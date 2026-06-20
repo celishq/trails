@@ -30,6 +30,8 @@ enum Cmd {
     Review(command::Review),
     /// Answer a question as an ephemeral cited cell
     Ask(command::Ask),
+    /// Retrieve ranked, verbatim-cited spans for a hard question (the agentic quality path)
+    Research(command::Research),
     /// Print the internal per-source summaries (the routing index) for debugging
     Summary(command::Summary),
     /// Show a cell's attributed change history (who changed what, when)
@@ -54,6 +56,7 @@ impl Cmd {
             Cmd::Cell(c) => c,
             Cmd::Review(c) => c,
             Cmd::Ask(c) => c,
+            Cmd::Research(c) => c,
             Cmd::Summary(c) => c,
             Cmd::History(c) => c,
             Cmd::Viz(c) => c,

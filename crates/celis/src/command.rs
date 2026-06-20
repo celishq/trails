@@ -318,6 +318,23 @@ impl Command for Ask {
 }
 
 #[derive(Args)]
+pub struct Research {
+    pub question: String,
+}
+impl Command for Research {
+    fn run(&self, cwd: &Path) -> Result<()> {
+        let spans = open_verbose(cwd)?.research(&OpenAiLlm::recall_from_env(), &self.question)?;
+        if spans.is_empty() {
+            println!("(no relevant spans found)");
+        }
+        for s in &spans {
+            println!("{}: \"{}\" — {}", s.path, s.quote, s.note);
+        }
+        Ok(())
+    }
+}
+
+#[derive(Args)]
 pub struct Summary;
 impl Command for Summary {
     fn run(&self, cwd: &Path) -> Result<()> {
