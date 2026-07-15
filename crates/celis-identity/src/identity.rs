@@ -4,12 +4,15 @@
 //! [`Delegation`]s, and hold the [`Cek`]. Devices get their own Secure-Enclave keys via delegation, never
 //! this key.
 
+use crate::codec::Sealed;
 use crate::delegation::Delegation;
 use crate::envelope::Cek;
 use crate::principal::Principal;
 use anyhow::{anyhow, Result};
 use bip39::Mnemonic;
+use data_encoding::HEXLOWER;
 use hkdf::Hkdf;
+use hmac::{Hmac, Mac};
 use p256::ecdsa::signature::Signer;
 use p256::ecdsa::{Signature, SigningKey, VerifyingKey};
 use sha2::Sha256;
@@ -21,6 +24,9 @@ const SALT: &[u8] = b"celis-identity-v1";
 const ROOT_INFO: &[u8] = b"root-p256";
 /// The HKDF info label for the content-encryption key.
 const CEK_INFO: &[u8] = b"cek-aes256";
+/// The HKDF info label for the vault key that keys sync-tier content ids — a MAC key distinct from the
+/// content-encryption key ([`CEK_INFO`]).
+const VAULT_ID_INFO: &[u8] = b"vault-id-hmac";
 
 /// An account root derived from a recovery phrase: the root signing key, its recovery `mnemonic` (to show
 /// the user for backup), and the vault content key. Deterministic — the same phrase always rebuilds the
@@ -29,6 +35,7 @@ pub struct Identity {
     mnemonic: Mnemonic,
     root: SigningKey,
     cek: Cek,
+    vault_key: [u8; 32],
 }
 
 impl Identity {
@@ -67,6 +74,31 @@ impl Identity {
     /// The vault content key.
     pub fn cek(&self) -> &Cek {
         &self.cek
+    }
+
+    /// Seal `plaintext` for the sync tier: its per-vault content id (a keyed hash) plus the CEK envelope.
+    /// The same plaintext seals to the same id on every device of this vault, so appends stay idempotent
+    /// under a set-union; the envelope is fresh each call (random nonce).
+    pub fn seal(&self, plaintext: &[u8]) -> Result<Sealed> {
+        Ok(Sealed {
+            id: self.content_id(plaintext),
+            envelope: self.cek.seal(plaintext)?,
+        })
+    }
+
+    /// Open a [`Sealed`] payload back to plaintext; errors on a wrong key or tampered bytes (the GCM tag).
+    pub fn open(&self, sealed: &Sealed) -> Result<Vec<u8>> {
+        self.cek.open(&sealed.envelope)
+    }
+
+    /// The per-vault content id of `plaintext` — HMAC-SHA256 under the vault key, lower-hex. Deterministic
+    /// across this vault's devices (shared key) yet uncorrelatable and unconfirmable by the keyless network:
+    /// not a bare `sha256(plaintext)` fingerprint.
+    pub fn content_id(&self, plaintext: &[u8]) -> String {
+        let mut mac = Hmac::<Sha256>::new_from_slice(&self.vault_key)
+            .expect("HMAC accepts a key of any length");
+        mac.update(plaintext);
+        HEXLOWER.encode(&mac.finalize().into_bytes())
     }
 
     /// Delegate authority to a device key — the root grants the device the given capabilities until `expiry`
@@ -117,10 +149,15 @@ impl Identity {
         hk.expand(CEK_INFO, &mut cek)
             .map_err(|e| anyhow!("cek derive: {e}"))?;
 
+        let mut vault_key = [0u8; 32];
+        hk.expand(VAULT_ID_INFO, &mut vault_key)
+            .map_err(|e| anyhow!("vault-id derive: {e}"))?;
+
         Ok(Identity {
             mnemonic,
             root,
             cek: Cek::new(cek),
+            vault_key,
         })
     }
 }
@@ -146,6 +183,55 @@ mod tests {
             original.cek().bytes(),
             restored.cek().bytes(),
             "content key is stable — the phrase restores decryption too"
+        );
+    }
+
+    #[test]
+    fn seal_open_round_trips() {
+        let id = Identity::generate().unwrap();
+        let sealed = id.seal(b"a log entry").unwrap();
+        assert_eq!(id.open(&sealed).unwrap(), b"a log entry");
+    }
+
+    #[test]
+    fn the_same_plaintext_seals_to_the_same_id_across_devices_and_reseals() {
+        let phrase = Identity::generate().unwrap().phrase();
+        let a = Identity::from_phrase(&phrase).unwrap();
+        let b = Identity::from_phrase(&phrase).unwrap();
+        let pt = b"cells/a.md revision";
+
+        assert_eq!(
+            a.content_id(pt),
+            b.content_id(pt),
+            "same vault key → same id across devices (union stays idempotent)"
+        );
+        let s1 = a.seal(pt).unwrap();
+        let s2 = a.seal(pt).unwrap();
+        assert_eq!(s1.id, s2.id, "a reseal yields the same id");
+        assert_ne!(
+            s1.envelope.nonce, s2.envelope.nonce,
+            "yet a fresh nonce each time"
+        );
+        assert_eq!(b.open(&s1).unwrap(), pt, "either device opens it");
+    }
+
+    #[test]
+    fn a_different_vault_yields_a_different_id_that_is_not_a_plaintext_hash() {
+        use sha2::Digest;
+        let a = Identity::generate().unwrap();
+        let b = Identity::generate().unwrap();
+        let pt = b"secret";
+
+        assert_ne!(
+            a.content_id(pt),
+            b.content_id(pt),
+            "another vault → an uncorrelatable id"
+        );
+        let bare = HEXLOWER.encode(&Sha256::digest(pt));
+        assert_ne!(
+            a.content_id(pt),
+            bare,
+            "keyed, not a bare sha256(plaintext) the network could confirm"
         );
     }
 
