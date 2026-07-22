@@ -15,6 +15,7 @@ use hkdf::Hkdf;
 use hmac::{Hmac, Mac};
 use p256::ecdsa::signature::Signer;
 use p256::ecdsa::{Signature, SigningKey, VerifyingKey};
+use p256::elliptic_curve::sec1::ToEncodedPoint;
 use sha2::Sha256;
 
 /// The HKDF salt binding every derivation to this application, so the same phrase used elsewhere never
@@ -27,6 +28,10 @@ const CEK_INFO: &[u8] = b"cek-aes256";
 /// The HKDF info label for the vault key that keys sync-tier content ids — a MAC key distinct from the
 /// content-encryption key ([`CEK_INFO`]).
 const VAULT_ID_INFO: &[u8] = b"vault-id-hmac";
+/// The HKDF info label for the sealing key — the ECDH keypair whose public half the account publishes in
+/// its profile, kept separate from the signing root ([`ROOT_INFO`]) so a compromise of one role never
+/// touches the other.
+const SEAL_INFO: &[u8] = b"seal-p256";
 
 /// An account root derived from a recovery phrase: the root signing key, its recovery `mnemonic` (to show
 /// the user for backup), and the vault content key. Deterministic — the same phrase always rebuilds the
@@ -36,6 +41,7 @@ pub struct Identity {
     root: SigningKey,
     cek: Cek,
     vault_key: [u8; 32],
+    seal: p256::SecretKey,
 }
 
 impl Identity {
@@ -118,6 +124,16 @@ impl Identity {
         self.public().to_encoded_point(true).as_bytes().to_vec()
     }
 
+    /// The sealing public key as SEC1-compressed bytes — published in the account's public profile; peers
+    /// ECDH against it so a contribution is openable only by this account. Not the signing root.
+    pub fn sealing_public_sec1(&self) -> Vec<u8> {
+        self.seal
+            .public_key()
+            .to_encoded_point(true)
+            .as_bytes()
+            .to_vec()
+    }
+
     /// A root signature over `msg` as its fixed 64-byte form.
     pub fn sign_bytes(&self, msg: &[u8]) -> Vec<u8> {
         self.sign(msg).to_bytes().to_vec()
@@ -153,11 +169,17 @@ impl Identity {
         hk.expand(VAULT_ID_INFO, &mut vault_key)
             .map_err(|e| anyhow!("vault-id derive: {e}"))?;
 
+        let mut seal = [0u8; 32];
+        hk.expand(SEAL_INFO, &mut seal)
+            .map_err(|e| anyhow!("seal derive: {e}"))?;
+        let seal = p256::SecretKey::from_slice(&seal).map_err(|e| anyhow!("seal scalar: {e}"))?;
+
         Ok(Identity {
             mnemonic,
             root,
             cek: Cek::new(cek),
             vault_key,
+            seal,
         })
     }
 }
@@ -167,6 +189,22 @@ mod tests {
     use super::*;
     use crate::delegation::authorize;
     use p256::ecdsa::signature::Signer;
+
+    #[test]
+    fn a_phrase_deterministically_rebuilds_the_same_sealing_key_distinct_from_the_root() {
+        let original = Identity::generate().unwrap();
+        let restored = Identity::from_phrase(&original.phrase()).unwrap();
+        assert_eq!(
+            original.sealing_public_sec1(),
+            restored.sealing_public_sec1(),
+            "sealing key is stable — the phrase restores the ability to be sealed to"
+        );
+        assert_ne!(
+            original.sealing_public_sec1(),
+            original.public_sec1(),
+            "key separation — the sealing key is not the signing root"
+        );
+    }
 
     #[test]
     fn a_phrase_deterministically_rebuilds_the_same_principal_and_cek() {
