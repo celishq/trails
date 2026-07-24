@@ -4,11 +4,12 @@
 //! [`Delegation`]s, and hold the [`Cek`]. Devices get their own Secure-Enclave keys via delegation, never
 //! this key.
 
-use crate::codec::Sealed;
 use crate::delegation::Delegation;
-use crate::envelope::Cek;
+use crate::envelope::{Cek, Envelope};
+use crate::keyslot::Keyslot;
 use crate::principal::Principal;
-use anyhow::{anyhow, Result};
+use crate::sealed::{Keyset, Sealed};
+use anyhow::{anyhow, bail, Result};
 use bip39::Mnemonic;
 use data_encoding::HEXLOWER;
 use hkdf::Hkdf;
@@ -82,19 +83,31 @@ impl Identity {
         &self.cek
     }
 
-    /// Seal `plaintext` for the sync tier: its per-vault content id (a keyed hash) plus the CEK envelope.
-    /// The same plaintext seals to the same id on every device of this vault, so appends stay idempotent
-    /// under a set-union; the envelope is fresh each call (random nonce).
-    pub fn seal(&self, plaintext: &[u8]) -> Result<Sealed> {
-        Ok(Sealed {
-            id: self.content_id(plaintext),
-            envelope: self.cek.seal(plaintext)?,
+    /// Seal `plaintext` to the private vault ([`Keyset::SelfVault`]) — the seed content key wraps the
+    /// body, no key-slots, no signature (the vault has no foreign reader). The reconciliation set-union
+    /// key is the orthogonal [`content_id`](Self::content_id); the envelope is fresh each call (random
+    /// nonce).
+    pub fn seal_self(&self, plaintext: &[u8]) -> Result<Sealed> {
+        Sealed::seal(plaintext, Keyset::SelfVault(&self.cek), None)
+    }
+
+    /// Open a vault [`Sealed`] back to plaintext; errors on a wrong key or tampered bytes (the GCM tag).
+    pub fn open_self(&self, sealed: &Sealed) -> Result<Vec<u8>> {
+        if sealed.body_enc.len() < 12 {
+            bail!("truncated sealed body");
+        }
+        let (nonce, ciphertext) = sealed.body_enc.split_at(12);
+        self.cek.open(&Envelope {
+            nonce: nonce.to_vec(),
+            ciphertext: ciphertext.to_vec(),
         })
     }
 
-    /// Open a [`Sealed`] payload back to plaintext; errors on a wrong key or tampered bytes (the GCM tag).
-    pub fn open(&self, sealed: &Sealed) -> Result<Vec<u8>> {
-        self.cek.open(&sealed.envelope)
+    /// Recover a shared cell's body from its `body_enc` and keyring `slots` (`spec/cell.md`)
+    /// using this account's sealing key: `Some(body)` when a slot seals to this account, `None` when
+    /// it is not a recipient, `Err` on a tampered body.
+    pub fn open_shared(&self, body_enc: &[u8], slots: &[Keyslot]) -> Result<Option<Vec<u8>>> {
+        crate::keyslot::open_body(body_enc, slots, &self.seal)
     }
 
     /// The per-vault content id of `plaintext` — HMAC-SHA256 under the vault key, lower-hex. Deterministic
@@ -227,8 +240,8 @@ mod tests {
     #[test]
     fn seal_open_round_trips() {
         let id = Identity::generate().unwrap();
-        let sealed = id.seal(b"a log entry").unwrap();
-        assert_eq!(id.open(&sealed).unwrap(), b"a log entry");
+        let sealed = id.seal_self(b"a log entry").unwrap();
+        assert_eq!(id.open_self(&sealed).unwrap(), b"a log entry");
     }
 
     #[test]
@@ -243,14 +256,14 @@ mod tests {
             b.content_id(pt),
             "same vault key → same id across devices (union stays idempotent)"
         );
-        let s1 = a.seal(pt).unwrap();
-        let s2 = a.seal(pt).unwrap();
-        assert_eq!(s1.id, s2.id, "a reseal yields the same id");
+        let s1 = a.seal_self(pt).unwrap();
+        let s2 = a.seal_self(pt).unwrap();
         assert_ne!(
-            s1.envelope.nonce, s2.envelope.nonce,
-            "yet a fresh nonce each time"
+            s1.body_enc[..12],
+            s2.body_enc[..12],
+            "a fresh nonce each seal (the 12-byte prefix)"
         );
-        assert_eq!(b.open(&s1).unwrap(), pt, "either device opens it");
+        assert_eq!(b.open_self(&s1).unwrap(), pt, "either device opens it");
     }
 
     #[test]
