@@ -310,7 +310,6 @@ mod tests {
     fn a_mistyped_principal_fails_the_checksum() {
         let id = Identity::generate().unwrap();
         let mut text = id.principal().to_string();
-        // Flip one character to a different valid base32 symbol.
         let last = text.pop().unwrap();
         text.push(if last == 'a' { 'b' } else { 'a' });
         assert!(
@@ -320,9 +319,9 @@ mod tests {
     }
 
     #[test]
+    /// A different message under the same signature fails authorization.
     fn a_delegated_device_request_authorizes_and_a_tampered_one_fails() {
         let id = Identity::generate().unwrap();
-        // Stand in for the Secure-Enclave device key with an in-memory one.
         let device = SigningKey::from_slice(&[3u8; 32]).unwrap();
         let delegation = id.delegate(device.verifying_key(), vec!["sync".into()], 0);
 
@@ -337,7 +336,6 @@ mod tests {
             &sig
         ));
 
-        // A different message under the same signature must fail.
         assert!(!authorize(
             &id.principal(),
             &id.public(),
@@ -366,11 +364,11 @@ mod tests {
     }
 
     #[test]
+    /// An attacker delegating to a device while presenting the victim's principal is refused.
     fn a_delegation_from_another_root_is_refused() {
         let id = Identity::generate().unwrap();
         let attacker = Identity::generate().unwrap();
         let device = SigningKey::from_slice(&[7u8; 32]).unwrap();
-        // Attacker delegates to the device, but presents the victim's principal.
         let forged = attacker.delegate(device.verifying_key(), vec!["sync".into()], 0);
         let msg = b"GET /sync";
         let sig: Signature = device.sign(msg);
