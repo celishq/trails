@@ -447,12 +447,12 @@ fn a_relay_that_says_nothing_about_kinds_refuses_none() {
 #[test]
 fn a_relays_document_is_asked_for_over_http_at_the_same_address() {
     assert_eq!(
-        http("wss://relay.example.com/public/relay"),
-        "https://relay.example.com/public/relay"
+        http("wss://relay.example.com/abc/relay"),
+        "https://relay.example.com/abc/relay"
     );
     assert_eq!(
-        http("ws://127.0.0.1:8787/private/relay"),
-        "http://127.0.0.1:8787/private/relay"
+        http("ws://127.0.0.1:8787/abc/relay"),
+        "http://127.0.0.1:8787/abc/relay"
     );
     assert_eq!(
         http("https://relay.example.com"),

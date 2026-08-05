@@ -13,9 +13,11 @@ use crate::note::Note;
 use crate::pubkey::Pubkey;
 use anyhow::{anyhow, bail, Result};
 use bech32::{Bech32, Hrp};
+use hkdf::Hkdf;
 use k256::schnorr::signature::hazmat::PrehashSigner;
 use k256::schnorr::SigningKey;
 use k256::SecretKey;
+use sha2::Sha256;
 
 const NSEC: Hrp = Hrp::parse_unchecked("nsec");
 
@@ -39,6 +41,20 @@ impl Account {
         let mut secret = [0u8; 32];
         getrandom::getrandom(&mut secret).map_err(|e| anyhow!("no randomness: {e}"))?;
         Self::new(&secret)
+    }
+
+    /// The key this account derives from `nonce` — a second identity of its own, recoverable from the
+    /// recovery phrase and this nonce alone.
+    ///
+    /// **The nonce is not a secret.** It is what makes two derivations of one account different, so it is
+    /// written down beside whatever it named; the account key it is mixed with is the secret. A device
+    /// restoring from a phrase derives the same key and can check it against the id it expects.
+    pub fn derive(&self, nonce: &[u8]) -> Result<Self> {
+        let mut derived = [0u8; 32];
+        Hkdf::<Sha256>::new(Some(nonce), &self.secret.to_bytes())
+            .expand(b"celis/server", &mut derived)
+            .map_err(|e| anyhow!("cannot derive a key: {e}"))?;
+        Self::new(&derived)
     }
 
     /// The account an `nsec` names (NIP-19) — the form a person exports and imports.

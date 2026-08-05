@@ -54,9 +54,22 @@ pub struct Filter {
     /// The account a gift wrap is addressed to — the `p` tag every wrap carries.
     #[serde(rename = "#p", skip_serializing_if = "Option::is_none")]
     pub recipient: Option<Vec<String>>,
+    /// The server a record is about — the `h` tag every record written to one carries.
+    #[serde(rename = "#h", skip_serializing_if = "Option::is_none")]
+    pub server: Option<Vec<String>>,
 }
 
 impl Filter {
+    /// Every record of `kind` written about the server at `id` — what a member list and an epoch list are
+    /// both read with.
+    pub fn about(id: &str, kind: u16) -> Self {
+        Self {
+            kinds: Some(vec![kind]),
+            server: Some(vec![id.to_string()]),
+            ..Self::default()
+        }
+    }
+
     /// Everything addressed to the account at `pubkey` — this account's own inbox: the revisions people
     /// share with it, the contributions proposed back to it, and its own receipts. Hex, as a `p` tag names an
     /// account, so a standard nostr client reads the same subscription.
