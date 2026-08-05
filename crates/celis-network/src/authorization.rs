@@ -3,8 +3,7 @@
 //!
 //! No account record is consulted at either end — the signature is the whole credential, so there is no
 //! session to steal and nothing to expire but the note's own timestamp. Every route the network serves that
-//! is ours rather than somebody's spec is called this way: the proxy, the usage routes, and the username
-//! claim.
+//! is ours rather than somebody's spec is called this way.
 
 use anyhow::Result;
 use celis_nostr::{Account, Note};

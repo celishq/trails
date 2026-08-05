@@ -41,8 +41,7 @@ impl Identity {
         self.mnemonic.to_string()
     }
 
-    /// This account on nostr — the secp256k1 key every note is signed and encrypted with. The recovery
-    /// phrase restores it, so a new device reads the whole history the moment it holds the phrase.
+    /// This account on nostr — the secp256k1 key every note is signed and encrypted with.
     pub fn account(&self) -> &Account {
         &self.account
     }

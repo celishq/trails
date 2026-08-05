@@ -1,9 +1,6 @@
-//! The specification's own test vectors, run against this implementation. They are the reason to trust
-//! anything in the parent module: every conversation key, message key, padding length and payload here was
-//! produced by other people's code, so agreeing with all of them means a note we encrypt is a note any
-//! other client can read.
-//!
-//! The file is `vectors/nip44-v2.json`, taken unmodified from the NIP-44 reference repository.
+//! The specification's own test vectors, run against this implementation — `vectors/nip44-v2.json`, taken
+//! unmodified from the NIP-44 reference repository. Every key, padding length and payload in it was produced
+//! by other people's code, so agreeing with all of them means a note we encrypt is one any client can read.
 
 use super::*;
 use crate::account::Account;

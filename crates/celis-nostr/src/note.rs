@@ -1,11 +1,10 @@
 //! **The envelope** — the only thing that crosses a relay (NIP-01). A note is self-certifying: its `id` is
-//! the sha256 of a compact array of exactly the fields that matter, and its `sig` is a BIP-340 signature
-//! over that id. Anyone can check both without asking anyone anything, which is why a relay can admit a
-//! note while knowing nothing about the account that wrote it.
+//! the sha256 of a compact array of the fields that matter, and its `sig` is a BIP-340 signature over that
+//! id. Anyone can check both without asking anyone anything.
 //!
-//! The id covers `pubkey`, `created_at`, `kind`, `tags` and `content` — so it changes if any of them do,
-//! and two clients that serialize the same note agree on it. `content` is opaque here: ciphertext for a
-//! log entry, plain markdown for a public cell.
+//! The id covers `pubkey`, `created_at`, `kind`, `tags` and `content` — so it changes if any of them do, and
+//! two clients that serialize the same note agree on it. `content` is opaque here: ciphertext for a log
+//! entry, plain markdown for a public cell.
 
 use crate::account::Account;
 use crate::pubkey::Pubkey;

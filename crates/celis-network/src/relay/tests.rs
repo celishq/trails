@@ -9,7 +9,7 @@ fn note() -> Note {
     entry("ciphertext")
 }
 
-/// The account a test client speaks as. A relay that never asks for a challenge never uses it.
+/// The account a test client speaks as.
 fn speaking() -> Arc<Account> {
     Arc::new(Account::new(&[3u8; 32]).unwrap())
 }
@@ -26,9 +26,8 @@ fn entry(content: &str) -> Note {
 }
 
 /// A relay on a local port, for what is about the socket rather than about a note. It answers `OK` to
-/// every `EVENT` and an empty `EOSE` to every `REQ`, counts the connections it accepted, and hangs up
-/// once it has answered `answers` of them — which is how a hibernating relay leaves a client holding a
-/// socket that is no longer there.
+/// every `EVENT` and an empty `EOSE` to every `REQ`, counts the connections it accepted, and hangs up once
+/// it has answered `answers` of them.
 struct LocalRelay {
     url: String,
     accepted: Arc<AtomicUsize>,
@@ -101,9 +100,6 @@ impl RefusingRelay {
 }
 
 #[test]
-/// A relay's reason reaches the caller as the relay wrote it. NIP-01 puts the meaning in the prefix and
-/// leaves the rest for a human — and a relay is free to quote what it said about another note in there —
-/// so nothing on the way out may read it, summarize it or wrap it in a sentence of ours.
 fn a_relays_reason_reaches_the_caller_unparsed() {
     let said = "error: could not save: invalid: is what it said about the last one";
     let relay = RefusingRelay::saying(said);
@@ -115,8 +111,7 @@ fn a_relays_reason_reaches_the_caller_unparsed() {
     assert_eq!(answer.reason, said, "word for word");
 }
 
-/// A relay that offers a challenge and turns down anything from a client that has not answered it —
-/// what our own private relay becomes.
+/// A relay that offers a challenge and turns down anything from a client that has not answered it.
 struct GuardedRelay {
     url: String,
     /// Every auth note it was given, so a test can read what the client signed.
@@ -168,8 +163,7 @@ impl GuardedRelay {
 }
 
 #[test]
-/// The whole of NIP-42 from this side: the relay turns a publish down, the client signs the challenge it
-/// was already given, and the same note goes again — without the caller knowing any of it happened.
+/// The whole of NIP-42 from this side, without the caller knowing any of it happened.
 fn a_relay_that_asks_who_is_publishing_is_answered_and_the_note_goes_again() {
     let guarded = GuardedRelay::new();
     let client = Relay::new(&guarded.url, speaking());
@@ -198,8 +192,6 @@ fn a_relay_that_asks_who_is_subscribing_is_answered_and_the_request_goes_again()
 }
 
 #[test]
-/// A relay that says nothing about authentication is never authenticated to. Signing on connect would
-/// make every exchange with an open relay wait for a challenge that is not coming.
 fn a_relay_that_asks_nothing_is_told_nothing() {
     let relay = LocalRelay::new(usize::MAX);
     let client = Relay::new(&relay.url, speaking());
@@ -412,10 +404,7 @@ fn a_relay_that_names_the_kinds_it_keeps_answers_for_each_one() {
     assert_eq!(relay.kinds(), "1, 5, [10000,19999]");
 }
 
-/// NIP-11 is optional, in whole and in part. A relay that has said nothing about kinds has not refused
-/// any: publishing and reading the answer is the better question.
 #[test]
-/// The two limits a caller acts on rather than advises with, read off the same document.
 fn a_relay_states_what_it_requires_and_how_much_it_answers_at_once() {
     let stated = information(
         r#"{"name":"ours","limitation":{"auth_required":true,"max_limit":5000,"max_filters":10}}"#,
@@ -425,8 +414,6 @@ fn a_relay_states_what_it_requires_and_how_much_it_answers_at_once() {
 }
 
 #[test]
-/// A relay that states no limits requires nothing and says nothing about how much it answers. Both read
-/// as the absence they are, so a caller that needs either can tell it apart from a relay that said yes.
 fn a_relay_that_states_no_limits_requires_nothing_and_says_nothing() {
     for document in [r#"{"name":"quiet"}"#, r#"{"limitation":{}}"#] {
         let quiet = information(document);

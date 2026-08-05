@@ -12,7 +12,6 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 const NPUB: Hrp = Hrp::parse_unchecked("npub");
 
-/// An account's public identity: the x-only public key everything else is addressed to.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct Pubkey([u8; 32]);
 

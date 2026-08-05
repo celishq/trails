@@ -1,8 +1,6 @@
 //! **Gift wrap** (NIP-59) — how one message reaches one person, with the relay learning neither who sent it
 //! nor what it says.
 //!
-//! Three layers, each doing one job:
-//!
 //! ```text
 //!   rumor   what the author wrote, unsigned          — so a leaked copy is not a publishable event
 //!   seal    the rumor, encrypted to the reader and signed by the author  — this is what proves authorship
@@ -10,13 +8,10 @@
 //! ```
 //!
 //! Only the wrap crosses the relay. Its author is a throwaway key, so the relay sees a note from nobody to a
-//! `p` tag; only the reader can open it, and only then does the author's signature appear. That is why an
-//! invite and a contribution travel this way rather than as ordinary notes: the fact that two accounts are
-//! talking is itself worth not publishing.
+//! `p` tag; only the reader can open it, and only then does the author's signature appear.
 //!
-//! **The timestamps are not backdated.** NIP-59 suggests spreading them over a couple of days so the layers
-//! cannot be correlated by second; every layer here carries the same second as the message it wraps. That is
-//! metadata hygiene we have not taken on, and it is visible only to a relay already holding both notes.
+//! **The timestamps are not backdated.** NIP-59 suggests spreading them so the layers cannot be correlated
+//! by second; every layer here carries the same second as the message it wraps.
 
 use crate::account::Account;
 use crate::note::Note;
@@ -32,9 +27,8 @@ const SEAL_KIND: u16 = 13;
 
 /// The message inside a gift wrap: what its author wrote, and who they are.
 ///
-/// Never signed, deliberately. A signature would make the message an event anyone could publish, and the
-/// author's `pubkey` here is trusted only because [`unwrap`] has already checked it against the seal's
-/// signature.
+/// Never signed, deliberately — a signature would make the message an event anyone could publish. The
+/// author's `pubkey` here is trusted only because [`unwrap`] has checked it against the seal's signature.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Rumor {
     pub pubkey: Pubkey,
@@ -43,11 +37,9 @@ pub struct Rumor {
     pub content: String,
 }
 
-/// Wrap `content` as `author` so that only `reader` can open it.
-///
-/// `expires_at` asks the relay to stop serving the wrap after that second (NIP-40) — the one thing about a
-/// message a relay is told, and it has to be on the wrap because the layers inside are opaque to it. `None`
-/// for a message that stands until it is answered.
+/// Wrap `content` as `author` so that only `reader` can open it. `expires_at` asks the relay to stop serving
+/// the wrap after that second (NIP-40) — the one thing about a message a relay is told, and it goes on the
+/// wrap because the layers inside are opaque to it. `None` for a message that stands until it is answered.
 pub fn wrap(
     author: &Account,
     reader: &Pubkey,
@@ -83,10 +75,9 @@ pub fn wrap(
     )
 }
 
-/// Open a gift wrap addressed to `reader`, answering what it carries and who wrote it.
-///
-/// Refuses anything that is not a genuine message to this account: a wrong kind at either layer, a signature
-/// that does not hold, a payload this key cannot open, or a rumor claiming an author who did not seal it.
+/// Open a gift wrap addressed to `reader`, answering what it carries and who wrote it. Refuses a wrong kind
+/// at either layer, a signature that does not hold, a payload this key cannot open, or a rumor claiming an
+/// author who did not seal it.
 pub fn unwrap(reader: &Account, wrap: &Note) -> Result<Rumor> {
     if wrap.kind != WRAP_KIND {
         bail!("kind {} is not a gift wrap", wrap.kind);
@@ -177,8 +168,6 @@ mod tests {
     }
 
     #[test]
-    /// The seal is what carries authorship, so a rumor that claims someone else wrote it is refused rather
-    /// than surfaced under a name it borrowed.
     fn a_message_claiming_an_author_that_did_not_seal_it_is_refused() {
         let (liar, victim, reader) = (account(3), account(4), account(5));
         let rumor = Rumor {
@@ -212,7 +201,6 @@ mod tests {
     }
 
     #[test]
-    /// An expiry is on the wrap, because the layers inside it are opaque to the relay that has to honour it.
     fn an_expiring_message_says_so_where_the_relay_can_read_it() {
         let (author, reader) = (account(3), account(4));
         let note = author

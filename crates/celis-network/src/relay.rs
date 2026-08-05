@@ -3,13 +3,11 @@
 //! subscription. Nothing here decides anything about a note's meaning; a relay is storage that speaks.
 //!
 //! A relay holds its connection: every exchange with the same relay travels over one socket, opened the
-//! first time it is needed and opened again if it goes away. Publishing is per note, so a connection per
-//! exchange made a first sync of a large vault one TLS handshake per entry.
+//! first time it is needed and opened again if it goes away.
 //!
 //! **Authentication is answered, never offered** (NIP-42). A relay that wants to know who is asking sends a
 //! challenge on connect and turns a frame down with `auth-required:`; only then does this client sign the
-//! challenge and try the frame again. Authenticating on connect instead would make every exchange with an
-//! open relay wait for a challenge that is never coming.
+//! challenge and try the frame again.
 
 use anyhow::{anyhow, bail, Result};
 use celis_nostr::{Account, Note};
@@ -20,12 +18,9 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tungstenite::stream::MaybeTlsStream;
 use tungstenite::{Message, WebSocket};
 
-/// How long one exchange waits on a relay that has stopped answering.
-///
-/// This is what a stalled relay costs the person at the screen, not just this round: a sync holds the
-/// binding's write guard for its whole length, so nothing else can write the vault meanwhile. Fifteen
-/// seconds is well past any answer a relay owes — a page is five hundred notes of JSON — and short enough
-/// that a dead one is a pause rather than a freeze.
+/// How long one exchange waits on a relay that has stopped answering. A sync holds the binding's write
+/// guard for its whole length, so this is what a stalled relay costs the person at the screen — well past
+/// any answer a relay owes, and short enough that a dead one is a pause rather than a freeze.
 const TIMEOUT: Duration = Duration::from_secs(15);
 
 /// The kind a client authenticates to a relay with (NIP-42).
@@ -70,9 +65,8 @@ impl Filter {
         }
     }
 
-    /// Everything addressed to the account at `pubkey` — this account's own inbox: the revisions people
-    /// share with it, the contributions proposed back to it, and its own receipts. Hex, as a `p` tag names an
-    /// account, so a standard nostr client reads the same subscription.
+    /// Everything addressed to the account at `pubkey`, as hex — this account's own inbox: the revisions
+    /// people share with it, the contributions proposed back to it, and its own receipts.
     pub fn addressed_to(pubkey: &str, kind: u16, since: Option<u64>) -> Self {
         Self {
             kinds: Some(vec![kind]),
@@ -86,10 +80,8 @@ impl Filter {
 /// What a relay said about one note — NIP-01's `OK`: whether it took the note, and its own reason when it
 /// did not.
 ///
-/// The reason travels as the relay wrote it. NIP-01 puts the machine-readable part in a prefix
-/// (`duplicate:`, `invalid:`, `blocked:`, `rate-limited:`, `auth-required:`, `error:`) and leaves the rest
-/// for a human, and a relay is free to quote the note it is talking about in there — so a reader of the
-/// reason has to read the prefix and nothing else. Handing it over whole is what lets one.
+/// The reason travels as the relay wrote it. NIP-01 puts the machine-readable part in a prefix and leaves
+/// the rest for a human, so a reader of the reason reads the prefix and nothing else.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Answer {
     pub accepted: bool,
@@ -97,10 +89,8 @@ pub struct Answer {
 }
 
 /// What a relay says about itself (NIP-11) — the document it answers a plain HTTP request with, on the same
-/// URL a client opens a websocket to.
-///
-/// Every field of it is optional, so an absent one is a relay that did not say rather than a relay that said
-/// no. A document naming no kinds at all is a relay that has told you nothing about which kinds it keeps.
+/// URL a client opens a websocket to. Every field is optional, so an absent one is a relay that did not say
+/// rather than one that said no.
 #[derive(Clone, Debug, Default, Deserialize)]
 pub struct Information {
     #[serde(default)]
@@ -111,13 +101,8 @@ pub struct Information {
     pub limitation: Limitation,
 }
 
-/// The limits a relay holds a client to (NIP-11).
-///
-/// **These two are read, where the kinds are only advised on.** A relay that says nothing about kinds is
-/// asked anyway, because guessing wrong there costs a refused publish the caller already sees. These cost
-/// something nobody sees: a relay that does not require authentication serves an account's shape to
-/// strangers, and a relay that will not say how much it answers at once cannot be told apart from one that
-/// answered everything. So a caller that needs either is entitled to treat silence as a no.
+/// The limits a relay holds a client to (NIP-11). A caller that needs either may treat silence as a no —
+/// unlike the kinds, which are only advised on.
 #[derive(Clone, Debug, Default, Deserialize)]
 pub struct Limitation {
     /// Whether this relay serves nothing until a client has answered its challenge (NIP-42).
@@ -174,8 +159,7 @@ fn covers(named: &Value, kind: u16) -> bool {
 }
 
 /// A relay's socket, and how many subscriptions have been asked over it. An id is never reused, so a frame
-/// left over from a subscription that has ended is recognisably not the current one's — which matters once
-/// a socket outlives the exchange that opened it.
+/// left over from a subscription that has ended is recognisably not the current one's.
 #[derive(Default)]
 struct Connection {
     socket: Option<Socket>,
@@ -183,9 +167,6 @@ struct Connection {
 }
 
 /// One relay, at a websocket URL, spoken to as one `account`.
-///
-/// The account is a collaborator rather than a decision: signing a challenge needs a key, and a relay that
-/// never asks for one never uses it.
 pub struct Relay {
     url: String,
     account: Arc<Account>,
@@ -212,16 +193,11 @@ impl Relay {
         &self.url
     }
 
-    /// Publish `note` and wait for the relay to say whether it took it — the relay's [`Answer`], reason and
-    /// all, as it wrote it.
+    /// Publish `note` and wait for the relay's [`Answer`], reason and all, as it wrote it.
     ///
-    /// A refusal is not an error here. The reasons differ in kind — a bad signature is a bug, a superseded
-    /// address is not — and which of them this caller can act on is the caller's to decide, so nothing on
-    /// the way out reads the reason or formats it into a message. The error is the socket: a relay that
-    /// never answered gave no answer at all.
-    ///
-    /// One refusal is answered rather than returned: a relay asking who is publishing is asking about the
-    /// connection, so the client signs its challenge and offers the same note again.
+    /// A refusal is not an error, and nothing on the way out reads the reason — which of them this caller
+    /// can act on is the caller's to decide. The error is the socket. `auth-required:` is answered rather
+    /// than returned: the client signs the challenge and offers the same note again.
     pub fn publish(&self, note: &Note) -> Result<Answer> {
         self.exchange(|relay, socket, _| {
             let mut answered = false;
@@ -238,10 +214,8 @@ impl Relay {
     }
 
     /// Every note the relay holds matching any of `filters` — `REQ`, collect until `EOSE`, then `CLOSE`.
-    /// Notes the relay sends after `EOSE` are not waited for: this asks what is stored, not what is next.
-    ///
-    /// Newest first, which is the order NIP-01 answers in and the order a walk backwards through `until`
-    /// reads.
+    /// Notes sent after `EOSE` are not waited for: this asks what is stored, not what is next. Newest first,
+    /// the order NIP-01 answers in and the order a walk backwards through `until` reads.
     pub fn fetch(&self, filters: &[Filter]) -> Result<Vec<Note>> {
         self.exchange(|relay, socket, id| {
             let mut request = vec![json!("REQ"), json!(id)];
@@ -305,11 +279,9 @@ impl Relay {
         }
     }
 
-    /// Answer the challenge this relay offered, so it knows which account is asking (NIP-42).
-    ///
-    /// The note names the relay by the URL this client dialed and carries the challenge exactly as it
-    /// arrived. A relay that refused a frame without ever sending a challenge is a relay this client cannot
-    /// satisfy, and saying so beats retrying forever.
+    /// Answer the challenge this relay offered, so it knows which account is asking (NIP-42). The note names
+    /// the relay by the URL this client dialed and carries the challenge exactly as it arrived. A relay that
+    /// refused a frame without ever sending one cannot be satisfied, and saying so beats retrying forever.
     fn authenticate(&self, socket: &mut Socket) -> Result<()> {
         let challenge = self
             .challenge
@@ -345,12 +317,8 @@ impl Relay {
     }
 
     /// What the relay says about itself (NIP-11): the same URL over plain HTTP, asked with
-    /// `Accept: application/nostr+json`.
-    ///
-    /// Asked once and kept for as long as this relay lives. A document is a relay's standing description of
-    /// itself rather than something that changes between two notes, and asking per note made a publish one
-    /// HTTP request per note per relay. A relay that answers nothing is remembered as having said nothing,
-    /// which is what an unanswered document already meant — silence is not a refusal.
+    /// `Accept: application/nostr+json`. Asked once and kept for as long as this relay lives; a relay that
+    /// answers nothing is remembered as having said nothing.
     pub fn information(&self) -> Information {
         self.information
             .get_or_init(|| self.ask().unwrap_or_default())
@@ -367,18 +335,14 @@ impl Relay {
         Ok(serde_json::from_str(&answer)?)
     }
 
-    /// The limits this relay states it holds a client to (NIP-11), or their defaults when it states none —
-    /// which reads as "requires nothing, says nothing", the answer a caller that needs either should act on.
+    /// The limits this relay states it holds a client to (NIP-11), or their defaults when it states none.
     pub fn limits(&self) -> Limitation {
         self.information().limitation
     }
 
-    /// What this relay says against keeping notes of `kind`, or `None` when it says nothing against them.
-    ///
-    /// A relay that answers no document, or one whose document names no kinds, refuses nothing here — NIP-11
-    /// is optional, and a publish is a better question than a guess. What this catches is the relay that *has*
-    /// said: a mirror keeping short notes and nothing else says so, and a client that reads it says why rather
-    /// than retrying a publish that will never be taken.
+    /// What this relay says against keeping notes of `kind`, or `None` when it says nothing against them. A
+    /// relay that answers no document, or one whose document names no kinds, refuses nothing here — NIP-11
+    /// is optional, and a publish is a better question than a guess.
     pub fn refusal(&self, kind: u16) -> Option<String> {
         let information = self.information();
         match information.keeps(kind) {
@@ -394,11 +358,9 @@ impl Relay {
     /// Run one exchange over this relay's connection, opening one if it holds none, and give the exchange a
     /// subscription id no earlier one has used.
     ///
-    /// A held socket may have gone away while nothing was being said over it — a relay hibernates, a
-    /// suspended app's connection dies without a word — and nothing finds out until the next frame. So a
-    /// failure over a socket that was already open is tried once more over a fresh one, and only a failure
-    /// over the fresh socket is the answer. A relay that answers a publish with a refusal costs one extra
-    /// connection for it; nothing is published twice, because a refused note was never stored.
+    /// A held socket may have gone away with nothing said over it, and nothing finds out until the next
+    /// frame. So a failure over an already-open socket is tried once more over a fresh one. Nothing is
+    /// published twice: a refused note was never stored.
     fn exchange<T>(&self, run: impl Fn(&Self, &mut Socket, &str) -> Result<T>) -> Result<T> {
         let mut connection = self
             .connection
@@ -441,11 +403,9 @@ impl Relay {
         Ok(socket)
     }
 
-    /// The next frame the relay sends that this crate understands. Ping/pong and binary frames are the
-    /// transport's business, not ours.
-    ///
-    /// A challenge is taken as it passes rather than waited for: it arrives unasked, before whatever this
-    /// exchange was after, and is only wanted if the relay later turns something down.
+    /// The next frame the relay sends that this crate understands. A challenge is taken as it passes rather
+    /// than waited for: it arrives unasked, before whatever this exchange was after, and is only wanted if
+    /// the relay later turns something down.
     fn next(&self, socket: &mut Socket) -> Result<Frame> {
         loop {
             let frame = match socket

@@ -6,9 +6,8 @@
 //! reaches them wrapped so that a relay learns neither who sent it nor what it says (NIP-59).
 //!
 //! The crate is deliberately ignorant of celis. It knows secp256k1, BIP-340, NIP-01, NIP-19, NIP-44 v2 and
-//! NIP-59, and nothing about cells or logs — the mapping from a log entry to a note lives above it.
-//! That keeps every rule here checkable against someone else's implementation: the notes it verifies were
-//! signed by other clients, and the encryption is exercised against the official NIP-44 vectors.
+//! NIP-59, and nothing about cells or logs — so every rule here is checkable against someone else's
+//! implementation, which is what its tests do.
 
 mod account;
 mod nip44;

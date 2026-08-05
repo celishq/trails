@@ -3,9 +3,8 @@
 //! it publishes, the Schnorr signature on every note, and the shared secret that encrypts a note's content
 //! to one reader.
 //!
-//! Encrypting to yourself is not a special case. Your own stream — everything this account authors, read by
-//! its own devices — is this account encrypting to its own public key, which is why syncing between your
-//! devices needs no key beyond the one the recovery phrase already restores.
+//! Encrypting to yourself is not a special case: your own stream is this account encrypting to its own
+//! public key, so syncing between your devices needs no key beyond the one the phrase already restores.
 
 use crate::nip44;
 use crate::nip59::{self, Rumor};
@@ -35,8 +34,7 @@ impl Account {
         })
     }
 
-    /// A fresh account nobody has ever held — the throwaway key that carries one gift
-    /// wrap.
+    /// A fresh account nobody has ever held — the throwaway key that carries one gift wrap.
     pub fn generate() -> Result<Self> {
         let mut secret = [0u8; 32];
         getrandom::getrandom(&mut secret).map_err(|e| anyhow!("no randomness: {e}"))?;
@@ -44,11 +42,8 @@ impl Account {
     }
 
     /// The key this account derives from `nonce` — a second identity of its own, recoverable from the
-    /// recovery phrase and this nonce alone.
-    ///
-    /// **The nonce is not a secret.** It is what makes two derivations of one account different, so it is
-    /// written down beside whatever it named; the account key it is mixed with is the secret. A device
-    /// restoring from a phrase derives the same key and can check it against the id it expects.
+    /// recovery phrase and this nonce alone. **The nonce is not a secret**: it is what makes two derivations
+    /// of one account different, and the account key it is mixed with is the secret.
     pub fn derive(&self, nonce: &[u8]) -> Result<Self> {
         let mut derived = [0u8; 32];
         Hkdf::<Sha256>::new(Some(nonce), &self.secret.to_bytes())
@@ -107,16 +102,13 @@ impl Account {
     }
 
     /// Encrypt `plaintext` so only `reader` can open it, the same way every time — the same plaintext gives
-    /// the same ciphertext, byte for byte, on this device and on every other holding this key.
+    /// the same ciphertext on this device and on every other holding this key, so a note carrying it can be
+    /// recomputed rather than stored.
     ///
-    /// **For plaintext that is already addressed by its own content, and nothing else.** What this gives up
+    /// **For plaintext that is already addressed by its own content, and nothing else.** What it gives up
     /// against [`encrypt`](Self::encrypt) is that two payloads carrying the same thing look alike, so it is
-    /// only safe where that is already said out loud — a log entry travels under a `d` tag that is the hash
-    /// of the entry, which announces it. A message, an invite or a receipt keeps a fresh nonce.
-    ///
-    /// What it buys is a note that need not be stored: every field of a note is a function of the entry it
-    /// carries once the ciphertext is, so a device recomputes the note rather than remembering it, and two
-    /// devices offering one entry offer one note.
+    /// only safe where that is already said out loud — a log entry under a `d` tag that is the hash of the
+    /// entry. A message, an invite or a receipt keeps a fresh nonce.
     pub fn encrypt_deterministic(&self, reader: &Pubkey, plaintext: &str) -> Result<String> {
         let key = self.conversation_key(reader)?;
         let nonce = nip44::nonce_for(&key, plaintext.as_bytes());
@@ -242,8 +234,6 @@ mod tests {
     }
 
     #[test]
-    /// The deterministic path answers the same bytes every time, and from any device holding the key — which
-    /// is what lets a note be recomputed rather than kept.
     fn the_same_plaintext_always_encrypts_the_same_way_deterministically() {
         let mine = account(3);
         let elsewhere = account(3);

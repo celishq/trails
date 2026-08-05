@@ -3,9 +3,9 @@
 //! fresh 32-byte nonce, encrypts with ChaCha20 and authenticates with HMAC-SHA256 over the nonce and the
 //! ciphertext.
 //!
-//! Plaintext is padded to a power-of-two-ish length before encryption, so the ciphertext reveals only a
-//! coarse size band rather than the exact length of what was written. The whole thing is checked against
-//! the specification's own test vectors — see the `vectors` module.
+//! Plaintext is padded before encryption, so the ciphertext reveals only a coarse size band rather than the
+//! exact length of what was written. The whole thing is checked against the specification's own test
+//! vectors — see the `vectors` module.
 
 use anyhow::{anyhow, bail, Result};
 use chacha20::cipher::{KeyIvInit, StreamCipher};
@@ -36,14 +36,10 @@ pub(crate) fn conversation_key(shared_x: &[u8; 32]) -> [u8; 32] {
 /// plaintext)`.
 ///
 /// **Only for plaintext that is already addressed by its own content.** Reusing a nonce across two
-/// *different* plaintexts under one key repeats the keystream and lets xoring the two ciphertexts strip it —
-/// the failure that makes a random nonce the default. That cannot happen here: two plaintexts share this
-/// nonce only if they collide under HMAC-SHA256, which is to say if they are the same plaintext.
-///
-/// What it does change is that the same plaintext gives the same ciphertext, so an observer can tell two
-/// payloads carry the same thing. Use it where that is already announced — a note whose `d` tag is the hash
-/// of what it carries — and nowhere else. Keyed rather than a plain hash of the plaintext, so nobody without
-/// the conversation key can test a guess against the nonce.
+/// *different* plaintexts under one key repeats the keystream; that cannot happen here, since two plaintexts
+/// share this nonce only if they collide under HMAC-SHA256. What it does change is that the same plaintext
+/// gives the same ciphertext, so use it only where that is already announced. Keyed rather than a plain hash
+/// of the plaintext, so nobody without the conversation key can test a guess against the nonce.
 pub(crate) fn nonce_for(conversation_key: &[u8; 32], plaintext: &[u8]) -> [u8; 32] {
     let mut mac = <Hmac<Sha256> as Mac>::new_from_slice(conversation_key)
         .expect("hmac takes a key of any length");
