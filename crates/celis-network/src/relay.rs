@@ -175,7 +175,7 @@ pub struct Relay {
     /// fresh socket brings a fresh challenge, and meaningless to a relay that sends none.
     challenge: Mutex<Option<String>>,
     /// What this relay says it keeps, once it has been asked.
-    information: OnceLock<Information>,
+    information: OnceLock<Option<Information>>,
 }
 
 impl Relay {
@@ -317,12 +317,12 @@ impl Relay {
     }
 
     /// What the relay says about itself (NIP-11): the same URL over plain HTTP, asked with
-    /// `Accept: application/nostr+json`. Asked once and kept for as long as this relay lives; a relay that
-    /// answers nothing is remembered as having said nothing.
-    pub fn information(&self) -> Information {
-        self.information
-            .get_or_init(|| self.ask().unwrap_or_default())
-            .clone()
+    /// `Accept: application/nostr+json`. Asked once and kept for as long as this relay lives.
+    ///
+    /// **`None` is a relay that answered nothing**, which is not the same as one whose document left every
+    /// field out: a caller reading silence as a statement would be quoting a relay that never spoke.
+    pub fn information(&self) -> Option<Information> {
+        self.information.get_or_init(|| self.ask().ok()).clone()
     }
 
     fn ask(&self) -> Result<Information> {
@@ -335,16 +335,16 @@ impl Relay {
         Ok(serde_json::from_str(&answer)?)
     }
 
-    /// The limits this relay states it holds a client to (NIP-11), or their defaults when it states none.
-    pub fn limits(&self) -> Limitation {
-        self.information().limitation
+    /// The limits this relay states it holds a client to (NIP-11), or `None` when it answered no document.
+    pub fn limits(&self) -> Option<Limitation> {
+        Some(self.information()?.limitation)
     }
 
     /// What this relay says against keeping notes of `kind`, or `None` when it says nothing against them. A
     /// relay that answers no document, or one whose document names no kinds, refuses nothing here — NIP-11
     /// is optional, and a publish is a better question than a guess.
     pub fn refusal(&self, kind: u16) -> Option<String> {
-        let information = self.information();
+        let information = self.information()?;
         match information.keeps(kind) {
             true => None,
             false => Some(format!(

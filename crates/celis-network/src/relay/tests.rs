@@ -262,7 +262,11 @@ fn a_relays_document_is_asked_for_once_however_often_it_is_read() {
 fn a_relay_that_answers_no_document_refuses_nothing_and_is_not_asked_again() {
     let relay = Relay::new("ws://127.0.0.1:1", speaking());
     assert!(relay.refusal(30_023).is_none(), "silence is not a refusal");
-    assert!(relay.information().keeps(30_023));
+    assert!(
+        relay.information().is_none(),
+        "and it is remembered as having said nothing, not as having said the defaults"
+    );
+    assert!(relay.limits().is_none());
 }
 
 #[test]
