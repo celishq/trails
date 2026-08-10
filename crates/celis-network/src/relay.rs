@@ -10,8 +10,7 @@
 //! challenge and try the frame again.
 
 use anyhow::{anyhow, bail, Result};
-use celis_nostr::{Account, Note};
-use serde::{Deserialize, Serialize};
+use celis_nostr::{Account, Answer, Filter, Information, Kind, Limitation, Note, Tags};
 use serde_json::{json, Value};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -23,140 +22,10 @@ use tungstenite::{Message, WebSocket};
 /// any answer a relay owes, and short enough that a dead one is a pause rather than a freeze.
 const TIMEOUT: Duration = Duration::from_secs(15);
 
-/// The kind a client authenticates to a relay with (NIP-42).
-const AUTH_KIND: u16 = 22_242;
-
 /// What a relay prefixes a refusal with when the frame would have been taken from an authenticated client.
 const AUTH_REQUIRED: &str = "auth-required:";
 
 type Socket = WebSocket<MaybeTlsStream<std::net::TcpStream>>;
-
-/// What a subscription asks for (NIP-01). An absent field constrains nothing; an empty list matches nothing.
-#[derive(Clone, Debug, Default, Serialize)]
-pub struct Filter {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub authors: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub kinds: Option<Vec<u16>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub since: Option<u64>,
-    /// The newest note wanted. A relay answers newest-first, so walking this backwards is how a client reads
-    /// past one page.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub until: Option<u64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub limit: Option<u32>,
-    /// The account a gift wrap is addressed to — the `p` tag every wrap carries.
-    #[serde(rename = "#p", skip_serializing_if = "Option::is_none")]
-    pub recipient: Option<Vec<String>>,
-    /// The server a record is about — the `h` tag every record written to one carries.
-    #[serde(rename = "#h", skip_serializing_if = "Option::is_none")]
-    pub server: Option<Vec<String>>,
-}
-
-impl Filter {
-    /// Every record of `kind` written about the server at `id` — what a member list and an epoch list are
-    /// both read with.
-    pub fn about(id: &str, kind: u16) -> Self {
-        Self {
-            kinds: Some(vec![kind]),
-            server: Some(vec![id.to_string()]),
-            ..Self::default()
-        }
-    }
-
-    /// Everything addressed to the account at `pubkey`, as hex — this account's own inbox: the revisions
-    /// people share with it, the contributions proposed back to it, and its own receipts.
-    pub fn addressed_to(pubkey: &str, kind: u16, since: Option<u64>) -> Self {
-        Self {
-            kinds: Some(vec![kind]),
-            recipient: Some(vec![pubkey.to_string()]),
-            since,
-            ..Self::default()
-        }
-    }
-}
-
-/// What a relay said about one note — NIP-01's `OK`: whether it took the note, and its own reason when it
-/// did not.
-///
-/// The reason travels as the relay wrote it. NIP-01 puts the machine-readable part in a prefix and leaves
-/// the rest for a human, so a reader of the reason reads the prefix and nothing else.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Answer {
-    pub accepted: bool,
-    pub reason: String,
-}
-
-/// What a relay says about itself (NIP-11) — the document it answers a plain HTTP request with, on the same
-/// URL a client opens a websocket to. Every field is optional, so an absent one is a relay that did not say
-/// rather than one that said no.
-#[derive(Clone, Debug, Default, Deserialize)]
-pub struct Information {
-    #[serde(default)]
-    pub name: String,
-    #[serde(default)]
-    pub retention: Vec<Retention>,
-    #[serde(default)]
-    pub limitation: Limitation,
-}
-
-/// The limits a relay holds a client to (NIP-11). A caller that needs either may treat silence as a no —
-/// unlike the kinds, which are only advised on.
-#[derive(Clone, Debug, Default, Deserialize)]
-pub struct Limitation {
-    /// Whether this relay serves nothing until a client has answered its challenge (NIP-42).
-    #[serde(default)]
-    pub auth_required: bool,
-    /// The most notes it answers one subscription at once, or `None` when it has not said.
-    #[serde(default)]
-    pub max_limit: Option<u32>,
-}
-
-/// One retention rule: how long the relay keeps the kinds it names. A rule may name a kind on its own or a
-/// `[first, last]` range of them (NIP-11).
-#[derive(Clone, Debug, Default, Deserialize)]
-pub struct Retention {
-    #[serde(default)]
-    kinds: Vec<Value>,
-}
-
-impl Information {
-    /// Whether this relay says it keeps notes of `kind` — true when it names the kind, and true when it names
-    /// no kinds at all, since a relay that has not said has not refused.
-    pub fn keeps(&self, kind: u16) -> bool {
-        let mut named = self.named();
-        named.peek().is_none() || named.any(|named| covers(named, kind))
-    }
-
-    /// The kinds this relay names, as it names them — what a refusal quotes back.
-    fn kinds(&self) -> String {
-        self.named()
-            .map(|kind| kind.to_string())
-            .collect::<Vec<String>>()
-            .join(", ")
-    }
-
-    /// Every kind its retention rules name, across all of them.
-    fn named(&self) -> std::iter::Peekable<impl Iterator<Item = &Value>> {
-        self.retention
-            .iter()
-            .flat_map(|rule| &rule.kinds)
-            .peekable()
-    }
-}
-
-/// Whether a NIP-11 `kinds` entry covers `kind` — the number itself, or a `[first, last]` range containing it.
-fn covers(named: &Value, kind: u16) -> bool {
-    match named {
-        Value::Number(one) => one.as_u64() == Some(kind as u64),
-        Value::Array(range) => {
-            let at = |i: usize| range.get(i).and_then(Value::as_u64);
-            matches!((at(0), at(1)), (Some(first), Some(last)) if (first..=last).contains(&(kind as u64)))
-        }
-        _ => false,
-    }
-}
 
 /// A relay's socket, and how many subscriptions have been asked over it. An id is never reused, so a frame
 /// left over from a subscription that has ended is recognisably not the current one's.
@@ -296,12 +165,11 @@ impl Relay {
             })?;
         let note = Note::write(
             &self.account,
-            AUTH_KIND,
+            Kind::RelayAuth,
             seconds(),
-            vec![
-                vec!["relay".to_string(), self.url.clone()],
-                vec!["challenge".to_string(), challenge],
-            ],
+            Tags::new()
+                .tag("relay", self.url.clone())
+                .tag("challenge", challenge),
             String::new(),
         )?;
         send(socket, json!(["AUTH", note]))?;

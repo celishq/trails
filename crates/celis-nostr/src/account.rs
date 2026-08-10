@@ -128,12 +128,12 @@ impl Account {
     pub fn wrap(
         &self,
         reader: &Pubkey,
-        kind: u16,
+        kind: impl Into<u16>,
         created_at: u64,
         expires_at: Option<u64>,
         content: &str,
     ) -> Result<Note> {
-        nip59::wrap(self, reader, kind, created_at, expires_at, content)
+        nip59::wrap(self, reader, kind.into(), created_at, expires_at, content)
     }
 
     /// Open a gift wrap addressed to this account, answering what it carries and the author it proves.

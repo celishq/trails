@@ -17,7 +17,7 @@ fn speaking() -> Arc<Account> {
 fn entry(content: &str) -> Note {
     Note::write(
         &Account::new(&[3u8; 32]).unwrap(),
-        35_000,
+        35_000u16,
         1_700_000_000,
         vec![vec!["d".into(), "entry-1".into()]],
         content,
@@ -172,7 +172,7 @@ fn a_relay_that_asks_who_is_publishing_is_answered_and_the_note_goes_again() {
 
     let answered = guarded.answered.lock().unwrap();
     assert_eq!(answered.len(), 1, "answered once, not once per note");
-    assert_eq!(answered[0].kind, AUTH_KIND);
+    assert_eq!(answered[0].kind, Kind::RelayAuth);
     assert_eq!(answered[0].tag("challenge"), Some("the-challenge"));
     assert_eq!(answered[0].tag("relay"), Some(guarded.url.as_str()));
     assert_eq!(answered[0].pubkey, speaking().pubkey());
@@ -293,35 +293,6 @@ fn a_socket_the_relay_dropped_is_opened_again_and_the_run_finishes() {
             .expect("a relay that hung up is connected to again, not reported as a failure");
     }
     assert_eq!(relay.accepted(), 2, "one reconnection, not six");
-}
-
-#[test]
-fn a_filter_carries_only_what_it_states() {
-    assert_eq!(
-        serde_json::to_value(Filter {
-            kinds: Some(vec![35_000]),
-            since: Some(42),
-            ..Filter::default()
-        })
-        .unwrap(),
-        json!({"kinds": [35000], "since": 42}),
-        "an absent condition is absent from the wire, not null"
-    );
-    assert_eq!(
-        serde_json::to_value(Filter::addressed_to("abc123", 1059, None)).unwrap(),
-        json!({"kinds": [1059], "#p": ["abc123"]}),
-    );
-    assert_eq!(serde_json::to_value(Filter::default()).unwrap(), json!({}));
-    assert_eq!(
-        serde_json::to_value(Filter {
-            until: Some(412),
-            limit: Some(500),
-            ..Filter::default()
-        })
-        .unwrap(),
-        json!({"until": 412, "limit": 500}),
-        "how a walk asks for the page before the one it just read"
-    );
 }
 
 #[test]

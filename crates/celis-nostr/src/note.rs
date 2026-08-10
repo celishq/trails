@@ -26,20 +26,21 @@ pub struct Note {
 }
 
 impl Note {
-    /// Write and sign a note as `account`.
+    /// Write and sign a note as `account`. `kind` takes a [`Kind`](crate::Kind) or the bare number a kind
+    /// this build does not name travels as.
     pub fn write(
         account: &Account,
-        kind: u16,
+        kind: impl Into<u16>,
         created_at: u64,
-        tags: Vec<Vec<String>>,
+        tags: impl Into<Vec<Vec<String>>>,
         content: impl Into<String>,
     ) -> Result<Self> {
         let mut note = Note {
             id: String::new(),
             pubkey: account.pubkey(),
             created_at,
-            kind,
-            tags,
+            kind: kind.into(),
+            tags: tags.into(),
             content: content.into(),
             sig: String::new(),
         };
@@ -163,7 +164,7 @@ mod tests {
         let account = Account::new(&[9u8; 32]).unwrap();
         let note = Note::write(
             &account,
-            35_000,
+            35_000u16,
             1_700_000_000,
             vec![
                 vec!["h".into(), "group-1".into()],
@@ -183,7 +184,7 @@ mod tests {
     #[test]
     fn the_id_covers_every_signed_field() {
         let account = Account::new(&[9u8; 32]).unwrap();
-        let note = Note::write(&account, 1, 1_700_000_000, vec![], "hello").unwrap();
+        let note = Note::write(&account, 1u16, 1_700_000_000, vec![], "hello").unwrap();
         let vary = |other: Note| assert_ne!(other.digest(), note.id);
 
         vary(Note {

@@ -6,29 +6,22 @@
 //! is ours rather than somebody's spec is called this way.
 
 use anyhow::Result;
-use celis_nostr::{Account, Note};
+use celis_nostr::{Account, Kind, Note, Tags};
 use data_encoding::{BASE64, HEXLOWER};
 use sha2::{Digest, Sha256};
 use std::time::{SystemTime, UNIX_EPOCH};
-
-/// The nostr kind an HTTP request authorizes itself with (NIP-98).
-pub const AUTH_KIND: u16 = 27_235;
 
 /// A signed note authorizing one request — the method, the url it goes to, and the bytes it carries — as the
 /// `Authorization` header wants it. `body` is empty for a request that sends none.
 pub fn authorization(account: &Account, method: &str, url: &str, body: &str) -> Result<String> {
     let note = Note::write(
         account,
-        AUTH_KIND,
+        Kind::HttpAuth,
         seconds(),
-        vec![
-            vec!["u".to_string(), url.to_string()],
-            vec!["method".to_string(), method.to_string()],
-            vec![
-                "payload".to_string(),
-                HEXLOWER.encode(&Sha256::digest(body.as_bytes())),
-            ],
-        ],
+        Tags::new()
+            .tag("u", url)
+            .tag("method", method)
+            .tag("payload", HEXLOWER.encode(&Sha256::digest(body.as_bytes()))),
         String::new(),
     )?;
     Ok(format!(

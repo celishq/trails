@@ -14,21 +14,16 @@
 //! by second; every layer here carries the same second as the message it wraps.
 
 use crate::account::Account;
+use crate::kind::Kind;
 use crate::note::Note;
 use crate::pubkey::Pubkey;
 use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
 
-/// The kind a gift wrap travels as — the only kind a relay ever sees of the three.
-pub const WRAP_KIND: u16 = 1059;
-
-/// The kind of the sealed layer inside a wrap.
-const SEAL_KIND: u16 = 13;
-
 /// The message inside a gift wrap: what its author wrote, and who they are.
 ///
 /// Never signed, deliberately — a signature would make the message an event anyone could publish. The
-/// author's `pubkey` here is trusted only because [`unwrap`] has checked it against the seal's signature.
+/// author's `pubkey` here is trusted only because `unwrap` has checked it against the seal's signature.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Rumor {
     pub pubkey: Pubkey,
@@ -56,7 +51,7 @@ pub fn wrap(
     };
     let seal = Note::write(
         author,
-        SEAL_KIND,
+        Kind::Seal,
         created_at,
         Vec::new(),
         author.encrypt(reader, &serde_json::to_string(&rumor)?)?,
@@ -68,7 +63,7 @@ pub fn wrap(
     }
     Note::write(
         &carrier,
-        WRAP_KIND,
+        Kind::Wrap,
         created_at,
         tags,
         carrier.encrypt(reader, &serde_json::to_string(&seal)?)?,
@@ -79,14 +74,14 @@ pub fn wrap(
 /// at either layer, a signature that does not hold, a payload this key cannot open, or a rumor claiming an
 /// author who did not seal it.
 pub fn unwrap(reader: &Account, wrap: &Note) -> Result<Rumor> {
-    if wrap.kind != WRAP_KIND {
+    if wrap.kind != Kind::Wrap {
         bail!("kind {} is not a gift wrap", wrap.kind);
     }
     if !wrap.verifies() {
         bail!("the wrapper is not signed by the key that carried it");
     }
     let seal: Note = serde_json::from_str(&reader.decrypt(&wrap.pubkey, &wrap.content)?)?;
-    if seal.kind != SEAL_KIND {
+    if seal.kind != Kind::Seal {
         bail!("kind {} is not a seal", seal.kind);
     }
     if !seal.verifies() {
@@ -178,7 +173,7 @@ mod tests {
         };
         let seal = Note::write(
             &liar,
-            SEAL_KIND,
+            Kind::Seal,
             AT,
             Vec::new(),
             liar.encrypt(&reader.pubkey(), &serde_json::to_string(&rumor).unwrap())
@@ -188,7 +183,7 @@ mod tests {
         let carrier = Account::generate().unwrap();
         let note = Note::write(
             &carrier,
-            WRAP_KIND,
+            Kind::Wrap,
             AT,
             vec![vec!["p".to_string(), reader.pubkey().hex()]],
             carrier
@@ -229,7 +224,7 @@ mod tests {
         };
         assert!(reader.unwrap(&tampered).is_err());
 
-        let plain = Note::write(&author, 1, AT, Vec::new(), "hello").unwrap();
+        let plain = Note::write(&author, 1u16, AT, Vec::new(), "hello").unwrap();
         assert!(reader.unwrap(&plain).is_err());
     }
 }

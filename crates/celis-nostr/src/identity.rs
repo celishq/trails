@@ -2,9 +2,9 @@
 //! is signed and encrypted with, and the whole of who this account is on the network. The phrase is the single
 //! backup that restores both.
 
+use crate::account::Account;
 use anyhow::{anyhow, Result};
 use bip39::Mnemonic;
-use celis_nostr::Account;
 use hkdf::Hkdf;
 use sha2::Sha256;
 
@@ -85,8 +85,7 @@ mod tests {
     #[test]
     fn a_note_this_account_signs_verifies_as_this_account() {
         let id = Identity::generate().unwrap();
-        let note =
-            celis_nostr::Note::write(id.account(), 1, 1_700_000_000, vec![], "hello").unwrap();
+        let note = crate::Note::write(id.account(), 1u16, 1_700_000_000, vec![], "hello").unwrap();
         assert!(note.verifies());
         assert_eq!(note.pubkey, id.account().pubkey());
     }
