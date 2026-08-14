@@ -1,4 +1,5 @@
 use super::*;
+use crate::doorbell::Doorbell;
 use celis_nostr::Account;
 
 use std::net::TcpListener;
@@ -71,6 +72,127 @@ impl LocalRelay {
     }
 }
 
+/// A relay that answers a `REQ` with `EOSE` and then pushes one note on it, the way a held subscription
+/// receives what lands after it opened.
+struct PushingRelay {
+    url: String,
+}
+
+impl PushingRelay {
+    fn new() -> Self {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("ws://{}", listener.local_addr().unwrap());
+        std::thread::spawn(move || {
+            for stream in listener.incoming().flatten() {
+                let Ok(mut socket) = tungstenite::accept(stream) else {
+                    continue;
+                };
+                std::thread::spawn(move || {
+                    while let Ok(Message::Text(text)) = socket.read() {
+                        let Ok(frame) = serde_json::from_str::<Vec<Value>>(&text) else {
+                            continue;
+                        };
+                        if frame[0].as_str() != Some("REQ") {
+                            continue;
+                        }
+                        let id = &frame[1];
+                        for answer in [json!(["EOSE", id]), json!(["EVENT", id, note()])] {
+                            if socket.send(Message::Text(answer.to_string())).is_err() {
+                                return;
+                            }
+                        }
+                    }
+                });
+            }
+        });
+        Self { url }
+    }
+}
+
+#[test]
+/// A note landing on a held subscription rings, and the ring carries nothing — what arrived is read by the
+/// round it brings on (`spec/network.md`).
+fn a_note_landing_on_a_held_subscription_rings() {
+    let served = PushingRelay::new();
+    let doorbell = Arc::new(Doorbell::default());
+    let rung = Arc::new(AtomicUsize::new(0));
+    let counted = rung.clone();
+    doorbell.heard_by(move || {
+        counted.fetch_add(1, Ordering::SeqCst);
+    });
+    let relay = Relay::new(&served.url, speaking(), doorbell);
+
+    relay.watch(&Filter::of(Kind::Wrap));
+
+    // One ring for the connect, one for the note that landed after it.
+    let deadline = std::time::Instant::now() + Duration::from_secs(10);
+    while rung.load(Ordering::SeqCst) < 2 && std::time::Instant::now() < deadline {
+        std::thread::sleep(Duration::from_millis(50));
+    }
+    assert_eq!(rung.load(Ordering::SeqCst), 2);
+    relay.close();
+}
+
+/// Wait until `served` has taken `many` connections, or fail saying how far it got.
+fn accepted(served: &LocalRelay, many: usize) {
+    let deadline = std::time::Instant::now() + Duration::from_secs(20);
+    while served.accepted() < many {
+        assert!(
+            std::time::Instant::now() < deadline,
+            "took {} connections, waiting for {many}",
+            served.accepted()
+        );
+        std::thread::sleep(Duration::from_millis(50));
+    }
+}
+
+#[test]
+/// One watch per relay: a round says what to watch every time it reaches one, and saying the same thing
+/// again must not open a second socket.
+fn watching_the_same_filter_again_holds_the_one_subscription() {
+    let served = LocalRelay::new(usize::MAX);
+    let relay = Relay::new(&served.url, speaking(), Arc::new(Doorbell::default()));
+
+    for _ in 0..5 {
+        relay.watch(&Filter::of(Kind::Wrap));
+    }
+    accepted(&served, 1);
+
+    assert_eq!(
+        served.accepted(),
+        1,
+        "one socket, however often it is asked for"
+    );
+    relay.close();
+}
+
+#[test]
+/// A thread that is gone leaves a watch behind naming the right filter, so nothing else would notice it had
+/// died. The thread flags itself on the way out and the next round dials again — otherwise the vault falls
+/// back to its backstop for the rest of the session, silently.
+fn a_watch_whose_thread_is_gone_is_asked_for_again() {
+    let served = LocalRelay::new(usize::MAX);
+    let relay = Relay::new(&served.url, speaking(), Arc::new(Doorbell::default()));
+    let filter = Filter::of(Kind::Wrap);
+
+    relay.watch(&filter);
+    accepted(&served, 1);
+
+    // What the guard the thread holds does when that thread is gone, however it went.
+    relay
+        .watch
+        .lock()
+        .unwrap()
+        .as_ref()
+        .unwrap()
+        .stopped
+        .store(true, Ordering::SeqCst);
+    relay.watch(&filter);
+
+    accepted(&served, 2);
+    relay.close();
+}
+
 /// A relay that turns every note down with one reason of its own — for what a client is handed back.
 struct RefusingRelay {
     url: String,
@@ -103,7 +225,7 @@ impl RefusingRelay {
 fn a_relays_reason_reaches_the_caller_unparsed() {
     let said = "error: could not save: invalid: is what it said about the last one";
     let relay = RefusingRelay::saying(said);
-    let client = Relay::new(&relay.url, speaking());
+    let client = Relay::new(&relay.url, speaking(), Arc::new(Doorbell::default()));
 
     let answer = client.publish(&entry("an entry")).unwrap();
 
@@ -166,7 +288,7 @@ impl GuardedRelay {
 /// The whole of NIP-42 from this side, without the caller knowing any of it happened.
 fn a_relay_that_asks_who_is_publishing_is_answered_and_the_note_goes_again() {
     let guarded = GuardedRelay::new();
-    let client = Relay::new(&guarded.url, speaking());
+    let client = Relay::new(&guarded.url, speaking(), Arc::new(Doorbell::default()));
 
     client.publish(&entry("a first entry")).unwrap();
 
@@ -182,7 +304,7 @@ fn a_relay_that_asks_who_is_publishing_is_answered_and_the_note_goes_again() {
 #[test]
 fn a_relay_that_asks_who_is_subscribing_is_answered_and_the_request_goes_again() {
     let guarded = GuardedRelay::new();
-    let client = Relay::new(&guarded.url, speaking());
+    let client = Relay::new(&guarded.url, speaking(), Arc::new(Doorbell::default()));
 
     assert!(
         client.fetch(&[Filter::default()]).is_ok(),
@@ -194,7 +316,7 @@ fn a_relay_that_asks_who_is_subscribing_is_answered_and_the_request_goes_again()
 #[test]
 fn a_relay_that_asks_nothing_is_told_nothing() {
     let relay = LocalRelay::new(usize::MAX);
-    let client = Relay::new(&relay.url, speaking());
+    let client = Relay::new(&relay.url, speaking(), Arc::new(Doorbell::default()));
     client.publish(&entry("an entry")).unwrap();
     assert_eq!(
         relay.accepted(),
@@ -211,6 +333,11 @@ struct LocalDocument {
 
 impl LocalDocument {
     fn serving(document: &'static str) -> Self {
+        Self::silent_then(document, 0)
+    }
+
+    /// The same, hanging up on the first `silent` requests before it starts answering.
+    fn silent_then(document: &'static str, silent: usize) -> Self {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let url = format!("ws://{}", listener.local_addr().unwrap());
         let asked = Arc::new(AtomicUsize::new(0));
@@ -218,8 +345,11 @@ impl LocalDocument {
         std::thread::spawn(move || {
             use std::io::{Read, Write};
             for mut stream in listener.incoming().flatten() {
-                counted.fetch_add(1, Ordering::SeqCst);
+                let seen = counted.fetch_add(1, Ordering::SeqCst);
                 let _ = stream.read(&mut [0u8; 1024]);
+                if seen < silent {
+                    continue;
+                }
                 let _ = stream.write_all(
                     format!(
                         "HTTP/1.1 200 OK\r\nContent-Type: application/nostr+json\r\n\
@@ -241,7 +371,7 @@ impl LocalDocument {
 #[test]
 fn a_relays_document_is_asked_for_once_however_often_it_is_read() {
     let served = LocalDocument::serving(r#"{"name":"a mirror","retention":[{"kinds":[1]}]}"#);
-    let relay = Relay::new(&served.url, speaking());
+    let relay = Relay::new(&served.url, speaking(), Arc::new(Doorbell::default()));
 
     for _ in 0..10 {
         assert!(
@@ -259,8 +389,12 @@ fn a_relays_document_is_asked_for_once_however_often_it_is_read() {
 }
 
 #[test]
-fn a_relay_that_answers_no_document_refuses_nothing_and_is_not_asked_again() {
-    let relay = Relay::new("ws://127.0.0.1:1", speaking());
+fn a_relay_that_answers_no_document_refuses_nothing() {
+    let relay = Relay::new(
+        "ws://127.0.0.1:1",
+        speaking(),
+        Arc::new(Doorbell::default()),
+    );
     assert!(relay.refusal(30_023).is_none(), "silence is not a refusal");
     assert!(
         relay.information().is_none(),
@@ -269,10 +403,48 @@ fn a_relay_that_answers_no_document_refuses_nothing_and_is_not_asked_again() {
     assert!(relay.limits().is_none());
 }
 
+/// Age what `relay` holds of its document by `by` seconds, so a test need not wait the window out.
+fn age(relay: &Relay, by: u64) {
+    let mut held = relay.information.lock().unwrap();
+    if let Some((at, _)) = held.as_mut() {
+        *at = at.saturating_sub(by);
+    }
+}
+
+#[test]
+/// A relay is held for as long as the vault is open, so a document read once and never again would let one
+/// failed read decide the fitness check for the whole session — the check that keeps this account's stream
+/// off a relay anybody may read (`spec/network.md`).
+fn a_silence_is_asked_again_once_it_has_gone_stale() {
+    let served = LocalDocument::silent_then(
+        r#"{"limitation":{"auth_required":true,"max_limit":500}}"#,
+        1,
+    );
+    let relay = Relay::new(&served.url, speaking(), Arc::new(Doorbell::default()));
+
+    assert!(
+        relay.limits().is_none(),
+        "the first ask was answered with nothing"
+    );
+    assert!(
+        relay.limits().is_none(),
+        "and the silence stands until it goes stale, so a dead relay is not asked on every read"
+    );
+    assert_eq!(served.asked(), 1);
+
+    age(&relay, STATED.as_secs());
+
+    assert!(
+        relay.limits().is_some(),
+        "asked again once stale, and this time it answered"
+    );
+    assert_eq!(served.asked(), 2);
+}
+
 #[test]
 fn a_run_of_publishes_travels_over_one_socket() {
     let relay = LocalRelay::new(usize::MAX);
-    let client = Relay::new(&relay.url, speaking());
+    let client = Relay::new(&relay.url, speaking(), Arc::new(Doorbell::default()));
     for i in 0..500 {
         client.publish(&entry(&format!("entry {i}"))).unwrap();
     }
@@ -286,7 +458,7 @@ fn a_run_of_publishes_travels_over_one_socket() {
 #[test]
 fn a_socket_the_relay_dropped_is_opened_again_and_the_run_finishes() {
     let relay = LocalRelay::new(3);
-    let client = Relay::new(&relay.url, speaking());
+    let client = Relay::new(&relay.url, speaking(), Arc::new(Doorbell::default()));
     for i in 0..6 {
         client
             .publish(&entry(&format!("entry {i}")))
