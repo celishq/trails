@@ -20,6 +20,9 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 #[repr(u16)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Kind {
+    /// What an account says about itself (NIP-01) — the note every nostr client shows a person by, and the
+    /// note a name is claimed with (`spec/public-profile.md`).
+    Profile = 0,
     /// A take-back of the record at an address (NIP-09), with a `k` naming the kind that address is in.
     Deletion = 5,
     /// A yes or a no (NIP-25) — `+` or `-` in the content, and a `k` naming the kind it answers.
@@ -38,6 +41,8 @@ pub enum Kind {
     HttpAuth = 27_235,
     /// Somebody taking themselves off a server (NIP-43), signed by the account leaving.
     Leave = 28_936,
+    /// Where to leave something addressed to an account (NIP-17).
+    Inbox = 10_050,
 
     /// A cell as it was written — content, kept whole and forever, keyed by its own id.
     Revision = 8_100,
@@ -61,7 +66,8 @@ pub enum Kind {
 
 /// Every kind, in one list — what [`Kind::of`] reads a number back through. Kept here rather than as a
 /// second `match` over the same numbers, so each one is written once.
-const ALL: [Kind; 18] = [
+const ALL: [Kind; 20] = [
+    Kind::Profile,
     Kind::Deletion,
     Kind::Reaction,
     Kind::Seal,
@@ -72,6 +78,7 @@ const ALL: [Kind; 18] = [
     Kind::BlossomAuth,
     Kind::HttpAuth,
     Kind::Leave,
+    Kind::Inbox,
     Kind::Record,
     Kind::Comment,
     Kind::Invitation,

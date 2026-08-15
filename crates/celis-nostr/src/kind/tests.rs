@@ -23,7 +23,6 @@ fn a_kind_this_build_does_not_know_is_none() {
         None,
         "NIP-23 long-form, which we never write"
     );
-    assert_eq!(Kind::of(0), None);
 }
 
 #[test]
