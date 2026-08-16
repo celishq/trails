@@ -43,9 +43,18 @@ pub enum Kind {
     Leave = 28_936,
     /// Where to leave something addressed to an account (NIP-17).
     Inbox = 10_050,
+    /// Where this account's public notes live (NIP-65) — the list a stranger follows from a name to an
+    /// article.
+    Relays = 10_002,
+    /// A public cell as the world reads it (NIP-23) — plain markdown addressed by the cell's slug, which
+    /// any nostr client renders without our client or our format.
+    Article = 30_023,
 
     /// A cell as it was written — content, kept whole and forever, keyed by its own id.
     Revision = 8_100,
+    /// The bytes at a hash are off the blob store. Pairs with [`Blob`](Kind::Blob): bytes are live until
+    /// something says they stopped.
+    BlobRemoved = 8_101,
     /// The rumor a record travels inside a wrap as. What it carries is a record with a kind of its own.
     Record = 35_000,
     /// A comment on a cell, addressed by the comment's own id so an edit supersedes it.
@@ -66,7 +75,7 @@ pub enum Kind {
 
 /// Every kind, in one list — what [`Kind::of`] reads a number back through. Kept here rather than as a
 /// second `match` over the same numbers, so each one is written once.
-const ALL: [Kind; 20] = [
+const ALL: [Kind; 23] = [
     Kind::Profile,
     Kind::Deletion,
     Kind::Reaction,
@@ -74,11 +83,14 @@ const ALL: [Kind; 20] = [
     Kind::Wrap,
     Kind::Blob,
     Kind::Revision,
+    Kind::BlobRemoved,
     Kind::RelayAuth,
     Kind::BlossomAuth,
     Kind::HttpAuth,
     Kind::Leave,
     Kind::Inbox,
+    Kind::Relays,
+    Kind::Article,
     Kind::Record,
     Kind::Comment,
     Kind::Invitation,

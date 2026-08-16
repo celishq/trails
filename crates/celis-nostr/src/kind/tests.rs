@@ -19,9 +19,9 @@ fn no_two_kinds_claim_one_number() {
 fn a_kind_this_build_does_not_know_is_none() {
     assert_eq!(Kind::of(1), None, "a plain note");
     assert_eq!(
-        Kind::of(30_023),
+        Kind::of(30_078),
         None,
-        "NIP-23 long-form, which we never write"
+        "NIP-78 application data, which we never write"
     );
 }
 
@@ -38,6 +38,9 @@ fn the_spec_assigned_numbers_are_what_the_nips_say() {
     assert_eq!(u16::from(Kind::BlossomAuth), 24_242, "BUD-01");
     assert_eq!(u16::from(Kind::HttpAuth), 27_235, "NIP-98");
     assert_eq!(u16::from(Kind::Leave), 28_936, "NIP-43");
+    assert_eq!(u16::from(Kind::Inbox), 10_050, "NIP-17");
+    assert_eq!(u16::from(Kind::Relays), 10_002, "NIP-65");
+    assert_eq!(u16::from(Kind::Article), 30_023, "NIP-23");
 }
 
 #[test]
@@ -45,6 +48,7 @@ fn the_spec_assigned_numbers_are_what_the_nips_say() {
 /// reading a record.
 fn every_mark_sits_in_the_addressable_range() {
     for kind in [
+        Kind::Article,
         Kind::Record,
         Kind::Comment,
         Kind::Invitation,
