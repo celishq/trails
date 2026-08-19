@@ -33,12 +33,18 @@ pub enum Kind {
     Wrap = 1_059,
     /// A file's address (NIP-94): these bytes, this size, this type, at this url.
     Blob = 1_063,
+    /// A comment on a cell (NIP-22). Addressed by the comment's own `d` so an edit supersedes it, which
+    /// this build's fold decides rather than the number's range.
+    Comment = 1_111,
     /// A relay authenticating a client on its socket (NIP-42).
     RelayAuth = 22_242,
     /// A call authorizing itself to a blob store (BUD-01).
     BlossomAuth = 24_242,
     /// A call authorizing itself over HTTP (NIP-98) — the method, the url, and the hash of the body.
     HttpAuth = 27_235,
+    /// An invitation onto a server (NIP-43). Addressed by the invitation's own `d`, which pairs it with
+    /// [`Leave`](Kind::Leave) below.
+    ServerInvitation = 28_935,
     /// Somebody taking themselves off a server (NIP-43), signed by the account leaving.
     Leave = 28_936,
     /// Where to leave something addressed to an account (NIP-17).
@@ -57,12 +63,9 @@ pub enum Kind {
     BlobRemoved = 8_101,
     /// The rumor a record travels inside a wrap as. What it carries is a record with a kind of its own.
     Record = 35_000,
-    /// A comment on a cell, addressed by the comment's own id so an edit supersedes it.
-    Comment = 35_001,
-    /// An invitation to read one cell, addressed by the invitation's own id.
+    /// An invitation to read one cell, addressed by the invitation's own id. Nothing writes one now
+    /// (`spec/log.md`); the number stays spent, as do 35001 and 35003 beside it.
     Invitation = 35_002,
-    /// An invitation onto a server, addressed by the invitation's own id.
-    ServerInvitation = 35_003,
     /// A server's own record: who owns it, where it answers, and who may leave something there.
     Server = 35_010,
     /// Where one account stands on one server, signed by the owner or an admin.
@@ -82,19 +85,19 @@ const ALL: [Kind; 23] = [
     Kind::Seal,
     Kind::Wrap,
     Kind::Blob,
+    Kind::Comment,
     Kind::Revision,
     Kind::BlobRemoved,
     Kind::RelayAuth,
     Kind::BlossomAuth,
     Kind::HttpAuth,
+    Kind::ServerInvitation,
     Kind::Leave,
     Kind::Inbox,
     Kind::Relays,
     Kind::Article,
     Kind::Record,
-    Kind::Comment,
     Kind::Invitation,
-    Kind::ServerInvitation,
     Kind::Server,
     Kind::Membership,
     Kind::Epoch,

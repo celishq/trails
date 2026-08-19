@@ -98,7 +98,9 @@ pub fn unwrap(reader: &Account, wrap: &Note) -> Result<Rumor> {
 mod tests {
     use super::*;
 
-    const KIND: u16 = 35_001;
+    /// What this system wraps: a record, whatever kind it carries inside (`spec/network.md`). The wrap
+    /// layer never reads it, so any number would pass — this one is the one it actually sees.
+    const KIND: u16 = Kind::Record as u16;
     const AT: u64 = 1_785_326_400;
 
     fn account(byte: u8) -> Account {

@@ -34,9 +34,11 @@ fn the_spec_assigned_numbers_are_what_the_nips_say() {
     assert_eq!(u16::from(Kind::Seal), 13, "NIP-59");
     assert_eq!(u16::from(Kind::Wrap), 1_059, "NIP-59");
     assert_eq!(u16::from(Kind::Blob), 1_063, "NIP-94");
+    assert_eq!(u16::from(Kind::Comment), 1_111, "NIP-22");
     assert_eq!(u16::from(Kind::RelayAuth), 22_242, "NIP-42");
     assert_eq!(u16::from(Kind::BlossomAuth), 24_242, "BUD-01");
     assert_eq!(u16::from(Kind::HttpAuth), 27_235, "NIP-98");
+    assert_eq!(u16::from(Kind::ServerInvitation), 28_935, "NIP-43");
     assert_eq!(u16::from(Kind::Leave), 28_936, "NIP-43");
     assert_eq!(u16::from(Kind::Inbox), 10_050, "NIP-17");
     assert_eq!(u16::from(Kind::Relays), 10_002, "NIP-65");
@@ -44,15 +46,13 @@ fn the_spec_assigned_numbers_are_what_the_nips_say() {
 }
 
 #[test]
-/// A mark is read latest-per-key by its `d`, which is what NIP-01's addressable range means to anything
-/// reading a record.
-fn every_mark_sits_in_the_addressable_range() {
+/// A mark of ours is read latest-per-key by its `d`, and takes a number in NIP-01's addressable range so
+/// that any client reads it the same way.
+fn every_mark_of_ours_sits_in_the_addressable_range() {
     for kind in [
         Kind::Article,
         Kind::Record,
-        Kind::Comment,
         Kind::Invitation,
-        Kind::ServerInvitation,
         Kind::Server,
         Kind::Membership,
         Kind::Epoch,
@@ -61,6 +61,19 @@ fn every_mark_sits_in_the_addressable_range() {
         assert!(
             (30_000..40_000).contains(&u16::from(kind)),
             "{kind:?} is outside the addressable range"
+        );
+    }
+}
+
+#[test]
+/// A mark whose number a NIP assigned takes that number, wherever it sits. Every record travels inside a
+/// gift wrap (`spec/network.md`), so no relay reads the number and none of them retains by it — which
+/// leaves this build's own fold the only thing addressing by `d`.
+fn a_mark_a_nip_named_keeps_the_nip_s_number_and_is_still_folded_by_d() {
+    for kind in [Kind::Comment, Kind::ServerInvitation] {
+        assert!(
+            !(30_000..40_000).contains(&u16::from(kind)),
+            "{kind:?} would not need this test inside the addressable range"
         );
     }
 }
