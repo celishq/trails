@@ -11,13 +11,14 @@
 //! challenge and try the frame again.
 
 use crate::doorbell::Doorbell;
+use crate::seconds;
 use anyhow::{anyhow, bail, Result};
 use celis_nostr::{Account, Answer, Filter, Information, Kind, Limitation, Note, Tags};
 use serde_json::{json, Value};
 use std::io::ErrorKind;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::Duration;
 use tungstenite::stream::MaybeTlsStream;
 use tungstenite::{Message, WebSocket};
 
@@ -467,14 +468,6 @@ fn http(url: &str) -> String {
         Some(("ws", rest)) => format!("http://{rest}"),
         _ => url.to_string(),
     }
-}
-
-/// Unix seconds now — a note's `created_at`, which a relay checks against its own clock.
-fn seconds() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_secs())
-        .unwrap_or(0)
 }
 
 /// Hold one subscription open until `stopped`, ringing `doorbell` as notes land on it, and dialling again
