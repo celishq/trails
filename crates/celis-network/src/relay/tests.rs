@@ -415,7 +415,11 @@ fn age(relay: &Relay, by: u64) {
 /// A relay is held for as long as the vault is open, so a document read once and never again would let one
 /// failed read decide the fitness check for the whole session — the check that keeps this account's stream
 /// off a relay anybody may read (`spec/network.md`).
-fn a_silence_is_asked_again_once_it_has_gone_stale() {
+///
+/// **A silence goes stale far sooner than a document does.** What a relay said about itself is a fact about
+/// the relay and stands for the hour; what it did not say is nothing, and remembering nothing for an hour is
+/// an hour of acting on it — a note refused for a kind is offered again until the document settles it.
+fn a_silence_is_asked_again_long_before_a_document_would_be() {
     let served = LocalDocument::silent_then(
         r#"{"limitation":{"auth_required":true,"max_limit":500}}"#,
         1,
@@ -432,13 +436,21 @@ fn a_silence_is_asked_again_once_it_has_gone_stale() {
     );
     assert_eq!(served.asked(), 1);
 
-    age(&relay, STATED.as_secs());
+    age(&relay, UNANSWERED.as_secs());
 
     assert!(
         relay.limits().is_some(),
-        "asked again once stale, and this time it answered"
+        "asked again a minute on, and this time it answered"
     );
     assert_eq!(served.asked(), 2);
+
+    age(&relay, UNANSWERED.as_secs());
+    assert!(relay.limits().is_some());
+    assert_eq!(
+        served.asked(),
+        2,
+        "and what it did answer stands for the hour, so the document is not read every minute"
+    );
 }
 
 #[test]

@@ -61,6 +61,13 @@ pub enum Kind {
     /// The bytes at a hash are off the blob store. Pairs with [`Blob`](Kind::Blob): bytes are live until
     /// something says they stopped.
     BlobRemoved = 8_101,
+    /// Where one account stands on one server, signed by the owner or an admin.
+    ///
+    /// **Kept, never replaced**, which is why it sits here rather than among the addressable kinds. Authority
+    /// is read as the walk goes, so the grant that made an admin is what every record they wrote rests on —
+    /// and a relay keeping only the newest record per member would drop that grant the moment they were taken
+    /// off, unmaking everything they had done (`spec/network.md`).
+    Membership = 8_102,
     /// The rumor a record travels inside a wrap as. What it carries is a record with a kind of its own.
     Record = 35_000,
     /// An invitation to read one cell, addressed by the invitation's own id. Nothing writes one now
@@ -68,8 +75,6 @@ pub enum Kind {
     Invitation = 35_002,
     /// A server's own record: who owns it, where it answers, and who may leave something there.
     Server = 35_010,
-    /// Where one account stands on one server, signed by the owner or an admin.
-    Membership = 35_011,
     /// A server's sealing key and when it opened.
     Epoch = 35_012,
     /// The epoch private keys one member may read, sealed to them alone.
@@ -88,6 +93,7 @@ const ALL: [Kind; 23] = [
     Kind::Comment,
     Kind::Revision,
     Kind::BlobRemoved,
+    Kind::Membership,
     Kind::RelayAuth,
     Kind::BlossomAuth,
     Kind::HttpAuth,
@@ -99,7 +105,6 @@ const ALL: [Kind; 23] = [
     Kind::Record,
     Kind::Invitation,
     Kind::Server,
-    Kind::Membership,
     Kind::Epoch,
     Kind::Keyring,
 ];

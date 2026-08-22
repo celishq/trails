@@ -47,7 +47,7 @@ fn a_tag_travels_under_its_own_name_behind_a_hash() {
                 .tagged('p', "someone")
         )
         .unwrap(),
-        json!({"kinds": [35011], "#h": ["a-server"], "#p": ["someone"]})
+        json!({"kinds": [8102], "#h": ["a-server"], "#p": ["someone"]})
     );
 }
 

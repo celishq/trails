@@ -62,6 +62,18 @@ pub const SKEW: u64 = 300;
 /// (`spec/network.md`).
 const STATED: Duration = Duration::from_secs(3600);
 
+/// How long a relay that answered **no** document stands before it is asked again.
+///
+/// Far shorter than [`STATED`], because the two are not the same fact. What a relay said is about the relay
+/// and keeps for the hour; what it did not say is nothing, and a caller acts on that nothing — a note
+/// refused for a kind this relay does not keep is offered again until the document settles it
+/// (`spec/network.md`). An hour of remembered silence is an hour of offering it.
+const UNANSWERED: Duration = Duration::from_secs(60);
+
+/// How long the document itself waits. Shorter than an exchange: it is one small `GET`, it is asked while
+/// the relay's own lock is held, and one that cannot answer it quickly is asked again in a minute anyway.
+const ASKING: Duration = Duration::from_secs(5);
+
 type Socket = WebSocket<MaybeTlsStream<std::net::TcpStream>>;
 
 /// One open socket to a relay, and the challenge that relay offered on it.
@@ -338,17 +350,26 @@ impl Relay {
     }
 
     /// What the relay says about itself (NIP-11): the same URL over plain HTTP, asked with
-    /// `Accept: application/nostr+json`. Kept for [`STATED`] and then asked again.
+    /// `Accept: application/nostr+json`. An answer is kept for [`STATED`], a silence for [`UNANSWERED`], and
+    /// then each is asked again.
     ///
     /// **`None` is a relay that answered nothing**, which is not the same as one whose document left every
-    /// field out: a caller reading silence as a statement would be quoting a relay that never spoke.
+    /// field out: a caller reading silence as a statement would be quoting a relay that never spoke. It is
+    /// also not worth keeping as long — see [`UNANSWERED`].
     pub fn information(&self) -> Option<Information> {
         let mut held = self.information.lock().ok()?;
         let now = seconds();
-        if held
-            .as_ref()
-            .is_none_or(|(at, _)| now.saturating_sub(*at) >= STATED.as_secs())
-        {
+        let stale = match held.as_ref() {
+            None => true,
+            Some((at, stated)) => {
+                let window = match stated {
+                    Some(_) => STATED,
+                    None => UNANSWERED,
+                };
+                now.saturating_sub(*at) >= window.as_secs()
+            }
+        };
+        if stale {
             *held = Some((now, self.ask().ok()));
         }
         held.as_ref().and_then(|(_, stated)| stated.clone())
@@ -356,7 +377,7 @@ impl Relay {
 
     fn ask(&self) -> Result<Information> {
         let answer = ureq::get(&http(&self.url))
-            .timeout(TIMEOUT)
+            .timeout(ASKING)
             .set("Accept", "application/nostr+json")
             .call()
             .map_err(|e| anyhow!("asking relay {} what it keeps: {e}", self.url))?

@@ -54,13 +54,28 @@ fn every_mark_of_ours_sits_in_the_addressable_range() {
         Kind::Record,
         Kind::Invitation,
         Kind::Server,
-        Kind::Membership,
         Kind::Epoch,
         Kind::Keyring,
     ] {
         assert!(
             (30_000..40_000).contains(&u16::from(kind)),
             "{kind:?} is outside the addressable range"
+        );
+    }
+}
+
+#[test]
+/// A record of ours that is **kept rather than replaced** takes a number in NIP-01's regular range, so that
+/// any relay keeps every one without being told to.
+///
+/// A membership is here rather than beside the other records about a server because authority is read as the
+/// walk goes: the grant that made an admin is what every record they wrote rests on, and a relay keeping only
+/// the newest record per member would drop that grant the moment they were taken off (`spec/network.md`).
+fn every_record_we_keep_sits_in_the_regular_range() {
+    for kind in [Kind::Revision, Kind::BlobRemoved, Kind::Membership] {
+        assert!(
+            (1_000..10_000).contains(&u16::from(kind)),
+            "{kind:?} is outside the range a relay keeps every note in"
         );
     }
 }

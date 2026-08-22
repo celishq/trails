@@ -1,0 +1,161 @@
+{
+  "about": [
+    "What a relay's `OK false` means (spec/network.md). The host writes these prefixes and the client reads",
+    "them, and the two must agree — so both read this file and both fail when one of them stops matching it.",
+    "",
+    "NIP-01 makes the prefix the machine-readable part and the rest of the reason a sentence for a person.",
+    "So this pins the prefixes and never the prose: a host is free to reword what it says and not free to",
+    "say it under a word the client cannot read.",
+    "",
+    "`offer` is what the client answers with. `took` is a relay that has the note. `refused` is that note's",
+    "own verdict, for good — the mark moves past it and nothing offers it again. `unsettled` is the relay",
+    "talking about the account or about itself rather than about the note, which is the only reason to come",
+    "back.",
+    "",
+    "`blocked` is the one word here that reads against the common one. NIP-01 offers it for a note nobody",
+    "will ever take, and this network writes it for an account over its allowance — a door that opens again,",
+    "since a deletion request is exempt from the ceiling. So it is unsettled, and a kind a relay does not",
+    "keep is settled by that relay's own document instead.",
+    "",
+    "A refusal the client cannot place is `unsettled`, because a host that says something new may be saying",
+    "it about itself. That is the safe default for an unknown word and the wrong one for a known word,",
+    "which is why every word the host can write is here.",
+    "",
+    "`cases` are whole reasons, read as a client reads them: the prefix decides and nothing after it does."
+  ],
+  "prefixes": [
+    {
+      "prefix": "duplicate",
+      "offer": "took",
+      "means": "the relay already holds this note, which is a relay that has it"
+    },
+    {
+      "prefix": "invalid",
+      "offer": "refused",
+      "means": "the note is malformed, or something newer holds its address"
+    },
+    {
+      "prefix": "blocked",
+      "offer": "unsettled",
+      "means": "the account is over its allowance, which a deletion request frees — so this is about the account and not about the note. A kind the relay does not keep is the other blocked, and what settles that is the relay's own document"
+    },
+    {
+      "prefix": "restricted",
+      "offer": "refused",
+      "means": "the note is not permitted here: membership, authority, or a name somebody else holds"
+    },
+    {
+      "prefix": "pow",
+      "offer": "refused",
+      "means": "the relay wants work this build will never do, so the note is refused for good"
+    },
+    {
+      "prefix": "rate-limited",
+      "offer": "unsettled",
+      "means": "the relay is asking for less of this, and the same note lands later"
+    },
+    {
+      "prefix": "error",
+      "offer": "unsettled",
+      "means": "the relay is describing itself, so the next round asks again"
+    },
+    {
+      "prefix": "auth-required",
+      "offer": "unsettled",
+      "means": "the socket has not said who it is. A publish answers the challenge and offers the note again, so this reaches the reading only from a host that asks for it twice"
+    }
+  ],
+  "cases": [
+    {
+      "name": "a relay that took it",
+      "accepted": true,
+      "reason": "",
+      "offer": "took"
+    },
+    {
+      "name": "a relay that has it",
+      "reason": "duplicate: already have this event",
+      "offer": "took"
+    },
+    {
+      "name": "a note nothing signed",
+      "reason": "invalid: bad signature",
+      "offer": "refused"
+    },
+    {
+      "name": "a note stamped ahead of the relay's clock",
+      "reason": "invalid: created_at is ahead of this relay’s clock",
+      "offer": "refused"
+    },
+    {
+      "name": "something newer holds the address",
+      "reason": "invalid: a newer event holds this address",
+      "offer": "refused"
+    },
+    {
+      "name": "a kind this relay does not keep",
+      "reason": "blocked: the private relay does not keep kind 30023",
+      "offer": "unsettled"
+    },
+    {
+      "name": "an account at its ceiling",
+      "reason": "blocked: over allowance",
+      "offer": "unsettled"
+    },
+    {
+      "name": "a note charged to somebody else",
+      "reason": "restricted: this note is not charged to the account this relay holds",
+      "offer": "refused"
+    },
+    {
+      "name": "leaving a server you are not on",
+      "reason": "restricted: not a member of this server",
+      "offer": "refused"
+    },
+    {
+      "name": "writing about a member without governing",
+      "reason": "restricted: only an admin writes about a member",
+      "offer": "refused"
+    },
+    {
+      "name": "a name somebody else holds",
+      "reason": "restricted: that name is taken",
+      "offer": "refused"
+    },
+    {
+      "name": "work this build will not do",
+      "reason": "pow: 24 bits of difficulty",
+      "offer": "refused"
+    },
+    {
+      "name": "a relay asking for less",
+      "reason": "rate-limited: slow down",
+      "offer": "unsettled"
+    },
+    {
+      "name": "a relay that could not save it",
+      "reason": "error: could not connect to the database",
+      "offer": "unsettled"
+    },
+    {
+      "name": "a relay quoting another note's verdict",
+      "reason": "error: could not save: invalid: is what it said about the last one",
+      "offer": "unsettled"
+    },
+    {
+      "name": "a relay that said no and said nothing",
+      "reason": "",
+      "offer": "unsettled"
+    },
+    {
+      "name": "a word this build has never heard",
+      "reason": "elsewhere: try another relay",
+      "offer": "unsettled"
+    },
+    {
+      "name": "a prefix that is only the start of one",
+      "reason": "invalidated: the account moved",
+      "offer": "unsettled"
+    }
+  ]
+}

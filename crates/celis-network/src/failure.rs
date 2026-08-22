@@ -34,6 +34,13 @@ impl Failure {
             why,
         }
     }
+
+    /// Whether the host answered about what was asked for, so there is nothing left to do about it. A host
+    /// that never answered, or answered in a shape this build cannot read, was talking about itself, and the
+    /// next round asks again.
+    pub fn settled(&self) -> bool {
+        matches!(self.why, Why::Refused { .. })
+    }
 }
 
 impl fmt::Display for Failure {
