@@ -7,6 +7,9 @@
 //! They share one enum because a kind is one namespace however it was minted, and two variants cannot claim
 //! one number — the compiler refuses it. Split across crates, nothing but a test said the numbers still
 //! agreed.
+//!
+//! A number's storage class binds where a relay reads it and nowhere else, so a kind riding inside a gift
+//! wrap is what the fold reads the record by, and NIP-01's ranges never reach it (`spec/log.md`).
 
 use serde::de::Error as _;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -42,11 +45,6 @@ pub enum Kind {
     BlossomAuth = 24_242,
     /// A call authorizing itself over HTTP (NIP-98) — the method, the url, and the hash of the body.
     HttpAuth = 27_235,
-    /// An invitation onto a server (NIP-43). Addressed by the invitation's own `d`, which pairs it with
-    /// [`Leave`](Kind::Leave) below.
-    ServerInvitation = 28_935,
-    /// Somebody taking themselves off a server (NIP-43), signed by the account leaving.
-    Leave = 28_936,
     /// Where to leave something addressed to an account (NIP-17).
     Inbox = 10_050,
     /// Where this account's public notes live (NIP-65) — the list a stranger follows from a name to an
@@ -61,29 +59,41 @@ pub enum Kind {
     /// The bytes at a hash are off the blob store. Pairs with [`Blob`](Kind::Blob): bytes are live until
     /// something says they stopped.
     BlobRemoved = 8_101,
-    /// Where one account stands on one server, signed by the owner or an admin.
+    /// Where one account stands on one server, signed by the owner or an admin (NIP-29's put-user). The
+    /// standing rides in the `p` tag's third slot, where NIP-29 puts a role.
     ///
-    /// **Kept, never replaced**, which is why it sits here rather than among the addressable kinds. Authority
-    /// is read as the walk goes, so the grant that made an admin is what every record they wrote rests on —
-    /// and a relay keeping only the newest record per member would drop that grant the moment they were taken
-    /// off, unmaking everything they had done (`spec/network.md`).
-    Membership = 8_102,
-    /// The rumor a record travels inside a wrap as. What it carries is a record with a kind of its own.
-    Record = 35_000,
-    /// An invitation to read one cell, addressed by the invitation's own id. Nothing writes one now
-    /// (`spec/log.md`); the number stays spent, as do 35001 and 35003 beside it.
-    Invitation = 35_002,
+    /// **Kept, never replaced**: authority is read as the walk goes, so the grant that made an admin is what
+    /// every record they wrote rests on, and a relay keeping only the newest record per member would drop it
+    /// the moment they were taken off (`spec/network.md`).
+    Membership = 9_000,
+    /// Somebody taking themselves off a server (NIP-29's leave-request), signed by the account leaving.
+    Leave = 9_022,
     /// A server's own record: who owns it, where it answers, and who may leave something there.
     Server = 35_010,
     /// A server's sealing key and when it opened.
     Epoch = 35_012,
     /// The epoch private keys one member may read, sealed to them alone.
     Keyring = 35_013,
+
+    /// A membership written before this build took NIP-29's number, which states its standing in a
+    /// `standing` tag. Read so an admin granted then may still sign; never written (`spec/network.md`).
+    ///
+    /// **This and [`LegacyLeave`](Kind::LegacyLeave) go together, once no client writes either number.**
+    /// What goes with them: `Membership::KINDS` and `LEAVINGS`, every `#[allow(deprecated)]` in the tree,
+    /// the relay's own two constants and its ephemeral carve-out, and the legacy cases in
+    /// `spec/fixtures/records.json`.
+    #[deprecated(note = "read only, for records already written — write Membership (9000)")]
+    LegacyMembership = 8_102,
+    /// A leaving written before this build took NIP-29's number. Read so somebody who has gone stays gone;
+    /// never written.
+    #[deprecated(note = "read only, for records already written — write Leave (9022)")]
+    LegacyLeave = 28_936,
 }
 
 /// Every kind, in one list — what [`Kind::of`] reads a number back through. Kept here rather than as a
 /// second `match` over the same numbers, so each one is written once.
-const ALL: [Kind; 23] = [
+#[allow(deprecated)]
+const ALL: [Kind; 22] = [
     Kind::Profile,
     Kind::Deletion,
     Kind::Reaction,
@@ -97,16 +107,15 @@ const ALL: [Kind; 23] = [
     Kind::RelayAuth,
     Kind::BlossomAuth,
     Kind::HttpAuth,
-    Kind::ServerInvitation,
     Kind::Leave,
     Kind::Inbox,
     Kind::Relays,
     Kind::Article,
-    Kind::Record,
-    Kind::Invitation,
     Kind::Server,
     Kind::Epoch,
     Kind::Keyring,
+    Kind::LegacyMembership,
+    Kind::LegacyLeave,
 ];
 
 impl Kind {

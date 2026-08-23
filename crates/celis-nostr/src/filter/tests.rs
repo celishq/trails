@@ -11,12 +11,12 @@ fn an_absent_condition_is_absent_from_the_frame_rather_than_null() {
     assert_eq!(serde_json::to_value(Filter::default()).unwrap(), json!({}));
     assert_eq!(
         serde_json::to_value(Filter {
-            kinds: Some(vec![Kind::Record]),
+            kinds: Some(vec![Kind::Server]),
             since: Some(42),
             ..Filter::default()
         })
         .unwrap(),
-        json!({"kinds": [35000], "since": 42})
+        json!({"kinds": [35010], "since": 42})
     );
 }
 
@@ -47,7 +47,7 @@ fn a_tag_travels_under_its_own_name_behind_a_hash() {
                 .tagged('p', "someone")
         )
         .unwrap(),
-        json!({"kinds": [8102], "#h": ["a-server"], "#p": ["someone"]})
+        json!({"kinds": [9000], "#h": ["a-server"], "#p": ["someone"]})
     );
 }
 

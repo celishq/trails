@@ -13,6 +13,20 @@ fn a_tag_is_its_name_then_its_value() {
 }
 
 #[test]
+/// NIP-29 puts a member's role in the `p` tag's third slot, which is the only place this build states two
+/// values under one name.
+fn a_pair_states_two_values_under_one_name() {
+    assert_eq!(
+        Vec::from(Tags::new().pair("p", "a-member", "admin")),
+        vec![vec![
+            "p".to_string(),
+            "a-member".to_string(),
+            "admin".to_string()
+        ]]
+    );
+}
+
+#[test]
 fn a_flag_states_nothing_beside_its_name() {
     assert_eq!(
         Vec::from(Tags::new().tag("h", "a-server").flag("-")),
@@ -60,4 +74,21 @@ fn a_note_built_from_tags_reads_them_back() {
     assert_eq!(note.tag("d"), Some("the-address"));
     assert_eq!(note.tag("h"), Some("a-server"));
     assert_eq!(note.tag("-"), None, "a flag states no value to read");
+    assert_eq!(note.second("h"), None, "and one value has no second");
+}
+
+#[test]
+fn a_note_reads_back_both_values_of_a_pair() {
+    let account = Account::new(&[9u8; 32]).unwrap();
+    let note = Note::write(
+        &account,
+        Kind::Membership,
+        1_700_000_000,
+        Tags::new().pair("p", "a-member", "admin"),
+        "",
+    )
+    .unwrap();
+
+    assert_eq!(note.tag("p"), Some("a-member"));
+    assert_eq!(note.second("p"), Some("admin"));
 }

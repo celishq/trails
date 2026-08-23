@@ -38,8 +38,8 @@ fn the_spec_assigned_numbers_are_what_the_nips_say() {
     assert_eq!(u16::from(Kind::RelayAuth), 22_242, "NIP-42");
     assert_eq!(u16::from(Kind::BlossomAuth), 24_242, "BUD-01");
     assert_eq!(u16::from(Kind::HttpAuth), 27_235, "NIP-98");
-    assert_eq!(u16::from(Kind::ServerInvitation), 28_935, "NIP-43");
-    assert_eq!(u16::from(Kind::Leave), 28_936, "NIP-43");
+    assert_eq!(u16::from(Kind::Membership), 9_000, "NIP-29 put-user");
+    assert_eq!(u16::from(Kind::Leave), 9_022, "NIP-29 leave-request");
     assert_eq!(u16::from(Kind::Inbox), 10_050, "NIP-17");
     assert_eq!(u16::from(Kind::Relays), 10_002, "NIP-65");
     assert_eq!(u16::from(Kind::Article), 30_023, "NIP-23");
@@ -49,14 +49,7 @@ fn the_spec_assigned_numbers_are_what_the_nips_say() {
 /// A mark of ours is read latest-per-key by its `d`, and takes a number in NIP-01's addressable range so
 /// that any client reads it the same way.
 fn every_mark_of_ours_sits_in_the_addressable_range() {
-    for kind in [
-        Kind::Article,
-        Kind::Record,
-        Kind::Invitation,
-        Kind::Server,
-        Kind::Epoch,
-        Kind::Keyring,
-    ] {
+    for kind in [Kind::Article, Kind::Server, Kind::Epoch, Kind::Keyring] {
         assert!(
             (30_000..40_000).contains(&u16::from(kind)),
             "{kind:?} is outside the addressable range"
@@ -72,7 +65,12 @@ fn every_mark_of_ours_sits_in_the_addressable_range() {
 /// walk goes: the grant that made an admin is what every record they wrote rests on, and a relay keeping only
 /// the newest record per member would drop that grant the moment they were taken off (`spec/network.md`).
 fn every_record_we_keep_sits_in_the_regular_range() {
-    for kind in [Kind::Revision, Kind::BlobRemoved, Kind::Membership] {
+    for kind in [
+        Kind::Revision,
+        Kind::BlobRemoved,
+        Kind::Membership,
+        Kind::Leave,
+    ] {
         assert!(
             (1_000..10_000).contains(&u16::from(kind)),
             "{kind:?} is outside the range a relay keeps every note in"
@@ -81,14 +79,23 @@ fn every_record_we_keep_sits_in_the_regular_range() {
 }
 
 #[test]
+/// The two numbers this build wrote before it took NIP-29's are read and never written, so a record already
+/// written still folds (`spec/network.md`). They keep their numbers, which stay spent.
+#[allow(deprecated)]
+fn the_numbers_written_before_nip_29_are_still_read() {
+    assert_eq!(u16::from(Kind::LegacyMembership), 8_102);
+    assert_eq!(u16::from(Kind::LegacyLeave), 28_936);
+    assert_eq!(Kind::of(8_102), Some(Kind::LegacyMembership));
+    assert_eq!(Kind::of(28_936), Some(Kind::LegacyLeave));
+}
+
+#[test]
 /// A mark whose number a NIP assigned takes that number, wherever it sits. Every record travels inside a
 /// gift wrap (`spec/network.md`), so no relay reads the number and none of them retains by it — which
 /// leaves this build's own fold the only thing addressing by `d`.
 fn a_mark_a_nip_named_keeps_the_nip_s_number_and_is_still_folded_by_d() {
-    for kind in [Kind::Comment, Kind::ServerInvitation] {
-        assert!(
-            !(30_000..40_000).contains(&u16::from(kind)),
-            "{kind:?} would not need this test inside the addressable range"
-        );
-    }
+    assert!(
+        !(30_000..40_000).contains(&u16::from(Kind::Comment)),
+        "a comment would not need this test inside the addressable range"
+    );
 }

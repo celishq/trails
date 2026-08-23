@@ -20,6 +20,14 @@ impl Tags {
         self
     }
 
+    /// The same tags, and `name` stating `first` with `second` after it — NIP-29 puts a member's role in a
+    /// `p` tag's third slot.
+    pub fn pair(mut self, name: &str, first: impl Into<String>, second: impl Into<String>) -> Self {
+        self.0
+            .push(vec![name.to_string(), first.into(), second.into()]);
+        self
+    }
+
     /// The same tags, and `name` stating nothing beside it — NIP-70's `-`, which says a note belongs to the
     /// relay it was sent to and nowhere else.
     pub fn flag(mut self, name: &str) -> Self {

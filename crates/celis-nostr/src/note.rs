@@ -76,10 +76,20 @@ impl Note {
     /// The first value of the `name` tag, if the note carries one — `d` for an addressable note's address,
     /// `p` for the account a gift wrap is addressed to.
     pub fn tag(&self, name: &str) -> Option<&str> {
+        self.slot(name, 1)
+    }
+
+    /// The second value of the `name` tag, if the note states one — NIP-29's role, beside the key a `p`
+    /// names.
+    pub fn second(&self, name: &str) -> Option<&str> {
+        self.slot(name, 2)
+    }
+
+    fn slot(&self, name: &str, slot: usize) -> Option<&str> {
         self.tags
             .iter()
             .find(|tag| tag.first().is_some_and(|first| first == name))
-            .and_then(|tag| tag.get(1))
+            .and_then(|tag| tag.get(slot))
             .map(String::as_str)
     }
 
