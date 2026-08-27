@@ -21,8 +21,14 @@ pub struct Failure {
 pub enum Why {
     /// The host never answered — no route to it, DNS, TLS, or a timeout.
     Unreachable,
-    /// The host answered, refusing, in the words it refused with.
-    Refused { status: u16, body: String },
+    /// The host answered, refusing, in the words it refused with. `after` is the seconds it said to wait
+    /// before asking again, where it said any.
+    Refused {
+        status: u16,
+        body: String,
+        #[serde(default)]
+        after: Option<u64>,
+    },
     /// The host answered, in a shape this build does not read.
     Unreadable { detail: String },
 }
@@ -47,7 +53,9 @@ impl fmt::Display for Failure {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.why {
             Why::Unreachable => write!(f, "{} could not be reached", self.route),
-            Why::Refused { status, body } => write!(f, "{}: status {status}: {body}", self.route),
+            Why::Refused { status, body, .. } => {
+                write!(f, "{}: status {status}: {body}", self.route)
+            }
             Why::Unreadable { detail } => write!(f, "{} could not be read: {detail}", self.route),
         }
     }

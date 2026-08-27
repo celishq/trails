@@ -617,3 +617,34 @@ fn a_frame_that_is_not_one_is_refused() {
         "not a note"
     );
 }
+
+#[test]
+/// **A note this device published is not one landing.** A relay hands a publisher its own note back on the
+/// subscription it holds, and ringing for it asks for the round that published it — which publishes again,
+/// for as long as the vault is open.
+fn a_note_this_device_published_does_not_ring() {
+    let served = PushingRelay::new();
+    let doorbell = Arc::new(Doorbell::default());
+    let rung = Arc::new(AtomicUsize::new(0));
+    let counted = rung.clone();
+    doorbell.heard_by(move || {
+        counted.fetch_add(1, Ordering::SeqCst);
+    });
+    let relay = Relay::new(&served.url, speaking(), doorbell);
+    relay.sent.wrote(&note().id);
+
+    relay.watch(&Filter::of(Kind::Wrap));
+
+    // The connect rings. Past two ticks of silence the note has been read and answered for, so a second
+    // ring here is the echo being taken for an arrival.
+    let deadline = std::time::Instant::now() + TICK * 3;
+    while std::time::Instant::now() < deadline {
+        assert!(
+            rung.load(Ordering::SeqCst) < 2,
+            "this device's own note rang"
+        );
+        std::thread::sleep(Duration::from_millis(50));
+    }
+    assert_eq!(rung.load(Ordering::SeqCst), 1, "and the connect still rang");
+    relay.close();
+}

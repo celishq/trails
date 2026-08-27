@@ -15,6 +15,7 @@ use crate::seconds;
 use anyhow::{anyhow, bail, Result};
 use celis_nostr::{Account, Answer, Filter, Information, Kind, Limitation, Note, Tags};
 use serde_json::{json, Value};
+use std::collections::VecDeque;
 use std::io::ErrorKind;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -259,6 +260,8 @@ pub struct Relay {
     /// own: a frame is delivered once, so an exchange and a subscription sharing a socket would take each
     /// other's (`spec/network.md`).
     watch: Mutex<Option<Watch>>,
+    /// What this device published here, which the subscription reads back and must not ring for.
+    sent: Arc<Sent>,
 }
 
 /// A subscription held open, and the flag that ends the thread reading it.
@@ -281,6 +284,38 @@ impl Watch {
     }
 }
 
+/// The notes this device published here, so its own copy coming back down the subscription is not read as
+/// something landing.
+///
+/// A relay hands a publisher its own note back on any subscription that matches it, and a round that
+/// publishes would otherwise ring the doorbell that asks for that round again. Bounded, because an echo
+/// comes back within a breath of the publish and an id kept past that costs nothing.
+#[derive(Default)]
+struct Sent(Mutex<VecDeque<String>>);
+
+impl Sent {
+    /// How many ids are kept — several rounds' worth, where one round publishes a handful.
+    const KEPT: usize = 64;
+
+    /// Remember that `id` went out from here.
+    fn wrote(&self, id: &str) {
+        let Ok(mut held) = self.0.lock() else {
+            return;
+        };
+        held.push_back(id.to_string());
+        while held.len() > Self::KEPT {
+            held.pop_front();
+        }
+    }
+
+    /// Whether `id` is a note this device published, rather than one that has landed.
+    fn ours(&self, id: &str) -> bool {
+        self.0
+            .lock()
+            .is_ok_and(|held| held.iter().any(|it| it == id))
+    }
+}
+
 /// Held by the thread that follows a subscription, and dropped when that thread is gone — however it went.
 /// `Drop` runs while a panic unwinds, so a thread that died says so as surely as one that was told to stop.
 struct Gone(Arc<AtomicBool>);
@@ -300,6 +335,7 @@ impl Relay {
             connection: Mutex::new(Connection::default()),
             information: Mutex::new(None),
             watch: Mutex::new(None),
+            sent: Arc::new(Sent::default()),
         }
     }
 
@@ -313,6 +349,9 @@ impl Relay {
     /// can act on is the caller's to decide. The error is the socket. `auth-required:` is answered rather
     /// than returned: the client signs the challenge and offers the same note again.
     pub fn publish(&self, note: &Note) -> Result<Answer> {
+        // Before the send, not after: the relay may hand this note back on the held subscription while the
+        // answer to the publish is still in flight.
+        self.sent.wrote(&note.id);
         self.exchange(|account, line, _| {
             let mut answered = false;
             loop {
@@ -453,15 +492,16 @@ impl Relay {
             filter: filter.clone(),
             stopped: stopped.clone(),
         });
-        let (url, account, doorbell, filter) = (
+        let (url, account, doorbell, sent, filter) = (
             self.url.clone(),
             self.account.clone(),
             self.doorbell.clone(),
+            self.sent.clone(),
             filter.clone(),
         );
         std::thread::spawn(move || {
             let _gone = Gone(stopped.clone());
-            follow(&url, &account, &doorbell, &filter, &stopped)
+            follow(&url, &account, &doorbell, &sent, &filter, &stopped)
         });
     }
 
@@ -498,6 +538,7 @@ fn follow(
     url: &str,
     account: &Account,
     doorbell: &Doorbell,
+    sent: &Sent,
     filter: &Filter,
     stopped: &AtomicBool,
 ) {
@@ -506,7 +547,7 @@ fn follow(
         match subscribe(url, account, filter) {
             Ok(mut line) => {
                 doorbell.ring();
-                if read(&mut line, doorbell, stopped) {
+                if read(&mut line, doorbell, sent, stopped) {
                     waiting = REDIAL;
                 }
             }
@@ -558,9 +599,14 @@ fn subscribe(url: &str, account: &Account, filter: &Filter) -> Result<Line> {
 /// A tick that read nothing is where the ring happens, so a page of notes arriving at once rings once
 /// rather than once each; [`PING_EVERY`] of them in a row is where the client says it is still there.
 ///
+/// **A note this device published is not one landing.** The relay hands a publisher its own note back, and
+/// ringing for it asks for the round that published it — which publishes again, for as long as the vault
+/// is open. Another device on this account still rings: it is the id that says whose note this is, not the
+/// author.
+///
 /// **Answers whether the relay ever answered on this socket.** One that broke before it said anything —
 /// even a tick of silence — is a relay to go back to more slowly, not at the rate a live one is redialled.
-fn read(line: &mut Line, doorbell: &Doorbell, stopped: &AtomicBool) -> bool {
+fn read(line: &mut Line, doorbell: &Doorbell, sent: &Sent, stopped: &AtomicBool) -> bool {
     let (mut landed, mut quiet, mut answered) = (false, 0, false);
     while !stopped.load(Ordering::SeqCst) {
         let Ok(heard) = line.waited() else {
@@ -568,7 +614,9 @@ fn read(line: &mut Line, doorbell: &Doorbell, stopped: &AtomicBool) -> bool {
         };
         answered = true;
         match heard {
-            Some(Frame::Event { subscription, .. }) if subscription == WATCHING => landed = true,
+            Some(Frame::Event { subscription, note }) if subscription == WATCHING => {
+                landed |= !sent.ours(&note.id)
+            }
             Some(_) => continue,
             None if landed => {
                 doorbell.ring();
