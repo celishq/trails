@@ -109,27 +109,31 @@ impl PushingRelay {
     }
 }
 
+/// What a ring in these tests names. A stream is named by the sync layer; from here it is a label the
+/// relay carries through to the ring.
+const STREAM: &str = "abc/records";
+
 #[test]
-/// A note landing on a held subscription rings, and the ring carries nothing — what arrived is read by the
-/// round it brings on (`spec/network.md`).
+/// A note landing on a held subscription rings, and the ring names the stream it landed on and carries no
+/// record — what arrived is read by the round it brings on (`spec/network.md`).
 fn a_note_landing_on_a_held_subscription_rings() {
     let served = PushingRelay::new();
     let doorbell = Arc::new(Doorbell::default());
-    let rung = Arc::new(AtomicUsize::new(0));
-    let counted = rung.clone();
-    doorbell.heard_by(move || {
-        counted.fetch_add(1, Ordering::SeqCst);
+    let rung: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
+    let named = rung.clone();
+    doorbell.heard_by(move |stream| {
+        named.lock().unwrap().push(stream.to_string());
     });
     let relay = Relay::new(&served.url, speaking(), doorbell);
 
-    relay.watch(&Filter::of(Kind::Wrap));
+    relay.watch(&Filter::of(Kind::Wrap), STREAM);
 
-    // One ring for the connect, one for the note that landed after it.
+    // One ring for the connect, one for the note that landed after it. Both name the stream.
     let deadline = std::time::Instant::now() + Duration::from_secs(10);
-    while rung.load(Ordering::SeqCst) < 2 && std::time::Instant::now() < deadline {
+    while rung.lock().unwrap().len() < 2 && std::time::Instant::now() < deadline {
         std::thread::sleep(Duration::from_millis(50));
     }
-    assert_eq!(rung.load(Ordering::SeqCst), 2);
+    assert_eq!(*rung.lock().unwrap(), vec![STREAM, STREAM]);
     relay.close();
 }
 
@@ -154,7 +158,7 @@ fn watching_the_same_filter_again_holds_the_one_subscription() {
     let relay = Relay::new(&served.url, speaking(), Arc::new(Doorbell::default()));
 
     for _ in 0..5 {
-        relay.watch(&Filter::of(Kind::Wrap));
+        relay.watch(&Filter::of(Kind::Wrap), STREAM);
     }
     accepted(&served, 1);
 
@@ -175,7 +179,7 @@ fn a_watch_whose_thread_is_gone_is_asked_for_again() {
     let relay = Relay::new(&served.url, speaking(), Arc::new(Doorbell::default()));
     let filter = Filter::of(Kind::Wrap);
 
-    relay.watch(&filter);
+    relay.watch(&filter, STREAM);
     accepted(&served, 1);
 
     // What the guard the thread holds does when that thread is gone, however it went.
@@ -187,7 +191,7 @@ fn a_watch_whose_thread_is_gone_is_asked_for_again() {
         .unwrap()
         .stopped
         .store(true, Ordering::SeqCst);
-    relay.watch(&filter);
+    relay.watch(&filter, STREAM);
 
     accepted(&served, 2);
     relay.close();
@@ -619,6 +623,30 @@ fn a_frame_that_is_not_one_is_refused() {
 }
 
 #[test]
+/// **The echo memory is bounded by when, not by how many.** A first sync publishes thousands at once, and
+/// a memory that dropped the earliest of them would ring for this device's own notes exactly where it
+/// matters most (`spec/network.md`).
+fn a_publish_of_thousands_holds_every_one_of_them_against_its_echo() {
+    let relay = Relay::new(
+        "ws://nowhere.example",
+        speaking(),
+        Arc::new(Doorbell::default()),
+    );
+    let published: Vec<String> = (0..2000)
+        .map(|n| entry(&format!("ciphertext {n}")).id)
+        .collect();
+
+    for id in &published {
+        relay.sent.wrote(id);
+    }
+
+    assert!(
+        published.iter().all(|id| relay.sent.ours(id)),
+        "an id published in this breath was forgotten while its echo was still in flight"
+    );
+}
+
+#[test]
 /// **A note this device published is not one landing.** A relay hands a publisher its own note back on the
 /// subscription it holds, and ringing for it asks for the round that published it — which publishes again,
 /// for as long as the vault is open.
@@ -627,13 +655,13 @@ fn a_note_this_device_published_does_not_ring() {
     let doorbell = Arc::new(Doorbell::default());
     let rung = Arc::new(AtomicUsize::new(0));
     let counted = rung.clone();
-    doorbell.heard_by(move || {
+    doorbell.heard_by(move |_| {
         counted.fetch_add(1, Ordering::SeqCst);
     });
     let relay = Relay::new(&served.url, speaking(), doorbell);
     relay.sent.wrote(&note().id);
 
-    relay.watch(&Filter::of(Kind::Wrap));
+    relay.watch(&Filter::of(Kind::Wrap), STREAM);
 
     // The connect rings. Past two ticks of silence the note has been read and answered for, so a second
     // ring here is the echo being taken for an arrival.

@@ -15,11 +15,11 @@ use crate::seconds;
 use anyhow::{anyhow, bail, Result};
 use celis_nostr::{Account, Answer, Filter, Information, Kind, Limitation, Note, Tags};
 use serde_json::{json, Value};
-use std::collections::VecDeque;
+use std::collections::BTreeMap;
 use std::io::ErrorKind;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use tungstenite::stream::MaybeTlsStream;
 use tungstenite::{Message, WebSocket};
 
@@ -50,8 +50,18 @@ const PONG: &str = "pong";
 const REDIAL: Duration = Duration::from_secs(1);
 const LONGEST: Duration = Duration::from_secs(60);
 
+/// How long a socket must have been held for its breaking to be ordinary rather than a flap. The longest
+/// wait, because a socket that lived past that broke for a reason no backoff was going to outlast, and one
+/// that did not would ring at the rate it flaps (`spec/network.md`).
+const STEADY: Duration = LONGEST;
+
 /// The subscription a held socket asks under. One per relay, so it never collides with an exchange's.
 const WATCHING: &str = "celis-watch";
+
+/// How long an id this device published is held against an echo of it. A relay hands a publisher its own
+/// note back within a breath of the publish, and past this an id that matches is somebody else's
+/// (`spec/network.md`).
+const ECHOING: Duration = Duration::from_secs(60);
 
 /// How far ahead of this device's clock a note may be stamped and still be taken as having just landed. The
 /// same allowance a relay holds a publisher to, so a device whose clock trails the sender's still hears what
@@ -288,31 +298,25 @@ impl Watch {
 /// something landing.
 ///
 /// A relay hands a publisher its own note back on any subscription that matches it, and a round that
-/// publishes would otherwise ring the doorbell that asks for that round again. Bounded, because an echo
-/// comes back within a breath of the publish and an id kept past that costs nothing.
+/// publishes would otherwise ring the doorbell that asks for that round again. **Held by when, so nothing
+/// has to say a round began**: a count drops the earliest of a first sync's thousands, and a round
+/// boundary drops the last publish of the round before it, which is the one still echoing.
 #[derive(Default)]
-struct Sent(Mutex<VecDeque<String>>);
+struct Sent(Mutex<BTreeMap<String, u64>>);
 
 impl Sent {
-    /// How many ids are kept — several rounds' worth, where one round publishes a handful.
-    const KEPT: usize = 64;
-
-    /// Remember that `id` went out from here.
+    /// Remember that `id` went out from here, and forget what went out too long ago to still be echoing.
     fn wrote(&self, id: &str) {
-        let Ok(mut held) = self.0.lock() else {
-            return;
-        };
-        held.push_back(id.to_string());
-        while held.len() > Self::KEPT {
-            held.pop_front();
+        if let Ok(mut held) = self.0.lock() {
+            let now = seconds();
+            held.retain(|_, at| now.saturating_sub(*at) <= ECHOING.as_secs());
+            held.insert(id.to_string(), now);
         }
     }
 
     /// Whether `id` is a note this device published, rather than one that has landed.
     fn ours(&self, id: &str) -> bool {
-        self.0
-            .lock()
-            .is_ok_and(|held| held.iter().any(|it| it == id))
+        self.0.lock().is_ok_and(|held| held.contains_key(id))
     }
 }
 
@@ -477,7 +481,7 @@ impl Relay {
     /// Asking for the filter already being watched does nothing, so a round may say this every time it
     /// reaches a relay. A different filter replaces the one held, and so does one whose thread is gone —
     /// which is what brings a subscription back rather than leaving the vault on its backstop.
-    pub fn watch(&self, filter: &Filter) {
+    pub fn watch(&self, filter: &Filter, stream: &str) {
         let Ok(mut held) = self.watch.lock() else {
             return;
         };
@@ -492,16 +496,17 @@ impl Relay {
             filter: filter.clone(),
             stopped: stopped.clone(),
         });
-        let (url, account, doorbell, sent, filter) = (
+        let (url, account, doorbell, sent, filter, stream) = (
             self.url.clone(),
             self.account.clone(),
             self.doorbell.clone(),
             self.sent.clone(),
             filter.clone(),
+            stream.to_string(),
         );
         std::thread::spawn(move || {
             let _gone = Gone(stopped.clone());
-            follow(&url, &account, &doorbell, &sent, &filter, &stopped)
+            follow(&url, &account, &doorbell, &sent, &filter, &stream, &stopped)
         });
     }
 
@@ -533,21 +538,28 @@ fn http(url: &str) -> String {
 
 /// Hold one subscription open until `stopped`, ringing `doorbell` as notes land on it, and dialling again
 /// whenever the socket breaks. Every connect rings: a note may have landed while there was no socket to
-/// hear it on.
+/// hear it on, and a ring is one stream's walk under its floor (`spec/runtime.md`).
+///
+/// **The backoff is reset by how long the socket was held, not by whether the relay spoke.** One that
+/// lived longer than the longest wait broke for an ordinary reason and is worth dialling at once. One that
+/// died sooner is a flap, and a flap that reset the backoff would ring at the rate it flaps.
 fn follow(
     url: &str,
     account: &Account,
     doorbell: &Doorbell,
     sent: &Sent,
     filter: &Filter,
+    stream: &str,
     stopped: &AtomicBool,
 ) {
     let mut waiting = REDIAL;
     while !stopped.load(Ordering::SeqCst) {
         match subscribe(url, account, filter) {
             Ok(mut line) => {
-                doorbell.ring();
-                if read(&mut line, doorbell, sent, stopped) {
+                doorbell.ring(stream);
+                let opened = Instant::now();
+                read(&mut line, doorbell, sent, stream, stopped);
+                if opened.elapsed() >= STEADY {
                     waiting = REDIAL;
                 }
             }
@@ -604,22 +616,21 @@ fn subscribe(url: &str, account: &Account, filter: &Filter) -> Result<Line> {
 /// is open. Another device on this account still rings: it is the id that says whose note this is, not the
 /// author.
 ///
-/// **Answers whether the relay ever answered on this socket.** One that broke before it said anything —
-/// even a tick of silence — is a relay to go back to more slowly, not at the rate a live one is redialled.
-fn read(line: &mut Line, doorbell: &Doorbell, sent: &Sent, stopped: &AtomicBool) -> bool {
-    let (mut landed, mut quiet, mut answered) = (false, 0, false);
+/// Returns when the socket breaks or the thread is told to let go. How long that took is what the caller
+/// reads a flap from, so nothing has to be answered here.
+fn read(line: &mut Line, doorbell: &Doorbell, sent: &Sent, stream: &str, stopped: &AtomicBool) {
+    let (mut landed, mut quiet) = (false, 0);
     while !stopped.load(Ordering::SeqCst) {
         let Ok(heard) = line.waited() else {
-            return answered;
+            return;
         };
-        answered = true;
         match heard {
             Some(Frame::Event { subscription, note }) if subscription == WATCHING => {
                 landed |= !sent.ours(&note.id)
             }
             Some(_) => continue,
             None if landed => {
-                doorbell.ring();
+                doorbell.ring(stream);
                 (landed, quiet) = (false, 0);
             }
             None => {
@@ -627,13 +638,12 @@ fn read(line: &mut Line, doorbell: &Doorbell, sent: &Sent, stopped: &AtomicBool)
                 if quiet >= PING_EVERY {
                     quiet = 0;
                     if line.socket.send(Message::Text(PING.into())).is_err() {
-                        return answered;
+                        return;
                     }
                 }
             }
         }
     }
-    answered
 }
 
 /// Wait `how_long`, looking up often enough that being told to stop is not waited out.
