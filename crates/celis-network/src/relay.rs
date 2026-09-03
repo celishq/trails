@@ -17,16 +17,30 @@ use celis_nostr::{Account, Answer, Filter, Information, Kind, Limitation, Note, 
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
 use std::io::ErrorKind;
+use std::net::{TcpStream, ToSocketAddrs};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
+use tungstenite::client::IntoClientRequest;
+use tungstenite::http::Uri;
 use tungstenite::stream::MaybeTlsStream;
 use tungstenite::{Message, WebSocket};
 
 /// How long one exchange waits on a relay that has stopped answering. A sync holds the binding's write
 /// guard for its whole length, so this is what a stalled relay costs the person at the screen — well past
-/// any answer a relay owes, and short enough that a dead one is a pause rather than a freeze.
+/// any answer a relay owes, and short enough that a dead one is a pause rather than a freeze. It is also
+/// how long dialling one may take, and how long a write may wait on a socket that has stopped reading.
 const TIMEOUT: Duration = Duration::from_secs(15);
+
+/// How long one whole exchange may take, however much the relay keeps saying. A relay that answers with
+/// anything but what was asked — a challenge over and over, a remark, another subscription's notes — would
+/// otherwise hold the connection for as long as it liked.
+const EXCHANGE: Duration = Duration::from_secs(60);
+
+/// How many pings in a row may go unanswered before the held socket is judged dead and dialled again. A
+/// socket a router has forgotten looks healthy from here: reads time out into nothing, which is what a quiet
+/// relay looks like too, and only the missing answers tell the two apart.
+const LOST: u32 = 3;
 
 /// What a relay prefixes a refusal with when the frame would have been taken from an authenticated client.
 const AUTH_REQUIRED: &str = "auth-required:";
@@ -95,19 +109,39 @@ struct Line {
     url: String,
     socket: Socket,
     challenge: Option<String>,
+    /// When the exchange under way must be over, or `None` on a socket held open for what lands.
+    deadline: Option<Instant>,
+    /// How many of this client's pings the relay has answered.
+    pongs: u32,
 }
 
 impl Line {
-    /// Dial `url`, giving up on a read that goes unanswered for `patience`.
+    /// Dial `url`, giving up on a read that goes unanswered for `patience`. Reaching the host, the
+    /// handshake and every write are bounded by [`TIMEOUT`].
     fn dial(url: &str, patience: Duration) -> Result<Line> {
-        let (socket, _) = tungstenite::connect(url).map_err(|e| anyhow!("relay {url}: {e}"))?;
+        let request = url
+            .into_client_request()
+            .map_err(|e| anyhow!("relay {url}: {e}"))?;
+        let stream = reach(request.uri()).map_err(|e| anyhow!("relay {url}: {e}"))?;
+        stream.set_read_timeout(Some(TIMEOUT))?;
+        stream.set_write_timeout(Some(TIMEOUT))?;
+        stream.set_nodelay(true)?;
+        let (socket, _) =
+            tungstenite::client_tls(request, stream).map_err(|e| anyhow!("relay {url}: {e}"))?;
         let line = Line {
             url: url.to_string(),
             socket,
             challenge: None,
+            deadline: None,
+            pongs: 0,
         };
         line.patience(patience)?;
         Ok(line)
+    }
+
+    /// Bound the exchange about to run over this socket to `how_long` from now.
+    fn within(&mut self, how_long: Duration) {
+        self.deadline = Some(Instant::now() + how_long);
     }
 
     /// How long a read waits on a relay that is saying nothing, from now on.
@@ -179,6 +213,12 @@ impl Line {
     /// over — it answers this client's own keepalive and is not a frame.
     fn waited(&mut self) -> Result<Option<Frame>> {
         loop {
+            if self.deadline.is_some_and(|it| Instant::now() >= it) {
+                bail!(
+                    "relay {} kept talking past the exchange's deadline",
+                    self.url
+                );
+            }
             let read = match self.socket.read() {
                 Ok(message) => message,
                 Err(tungstenite::Error::Io(e))
@@ -189,7 +229,10 @@ impl Line {
                 Err(e) => bail!("relay {}: {e}", self.url),
             };
             let frame = match read {
-                Message::Text(text) if text == PONG => continue,
+                Message::Text(text) if text == PONG => {
+                    self.pongs += 1;
+                    continue;
+                }
                 Message::Text(text) => Frame::parse(&text)?,
                 Message::Close(_) => bail!("relay {} hung up", self.url),
                 _ => continue,
@@ -455,20 +498,23 @@ impl Relay {
     /// frame. So a failure over an already-open socket is tried once more over a fresh one. Nothing is
     /// published twice: a refused note was never stored.
     fn exchange<T>(&self, run: impl Fn(&Account, &mut Line, &str) -> Result<T>) -> Result<T> {
+        // A connection holds nothing a panic can leave half-done, so one is recovered rather than refused.
         let mut connection = self
             .connection
             .lock()
-            .map_err(|_| anyhow!("relay {}: the connection is poisoned", self.url))?;
+            .unwrap_or_else(|held| held.into_inner());
         connection.asked += 1;
         let id = format!("celis-{}", connection.asked);
 
         if let Some(line) = connection.line.as_mut() {
+            line.within(EXCHANGE);
             match run(&self.account, line, &id) {
                 Ok(answer) => return Ok(answer),
                 Err(_) => connection.line = None,
             }
         }
         let mut line = Line::dial(&self.url, TIMEOUT)?;
+        line.within(EXCHANGE);
         let answer = run(&self.account, &mut line, &id)?;
         connection.line = Some(line);
         Ok(answer)
@@ -524,6 +570,26 @@ impl Relay {
             let _ = line.socket.close(None);
         }
     }
+}
+
+/// A TCP connection to the host `uri` names, tried for [`TIMEOUT`] per address it resolves to.
+fn reach(uri: &Uri) -> Result<TcpStream> {
+    let host = uri.host().ok_or_else(|| anyhow!("no host in {uri}"))?;
+    let port = uri.port_u16().unwrap_or(match uri.scheme_str() {
+        Some("wss") => 443,
+        _ => 80,
+    });
+    let mut refused = None;
+    for address in (host, port).to_socket_addrs()? {
+        match TcpStream::connect_timeout(&address, TIMEOUT) {
+            Ok(stream) => return Ok(stream),
+            Err(why) => refused = Some(why),
+        }
+    }
+    Err(match refused {
+        Some(why) => anyhow!("{why}"),
+        None => anyhow!("{host} resolves to no address"),
+    })
 }
 
 /// A relay's websocket URL as the HTTP one its information document is served from — the same address, the
@@ -586,12 +652,14 @@ fn subscribe(url: &str, account: &Account, filter: &Filter) -> Result<Line> {
         ..filter.clone()
     };
     let mut line = Line::dial(url, TIMEOUT)?;
+    line.within(EXCHANGE);
     let asked = request(WATCHING, std::slice::from_ref(&from))?;
     let mut answered = false;
     loop {
         line.send(asked.clone())?;
         match line.opened()? {
             Ok(()) => {
+                line.deadline = None;
                 line.patience(TICK)?;
                 return Ok(line);
             }
@@ -616,10 +684,11 @@ fn subscribe(url: &str, account: &Account, filter: &Filter) -> Result<Line> {
 /// is open. Another device on this account still rings: it is the id that says whose note this is, not the
 /// author.
 ///
-/// Returns when the socket breaks or the thread is told to let go. How long that took is what the caller
-/// reads a flap from, so nothing has to be answered here.
+/// Returns when the socket breaks, the relay closes the subscription, [`LOST`] pings go unanswered, or the
+/// thread is told to let go. How long that took is what the caller reads a flap from, so nothing has to be
+/// answered here.
 fn read(line: &mut Line, doorbell: &Doorbell, sent: &Sent, stream: &str, stopped: &AtomicBool) {
-    let (mut landed, mut quiet) = (false, 0);
+    let (mut landed, mut quiet, mut pinged) = (false, 0, 0u32);
     while !stopped.load(Ordering::SeqCst) {
         let Ok(heard) = line.waited() else {
             return;
@@ -627,6 +696,13 @@ fn read(line: &mut Line, doorbell: &Doorbell, sent: &Sent, stream: &str, stopped
         match heard {
             Some(Frame::Event { subscription, note }) if subscription == WATCHING => {
                 landed |= !sent.ours(&note.id)
+            }
+            Some(Frame::Closed {
+                subscription,
+                message,
+            }) if subscription == WATCHING => {
+                tracing::debug!(target: "client", url = %line.url, %message, "the relay closed the subscription");
+                return;
             }
             Some(_) => continue,
             None if landed => {
@@ -637,9 +713,14 @@ fn read(line: &mut Line, doorbell: &Doorbell, sent: &Sent, stream: &str, stopped
                 quiet += 1;
                 if quiet >= PING_EVERY {
                     quiet = 0;
+                    if pinged.saturating_sub(line.pongs) >= LOST {
+                        tracing::debug!(target: "client", url = %line.url, "the relay stopped answering");
+                        return;
+                    }
                     if line.socket.send(Message::Text(PING.into())).is_err() {
                         return;
                     }
+                    pinged += 1;
                 }
             }
         }

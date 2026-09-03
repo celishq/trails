@@ -14,19 +14,32 @@ use celis_nostr::{Account, Kind, Note, Tags};
 use data_encoding::{BASE64, HEXLOWER};
 use sha2::{Digest, Sha256};
 
-/// A signed note authorizing one request — the method, the url it goes to, and the bytes it carries — as the
-/// `Authorization` header wants it. `body` is empty for a request that sends none.
-pub fn authorization(account: &Account, method: &str, url: &str, body: &str) -> Result<String> {
-    let note = Note::write(
-        account,
-        Kind::HttpAuth,
-        seconds(),
-        Tags::new()
-            .tag("u", url)
-            .tag("method", method)
-            .tag("payload", HEXLOWER.encode(&Sha256::digest(body.as_bytes()))),
-        String::new(),
-    )?;
+/// The tag naming the call a note is one attempt of, so a host answers a second attempt from the first.
+pub const IDEMPOTENCY: &str = "idempotency";
+
+/// One request as the note names it: the method, the url it goes to, the bytes it carries, and the call it
+/// is an attempt of where it is one that must not be served twice. `body` is empty for a request that
+/// sends none.
+pub struct Request<'a> {
+    pub method: &'a str,
+    pub url: &'a str,
+    pub body: &'a str,
+    pub key: Option<&'a str>,
+}
+
+/// A signed note authorizing `request`, as the `Authorization` header wants it.
+pub fn authorization(account: &Account, request: &Request<'_>) -> Result<String> {
+    let mut tags = Tags::new()
+        .tag("u", request.url)
+        .tag("method", request.method)
+        .tag(
+            "payload",
+            HEXLOWER.encode(&Sha256::digest(request.body.as_bytes())),
+        );
+    if let Some(key) = request.key {
+        tags = tags.tag(IDEMPOTENCY, key);
+    }
+    let note = Note::write(account, Kind::HttpAuth, seconds(), tags, String::new())?;
     header(&note)
 }
 

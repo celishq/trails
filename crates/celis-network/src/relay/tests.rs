@@ -109,9 +109,165 @@ impl PushingRelay {
     }
 }
 
+/// A relay that answers every frame with remarks, one after another, for as long as the socket stands.
+struct TalkativeRelay {
+    url: String,
+}
+
+impl TalkativeRelay {
+    fn new() -> Self {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("ws://{}", listener.local_addr().unwrap());
+        std::thread::spawn(move || {
+            for stream in listener.incoming().flatten() {
+                let Ok(mut socket) = tungstenite::accept(stream) else {
+                    continue;
+                };
+                std::thread::spawn(move || {
+                    if socket.read().is_err() {
+                        return;
+                    }
+                    loop {
+                        let remark = json!(["NOTICE", "still here"]);
+                        if socket.send(Message::Text(remark.to_string())).is_err() {
+                            return;
+                        }
+                        std::thread::sleep(Duration::from_millis(5));
+                    }
+                });
+            }
+        });
+        Self { url }
+    }
+}
+
+/// A relay that opens every subscription and closes it again at once, counting the connections it took.
+struct ClosingRelay {
+    url: String,
+    accepted: Arc<AtomicUsize>,
+}
+
+impl ClosingRelay {
+    fn new() -> Self {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("ws://{}", listener.local_addr().unwrap());
+        let accepted = Arc::new(AtomicUsize::new(0));
+        let counted = accepted.clone();
+        std::thread::spawn(move || {
+            for stream in listener.incoming().flatten() {
+                counted.fetch_add(1, Ordering::SeqCst);
+                let Ok(mut socket) = tungstenite::accept(stream) else {
+                    continue;
+                };
+                std::thread::spawn(move || {
+                    while let Ok(Message::Text(text)) = socket.read() {
+                        let Ok(frame) = serde_json::from_str::<Vec<Value>>(&text) else {
+                            continue;
+                        };
+                        if frame[0].as_str() != Some("REQ") {
+                            continue;
+                        }
+                        let id = &frame[1];
+                        for answer in [
+                            json!(["EOSE", id]),
+                            json!(["CLOSED", id, "restricted: not any more"]),
+                        ] {
+                            if socket.send(Message::Text(answer.to_string())).is_err() {
+                                return;
+                            }
+                        }
+                    }
+                });
+            }
+        });
+        Self { url, accepted }
+    }
+}
+
 /// What a ring in these tests names. A stream is named by the sync layer; from here it is a label the
 /// relay carries through to the ring.
 const STREAM: &str = "abc/records";
+
+#[test]
+/// **An exchange ends at its deadline however much the relay keeps saying.** A relay answering with
+/// anything but what was asked would otherwise hold the connection, and every exchange queued behind it,
+/// for as long as it liked.
+fn an_exchange_over_a_relay_that_keeps_talking_ends_at_its_deadline() {
+    let served = TalkativeRelay::new();
+    let mut line = Line::dial(&served.url, TIMEOUT).unwrap();
+    line.within(Duration::from_millis(300));
+    line.send(json!(["EVENT", note()])).unwrap();
+
+    let began = std::time::Instant::now();
+    let why = line.answer(&note().id).unwrap_err().to_string();
+
+    assert!(why.contains("deadline"), "{why}");
+    assert!(
+        began.elapsed() < Duration::from_secs(5),
+        "{:?}",
+        began.elapsed()
+    );
+}
+
+#[test]
+/// **A subscription the relay closed is opened again.** A `CLOSED` on the held socket is the relay letting
+/// go — an expired session, a membership taken back — and a thread that read past it would hold a dead
+/// subscription for the whole session, hearing nothing and saying so to nobody.
+fn a_subscription_the_relay_closed_is_opened_again() {
+    let served = ClosingRelay::new();
+    let relay = Relay::new(&served.url, speaking(), Arc::new(Doorbell::default()));
+
+    relay.watch(&Filter::of(Kind::Wrap), STREAM);
+
+    let deadline = std::time::Instant::now() + Duration::from_secs(10);
+    while served.accepted.load(Ordering::SeqCst) < 2 && std::time::Instant::now() < deadline {
+        std::thread::sleep(Duration::from_millis(50));
+    }
+    assert!(
+        served.accepted.load(Ordering::SeqCst) >= 2,
+        "the closed subscription was dialled again"
+    );
+    relay.close();
+}
+
+#[test]
+/// **A relay that stops answering pings is let go of.** A socket a router has forgotten reads like a quiet
+/// relay, and only the missing answers say it is not one.
+fn a_relay_that_stops_answering_pings_is_let_go_of() {
+    let served = LocalRelay::new(usize::MAX);
+    let mut line = Line::dial(&served.url, Duration::from_millis(2)).unwrap();
+    let stopped = AtomicBool::new(false);
+
+    let began = std::time::Instant::now();
+    read(
+        &mut line,
+        &Doorbell::default(),
+        &Sent::default(),
+        STREAM,
+        &stopped,
+    );
+
+    assert!(
+        began.elapsed() < Duration::from_secs(10),
+        "three pings unanswered at two milliseconds a tick: {:?}",
+        began.elapsed()
+    );
+}
+
+#[test]
+/// A panic inside one exchange does not cost the relay every exchange after it.
+fn a_connection_a_panic_left_behind_is_used_again() {
+    let served = LocalRelay::new(usize::MAX);
+    let relay = Relay::new(&served.url, speaking(), Arc::new(Doorbell::default()));
+    relay.publish(&note()).unwrap();
+
+    let panicked = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        relay.exchange(|_, _, _| -> Result<()> { panic!("inside the exchange") })
+    }));
+    assert!(panicked.is_err());
+
+    assert!(relay.publish(&note()).unwrap().accepted);
+}
 
 #[test]
 /// A note landing on a held subscription rings, and the ring names the stream it landed on and carries no
