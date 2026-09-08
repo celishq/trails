@@ -211,8 +211,8 @@ fn an_exchange_over_a_relay_that_keeps_talking_ends_at_its_deadline() {
 
 #[test]
 /// **A subscription the relay closed is opened again.** A `CLOSED` on the held socket is the relay letting
-/// go — an expired session, a membership taken back — and a thread that read past it would hold a dead
-/// subscription for the whole session, hearing nothing and saying so to nobody.
+/// go — an expired session, say — and a thread that read past it would hold a dead subscription for the
+/// whole session, hearing nothing and saying so to nobody.
 fn a_subscription_the_relay_closed_is_opened_again() {
     let served = ClosingRelay::new();
     let relay = Relay::new(&served.url, speaking(), Arc::new(Doorbell::default()));

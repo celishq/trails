@@ -42,12 +42,12 @@ fn a_tag_travels_under_its_own_name_behind_a_hash() {
     );
     assert_eq!(
         serde_json::to_value(
-            Filter::of(Kind::Membership)
+            Filter::of(Kind::Comment)
                 .tagged('h', "a-server")
                 .tagged('p', "someone")
         )
         .unwrap(),
-        json!({"kinds": [9000], "#h": ["a-server"], "#p": ["someone"]})
+        json!({"kinds": [1111], "#h": ["a-server"], "#p": ["someone"]})
     );
 }
 

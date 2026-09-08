@@ -94,7 +94,7 @@
     },
     {
       "name": "a kind this relay does not keep",
-      "reason": "blocked: the private relay does not keep kind 30023",
+      "reason": "blocked: the private relay does not keep kind 0",
       "offer": "unsettled"
     },
     {

@@ -38,55 +38,28 @@ fn the_spec_assigned_numbers_are_what_the_nips_say() {
     assert_eq!(u16::from(Kind::RelayAuth), 22_242, "NIP-42");
     assert_eq!(u16::from(Kind::BlossomAuth), 24_242, "BUD-01");
     assert_eq!(u16::from(Kind::HttpAuth), 27_235, "NIP-98");
-    assert_eq!(u16::from(Kind::Membership), 9_000, "NIP-29 put-user");
-    assert_eq!(u16::from(Kind::Leave), 9_022, "NIP-29 leave-request");
     assert_eq!(u16::from(Kind::Inbox), 10_050, "NIP-17");
     assert_eq!(u16::from(Kind::Relays), 10_002, "NIP-65");
-    assert_eq!(u16::from(Kind::Article), 30_023, "NIP-23");
 }
 
 #[test]
 /// A mark of ours is read latest-per-key by its `d`, and takes a number in NIP-01's addressable range so
 /// that any client reads it the same way.
 fn every_mark_of_ours_sits_in_the_addressable_range() {
-    for kind in [Kind::Article, Kind::Server, Kind::Epoch, Kind::Keyring] {
-        assert!(
-            (30_000..40_000).contains(&u16::from(kind)),
-            "{kind:?} is outside the addressable range"
-        );
-    }
+    assert!(
+        (30_000..40_000).contains(&u16::from(Kind::Server)),
+        "a server's record is outside the addressable range"
+    );
 }
 
 #[test]
 /// A record of ours that is **kept rather than replaced** takes a number in NIP-01's regular range, so that
 /// any relay keeps every one without being told to.
-///
-/// A membership is here rather than beside the other records about a server because authority is read as the
-/// walk goes: the grant that made an admin is what every record they wrote rests on, and a relay keeping only
-/// the newest record per member would drop that grant the moment they were taken off (`spec/network.md`).
 fn every_record_we_keep_sits_in_the_regular_range() {
-    for kind in [
-        Kind::Revision,
-        Kind::BlobRemoved,
-        Kind::Membership,
-        Kind::Leave,
-    ] {
-        assert!(
-            (1_000..10_000).contains(&u16::from(kind)),
-            "{kind:?} is outside the range a relay keeps every note in"
-        );
-    }
-}
-
-#[test]
-/// The two numbers this build wrote before it took NIP-29's are read and never written, so a record already
-/// written still folds (`spec/network.md`). They keep their numbers, which stay spent.
-#[allow(deprecated)]
-fn the_numbers_written_before_nip_29_are_still_read() {
-    assert_eq!(u16::from(Kind::LegacyMembership), 8_102);
-    assert_eq!(u16::from(Kind::LegacyLeave), 28_936);
-    assert_eq!(Kind::of(8_102), Some(Kind::LegacyMembership));
-    assert_eq!(Kind::of(28_936), Some(Kind::LegacyLeave));
+    assert!(
+        (1_000..10_000).contains(&u16::from(Kind::Revision)),
+        "a revision is outside the range a relay keeps every note in"
+    );
 }
 
 #[test]

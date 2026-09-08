@@ -60,7 +60,7 @@ fn a_note_built_from_tags_reads_them_back() {
     let account = Account::new(&[9u8; 32]).unwrap();
     let note = Note::write(
         &account,
-        Kind::Epoch,
+        Kind::Revision,
         1_700_000_000,
         Tags::new()
             .tag("d", "the-address")
@@ -82,7 +82,7 @@ fn a_note_reads_back_both_values_of_a_pair() {
     let account = Account::new(&[9u8; 32]).unwrap();
     let note = Note::write(
         &account,
-        Kind::Membership,
+        Kind::Comment,
         1_700_000_000,
         Tags::new().pair("p", "a-member", "admin"),
         "",
