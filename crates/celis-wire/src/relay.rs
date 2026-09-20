@@ -436,12 +436,12 @@ impl Relay {
     }
 
     /// What the relay says about itself (NIP-11): the same URL over plain HTTP, asked with
-    /// `Accept: application/nostr+json`. An answer is kept for [`STATED`], a silence for [`UNANSWERED`], and
+    /// `Accept: application/nostr+json`. An answer is kept for `STATED`, a silence for `UNANSWERED`, and
     /// then each is asked again.
     ///
     /// **`None` is a relay that answered nothing**, which is not the same as one whose document left every
     /// field out: a caller reading silence as a statement would be quoting a relay that never spoke. It is
-    /// also not worth keeping as long — see [`UNANSWERED`].
+    /// also not worth keeping as long — see `UNANSWERED`.
     pub fn information(&self) -> Option<Information> {
         let mut held = self.information.lock().ok()?;
         let now = seconds();
