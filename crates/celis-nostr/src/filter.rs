@@ -6,6 +6,7 @@
 //! is about, but that is this application's reading of them rather than the protocol's.
 
 use crate::kind::Kind;
+use crate::note::Note;
 use crate::pubkey::Pubkey;
 use serde::ser::SerializeMap;
 use serde::{Serialize, Serializer};
@@ -39,6 +40,26 @@ impl Filter {
     pub fn tagged(mut self, name: char, value: impl Into<String>) -> Self {
         self.tags.entry(name).or_default().push(value.into());
         self
+    }
+
+    /// Whether a relay answering this filter answers `note` (NIP-01): every stated condition holds, and a
+    /// tag condition holds when any of the note's tags of that name carries any of the values asked for.
+    pub fn admits(&self, note: &Note) -> bool {
+        self.authors
+            .as_ref()
+            .is_none_or(|authors| authors.contains(&note.pubkey))
+            && self
+                .kinds
+                .as_ref()
+                .is_none_or(|kinds| kinds.iter().any(|kind| note.kind == *kind))
+            && self.tags.iter().all(|(name, values)| {
+                note.tags.iter().any(|tag| {
+                    tag.first().map(String::as_str) == Some(&name.to_string())
+                        && tag.get(1).is_some_and(|value| values.contains(value))
+                })
+            })
+            && self.since.is_none_or(|since| note.created_at >= since)
+            && self.until.is_none_or(|until| note.created_at <= until)
     }
 }
 

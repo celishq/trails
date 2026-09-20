@@ -79,6 +79,20 @@ impl Note {
         self.slot(name, 1)
     }
 
+    /// What a relay files this note under (NIP-01): an addressable kind (30000–39999) replaces on
+    /// `pubkey:kind:d`, and everything else is kept as written under its own id.
+    pub fn address(&self) -> String {
+        match (30_000..40_000).contains(&self.kind) {
+            true => format!(
+                "{}:{}:{}",
+                self.pubkey.hex(),
+                self.kind,
+                self.tag("d").unwrap_or_default()
+            ),
+            false => self.id.clone(),
+        }
+    }
+
     /// The second value of the `name` tag, if the note states one — NIP-29's role, beside the key a `p`
     /// names.
     pub fn second(&self, name: &str) -> Option<&str> {
