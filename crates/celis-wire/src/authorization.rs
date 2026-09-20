@@ -9,8 +9,8 @@
 //! store's own authorization is the same encoding over a different note.
 
 use crate::seconds;
+use crate::{Account, Kind, Note, Tags};
 use anyhow::Result;
-use celis_nostr::{Account, Kind, Note, Tags};
 use data_encoding::{BASE64, HEXLOWER};
 use sha2::{Digest, Sha256};
 

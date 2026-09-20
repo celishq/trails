@@ -12,7 +12,7 @@
 //!
 //! **The seal's second is pushed back, the wrap's is not.** NIP-59 spreads the layers so they cannot be
 //! correlated by second. The wrap's second is what a device resumes a walk from
-//! (`celis-sync/src/network/entries.rs`), so pushing it back would leave a record published now, stamped
+//! (`celis-runtime/src/network/entries.rs`), so pushing it back would leave a record published now, stamped
 //! yesterday, behind a cursor that has already passed it — and nothing would ever fetch it again.
 
 use crate::account::Account;
@@ -56,74 +56,76 @@ impl Rumor {
         }
         .digest()
     }
-}
 
-/// Wrap `content` as `author` so that only `reader` can open it. `expires_at` asks the relay to stop serving
-/// the wrap after that second (NIP-40) — the one thing about a message a relay is told, and it goes on the
-/// wrap because the layers inside are opaque to it. `None` for a message that stands until it is answered.
-pub fn wrap(
-    author: &Account,
-    reader: &Pubkey,
-    kind: u16,
-    created_at: u64,
-    expires_at: Option<u64>,
-    content: &str,
-) -> Result<Note> {
-    let mut rumor = Rumor {
-        id: String::new(),
-        pubkey: author.pubkey(),
-        created_at,
-        kind,
-        tags: Vec::new(),
-        content: content.to_string(),
-    };
-    rumor.id = rumor.digest();
-    let seal = Note::write(
-        author,
-        Kind::Seal,
-        created_at.saturating_sub(tweak()?),
-        Vec::new(),
-        author.encrypt(reader, &serde_json::to_string(&rumor)?)?,
-    )?;
-    let carrier = Account::generate()?;
-    let mut tags = vec![vec!["p".to_string(), reader.hex()]];
-    if let Some(at) = expires_at {
-        tags.push(vec!["expiration".to_string(), at.to_string()]);
+    /// Wrap `content` as `author` so that only `reader` can open it, and only they learn who sent it.
+    /// `kind` says which of the author's messages this is; it stays inside the ciphertext. `expires_at`
+    /// asks the relay to stop serving the wrap after that second (NIP-40) — the one thing about a message
+    /// a relay is told, and it goes on the wrap because the layers inside are opaque to it. `None` for a
+    /// message that stands until it is answered.
+    pub fn wrap(
+        author: &Account,
+        reader: &Pubkey,
+        kind: impl Into<u16>,
+        created_at: u64,
+        expires_at: Option<u64>,
+        content: &str,
+    ) -> Result<Note> {
+        let mut rumor = Rumor {
+            id: String::new(),
+            pubkey: author.pubkey(),
+            created_at,
+            kind: kind.into(),
+            tags: Vec::new(),
+            content: content.to_string(),
+        };
+        rumor.id = rumor.digest();
+        let seal = Note::write(
+            author,
+            Kind::Seal,
+            created_at.saturating_sub(tweak()?),
+            Vec::new(),
+            author.encrypt(reader, &serde_json::to_string(&rumor)?)?,
+        )?;
+        let carrier = Account::generate()?;
+        let mut tags = vec![vec!["p".to_string(), reader.hex()]];
+        if let Some(at) = expires_at {
+            tags.push(vec!["expiration".to_string(), at.to_string()]);
+        }
+        Note::write(
+            &carrier,
+            Kind::Wrap,
+            created_at,
+            tags,
+            carrier.encrypt(reader, &serde_json::to_string(&seal)?)?,
+        )
     }
-    Note::write(
-        &carrier,
-        Kind::Wrap,
-        created_at,
-        tags,
-        carrier.encrypt(reader, &serde_json::to_string(&seal)?)?,
-    )
-}
 
-/// Open a gift wrap addressed to `reader`, answering what it carries and who wrote it. Refuses a wrong kind
-/// at either layer, a signature that does not hold, a payload this key cannot open, or a rumor claiming an
-/// author who did not seal it.
-pub fn unwrap(reader: &Account, wrap: &Note) -> Result<Rumor> {
-    if wrap.kind != Kind::Wrap {
-        bail!("kind {} is not a gift wrap", wrap.kind);
+    /// Open a gift wrap addressed to `reader`, answering what it carries and the author it proves. Refuses
+    /// a wrong kind at either layer, a signature that does not hold, a payload this key cannot open, or a
+    /// rumor claiming an author who did not seal it.
+    pub fn unwrap(reader: &Account, wrap: &Note) -> Result<Rumor> {
+        if wrap.kind != Kind::Wrap {
+            bail!("kind {} is not a gift wrap", wrap.kind);
+        }
+        if !wrap.verifies() {
+            bail!("the wrapper is not signed by the key that carried it");
+        }
+        let seal: Note = serde_json::from_str(&reader.decrypt(&wrap.pubkey, &wrap.content)?)?;
+        if seal.kind != Kind::Seal {
+            bail!("kind {} is not a seal", seal.kind);
+        }
+        if !seal.verifies() {
+            bail!("the seal is not signed by the account that claims it");
+        }
+        let rumor: Rumor = serde_json::from_str(&reader.decrypt(&seal.pubkey, &seal.content)?)?;
+        if rumor.pubkey != seal.pubkey {
+            bail!("the message claims an author that did not seal it");
+        }
+        if rumor.id != rumor.digest() {
+            bail!("the message's id does not describe it");
+        }
+        Ok(rumor)
     }
-    if !wrap.verifies() {
-        bail!("the wrapper is not signed by the key that carried it");
-    }
-    let seal: Note = serde_json::from_str(&reader.decrypt(&wrap.pubkey, &wrap.content)?)?;
-    if seal.kind != Kind::Seal {
-        bail!("kind {} is not a seal", seal.kind);
-    }
-    if !seal.verifies() {
-        bail!("the seal is not signed by the account that claims it");
-    }
-    let rumor: Rumor = serde_json::from_str(&reader.decrypt(&seal.pubkey, &seal.content)?)?;
-    if rumor.pubkey != seal.pubkey {
-        bail!("the message claims an author that did not seal it");
-    }
-    if rumor.id != rumor.digest() {
-        bail!("the message's id does not describe it");
-    }
-    Ok(rumor)
 }
 
 /// How far back to push one seal's second — anywhere in [`TWEAK`], drawn fresh for each message so two
@@ -150,11 +152,9 @@ mod tests {
     #[test]
     fn a_message_opens_for_its_reader_and_names_the_author_who_sealed_it() {
         let (author, reader) = (account(3), account(4));
-        let note = author
-            .wrap(&reader.pubkey(), KIND, AT, None, "the invite")
-            .unwrap();
+        let note = Rumor::wrap(&author, &reader.pubkey(), KIND, AT, None, "the invite").unwrap();
 
-        let rumor = reader.unwrap(&note).unwrap();
+        let rumor = Rumor::unwrap(&reader, &note).unwrap();
         assert_eq!(rumor.content, "the invite");
         assert_eq!(rumor.pubkey, author.pubkey());
         assert_eq!((rumor.kind, rumor.created_at), (KIND, AT));
@@ -163,13 +163,11 @@ mod tests {
     #[test]
     fn nobody_else_opens_it_and_the_relay_sees_neither_party() {
         let (author, reader, stranger) = (account(3), account(4), account(5));
-        let note = author
-            .wrap(&reader.pubkey(), KIND, AT, None, "the invite")
-            .unwrap();
+        let note = Rumor::wrap(&author, &reader.pubkey(), KIND, AT, None, "the invite").unwrap();
 
-        assert!(stranger.unwrap(&note).is_err());
+        assert!(Rumor::unwrap(&stranger, &note).is_err());
         assert!(
-            author.unwrap(&note).is_err(),
+            Rumor::unwrap(&author, &note).is_err(),
             "not even the author reads it back — the carrier key is thrown away"
         );
         assert_ne!(
@@ -189,18 +187,14 @@ mod tests {
     #[test]
     fn the_same_message_wraps_differently_every_time() {
         let (author, reader) = (account(3), account(4));
-        let once = author
-            .wrap(&reader.pubkey(), KIND, AT, None, "same words")
-            .unwrap();
-        let twice = author
-            .wrap(&reader.pubkey(), KIND, AT, None, "same words")
-            .unwrap();
+        let once = Rumor::wrap(&author, &reader.pubkey(), KIND, AT, None, "same words").unwrap();
+        let twice = Rumor::wrap(&author, &reader.pubkey(), KIND, AT, None, "same words").unwrap();
 
         assert_ne!(once.pubkey, twice.pubkey, "a fresh carrier each send");
         assert_ne!(once.id, twice.id);
         assert_eq!(
-            reader.unwrap(&once).unwrap(),
-            reader.unwrap(&twice).unwrap()
+            Rumor::unwrap(&reader, &once).unwrap(),
+            Rumor::unwrap(&reader, &twice).unwrap()
         );
     }
 
@@ -235,11 +229,9 @@ mod tests {
     /// client can read what this one writes.
     fn a_rumor_carries_every_field_a_nostr_event_does() {
         let (author, reader) = (account(3), account(4));
-        let note = author
-            .wrap(&reader.pubkey(), KIND, AT, None, "the invite")
-            .unwrap();
+        let note = Rumor::wrap(&author, &reader.pubkey(), KIND, AT, None, "the invite").unwrap();
 
-        let rumor = reader.unwrap(&note).unwrap();
+        let rumor = Rumor::unwrap(&reader, &note).unwrap();
         assert_eq!(rumor.id, rumor.digest(), "and its id is its own hash");
         assert_eq!(rumor.tags, Vec::<Vec<String>>::new());
         assert_eq!(
@@ -271,10 +263,10 @@ mod tests {
             content: "the invite".to_string(),
         };
         rumor.id = rumor.digest();
-        assert!(reader.unwrap(&wrapped(&author, &reader, &rumor)).is_ok());
+        assert!(Rumor::unwrap(&reader, &wrapped(&author, &reader, &rumor)).is_ok());
 
         rumor.content.push('!');
-        assert!(reader.unwrap(&wrapped(&author, &reader, &rumor)).is_err());
+        assert!(Rumor::unwrap(&reader, &wrapped(&author, &reader, &rumor)).is_err());
     }
 
     #[test]
@@ -282,22 +274,19 @@ mod tests {
     /// second, so a wrap stamped in the past would fall behind a cursor already past it.
     fn the_seal_is_pushed_back_and_the_wrap_carries_the_send_second() {
         let (author, reader) = (account(3), account(4));
-        let note = author
-            .wrap(&reader.pubkey(), KIND, AT, None, "the invite")
-            .unwrap();
+        let note = Rumor::wrap(&author, &reader.pubkey(), KIND, AT, None, "the invite").unwrap();
 
         assert_eq!(note.created_at, AT, "the wrap says when it was sent");
         assert_eq!(
-            reader.unwrap(&note).unwrap().created_at,
+            Rumor::unwrap(&reader, &note).unwrap().created_at,
             AT,
             "and the rumor says when the message is from"
         );
 
         let seals: std::collections::BTreeSet<u64> = (0..24)
             .map(|_| {
-                let note = author
-                    .wrap(&reader.pubkey(), KIND, AT, None, "the invite")
-                    .unwrap();
+                let note =
+                    Rumor::wrap(&author, &reader.pubkey(), KIND, AT, None, "the invite").unwrap();
                 let seal: Note =
                     serde_json::from_str(&reader.decrypt(&note.pubkey, &note.content).unwrap())
                         .unwrap();
@@ -323,20 +312,26 @@ mod tests {
             content: "not mine".to_string(),
         };
         rumor.id = rumor.digest();
-        assert!(reader.unwrap(&wrapped(&liar, &reader, &rumor)).is_err());
+        assert!(Rumor::unwrap(&reader, &wrapped(&liar, &reader, &rumor)).is_err());
     }
 
     #[test]
     fn an_expiring_message_says_so_where_the_relay_can_read_it() {
         let (author, reader) = (account(3), account(4));
-        let note = author
-            .wrap(&reader.pubkey(), KIND, AT, Some(AT + 60), "the receipt")
-            .unwrap();
+        let note = Rumor::wrap(
+            &author,
+            &reader.pubkey(),
+            KIND,
+            AT,
+            Some(AT + 60),
+            "the receipt",
+        )
+        .unwrap();
 
         assert_eq!(note.expires_at(), Some(AT + 60));
         assert!(note.verifies(), "the expiry is signed, not appended after");
         assert_eq!(
-            reader.unwrap(&note).unwrap().content,
+            Rumor::unwrap(&reader, &note).unwrap().content,
             "the receipt",
             "and it still opens the same way"
         );
@@ -345,17 +340,15 @@ mod tests {
     #[test]
     fn a_tampered_wrap_and_a_note_of_another_kind_are_refused() {
         let (author, reader) = (account(3), account(4));
-        let note = author
-            .wrap(&reader.pubkey(), KIND, AT, None, "the invite")
-            .unwrap();
+        let note = Rumor::wrap(&author, &reader.pubkey(), KIND, AT, None, "the invite").unwrap();
 
         let tampered = Note {
             content: "not the ciphertext it was".to_string(),
             ..note.clone()
         };
-        assert!(reader.unwrap(&tampered).is_err());
+        assert!(Rumor::unwrap(&reader, &tampered).is_err());
 
         let plain = Note::write(&author, 1u16, AT, Vec::new(), "hello").unwrap();
-        assert!(reader.unwrap(&plain).is_err());
+        assert!(Rumor::unwrap(&reader, &plain).is_err());
     }
 }

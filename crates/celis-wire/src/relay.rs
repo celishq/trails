@@ -10,10 +10,10 @@
 //! challenge on connect and turns a frame down with `auth-required:`; only then does this client sign the
 //! challenge and try the frame again.
 
-use crate::doorbell::Doorbell;
+use crate::mailbox::Mailbox;
 use crate::seconds;
+use crate::{Account, Answer, Filter, Information, Kind, Limitation, Note, Tags};
 use anyhow::{anyhow, bail, Result};
-use celis_nostr::{Account, Answer, Filter, Information, Kind, Limitation, Note, Tags};
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
 use std::io::ErrorKind;
@@ -304,7 +304,7 @@ struct Connection {
 pub struct Relay {
     url: String,
     account: Arc<Account>,
-    doorbell: Arc<Doorbell>,
+    mailbox: Arc<Mailbox>,
     connection: Mutex<Connection>,
     /// What this relay said it keeps and the second it was asked, or `None` before it has been. The inner
     /// `None` is a relay that answered nothing, which is not a relay that stated nothing.
@@ -313,7 +313,7 @@ pub struct Relay {
     /// own: a frame is delivered once, so an exchange and a subscription sharing a socket would take each
     /// other's (`spec/network.md`).
     watch: Mutex<Option<Watch>>,
-    /// What this device published here, which the subscription reads back and must not ring for.
+    /// What this device published here, which the subscription reads back and must not hold.
     sent: Arc<Sent>,
 }
 
@@ -340,8 +340,8 @@ impl Watch {
 /// The notes this device published here, so its own copy coming back down the subscription is not read as
 /// something landing.
 ///
-/// A relay hands a publisher its own note back on any subscription that matches it, and a round that
-/// publishes would otherwise ring the doorbell that asks for that round again. **Held by when, so nothing
+/// A relay hands a publisher its own note back on any subscription that matches it, and a send would
+/// otherwise hold what it just sent for the landing that follows. **Held by when, so nothing
 /// has to say a round began**: a count drops the earliest of a first sync's thousands, and a round
 /// boundary drops the last publish of the round before it, which is the one still echoing.
 #[derive(Default)]
@@ -374,11 +374,11 @@ impl Drop for Gone {
 }
 
 impl Relay {
-    pub fn new(url: impl Into<String>, account: Arc<Account>, doorbell: Arc<Doorbell>) -> Self {
+    pub fn new(url: impl Into<String>, account: Arc<Account>, mailbox: Arc<Mailbox>) -> Self {
         Self {
             url: url.into(),
             account,
-            doorbell,
+            mailbox,
             connection: Mutex::new(Connection::default()),
             information: Mutex::new(None),
             watch: Mutex::new(None),
@@ -521,8 +521,8 @@ impl Relay {
     }
 
     /// Hold `filter` open on a socket of its own, so the relay hands a matching note over as it lands rather
-    /// than waiting to be asked. Ringing is all that happens with one: what arrived is read by the round the
-    /// ring brings on (`spec/network.md`).
+    /// than waiting to be asked. A note that lands is left in the mailbox under `stream`, unopened, for the
+    /// turn that lands it (`spec/network.md`).
     ///
     /// Asking for the filter already being watched does nothing, so a round may say this every time it
     /// reaches a relay. A different filter replaces the one held, and so does one whose thread is gone —
@@ -542,17 +542,17 @@ impl Relay {
             filter: filter.clone(),
             stopped: stopped.clone(),
         });
-        let (url, account, doorbell, sent, filter, stream) = (
+        let (url, account, mailbox, sent, filter, stream) = (
             self.url.clone(),
             self.account.clone(),
-            self.doorbell.clone(),
+            self.mailbox.clone(),
             self.sent.clone(),
             filter.clone(),
             stream.to_string(),
         );
         std::thread::spawn(move || {
             let _gone = Gone(stopped.clone());
-            follow(&url, &account, &doorbell, &sent, &filter, &stream, &stopped)
+            follow(&url, &account, &mailbox, &sent, &filter, &stream, &stopped)
         });
     }
 
@@ -602,9 +602,9 @@ fn http(url: &str) -> String {
     }
 }
 
-/// Hold one subscription open until `stopped`, ringing `doorbell` as notes land on it, and dialling again
-/// whenever the socket breaks. Every connect rings: a note may have landed while there was no socket to
-/// hear it on, and a ring is one stream's walk under its floor (`spec/runtime.md`).
+/// Hold one subscription open until `stopped`, leaving each note that lands on it in `mailbox`, and dialling
+/// again whenever the socket breaks. Every connect rings: a note may have landed while there was no socket
+/// to hear it on, and a ring is one stream's walk under its floor (`spec/runtime.md`).
 ///
 /// **The backoff is reset by how long the socket was held, not by whether the relay spoke.** One that
 /// lived longer than the longest wait broke for an ordinary reason and is worth dialling at once. One that
@@ -612,7 +612,7 @@ fn http(url: &str) -> String {
 fn follow(
     url: &str,
     account: &Account,
-    doorbell: &Doorbell,
+    mailbox: &Mailbox,
     sent: &Sent,
     filter: &Filter,
     stream: &str,
@@ -622,9 +622,9 @@ fn follow(
     while !stopped.load(Ordering::SeqCst) {
         match subscribe(url, account, filter) {
             Ok(mut line) => {
-                doorbell.ring(stream);
+                mailbox.ring(stream);
                 let opened = Instant::now();
-                read(&mut line, doorbell, sent, stream, stopped);
+                read(&mut line, mailbox, sent, stream, stopped);
                 if opened.elapsed() >= STEADY {
                     waiting = REDIAL;
                 }
@@ -641,8 +641,8 @@ fn follow(
 /// A socket of its own, authenticated if the relay asks, holding `filter` open from this moment on.
 ///
 /// **`since` is settled here, not by the caller.** Nothing the relay already holds is wanted — the walk
-/// reads, and this only says something has landed — and a filter that carried the second it was made would
-/// differ on every round, so the subscription would be torn down and reopened each time.
+/// reads that, and this hands over what lands from now — and a filter that carried the second it was made
+/// would differ on every round, so the subscription would be torn down and reopened each time.
 ///
 /// Opening waits like an exchange; the held socket does not. Everything up to `EOSE` is a relay answering,
 /// and everything after is silence until something lands.
@@ -676,26 +676,27 @@ fn subscribe(url: &str, account: &Account, filter: &Filter) -> Result<Line> {
 
 /// Read the held subscription until the socket breaks or `stopped` says to let go.
 ///
-/// A tick that read nothing is where the ring happens, so a page of notes arriving at once rings once
-/// rather than once each; [`PING_EVERY`] of them in a row is where the client says it is still there.
+/// Each note that lands is handed to the mailbox as it comes, unopened; [`PING_EVERY`] quiet ticks in a
+/// row is where the client says it is still there.
 ///
 /// **A note this device published is not one landing.** The relay hands a publisher its own note back, and
-/// ringing for it asks for the round that published it — which publishes again, for as long as the vault
-/// is open. Another device on this account still rings: it is the id that says whose note this is, not the
-/// author.
+/// holding it would land what the send just sent, for as long as the vault is open. Another device on this
+/// account is still held: it is the id that says whose note this is, not the author.
 ///
 /// Returns when the socket breaks, the relay closes the subscription, [`LOST`] pings go unanswered, or the
 /// thread is told to let go. How long that took is what the caller reads a flap from, so nothing has to be
 /// answered here.
-fn read(line: &mut Line, doorbell: &Doorbell, sent: &Sent, stream: &str, stopped: &AtomicBool) {
-    let (mut landed, mut quiet, mut pinged) = (false, 0, 0u32);
+fn read(line: &mut Line, mailbox: &Mailbox, sent: &Sent, stream: &str, stopped: &AtomicBool) {
+    let (mut quiet, mut pinged) = (0, 0u32);
     while !stopped.load(Ordering::SeqCst) {
         let Ok(heard) = line.waited() else {
             return;
         };
         match heard {
             Some(Frame::Event { subscription, note }) if subscription == WATCHING => {
-                landed |= !sent.ours(&note.id)
+                if !sent.ours(&note.id) {
+                    mailbox.heard(stream, note);
+                }
             }
             Some(Frame::Closed {
                 subscription,
@@ -705,10 +706,6 @@ fn read(line: &mut Line, doorbell: &Doorbell, sent: &Sent, stream: &str, stopped
                 return;
             }
             Some(_) => continue,
-            None if landed => {
-                doorbell.ring(stream);
-                (landed, quiet) = (false, 0);
-            }
             None => {
                 quiet += 1;
                 if quiet >= PING_EVERY {

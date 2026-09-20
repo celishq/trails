@@ -1,6 +1,6 @@
 use super::*;
-use crate::doorbell::Doorbell;
-use celis_nostr::Account;
+use crate::mailbox::Mailbox;
+use crate::Account;
 
 use std::net::TcpListener;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -215,7 +215,7 @@ fn an_exchange_over_a_relay_that_keeps_talking_ends_at_its_deadline() {
 /// whole session, hearing nothing and saying so to nobody.
 fn a_subscription_the_relay_closed_is_opened_again() {
     let served = ClosingRelay::new();
-    let relay = Relay::new(&served.url, speaking(), Arc::new(Doorbell::default()));
+    let relay = Relay::new(&served.url, speaking(), Arc::new(Mailbox::default()));
 
     relay.watch(&Filter::of(Kind::Wrap), STREAM);
 
@@ -241,7 +241,7 @@ fn a_relay_that_stops_answering_pings_is_let_go_of() {
     let began = std::time::Instant::now();
     read(
         &mut line,
-        &Doorbell::default(),
+        &Mailbox::default(),
         &Sent::default(),
         STREAM,
         &stopped,
@@ -258,7 +258,7 @@ fn a_relay_that_stops_answering_pings_is_let_go_of() {
 /// A panic inside one exchange does not cost the relay every exchange after it.
 fn a_connection_a_panic_left_behind_is_used_again() {
     let served = LocalRelay::new(usize::MAX);
-    let relay = Relay::new(&served.url, speaking(), Arc::new(Doorbell::default()));
+    let relay = Relay::new(&served.url, speaking(), Arc::new(Mailbox::default()));
     relay.publish(&note()).unwrap();
 
     let panicked = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
@@ -270,27 +270,47 @@ fn a_connection_a_panic_left_behind_is_used_again() {
 }
 
 #[test]
-/// A note landing on a held subscription rings, and the ring names the stream it landed on and carries no
-/// record — what arrived is read by the round it brings on (`spec/network.md`).
-fn a_note_landing_on_a_held_subscription_rings() {
+/// A note landing on a held subscription is left in the mailbox under the stream it landed on, unopened,
+/// and the connect before it rang with none — the walk is owed, the note is not read twice
+/// (`spec/network.md`).
+fn a_note_landing_on_a_held_subscription_is_held_under_its_stream() {
     let served = PushingRelay::new();
-    let doorbell = Arc::new(Doorbell::default());
-    let rung: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
-    let named = rung.clone();
-    doorbell.heard_by(move |stream| {
-        named.lock().unwrap().push(stream.to_string());
-    });
-    let relay = Relay::new(&served.url, speaking(), doorbell);
+    let mailbox = Arc::new(Mailbox::default());
+    let relay = Relay::new(&served.url, speaking(), mailbox.clone());
 
     relay.watch(&Filter::of(Kind::Wrap), STREAM);
 
-    // One ring for the connect, one for the note that landed after it. Both name the stream.
+    let held = wait_for_note(&mailbox);
+    assert!(held.walk, "the connect rang, so the walk is owed");
+    assert_eq!(
+        held.notes
+            .iter()
+            .map(|it| it.id.clone())
+            .collect::<Vec<_>>(),
+        vec![note().id],
+        "and the note that landed after it is held as it came"
+    );
+    relay.close();
+}
+
+/// Wait until `mailbox` holds a note on [`STREAM`], and take what it holds.
+fn wait_for_note(mailbox: &Mailbox) -> crate::mailbox::Held {
     let deadline = std::time::Instant::now() + Duration::from_secs(10);
-    while rung.lock().unwrap().len() < 2 && std::time::Instant::now() < deadline {
+    loop {
+        let mut taken = mailbox.take(&[STREAM.to_string()]);
+        if let Some(held) = taken.remove(STREAM) {
+            if !held.notes.is_empty() {
+                return held;
+            }
+            // Only the connect so far: put the walk back and keep waiting for the note.
+            mailbox.ring(STREAM);
+        }
+        assert!(
+            std::time::Instant::now() < deadline,
+            "no note reached the mailbox"
+        );
         std::thread::sleep(Duration::from_millis(50));
     }
-    assert_eq!(*rung.lock().unwrap(), vec![STREAM, STREAM]);
-    relay.close();
 }
 
 /// Wait until `served` has taken `many` connections, or fail saying how far it got.
@@ -311,7 +331,7 @@ fn accepted(served: &LocalRelay, many: usize) {
 /// again must not open a second socket.
 fn watching_the_same_filter_again_holds_the_one_subscription() {
     let served = LocalRelay::new(usize::MAX);
-    let relay = Relay::new(&served.url, speaking(), Arc::new(Doorbell::default()));
+    let relay = Relay::new(&served.url, speaking(), Arc::new(Mailbox::default()));
 
     for _ in 0..5 {
         relay.watch(&Filter::of(Kind::Wrap), STREAM);
@@ -332,7 +352,7 @@ fn watching_the_same_filter_again_holds_the_one_subscription() {
 /// back to its backstop for the rest of the session, silently.
 fn a_watch_whose_thread_is_gone_is_asked_for_again() {
     let served = LocalRelay::new(usize::MAX);
-    let relay = Relay::new(&served.url, speaking(), Arc::new(Doorbell::default()));
+    let relay = Relay::new(&served.url, speaking(), Arc::new(Mailbox::default()));
     let filter = Filter::of(Kind::Wrap);
 
     relay.watch(&filter, STREAM);
@@ -385,7 +405,7 @@ impl RefusingRelay {
 fn a_relays_reason_reaches_the_caller_unparsed() {
     let said = "error: could not save: invalid: is what it said about the last one";
     let relay = RefusingRelay::saying(said);
-    let client = Relay::new(&relay.url, speaking(), Arc::new(Doorbell::default()));
+    let client = Relay::new(&relay.url, speaking(), Arc::new(Mailbox::default()));
 
     let answer = client.publish(&entry("an entry")).unwrap();
 
@@ -448,7 +468,7 @@ impl GuardedRelay {
 /// The whole of NIP-42 from this side, without the caller knowing any of it happened.
 fn a_relay_that_asks_who_is_publishing_is_answered_and_the_note_goes_again() {
     let guarded = GuardedRelay::new();
-    let client = Relay::new(&guarded.url, speaking(), Arc::new(Doorbell::default()));
+    let client = Relay::new(&guarded.url, speaking(), Arc::new(Mailbox::default()));
 
     client.publish(&entry("a first entry")).unwrap();
 
@@ -464,7 +484,7 @@ fn a_relay_that_asks_who_is_publishing_is_answered_and_the_note_goes_again() {
 #[test]
 fn a_relay_that_asks_who_is_subscribing_is_answered_and_the_request_goes_again() {
     let guarded = GuardedRelay::new();
-    let client = Relay::new(&guarded.url, speaking(), Arc::new(Doorbell::default()));
+    let client = Relay::new(&guarded.url, speaking(), Arc::new(Mailbox::default()));
 
     assert!(
         client.fetch(&[Filter::default()]).is_ok(),
@@ -476,7 +496,7 @@ fn a_relay_that_asks_who_is_subscribing_is_answered_and_the_request_goes_again()
 #[test]
 fn a_relay_that_asks_nothing_is_told_nothing() {
     let relay = LocalRelay::new(usize::MAX);
-    let client = Relay::new(&relay.url, speaking(), Arc::new(Doorbell::default()));
+    let client = Relay::new(&relay.url, speaking(), Arc::new(Mailbox::default()));
     client.publish(&entry("an entry")).unwrap();
     assert_eq!(
         relay.accepted(),
@@ -531,7 +551,7 @@ impl LocalDocument {
 #[test]
 fn a_relays_document_is_asked_for_once_however_often_it_is_read() {
     let served = LocalDocument::serving(r#"{"name":"a mirror","retention":[{"kinds":[1]}]}"#);
-    let relay = Relay::new(&served.url, speaking(), Arc::new(Doorbell::default()));
+    let relay = Relay::new(&served.url, speaking(), Arc::new(Mailbox::default()));
 
     for _ in 0..10 {
         assert!(
@@ -550,11 +570,7 @@ fn a_relays_document_is_asked_for_once_however_often_it_is_read() {
 
 #[test]
 fn a_relay_that_answers_no_document_refuses_nothing() {
-    let relay = Relay::new(
-        "ws://127.0.0.1:1",
-        speaking(),
-        Arc::new(Doorbell::default()),
-    );
+    let relay = Relay::new("ws://127.0.0.1:1", speaking(), Arc::new(Mailbox::default()));
     assert!(relay.refusal(30_023).is_none(), "silence is not a refusal");
     assert!(
         relay.information().is_none(),
@@ -584,7 +600,7 @@ fn a_silence_is_asked_again_long_before_a_document_would_be() {
         r#"{"limitation":{"auth_required":true,"max_limit":500}}"#,
         1,
     );
-    let relay = Relay::new(&served.url, speaking(), Arc::new(Doorbell::default()));
+    let relay = Relay::new(&served.url, speaking(), Arc::new(Mailbox::default()));
 
     assert!(
         relay.limits().is_none(),
@@ -616,7 +632,7 @@ fn a_silence_is_asked_again_long_before_a_document_would_be() {
 #[test]
 fn a_run_of_publishes_travels_over_one_socket() {
     let relay = LocalRelay::new(usize::MAX);
-    let client = Relay::new(&relay.url, speaking(), Arc::new(Doorbell::default()));
+    let client = Relay::new(&relay.url, speaking(), Arc::new(Mailbox::default()));
     for i in 0..500 {
         client.publish(&entry(&format!("entry {i}"))).unwrap();
     }
@@ -630,7 +646,7 @@ fn a_run_of_publishes_travels_over_one_socket() {
 #[test]
 fn a_socket_the_relay_dropped_is_opened_again_and_the_run_finishes() {
     let relay = LocalRelay::new(3);
-    let client = Relay::new(&relay.url, speaking(), Arc::new(Doorbell::default()));
+    let client = Relay::new(&relay.url, speaking(), Arc::new(Mailbox::default()));
     for i in 0..6 {
         client
             .publish(&entry(&format!("entry {i}")))
@@ -786,7 +802,7 @@ fn a_publish_of_thousands_holds_every_one_of_them_against_its_echo() {
     let relay = Relay::new(
         "ws://nowhere.example",
         speaking(),
-        Arc::new(Doorbell::default()),
+        Arc::new(Mailbox::default()),
     );
     let published: Vec<String> = (0..2000)
         .map(|n| entry(&format!("ciphertext {n}")).id)
@@ -804,17 +820,17 @@ fn a_publish_of_thousands_holds_every_one_of_them_against_its_echo() {
 
 #[test]
 /// **A note this device published is not one landing.** A relay hands a publisher its own note back on the
-/// subscription it holds, and ringing for it asks for the round that published it — which publishes again,
-/// for as long as the vault is open.
-fn a_note_this_device_published_does_not_ring() {
+/// subscription it holds, and holding it would land what the send just sent, for as long as the vault is
+/// open.
+fn a_note_this_device_published_is_neither_held_nor_rung() {
     let served = PushingRelay::new();
-    let doorbell = Arc::new(Doorbell::default());
+    let mailbox = Arc::new(Mailbox::default());
     let rung = Arc::new(AtomicUsize::new(0));
     let counted = rung.clone();
-    doorbell.heard_by(move |_| {
+    mailbox.heard_by(move |_| {
         counted.fetch_add(1, Ordering::SeqCst);
     });
-    let relay = Relay::new(&served.url, speaking(), doorbell);
+    let relay = Relay::new(&served.url, speaking(), mailbox.clone());
     relay.sent.wrote(&note().id);
 
     relay.watch(&Filter::of(Kind::Wrap), STREAM);
@@ -830,5 +846,10 @@ fn a_note_this_device_published_does_not_ring() {
         std::thread::sleep(Duration::from_millis(50));
     }
     assert_eq!(rung.load(Ordering::SeqCst), 1, "and the connect still rang");
+    let held = mailbox.take(&[STREAM.to_string()]).remove(STREAM).unwrap();
+    assert!(
+        held.walk && held.notes.is_empty(),
+        "and nothing was held: {held:?}"
+    );
     relay.close();
 }

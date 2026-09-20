@@ -1,6 +1,7 @@
-//! The specification's own test vectors, run against this implementation — `vectors/nip44-v2.json`, taken
-//! unmodified from the NIP-44 reference repository. Every key, padding length and payload in it was produced
-//! by other people's code, so agreeing with all of them means a note we encrypt is one any client can read.
+//! The padding and the payload bounds, then the specification's own test vectors run against this
+//! implementation — `vectors/nip44-v2.json`, taken unmodified from the NIP-44 reference repository. Every
+//! key, padding length and payload in it was produced by other people's code, so agreeing with all of them
+//! means a note we encrypt is one any client can read.
 
 use super::*;
 use crate::account::Account;
@@ -205,4 +206,34 @@ fn every_bad_plaintext_length_is_refused() {
         );
     }
     assert_eq!(cases.len(), 4, "every case ran");
+}
+
+#[test]
+fn padding_falls_into_coarse_bands() {
+    assert_eq!(padded_len(1), 32);
+    assert_eq!(padded_len(32), 32);
+    assert_eq!(padded_len(33), 64);
+    assert_eq!(padded_len(37), 64);
+    assert_eq!(padded_len(45), 64);
+    assert_eq!(padded_len(65), 96);
+    assert_eq!(padded_len(1000), 1024);
+    assert_eq!(padded_len(65535), 65536);
+}
+
+#[test]
+fn padding_round_trips_and_a_wrong_length_is_refused() {
+    let padded = pad(b"a message").unwrap();
+    assert_eq!(padded.len(), 34);
+    assert_eq!(unpad(&padded).unwrap(), b"a message");
+
+    let mut lying = padded.clone();
+    lying[1] = 200;
+    assert!(unpad(&lying).is_err(), "a length past the buffer");
+    assert!(unpad(&[0, 0, 0, 0]).is_err(), "a zero-length plaintext");
+}
+
+#[test]
+fn an_empty_or_oversized_plaintext_is_refused() {
+    assert!(pad(b"").is_err());
+    assert!(pad(&vec![0u8; MAX_PLAINTEXT + 1]).is_err());
 }

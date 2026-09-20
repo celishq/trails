@@ -5,7 +5,7 @@
 //!
 //! Plaintext is padded before encryption, so the ciphertext reveals only a coarse size band rather than the
 //! exact length of what was written. The whole thing is checked against the specification's own test
-//! vectors — see the `vectors` module.
+//! vectors.
 
 use anyhow::{anyhow, bail, Result};
 use chacha20::cipher::{KeyIvInit, StreamCipher};
@@ -16,7 +16,7 @@ use hmac::{Hmac, Mac};
 use sha2::Sha256;
 
 #[cfg(test)]
-mod vectors;
+mod tests;
 
 const VERSION: u8 = 2;
 const SALT: &[u8] = b"nip44-v2";
@@ -158,39 +158,4 @@ pub(crate) fn decrypt(conversation_key: &[u8; 32], payload: &str) -> Result<Vec<
     let mut plaintext = ciphertext.to_vec();
     ChaCha20::new(&keys.cipher.into(), &keys.nonce.into()).apply_keystream(&mut plaintext);
     unpad(&plaintext)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn padding_falls_into_coarse_bands() {
-        assert_eq!(padded_len(1), 32);
-        assert_eq!(padded_len(32), 32);
-        assert_eq!(padded_len(33), 64);
-        assert_eq!(padded_len(37), 64);
-        assert_eq!(padded_len(45), 64);
-        assert_eq!(padded_len(65), 96);
-        assert_eq!(padded_len(1000), 1024);
-        assert_eq!(padded_len(65535), 65536);
-    }
-
-    #[test]
-    fn padding_round_trips_and_a_wrong_length_is_refused() {
-        let padded = pad(b"a message").unwrap();
-        assert_eq!(padded.len(), 34);
-        assert_eq!(unpad(&padded).unwrap(), b"a message");
-
-        let mut lying = padded.clone();
-        lying[1] = 200;
-        assert!(unpad(&lying).is_err(), "a length past the buffer");
-        assert!(unpad(&[0, 0, 0, 0]).is_err(), "a zero-length plaintext");
-    }
-
-    #[test]
-    fn an_empty_or_oversized_plaintext_is_refused() {
-        assert!(pad(b"").is_err());
-        assert!(pad(&vec![0u8; MAX_PLAINTEXT + 1]).is_err());
-    }
 }

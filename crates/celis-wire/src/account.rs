@@ -1,14 +1,12 @@
 //! **The secret behind an identity** — the 32-byte secp256k1 key an account signs and decrypts with. It
 //! never leaves the device that holds it. Everything the network sees is derived from it: the [`Pubkey`]
 //! it publishes, the Schnorr signature on every note, and the shared secret that encrypts a note's content
-//! to one reader.
+//! to one reader. A message sealed to one person is [`Rumor`](crate::Rumor)'s, over these.
 //!
 //! Encrypting to yourself is not a special case: your own stream is this account encrypting to its own
 //! public key, so syncing between your devices needs no key beyond the one the phrase already restores.
 
 use crate::nip44;
-use crate::nip59::{self, Rumor};
-use crate::note::Note;
 use crate::pubkey::Pubkey;
 use anyhow::{anyhow, bail, Result};
 use bech32::{Bech32, Hrp};
@@ -120,25 +118,6 @@ impl Account {
     pub fn decrypt(&self, writer: &Pubkey, payload: &str) -> Result<String> {
         let plaintext = nip44::decrypt(&self.conversation_key(writer)?, payload)?;
         String::from_utf8(plaintext).map_err(|e| anyhow!("not utf-8: {e}"))
-    }
-
-    /// Wrap `content` so only `reader` can open it, and only they learn who sent it (NIP-59). `kind` says
-    /// which of the sender's messages this is; it stays inside the ciphertext. `expires_at` is the second
-    /// after which the relay stops serving it (NIP-40), `None` for a message that stands until answered.
-    pub fn wrap(
-        &self,
-        reader: &Pubkey,
-        kind: impl Into<u16>,
-        created_at: u64,
-        expires_at: Option<u64>,
-        content: &str,
-    ) -> Result<Note> {
-        nip59::wrap(self, reader, kind.into(), created_at, expires_at, content)
-    }
-
-    /// Open a gift wrap addressed to this account, answering what it carries and the author it proves.
-    pub fn unwrap(&self, wrap: &Note) -> Result<Rumor> {
-        nip59::unwrap(self, wrap)
     }
 
     /// The long-lived secret this account shares with `peer` — the same value from either side, so a
