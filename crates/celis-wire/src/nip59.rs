@@ -1,19 +1,8 @@
-//! **Gift wrap** (NIP-59) — how one message reaches one person, with the relay learning neither who sent it
-//! nor what it says.
+//! Gift wrap (NIP-59) — how one message reaches one person, with the relay learning neither who sent it nor
+//! what it says: a rumor (unsigned) sealed to the reader and signed by the author, then wrapped again under
+//! a throwaway key minted for this one message. Only the wrap crosses the relay.
 //!
-//! ```text
-//!   rumor   what the author wrote, unsigned          — so a leaked copy is not a publishable event
-//!   seal    the rumor, encrypted to the reader and signed by the author  — this is what proves authorship
-//!   wrap    the seal, encrypted to the reader and signed by a key minted for this one message
-//! ```
-//!
-//! Only the wrap crosses the relay. Its author is a throwaway key, so the relay sees a note from nobody to a
-//! `p` tag; only the reader can open it, and only then does the author's signature appear.
-//!
-//! **The seal's second is pushed back, the wrap's is not.** NIP-59 spreads the layers so they cannot be
-//! correlated by second. The wrap's second is what a device resumes a walk from
-//! (`celis-runtime/src/network/entries.rs`), so pushing it back would leave a record published now, stamped
-//! yesterday, behind a cursor that has already passed it — and nothing would ever fetch it again.
+//! The seal's second is pushed back to avoid correlation; the wrap's is not, since a device resumes its walk from it.
 
 use crate::account::Account;
 use crate::kind::Kind;
@@ -57,11 +46,9 @@ impl Rumor {
         .digest()
     }
 
-    /// Wrap `content` as `author` so that only `reader` can open it, and only they learn who sent it.
-    /// `kind` says which of the author's messages this is; it stays inside the ciphertext. `expires_at`
-    /// asks the relay to stop serving the wrap after that second (NIP-40) — the one thing about a message
-    /// a relay is told, and it goes on the wrap because the layers inside are opaque to it. `None` for a
-    /// message that stands until it is answered.
+    /// Wrap `content` as `author` so that only `reader` can open it, and only they learn who sent it. `kind`
+    /// stays inside the ciphertext. `expires_at` asks the relay to stop serving the wrap after that second
+    /// (NIP-40); `None` for a message that stands until answered.
     pub fn wrap(
         author: &Account,
         reader: &Pubkey,

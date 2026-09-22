@@ -1,9 +1,8 @@
-//! **What a subscription asks for** (NIP-01) — the shape a `REQ` frame carries, and nothing about the
-//! socket it goes down.
+//! What a subscription asks for (NIP-01) — the shape a `REQ` frame carries, and nothing about the socket
+//! it goes down. An absent field constrains nothing; an empty list matches nothing.
 //!
-//! An absent field constrains nothing; an empty list matches nothing. Tags are a map because NIP-01 says
-//! nothing about what a tag means: `#p` is the account a wrap is addressed to and `#h` the server a record
-//! is about, but that is this application's reading of them rather than the protocol's.
+//! Tags are a map because NIP-01 says nothing about what a tag means: `#p` is the account a wrap is
+//! addressed to and `#h` the server a record is about — this application's reading, not the protocol's.
 
 use crate::kind::Kind;
 use crate::note::Note;

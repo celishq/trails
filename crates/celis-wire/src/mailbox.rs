@@ -4,35 +4,18 @@ use crate::Note;
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::{Arc, Mutex};
 
-/// What arrives on the held subscriptions, held per stream until a landing takes it. A socket hands each
-/// note over unopened; a connect rings with none, which says the walk is owed (`spec/runtime.md`, "What
-/// arrives is data").
+mod held;
+pub use held::Held;
+
+/// What arrives on the held subscriptions, held per stream until a landing takes it: a socket hands each
+/// note over unopened, and a connect rings with none, meaning the walk is owed
+/// (`spec/runtime.md`, "What arrives is data").
 ///
-/// **A note is held before whoever is listening is told**, so a host owes a ring nothing but a turn, and
-/// losing what is held costs the walk on the next connect rather than the record. One per node, never a
-/// process-wide sink: a test binary opens many.
+/// A note is held before whoever listens is told, so losing it costs the walk again, never the record.
 #[derive(Default)]
 pub struct Mailbox {
     listening: Mutex<Option<Ring>>,
     held: Mutex<BTreeMap<String, Held>>,
-}
-
-/// What one stream has said since a landing last took it: the notes its socket handed over, and whether
-/// the walk from the cursor is owed — a connect says so and carries no note.
-#[derive(Debug, Default)]
-pub struct Held {
-    pub notes: Vec<Note>,
-    pub walk: bool,
-}
-
-impl Held {
-    /// A stream owed its walk, with nothing heard.
-    pub fn walking() -> Self {
-        Self {
-            notes: Vec::new(),
-            walk: true,
-        }
-    }
 }
 
 /// Whoever hears the mailbox, told the stream a relay handed something over on.

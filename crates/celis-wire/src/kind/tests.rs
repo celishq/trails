@@ -26,8 +26,6 @@ fn a_kind_this_build_does_not_know_is_none() {
 }
 
 #[test]
-/// The numbers other clients already write, pinned against the NIPs that assign them — so a typo here reads
-/// as somebody else's kind rather than failing only where two of our crates disagree.
 fn the_spec_assigned_numbers_are_what_the_nips_say() {
     assert_eq!(u16::from(Kind::Deletion), 5, "NIP-09");
     assert_eq!(u16::from(Kind::Reaction), 7, "NIP-25");
@@ -43,8 +41,6 @@ fn the_spec_assigned_numbers_are_what_the_nips_say() {
 }
 
 #[test]
-/// A mark of ours is read latest-per-key by its `d`, and takes a number in NIP-01's addressable range so
-/// that any client reads it the same way.
 fn every_mark_of_ours_sits_in_the_addressable_range() {
     assert!(
         (30_000..40_000).contains(&u16::from(Kind::Server)),
@@ -53,8 +49,6 @@ fn every_mark_of_ours_sits_in_the_addressable_range() {
 }
 
 #[test]
-/// A record of ours that is **kept rather than replaced** takes a number in NIP-01's regular range, so that
-/// any relay keeps every one without being told to.
 fn every_record_we_keep_sits_in_the_regular_range() {
     assert!(
         (1_000..10_000).contains(&u16::from(Kind::Revision)),
@@ -62,10 +56,8 @@ fn every_record_we_keep_sits_in_the_regular_range() {
     );
 }
 
+/// (`spec/network.md`, "What travels where")
 #[test]
-/// A mark whose number a NIP assigned takes that number, wherever it sits. Every record travels inside a
-/// gift wrap (`spec/network.md`), so no relay reads the number and none of them retains by it — which
-/// leaves this build's own fold the only thing addressing by `d`.
 fn a_mark_a_nip_named_keeps_the_nip_s_number_and_is_still_folded_by_d() {
     assert!(
         !(30_000..40_000).contains(&u16::from(Kind::Comment)),

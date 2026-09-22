@@ -1,8 +1,6 @@
 use super::*;
 
 #[test]
-/// A refusal of the request is settled; a host that is busy, over its rate, or failing is asking to be
-/// asked again, and says how long where it can.
 fn a_status_says_what_is_left_to_do() {
     assert_eq!(Verdict::of_status(400, None), Verdict::Settled);
     assert_eq!(Verdict::of_status(402, None), Verdict::Settled);
@@ -21,9 +19,7 @@ fn a_status_says_what_is_left_to_do() {
 }
 
 #[test]
-/// The prefix is the whole of the reading (`spec/fixtures/refusals.json`): three words are about the
-/// note, and every other word, a word inside the sentence, or no word is the relay about itself.
-fn a_relays_word_says_what_is_left_to_do() {
+fn a_relays_word_says_what_is_left_to_do_only_when_it_is_the_whole_prefix() {
     for word in [
         "invalid: bad sig",
         "restricted: not a member",
@@ -46,9 +42,6 @@ fn a_relays_word_says_what_is_left_to_do() {
     }
 }
 
-/// Every prefix in `spec/fixtures/refusals.json`, which the host writes against — so the table here
-/// and the words the host writes cannot drift apart without failing. `took` is not a verdict: a relay
-/// that has the note refused nothing, and what reads that is the offer.
 #[test]
 fn every_prefix_the_host_writes_carries_the_verdict_the_fixture_states() {
     let stated: serde_json::Value =

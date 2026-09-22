@@ -52,8 +52,6 @@ fn a_tag_travels_under_its_own_name_behind_a_hash() {
 }
 
 #[test]
-/// A relay answers a note matching any value under one tag, so asking twice widens the subscription rather
-/// than narrowing it to notes carrying both.
 fn asking_twice_under_one_name_keeps_both_values() {
     assert_eq!(
         serde_json::to_value(Filter::default().tagged('h', "one").tagged('h', "two")).unwrap(),

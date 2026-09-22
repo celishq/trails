@@ -108,8 +108,6 @@ fn the_same_plaintext_always_encrypts_the_same_way_deterministically() {
 }
 
 #[test]
-/// A note signed twice over one id is the same note, so deriving one rather than keeping it does not
-/// hand two relays two signatures for one address.
 fn signing_the_same_id_twice_gives_the_same_signature() {
     let mine = account(3);
     assert_eq!(

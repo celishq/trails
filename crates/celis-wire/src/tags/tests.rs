@@ -13,8 +13,6 @@ fn a_tag_is_its_name_then_its_value() {
 }
 
 #[test]
-/// NIP-29 puts a member's role in the `p` tag's third slot, which is the only place this build states two
-/// values under one name.
 fn a_pair_states_two_values_under_one_name() {
     assert_eq!(
         Vec::from(Tags::new().pair("p", "a-member", "admin")),
@@ -38,8 +36,6 @@ fn a_flag_states_nothing_beside_its_name() {
 }
 
 #[test]
-/// A note's id covers its tags as they were written, so two names spelled alike both stay and the order
-/// they were stated in is the order they keep.
 fn nothing_is_reordered_or_dropped() {
     let tags = Tags::new()
         .tag("p", "one")

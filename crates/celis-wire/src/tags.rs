@@ -1,9 +1,8 @@
-//! **What a note states beside its content** — NIP-01's tags, in the order they were stated.
+//! What a note states beside its content — NIP-01's tags, in the order they were stated. A tag is a list
+//! of strings whose first is its name: a name with one value covers nearly everything, a name on its own
+//! is NIP-70's `-`, and anything longer is built as the list it is.
 //!
-//! A tag is a list of strings whose first is its name, so the shape here is deliberately the wire's own: a
-//! name with one value covers nearly everything, a name on its own is NIP-70's `-`, and anything longer is
-//! built as the list it is. Nothing is deduplicated or reordered — a note's id covers its tags exactly as
-//! they were written.
+//! Nothing is deduplicated or reordered — a note's id covers its tags exactly as they were written.
 
 /// The tags a note carries, built in the order a reader will see them.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]

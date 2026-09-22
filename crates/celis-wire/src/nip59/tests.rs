@@ -1,7 +1,7 @@
 use super::*;
 
-/// What this system wraps: a record, which states its own kind (`spec/network.md`). The wrap layer
-/// never reads it, so any number would pass — this one is the one it actually sees.
+/// What this system wraps: a record, which states its own kind. The wrap layer never reads it, so any
+/// number would pass — this one is the one it actually sees.
 const KIND: u16 = Kind::Revision as u16;
 const AT: u64 = 1_785_326_400;
 
@@ -85,8 +85,6 @@ fn wrapped(sealer: &Account, reader: &Account, rumor: &Rumor) -> Note {
 }
 
 #[test]
-/// A rumor is a regular event minus its signature (NIP-59), so it carries every field one does — and any
-/// client can read what this one writes.
 fn a_rumor_carries_every_field_a_nostr_event_does() {
     let (author, reader) = (account(3), account(4));
     let note = Rumor::wrap(&author, &reader.pubkey(), KIND, AT, None, "the invite").unwrap();
@@ -110,8 +108,6 @@ fn a_rumor_carries_every_field_a_nostr_event_does() {
 }
 
 #[test]
-/// An id that does not describe the rumor beside it is refused, the same way a note's own is. Without
-/// the check the field would be decoration a sender could put anything in.
 fn a_rumor_whose_id_does_not_describe_it_is_refused() {
     let (author, reader) = (account(3), account(4));
     let mut rumor = Rumor {
@@ -130,8 +126,6 @@ fn a_rumor_whose_id_does_not_describe_it_is_refused() {
 }
 
 #[test]
-/// The seal's second is pushed back and the wrap's is not. A device resumes a walk from the wrap's
-/// second, so a wrap stamped in the past would fall behind a cursor already past it.
 fn the_seal_is_pushed_back_and_the_wrap_carries_the_send_second() {
     let (author, reader) = (account(3), account(4));
     let note = Rumor::wrap(&author, &reader.pubkey(), KIND, AT, None, "the invite").unwrap();

@@ -1,12 +1,8 @@
 //! The `Authorization` header a celis route is called with (NIP-98): a kind 27235 note, base64, signed by
-//! the account making the call and naming the url, the method and the sha256 of the body it carries.
+//! the account making the call and naming the url, the method and the sha256 of the body it carries. No
+//! account record is consulted at either end.
 //!
-//! No account record is consulted at either end — the signature is the whole credential, so there is no
-//! session to steal and nothing to expire but the note's own timestamp. Every route the network serves that
-//! is ours rather than somebody's spec is called this way.
-//!
-//! [`header`] is how a signed note is spelled in that field. BUD-01 spells it the same way, so the blob
-//! store's own authorization is the same encoding over a different note.
+//! [`header`] is how a signed note is spelled in that field. BUD-01 spells it the same way.
 
 use crate::seconds;
 use crate::{Account, Kind, Note, Tags};

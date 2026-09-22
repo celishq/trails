@@ -189,9 +189,6 @@ impl ClosingRelay {
 const STREAM: &str = "abc/records";
 
 #[test]
-/// **An exchange ends at its deadline however much the relay keeps saying.** A relay answering with
-/// anything but what was asked would otherwise hold the connection, and every exchange queued behind it,
-/// for as long as it liked.
 fn an_exchange_over_a_relay_that_keeps_talking_ends_at_its_deadline() {
     let served = TalkativeRelay::new();
     let mut line = Line::dial(&served.url, TIMEOUT).unwrap();
@@ -210,9 +207,6 @@ fn an_exchange_over_a_relay_that_keeps_talking_ends_at_its_deadline() {
 }
 
 #[test]
-/// **A subscription the relay closed is opened again.** A `CLOSED` on the held socket is the relay letting
-/// go — an expired session, say — and a thread that read past it would hold a dead subscription for the
-/// whole session, hearing nothing and saying so to nobody.
 fn a_subscription_the_relay_closed_is_opened_again() {
     let served = ClosingRelay::new();
     let relay = Relay::new(&served.url, speaking(), Arc::new(Mailbox::default()));
@@ -231,8 +225,6 @@ fn a_subscription_the_relay_closed_is_opened_again() {
 }
 
 #[test]
-/// **A relay that stops answering pings is let go of.** A socket a router has forgotten reads like a quiet
-/// relay, and only the missing answers say it is not one.
 fn a_relay_that_stops_answering_pings_is_let_go_of() {
     let served = LocalRelay::new(usize::MAX);
     let mut line = Line::dial(&served.url, Duration::from_millis(2)).unwrap();
@@ -255,7 +247,6 @@ fn a_relay_that_stops_answering_pings_is_let_go_of() {
 }
 
 #[test]
-/// A panic inside one exchange does not cost the relay every exchange after it.
 fn a_connection_a_panic_left_behind_is_used_again() {
     let served = LocalRelay::new(usize::MAX);
     let relay = Relay::new(&served.url, speaking(), Arc::new(Mailbox::default()));
@@ -269,11 +260,9 @@ fn a_connection_a_panic_left_behind_is_used_again() {
     assert!(relay.publish(&note()).unwrap().accepted);
 }
 
+/// (`spec/runtime.md`, "What arrives is data")
 #[test]
-/// A note landing on a held subscription is left in the mailbox under the stream it landed on, unopened,
-/// and the connect before it rang with none — the walk is owed, the note is not read twice
-/// (`spec/network.md`).
-fn a_note_landing_on_a_held_subscription_is_held_under_its_stream() {
+fn a_note_landing_on_a_held_subscription_is_held_under_its_stream_and_the_connect_owed_the_walk() {
     let served = PushingRelay::new();
     let mailbox = Arc::new(Mailbox::default());
     let relay = Relay::new(&served.url, speaking(), mailbox.clone());
@@ -302,7 +291,6 @@ fn wait_for_note(mailbox: &Mailbox) -> crate::mailbox::Held {
             if !held.notes.is_empty() {
                 return held;
             }
-            // Only the connect so far: put the walk back and keep waiting for the note.
             mailbox.ring(STREAM);
         }
         assert!(
@@ -327,8 +315,6 @@ fn accepted(served: &LocalRelay, many: usize) {
 }
 
 #[test]
-/// One watch per relay: a round says what to watch every time it reaches one, and saying the same thing
-/// again must not open a second socket.
 fn watching_the_same_filter_again_holds_the_one_subscription() {
     let served = LocalRelay::new(usize::MAX);
     let relay = Relay::new(&served.url, speaking(), Arc::new(Mailbox::default()));
@@ -347,9 +333,6 @@ fn watching_the_same_filter_again_holds_the_one_subscription() {
 }
 
 #[test]
-/// A thread that is gone leaves a watch behind naming the right filter, so nothing else would notice it had
-/// died. The thread flags itself on the way out and the next round dials again — otherwise the vault falls
-/// back to its backstop for the rest of the session, silently.
 fn a_watch_whose_thread_is_gone_is_asked_for_again() {
     let served = LocalRelay::new(usize::MAX);
     let relay = Relay::new(&served.url, speaking(), Arc::new(Mailbox::default()));
@@ -358,7 +341,6 @@ fn a_watch_whose_thread_is_gone_is_asked_for_again() {
     relay.watch(&filter, STREAM);
     accepted(&served, 1);
 
-    // What the guard the thread holds does when that thread is gone, however it went.
     relay
         .watch
         .lock()
@@ -465,7 +447,6 @@ impl GuardedRelay {
 }
 
 #[test]
-/// The whole of NIP-42 from this side, without the caller knowing any of it happened.
 fn a_relay_that_asks_who_is_publishing_is_answered_and_the_note_goes_again() {
     let guarded = GuardedRelay::new();
     let client = Relay::new(&guarded.url, speaking(), Arc::new(Mailbox::default()));
@@ -587,14 +568,8 @@ fn age(relay: &Relay, by: u64) {
     }
 }
 
+/// (`spec/network.md`, "The relay")
 #[test]
-/// A relay is held for as long as the vault is open, so a document read once and never again would let one
-/// failed read decide the fitness check for the whole session — the check that keeps this account's stream
-/// off a relay anybody may read (`spec/network.md`).
-///
-/// **A silence goes stale far sooner than a document does.** What a relay said about itself is a fact about
-/// the relay and stands for the hour; what it did not say is nothing, and remembering nothing for an hour is
-/// an hour of acting on it — a note refused for a kind is offered again until the document settles it.
 fn a_silence_is_asked_again_long_before_a_document_would_be() {
     let served = LocalDocument::silent_then(
         r#"{"limitation":{"auth_required":true,"max_limit":500}}"#,
@@ -794,10 +769,8 @@ fn a_frame_that_is_not_one_is_refused() {
     );
 }
 
+/// (`spec/network.md`, "The held connection")
 #[test]
-/// **The echo memory is bounded by when, not by how many.** A first sync publishes thousands at once, and
-/// a memory that dropped the earliest of them would ring for this device's own notes exactly where it
-/// matters most (`spec/network.md`).
 fn a_publish_of_thousands_holds_every_one_of_them_against_its_echo() {
     let relay = Relay::new(
         "ws://nowhere.example",
@@ -819,9 +792,6 @@ fn a_publish_of_thousands_holds_every_one_of_them_against_its_echo() {
 }
 
 #[test]
-/// **A note this device published is not one landing.** A relay hands a publisher its own note back on the
-/// subscription it holds, and holding it would land what the send just sent, for as long as the vault is
-/// open.
 fn a_note_this_device_published_is_neither_held_nor_rung() {
     let served = PushingRelay::new();
     let mailbox = Arc::new(Mailbox::default());
@@ -835,8 +805,6 @@ fn a_note_this_device_published_is_neither_held_nor_rung() {
 
     relay.watch(&Filter::of(Kind::Wrap), STREAM);
 
-    // The connect rings. Past two ticks of silence the note has been read and answered for, so a second
-    // ring here is the echo being taken for an arrival.
     let deadline = std::time::Instant::now() + TICK * 3;
     while std::time::Instant::now() < deadline {
         assert!(

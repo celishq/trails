@@ -14,8 +14,6 @@ fn note(content: &str) -> Note {
 }
 
 #[test]
-/// **What a relay handed over is held before anybody is told.** A host answers a ring with a turn, so one
-/// that reached it ahead of the note would land a turn that is about nothing.
 fn a_note_is_held_before_whoever_is_listening_hears_it() {
     let mailbox = Arc::new(Mailbox::default());
     let seen: Arc<Mutex<Vec<BTreeSet<String>>>> = Arc::new(Mutex::new(Vec::new()));
@@ -32,8 +30,6 @@ fn a_note_is_held_before_whoever_is_listening_hears_it() {
 }
 
 #[test]
-/// A landing takes a stream's notes with it, and the other streams keep theirs. A note held again after
-/// the take is the next landing's.
 fn a_take_empties_the_streams_named_and_leaves_the_others() {
     let mailbox = Mailbox::default();
     mailbox.heard("abc/records", note("one"));
@@ -49,8 +45,7 @@ fn a_take_empties_the_streams_named_and_leaves_the_others() {
 }
 
 #[test]
-/// A connect carries no note and says the walk is owed; a storm of them on one stream is one entry.
-fn a_ring_holds_no_note_and_owes_the_walk() {
+fn a_ring_holds_no_note_and_owes_the_walk_and_a_storm_of_them_is_one_entry() {
     let mailbox = Mailbox::default();
     for _ in 0..5 {
         mailbox.ring("abc/records");
@@ -65,7 +60,6 @@ fn a_ring_holds_no_note_and_owes_the_walk() {
 }
 
 #[test]
-/// What was heard about a stream this vault has stopped reading is forgotten rather than answered.
 fn a_stream_no_longer_read_is_dropped() {
     let mailbox = Mailbox::default();
     mailbox.heard("abc/records", note("one"));
@@ -78,9 +72,6 @@ fn a_stream_no_longer_read_is_dropped() {
 }
 
 #[test]
-/// **Whoever is listening is told outside the lock.** A host that rings back in from inside the call — a
-/// turn that reaches a relay that rings — would otherwise wait on itself forever, and a slow host would
-/// hold every relay's thread with it.
 fn a_listener_may_ring_back_in_from_inside_the_call() {
     let mailbox = Arc::new(Mailbox::default());
     let again = Arc::new(std::sync::atomic::AtomicBool::new(false));

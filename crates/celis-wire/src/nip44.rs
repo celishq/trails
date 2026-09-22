@@ -1,11 +1,8 @@
-//! **NIP-44 v2** — how a note's content is encrypted to one reader. Two accounts derive a conversation key
-//! from their shared Diffie-Hellman secret once; every message then mints its own keys from that plus a
-//! fresh 32-byte nonce, encrypts with ChaCha20 and authenticates with HMAC-SHA256 over the nonce and the
-//! ciphertext.
+//! NIP-44 v2 — how a note's content is encrypted to one reader. Two accounts derive a conversation key
+//! from their shared secret once; every message mints its own keys from that plus a fresh nonce, encrypts
+//! with ChaCha20 and authenticates with HMAC-SHA256.
 //!
-//! Plaintext is padded before encryption, so the ciphertext reveals only a coarse size band rather than the
-//! exact length of what was written. The whole thing is checked against the specification's own test
-//! vectors.
+//! Plaintext is padded before encryption, so the ciphertext reveals only a coarse size band.
 
 use anyhow::{anyhow, bail, Result};
 use chacha20::cipher::{KeyIvInit, StreamCipher};
@@ -33,13 +30,8 @@ pub(crate) fn conversation_key(shared_x: &[u8; 32]) -> [u8; 32] {
 }
 
 /// The nonce a plaintext gets when it is to encrypt the same way every time: `HMAC(conversation_key,
-/// plaintext)`.
-///
-/// **Only for plaintext that is already addressed by its own content.** Reusing a nonce across two
-/// *different* plaintexts under one key repeats the keystream; that cannot happen here, since two plaintexts
-/// share this nonce only if they collide under HMAC-SHA256. What it does change is that the same plaintext
-/// gives the same ciphertext, so use it only where that is already announced. Keyed rather than a plain hash
-/// of the plaintext, so nobody without the conversation key can test a guess against the nonce.
+/// plaintext)`. Only for plaintext that is already addressed by its own content — reusing this for two
+/// different plaintexts under one key would repeat the keystream.
 pub(crate) fn nonce_for(conversation_key: &[u8; 32], plaintext: &[u8]) -> [u8; 32] {
     let mut mac = <Hmac<Sha256> as Mac>::new_from_slice(conversation_key)
         .expect("hmac takes a key of any length");

@@ -1,30 +1,20 @@
-//! **What a note is** — every kind this application writes, in one enum.
+//! What a note is — every kind this application writes, in one enum. Most numbers are a NIP's; the rest
+//! are ours, minted to avoid every assignment we know of in their ranges.
 //!
-//! Two families sit here together. Most of these numbers are somebody else's: a NIP assigns them and every
-//! nostr client already writes them. The rest are ours, minted for records no other client reads, and they
-//! avoid every assignment we know of in the ranges they sit in.
-//!
-//! They share one enum because a kind is one namespace however it was minted, and two variants cannot claim
-//! one number — the compiler refuses it. Split across crates, nothing but a test said the numbers still
-//! agreed.
-//!
-//! A number's storage class binds where a relay reads it and nowhere else, so a kind riding inside a gift
-//! wrap is what the fold reads the record by, and NIP-01's ranges never reach it (`spec/log.md`).
+//! A number's storage class binds where a relay reads it: inside a gift wrap it is the fold's
+//! discriminator, and NIP-01's ranges never reach it (`spec/log.md`, "Kinds").
 
 use serde::de::Error as _;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-/// The kind a note travels as (NIP-01).
-///
-/// The number is the wire form: [`Display`](std::fmt::Display) writes it, `u16` converts to it, and
-/// [`of`](Kind::of) reads one back. A kind this build does not know has no variant, which is why
-/// [`Note::kind`](crate::Note::kind) stays a `u16` — a record a newer build wrote still has to verify, sort
-/// and reach the next device.
+/// The kind a note travels as (NIP-01). The number is the wire form: [`Display`](std::fmt::Display) writes
+/// it, `u16` converts to it, and [`of`](Kind::of) reads one back. A kind this build does not know has no
+/// variant, which is why [`Note::kind`](crate::Note::kind) stays a `u16`.
 #[repr(u16)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Kind {
     /// What an account says about itself (NIP-01) — the note every nostr client shows a person by, and the
-    /// note a name is claimed with (`spec/public-profile.md`).
+    /// note a name is claimed with (`spec/public-profile.md`, "The claim").
     Profile = 0,
     /// A take-back of the record at an address (NIP-09), with a `k` naming the kind that address is in.
     Deletion = 5,

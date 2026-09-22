@@ -1,10 +1,7 @@
-//! **The secret behind an identity** — the 32-byte secp256k1 key an account signs and decrypts with. It
-//! never leaves the device that holds it. Everything the network sees is derived from it: the [`Pubkey`]
-//! it publishes, the Schnorr signature on every note, and the shared secret that encrypts a note's content
-//! to one reader. A message sealed to one person is [`Rumor`](crate::Rumor)'s, over these.
-//!
-//! Encrypting to yourself is not a special case: your own stream is this account encrypting to its own
-//! public key, so syncing between your devices needs no key beyond the one the phrase already restores.
+//! The secret behind an identity — the 32-byte secp256k1 key an account signs and decrypts with. It never
+//! leaves the device that holds it. Everything the network sees is derived from it: the [`Pubkey`] it
+//! publishes, the Schnorr signature on every note, and the shared secret that encrypts a note's content to
+//! one reader.
 
 use crate::nip44;
 use crate::pubkey::Pubkey;
@@ -99,14 +96,9 @@ impl Account {
         )
     }
 
-    /// Encrypt `plaintext` so only `reader` can open it, the same way every time — the same plaintext gives
-    /// the same ciphertext on this device and on every other holding this key, so a note carrying it can be
-    /// recomputed rather than stored.
-    ///
-    /// **For plaintext that is already addressed by its own content, and nothing else.** What it gives up
-    /// against [`encrypt`](Self::encrypt) is that two payloads carrying the same thing look alike, so it is
-    /// only safe where that is already said out loud — a log entry under a `d` tag that is the hash of the
-    /// entry. A message, an invite or a receipt keeps a fresh nonce.
+    /// Encrypt `plaintext` so only `reader` can open it, the same way every time. Safe only where the
+    /// plaintext is already addressed by its own content — a log entry under a `d` tag that is the hash of
+    /// the entry.
     pub fn encrypt_deterministic(&self, reader: &Pubkey, plaintext: &str) -> Result<String> {
         let key = self.conversation_key(reader)?;
         let nonce = nip44::nonce_for(&key, plaintext.as_bytes());

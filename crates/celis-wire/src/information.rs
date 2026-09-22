@@ -6,6 +6,12 @@
 use serde::Deserialize;
 use serde_json::Value;
 
+mod limitation;
+mod retention;
+
+pub use limitation::Limitation;
+pub use retention::Retention;
+
 /// A relay's own document.
 #[derive(Clone, Debug, Default, Deserialize)]
 pub struct Information {
@@ -17,32 +23,10 @@ pub struct Information {
     pub limitation: Limitation,
 }
 
-/// The limits a relay holds a client to. A caller that needs either may treat silence as a no — unlike the
-/// kinds, which are only advised on.
-#[derive(Clone, Debug, Default, Deserialize)]
-pub struct Limitation {
-    /// Whether this relay serves nothing until a client has answered its challenge (NIP-42).
-    #[serde(default)]
-    pub auth_required: bool,
-    /// The most notes it answers one subscription at once, or `None` when it has not said.
-    #[serde(default)]
-    pub max_limit: Option<u32>,
-}
-
-/// One retention rule: how long the relay keeps the kinds it names. A rule may name a kind on its own or a
-/// `[first, last]` range of them.
-#[derive(Clone, Debug, Default, Deserialize)]
-pub struct Retention {
-    #[serde(default)]
-    kinds: Vec<Value>,
-}
-
 impl Information {
-    /// Whether this relay says it keeps notes of `kind` — true when it names the kind, and true when it
-    /// names no kinds at all, since a relay that has not said has not refused.
-    ///
-    /// A number rather than a [`Kind`](crate::Kind): what a relay keeps is asked about kinds this build does
-    /// not write, and a caller has to be able to ask.
+    /// Whether this relay says it keeps notes of `kind` — true when it names the kind, and true when it names
+    /// no kinds at all, since a relay that has not said has not refused. A number rather than a
+    /// [`Kind`](crate::Kind), since a relay may keep kinds this build does not write.
     pub fn keeps(&self, kind: u16) -> bool {
         let mut named = self.named();
         named.peek().is_none() || named.any(|named| covers(named, kind))
