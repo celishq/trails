@@ -44,6 +44,7 @@ fn a_take_empties_the_streams_named_and_leaves_the_others() {
     assert_eq!(mailbox.all(), BTreeSet::from(["def/records".to_string()]));
 }
 
+/// (`spec/runtime.md`, "What arrives is data")
 #[test]
 fn a_ring_holds_no_note_and_owes_the_walk_and_a_storm_of_them_is_one_entry() {
     let mailbox = Mailbox::default();

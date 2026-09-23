@@ -18,6 +18,7 @@ fn a_status_says_what_is_left_to_do() {
     }
 }
 
+/// (`spec/network.md`, "What a refusal means")
 #[test]
 fn a_relays_word_says_what_is_left_to_do_only_when_it_is_the_whole_prefix() {
     for word in [

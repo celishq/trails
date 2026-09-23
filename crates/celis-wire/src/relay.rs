@@ -2,7 +2,7 @@
 //! `REQ` asks, `EOSE` says the relay has sent everything it holds, `CLOSE` ends the subscription.
 //!
 //! The connection is held for as long as the relay itself is, redialled only if it goes away; who says
-//! when to let go is the host (`spec/network.md`, "The held connection").
+//! when to let go is the host.
 
 use crate::mailbox::Mailbox;
 use crate::seconds;
@@ -43,7 +43,7 @@ const AUTH_REQUIRED: &str = "auth-required:";
 const TICK: Duration = Duration::from_secs(1);
 
 /// How many quiet [`TICK`]s pass before the client says it is still there. The relay answers this without
-/// waking, so it costs the host nothing (`spec/network.md`, "The held connection").
+/// waking, so it costs the host nothing.
 const PING_EVERY: u32 = 30;
 
 /// What a client says on a quiet socket, and what a relay answers. Bare words rather than NIP-01 frames,
@@ -57,28 +57,25 @@ const PONG: &str = "pong";
 const REDIAL: Duration = Duration::from_secs(1);
 const LONGEST: Duration = Duration::from_secs(60);
 
-/// How long a socket must have been held for its breaking to be ordinary rather than a flap
-/// (`spec/network.md`, "The held connection").
+/// How long a socket must have been held for its breaking to be ordinary rather than a flap.
 const STEADY: Duration = LONGEST;
 
 /// The subscription a held socket asks under. One per relay, so it never collides with an exchange's.
 const WATCHING: &str = "celis-watch";
 
 /// How long an id this device published is held against an echo of it: past this, a matching id is
-/// somebody else's (`spec/network.md`, "The held connection").
+/// somebody else's.
 const ECHOING: Duration = Duration::from_secs(60);
 
 /// How far ahead of this device's clock a note may be stamped and still be taken as having just landed —
 /// the same allowance a relay holds a publisher to (`spec/network.md`, "Two orders, and one rule").
 pub const SKEW: u64 = 300;
 
-/// How long what a relay said about itself stands before it is asked again
-/// (`spec/network.md`, "The relay").
+/// How long what a relay said about itself stands before it is asked again.
 const STATED: Duration = Duration::from_secs(3600);
 
 /// How long a relay that answered no document stands before it is asked again — far shorter than
-/// [`STATED`], since silence is not the same fact as a stated document
-/// (`spec/network.md`, "The relay").
+/// [`STATED`], since silence is not the same fact as a stated document.
 const UNANSWERED: Duration = Duration::from_secs(60);
 
 /// How long the document itself waits. Shorter than an exchange: it is one small `GET`, it is asked while
@@ -293,7 +290,7 @@ pub struct Relay {
     /// `None` is a relay that answered nothing, which is not a relay that stated nothing.
     information: Mutex<Option<(u64, Option<Information>)>>,
     /// The subscription being held open, when one is: one socket, one thread, since a frame is delivered
-    /// once (`spec/network.md`, "The held connection").
+    /// once.
     watch: Mutex<Option<Watch>>,
     /// What this device published here, which the subscription reads back and must not hold.
     sent: Arc<Sent>,
@@ -489,8 +486,8 @@ impl Relay {
     }
 
     /// Hold `filter` open on a socket of its own; a matching note lands in the mailbox under `stream`,
-    /// unopened, for the turn that lands it (`spec/runtime.md`, "What arrives is data"). Asking for the
-    /// filter already watched does nothing; a different filter, or a thread that is gone, replaces it.
+    /// unopened, for the turn that lands it. Asking for the filter already watched does nothing; a
+    /// different filter, or a thread that is gone, replaces it.
     pub fn watch(&self, filter: &Filter, stream: &str) {
         let Ok(mut held) = self.watch.lock() else {
             return;
@@ -521,8 +518,8 @@ impl Relay {
     }
 
     /// Let go of both sockets: the exchange line, and the subscription being held open. The host says when
-    /// — the app going away, or the network going away (`spec/network.md`, "The held connection"). Whatever
-    /// was being watched is asked for again by the next round that reaches this relay.
+    /// — the app going away, or the network going away. Whatever was being watched is asked for again by
+    /// the next round that reaches this relay.
     pub fn close(&self) {
         if let Ok(mut watch) = self.watch.lock() {
             watch.take();
@@ -568,7 +565,7 @@ fn http(url: &str) -> String {
 
 /// Hold one subscription open until `stopped`, leaving each note that lands in `mailbox`, and dialling
 /// again whenever the socket breaks. Every connect rings, since a note may have landed with no socket to
-/// hear it on (`spec/runtime.md`, "What arrives is data").
+/// hear it on.
 fn follow(
     url: &str,
     account: &Account,

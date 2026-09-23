@@ -224,6 +224,7 @@ fn a_subscription_the_relay_closed_is_opened_again() {
     relay.close();
 }
 
+/// (`spec/network.md`, "The held connection")
 #[test]
 fn a_relay_that_stops_answering_pings_is_let_go_of() {
     let served = LocalRelay::new(usize::MAX);
@@ -314,6 +315,7 @@ fn accepted(served: &LocalRelay, many: usize) {
     }
 }
 
+/// (`spec/network.md`, "The held connection")
 #[test]
 fn watching_the_same_filter_again_holds_the_one_subscription() {
     let served = LocalRelay::new(usize::MAX);
@@ -529,6 +531,7 @@ impl LocalDocument {
     }
 }
 
+/// (`spec/network.md`, "The relay")
 #[test]
 fn a_relays_document_is_asked_for_once_however_often_it_is_read() {
     let served = LocalDocument::serving(r#"{"name":"a mirror","retention":[{"kinds":[1]}]}"#);
@@ -568,6 +571,7 @@ fn age(relay: &Relay, by: u64) {
     }
 }
 
+/// (`spec/network.md`, "The relay")
 /// (`spec/network.md`, "The relay")
 #[test]
 fn a_silence_is_asked_again_long_before_a_document_would_be() {
@@ -791,6 +795,7 @@ fn a_publish_of_thousands_holds_every_one_of_them_against_its_echo() {
     );
 }
 
+/// (`spec/network.md`, "The held connection")
 #[test]
 fn a_note_this_device_published_is_neither_held_nor_rung() {
     let served = PushingRelay::new();

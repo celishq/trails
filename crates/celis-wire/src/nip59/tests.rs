@@ -125,6 +125,7 @@ fn a_rumor_whose_id_does_not_describe_it_is_refused() {
     assert!(Rumor::unwrap(&reader, &wrapped(&author, &reader, &rumor)).is_err());
 }
 
+/// (`spec/network.md`, "Sign, then encrypt")
 #[test]
 fn the_seal_is_pushed_back_and_the_wrap_carries_the_send_second() {
     let (author, reader) = (account(3), account(4));

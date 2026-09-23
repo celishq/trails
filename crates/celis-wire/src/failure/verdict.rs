@@ -15,8 +15,7 @@ pub enum Verdict {
 const ABOUT_ITSELF: [u16; 5] = [429, 500, 502, 503, 504];
 
 /// The prefixes a relay writes about the note itself, nothing left to do about it (NIP-01). `blocked:` is
-/// not among them: it is written for an account over its allowance, a door that opens again
-/// (`spec/network.md`, "What a refusal means").
+/// not among them: it is written for an account over its allowance, a door that opens again.
 const FINAL: [&str; 3] = ["invalid:", "restricted:", "pow:"];
 
 impl Verdict {
@@ -29,8 +28,7 @@ impl Verdict {
     }
 
     /// The verdict a relay's refusal carries, read off its NIP-01 prefix and nothing else. A word this
-    /// build cannot place, and no word at all, is the relay talking about itself
-    /// (`spec/network.md`, "What a refusal means").
+    /// build cannot place, and no word at all, is the relay talking about itself.
     pub fn of_word(reason: &str) -> Verdict {
         match FINAL.iter().any(|word| reason.starts_with(word)) {
             true => Verdict::Settled,

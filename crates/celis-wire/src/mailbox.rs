@@ -8,8 +8,7 @@ mod held;
 pub use held::Held;
 
 /// What arrives on the held subscriptions, held per stream until a landing takes it: a socket hands each
-/// note over unopened, and a connect rings with none, meaning the walk is owed
-/// (`spec/runtime.md`, "What arrives is data").
+/// note over unopened, and a connect rings with none, meaning the walk is owed.
 ///
 /// A note is held before whoever listens is told, so losing it costs the walk again, never the record.
 #[derive(Default)]
