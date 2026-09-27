@@ -34,6 +34,11 @@ impl Pubkey {
         )
     }
 
+    /// Whether `npub` is one account's only spelling: it parses, and renders back to exactly what was read.
+    pub fn canonical(npub: &str) -> bool {
+        Self::parse_npub(npub).is_ok_and(|key| key.npub() == npub)
+    }
+
     /// The key written as an `npub` — the form a person copies and pastes (NIP-19).
     pub fn parse_npub(npub: &str) -> Result<Self> {
         let (hrp, bytes) = bech32::decode(npub).map_err(|e| anyhow!("not bech32: {e}"))?;
