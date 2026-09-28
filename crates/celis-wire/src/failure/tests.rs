@@ -101,3 +101,20 @@ fn a_failure_reads_its_verdict_off_what_became_of_it() {
     assert!(!busy.settled());
     assert_eq!(busy.verdict(), Verdict::Again { after: Some(3) });
 }
+
+#[test]
+fn only_a_404_says_the_host_does_not_hold_it() {
+    let refused = |status| {
+        Failure::new(
+            "/abc",
+            Why::Refused {
+                status,
+                body: String::new(),
+                after: None,
+            },
+        )
+    };
+    assert!(refused(404).missing());
+    assert!(!refused(403).missing());
+    assert!(!Failure::new("/abc", Why::Unreachable).missing());
+}

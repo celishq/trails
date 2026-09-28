@@ -43,6 +43,11 @@ impl Failure {
     pub fn settled(&self) -> bool {
         self.verdict() == Verdict::Settled
     }
+
+    /// Whether the host answered that it does not hold what was asked for.
+    pub fn missing(&self) -> bool {
+        matches!(self.why, Why::Refused { status: 404, .. })
+    }
 }
 
 impl fmt::Display for Failure {
