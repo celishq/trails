@@ -9,6 +9,9 @@ pub enum Verdict {
     Again { after: Option<u64> },
     /// The host never answered.
     Unreached,
+    /// The host is still answering this same call, so the same call asks again after `after` seconds and
+    /// is answered with it.
+    Answering { after: u64 },
 }
 
 /// The HTTP statuses a host answers about itself with: busy, over its rate, or failing.
@@ -21,9 +24,10 @@ const FINAL: [&str; 3] = ["invalid:", "restricted:", "pow:"];
 impl Verdict {
     /// The verdict an HTTP status carries, with `after` as the seconds a `Retry-After` named.
     pub fn of_status(status: u16, after: Option<u64>) -> Verdict {
-        match ABOUT_ITSELF.contains(&status) {
-            true => Verdict::Again { after },
-            false => Verdict::Settled,
+        match (status, after) {
+            (409, Some(after)) => Verdict::Answering { after },
+            _ if ABOUT_ITSELF.contains(&status) => Verdict::Again { after },
+            _ => Verdict::Settled,
         }
     }
 

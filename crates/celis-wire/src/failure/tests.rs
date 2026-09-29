@@ -118,3 +118,25 @@ fn only_a_404_says_the_host_does_not_hold_it() {
     assert!(!refused(403).missing());
     assert!(!Failure::new("/abc", Why::Unreachable).missing());
 }
+
+/// (`spec/network.md`, "The metered proxy")
+#[test]
+fn a_409_that_names_a_wait_is_a_call_still_being_answered_and_one_without_is_settled() {
+    let refused = |after| {
+        Failure::new(
+            "/ai",
+            Why::Refused {
+                status: 409,
+                body: String::new(),
+                after,
+            },
+        )
+    };
+
+    assert_eq!(refused(Some(2)).verdict(), Verdict::Answering { after: 2 });
+    assert!(!refused(Some(2)).settled());
+    assert!(
+        refused(None).settled(),
+        "an answer too large to keep is final"
+    );
+}
