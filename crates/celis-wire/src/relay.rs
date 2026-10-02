@@ -6,7 +6,7 @@
 
 use crate::mailbox::Mailbox;
 use crate::seconds;
-use crate::{Account, Answer, Filter, Information, Kind, Limitation, Note, Tags};
+use crate::{Account, Answer, Failure, Filter, Information, Kind, Limitation, Note, Tags, Why};
 use anyhow::{anyhow, bail, Result};
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
@@ -100,7 +100,8 @@ struct Line {
 
 impl Line {
     /// Dial `url`, giving up on a read that goes unanswered for `patience`. Reaching the host, the
-    /// handshake and every write are bounded by [`TIMEOUT`].
+    /// handshake and every write are bounded by [`TIMEOUT`]. An address the relay holds nothing at fails
+    /// with a `Failure` that is `missing`.
     fn dial(url: &str, patience: Duration) -> Result<Line> {
         let request = url
             .into_client_request()
@@ -109,8 +110,20 @@ impl Line {
         stream.set_read_timeout(Some(TIMEOUT))?;
         stream.set_write_timeout(Some(TIMEOUT))?;
         stream.set_nodelay(true)?;
-        let (socket, _) =
-            tungstenite::client_tls(request, stream).map_err(|e| anyhow!("relay {url}: {e}"))?;
+        let (socket, _) = tungstenite::client_tls(request, stream).map_err(|e| match e {
+            tungstenite::HandshakeError::Failure(tungstenite::Error::Http(answer))
+                if answer.status() == 404 =>
+            {
+                let body = String::from_utf8_lossy(answer.body().as_deref().unwrap_or_default());
+                let why = Why::Refused {
+                    status: 404,
+                    body: body.into_owned(),
+                    after: None,
+                };
+                anyhow::Error::new(Failure::new(url, why))
+            }
+            e => anyhow!("relay {url}: {e}"),
+        })?;
         let line = Line {
             url: url.to_string(),
             socket,

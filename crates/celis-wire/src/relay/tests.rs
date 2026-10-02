@@ -826,3 +826,39 @@ fn a_note_this_device_published_is_neither_held_nor_rung() {
     );
     relay.close();
 }
+
+/// A relay address that answers every request with `status`.
+fn answering(status: &'static str) -> String {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let url = format!("ws://{}", listener.local_addr().unwrap());
+    std::thread::spawn(move || {
+        use std::io::{Read, Write};
+        for mut stream in listener.incoming().flatten() {
+            let _ = stream.read(&mut [0u8; 1024]);
+            let _ = stream.write_all(
+                format!("HTTP/1.1 {status}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+                    .as_bytes(),
+            );
+        }
+    });
+    url
+}
+
+/// (`spec/vault/03-sync.md`, "Stores")
+#[test]
+fn a_store_the_relay_does_not_hold_is_told_from_an_outage() {
+    let fetched = |status| {
+        Relay::new(answering(status), speaking(), Arc::new(Mailbox::default()))
+            .fetch(&[Filter::of(Kind::Wrap)])
+            .unwrap_err()
+    };
+
+    let missing = |error: anyhow::Error| {
+        error
+            .downcast_ref::<Failure>()
+            .is_some_and(Failure::missing)
+    };
+
+    assert!(missing(fetched("404 Not Found")));
+    assert!(!missing(fetched("503 Service Unavailable")));
+}
