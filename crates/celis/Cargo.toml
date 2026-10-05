@@ -1,0 +1,39 @@
+[package]
+name = "celis"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "celis"
+path = "src/main.rs"
+
+[[test]]
+name = "scan"
+path = "tests/scan.rs"
+required-features = ["vault"]
+
+[features]
+# The vault speed budgets in bench.toml, run by `make bench`.
+bench = ["vault"]
+# The tests that sync through a real relay and Blossom server.
+e2e = ["vault"]
+# The vault, file and sync groups beside auth and cairn.
+vault = []
+
+[dependencies]
+celis-vault = { path = "../celis-vault" }
+celis-cairns = { path = "../celis-cairns" }
+celis-wire = { path = "../celis-wire" }
+anyhow = "1"
+data-encoding = "2"
+serde_json = "1"
+
+[dev-dependencies]
+celis-vault = { path = "../celis-vault", features = ["test-support"] }
+celis-testnet = { path = "../celis-testnet" }
+getrandom = "0.2"
+hkdf = "0.12"
+libc = "0.2"
+serde_yaml = "0.9"
+sha2 = "0.10"
+tempfile = "3"
