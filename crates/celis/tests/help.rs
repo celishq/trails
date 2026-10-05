@@ -122,7 +122,8 @@ fn every_command() -> Vec<Entry> {
     all
 }
 
-/// The `$` lines of a "Commands" block, a variable with a second line kept as one.
+/// The `$` lines of a "Commands" block, a variable with a second line kept as one. Off macOS, the default of
+/// `$CELIS_HOME` is the one its rule names (`spec/vault/05-cli.md`, "Commands").
 fn variables(doc: &str) -> Vec<Variable> {
     let mut found: Vec<Variable> = Vec::new();
     for line in blocks(doc, "Commands")[0].lines() {
@@ -136,6 +137,13 @@ fn variables(doc: &str) -> Vec<Variable> {
         } else if let (Some(last), false) = (found.last_mut(), line.trim().is_empty()) {
             last.text = format!("{} {}", last.text, line.trim());
             last.default = line.trim().strip_prefix("default: ").map(str::to_string);
+        }
+    }
+    if !cfg!(target_os = "macos") {
+        for variable in found.iter_mut().filter(|v| v.name == "$CELIS_HOME") {
+            let mac = "~/Library/Application Support/Celis";
+            variable.text = variable.text.replace(mac, "~/.local/share/celis");
+            variable.default = Some("~/.local/share/celis".into());
         }
     }
     found

@@ -1,0 +1,197 @@
+name: CLI release
+
+# Builds the `celis` command line for macOS and Linux, signs and notarizes the macOS builds, and puts every
+# archive on R2 under `cli/<version>/` and `cli/latest/`. The site serves them at celis.ai/updates/cli/, and
+# `workers/celis-site/public/install.sh` downloads them. A last job installs the release on clean runners.
+#
+# A `cli-v1.2.3` tag publishes version 1.2.3, which must be the version in crates/celis/Cargo.toml. A manual
+# run builds and signs, and publishes nothing.
+
+on:
+  push:
+    tags: ["cli-v*"]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+# The compiler `release.yml` and CI use.
+env:
+  RUST_TOOLCHAIN: "1.96.0"
+
+jobs:
+  version:
+    name: Version
+    runs-on: namespace-profile-linux
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: version
+        run: |
+          set -euo pipefail
+          CARGO="$(sed -n 's/^version = "\(.*\)"/\1/p' crates/celis/Cargo.toml | head -1)"
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            TAG="${GITHUB_REF_NAME#cli-v}"
+            if [ "$TAG" != "$CARGO" ]; then
+              echo "::error::the tag says $TAG, crates/celis/Cargo.toml says $CARGO"
+              exit 1
+            fi
+          fi
+          echo "version=$CARGO" >> "$GITHUB_OUTPUT"
+
+  linux:
+    name: Linux builds
+    runs-on: namespace-profile-linux
+    needs: version
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          targets: x86_64-unknown-linux-musl,aarch64-unknown-linux-musl
+      # Zig is the C compiler and linker for both musl targets, so the bundled SQLite and `ring` build
+      # without a cross toolchain, and the binaries run on any Linux.
+      - name: Install cargo-zigbuild
+        run: pip3 install --break-system-packages ziglang cargo-zigbuild
+      - name: Build
+        working-directory: crates
+        run: |
+          set -euo pipefail
+          for target in x86_64-unknown-linux-musl aarch64-unknown-linux-musl; do
+            cargo zigbuild --release --locked -p celis --target "$target"
+            mkdir -p "../dist"
+            tar -czf "../dist/celis-$target.tar.gz" -C "target/$target/release" celis
+          done
+      - name: Checksums
+        working-directory: dist
+        run: for f in *.tar.gz; do sha256sum "$f" > "$f.sha256"; done
+      - uses: actions/upload-artifact@v7
+        with:
+          name: cli-linux
+          path: dist/
+
+  mac:
+    name: macOS builds
+    runs-on: namespace-profile-mac
+    needs: version
+    # Notarization waits on Apple, which is the part that can hang.
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Import Developer ID signing certificate
+        env:
+          DEV_ID_CERT_P12_BASE64: ${{ secrets.DEV_ID_CERT_P12_BASE64 }}
+          DEV_ID_CERT_PASSWORD: ${{ secrets.DEV_ID_CERT_PASSWORD }}
+        run: |
+          set -euo pipefail
+          KEYCHAIN="$RUNNER_TEMP/build.keychain-db"
+          KC_PW="$(openssl rand -base64 24)"
+          echo "$DEV_ID_CERT_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security create-keychain -p "$KC_PW" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KC_PW" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/cert.p12" -k "$KEYCHAIN" -P "$DEV_ID_CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KC_PW" "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          rm -f "$RUNNER_TEMP/cert.p12"
+
+      - name: Write notary API key
+        env:
+          NOTARY_KEY_P8_BASE64: ${{ secrets.NOTARY_KEY_P8_BASE64 }}
+        run: echo "$NOTARY_KEY_P8_BASE64" | base64 --decode > "$RUNNER_TEMP/notary.p8"
+
+      # A bare binary cannot hold a stapled ticket. Notarizing it still lets Gatekeeper pass it online when
+      # it arrives quarantined, as from a browser download.
+      - name: Build, sign, notarize
+        working-directory: crates
+        env:
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
+        run: |
+          set -euo pipefail
+          mkdir -p ../dist
+          for target in aarch64-apple-darwin x86_64-apple-darwin; do
+            cargo build --release --locked -p celis --target "$target"
+            BIN="target/$target/release/celis"
+            codesign --force --options runtime --timestamp --sign "Developer ID Application" "$BIN"
+            codesign --verify --strict "$BIN"
+            ditto -c -k "$BIN" "$RUNNER_TEMP/celis-$target.zip"
+            xcrun notarytool submit "$RUNNER_TEMP/celis-$target.zip" \
+              --key "$RUNNER_TEMP/notary.p8" --key-id "$NOTARY_KEY_ID" --issuer "$NOTARY_ISSUER" --wait
+            tar -czf "../dist/celis-$target.tar.gz" -C "target/$target/release" celis
+          done
+      - name: Checksums
+        working-directory: dist
+        run: for f in *.tar.gz; do shasum -a 256 "$f" > "$f.sha256"; done
+      - uses: actions/upload-artifact@v7
+        with:
+          name: cli-mac
+          path: dist/
+
+      - name: Clean up
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/build.keychain-db" || true
+          rm -f "$RUNNER_TEMP/notary.p8"
+
+  publish:
+    name: Publish to R2
+    if: github.ref_type == 'tag'
+    runs-on: namespace-profile-linux
+    needs: [version, linux, mac]
+    steps:
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: cli-*
+          merge-multiple: true
+          path: dist
+      - name: Upload
+        working-directory: dist
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          put() { npx --yes wrangler@4 r2 object put "celis-updates/$1" --file="$2" --content-type=application/octet-stream --remote; }
+          for f in *; do
+            put "cli/$VERSION/$f" "$f"
+            put "cli/latest/$f" "$f"
+          done
+
+  smoke:
+    name: Install on ${{ matrix.runner }}
+    needs: [version, publish]
+    strategy:
+      matrix:
+        runner: [namespace-profile-linux, namespace-profile-mac]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install the published release
+        env:
+          CELIS_VERSION: ${{ needs.version.outputs.version }}
+          CELIS_INSTALL_DIR: ${{ runner.temp }}/bin
+        run: sh workers/celis-site/public/install.sh
+      - name: Set up a project
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          CELIS="$RUNNER_TEMP/bin/celis"
+          "$CELIS" --version | grep -F "celis $VERSION"
+          PROJECT="$RUNNER_TEMP/project"
+          mkdir -p "$PROJECT" && cd "$PROJECT" && git init -q
+          CELIS_HOME="$RUNNER_TEMP/home" "$CELIS" init --for codex
+          grep -F "<!-- celis:cairns -->" AGENTS.md
+          test -f .agents/skills/cairns/SKILL.md

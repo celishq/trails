@@ -9,7 +9,10 @@ use command::Command;
 use std::io::Write;
 
 fn main() {
-    let args: Vec<String> = std::env::args().skip(1).collect();
+    let mut args: Vec<String> = std::env::args().skip(1).collect();
+    if args.first().map(String::as_str) == Some("init") {
+        args.insert(0, "cairn".into());
+    }
     if let Some(page) = help::page(&args) {
         let _ = writeln!(std::io::stdout(), "{page}");
         return;
