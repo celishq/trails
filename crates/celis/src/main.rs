@@ -13,6 +13,10 @@ fn main() {
     if args.first().map(String::as_str) == Some("init") {
         args.insert(0, "cairn".into());
     }
+    if args.first().map(String::as_str) == Some("stats") {
+        args.insert(0, "cairn".into());
+        args.insert(2, "--summary".into());
+    }
     if let Some(page) = help::page(&args) {
         let _ = writeln!(std::io::stdout(), "{page}");
         return;
