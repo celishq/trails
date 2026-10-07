@@ -1,7 +1,7 @@
 //! A git repo in a temp folder, a `$CELIS_HOME` with the fixture's account, and the binary run in them.
 #![allow(dead_code)]
 
-use celis_cairns::{Agent, Silo};
+use celis_cairns::{Agent, Project, Store};
 use celis_wire::{Account, Note};
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
@@ -52,24 +52,34 @@ impl Repo {
         self.dir.path().join("home")
     }
 
-    /// The silo the main checkout opens.
-    pub fn silo(&self) -> PathBuf {
-        self.path().join(".celis/cairns")
+    /// The store every command opens.
+    pub fn store(&self) -> PathBuf {
+        self.home().join("cairns")
     }
 
-    /// The 32-hex id in the silo's `id` file; opens the silo first, so the file exists.
-    pub fn silo_id(&self) -> String {
-        Silo::open(&self.path(), Some(&self.home())).unwrap();
-        std::fs::read_to_string(self.silo().join("id"))
-            .unwrap()
-            .trim()
-            .to_string()
+    /// The id of the main checkout's project: its first commit.
+    pub fn project_id(&self) -> String {
+        Project::at(&self.path()).id
     }
 
     /// A new worktree on a new branch `name`, beside the main checkout.
     pub fn worktree(&self, name: &str) -> PathBuf {
         let path = self.dir.path().join(name);
         self.git(&["worktree", "add", "-q", "-b", name, path.to_str().unwrap()]);
+        path
+    }
+
+    /// A second git repo `name`, with one commit, beside the main checkout; it shares this home.
+    pub fn other(&self, name: &str) -> PathBuf {
+        let path = self.dir.path().join(name);
+        std::fs::create_dir_all(&path).unwrap();
+        let commit = ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q"];
+        let mut first = commit.to_vec();
+        first.extend(["--allow-empty", "-m", name]);
+        for args in [vec!["init", "-q"], first] {
+            let run = Command::new("git").args(args).current_dir(&path).status();
+            assert!(run.unwrap().success());
+        }
         path
     }
 
@@ -129,19 +139,16 @@ pub fn now() -> u64 {
 }
 
 fn shared(repo: &Repo) -> std::path::PathBuf {
-    let path = repo.silo().join("shared");
+    let path = repo.store().join("shared");
     std::fs::create_dir_all(&path).unwrap();
     path
 }
 
 pub fn put(repo: &Repo, note: &Note) {
-    Silo::open(&repo.path(), Some(&repo.home()))
-        .unwrap()
-        .write(note)
-        .unwrap();
+    Store::open(&repo.home()).unwrap().write(note).unwrap();
 }
 
-/// The agent of `session`, with its profile and link already in the silo.
+/// The agent of `session`, with its profile and link already in the store.
 pub fn agent(repo: &Repo, session: &str) -> Agent {
     let account = Account::new(&[1u8; 32]).unwrap();
     let agent = Agent::new(&account, "claude-code", session).unwrap();
@@ -152,12 +159,13 @@ pub fn agent(repo: &Repo, session: &str) -> Agent {
 
 /// A cairn on the repo that `by` signed at `at`, with the extra tags `extra`.
 pub fn cairn(repo: &Repo, by: &Agent, label: &str, extra: &[(&str, &str)], at: u64) -> Note {
-    let anchor = format!("silo:{}", repo.silo_id());
+    let anchor = format!("project:{}", repo.project_id());
     let mut tags: Vec<Vec<String>> = vec![
         vec!["I".into(), anchor.clone()],
-        vec!["K".into(), "silo".into()],
+        vec!["K".into(), "project".into()],
         vec!["i".into(), anchor],
-        vec!["k".into(), "silo".into()],
+        vec!["k".into(), "project".into()],
+        vec!["project".into(), "repo".into()],
         vec!["L".into(), "celis.cairn".into()],
         vec!["l".into(), label.into(), "celis.cairn".into()],
     ];
@@ -169,14 +177,15 @@ pub fn cairn(repo: &Repo, by: &Agent, label: &str, extra: &[(&str, &str)], at: u
     note
 }
 
-/// A finding saying `content`, written by `by` at `at`, with no `else`.
+/// A finding saying `content`, written by `by` at `at`.
 pub fn cairn_saying(repo: &Repo, by: &Agent, content: &str, at: u64) -> Note {
-    let anchor = format!("silo:{}", repo.silo_id());
+    let anchor = format!("project:{}", repo.project_id());
     let tags: Vec<Vec<String>> = vec![
         vec!["I".into(), anchor.clone()],
-        vec!["K".into(), "silo".into()],
+        vec!["K".into(), "project".into()],
         vec!["i".into(), anchor],
-        vec!["k".into(), "silo".into()],
+        vec!["k".into(), "project".into()],
+        vec!["project".into(), "repo".into()],
         vec!["L".into(), "celis.cairn".into()],
         vec!["l".into(), "finding".into(), "celis.cairn".into()],
     ];
@@ -185,10 +194,9 @@ pub fn cairn_saying(repo: &Repo, by: &Agent, content: &str, at: u64) -> Note {
     note
 }
 
-/// A finding that prevents `E-NET`.
+/// A finding written by `by` at `at`.
 pub fn finding(repo: &Repo, by: &Agent, at: u64) -> Note {
-    let extra = [("else", "E-NET")];
-    cairn(repo, by, "finding", &extra, at)
+    cairn(repo, by, "finding", &[], at)
 }
 
 /// `by`'s rating of `cairn`, written at `at`.
@@ -226,15 +234,21 @@ pub fn listed(repo: &Repo, session: &str, filters: &[&str]) -> Vec<serde_json::V
         .collect()
 }
 
-/// The strength `list --json` shows for `cairn`; `None` when it is not listed.
-pub fn strength(repo: &Repo, cairn: &Note) -> Option<i64> {
+/// The score `list --json` shows for `cairn`; `None` when it is not listed.
+pub fn score(repo: &Repo, cairn: &Note) -> Option<f64> {
     listed(repo, "reader", &[])
         .iter()
         .find(|o| o["id"] == cairn.id.as_str())
-        .map(|o| o["strength"].as_i64().unwrap())
+        .map(|o| o["score"].as_f64().unwrap())
 }
 
-/// Every cairn record in the silo with the label `label`.
+/// Asserts that `got` is a score within 0.01 of `want`.
+pub fn assert_near(got: Option<f64>, want: f64) {
+    let got = got.expect("the cairn is listed");
+    assert!((got - want).abs() < 0.01, "score {got}, want {want}");
+}
+
+/// Every cairn record in the store with the label `label`.
 pub fn labelled(repo: &Repo, label: &str) -> Vec<Note> {
     std::fs::read_dir(shared(repo))
         .unwrap()
@@ -263,21 +277,22 @@ pub fn err(o: &Output) -> String {
 }
 
 /// Two records labelled `first` and `second`, signed by `by`, whose ids share their first 8
-/// characters. Nothing is written to the silo.
+/// characters. Nothing is written to the store.
 pub fn sharing_a_start(repo: &Repo, by: &Agent, first: &str, second: &str) -> (Note, Note) {
-    let silo_id = repo.silo_id();
+    let project_id = repo.project_id();
     let at = now() - DAY;
     let pubkey = by.key().pubkey().hex();
     let tags = |label: &str| {
-        let anchor = format!("silo:{silo_id}");
+        let anchor = format!("project:{project_id}");
         vec![
             vec!["I".to_string(), anchor.clone()],
-            vec!["K".into(), "silo".into()],
+            vec!["K".into(), "project".into()],
             vec!["i".into(), anchor],
-            vec!["k".into(), "silo".into()],
+            vec!["k".into(), "project".into()],
+            vec!["project".into(), "repo".into()],
+            vec!["project".into(), "repo".into()],
             vec!["L".into(), "celis.cairn".into()],
             vec!["l".into(), label.into(), "celis.cairn".into()],
-            vec!["else".into(), "E-NET".into()],
         ]
     };
     let tags_of = [tags(first), tags(second)];

@@ -6,11 +6,7 @@ use serde_json::Value;
 use std::process::Output;
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
-use support::{
-    agent, cairn, err, finding, labelled, now, out, put, rating, run, sharing_a_start, Repo, DAY,
-};
-
-const E: &str = "ConnectionError: E-NET";
+use support::{agent, err, finding, labelled, now, out, put, sharing_a_start, Repo, DAY};
 
 fn objects(text: &str) -> Vec<Value> {
     text.lines()
@@ -21,9 +17,9 @@ fn objects(text: &str) -> Vec<Value> {
 const SESSION: [(&str, &str); 1] = [("CELIS_SESSION", "s1")];
 
 fn written(repo: &Repo, extra: &[&str]) -> Output {
-    let mut args = vec!["write", "finding"];
+    let mut args = vec!["add", "--task", "t", "finding"];
     args.extend_from_slice(extra);
-    args.extend(["--else", "E", "--", "the note"]);
+    args.extend(["--", "the note"]);
     repo.run(&repo.path(), &args, &SESSION, "")
 }
 
@@ -33,15 +29,15 @@ fn id_of(repo: &Repo) -> String {
     out(&o).trim().to_string()
 }
 
-/// Asserts that the silo holds a rating, kind 7, with id `rating` and an `e` tag naming `cairn`.
+/// Asserts that the store holds a rating, kind 7, with id `rating` and an `e` tag naming `cairn`.
 fn assert_rating_cites(repo: &Repo, rating: &str, cairn: &str) {
-    let dir = repo.silo().join("shared");
+    let dir = repo.store().join("shared");
     let found = std::fs::read_dir(dir)
         .unwrap()
         .filter_map(|e| std::fs::read_to_string(e.unwrap().path()).ok())
         .filter_map(|t| serde_json::from_str::<Value>(&t).ok())
         .find(|n| n["id"] == rating)
-        .expect("the printed id is a record in the silo");
+        .expect("the printed id is a record in the store");
     assert_eq!(found["kind"], 7);
     assert!(found["tags"]
         .as_array()
@@ -51,68 +47,32 @@ fn assert_rating_cites(repo: &Repo, rating: &str, cairn: &str) {
     assert_ne!(rating, cairn);
 }
 
-/// `list` prints each cairn in the one-line text form `<id8> <✓|?> <content>`
+/// Each `list` line is `<id8> [<project name>] <content>`, a cairn of this project included, with no mark
 /// (`spec/cairns/11-cli.md`, "Output and errors").
 #[test]
 fn list_prints_the_text_form_on_one_line() {
     let repo = Repo::new();
     let id = id_of(&repo);
+    let name = objects(&out(&repo.run(&repo.path(), &["list", "--json"], &[], "")))[0]["project"]
+        .as_str()
+        .unwrap()
+        .to_string();
 
     let text = out(&repo.run(&repo.path(), &["list"], &[], ""));
-    assert_eq!(text.trim_end(), format!("{} ? the note", &id[..8]));
+    assert_eq!(text.trim_end(), format!("{} [{name}] the note", &id[..8]));
     assert_eq!(text.lines().count(), 1, "{text}");
 }
 
-/// `list` marks a confirmed cairn `✓` and one not confirmed `?`, and `--json` adds `"mark"`
+/// A `--json` list object carries `"score"`, a number
 /// (`spec/cairns/11-cli.md`, "Output and errors").
 #[test]
-fn list_marks_a_confirmed_cairn_and_a_new_one() {
+fn a_json_list_object_carries_a_score() {
     let repo = Repo::new();
-    let by = agent(&repo, "a");
-    let helper = agent(&repo, "b");
-    let confirmed = finding(&repo, &by, now() - 2 * DAY);
-    rating(&repo, &helper, &confirmed, true, now() - DAY);
-    let fresh = cairn(&repo, &by, "finding", &[("when", "cmd:y")], now() - 3600);
+    id_of(&repo);
 
-    let text = out(&repo.run(&repo.path(), &["list"], &[], ""));
-    assert!(
-        text.contains(&format!("{} ✓ text", &confirmed.id[..8])),
-        "{text}"
-    );
-    assert!(
-        text.contains(&format!("{} ? text", &fresh.id[..8])),
-        "{text}"
-    );
+    let objs = objects(&out(&repo.run(&repo.path(), &["list", "--json"], &[], "")));
 
-    let json = objects(&out(&repo.run(&repo.path(), &["list", "--json"], &[], "")));
-    let mark = |id: &str| json.iter().find(|o| o["id"] == id).unwrap()["mark"].clone();
-    assert_eq!(mark(&confirmed.id), "confirmed");
-    assert_eq!(mark(&fresh.id), "new");
-}
-
-/// An unsolved error prints `✗ <n> agent(s) failed here: <error>. No fix yet.`, and `--json` prints
-/// `{"unsolved", "spots"}` (`spec/cairns/11-cli.md`, "Output and errors").
-#[test]
-fn list_prints_an_unsolved_error_in_text_and_json() {
-    let repo = Repo::new();
-    let by = agent(&repo, "a");
-    cairn(&repo, &by, "spot", &[("else", "E-ONE")], now() - 3600);
-    cairn(&repo, &by, "spot", &[("else", "E-TWO")], now() - 3600);
-    cairn(&repo, &by, "spot", &[("else", "E-TWO")], now() - 7200);
-
-    let text = out(&repo.run(&repo.path(), &["list"], &[], ""));
-    assert_eq!(
-        text,
-        "✗ 2 agents failed here: E-TWO. No fix yet.\n✗ 1 agent failed here: E-ONE. No fix yet.\n"
-    );
-    let json = objects(&out(&repo.run(&repo.path(), &["list", "--json"], &[], "")));
-    assert_eq!(
-        json,
-        [
-            serde_json::json!({"unsolved": "E-TWO", "spots": 2}),
-            serde_json::json!({"unsolved": "E-ONE", "spots": 1}),
-        ]
-    );
+    assert!(objs[0]["score"].is_number(), "{}", objs[0]);
 }
 
 /// `list` prints one JSON object a line with `--json`
@@ -130,40 +90,24 @@ fn list_prints_one_json_object_a_line() {
         "label",
         "agent",
         "created_at",
-        "strength",
+        "score",
         "anchor",
-        "else",
         "content",
     ] {
         assert!(objs[0].get(key).is_some(), "{key}");
     }
     assert_eq!(objs[0]["id"], id);
-    assert_eq!(objs[0]["else"], serde_json::json!(["E"]));
-}
-
-/// A JSON list object holds no `when`
-/// (`spec/cairns/11-cli.md`, "Output and errors").
-#[test]
-fn a_json_list_object_holds_no_when() {
-    let repo = Repo::new();
-    let by = agent(&repo, "w");
-    cairn(&repo, &by, "finding", &[("else", "E")], now() - 3600);
-
-    let objs = objects(&out(&repo.run(&repo.path(), &["list", "--json"], &[], "")));
-
-    assert_eq!(objs.len(), 1);
-    assert!(objs[0].get("when").is_none(), "{}", objs[0]);
 }
 
 /// A cairn of 9000 bytes of content.
 fn long(repo: &Repo) {
     let by = agent(repo, "w");
-    let anchor = format!("silo:{}", repo.silo_id());
+    let anchor = format!("project:{}", repo.project_id());
     let tags = vec![
         vec!["I".to_string(), anchor.clone()],
-        vec!["K".into(), "silo".into()],
+        vec!["K".into(), "project".into()],
         vec!["i".into(), anchor],
-        vec!["k".into(), "silo".into()],
+        vec!["k".into(), "project".into()],
         vec!["L".into(), "celis.cairn".into()],
         vec!["l".into(), "finding".into(), "celis.cairn".into()],
     ];
@@ -213,7 +157,7 @@ fn the_json_form_names_the_agent_and_the_time() {
     let cairn = finding(&repo, &old, at);
     let mine = out(&repo.run(
         &dir,
-        &["write", "finding", "--else", "E-OTHER", "--", "the note"],
+        &["add", "--task", "t", "finding", "--", "the note"],
         &SESSION,
         "",
     ))
@@ -228,50 +172,6 @@ fn the_json_form_names_the_agent_and_the_time() {
     assert_ne!(by(&mine)["agent"], by(&cairn.id)["agent"]);
 }
 
-/// The error lookup prints `<n> spots: no fix yet; yours is <id8>`, and no spot, when only spots match
-/// (`spec/cairns/11-cli.md`, "Output and errors").
-#[test]
-fn the_error_lookup_prints_the_spots_line_when_only_spots_match() {
-    let repo = Repo::new();
-    agent(&repo, "s1");
-    agent(&repo, "s2");
-    let other = run(&repo, "s2", &["list", "--error", E]);
-    assert_eq!(other.lines().count(), 1, "{other}");
-    let theirs = labelled(&repo, "spot")[0].id.clone();
-
-    let text = run(&repo, "s1", &["list", "--error", E]);
-    let mine = labelled(&repo, "spot")
-        .into_iter()
-        .find(|n| n.id != theirs)
-        .unwrap()
-        .id;
-    assert_eq!(
-        text.trim_end(),
-        format!("2 spots: no fix yet; yours is {}", &mine[..8])
-    );
-
-    let json = run(&repo, "s1", &["list", "--json", "--error", E]);
-    let objs = objects(&json);
-    assert_eq!(objs.len(), 1, "{json}");
-    assert_eq!(objs[0], serde_json::json!({"spots": 2, "spot": mine}));
-}
-
-/// The spot the spots line names is the one the session holds: written now, or held before
-/// (`spec/cairns/11-cli.md`, "Output and errors").
-#[test]
-fn the_spots_line_names_the_session_s_own_spot() {
-    let repo = Repo::new();
-    agent(&repo, "s1");
-    let first = objects(&run(&repo, "s1", &["list", "--json", "--error", E]));
-    let written = labelled(&repo, "spot");
-    assert_eq!(written.len(), 1);
-    assert_eq!(first[0]["spot"], written[0].id);
-
-    let again = objects(&run(&repo, "s1", &["list", "--json", "--error", E]));
-    assert_eq!(labelled(&repo, "spot").len(), 1);
-    assert_eq!(again[0]["spot"], written[0].id);
-}
-
 /// `rate` takes the first 8 characters of an id, when only one cairn's id starts with them
 /// (`spec/cairns/11-cli.md`, "Output and errors").
 #[test]
@@ -284,7 +184,7 @@ fn rate_takes_the_first_8_characters_of_an_id() {
     assert_rating_cites(&repo, out(&o).trim(), &id);
 }
 
-/// Every command accepts `--json`; `write` and `rate` print the id, or `{"id"}`; no command asks a
+/// Every command accepts `--json`; `add` and `rate` print the id, or `{"id"}`; no command asks a
 /// question (`spec/cairns/11-cli.md`, "Output and errors").
 #[test]
 fn every_command_accepts_json_and_prints_the_id_without_asking() {
@@ -324,9 +224,15 @@ fn a_command_with_stdin_left_open_finishes_and_asks_nothing() {
     let id = id_of(&repo);
     let runs: [&[&str]; 7] = [
         &["list"],
-        &["write", "decision", "--", "note"],
+        &[
+            "add",
+            "--task",
+            "t",
+            "--",
+            "When you note: write it, because the next run needs it.",
+        ],
         &["rate", &id[..8], "+"],
-        &["report", "--helped", &id[..8]],
+        &["report", "--done"],
         &["show", &id[..8]],
         &["log"],
         &["stats"],
@@ -407,6 +313,67 @@ fn without_json_an_error_is_one_line() {
     assert!(object["message"].is_string());
 }
 
+/// A code-1 error without `--json` is one line on stderr, `celis: <message>`
+/// (`spec/cairns/11-cli.md`, "Output and errors").
+#[test]
+fn a_code_1_error_without_json_is_one_celis_line() {
+    let repo = Repo::new();
+    let o = repo.run(
+        &repo.path(),
+        &["rate", "deadbeef", "+"],
+        &[("CELIS_SESSION", "s2")],
+        "",
+    );
+    assert_eq!(o.status.code(), Some(1), "{}", err(&o));
+    let message = err(&o);
+    assert_eq!(message.matches('\n').count(), 1, "{message:?}");
+    assert!(
+        message.starts_with("celis: ") && message.ends_with('\n'),
+        "{message:?}"
+    );
+    assert_eq!(out(&o), "");
+}
+
+/// `init` with no terminal finishes without waiting and asks no question
+/// (`spec/cairns/11-cli.md`, "Output and errors").
+#[test]
+fn init_with_no_terminal_asks_no_question() {
+    for agent_args in [&["--for", "claude"][..], &[][..]] {
+        for closed in [true, false] {
+            let repo = Repo::new();
+            let mut cmd = Command::new(env!("CARGO_BIN_EXE_celis"));
+            cmd.arg("init")
+                .args(agent_args)
+                .current_dir(repo.path())
+                .env_clear()
+                .env("PATH", "/usr/bin:/bin")
+                .env("HOME", repo.home())
+                .env("CELIS_HOME", repo.home())
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped());
+            let mut child = if closed {
+                cmd.stdin(Stdio::null()).spawn().unwrap()
+            } else {
+                cmd.stdin(Stdio::piped()).spawn().unwrap()
+            };
+            let held = child.stdin.take();
+            let start = Instant::now();
+            while child.try_wait().unwrap().is_none() {
+                if start.elapsed() > Duration::from_secs(20) {
+                    child.kill().unwrap();
+                    panic!("init {agent_args:?} waited on stdin");
+                }
+                std::thread::sleep(Duration::from_millis(20));
+            }
+            drop(held);
+            let o = child.wait_with_output().unwrap();
+            assert!(o.status.success(), "init {agent_args:?}: {}", err(&o));
+            let text = format!("{}{}", out(&o), err(&o));
+            assert!(!text.contains('?'), "{text}");
+        }
+    }
+}
+
 /// Any other error exits 1, and with `--json` it is one object on stderr (`spec/cairns/11-cli.md`,
 /// "Output and errors").
 #[test]
@@ -447,44 +414,6 @@ fn rate_refuses_an_8_character_start_two_cairns_share() {
     assert_rating_cites(&repo, out(&o).trim(), &a.id);
 }
 
-fn write_on_spot(repo: &Repo, start: &str) -> Output {
-    let args = [
-        "write", "finding", "--spot", start, "--else", "E", "--", "x",
-    ];
-    repo.run(&repo.path(), &args, &SESSION, "")
-}
-
-/// `--spot` refuses an 8-character start two live spots share
-/// (`spec/cairns/11-cli.md`, "Output and errors").
-#[test]
-fn spot_refuses_an_8_character_start_two_live_spots_share() {
-    let repo = Repo::new();
-    let by = agent(&repo, "s1");
-    let (a, b) = sharing_a_start(&repo, &by, "spot", "spot");
-    put(&repo, &a);
-    put(&repo, &b);
-
-    let refused = write_on_spot(&repo, &a.id[..8]);
-    assert!(!refused.status.success());
-    assert_eq!(out(&refused), "");
-    assert_eq!(labelled(&repo, "finding").len(), 0);
-}
-
-/// `--spot` counts live spots only: a start a spot shares with a finding names the spot
-/// (`spec/cairns/11-cli.md`, "Output and errors").
-#[test]
-fn spot_takes_an_8_character_start_a_finding_also_has() {
-    let repo = Repo::new();
-    let by = agent(&repo, "s1");
-    let (spot, finding) = sharing_a_start(&repo, &by, "spot", "finding");
-    put(&repo, &spot);
-    put(&repo, &finding);
-
-    let o = write_on_spot(&repo, &spot.id[..8]);
-    assert!(o.status.success(), "{}", err(&o));
-    assert_eq!(labelled(&repo, "finding").len(), 2);
-}
-
 /// `log`, `show` and `stats` print only JSON objects, one a line, on stdout with `--json`
 /// (`spec/cairns/11-cli.md`, "Output and errors").
 #[test]
@@ -521,4 +450,35 @@ fn an_unknown_command_far_from_every_known_one_names_no_suggestion() {
     assert_eq!(usage.status.code(), Some(2));
     assert!(err(&usage).contains("frobnicate"), "{}", err(&usage));
     assert!(!err(&usage).contains("did you mean"), "{}", err(&usage));
+}
+
+/// `list` names the project of each cairn, and `--json` names its project and task (`spec/cairns/11-cli.md`, "Output and errors").
+#[test]
+fn list_marks_a_cairn_of_another_project_with_its_name() {
+    let repo = Repo::new();
+    let shop = repo.other("shop");
+    let args = [
+        "add",
+        "--task",
+        "add a tier",
+        "--",
+        "When pricing, use cents.",
+    ];
+    let o = repo.run(&shop, &args, &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+    let id = out(&o).trim().to_string();
+    let text = repo.run(&repo.path(), &["list"], &[], "");
+    assert_eq!(
+        out(&text),
+        format!("{} [shop] When pricing, use cents.\n", &id[..8])
+    );
+    let there = repo.run(&shop, &["list"], &[], "");
+    assert_eq!(
+        out(&there),
+        format!("{} [shop] When pricing, use cents.\n", &id[..8])
+    );
+    let json = repo.run(&repo.path(), &["list", "--json"], &[], "");
+    let object: Value = serde_json::from_str(out(&json).trim()).unwrap();
+    assert_eq!(object["project"], "shop");
+    assert_eq!(object["task"], "add a tier");
 }

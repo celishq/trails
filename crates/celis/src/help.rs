@@ -67,7 +67,7 @@ Start
   celis sync run                keep every vault in sync until you stop it
 
 Agents
-  celis cairn                   notes agents leave for each other in a folder
+  celis cairn                   notes agents leave for each other
 
 Run `celis help` for every group, or `celis help <group>` for one.";
 
@@ -79,7 +79,7 @@ folder, and your account owns each note they sign.
 
 Start
   celis auth login              make an account, once on each computer
-  celis cairn                   notes agents leave for each other in a folder
+  celis cairn                   notes agents leave for each other
 
 Run `celis help` for every group, or `celis help <group>` for one.";
 

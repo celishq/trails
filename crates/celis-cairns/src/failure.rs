@@ -42,16 +42,7 @@ impl Failure {
             .map(|(_, k)| k)
     }
 
-    /// The silo is in a vault, and `$CELIS_HOME` holds no key.
-    pub fn no_account() -> Self {
-        Self {
-            name: "no-account".into(),
-            message: "this folder is a vault, and $CELIS_HOME holds no key".into(),
-            code: 1,
-        }
-    }
-
-    /// No cairn in the silo has this id.
+    /// No cairn in the store has this id.
     pub fn no_cairn(id: &str) -> Self {
         Self {
             name: "no-cairn".into(),

@@ -525,11 +525,11 @@ fn under_json_a_group_page_prints_only_the_objects_it_covers() {
     for (object, command) in lines.iter().zip(&cairn) {
         assert_command_object(object, command);
     }
-    let one = objects(&["cairn", "write", "--help", "--json"]);
+    let one = objects(&["cairn", "add", "--help", "--json"]);
     assert_eq!(one.len(), 1);
     assert_command_object(
         &one[0],
-        cairn.iter().find(|c| c.key == "cairn write").unwrap(),
+        cairn.iter().find(|c| c.key == "cairn add").unwrap(),
     );
 }
 
@@ -572,13 +572,28 @@ fn celis_cairn_words_follow_cip_11_and_its_help_pages_follow_help() {
     assert!(command_page(list).starts_with("celis cairn list"));
 }
 
+/// Every `celis cairn` help page fits 80 columns and names no `spec/`
+/// (`spec/cairns/11-cli.md`, "Help").
+#[test]
+fn every_cairn_help_page_fits_80_columns_and_names_no_spec() {
+    let mut pages = vec![page(&["cairn"])];
+    pages.extend(commands(CAIRNS).iter().map(command_page));
+    assert!(pages.len() > 1);
+    for shown in pages {
+        for line in shown.lines() {
+            assert!(line.chars().count() <= 80, "{line:?}");
+        }
+        assert!(!shown.contains("spec/"), "{shown}");
+    }
+}
+
 /// The pages of `celis cairn stats` and `celis cairn log` name the file they read
 /// (`spec/cairns/11-cli.md`, "Help").
 #[test]
 fn the_pages_of_cairn_stats_and_log_name_the_log_file() {
     for word in ["stats", "log"] {
         let shown = page(&["cairn", word, "--help"]);
-        assert!(shown.contains(".celis/cairns/local/log"), "{shown}");
+        assert!(shown.contains("$CELIS_HOME/cairns/local/log"), "{shown}");
     }
 }
 
@@ -586,14 +601,40 @@ fn the_pages_of_cairn_stats_and_log_name_the_log_file() {
 /// (`spec/cairns/11-cli.md`, "Help").
 #[test]
 fn the_cairn_page_matches_the_spec() {
-    let cairn = blocks(CAIRNS, "Help")[0].clone();
-    assert_eq!(page(&["cairn"]).trim_end(), cairn.trim_end());
+    assert_eq!(page(&["cairn"]).trim_end(), cairn_page().trim_end());
 }
 
 /// `celis cairn help` prints the cairn page and exits 0
 /// (`spec/cairns/11-cli.md`, "Help").
 #[test]
 fn celis_cairn_help_must_print_the_cairn_page_and_exit_0() {
-    let cairn = blocks(CAIRNS, "Help")[0].clone();
-    assert_eq!(page(&["cairn", "help"]).trim_end(), cairn.trim_end());
+    assert_eq!(page(&["cairn", "help"]).trim_end(), cairn_page().trim_end());
+}
+
+/// The cairn page as the spec shows it.
+fn cairn_page() -> String {
+    blocks(CAIRNS, "Help")[0].clone()
+}
+
+/// `celis cairn brief` prints the brief as the spec shows it, each line at most 80 characters
+/// (`spec/cairns/11-cli.md`, "The brief").
+#[test]
+fn celis_cairn_brief_must_print_the_brief_and_exit_0() {
+    let brief = blocks(CAIRNS, "The brief")[0].clone();
+    let shown = page(&["cairn", "brief"]);
+    assert_eq!(shown.trim_end(), brief.trim_end());
+    assert!(shown.lines().all(|l| l.chars().count() <= 80), "{shown}");
+}
+
+/// With `--json`, `brief` prints one object `{"brief"}` (`spec/cairns/11-cli.md`, "The brief").
+#[test]
+fn with_json_brief_must_print_one_object() {
+    let shown = page(&["cairn", "brief", "--json"]);
+    let lines: Vec<&str> = shown.lines().collect();
+    assert_eq!(lines.len(), 1, "{shown}");
+    let object: serde_json::Value = serde_json::from_str(lines[0]).unwrap();
+    assert_eq!(
+        object["brief"].as_str().unwrap().trim_end(),
+        page(&["cairn", "brief"]).trim_end()
+    );
 }

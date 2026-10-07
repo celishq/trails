@@ -3,10 +3,10 @@
 mod support;
 use serde_json::Value;
 use std::process::Output;
-use support::{agent, cairn, cairn_saying, err, labelled, now, out, rating, run, Repo, DAY};
+use support::{agent, cairn, cairn_saying, err, labelled, now, out, Repo, DAY};
 
 fn write(repo: &Repo, env: &[(&str, &str)], args: &[&str]) -> Output {
-    let mut all = vec!["write"];
+    let mut all = vec!["add", "--task", "t"];
     all.extend_from_slice(args);
     repo.run(&repo.path(), &all, env, "")
 }
@@ -39,7 +39,7 @@ fn with_a_session_a_command_signs_as_that_sessions_agent() {
     let one = [("CELIS_SESSION", "s1")];
     let two = [("CELIS_SESSION", "s2")];
     for (env, text) in [(&one[..], "a"), (&one, "b"), (&two, "c"), (&[], "d")] {
-        let args = ["finding", "--else", text, "--", text];
+        let args = ["finding", "--", text];
         let o = write(&repo, env, &args);
         assert!(o.status.success(), "{}", err(&o));
     }
@@ -51,125 +51,7 @@ fn with_a_session_a_command_signs_as_that_sessions_agent() {
     assert_ne!(agent("c"), agent("d"));
 }
 
-/// `list` never prints a spot (`spec/cairns/11-cli.md`, "Commands").
-#[test]
-fn list_never_prints_a_spot() {
-    let repo = Repo::new();
-    let by = agent(&repo, "a");
-    let kept = cairn(&repo, &by, "finding", &[], now() - DAY);
-    cairn(&repo, &by, "spot", &[("else", "E-SPOT")], now() - DAY);
-    let all: Vec<Value> = listed(&repo, &[])
-        .into_iter()
-        .filter(|e| e.get("id").is_some())
-        .collect();
-    assert_eq!(all.len(), 1);
-    assert_eq!(all[0]["id"], kept.id.as_str());
-    assert!(listed(&repo, &["--error", "E-SPOT"])
-        .iter()
-        .all(|e| e["label"] != "spot"));
-}
-
-/// With `--spot`, `write` takes the `else` of that spot, adds those the flags give, and
-/// takes the first 8 characters of the spot's id (`spec/cairns/11-cli.md`, "Commands").
-#[test]
-fn with_spot_write_takes_the_else_of_that_spot_and_adds_the_flags() {
-    let repo = Repo::new();
-    let by = agent(&repo, "a");
-    let spot = cairn(&repo, &by, "spot", &[("else", "E-SPOT")], now() - DAY);
-    let args = [
-        "finding",
-        "--spot",
-        &spot.id[..8],
-        "--else",
-        "E-MORE",
-        "--",
-        "fix",
-    ];
-    let o = write(&repo, &[], &args);
-    assert!(o.status.success(), "{}", err(&o));
-    let id = out(&o).trim().to_string();
-    let all = listed(&repo, &[]);
-    let made = all.iter().find(|e| e["id"] == id.as_str()).unwrap();
-    let names = |key: &str| {
-        let mut v: Vec<String> = made[key]
-            .as_array()
-            .unwrap()
-            .iter()
-            .map(|x| x.as_str().unwrap().to_string())
-            .collect();
-        v.sort();
-        v
-    };
-    assert_eq!(names("else"), ["E-MORE", "E-SPOT"]);
-}
-
-/// `write` refuses a `--spot` that names no live spot, with `no-cairn` (`spec/cairns/11-cli.md`,
-/// "Commands", "Output and errors").
-#[test]
-fn write_refuses_a_spot_that_names_no_live_spot() {
-    let repo = Repo::new();
-    let by = agent(&repo, "a");
-    let kept = cairn(&repo, &by, "finding", &[], now() - DAY);
-    for id in ["0".repeat(64), kept.id.clone(), kept.id[..8].to_string()] {
-        let args = ["finding", "--spot", &id, "--else", "E", "--", "x"];
-        let o = repo.run(
-            &repo.path(),
-            &[&["write", "--json"][..], &args].concat(),
-            &[],
-            "",
-        );
-        assert_eq!(o.status.code(), Some(1), "{id}: {}", err(&o));
-        let object: Value = serde_json::from_str(err(&o).trim()).unwrap();
-        assert_eq!(object["error"], "no-cairn");
-    }
-}
-
-/// `list --error` is the error lookup and writes a spot (`spec/cairns/11-cli.md`, "Commands").
-#[test]
-fn list_error_is_the_error_lookup_and_writes_a_spot() {
-    let repo = Repo::new();
-    agent(&repo, "s1");
-    assert!(labelled(&repo, "spot").is_empty());
-    run(&repo, "s1", &["list", "--error", "E-LOOKUP"]);
-    let spots = labelled(&repo, "spot");
-    assert_eq!(spots.len(), 1);
-    assert_eq!(spots[0].tag("else"), Some("E-LOOKUP"));
-}
-
-/// `write` refuses a `--spot` that names an expired spot, with `no-cairn` (`spec/cairns/11-cli.md`,
-/// "Commands").
-#[test]
-fn write_refuses_an_expired_spot() {
-    let repo = Repo::new();
-    let by = agent(&repo, "a");
-    let spot = cairn(&repo, &by, "spot", &[("else", "E-SPOT")], now() - 15 * DAY);
-    refused_spot(&repo, &spot.id);
-}
-
-/// `write` refuses a `--spot` that names a pulled spot, with `no-cairn` (`spec/cairns/11-cli.md`,
-/// "Commands").
-#[test]
-fn write_refuses_a_pulled_spot() {
-    let repo = Repo::new();
-    let by = agent(&repo, "a");
-    let spot = cairn(&repo, &by, "spot", &[("else", "E-SPOT")], now() - DAY);
-    for session in ["b", "c"] {
-        rating(&repo, &agent(&repo, session), &spot, false, now() - 3600);
-    }
-    refused_spot(&repo, &spot.id);
-}
-
-fn refused_spot(repo: &Repo, id: &str) {
-    let args = [
-        "write", "--json", "finding", "--spot", id, "--else", "E", "--", "x",
-    ];
-    let o = repo.run(&repo.path(), &args, &[], "");
-    assert_eq!(o.status.code(), Some(1), "{}", err(&o));
-    let object: Value = serde_json::from_str(err(&o).trim()).unwrap();
-    assert_eq!(object["error"], "no-cairn");
-}
-
-/// `rate` refuses an id no cairn in the silo has, with `no-cairn` (`spec/cairns/11-cli.md`, "Commands").
+/// `rate` refuses an id no cairn in the store has, with `no-cairn` (`spec/cairns/11-cli.md`, "Commands").
 #[test]
 fn rate_refuses_an_unknown_id_with_no_cairn() {
     let repo = Repo::new();
@@ -180,13 +62,12 @@ fn rate_refuses_an_unknown_id_with_no_cairn() {
     assert_eq!(object["error"], "no-cairn");
 }
 
-/// With `$CELIS_SESSION` set, `rate` and the spot an error lookup writes are signed by that session's
-/// agent, not the account (`spec/cairns/11-cli.md`, "Commands").
+/// With `$CELIS_SESSION` set, `rate` is signed by that session's agent, not the account (`spec/cairns/11-cli.md`, "Commands").
 #[test]
-fn with_a_session_rate_and_the_error_lookup_sign_as_that_sessions_agent() {
+fn with_a_session_rate_signs_as_that_sessions_agent() {
     let repo = Repo::new();
     let session = [("CELIS_SESSION", "s1")];
-    let args = ["finding", "--else", "E-ONE", "--", "one"];
+    let args = ["finding", "--", "one"];
     let o = write(&repo, &session, &args);
     assert!(o.status.success(), "{}", err(&o));
     let o = write(&repo, &[], &["decision", "--", "two"]);
@@ -199,18 +80,14 @@ fn with_a_session_rate_and_the_error_lookup_sign_as_that_sessions_agent() {
 
     let rated = repo.run(&repo.path(), &["rate", &id, "+"], &session, "");
     assert!(rated.status.success(), "{}", err(&rated));
-    run(&repo, "s1", &["list", "--error", "E-LOOKUP"]);
 
-    let notes: Vec<celis_wire::Note> = std::fs::read_dir(repo.silo().join("shared"))
+    let notes: Vec<celis_wire::Note> = std::fs::read_dir(repo.store().join("shared"))
         .unwrap()
         .filter_map(|e| std::fs::read_to_string(e.unwrap().path()).ok())
         .filter_map(|t| serde_json::from_str(&t).ok())
         .collect();
     let rating = notes.iter().find(|n| n.kind == 7).unwrap();
     assert_eq!(rating.pubkey.npub(), agent_npub.as_str().unwrap());
-    let spots = labelled(&repo, "spot");
-    assert_eq!(spots.len(), 1);
-    assert_eq!(spots[0].pubkey.npub(), agent_npub.as_str().unwrap());
 }
 
 /// `--days` takes a whole number from 1: `stats` and `log` refuse 0, abc, -1 and 1.5 as a usage error
@@ -236,58 +113,21 @@ fn list_refuses_task_as_a_usage_error() {
     assert_eq!(o.status.code(), Some(2), "{}", err(&o));
 }
 
-fn spot(repo: &Repo, by: &celis_cairns::Agent, error: &str, ago: u64) {
-    cairn(repo, by, "spot", &[("else", error)], now() - ago);
-}
-
-fn unsolved(repo: &Repo, args: &[&str]) -> Vec<(String, u64)> {
-    listed(repo, args)
-        .iter()
-        .filter_map(|o| Some((o["unsolved"].as_str()?.to_string(), o["spots"].as_u64()?)))
-        .collect()
-}
-
-/// `list` prints every live cairn but spots, in reading order, with no limit
+/// `list` prints every cairn, in reading order, with no limit
 /// (`spec/cairns/11-cli.md`, "Commands").
 #[test]
-fn list_must_print_every_live_cairn_but_spots_with_no_limit() {
+fn list_must_print_every_live_cairn_with_no_limit() {
     let repo = Repo::new();
     let by = agent(&repo, "a");
-    let ids: Vec<String> = (0..12)
-        .map(|i| cairn(&repo, &by, "finding", &[], now() - (20 - i) * 3600).id)
+    let ids: Vec<String> = (0..25)
+        .map(|i| cairn(&repo, &by, "finding", &[], now() - (30 - i) * 3600).id)
         .collect();
-    cairn(&repo, &by, "spot", &[("else", "E-SPOT")], now() - 3600);
     let printed: Vec<String> = listed(&repo, &[])
         .iter()
         .filter_map(|e| Some(e["id"].as_str()?.to_string()))
         .collect();
     let newest_first: Vec<String> = ids.iter().rev().cloned().collect();
     assert_eq!(printed, newest_first);
-}
-
-/// `list` then prints a line for each unsolved error, most spots first, with no limit, and an error a
-/// live cairn matches is not one (`spec/cairns/11-cli.md`, "Commands").
-#[test]
-fn list_must_then_print_a_line_for_each_unsolved_error_most_spots_first() {
-    let repo = Repo::new();
-    let by = agent(&repo, "a");
-    for (error, spots) in [("E-A", 4), ("E-B", 3), ("E-C", 2), ("E-D", 1), ("E-NET", 5)] {
-        for n in 0..spots {
-            spot(&repo, &by, error, 3600 + n * 60);
-        }
-    }
-    cairn(&repo, &by, "finding", &[("else", "E-NET")], now() - DAY);
-    let all = listed(&repo, &[]);
-    assert_eq!(all[0]["label"], "finding");
-    assert_eq!(
-        unsolved(&repo, &[]),
-        [
-            ("E-A".to_string(), 4),
-            ("E-B".to_string(), 3),
-            ("E-C".to_string(), 2),
-            ("E-D".to_string(), 1)
-        ]
-    );
 }
 
 /// Past 8000 bytes of content, `list` ends with `note: <n> cairns, about <bytes / 4> tokens`
@@ -331,21 +171,134 @@ fn list_prints_the_note_only_past_8000_bytes() {
     assert_eq!(last_line(1), "note: 8 cairns, about 2000 tokens");
 }
 
-/// `list --error` prints only the live cairns whose `else` matches the error
+/// `add` refuses a missing or empty `--task` as a usage error, and writes nothing
 /// (`spec/cairns/11-cli.md`, "Commands").
 #[test]
-fn list_error_must_print_only_the_live_cairns_whose_else_matches() {
+fn add_must_refuse_a_missing_or_empty_task() {
+    let repo = Repo::new();
+    for args in [
+        &["add", "--", "Before you run make, set CI=1."][..],
+        &["add", "--task", " ", "--", "Before you run make, set CI=1."],
+    ] {
+        let o = repo.run(&repo.path(), args, &[], "");
+        assert_eq!(o.status.code(), Some(2), "{args:?}: {}", err(&o));
+    }
+    assert!(labelled(&repo, "finding").is_empty());
+}
+
+/// `list` prints every cairn of every project, an unrated one of another project included, by score
+/// (`spec/cairns/11-cli.md`, "Commands").
+#[test]
+fn list_prints_every_cairn_of_every_project_by_score() {
+    let repo = Repo::new();
+    let shop = repo.other("shop");
+    let mut ids = vec![];
+    for text in ["Before you test, set A=1.", "Before you test, set B=1."] {
+        let args = ["add", "--task", "t", "--", text];
+        let o = repo.run(&shop, &args, &[], "");
+        assert!(o.status.success(), "{}", err(&o));
+        ids.push(out(&o).trim().to_string());
+    }
+    let here = write(&repo, &[], &["--", "Before you test, set C=1."]);
+    assert!(here.status.success(), "{}", err(&here));
+    let rated = repo.run(
+        &shop,
+        &["rate", &ids[0], "+"],
+        &[("CELIS_SESSION", "s2")],
+        "",
+    );
+    assert!(rated.status.success(), "{}", err(&rated));
+
+    {
+        let all = listed(&repo, &[]);
+        let cairns: Vec<&Value> = all.iter().filter(|e| e.get("id").is_some()).collect();
+        assert_eq!(cairns.len(), 3, "{all:?}");
+        assert_eq!(cairns[0]["id"], ids[0].as_str());
+        let scores: Vec<f64> = cairns
+            .iter()
+            .map(|e| e["score"].as_f64().unwrap())
+            .collect();
+        assert!(scores.windows(2).all(|w| w[0] >= w[1]), "{scores:?}");
+    }
+}
+
+/// `list --prompt` prints what `list` prints, in the same order (`spec/cairns/11-cli.md`, "Commands").
+#[test]
+fn list_prompt_must_print_what_list_prints() {
     let repo = Repo::new();
     let by = agent(&repo, "a");
-    cairn_saying(&repo, &by, "none", now() - DAY);
-    cairn(
-        &repo,
-        &by,
-        "finding",
-        &[("else", "ConnectionError: E-NET")],
-        now() - DAY,
+    for (i, text) in ["first", "second", "third"].iter().enumerate() {
+        cairn_saying(&repo, &by, text, now() - (10 - i as u64) * 3600);
+    }
+    let plain = repo.run(&repo.path(), &["list"], &[], "");
+    let prompted = repo.run(
+        &repo.path(),
+        &["list", "--prompt", "fix the build"],
+        &[],
+        "",
     );
-    cairn(&repo, &by, "decision", &[("else", "E-OTHER")], now() - DAY);
-    assert_eq!(contents(&repo, &["--error", "E-NET"]), ["text"]);
-    assert_eq!(listed(&repo, &["--error", "E-NET"]).len(), 1);
+    assert!(plain.status.success(), "{}", err(&plain));
+    assert!(prompted.status.success(), "{}", err(&prompted));
+    assert_eq!(out(&prompted), out(&plain));
+}
+
+/// `add` refuses --weight 0, 11, 2.5 and x as a usage error and writes nothing
+/// (`spec/cairns/11-cli.md`, "Commands").
+#[test]
+fn add_refuses_a_weight_that_is_not_a_whole_number_1_to_10() {
+    let repo = Repo::new();
+    for weight in ["1", "10"] {
+        let o = write(&repo, &[], &["--weight", weight, "--", weight]);
+        assert!(o.status.success(), "{weight}: {}", err(&o));
+    }
+    for weight in ["0", "11", "2.5", "x"] {
+        let o = write(&repo, &[], &["--weight", weight, "--", "text"]);
+        assert_eq!(o.status.code(), Some(2), "{weight}: {}", err(&o));
+    }
+    assert_eq!(contents(&repo, &[]), ["1", "10"]);
+}
+
+/// A flag no command takes is a usage error, on a call that is valid without it
+/// (`spec/cairns/11-cli.md`, "Commands").
+#[test]
+fn a_flag_no_command_takes_is_a_usage_error() {
+    let repo = Repo::new();
+    let session = [("CELIS_SESSION", "s1")];
+    for (call, env) in [
+        (&["list"][..], &[][..]),
+        (&["report", "--done"], &session[..]),
+    ] {
+        let o = repo.run(&repo.path(), call, env, "");
+        assert!(o.status.success(), "{call:?}: {}", err(&o));
+        for flag in [
+            "--error",
+            "--context",
+            "--spot",
+            "--else",
+            "--helped",
+            "--wrong",
+        ] {
+            let mut all = call.to_vec();
+            all.extend([flag, "x"]);
+            let o = repo.run(&repo.path(), &all, env, "");
+            assert_eq!(o.status.code(), Some(2), "{all:?}: {}", err(&o));
+        }
+    }
+}
+
+/// `add --weight 7` writes the tag `["weight","7"]` (`spec/cairns/11-cli.md`, "Commands").
+#[test]
+fn add_weight_writes_the_weight_tag() {
+    let repo = Repo::new();
+    let o = write(&repo, &[], &["--weight", "7", "--", "heavy"]);
+    assert!(o.status.success(), "{}", err(&o));
+    let notes: Vec<celis_wire::Note> = std::fs::read_dir(repo.store().join("shared"))
+        .unwrap()
+        .filter_map(|e| std::fs::read_to_string(e.unwrap().path()).ok())
+        .filter_map(|t| serde_json::from_str(&t).ok())
+        .collect();
+    let note = notes.iter().find(|n| n.content.contains("heavy")).unwrap();
+    assert!(note
+        .tags
+        .contains(&vec!["weight".to_string(), "7".to_string()]));
 }
