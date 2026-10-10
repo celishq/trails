@@ -52,8 +52,14 @@ fn add_carries_the_whole_ids_of_under_and_fixes() {
         .filter_map(|v| v.get("step").cloned())
         .find(|s| s["id"] == fix.as_str())
         .expect("the fix");
-    assert_eq!(step["under"], trail.as_str());
-    assert_eq!(step["fixes"], first.as_str());
+    assert_eq!(
+        step["links"],
+        serde_json::json!([
+            {"to": trail, "kind": "under"},
+            {"to": first, "kind": "fixes"},
+        ])
+    );
+    assert!(step.get("under").is_none(), "{step}");
 }
 
 /// `done` refuses a step with an open step under it, with `open-steps`, and writes nothing

@@ -35,7 +35,7 @@ impl<'a> Decisions<'a> {
     }
 
     /// The live decision in scope in `project` whose id is `id`, or the only one whose id starts with `id`
-    /// when `id` is 8 characters.
+    /// when `id` is 4 or more characters.
     pub fn find(&self, project: &str, id: &str) -> Result<&'a Note, Failure> {
         let live: Vec<&'a Note> = self.live(project).into_iter().map(|(n, _)| n).collect();
         crate::id::find(live, id).ok_or_else(|| Failure::no_decision(id))
@@ -70,7 +70,7 @@ impl<'a> Decisions<'a> {
 }
 
 /// The file or folder of the place `at`, without a trailing `:<line>`.
-fn path(at: &str) -> &str {
+pub(crate) fn path(at: &str) -> &str {
     match at.rsplit_once(':') {
         Some((path, line)) if !line.is_empty() && line.bytes().all(|b| b.is_ascii_digit()) => path,
         _ => at,

@@ -106,3 +106,36 @@ fn a_reader_counts_a_record_as_a_step_only_with_the_label() {
     assert!(text.contains(&step.id[..8]), "{text}");
     assert!(!text.contains(&other.id[..8]), "{text}");
 }
+
+/// A step's text line holds only its title, its first line; the full tree prints the other lines under
+/// it (`spec/trails/12-steps.md`, "Steps").
+#[test]
+fn a_steps_line_holds_its_title_and_the_full_tree_its_detail() {
+    let repo = Repo::new();
+    let trail = support::add(&repo, &["--", "the trail"]);
+    support::add(
+        &repo,
+        &[
+            "--under",
+            &trail[..8],
+            "--",
+            "Round down\nThe test expects 7.99.",
+        ],
+    );
+    let read = support::out(&run(&repo, &["read"]));
+    assert!(
+        read.lines().any(|l| l.ends_with("[repo] Round down")),
+        "{read}"
+    );
+    assert!(!read.contains("7.99"), "{read}");
+    let short = support::out(&run(&repo, &["tree", &trail[..8]]));
+    assert!(
+        short.lines().any(|l| l.ends_with("[repo] Round down")),
+        "{short}"
+    );
+    assert!(!short.contains("7.99"), "{short}");
+    let full = support::out(&run(&repo, &["tree", &trail[..8], "--full"]));
+    let lines: Vec<&str> = full.lines().collect();
+    assert!(lines[1].ends_with("[repo] Round down"), "{full}");
+    assert_eq!(lines[2], "    The test expects 7.99.", "{full}");
+}

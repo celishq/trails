@@ -115,3 +115,31 @@ fn a_reader_orders_decisions_by_scope_then_newest_first_then_by_id() {
     want.push(mine);
     assert_eq!(read_ids(&repo, &repo.path(), &[]), want);
 }
+
+/// A place resolves against the working folder and reads as a path from the project's top folder, so
+/// `./a`, a full path and a path from a subfolder name one place (`spec/trails/10-decisions.md`, "Places").
+#[test]
+fn a_place_reads_as_a_path_from_the_projects_top_folder() {
+    let repo = Repo::new();
+    repo.write("src/a.rs", "fn main() {}\n");
+    let root = repo.path();
+    let src = root.join("src");
+    let o = repo.run(
+        &root,
+        &["decide", "--scope", "at:./src/a.rs:3", "--", "kept"],
+        &[],
+        "",
+    );
+    assert!(o.status.success(), "{}", support::err(&o));
+    let id = short(support::out(&o).trim());
+    let full = root.join("src/a.rs").display().to_string();
+    assert_eq!(read_ids(&repo, &root, &["--at", &full]), [id.as_str()]);
+    assert_eq!(read_ids(&repo, &src, &["--at", "a.rs"]), [id.as_str()]);
+    assert_eq!(read_ids(&repo, &src, &["--at", "../src"]), [id.as_str()]);
+    let o = repo.run(&root, &["read", "--json"], &[], "");
+    assert!(
+        support::out(&o).contains("\"at:src/a.rs:3\""),
+        "{}",
+        support::out(&o)
+    );
+}

@@ -3,7 +3,7 @@
 mod support;
 
 use celis_wire::{Account, Note};
-use support::{account, err, now, out, put, Repo, DAY};
+use support::{account, err, now, out, put, Repo};
 
 fn step(repo: &Repo, by: &Account, text: &str, extra: &[(&str, &str)], at: u64) -> Note {
     let anchor = format!("project:{}", repo.project_id());
@@ -52,8 +52,8 @@ fn done_records(repo: &Repo) -> Vec<Note> {
 fn a_step_is_open_until_a_done_names_it_and_done_carries_its_proof() {
     let repo = Repo::new();
     let by = &account();
-    let p = step(&repo, by, "work.", &[], now() - 4 * DAY).id;
-    let q = step(&repo, by, "other.", &[], now() - 4 * DAY + 1).id;
+    let p = step(&repo, by, "work.", &[], now() - 4 * 60).id;
+    let q = step(&repo, by, "other.", &[], now() - 4 * 60 + 1).id;
     assert!(ready(&repo).contains(&p[..8]));
     let o = run(&repo, &["done", &p, "--", "proof"]);
     assert!(o.status.success(), "{}", err(&o));
@@ -73,7 +73,7 @@ fn a_step_is_open_until_a_done_names_it_and_done_carries_its_proof() {
 fn a_reader_ignores_a_done_record_with_no_content() {
     let repo = Repo::plain();
     let by = &account();
-    let p = step(&repo, by, "work", &[], now() - 4 * DAY);
+    let p = step(&repo, by, "work", &[], now() - 4 * 60);
     let tags: Vec<Vec<String>> = vec![
         vec!["L".into(), "celis.step".into()],
         vec!["l".into(), "done".into(), "celis.step".into()],
@@ -81,7 +81,7 @@ fn a_reader_ignores_a_done_record_with_no_content() {
     ];
     put(
         &repo,
-        &Note::write(by, 1985u16, now() - 3 * DAY, tags, "").unwrap(),
+        &Note::write(by, 1985u16, now() - 3 * 60, tags, "").unwrap(),
     );
     let all = ready(&repo);
     assert!(all.contains(&p.id[..8]), "{all}");
@@ -92,7 +92,7 @@ fn a_reader_ignores_a_done_record_with_no_content() {
 fn done_refuses_an_empty_proof_as_a_usage_error() {
     let repo = Repo::plain();
     let by = &account();
-    let p = step(&repo, by, "work", &[], now() - 4 * DAY);
+    let p = step(&repo, by, "work", &[], now() - 4 * 60);
     let o = run(&repo, &["done", &p.id[..8], "--", ""]);
     assert_eq!(o.status.code(), Some(2), "{}", err(&o));
 }

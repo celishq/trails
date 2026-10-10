@@ -68,8 +68,8 @@ account   $CELIS_HOME/key (CIP-01), minted at random on first use when it does n
 
 ## Decisions
 
-A decision is one sentence that holds until another replaces it. You make decisions, and each holds in
-its scope.
+A decision is one sentence that holds until another replaces it. An agent writes it, signed as your
+account, when it learns a rule that later work must keep. Each holds in its scope.
 
 ```json
 kind 1111, signed by the account (NIP-22)
@@ -124,6 +124,24 @@ me                in every project
 ```
 at:shelf/prices.py   "When you change prices: keep them in cents, because floats lost a cent."
 me                   "When you write a commit message: use plain words, because the team reads them."
+```
+
+## Places
+
+A place is a file, a `file:line`, a folder or a URL. A command writes and reads a path from the project's
+top folder. So `./a.rs`, a path from a subfolder and the full path name one place.
+
+**Rules**
+
+- A command MUST resolve a place that is a path against the working folder, and drop its `.` and `..`.
+- A command MUST write and read that path from the project's top folder. A `:<line>` MUST stay at its end.
+- A command MUST keep a URL, and a path outside the project's top folder, as it was given.
+
+**Examples**
+
+```
+in ~/code/shop/src:   --at ./prices.py:40    →   src/prices.py:40
+in ~/code/shop:       --at /Users/me/code/shop/src/prices.py   →   src/prices.py
 ```
 
 ## Reading

@@ -4,9 +4,7 @@ mod support;
 
 use serde_json::Value;
 use std::process::Output;
-use support::{
-    account, decision, done_note, err, labelled, now, out, refusal, step_note, Repo, DAY,
-};
+use support::{account, decision, done_note, err, labelled, now, out, refusal, step_note, Repo};
 
 const WORK: &str = "When you change prices: keep them in cents, because floats lost a cent.";
 
@@ -41,7 +39,7 @@ fn project(id: &str) -> (&str, &str) {
 fn read_prints_the_trails_with_their_rules_then_the_open_steps_then_the_decisions() {
     let repo = Repo::new();
     let id = repo.project_id();
-    let t = now() - 5 * DAY;
+    let t = now() - 5 * 60;
     let first = step_note(&repo, &account(), None, "first", t);
     let second = step_note(&repo, &account(), None, "second\nmore", t + 1);
     let scope = format!("trail:{}", second.id);
@@ -75,7 +73,7 @@ fn read_prints_the_trails_with_their_rules_then_the_open_steps_then_the_decision
 fn read_prints_no_reached_trail_and_no_rule_of_one() {
     let repo = Repo::new();
     let id = repo.project_id();
-    let t = now() - 5 * DAY;
+    let t = now() - 5 * 60;
     let reached = step_note(&repo, &account(), None, "reached", t);
     done_note(&repo, &account(), &reached, t + 1);
     let scope = format!("trail:{}", reached.id);
@@ -103,7 +101,7 @@ fn read_prints_no_reached_trail_and_no_rule_of_one() {
 fn read_puts_the_decisions_at_each_at_place_first() {
     let repo = Repo::new();
     let id = repo.project_id();
-    let t = now() - 5 * DAY;
+    let t = now() - 5 * 60;
     let a = decision(
         &repo,
         project(&id),
@@ -130,13 +128,13 @@ fn read_puts_the_decisions_at_each_at_place_first() {
     assert_eq!(ids(&["read", "--at", "a.py"]), [short(&a.id), short(&b.id)]);
 }
 
-/// `read` prints 30 decisions at most, those at an `--at` place first (`spec/trails/11-cli.md`,
-/// "Commands").
+/// `read` prints 30 decisions at most, those at an `--at` place first, then how many it left out
+/// (`spec/trails/11-cli.md`, "Commands").
 #[test]
 fn read_prints_30_decisions_at_most_those_at_a_place_first() {
     let repo = Repo::new();
     let id = repo.project_id();
-    let t = now() - 5 * DAY;
+    let t = now() - 5 * 60;
     let there = decision(
         &repo,
         project(&id),
@@ -157,10 +155,13 @@ fn read_prints_30_decisions_at_most_those_at_a_place_first() {
             )
         })
         .collect();
-    let got: Vec<String> = lines_of(&repo, &repo.path(), &["read", "--at", "a.py"])
-        .iter()
-        .map(|l| l[..8].to_string())
-        .collect();
+    let mut lines = lines_of(&repo, &repo.path(), &["read", "--at", "a.py"]);
+    assert_eq!(
+        lines.pop().as_deref(),
+        Some("6 more decisions"),
+        "{lines:?}"
+    );
+    let got: Vec<String> = lines.iter().map(|l| l[..8].to_string()).collect();
     assert_eq!(got.len(), 30, "{got:?}");
     assert_eq!(got[0], short(&there.id));
     assert_eq!(got[1], short(&others[34].id));
@@ -173,7 +174,7 @@ fn read_prints_30_decisions_at_most_those_at_a_place_first() {
 fn read_with_like_prints_the_past_trails_after_the_decisions() {
     let repo = Repo::new();
     let id = repo.project_id();
-    let t = now() - 5 * DAY;
+    let t = now() - 5 * 60;
     let past = step_note(&repo, &account(), None, "Build the Vendors page", t);
     done_note(&repo, &account(), &past, t + 1);
     let cents = decision(&repo, project(&id), &account(), (None, None), WORK, t + 2);
@@ -193,15 +194,15 @@ fn read_with_like_prints_the_past_trails_after_the_decisions() {
 fn read_writes_no_record() {
     let repo = Repo::new();
     let id = repo.project_id();
-    let trail = step_note(&repo, &account(), None, "a trail", now() - DAY);
-    done_note(&repo, &account(), &trail, now() - DAY);
+    let trail = step_note(&repo, &account(), None, "a trail", now() - 60);
+    done_note(&repo, &account(), &trail, now() - 60);
     decision(
         &repo,
         project(&id),
         &account(),
         (None, None),
         "one",
-        now() - DAY,
+        now() - 60,
     );
     let before = records(&repo);
     for args in [
@@ -257,7 +258,7 @@ fn the_json_form_of_a_decision_has_the_listed_fields() {
         &account(),
         (Some("at:a.py"), None),
         "one",
-        now() - DAY,
+        now() - 60,
     );
     let o = repo.run(&repo.path(), &["read", "--json"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
@@ -296,7 +297,7 @@ fn decide_writes_its_scope_and_replaces_as_tags() {
         &account(),
         (None, None),
         "old",
-        now() - DAY,
+        now() - 60,
     );
     let written = |args: &[&str]| {
         let mut all = vec!["decide"];
@@ -346,7 +347,7 @@ fn decide_refuses_empty_text_and_an_unknown_scope_as_a_usage_error() {
 #[test]
 fn decide_refuses_a_trail_no_active_trail_of_the_project_has() {
     let repo = Repo::new();
-    let t = now() - 5 * DAY;
+    let t = now() - 5 * 60;
     let reached = step_note(&repo, &account(), None, "reached", t);
     done_note(&repo, &account(), &reached, t + 1);
     let active = step_note(&repo, &account(), None, "active", t + 2);
@@ -376,7 +377,7 @@ fn decide_refuses_a_replaces_no_live_decision_has() {
         &account(),
         (None, None),
         "old",
-        now() - 3 * DAY,
+        now() - 3 * 60,
     );
     decision(
         &repo,
@@ -384,7 +385,7 @@ fn decide_refuses_a_replaces_no_live_decision_has() {
         &account(),
         (None, Some(&old.id)),
         "new",
-        now() - 2 * DAY,
+        now() - 2 * 60,
     );
     let unknown = "0".repeat(64);
     for target in [unknown.as_str(), old.id.as_str()] {
@@ -405,4 +406,19 @@ fn a_flag_no_command_takes_is_a_usage_error() {
     ] {
         refusal(&repo.run(&repo.path(), &args, &[], ""), 2, "usage");
     }
+}
+
+/// `home` prints the full path of the store and writes nothing; with `--json`, `{"path"}`
+/// (`spec/trails/11-cli.md`, "Commands").
+#[test]
+fn home_prints_the_path_of_the_store() {
+    let repo = Repo::new();
+    let o = run(&repo, &["home"]);
+    assert!(o.status.success(), "{}", err(&o));
+    let store = repo.store().display().to_string();
+    assert_eq!(out(&o).trim(), store);
+    let o = run(&repo, &["home", "--json"]);
+    let printed: Value = serde_json::from_str(out(&o).trim()).unwrap();
+    assert_eq!(printed["path"], store.as_str());
+    assert!(!repo.store().exists());
 }

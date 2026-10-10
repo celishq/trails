@@ -44,7 +44,7 @@ fn a_steer_does_not_close_its_step_and_one_with_no_content_is_ignored() {
     assert!(read.contains(&id[..8]), "{read}");
     let o = run(&repo, &["step", "done", &id[..8], "--", "done"]);
     assert!(o.status.success(), "{}", err(&o));
-    let tree = out(&run(&repo, &["tree", &id[..8]]));
+    let tree = out(&run(&repo, &["tree", &id[..8], "--full"]));
     assert!(tree.contains(" · steered 1"), "{tree}");
 }
 

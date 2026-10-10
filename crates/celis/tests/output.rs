@@ -136,13 +136,19 @@ fn read_at_and_decide_with_stdin_left_open_ask_nothing() {
     }
 }
 
-/// A command takes an id whole, or as its first 8 characters when only one record's id starts with
-/// them (`spec/trails/11-cli.md`, "Output and errors").
+/// A command takes an id whole, or as its first 4 or more characters when only one record's id starts
+/// with them; 3 characters name no record (`spec/trails/11-cli.md`, "Output and errors").
 #[test]
-fn a_command_takes_an_id_whole_or_as_its_first_8_characters() {
+fn a_command_takes_an_id_whole_or_as_a_start_of_4_or_more_characters() {
     let repo = Repo::plain();
-    let (a, b) = (step_id(&repo, "one"), step_id(&repo, "two"));
-    for text in [a.as_str(), &b[..8]] {
+    let (a, b, c) = (
+        step_id(&repo, "one"),
+        step_id(&repo, "two"),
+        step_id(&repo, "three"),
+    );
+    let o = repo.run(&repo.path(), &["step", "done", &c[..3], "--", "p"], &[], "");
+    assert!(!o.status.success(), "{}", out(&o));
+    for text in [a.as_str(), &b[..8], &c[..4]] {
         let o = repo.run(&repo.path(), &["step", "done", text, "--", "p"], &[], "");
         assert!(o.status.success(), "{text}: {}", err(&o));
     }

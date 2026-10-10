@@ -35,7 +35,8 @@ impl Store {
         })
     }
 
-    fn root(home: &Path) -> PathBuf {
+    /// The folder of the store in `home`.
+    pub fn root(home: &Path) -> PathBuf {
         home.join("trails")
     }
 

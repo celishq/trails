@@ -5,7 +5,7 @@ use crate::{Anchor, Scope};
 use anyhow::Result;
 use celis_wire::{Account, Note};
 
-/// One decision of yours, written on a project, that holds in its scope.
+/// One decision, written on a project, that holds in its scope.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Decision {
     pub anchor: Anchor,

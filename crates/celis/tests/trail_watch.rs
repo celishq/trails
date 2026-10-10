@@ -145,8 +145,9 @@ fn watch_refuses_an_unknown_id() {
     refusal(&cli(&repo, &["watch", "deadbeef", "--json"]), 1, "no-step");
 }
 
-/// The text `celis watch <args>` writes to a terminal, read until it holds each of `texts` in turn.
-fn on_terminal(repo: &Repo, args: &[&str], texts: &[&str]) -> String {
+/// The text `celis watch <args>` writes to a terminal, read until it holds each of `texts` in turn; after
+/// the first, the terminal turns `resize` columns wide and signals it, when given.
+fn on_terminal(repo: &Repo, args: &[&str], texts: &[&str], resize: Option<u16>) -> String {
     use std::io::Read;
     use std::os::fd::FromRawFd;
     let (mut lead, mut follow) = (0, 0);
@@ -195,8 +196,19 @@ fn on_terminal(repo: &Repo, args: &[&str], texts: &[&str]) -> String {
             }
         }
     };
-    for text in texts {
+    for (n, text) in texts.iter().enumerate() {
         wait_for(text, &mut seen);
+        if let (0, Some(columns)) = (n, resize) {
+            let size = libc::winsize {
+                ws_row: 24,
+                ws_col: columns,
+                ws_xpixel: 0,
+                ws_ypixel: 0,
+            };
+            assert_eq!(unsafe { libc::ioctl(lead, libc::TIOCSWINSZ, &size) }, 0);
+            let pid = libc::pid_t::try_from(child.id()).unwrap();
+            assert_eq!(unsafe { libc::kill(pid, libc::SIGWINCH) }, 0);
+        }
     }
     let _ = child.kill();
     let _ = child.wait();
@@ -222,12 +234,46 @@ fn watch_on_a_terminal_clears_the_screen_before_each_tree() {
             assert!(o.status.success());
         }
     });
-    let shown = on_terminal(&repo, &[&trail[..8]], &["the trail", "the step"]);
+    let shown = on_terminal(&repo, &[&trail[..8]], &["the trail", "the step"], None);
     adder.join().unwrap();
     let clear = "\x1b[H\x1b[2J\x1b[3J";
     let trees: Vec<&str> = shown.split(clear).skip(1).collect();
-    assert_eq!(trees.len(), 2, "{shown:?}");
+    assert!(trees.len() >= 2, "{shown:?}");
     assert!(shown.starts_with(clear), "{shown:?}");
-    assert!(trees[1].contains("the step"), "{shown:?}");
+    assert!(!trees[0].contains("the step"), "{shown:?}");
+    assert!(trees[trees.len() - 1].contains("the step"), "{shown:?}");
     assert!(!shown.contains("\r\n\r\n"), "{shown:?}");
+}
+
+/// On a terminal, `watch` prints a tree whose times stand still again, cut to the new width, when the
+/// terminal's width changes (`spec/trails/14-trails.md`, "Watching").
+#[test]
+fn watch_on_a_terminal_prints_the_tree_again_when_its_width_changes() {
+    let repo = Repo::new();
+    let hours = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs()
+        - 7_200;
+    let text = "a trail whose words run well past thirty characters";
+    let trail = support::step_note(&repo, &support::account(), None, text, hours).id;
+    let shown = on_terminal(&repo, &[&trail[..8]], &["thirty characters", "…"], Some(30));
+    let clear = "\x1b[H\x1b[2J\x1b[3J";
+    let trees: Vec<&str> = shown.split(clear).skip(1).collect();
+    assert!(trees.len() >= 2, "{shown:?}");
+    assert!(
+        !trees[trees.len() - 1].contains("thirty characters"),
+        "{shown:?}"
+    );
+}
+
+/// On a terminal, `watch` prints the tree again as the times it shows change, with no record landing
+/// (`spec/trails/14-trails.md`, "Watching").
+#[test]
+fn watch_on_a_terminal_prints_the_tree_again_as_its_times_change() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    let shown = on_terminal(&repo, &[&trail[..8]], &["the trail", "3s"], None);
+    let clear = "\x1b[H\x1b[2J\x1b[3J";
+    assert!(shown.split(clear).skip(1).count() >= 2, "{shown:?}");
 }

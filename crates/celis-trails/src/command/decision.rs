@@ -1,4 +1,4 @@
-//! `celis decide`: write a decision of yours.
+//! `celis decide`: write a decision.
 
 use super::{Args, Command};
 use crate::steps::ACTIVE;
@@ -28,7 +28,10 @@ impl Command {
         let records = store.records();
         let scope = match scope {
             Scope::Trail(id) => {
-                let steps = Steps { records: &records };
+                let steps = Steps {
+                    records: &records,
+                    now: super::now(),
+                };
                 let note = steps.find(&id).map_err(|_| Failure::no_trail(&id))?;
                 let active = steps.state(note) == ACTIVE
                     && Step::read(note)
@@ -38,6 +41,7 @@ impl Command {
                     false => return Err(Failure::no_trail(&id)),
                 }
             }
+            Scope::At(place) => Scope::At(project.place(&place, &self.folder)),
             scope => scope,
         };
         let replaces = match &args.replaces {

@@ -29,7 +29,7 @@ impl Grade {
 }
 
 /// `seconds` in its two largest units.
-fn took(seconds: u64) -> String {
+pub(crate) fn took(seconds: u64) -> String {
     match seconds {
         s if s < 60 => format!("{s}s"),
         s if s < 3_600 => format!("{}m {}s", s / 60, s % 60),

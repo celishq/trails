@@ -21,7 +21,7 @@ The conventions in `spec/AGENTS.md` apply here unchanged.
 
 | Name | What | CIP |
 |---|---|---|
-| 1111 with `decision` in `celis.decision` | kind: a decision of yours (NIP-22) | 10 |
+| 1111 with `decision` in `celis.decision` | kind: a decision (NIP-22) | 10 |
 | `project:<id>` · `project` | anchor of a project, and its `K` | 10 |
 | `scope` · `replaces` | decision tags: where it holds, the decision it replaces | 10 |
 | `me` · `project` · `trail:<id>` · `at:<place>` | the scopes of a decision | 10 |
@@ -31,6 +31,7 @@ The conventions in `spec/AGENTS.md` apply here unchanged.
 | 1985 with `done` in `celis.step` | kind: a done (NIP-32) | 12 |
 | 1985 with `start` in `celis.step` | kind: a start (NIP-32) | 12 |
 | 1985 with `steer` in `celis.step` | kind: a steer (NIP-32) | 12 |
+| 1985 with `drop` in `celis.step` | kind: a drop (NIP-32) | 12 |
 | `under` · `fixes` · `follows` · `at` · `file` · `check` | step tags | 12 |
 | `figma:<key>` · `web:<host>` | project id of a step outside git | 12 |
 | `no-step` · `closed` · `open-steps` · `check-failed` | errors | 12 |
@@ -47,9 +48,9 @@ The conventions in `spec/AGENTS.md` apply here unchanged.
 | `trail` | one task you give, in your words: a step with no `under`, and the steps under it |
 | `rule` | a live decision whose scope is a trail |
 | `scope` | where a decision holds: a place, a trail, the project, or every project |
-| `step` | one part of the work toward a trail, at a place: open, working or done |
+| `step` | one part of the work toward a trail, at a place: open, working, done or dropped |
 | `steer` | what you asked for while a step was open, written by the agent |
-| `decision` | one sentence of yours that holds in its scope until another replaces it |
+| `decision` | one sentence an agent writes, that holds in its scope until another replaces it |
 | `live` | a decision no counted decision replaces |
 | `rework` | a step that fixes the work of a done step |
 | `place` | a file, a `file:line`, a folder or a URL that a step or a decision is at |

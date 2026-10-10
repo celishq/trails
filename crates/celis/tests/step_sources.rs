@@ -5,7 +5,7 @@ mod support;
 use celis_wire::{Account, Note};
 use serde_json::Value;
 use std::process::Output;
-use support::{account, err, now, out, put, Repo, DAY};
+use support::{account, err, now, out, put, Repo};
 
 fn run(repo: &Repo, args: &[&str]) -> Output {
     let mut all = vec!["step"];
@@ -62,7 +62,7 @@ fn steps(repo: &Repo) -> usize {
 fn a_reader_reads_steps_from_the_store_only() {
     let repo = Repo::new();
     let by = &account();
-    let kept = store_step(&repo, by, "in the store", now() - 3 * DAY);
+    let kept = store_step(&repo, by, "in the store", now() - 3 * 60);
     repo.write("a.rs", "// @todo #1 in the code\n");
     repo.git(&["add", "."]);
     assert_eq!(ids(&listed(&repo)), vec![kept.id]);
@@ -74,7 +74,7 @@ fn a_reader_reads_steps_from_the_store_only() {
 fn a_reader_ignores_a_done_that_names_its_step_with_a_step_tag() {
     let repo = Repo::new();
     let by = &account();
-    let kept = store_step(&repo, by, "work", now() - 3 * DAY);
+    let kept = store_step(&repo, by, "work", now() - 3 * 60);
     let tags: Vec<Vec<String>> = vec![
         vec!["L".into(), "celis.step".into()],
         vec!["l".into(), "done".into(), "celis.step".into()],
@@ -96,8 +96,8 @@ fn add_writes_a_step_in_a_project_in_git() {
     assert_eq!(ids(&listed(&repo)).len(), 1);
 }
 
-/// `add` writes no step when an open step of the same project has the same text, and prints that
-/// step's id (`spec/trails/12-steps.md`, "The commands").
+/// `add` writes no step when an open step of the same project and `under` has the same text, and prints
+/// that step's id (`spec/trails/12-steps.md`, "The commands").
 #[test]
 fn add_must_not_write_a_step_an_open_one_of_the_project_already_states() {
     let repo = Repo::new();
@@ -111,4 +111,13 @@ fn add_must_not_write_a_step_an_open_one_of_the_project_already_states() {
     let elsewhere = repo.run(outside.path(), &["step", "add", "--", "undo it."], &[], "");
     assert!(elsewhere.status.success(), "{}", err(&elsewhere));
     assert_ne!(out(&elsewhere), out(&first));
+    let a = out(&run(&repo, &["add", "--", "trail a"]))
+        .trim()
+        .to_string();
+    let b = out(&run(&repo, &["add", "--", "trail b"]))
+        .trim()
+        .to_string();
+    let in_a = run(&repo, &["add", "--under", &a[..8], "--", "write the tests"]);
+    let in_b = run(&repo, &["add", "--under", &b[..8], "--", "write the tests"]);
+    assert_ne!(out(&in_a), out(&in_b));
 }

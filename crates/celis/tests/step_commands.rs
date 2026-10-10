@@ -6,7 +6,7 @@ use celis_trails::Project;
 use celis_wire::{Account, Note};
 use serde_json::Value;
 use std::process::Output;
-use support::{account, err, now, out, put, Repo, DAY};
+use support::{account, add, cli, err, now, out, put, Repo};
 
 fn step(by: &Account, project: (&str, &str), text: &str, extra: &[(&str, &str)], at: u64) -> Note {
     let anchor = format!("project:{}", project.0);
@@ -55,11 +55,11 @@ fn step_add_refuses_empty_text_and_the_other_commands_refuse_unknown_and_closed_
     let repo = Repo::plain();
     let by = &account();
     let id = repo.project_id();
-    let open = step(by, (&id, "repo"), "open", &[], now() - 3 * DAY);
-    let shut = step(by, (&id, "repo"), "shut", &[], now() - 3 * DAY + 1);
+    let open = step(by, (&id, "repo"), "open", &[], now() - 3 * 60);
+    let shut = step(by, (&id, "repo"), "shut", &[], now() - 3 * 60 + 1);
     put(&repo, &open);
     put(&repo, &shut);
-    record(&repo, by, "done", &shut.id, now() - 2 * DAY);
+    record(&repo, by, "done", &shut.id, now() - 2 * 60);
     refusal(&run(&repo, &["add", "--json", "--", ""]), 2, "usage");
     let nowhere = "0".repeat(64);
     let gone = ["done", "--json", &nowhere, "--", "p"];
@@ -81,7 +81,7 @@ fn read_prints_each_open_step_as_the_line_and_object_the_spec_gives() {
     std::fs::create_dir_all(&other).unwrap();
     let home = (repo.project_id(), "repo".to_string());
     let away = (Project::at(&other).id, "elsewhere".to_string());
-    let t = now() - 5 * DAY;
+    let t = now() - 5 * 60;
     let trail = step(by, (&home.0, &home.1), "the trail", &[], t - 1);
     let under = [("under", trail.id.as_str())];
     let at = [("under", trail.id.as_str()), ("at", "a.rs:1")];
@@ -111,7 +111,8 @@ fn read_prints_each_open_step_as_the_line_and_object_the_spec_gives() {
     assert_eq!(object["id"], first.id.as_str());
     assert_eq!(object["project"], home.0.as_str());
     assert!(object.get("task").is_none(), "{object}");
-    assert_eq!(object["under"], trail.id.as_str());
+    assert_eq!(object["links"][0]["to"], trail.id.as_str());
+    assert_eq!(object["links"][0]["kind"], "under");
     assert_eq!(object["content"], "first");
     assert!(object.get("holder").is_none(), "{object}");
     assert!(object.get("agent").is_none(), "{object}");
@@ -141,7 +142,7 @@ fn the_step_commands_print_the_ids_they_wrote() {
     let repo = Repo::plain();
     let by = &account();
     let id = repo.project_id();
-    let at = now() - 3 * DAY;
+    let at = now() - 3 * 60;
     let notes: Vec<Note> = ["a", "b", "c", "d"]
         .iter()
         .enumerate()
@@ -187,7 +188,7 @@ fn step_split_is_an_unknown_command_and_a_usage_error() {
     let repo = Repo::plain();
     let by = &account();
     let id = repo.project_id();
-    let whole = step(by, (&id, "repo"), "big", &[], now() - 3 * DAY);
+    let whole = step(by, (&id, "repo"), "big", &[], now() - 3 * 60);
     put(&repo, &whole);
     let o = run(
         &repo,
@@ -220,4 +221,91 @@ fn add_carries_each_file_and_the_check_as_their_tags() {
     };
     assert_eq!(values("file"), ["a.rs", "b.rs"]);
     assert_eq!(values("check"), ["make t"]);
+}
+
+/// `add` writes `--at` and each `--file` as paths from the project's top folder
+/// (`spec/trails/12-steps.md`, "The commands").
+#[test]
+fn add_writes_its_places_from_the_projects_top_folder() {
+    let repo = Repo::new();
+    repo.write("src/a.rs", "fn main() {}\n");
+    let src = repo.path().join("src");
+    let args = [
+        "step", "add", "--at", "./a.rs:4", "--file", "../b.rs", "--", "text",
+    ];
+    let o = repo.run(&src, &args, &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+    let note = stored(&repo)
+        .into_iter()
+        .find(|n| n.id == out(&o).trim())
+        .unwrap();
+    assert_eq!(note.tag("at"), Some("src/a.rs:4"));
+    assert_eq!(note.tag("file"), Some("b.rs"));
+}
+
+/// `done` says on stderr that a direction check is due each time 5 more steps under a trail are done
+/// (`spec/trails/12-steps.md`, "The commands").
+#[test]
+fn done_says_a_direction_check_is_due_every_five_done_steps_of_a_trail() {
+    let repo = Repo::new();
+    let trail = out(&run(&repo, &["add", "--", "the trail"]))
+        .trim()
+        .to_string();
+    let part = out(&run(&repo, &["add", "--under", &trail[..8], "--", "part"]))
+        .trim()
+        .to_string();
+    let mut said = Vec::new();
+    for n in 1..=6 {
+        let text = format!("piece {n}");
+        let id = out(&run(&repo, &["add", "--under", &part[..8], "--", &text]))
+            .trim()
+            .to_string();
+        let o = run(&repo, &["done", &id[..8], "--", "proof"]);
+        assert!(o.status.success(), "{}", err(&o));
+        said.push(err(&o));
+    }
+    let due = format!(
+        "celis: 5 steps of the trail {} are done; check its direction.\n",
+        &trail[..8]
+    );
+    assert_eq!(said[4], due);
+    assert!(
+        said.iter().enumerate().all(|(i, e)| i == 4 || e.is_empty()),
+        "{said:?}"
+    );
+}
+
+/// `done` carries `--path` and `--pitfall` as tags: `tree --full` prints them under the proof, and `read`
+/// prints each pitfall of an active trail's tree under the trail (`spec/trails/12-steps.md`, "The
+/// commands"; `spec/trails/11-cli.md`, "Commands").
+#[test]
+fn done_carries_a_path_and_a_pitfall_that_tree_and_read_print() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    let part = add(&repo, &["--under", &trail[..8], "--", "the part"]);
+    let args = [
+        "step",
+        "done",
+        &part[..8],
+        "--path",
+        "test first",
+        "--pitfall",
+        "the fixture needs --yes",
+        "--",
+        "it passes",
+    ];
+    let o = cli(&repo, &args);
+    assert!(o.status.success(), "{}", err(&o));
+    let full = out(&cli(&repo, &["tree", &trail[..8], "--full"]));
+    let lines: Vec<&str> = full.lines().collect();
+    assert_eq!(lines[2], "    done it passes", "{full}");
+    assert_eq!(lines[3], "    path test first", "{full}");
+    assert_eq!(lines[4], "    pitfall the fixture needs --yes", "{full}");
+    let read = out(&cli(&repo, &["read"]));
+    let lines: Vec<&str> = read.lines().collect();
+    assert_eq!(
+        lines[1],
+        format!("  pitfall {} the fixture needs --yes", &part[..8]),
+        "{read}"
+    );
 }

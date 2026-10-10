@@ -7,6 +7,8 @@ use crate::Failure;
 pub(crate) struct Args {
     pub json: bool,
     pub help: bool,
+    pub full: bool,
+    pub new: bool,
     pub words: Vec<String>,
     pub text: Option<String>,
     pub at: Option<String>,
@@ -19,6 +21,8 @@ pub(crate) struct Args {
     pub files: Vec<String>,
     pub check: Option<String>,
     pub like: Option<String>,
+    pub path: Option<String>,
+    pub pitfall: Option<String>,
 }
 
 impl Args {
@@ -42,6 +46,8 @@ impl Args {
                 }
                 "--json" => parsed.json = true,
                 "--help" => parsed.help = true,
+                "--full" => parsed.full = true,
+                "--new" => parsed.new = true,
                 "--at" => {
                     let place = value(arg, rest.next())?;
                     parsed.places.push(place.clone());
@@ -55,6 +61,8 @@ impl Args {
                 "--file" => parsed.files.push(value(arg, rest.next())?),
                 "--check" => parsed.check = Some(value(arg, rest.next())?),
                 "--like" => parsed.like = Some(value(arg, rest.next())?),
+                "--path" => parsed.path = Some(value(arg, rest.next())?),
+                "--pitfall" => parsed.pitfall = Some(value(arg, rest.next())?),
                 flag if flag.starts_with("--") => {
                     bad.get_or_insert(Failure::usage(format!("{flag} is not a flag")));
                 }

@@ -5,8 +5,8 @@ use anyhow::Result;
 use celis_wire::{Account, Note};
 
 /// One part of the work on its project: the step it is a part of, the done step it fixes, the past trail
-/// it follows, the place the work goes, the files it may change, the check that proves it, and the words.
-/// A step under no other is a trail.
+/// it follows, the place the work goes, the files it may change, the check that proves it, the session of
+/// a trail, and the words. A step under no other is a trail.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Step {
     pub anchor: Anchor,
@@ -16,6 +16,7 @@ pub struct Step {
     pub at: Option<String>,
     pub files: Vec<String>,
     pub check: Option<String>,
+    pub session: Option<String>,
     pub content: String,
 }
 
@@ -30,6 +31,7 @@ impl Step {
         tags.extend(self.at.iter().map(|a| tag("at", a)));
         tags.extend(self.files.iter().map(|f| tag("file", f)));
         tags.extend(self.check.iter().map(|c| tag("check", c)));
+        tags.extend(self.session.iter().map(|s| tag("session", s)));
         tags.extend([
             tag("L", NAMESPACE),
             vec!["l".to_string(), "step".to_string(), NAMESPACE.to_string()],
@@ -65,6 +67,7 @@ impl Step {
                 .map(|t| t[1].clone())
                 .collect(),
             check: owned("check"),
+            session: owned("session"),
             content: note.content.clone(),
         })
     }
@@ -75,9 +78,7 @@ impl Step {
             "id": note.id,
             "created_at": note.created_at,
             "project": self.anchor.project,
-            "under": self.under,
-            "fixes": self.fixes,
-            "follows": self.follows,
+            "links": self.links(),
             "at": self.at,
             "files": self.files,
             "check": self.check,
@@ -85,10 +86,33 @@ impl Step {
         })
     }
 
+    /// The `--json` links of this step: its `under`, `fixes` and `follows`, in that order.
+    pub fn links(&self) -> serde_json::Value {
+        let links: Vec<serde_json::Value> = [
+            ("under", &self.under),
+            ("fixes", &self.fixes),
+            ("follows", &self.follows),
+        ]
+        .into_iter()
+        .filter_map(|(kind, to)| Some(serde_json::json!({"to": to.as_ref()?, "kind": kind})))
+        .collect();
+        serde_json::Value::Array(links)
+    }
+
+    /// The first line of the text.
+    pub fn title(&self) -> &str {
+        self.content.lines().next().unwrap_or("")
+    }
+
+    /// The lines of the text after its title.
+    pub fn detail(&self) -> impl Iterator<Item = &str> {
+        self.content.lines().skip(1)
+    }
+
     /// The text line for this step, as `note` holds it.
     pub fn line(&self, note: &Note) -> String {
         let id: String = crate::id::short(&note.id);
-        let mut line = format!("{} [{}] {}", id, self.anchor.name, self.content);
+        let mut line = format!("{} [{}] {}", id, self.anchor.name, self.title());
         if let Some(at) = &self.at {
             line.push_str(&format!(" · {at}"));
         }

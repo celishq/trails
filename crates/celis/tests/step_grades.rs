@@ -2,9 +2,10 @@
 
 mod support;
 
+use celis_wire::Note;
 use serde_json::Value;
 use std::process::Output;
-use support::{err, out, refusal, Repo};
+use support::{account, done_note, err, now, out, put, refusal, step_note, Repo};
 
 fn run(repo: &Repo, args: &[&str]) -> Output {
     repo.run(&repo.path(), args, &[], "")
@@ -46,6 +47,33 @@ fn done_runs_the_check_and_refuses_when_it_fails() {
     assert!(o.status.success(), "{}", err(&o));
 }
 
+/// `done` runs the check in the project's top folder, from any folder under it, and stops a check that
+/// runs past `CELIS_CHECK_SECONDS` as failed (`spec/trails/12-steps.md`, "The commands").
+#[test]
+fn done_runs_the_check_at_the_top_folder_and_stops_a_slow_one() {
+    let repo = Repo::new();
+    repo.write("marker", "");
+    repo.write("sub/keep", "");
+    let top = add(&repo, &["--check", "test -f marker", "--", "at the top"]);
+    let o = repo.run(
+        &repo.path().join("sub"),
+        &["step", "done", &top[..8], "--", "p"],
+        &[],
+        "",
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let slow = add(&repo, &["--check", "sleep 30", "--", "slow"]);
+    let started = std::time::Instant::now();
+    let o = repo.run(
+        &repo.path(),
+        &["step", "done", &slow[..8], "--json", "--", "p"],
+        &[("CELIS_CHECK_SECONDS", "1")],
+        "",
+    );
+    refusal(&o, 1, "check-failed");
+    assert!(started.elapsed().as_secs() < 10, "{:?}", started.elapsed());
+}
+
 /// `tree` prints a done step's grade under its proof: the time it took, the steps that fix it as
 /// rework, and its steers (`spec/trails/12-steps.md`, "Grades").
 #[test]
@@ -70,7 +98,7 @@ fn tree_prints_the_grade_of_each_done_step() {
             "the badge repeats",
         ],
     );
-    let o = run(&repo, &["tree", &trail[..8]]);
+    let o = run(&repo, &["tree", &trail[..8], "--full"]);
     assert!(o.status.success(), "{}", err(&o));
     let text = out(&o);
     let lines: Vec<&str> = text.lines().collect();
@@ -107,4 +135,39 @@ fn tree_json_gives_a_done_step_its_grade() {
     let grade = step["grade"].as_object().expect("a grade");
     let keys: Vec<&str> = grade.keys().map(String::as_str).collect();
     assert_eq!(keys, ["rework", "steered", "took"]);
+}
+
+/// `took` counts from the step's first `start`, and from the step when it has none
+/// (`spec/trails/12-steps.md`, "Grades").
+#[test]
+fn took_counts_from_the_first_start_else_from_the_step() {
+    let repo = Repo::new();
+    let at = now() - 10_000;
+    let trail = step_note(&repo, &account(), None, "the trail", at);
+    let started = step_note(&repo, &account(), Some(&trail), "started", at);
+    let tags: Vec<Vec<String>> = vec![
+        vec!["L".into(), "celis.step".into()],
+        vec!["l".into(), "start".into(), "celis.step".into()],
+        vec!["e".into(), started.id.clone()],
+    ];
+    put(
+        &repo,
+        &Note::write(&account(), 1985u16, at + 3_000, tags, "").unwrap(),
+    );
+    done_note(&repo, &account(), &started, at + 3_090);
+    let unstarted = step_note(&repo, &account(), Some(&trail), "unstarted", at);
+    done_note(&repo, &account(), &unstarted, at + 90);
+    let o = run(&repo, &["tree", &trail.id[..8], "--full"]);
+    assert!(o.status.success(), "{}", err(&o));
+    let text = out(&o);
+    let took = |id: &str| {
+        let lines: Vec<&str> = text.lines().collect();
+        let at = lines.iter().position(|l| l.contains(id)).expect("the step");
+        lines[at + 2].trim().to_string()
+    };
+    assert!(took(&started.id[..8]).starts_with("took 1m 30s "), "{text}");
+    assert!(
+        took(&unstarted.id[..8]).starts_with("took 1m 30s "),
+        "{text}"
+    );
 }

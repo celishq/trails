@@ -18,6 +18,7 @@ fn step(text: &str, at: u64) -> Note {
         at: None,
         files: Vec::new(),
         check: None,
+        session: None,
         content: text.into(),
     }
     .record(&account(), at)
@@ -27,6 +28,8 @@ fn step(text: &str, at: u64) -> Note {
 fn done(id: &str, proof: &str, at: u64) -> Note {
     let mark = Mark::Done {
         proof: proof.into(),
+        path: None,
+        pitfall: None,
     };
     mark.record(&account(), id, at).unwrap()
 }
@@ -45,7 +48,10 @@ fn the_first_done_with_a_proof_closes_its_step() {
     let first = done(&a.id, "first", 20);
     let later = done(&a.id, "later", 30);
     let records = vec![a.clone(), b.clone(), later, empty, first.clone()];
-    let steps = Steps { records: &records };
+    let steps = Steps {
+        records: &records,
+        now: 0,
+    };
     assert_eq!(steps.done(&a.id).map(|n| n.id.clone()), Some(first.id));
     assert_eq!(ids(steps.open()), vec![b.id]);
 }
@@ -59,7 +65,10 @@ fn a_prefix_two_steps_share_finds_neither() {
     a.id = format!("abcdefgh{}", "1".repeat(56));
     b.id = format!("abcdefgh{}", "2".repeat(56));
     let records = vec![a.clone(), b];
-    let steps = Steps { records: &records };
+    let steps = Steps {
+        records: &records,
+        now: 0,
+    };
     let refused = steps.find("abcdefgh").unwrap_err();
     assert_eq!((refused.name.as_str(), refused.code), ("no-step", 1));
     assert_eq!(steps.find(&a.id).unwrap().id, a.id);

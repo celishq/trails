@@ -12,24 +12,34 @@ depends: [CIP-10]
 ```
 celis read [--at <place>]... [--like <text>]          this project's active trails, open steps and decisions
 celis decide [--scope <scope>] [--replaces <id>] -- <text>
-                                                       a decision of yours
-celis tree [<id>]                                     a trail and its steps (CIP-14)
-celis step add | start | done | steer                 the steps of a trail (CIP-12)
-celis watch [<id>]                                    a trail's tree, again on each change (CIP-14)
+                                                       a decision, in its scope
+celis tree [<id>] [--full]                            a trail and its steps (CIP-14)
+celis step add | start | done | steer | drop | edit   the steps of a trail (CIP-12)
+celis watch [<id>] [--full]                           a trail's tree, again on each change (CIP-14)
+celis home                                            the folder of the store, to open it
+celis prompt                                          a person's prompt, from a hook (CIP-14)
+celis end                                             the end of a session, from a hook (CIP-14)
+celis join <id>                                       join this session to a trail (CIP-14)
 
 $CELIS_HOME   where celis keeps the key and the store
               default: ~/Library/Application Support/Celis
+$CELIS_TRAIL  the trail new steps go under (CIP-14)
 ```
 
 **Rules**
 
 - Off macOS, `$CELIS_HOME` MUST default to `~/.local/share/celis`.
-- `read` MUST print the working folder's project's active trails, oldest first, each with its rules. Then
-  come its open steps that are no trail, oldest first. Then come its live decisions that are no rule
+- `read` MUST print the working folder's project's active trails, oldest first, each with its rules. The
+  pitfall of each done step of its tree MUST come next. Then come its open steps that are no trail, oldest
+  first. Then come its live decisions that are no rule
   (CIP-10, "Reading"), 30 at most. The decisions at each `--at` place MUST come first.
+- When it leaves decisions out, `read` MUST then print `<n> more decisions`, or `{"more": <n>}` with
+  `--json`.
 - `read` MUST NOT print a rule of a reached trail, or write a record.
+- `home` MUST print the full path of the store, `$CELIS_HOME/trails`, and write nothing. With `--json`, it
+  MUST print `{"path"}`.
 - With `--like`, `read` MUST then print the past trails like the text (CIP-14, "The past").
-- `decide` MUST write a decision of yours on the working folder's project (CIP-10, "Decisions"), with
+- `decide` MUST write a decision on the working folder's project (CIP-10, "Decisions"), with
   `--scope` and `--replaces` as its tags. With `--scope project`, or no `--scope`, it MUST write no
   `scope` tag.
 - `decide` MUST write the whole id of the trail that `--scope trail:<id>` names.
@@ -43,10 +53,12 @@ decision  text  <id, first 8> <scope> <text>
           json  {"id", "created_at", "project", "scope", "replaces", "content"}
 read      text  <id, first 8> [<project name>] <the trail's first line>      each active trail
                   rule <id, first 8> <text>                                 each of its rules
+                  pitfall <id, first 8> <text>                              each pitfall of its tree
                 <an open step, as CIP-12 "The commands" gives it>
                 <a decision>
                 <a past trail, as `tree` prints it>                         with `--like`
-          json  {"trail": {"id", "created_at", "project", "content", "rules": []}} · {"step": {...}}
+          json  {"trail": {"id", "created_at", "project", "content", "rules": [], "pitfalls": [{"id",
+                "text"}]}} · {"step": {...}}
                 · {"decision": {...}} · {"past": {...}}, one a line, each as its own json
 ```
 
@@ -77,12 +89,17 @@ agents take toward it, and the decisions made on the way. Use it through the
 
 Commands
   read     this project's active trails, open steps and decisions
-  decide   a decision of yours, in its scope
+  decide   a decision, in its scope
   tree     a trail and its steps, with their grades
-  step     the steps of a trail: add, start, done, steer
+  step     the steps of a trail: add, start, done, steer, drop, edit
   watch    a trail's tree, printed again on each change
+  home     the folder of the store, to open it
+  prompt   a person's prompt, from a hook
+  end      the end of a session, from a hook
+  join     join this session to a trail
 
-$CELIS_HOME holds the key and the store.
+$CELIS_HOME holds the key and the store. $CELIS_TRAIL names the trail new steps
+go under.
 
 See `celis <command> --help`.
 ```
@@ -114,8 +131,8 @@ Examples
 
 **Rules**
 
-- A command MUST take an id whole, or as its first 8 characters when only one record's id starts with
-  them.
+- A command MUST take an id whole, or as its first 4 or more characters when only one record's id
+  starts with them.
 - Every command MUST accept `--json`, and then print one JSON object a line, and nothing else, to stdout.
 - A command that writes a record MUST print its id. With `--json`, it prints `{"id"}`.
 - A command MUST NOT ask a question.

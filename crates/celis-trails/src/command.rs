@@ -2,6 +2,7 @@
 
 mod args;
 mod decision;
+mod prompt;
 mod read;
 mod step;
 mod tree;
@@ -13,7 +14,7 @@ use args::Args;
 use celis_wire::Note;
 use serde_json::json;
 use std::collections::HashMap;
-use std::io::Write;
+use std::io::{IsTerminal, Write};
 use std::path::{Path, PathBuf};
 
 /// The folder under `$HOME` that `$CELIS_HOME` defaults to.
@@ -38,7 +39,7 @@ impl Command {
             return 0;
         }
         let json = Args::asks_json(&self.args);
-        let mut failure = match Args::parse(&self.args).and_then(|a| self.go(&a, out)) {
+        let mut failure = match Args::parse(&self.args).and_then(|a| self.go(&a, out, err)) {
             Ok(()) => return 0,
             Err(failure) => failure,
         };
@@ -65,14 +66,18 @@ impl Command {
         failure.code
     }
 
-    fn go(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
+    fn go(&self, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> Result<(), Failure> {
         let now = now();
         match args.words.first().map(String::as_str).unwrap_or("") {
-            "step" => self.step(args, out, &self.project(), now),
+            "step" => self.step(args, out, err, &self.project(), now),
             "read" => self.read(args, out, &self.project()),
             "decide" => self.decide(args, out, &self.project(), now),
             "tree" => self.tree(args, out, &self.project()),
             "watch" => self.watch(args, out, &self.project()),
+            "home" => self.store_path(args, out),
+            "prompt" => self.prompt(args, out, &self.project(), now),
+            "end" => self.end(args, out, &self.project(), now),
+            "join" => self.join(args, out, now),
             "" => Err(Failure::usage("expected: celis <command>")),
             verb => Err(Failure::unknown(verb, verbs())),
         }
@@ -81,6 +86,52 @@ impl Command {
     /// The project of the working folder.
     fn project(&self) -> Project {
         Project::at(&self.folder)
+    }
+
+    /// Prints the folder of the store. Writes nothing.
+    fn store_path(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
+        let path = Store::root(&self.home()?).display().to_string();
+        match args.json {
+            true => put(out, &json!({ "path": path }).to_string()),
+            false => put(out, &path),
+        }
+    }
+
+    /// Whether `tree` and `watch` print styled: on a terminal, or with `CLICOLOR_FORCE` set and not `0`;
+    /// never with `NO_COLOR` set.
+    fn styled(&self) -> bool {
+        let set = |name: &str| self.env.get(name).is_some_and(|v| !v.is_empty());
+        if set("NO_COLOR") {
+            return false;
+        }
+        let forced =
+            set("CLICOLOR_FORCE") && self.env.get("CLICOLOR_FORCE").is_some_and(|v| v != "0");
+        forced || std::io::stdout().is_terminal()
+    }
+
+    /// The width of the terminal stdout is, else `COLUMNS`; none when neither is known.
+    fn columns(&self) -> Option<usize> {
+        if std::io::stdout().is_terminal() {
+            let mut size = libc::winsize {
+                ws_row: 0,
+                ws_col: 0,
+                ws_xpixel: 0,
+                ws_ypixel: 0,
+            };
+            let asked = unsafe { libc::ioctl(libc::STDOUT_FILENO, libc::TIOCGWINSZ, &mut size) };
+            if asked == 0 && size.ws_col > 0 {
+                return Some(usize::from(size.ws_col));
+            }
+        }
+        self.env.get("COLUMNS").and_then(|c| c.parse().ok())
+    }
+
+    /// The agent session this run belongs to, from `$CLAUDE_CODE_SESSION_ID`.
+    fn session(&self) -> Option<String> {
+        self.env
+            .get("CLAUDE_CODE_SESSION_ID")
+            .filter(|s| !s.is_empty())
+            .cloned()
     }
 
     /// Whether the store exists.
