@@ -2,9 +2,9 @@ use super::Failure;
 
 #[test]
 fn usage_exits_2_and_names_the_help_page() {
-    let failure = Failure::usage("bad flag").see("celis cairn help");
+    let failure = Failure::usage("bad flag").see("celis trail help");
     assert_eq!((failure.name.as_str(), failure.code), ("usage", 2));
-    assert_eq!(failure.message, "bad flag. See `celis cairn help`.");
+    assert_eq!(failure.message, "bad flag. See `celis trail help`.");
 }
 
 #[test]
@@ -14,13 +14,6 @@ fn an_unknown_word_names_the_nearest_known_one_within_two_edits() {
     assert!(failure.message.contains("did you mean \"list\"?"));
     let far = Failure::unknown("frobnicate", ["list", "add"]);
     assert_eq!(far.message, "no command \"frobnicate\"");
-}
-
-#[test]
-fn no_cairn_exits_1_and_names_the_id() {
-    let failure = Failure::no_cairn("abc123");
-    assert_eq!((failure.name.as_str(), failure.code), ("no-cairn", 1));
-    assert!(failure.message.contains("abc123"));
 }
 
 #[test]

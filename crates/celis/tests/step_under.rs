@@ -1,0 +1,72 @@
+//! CIP-12, "The commands": `--under`, `--fixes`, and a step with open steps under it.
+
+mod support;
+
+use support::{add, cli, finish, objects, refusal, Repo};
+
+fn records(repo: &Repo) -> usize {
+    std::fs::read_dir(repo.store().join("shared")).map_or(0, |d| d.count())
+}
+
+/// `add` refuses an `--under` or `--fixes` no step has with `no-step`, and a closed `--under` with
+/// `closed` (`spec/trails/12-steps.md`, "The commands").
+#[test]
+fn add_refuses_an_unknown_under_or_fixes_and_a_closed_under() {
+    let repo = Repo::new();
+    let closed = add(&repo, &["--", "closed"]);
+    finish(&repo, &closed[..8]);
+    for flag in ["--under", "--fixes"] {
+        let o = cli(
+            &repo,
+            &["step", "add", flag, "deadbeef", "--json", "--", "x"],
+        );
+        refusal(&o, 1, "no-step");
+    }
+    let o = cli(
+        &repo,
+        &["step", "add", "--under", &closed[..8], "--json", "--", "x"],
+    );
+    refusal(&o, 1, "closed");
+}
+
+/// `add` carries the whole ids of `--under` and `--fixes` (`spec/trails/12-steps.md`, "The commands").
+#[test]
+fn add_carries_the_whole_ids_of_under_and_fixes() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    let first = add(&repo, &["--under", &trail[..8], "--", "first"]);
+    finish(&repo, &first[..8]);
+    let fix = add(
+        &repo,
+        &[
+            "--under",
+            &trail[..8],
+            "--fixes",
+            &first[..8],
+            "--",
+            "fix it",
+        ],
+    );
+    let step = objects(&repo, &["tree", &trail[..8]])
+        .into_iter()
+        .filter_map(|v| v.get("step").cloned())
+        .find(|s| s["id"] == fix.as_str())
+        .expect("the fix");
+    assert_eq!(step["under"], trail.as_str());
+    assert_eq!(step["fixes"], first.as_str());
+}
+
+/// `done` refuses a step with an open step under it, with `open-steps`, and writes nothing
+/// (`spec/trails/12-steps.md`, "The commands").
+#[test]
+fn done_refuses_a_step_with_an_open_step_under_it() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    let part = add(&repo, &["--under", &trail[..8], "--", "part"]);
+    let before = records(&repo);
+    let o = cli(&repo, &["step", "done", &trail[..8], "--json", "--", "p"]);
+    refusal(&o, 1, "open-steps");
+    assert_eq!(records(&repo), before);
+    finish(&repo, &part[..8]);
+    finish(&repo, &trail[..8]);
+}

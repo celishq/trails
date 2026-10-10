@@ -1,7 +1,7 @@
 //! A git repo in a temp folder, a `$CELIS_HOME` with the fixture's account, and the binary run in them.
 #![allow(dead_code)]
 
-use celis_cairns::{Agent, Project, Store};
+use celis_trails::{Project, Store};
 use celis_wire::{Account, Note};
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
@@ -11,7 +11,7 @@ use std::process::{Command, Output, Stdio};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tempfile::TempDir;
 
-/// The account secret `spec/fixtures/cairn.json` holds.
+/// The account secret of every test home.
 pub const SECRET: &str = "0101010101010101010101010101010101010101010101010101010101010101";
 
 /// A git repo with one commit, and a `$CELIS_HOME` beside it whose key is [`SECRET`].
@@ -42,6 +42,17 @@ impl Repo {
         repo
     }
 
+    /// A folder outside git, with a `$CELIS_HOME` beside it whose key is [`SECRET`].
+    pub fn plain() -> Repo {
+        let root = std::fs::canonicalize(std::env::temp_dir()).unwrap();
+        let dir = tempfile::tempdir_in(root).expect("a temp folder");
+        let repo = Repo { dir };
+        std::fs::create_dir_all(repo.path()).unwrap();
+        std::fs::create_dir_all(repo.home()).unwrap();
+        std::fs::write(repo.home().join("key"), format!("{SECRET}\n")).unwrap();
+        repo
+    }
+
     /// The main checkout.
     pub fn path(&self) -> PathBuf {
         self.dir.path().join("repo")
@@ -54,7 +65,7 @@ impl Repo {
 
     /// The store every command opens.
     pub fn store(&self) -> PathBuf {
-        self.home().join("cairns")
+        self.home().join("trails")
     }
 
     /// The id of the main checkout's project: its first commit.
@@ -104,10 +115,9 @@ impl Repo {
         String::from_utf8_lossy(&out.stdout).trim().to_string()
     }
 
-    /// Runs `celis cairn` in `folder` with `args`, this repo's home, the variables `env`, and `stdin`.
+    /// Runs `celis` in `folder` with `args`, this repo's home, the variables `env`, and `stdin`.
     pub fn run(&self, folder: &Path, args: &[&str], env: &[(&str, &str)], stdin: &str) -> Output {
         let mut child = Command::new(env!("CARGO_BIN_EXE_celis"))
-            .arg("cairn")
             .args(args)
             .current_dir(folder)
             .env_clear()
@@ -148,17 +158,8 @@ pub fn put(repo: &Repo, note: &Note) {
     Store::open(&repo.home()).unwrap().write(note).unwrap();
 }
 
-/// The agent of `session`, with its profile and link already in the store.
-pub fn agent(repo: &Repo, session: &str) -> Agent {
-    let account = Account::new(&[1u8; 32]).unwrap();
-    let agent = Agent::new(&account, "claude-code", session).unwrap();
-    put(repo, &agent.profile("", now() - 30 * DAY).unwrap());
-    put(repo, &agent.link(&account, now() - 30 * DAY).unwrap());
-    agent
-}
-
 /// A cairn on the repo that `by` signed at `at`, with the extra tags `extra`.
-pub fn cairn(repo: &Repo, by: &Agent, label: &str, extra: &[(&str, &str)], at: u64) -> Note {
+pub fn cairn(repo: &Repo, by: &Account, label: &str, extra: &[(&str, &str)], at: u64) -> Note {
     let anchor = format!("project:{}", repo.project_id());
     let mut tags: Vec<Vec<String>> = vec![
         vec!["I".into(), anchor.clone()],
@@ -172,13 +173,13 @@ pub fn cairn(repo: &Repo, by: &Agent, label: &str, extra: &[(&str, &str)], at: u
     for (name, value) in extra {
         tags.push(vec![name.to_string(), value.to_string()]);
     }
-    let note = Note::write(by.key(), 1111u16, at, tags, "text").unwrap();
+    let note = Note::write(by, 1111u16, at, tags, "text").unwrap();
     put(repo, &note);
     note
 }
 
 /// A finding saying `content`, written by `by` at `at`.
-pub fn cairn_saying(repo: &Repo, by: &Agent, content: &str, at: u64) -> Note {
+pub fn cairn_saying(repo: &Repo, by: &Account, content: &str, at: u64) -> Note {
     let anchor = format!("project:{}", repo.project_id());
     let tags: Vec<Vec<String>> = vec![
         vec!["I".into(), anchor.clone()],
@@ -189,63 +190,25 @@ pub fn cairn_saying(repo: &Repo, by: &Agent, content: &str, at: u64) -> Note {
         vec!["L".into(), "celis.cairn".into()],
         vec!["l".into(), "finding".into(), "celis.cairn".into()],
     ];
-    let note = Note::write(by.key(), 1111u16, at, tags, content).unwrap();
+    let note = Note::write(by, 1111u16, at, tags, content).unwrap();
     put(repo, &note);
     note
 }
 
 /// A finding written by `by` at `at`.
-pub fn finding(repo: &Repo, by: &Agent, at: u64) -> Note {
+pub fn finding(repo: &Repo, by: &Account, at: u64) -> Note {
     cairn(repo, by, "finding", &[], at)
 }
 
 /// `by`'s rating of `cairn`, written at `at`.
-pub fn rating(repo: &Repo, by: &Agent, cairn: &Note, helped: bool, at: u64) {
+pub fn rating(repo: &Repo, by: &Account, cairn: &Note, helped: bool, at: u64) {
     let tags = vec![
         vec!["e".to_string(), cairn.id.clone()],
         vec!["p".to_string(), cairn.pubkey.hex()],
         vec!["k".to_string(), "1111".to_string()],
     ];
     let content = if helped { "+" } else { "-" };
-    put(
-        repo,
-        &Note::write(by.key(), 7u16, at, tags, content).unwrap(),
-    );
-}
-
-/// `celis cairn <args>` run as `session`; its stdout when it exits 0.
-pub fn run(repo: &Repo, session: &str, args: &[&str]) -> String {
-    let out = repo.run(&repo.path(), args, &[("CELIS_SESSION", session)], "");
-    assert!(
-        out.status.success(),
-        "{args:?}: {}",
-        String::from_utf8_lossy(&out.stderr)
-    );
-    String::from_utf8_lossy(&out.stdout).to_string()
-}
-
-/// The objects `list --json` prints with `filters`, in order.
-pub fn listed(repo: &Repo, session: &str, filters: &[&str]) -> Vec<serde_json::Value> {
-    let mut args = vec!["list", "--json"];
-    args.extend(filters);
-    run(repo, session, &args)
-        .lines()
-        .map(|l| serde_json::from_str(l).unwrap())
-        .collect()
-}
-
-/// The score `list --json` shows for `cairn`; `None` when it is not listed.
-pub fn score(repo: &Repo, cairn: &Note) -> Option<f64> {
-    listed(repo, "reader", &[])
-        .iter()
-        .find(|o| o["id"] == cairn.id.as_str())
-        .map(|o| o["score"].as_f64().unwrap())
-}
-
-/// Asserts that `got` is a score within 0.01 of `want`.
-pub fn assert_near(got: Option<f64>, want: f64) {
-    let got = got.expect("the cairn is listed");
-    assert!((got - want).abs() < 0.01, "score {got}, want {want}");
+    put(repo, &Note::write(by, 7u16, at, tags, content).unwrap());
 }
 
 /// Every cairn record in the store with the label `label`.
@@ -278,10 +241,10 @@ pub fn err(o: &Output) -> String {
 
 /// Two records labelled `first` and `second`, signed by `by`, whose ids share their first 8
 /// characters. Nothing is written to the store.
-pub fn sharing_a_start(repo: &Repo, by: &Agent, first: &str, second: &str) -> (Note, Note) {
+pub fn sharing_a_start(repo: &Repo, by: &Account, first: &str, second: &str) -> (Note, Note) {
     let project_id = repo.project_id();
     let at = now() - DAY;
-    let pubkey = by.key().pubkey().hex();
+    let pubkey = by.pubkey().hex();
     let tags = |label: &str| {
         let anchor = format!("project:{project_id}");
         vec![
@@ -290,9 +253,8 @@ pub fn sharing_a_start(repo: &Repo, by: &Agent, first: &str, second: &str) -> (N
             vec!["i".into(), anchor],
             vec!["k".into(), "project".into()],
             vec!["project".into(), "repo".into()],
-            vec!["project".into(), "repo".into()],
-            vec!["L".into(), "celis.cairn".into()],
-            vec!["l".into(), label.into(), "celis.cairn".into()],
+            vec!["L".into(), "celis.step".into()],
+            vec!["l".into(), label.into(), "celis.step".into()],
         ]
     };
     let tags_of = [tags(first), tags(second)];
@@ -301,14 +263,8 @@ pub fn sharing_a_start(repo: &Repo, by: &Agent, first: &str, second: &str) -> (N
         format!("{:x}", Sha256::digest(body.to_string().as_bytes()))
     };
     let write = |side: usize, n: u32, id: &str| {
-        let note = Note::write(
-            by.key(),
-            1111u16,
-            at,
-            tags_of[side].clone(),
-            format!("note {n}"),
-        )
-        .unwrap();
+        let note =
+            Note::write(by, 1111u16, at, tags_of[side].clone(), format!("note {n}")).unwrap();
         assert_eq!(note.id, id, "the id hashed by hand is the id written");
         note
     };
@@ -331,4 +287,201 @@ pub fn sharing_a_start(repo: &Repo, by: &Agent, first: &str, second: &str) -> (N
         }
     }
     unreachable!()
+}
+
+/// Asserts that `o` exited with `code` and printed the error `name` as a JSON object on stderr.
+pub fn refusal(o: &Output, code: i32, name: &str) {
+    assert_eq!(o.status.code(), Some(code), "{}", err(o));
+    let object: serde_json::Value =
+        serde_json::from_str(err(o).trim()).unwrap_or_else(|_| panic!("{}", err(o)));
+    assert_eq!(object["error"], name, "{}", err(o));
+}
+
+/// A decision of `by` on `project` (id, name) saying `content`, with the tags `scope` and `replaces`
+/// when given, written at `created`, put in the store.
+pub fn decision(
+    repo: &Repo,
+    project: (&str, &str),
+    by: &Account,
+    place: (Option<&str>, Option<&str>),
+    content: &str,
+    created: u64,
+) -> Note {
+    let anchor = format!("project:{}", project.0);
+    let mut tags: Vec<Vec<String>> = vec![
+        vec!["I".into(), anchor.clone()],
+        vec!["K".into(), "project".into()],
+        vec!["i".into(), anchor],
+        vec!["k".into(), "project".into()],
+        vec!["project".into(), project.1.into()],
+        vec!["L".into(), "celis.decision".into()],
+        vec!["l".into(), "decision".into(), "celis.decision".into()],
+    ];
+    if let Some(scope) = place.0 {
+        tags.push(vec!["scope".into(), scope.into()]);
+    }
+    if let Some(id) = place.1 {
+        tags.push(vec!["replaces".into(), id.into()]);
+    }
+    let note = Note::write(by, 1111u16, created, tags, content).unwrap();
+    put(repo, &note);
+    note
+}
+
+/// An open step of this repo that `by` signed at `at`, put in the store.
+pub fn open_step(repo: &Repo, by: &Account, at: u64) -> Note {
+    let anchor = format!("project:{}", repo.project_id());
+    let tags: Vec<Vec<String>> = vec![
+        vec!["I".into(), anchor.clone()],
+        vec!["K".into(), "project".into()],
+        vec!["i".into(), anchor],
+        vec!["k".into(), "project".into()],
+        vec!["project".into(), "repo".into()],
+        vec!["L".into(), "celis.step".into()],
+        vec!["l".into(), "step".into(), "celis.step".into()],
+    ];
+    let note = Note::write(by, 1111u16, at, tags, "work").unwrap();
+    put(repo, &note);
+    note
+}
+
+/// A step of this repo under `under`, when given, that `by` signed at `at`, saying `content`, put in the
+/// store.
+pub fn step_note(repo: &Repo, by: &Account, under: Option<&Note>, content: &str, at: u64) -> Note {
+    let mut tags = step_tags((&repo.project_id(), "repo"));
+    tags.extend(under.map(|u| vec!["under".to_string(), u.id.clone()]));
+    let note = Note::write(by, 1111u16, at, tags, content).unwrap();
+    put(repo, &note);
+    note
+}
+
+/// A `done` of `step` that `by` signed at `at`, put in the store.
+pub fn done_note(repo: &Repo, by: &Account, step: &Note, at: u64) -> Note {
+    let tags: Vec<Vec<String>> = vec![
+        vec!["L".into(), "celis.step".into()],
+        vec!["l".into(), "done".into(), "celis.step".into()],
+        vec!["e".into(), step.id.clone()],
+    ];
+    let note = Note::write(by, 1985u16, at, tags, "proof").unwrap();
+    put(repo, &note);
+    note
+}
+
+/// An open step of this repo that `by` signed at `at`, saying `content`, put in the store.
+pub fn step_signed(repo: &Repo, by: &Account, content: &str, at: u64) -> Note {
+    let anchor = format!("project:{}", repo.project_id());
+    let tags: Vec<Vec<String>> = vec![
+        vec!["I".into(), anchor.clone()],
+        vec!["K".into(), "project".into()],
+        vec!["i".into(), anchor],
+        vec!["k".into(), "project".into()],
+        vec!["project".into(), "repo".into()],
+        vec!["L".into(), "celis.step".into()],
+        vec!["l".into(), "step".into(), "celis.step".into()],
+    ];
+    let note = Note::write(by, 1111u16, at, tags, content).unwrap();
+    put(repo, &note);
+    note
+}
+
+/// Two distinct kind 1111 records of `by` at `at` with `tags`, whose ids share their first 8 characters.
+/// Nothing is written to the store.
+pub fn sharing_a_start_with(by: &Account, at: u64, tags: &[Vec<String>]) -> (Note, Note) {
+    let pubkey = by.pubkey().hex();
+    let mut seen: HashMap<String, u32> = HashMap::new();
+    for n in 0u32.. {
+        let body = serde_json::json!([0, pubkey, at, 1111, tags, format!("note {n}")]);
+        let id = format!("{:x}", Sha256::digest(body.to_string().as_bytes()));
+        if let Some(m) = seen.insert(id[..8].to_string(), n) {
+            let write = |k: u32| Note::write(by, 1111u16, at, tags.to_vec(), format!("note {k}"));
+            return (write(m).unwrap(), write(n).unwrap());
+        }
+    }
+    unreachable!()
+}
+
+/// The tags of a step on `project` (id, name).
+pub fn step_tags(project: (&str, &str)) -> Vec<Vec<String>> {
+    let mut tags = decision_tags(project);
+    tags.truncate(5);
+    tags.push(vec!["L".into(), "celis.step".into()]);
+    tags.push(vec!["l".into(), "step".into(), "celis.step".into()]);
+    tags
+}
+
+/// The tags of a decision on `project` (id, name).
+pub fn decision_tags(project: (&str, &str)) -> Vec<Vec<String>> {
+    let anchor = format!("project:{}", project.0);
+    vec![
+        vec!["I".into(), anchor.clone()],
+        vec!["K".into(), "project".into()],
+        vec!["i".into(), anchor],
+        vec!["k".into(), "project".into()],
+        vec!["project".into(), project.1.into()],
+        vec!["L".into(), "celis.decision".into()],
+        vec!["l".into(), "decision".into(), "celis.decision".into()],
+    ]
+}
+
+/// The trail objects that `celis read --json` prints in `folder`, in order.
+pub fn read_trails(repo: &Repo, folder: &Path) -> Vec<serde_json::Value> {
+    let o = repo.run(folder, &["read", "--json"], &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+    out(&o)
+        .lines()
+        .map(|l| serde_json::from_str::<serde_json::Value>(l).unwrap())
+        .filter_map(|v| v.get("trail").cloned())
+        .collect()
+}
+
+/// `celis <args>` run in the main checkout.
+pub fn cli(repo: &Repo, args: &[&str]) -> Output {
+    repo.run(&repo.path(), args, &[], "")
+}
+
+/// The id `celis step add <args>` prints in the main checkout.
+pub fn add(repo: &Repo, args: &[&str]) -> String {
+    let mut all = vec!["step", "add"];
+    all.extend(args);
+    let o = cli(repo, &all);
+    assert!(o.status.success(), "{}", err(&o));
+    out(&o).trim().to_string()
+}
+
+/// Closes the step `id` with a proof, and asserts it closed.
+pub fn finish(repo: &Repo, id: &str) {
+    let o = cli(
+        repo,
+        &["step", "done", id, "--", "failed before, passes now"],
+    );
+    assert!(o.status.success(), "{}", err(&o));
+}
+
+/// The JSON objects `celis <args> --json` prints in the main checkout, one a line.
+pub fn objects(repo: &Repo, args: &[&str]) -> Vec<serde_json::Value> {
+    let mut all = args.to_vec();
+    all.push("--json");
+    let o = cli(repo, &all);
+    assert!(o.status.success(), "{}", err(&o));
+    out(&o)
+        .lines()
+        .map(|l| serde_json::from_str(l).unwrap())
+        .collect()
+}
+
+/// The ids, first 8 characters, of the decisions `celis read <args> --json` prints in `folder`, in
+/// order.
+pub fn read_ids(repo: &Repo, folder: &Path, args: &[&str]) -> Vec<String> {
+    let mut all = vec!["read"];
+    all.extend(args);
+    all.push("--json");
+    let o = repo.run(folder, &all, &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+    out(&o)
+        .lines()
+        .filter_map(|l| {
+            let v: serde_json::Value = serde_json::from_str(l).unwrap();
+            Some(v.get("decision")?["id"].as_str()?[..8].to_string())
+        })
+        .collect()
 }

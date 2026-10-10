@@ -183,7 +183,7 @@ jobs:
           CELIS_VERSION: ${{ needs.version.outputs.version }}
           CELIS_INSTALL_DIR: ${{ runner.temp }}/bin
         run: sh workers/celis-site/public/install.sh
-      - name: Set up a project
+      - name: Start a trail and read it back
         env:
           VERSION: ${{ needs.version.outputs.version }}
         run: |
@@ -192,6 +192,7 @@ jobs:
           "$CELIS" --version | grep -F "celis $VERSION"
           PROJECT="$RUNNER_TEMP/project"
           mkdir -p "$PROJECT" && cd "$PROJECT" && git init -q
-          CELIS_HOME="$RUNNER_TEMP/home" "$CELIS" init --for codex
-          grep -F "<!-- celis:cairns -->" AGENTS.md
-          test -f .agents/skills/cairns/SKILL.md
+          export CELIS_HOME="$RUNNER_TEMP/home"
+          "$CELIS" step add -- "The release reads its trail back."
+          "$CELIS" read | tee "$RUNNER_TEMP/read"
+          grep -F 'The release reads its trail back.' "$RUNNER_TEMP/read"

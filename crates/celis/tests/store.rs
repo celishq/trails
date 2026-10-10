@@ -2,39 +2,57 @@
 
 mod support;
 
-use celis_cairns::Store;
+use celis_trails::Store;
 use celis_wire::Note;
 use support::{account, err, out, Repo};
 
-/// A command opens the store in `$CELIS_HOME`, so a cairn written in one project lists in another folder,
-/// inside git or not (`spec/cairns/10-cairns.md`, "The store").
+/// A command opens the store in `$CELIS_HOME`, so a trail written in one folder lists in another, inside
+/// git or not (`spec/trails/10-decisions.md`, "The store").
 #[test]
 fn a_command_must_open_the_store_in_celis_home_whatever_the_working_folder() {
     let repo = Repo::new();
     let text = "Before you run make, set CI=1.";
-    let wrote = repo.run(&repo.path(), &["add", "--task", "t", "--", text], &[], "");
+    let wrote = repo.run(&repo.path(), &["step", "add", "--", text], &[], "");
     assert!(wrote.status.success(), "{}", err(&wrote));
-    let id = out(&wrote).trim().to_string();
-    let rated = repo.run(&repo.path(), &["rate", &id, "+"], &[], "");
-    assert!(rated.status.success(), "{}", err(&rated));
     let tree = repo.worktree("feat-a");
+    let listed = repo.run(&tree, &["read"], &[], "");
+    assert!(out(&listed).contains(text), "{}", out(&listed));
     let outside = tempfile::tempdir().unwrap();
+    let elsewhere = repo.run(outside.path(), &["step", "add", "--", "Run make."], &[], "");
+    assert!(elsewhere.status.success(), "{}", err(&elsewhere));
     for folder in [tree.as_path(), outside.path()] {
-        let listed = repo.run(folder, &["list"], &[], "");
-        assert!(
-            out(&listed).contains(text),
-            "{}: {}",
-            folder.display(),
-            out(&listed)
-        );
         assert!(!folder.join(".celis").exists(), "{}", folder.display());
     }
-    assert!(repo.store().join("shared").is_dir());
+    let written = std::fs::read_dir(repo.store().join("shared"))
+        .unwrap()
+        .filter(|e| {
+            e.as_ref()
+                .unwrap()
+                .path()
+                .extension()
+                .is_some_and(|x| x == "json")
+        })
+        .count();
+    assert!(written >= 2, "{written}");
     assert!(!repo.path().join(".celis").exists());
 }
 
+/// With no store, `decide` and `step add` create it (`spec/trails/10-decisions.md`, "The store").
+#[test]
+fn with_no_store_decide_and_step_add_create_it() {
+    for args in [
+        &["decide", "--", "Keep prices in cents."][..],
+        &["step", "add", "--", "work"],
+    ] {
+        let repo = Repo::plain();
+        let o = repo.run(&repo.path(), args, &[], "");
+        assert!(o.status.success(), "{args:?}: {}", err(&o));
+        assert!(repo.store().join("shared").is_dir(), "{args:?}");
+    }
+}
+
 /// A record is written to `<created_at>-<id>.json` holding the record as NIP-01 JSON
-/// (`spec/cairns/10-cairns.md`, "The store").
+/// (`spec/trails/10-decisions.md`, "The store").
 #[test]
 fn a_record_must_be_written_to_a_file_named_by_its_time_and_id() {
     let repo = Repo::new();
@@ -50,7 +68,7 @@ fn a_record_must_be_written_to_a_file_named_by_its_time_and_id() {
 }
 
 /// A record file does not change once written, and a file still being written is not seen
-/// (`spec/cairns/10-cairns.md`, "The store").
+/// (`spec/trails/10-decisions.md`, "The store").
 #[test]
 fn a_record_file_must_not_change_once_written() {
     let repo = Repo::new();
@@ -72,7 +90,7 @@ fn a_record_file_must_not_change_once_written() {
 }
 
 /// A reader never sees a record file half written, however large the record
-/// (`spec/cairns/10-cairns.md`, "The store").
+/// (`spec/trails/10-decisions.md`, "The store").
 #[test]
 fn a_record_file_must_never_be_seen_half_written() {
     use std::sync::atomic::{AtomicBool, Ordering};
@@ -104,7 +122,7 @@ fn a_record_file_must_never_be_seen_half_written() {
 }
 
 /// A reader skips a file that does not parse or whose record does not verify
-/// (`spec/cairns/10-cairns.md`, "The store").
+/// (`spec/trails/10-decisions.md`, "The store").
 #[test]
 fn a_reader_must_skip_a_file_that_does_not_parse_or_verify() {
     let repo = Repo::new();
@@ -125,91 +143,68 @@ fn a_reader_must_skip_a_file_that_does_not_parse_or_verify() {
     assert_eq!(store.records(), vec![good]);
 }
 
-/// `local/` holds only the log, and no record file carries the account's secret
-/// (`spec/cairns/10-cairns.md`, "The store").
+/// No record file carries the account's secret
+/// (`spec/trails/10-decisions.md`, "The store").
 #[test]
-fn local_must_not_leave_the_machine() {
-    let repo = Repo::new();
+fn no_record_file_must_carry_the_accounts_secret() {
+    let repo = Repo::plain();
     let wrote = repo.run(
         &repo.path(),
-        &["add", "--task", "t", "--", "Before you run make, set CI=1."],
+        &["step", "add", "--", "Before you run make, set CI=1."],
         &[],
         "",
     );
     assert!(wrote.status.success(), "{}", err(&wrote));
     let secret = std::fs::read_to_string(repo.home().join("key")).unwrap();
-    let names: Vec<_> = std::fs::read_dir(repo.store().join("local"))
-        .unwrap()
-        .map(|e| e.unwrap().file_name())
-        .collect();
-    assert_eq!(names, vec![std::ffi::OsString::from("log")]);
     for entry in std::fs::read_dir(repo.store().join("shared")).unwrap() {
         let text = std::fs::read_to_string(entry.unwrap().path()).unwrap();
         assert!(!text.contains(secret.trim()));
     }
 }
 
-/// With no store, `list --all`, `show` and `log` answer as an empty store and create nothing
-/// (`spec/cairns/10-cairns.md`, "The store").
+/// With no store, `read --like` answers as an empty store and creates nothing
+/// (`spec/trails/10-decisions.md`, "The store").
 #[test]
-fn a_read_with_no_store_must_answer_empty_and_create_nothing() {
-    let repo = Repo::new();
-    for args in [&["list", "--all"][..], &["show", "abcdef12"], &["log"]] {
-        let o = repo.run(&repo.path(), args, &[], "");
-        assert!(out(&o).is_empty(), "{args:?}: {}", out(&o));
-        assert!(
-            args[0] == "show" || o.status.success(),
-            "{args:?}: {}",
-            err(&o)
-        );
-        assert!(!repo.store().exists(), "{args:?}");
-    }
-}
-
-/// With no store, `stats` answers as an empty store, in text and under `--json`, and creates nothing
-/// (`spec/cairns/10-cairns.md`, "The store").
-#[test]
-fn stats_with_no_store_must_answer_empty_and_create_nothing() {
-    let repo = Repo::new();
-    for args in [&["stats"][..], &["stats", "--json"]] {
-        let o = repo.run(&repo.path(), args, &[], "");
-        assert!(o.status.success(), "{args:?}: {}", err(&o));
-        if args.contains(&"--json") {
-            let object: serde_json::Value = serde_json::from_str(out(&o).trim()).unwrap();
-            assert_eq!(
-                object,
-                serde_json::json!({"days": 7, "sessions": 0, "reported": 0, "done": 0}),
-                "{args:?}"
-            );
-            assert_eq!(out(&o).trim().lines().count(), 1, "{args:?}");
-        } else {
-            assert_eq!(
-                out(&o).trim(),
-                "0 sessions, 0 of 0 tasks done, in 7 days",
-                "{args:?}"
-            );
-        }
-        assert!(!repo.store().exists(), "{args:?}");
-    }
-}
-
-/// With no store, `show` refuses with `no-cairn` and creates nothing
-/// (`spec/cairns/10-cairns.md`, "The store").
-#[test]
-fn show_with_no_store_must_refuse_with_no_cairn() {
-    let repo = Repo::new();
-    let o = repo.run(&repo.path(), &["show", "--json", "abcdef12"], &[], "");
-    assert_eq!(o.status.code(), Some(1), "{}", err(&o));
-    let object: serde_json::Value = serde_json::from_str(err(&o).trim()).unwrap();
-    assert_eq!(object["error"], "no-cairn");
+fn a_read_like_with_no_store_must_answer_empty_and_create_nothing() {
+    let repo = Repo::plain();
+    let o = repo.run(&repo.path(), &["read", "--like", "a task"], &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+    assert!(out(&o).is_empty(), "{}", out(&o));
     assert!(!repo.store().exists());
 }
 
-/// With no store, a command that writes creates it (`spec/cairns/10-cairns.md`, "The store").
+/// With no store, `read` answers as an empty store and creates nothing (`spec/trails/10-decisions.md`, "The
+/// store").
+#[test]
+fn read_with_no_store_must_answer_empty_and_create_nothing() {
+    let repo = Repo::new();
+    let o = repo.run(&repo.path(), &["read"], &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+    assert!(out(&o).is_empty(), "{}", out(&o));
+    assert!(!repo.store().exists());
+}
+
+/// With no store, `tree` answers as an empty store and creates nothing (`spec/trails/10-decisions.md`, "The
+/// store").
+#[test]
+fn tree_with_no_store_must_answer_empty_and_create_nothing() {
+    let repo = Repo::new();
+    let o = repo.run(&repo.path(), &["tree"], &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+    assert!(out(&o).is_empty(), "{}", out(&o));
+    assert!(!repo.store().exists());
+}
+
+/// With no store, a command that writes creates it (`spec/trails/10-decisions.md`, "The store").
 #[test]
 fn with_no_store_every_other_command_must_create_it() {
     let repo = Repo::new();
-    let o = repo.run(&repo.path(), &["list"], &[], "");
+    let o = repo.run(
+        &repo.path(),
+        &["step", "add", "--", "Show a tier."],
+        &[],
+        "",
+    );
     assert!(o.status.success(), "{}", err(&o));
     assert!(repo.store().join("shared").is_dir());
 }

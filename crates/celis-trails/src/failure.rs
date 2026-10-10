@@ -42,11 +42,56 @@ impl Failure {
             .map(|(_, k)| k)
     }
 
-    /// No cairn in the store has this id.
-    pub fn no_cairn(id: &str) -> Self {
+    /// No step in the store has this id.
+    pub fn no_step(id: &str) -> Self {
         Self {
-            name: "no-cairn".into(),
-            message: format!("no cairn has the id {id}"),
+            name: "no-step".into(),
+            message: format!("no step has the id {id}"),
+            code: 1,
+        }
+    }
+
+    /// No live decision has this id.
+    pub fn no_decision(id: &str) -> Self {
+        Self {
+            name: "no-decision".into(),
+            message: format!("no live decision has the id {id}"),
+            code: 1,
+        }
+    }
+
+    /// No trail in the store has this id.
+    pub fn no_trail(id: &str) -> Self {
+        Self {
+            name: "no-trail".into(),
+            message: format!("no trail has the id {id}"),
+            code: 1,
+        }
+    }
+
+    /// The step's check fails; `output` is the end of what it printed.
+    pub fn check_failed(output: &str) -> Self {
+        Self {
+            name: "check-failed".into(),
+            message: format!("the step's check fails:\n{output}"),
+            code: 1,
+        }
+    }
+
+    /// The step has an open step under it.
+    pub fn open_steps(id: &str) -> Self {
+        Self {
+            name: "open-steps".into(),
+            message: format!("the step {id} has an open step under it"),
+            code: 1,
+        }
+    }
+
+    /// The step is done.
+    pub fn closed(id: &str) -> Self {
+        Self {
+            name: "closed".into(),
+            message: format!("the step {id} is closed"),
             code: 1,
         }
     }

@@ -1,0 +1,67 @@
+//! CIP-12, "Starting".
+
+mod support;
+
+use serde_json::Value;
+use support::{add, cli, err, finish, objects, out, refusal, Repo};
+
+/// The state `tree --json` gives the step `id`.
+fn state(repo: &Repo, trail: &str, id: &str) -> String {
+    objects(repo, &["tree", &trail[..8]])
+        .into_iter()
+        .find_map(|v| Some(v.get("step").filter(|s| s["id"] == id)?["state"].clone()))
+        .and_then(|s| s.as_str().map(str::to_string))
+        .unwrap()
+}
+
+/// A step is open, then working once a `start` names it, then done; a `start` does not close it, and
+/// `tree` marks a working step `◐` (`spec/trails/12-steps.md`, "Starting").
+#[test]
+fn a_started_step_is_working_until_it_closes() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    let step = add(&repo, &["--under", &trail[..8], "--", "the step"]);
+    assert_eq!(state(&repo, &trail, &step), "open");
+    let o = cli(&repo, &["step", "start", &step[..8]]);
+    assert!(o.status.success(), "{}", err(&o));
+    assert_eq!(state(&repo, &trail, &step), "working");
+    let tree = out(&cli(&repo, &["tree", &trail[..8]]));
+    assert!(tree.contains(&format!("◐ {}", &step[..8])), "{tree}");
+    finish(&repo, &step[..8]);
+    assert_eq!(state(&repo, &trail, &step), "done");
+}
+
+/// `start` refuses an unknown step with `no-step` and a closed step with `closed`; on a working step it
+/// writes nothing and prints the id of the first `start`; it prints the id it wrote, and `{"id"}` with
+/// `--json` (`spec/trails/12-steps.md`, "The commands").
+#[test]
+fn start_refuses_unknown_and_closed_steps_and_starts_a_step_once() {
+    let repo = Repo::new();
+    let open = add(&repo, &["--", "open"]);
+    let closed = add(&repo, &["--", "closed"]);
+    finish(&repo, &closed[..8]);
+    refusal(
+        &cli(&repo, &["step", "start", "deadbeef", "--json"]),
+        1,
+        "no-step",
+    );
+    refusal(
+        &cli(&repo, &["step", "start", &closed[..8], "--json"]),
+        1,
+        "closed",
+    );
+    let files = || {
+        std::fs::read_dir(repo.store().join("shared"))
+            .unwrap()
+            .count()
+    };
+    let o = cli(&repo, &["step", "start", &open[..8], "--json"]);
+    assert!(o.status.success(), "{}", err(&o));
+    let first: Value = serde_json::from_str(out(&o).trim()).unwrap();
+    assert_eq!(first["id"].as_str().map(str::len), Some(64), "{}", out(&o));
+    let before = files();
+    let o = cli(&repo, &["step", "start", &open[..8]]);
+    assert!(o.status.success(), "{}", err(&o));
+    assert_eq!(out(&o).trim(), first["id"].as_str().unwrap());
+    assert_eq!(files(), before);
+}

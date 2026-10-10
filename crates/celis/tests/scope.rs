@@ -2,105 +2,68 @@
 
 mod support;
 
-use celis_cairns::{Project, Store};
 use celis_wire::Note;
-use std::process::Command;
-use support::Repo;
+use support::{account, cli, decision_tags, err, now, objects, out, put, Repo};
 
-/// Every clone and every worktree of one repo has the id of its first commit, and the name of the main
-/// checkout's folder (`spec/cairns/10-cairns.md`, "Scope").
-#[test]
-fn every_clone_and_every_worktree_of_one_repo_must_give_the_same_project_id() {
-    let repo = Repo::new();
-    let first = repo.git(&["rev-list", "--max-parents=0", "HEAD"]);
-    let tree = repo.worktree("feat-a");
-    let clone = tempfile::tempdir().unwrap();
-    let copy = clone.path().join("copy");
-    let cloned = Command::new("git")
-        .args([
-            "clone",
-            "-q",
-            repo.path().to_str().unwrap(),
-            copy.to_str().unwrap(),
-        ])
-        .status()
-        .unwrap();
-    assert!(cloned.success());
-    for folder in [repo.path(), repo.path().join("sub"), tree, copy] {
-        std::fs::create_dir_all(&folder).unwrap();
-        assert_eq!(Project::at(&folder).id, first, "{}", folder.display());
-    }
-    assert_eq!(Project::at(&repo.worktree("feat-b")).name, "repo");
-}
-
-/// Outside git, the working folder's path is the project id, and its name is the project name
-/// (`spec/cairns/10-cairns.md`, "Scope").
-#[test]
-fn outside_git_the_project_id_is_the_path_of_the_working_folder() {
-    let outside = tempfile::tempdir().unwrap();
-    let folder = outside.path().join("shop");
-    std::fs::create_dir_all(&folder).unwrap();
-    let project = Project::at(&folder);
-    assert_eq!(project.id, folder.display().to_string());
-    assert_eq!(project.name, "shop");
-}
-
-/// `--project` names the project, and the id stays the first commit (`spec/cairns/10-cairns.md`,
-/// "Scope").
-#[test]
-fn the_name_must_not_change_the_project_id() {
-    let repo = Repo::new();
-    let args = [
-        "add",
-        "--task",
-        "t",
-        "--project",
-        "shelf",
-        "--",
-        "Before you run make, set CI=1.",
-    ];
-    let o = repo.run(&repo.path(), &args, &[], "");
-    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
-    let note = written(&repo);
-    assert_eq!(values(&note, "project"), ["shelf"]);
-    assert_eq!(
-        values(&note, "I"),
-        [format!("project:{}", repo.project_id())]
-    );
-}
-
-/// `add --project <name>` carries the name as the cairn's project name.
-///
-/// (`spec/cairns/11-cli.md`, "Commands")
-#[test]
-fn add_with_project_carries_the_name_as_the_cairns_project_name() {
-    let repo = Repo::new();
-    let args = [
-        "add",
-        "--task",
-        "t",
-        "--project",
-        "shelf",
-        "--",
-        "Before you run make, set CI=1.",
-    ];
-    let o = repo.run(&repo.path(), &args, &[], "");
-    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
-    assert_eq!(values(&written(&repo), "project"), ["shelf"]);
-}
-
-/// The one cairn in the store.
-fn written(repo: &Repo) -> Note {
-    let records = Store::open(&repo.home()).unwrap().records();
-    let mut cairns = records.into_iter().filter(|n| n.kind == 1111);
-    cairns.next().unwrap()
-}
-
-/// The values of the tags of `note` named `name`.
-fn values<'a>(note: &'a Note, name: &str) -> Vec<&'a str> {
-    note.tags
-        .iter()
-        .filter(|t| t[0] == name)
-        .map(|t| t[1].as_str())
+/// The ids of the decisions `read --json` prints in `folder`.
+fn decisions(repo: &Repo, folder: &std::path::Path) -> Vec<String> {
+    let o = repo.run(folder, &["read", "--json"], &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+    out(&o)
+        .lines()
+        .filter_map(|l| serde_json::from_str::<serde_json::Value>(l).ok())
+        .filter_map(|v| Some(v.get("decision")?["id"].as_str()?.to_string()))
         .collect()
+}
+
+fn decide(repo: &Repo, args: &[&str]) -> String {
+    let mut all = vec!["decide"];
+    all.extend(args);
+    let o = cli(repo, &all);
+    assert!(o.status.success(), "{}", err(&o));
+    out(&o).trim().to_string()
+}
+
+/// A reader gives a `me` decision in every project, and a decision with any other scope only in its own
+/// (`spec/trails/10-decisions.md`, "Scope").
+#[test]
+fn a_me_decision_holds_in_every_project_and_others_only_in_their_own() {
+    let repo = Repo::new();
+    let shop = repo.other("shop");
+    let mine = decide(&repo, &["--scope", "me", "--", "Use plain words."]);
+    let here = decide(&repo, &["--", "Keep prices in cents."]);
+    let placed = decide(&repo, &["--scope", "at:src/a.rs", "--", "Round down."]);
+    assert_eq!(decisions(&repo, &shop), std::slice::from_ref(&mine));
+    let local = decisions(&repo, &repo.path());
+    for id in [&mine, &here, &placed] {
+        assert!(local.contains(id), "{local:?}");
+    }
+}
+
+/// A reader counts a decision with no `scope` tag as `project`, and skips one whose scope it does not
+/// know (`spec/trails/10-decisions.md`, "Scope").
+#[test]
+fn no_scope_tag_is_the_project_and_an_unknown_scope_is_skipped() {
+    let repo = Repo::new();
+    let id = repo.project_id();
+    let here = decide(&repo, &["--", "Keep prices in cents."]);
+    let record = std::fs::read_dir(repo.store().join("shared"))
+        .unwrap()
+        .map(|e| std::fs::read_to_string(e.unwrap().path()).unwrap())
+        .find(|t| t.contains(&here))
+        .unwrap();
+    assert!(!record.contains("\"scope\""), "{record}");
+    let mut tags = decision_tags((&id, "repo"));
+    tags.push(vec!["scope".into(), "team:design".into()]);
+    let unknown = Note::write(&account(), 1111u16, now(), tags, "Team rule.").unwrap();
+    put(&repo, &unknown);
+    let shown = objects(&repo, &["read"]);
+    let scopes: Vec<(&str, &str)> = shown
+        .iter()
+        .filter_map(|v| {
+            let d = v.get("decision")?;
+            Some((d["id"].as_str()?, d["scope"].as_str()?))
+        })
+        .collect();
+    assert_eq!(scopes, [(here.as_str(), "project")]);
 }

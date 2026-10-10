@@ -6,7 +6,9 @@ use serde_json::Value;
 use std::process::Output;
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
-use support::{agent, err, finding, labelled, now, out, put, sharing_a_start, Repo, DAY};
+use support::{
+    account, decision_tags, err, out, put, sharing_a_start, sharing_a_start_with, step_tags, Repo,
+};
 
 fn objects(text: &str) -> Vec<Value> {
     text.lines()
@@ -14,269 +16,268 @@ fn objects(text: &str) -> Vec<Value> {
         .collect()
 }
 
-const SESSION: [(&str, &str); 1] = [("CELIS_SESSION", "s1")];
+/// Every command accepts `--json`; `decide` prints the id, or `{"id"}` (`spec/trails/11-cli.md`,
+/// "Output and errors").
+#[test]
+fn every_command_accepts_json_and_prints_the_id() {
+    let repo = Repo::new();
+    let dir = repo.path();
+    let o = repo.run(&dir, &["decide", "--", "one"], &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+    assert!(is_id(out(&o).trim()), "{}", out(&o));
 
-fn written(repo: &Repo, extra: &[&str]) -> Output {
-    let mut args = vec!["add", "--task", "t", "finding"];
-    args.extend_from_slice(extra);
-    args.extend(["--", "the note"]);
-    repo.run(&repo.path(), &args, &SESSION, "")
+    let again = repo.run(&dir, &["decide", "--json", "--", "two"], &[], "");
+    let objs = objects(&out(&again));
+    assert_eq!(objs.len(), 1);
+    assert!(is_id(objs[0]["id"].as_str().unwrap()));
+
+    let o = repo.run(&dir, &["read", "--json"], &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+    objects(&out(&o));
 }
 
-fn id_of(repo: &Repo) -> String {
-    let o = written(repo, &[]);
+/// Runs `celis <args>` with stdin left open and returns its output.
+fn without_asking(repo: &Repo, args: &[&str]) -> Output {
+    let mut child = Command::new(env!("CARGO_BIN_EXE_celis"))
+        .args(args)
+        .current_dir(repo.path())
+        .env_clear()
+        .env("PATH", std::env::var("PATH").unwrap_or_default())
+        .env("CELIS_HOME", repo.home())
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    let held = child.stdin.take().unwrap();
+    let start = Instant::now();
+    while child.try_wait().unwrap().is_none() {
+        if start.elapsed() > Duration::from_secs(20) {
+            child.kill().unwrap();
+            panic!("{args:?} waited on stdin");
+        }
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    drop(held);
+    let o = child.wait_with_output().unwrap();
+    assert!(o.status.success(), "{args:?}: {}", err(&o));
+    assert_eq!(err(&o), "", "{args:?}");
+    let asked = out(&o).lines().any(|l| l.trim_end().ends_with('?'));
+    assert!(!asked, "{args:?}: {}", out(&o));
+    o
+}
+
+fn step_id(repo: &Repo, text: &str) -> String {
+    let o = repo.run(&repo.path(), &["step", "add", "--", text], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     out(&o).trim().to_string()
 }
 
-/// Asserts that the store holds a rating, kind 7, with id `rating` and an `e` tag naming `cairn`.
-fn assert_rating_cites(repo: &Repo, rating: &str, cairn: &str) {
-    let dir = repo.store().join("shared");
-    let found = std::fs::read_dir(dir)
-        .unwrap()
-        .filter_map(|e| std::fs::read_to_string(e.unwrap().path()).ok())
-        .filter_map(|t| serde_json::from_str::<Value>(&t).ok())
-        .find(|n| n["id"] == rating)
-        .expect("the printed id is a record in the store");
-    assert_eq!(found["kind"], 7);
-    assert!(found["tags"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .any(|t| t[0] == "e" && t[1] == cairn));
-    assert_ne!(rating, cairn);
-}
-
-/// Each `list` line is `<id8> [<project name>] <content>`, a cairn of this project included, with no mark
-/// (`spec/cairns/11-cli.md`, "Output and errors").
-#[test]
-fn list_prints_the_text_form_on_one_line() {
-    let repo = Repo::new();
-    let id = id_of(&repo);
-    let name = objects(&out(&repo.run(&repo.path(), &["list", "--json"], &[], "")))[0]["project"]
-        .as_str()
-        .unwrap()
-        .to_string();
-
-    let text = out(&repo.run(&repo.path(), &["list"], &[], ""));
-    assert_eq!(text.trim_end(), format!("{} [{name}] the note", &id[..8]));
-    assert_eq!(text.lines().count(), 1, "{text}");
-}
-
-/// A `--json` list object carries `"score"`, a number
-/// (`spec/cairns/11-cli.md`, "Output and errors").
-#[test]
-fn a_json_list_object_carries_a_score() {
-    let repo = Repo::new();
-    id_of(&repo);
-
-    let objs = objects(&out(&repo.run(&repo.path(), &["list", "--json"], &[], "")));
-
-    assert!(objs[0]["score"].is_number(), "{}", objs[0]);
-}
-
-/// `list` prints one JSON object a line with `--json`
-/// (`spec/cairns/11-cli.md`, "Output and errors").
-#[test]
-fn list_prints_one_json_object_a_line() {
-    let repo = Repo::new();
-    let id = id_of(&repo);
-    let dir = repo.path();
-
-    let objs = objects(&out(&repo.run(&dir, &["list", "--json"], &[], "")));
-    assert_eq!(objs.len(), 1);
-    for key in [
-        "id",
-        "label",
-        "agent",
-        "created_at",
-        "score",
-        "anchor",
-        "content",
-    ] {
-        assert!(objs[0].get(key).is_some(), "{key}");
-    }
-    assert_eq!(objs[0]["id"], id);
-}
-
-/// A cairn of 9000 bytes of content.
-fn long(repo: &Repo) {
-    let by = agent(repo, "w");
-    let anchor = format!("project:{}", repo.project_id());
-    let tags = vec![
-        vec!["I".to_string(), anchor.clone()],
-        vec!["K".into(), "project".into()],
-        vec!["i".into(), anchor],
-        vec!["k".into(), "project".into()],
-        vec!["L".into(), "celis.cairn".into()],
-        vec!["l".into(), "finding".into(), "celis.cairn".into()],
-    ];
-    let note = celis_wire::Note::write(by.key(), 1111u16, now() - 3600, tags, "a".repeat(9000));
-    put(repo, &note.unwrap());
-}
-
-/// Past 8000 bytes of content, `list` ends with the line `note: <n> cairns, about <tokens> tokens`
-/// (`spec/cairns/11-cli.md`, "Output and errors").
-#[test]
-fn past_8000_bytes_list_ends_with_the_note_line() {
-    let repo = Repo::new();
-    long(&repo);
-
-    let text = out(&repo.run(&repo.path(), &["list"], &[], ""));
-
-    assert_eq!(
-        text.lines().last(),
-        Some("note: 1 cairns, about 2250 tokens"),
-        "{text}"
-    );
-}
-
-/// With `--json`, the note is the object `{"note", "cairns", "tokens"}`
-/// (`spec/cairns/11-cli.md`, "Output and errors").
-#[test]
-fn with_json_the_note_is_an_object_of_note_cairns_and_tokens() {
-    let repo = Repo::new();
-    long(&repo);
-
-    let objs = objects(&out(&repo.run(&repo.path(), &["list", "--json"], &[], "")));
-
-    let last = objs.last().unwrap();
-    assert_eq!(last["cairns"], 1, "{last}");
-    assert_eq!(last["tokens"], 2250, "{last}");
-    assert!(last["note"].is_string(), "{last}");
-}
-
-/// The JSON form names the agent and the time of each cairn, which the one-line text form leaves out
-/// (`spec/cairns/11-cli.md`, "Output and errors").
-#[test]
-fn the_json_form_names_the_agent_and_the_time() {
-    let repo = Repo::new();
-    let dir = repo.path();
-    let old = agent(&repo, "old");
-    let at = now() - 2 * DAY;
-    let cairn = finding(&repo, &old, at);
-    let mine = out(&repo.run(
-        &dir,
-        &["add", "--task", "t", "finding", "--", "the note"],
-        &SESSION,
+fn trail_id(repo: &Repo, text: &str) -> String {
+    let o = repo.run(
+        &repo.path(),
+        &["step", "add", "--json", "--", text],
+        &[],
         "",
-    ))
-    .trim()
-    .to_string();
-
-    let objs = objects(&out(&repo.run(&dir, &["list", "--json"], &[], "")));
-    assert_eq!(objs.len(), 2);
-    let by = |id: &str| objs.iter().find(|o| o["id"] == id).unwrap().clone();
-    assert_eq!(by(&cairn.id)["agent"], cairn.pubkey.npub());
-    assert_eq!(by(&cairn.id)["created_at"], at);
-    assert_ne!(by(&mine)["agent"], by(&cairn.id)["agent"]);
-}
-
-/// `rate` takes the first 8 characters of an id, when only one cairn's id starts with them
-/// (`spec/cairns/11-cli.md`, "Output and errors").
-#[test]
-fn rate_takes_the_first_8_characters_of_an_id() {
-    let repo = Repo::new();
-    let id = id_of(&repo);
-    let other = [("CELIS_SESSION", "s2")];
-    let o = repo.run(&repo.path(), &["rate", &id[..8], "+"], &other, "");
-    assert!(o.status.success(), "{}", err(&o));
-    assert_rating_cites(&repo, out(&o).trim(), &id);
-}
-
-/// Every command accepts `--json`; `add` and `rate` print the id, or `{"id"}`; no command asks a
-/// question (`spec/cairns/11-cli.md`, "Output and errors").
-#[test]
-fn every_command_accepts_json_and_prints_the_id_without_asking() {
-    let repo = Repo::new();
-    let dir = repo.path();
-    let id = id_of(&repo);
-    assert!(
-        id.len() == 64 && id.chars().all(|c| c.is_ascii_hexdigit()),
-        "{id}"
     );
-
-    let again = written(&repo, &["--json"]);
-    let objs = objects(&out(&again));
-    assert_eq!(objs.len(), 1);
-    let again_id = objs[0]["id"].as_str().unwrap();
-    assert_eq!(again_id.len(), 64);
-    assert!(labelled(&repo, "finding").iter().any(|n| n.id == again_id));
-
-    let other = [("CELIS_SESSION", "s2")];
-    let rate = repo.run(&dir, &["rate", &id, "+", "--json"], &other, "");
-    assert!(rate.status.success(), "{}", err(&rate));
-    let printed = objects(&out(&rate))[0]["id"].as_str().unwrap().to_string();
-    assert_rating_cites(&repo, &printed, &id);
-
-    for args in [vec!["list", "--json"], vec!["help", "--json"]] {
-        let o = repo.run(&dir, &args, &[], "");
-        assert!(o.status.success(), "{args:?}");
-        objects(&out(&o));
-    }
+    assert!(o.status.success(), "{}", err(&o));
+    objects(&out(&o))[0]["id"].as_str().unwrap().to_string()
 }
 
-/// A command run with its stdin left open finishes, and prints no question
-/// (`spec/cairns/11-cli.md`, "Output and errors").
+fn is_id(s: &str) -> bool {
+    s.len() == 64 && s.chars().all(|c| c.is_ascii_hexdigit())
+}
+
+/// A trail or step command run with its stdin left open finishes, and prints no question
+/// (`spec/trails/11-cli.md`, "Output and errors").
 #[test]
-fn a_command_with_stdin_left_open_finishes_and_asks_nothing() {
-    let repo = Repo::new();
-    let id = id_of(&repo);
-    let runs: [&[&str]; 7] = [
-        &["list"],
-        &[
-            "add",
-            "--task",
-            "t",
-            "--",
-            "When you note: write it, because the next run needs it.",
-        ],
-        &["rate", &id[..8], "+"],
-        &["report", "--done"],
-        &["show", &id[..8]],
-        &["log"],
-        &["stats"],
+fn a_trail_or_step_command_with_stdin_left_open_asks_nothing() {
+    let repo = Repo::plain();
+    let closed = step_id(&repo, "two")[..8].to_string();
+    let trail = trail_id(&repo, "senior tier");
+    let scope = format!("trail:{}", &trail[..8]);
+    let runs: Vec<Vec<&str>> = vec![
+        vec!["decide", "--scope", &scope, "--", "80%"],
+        vec!["tree", &trail[..8]],
+        vec!["step", "add", "--", "four"],
+        vec!["read", "--like", "senior tier"],
+        vec!["step", "done", &closed, "--", "it passes"],
     ];
     for args in runs {
-        let mut child = Command::new(env!("CARGO_BIN_EXE_celis"))
-            .arg("cairn")
-            .args(args)
-            .current_dir(repo.path())
-            .env_clear()
-            .env("PATH", std::env::var("PATH").unwrap_or_default())
-            .env("CELIS_HOME", repo.home())
-            .env("CELIS_SESSION", "s2")
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .unwrap();
-        let held = child.stdin.take().unwrap();
-        let start = Instant::now();
-        while child.try_wait().unwrap().is_none() {
-            if start.elapsed() > Duration::from_secs(20) {
-                child.kill().unwrap();
-                panic!("{args:?} waited on stdin");
-            }
-            std::thread::sleep(Duration::from_millis(20));
-        }
-        drop(held);
-        let o = child.wait_with_output().unwrap();
-        assert!(o.status.success(), "{args:?}: {}", err(&o));
-        assert_eq!(err(&o), "", "{args:?}");
-        let asked = out(&o).lines().any(|l| l.trim_end().ends_with('?'));
-        assert!(!asked, "{args:?}: {}", out(&o));
+        without_asking(&repo, &args);
     }
 }
 
-/// A usage error names the narrowest help page that covers it (`spec/cairns/11-cli.md`, "Output and errors").
+/// `read` run with its stdin left open finishes, and prints no question (`spec/trails/11-cli.md`, "Output
+/// and errors").
+#[test]
+fn read_with_stdin_left_open_asks_nothing() {
+    let repo = Repo::new();
+    trail_id(&repo, "senior tier");
+    without_asking(&repo, &["read"]);
+}
+
+/// `read --at` and `decide` run with their stdin left open finish, and print no question
+/// (`spec/trails/11-cli.md`, "Output and errors").
+#[test]
+fn read_at_and_decide_with_stdin_left_open_ask_nothing() {
+    let repo = Repo::new();
+    for args in [
+        vec![
+            "decide",
+            "--scope",
+            "at:a.py",
+            "--",
+            "When you edit: test, because.",
+        ],
+        vec!["read", "--at", "a.py"],
+    ] {
+        without_asking(&repo, &args);
+    }
+}
+
+/// A command takes an id whole, or as its first 8 characters when only one record's id starts with
+/// them (`spec/trails/11-cli.md`, "Output and errors").
+#[test]
+fn a_command_takes_an_id_whole_or_as_its_first_8_characters() {
+    let repo = Repo::plain();
+    let (a, b) = (step_id(&repo, "one"), step_id(&repo, "two"));
+    for text in [a.as_str(), &b[..8]] {
+        let o = repo.run(&repo.path(), &["step", "done", text, "--", "p"], &[], "");
+        assert!(o.status.success(), "{text}: {}", err(&o));
+    }
+    let (g, h) = (trail_id(&repo, "one"), trail_id(&repo, "two"));
+    for text in [g.as_str(), &h[..8]] {
+        let o = repo.run(&repo.path(), &["tree", text], &[], "");
+        assert!(o.status.success(), "{text}: {}", err(&o));
+        assert!(!out(&o).is_empty(), "{text}");
+    }
+}
+
+/// `decide --replaces` takes the first 8 characters of a decision's id
+/// (`spec/trails/11-cli.md`, "Output and errors").
+#[test]
+fn decide_replaces_takes_the_first_8_characters_of_an_id() {
+    let repo = Repo::plain();
+    let first = repo.run(&repo.path(), &["decide", "--", "old"], &[], "");
+    assert!(first.status.success(), "{}", err(&first));
+    let id = out(&first).trim().to_string();
+    let args = ["decide", "--replaces", &id[..8], "--", "new"];
+    let o = repo.run(&repo.path(), &args, &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+    let read = out(&repo.run(&repo.path(), &["read"], &[], ""));
+    assert!(read.contains("new") && !read.contains("old"), "{read}");
+}
+
+/// A trail or step command accepts `--json` and prints one JSON object a line, and nothing else
+/// (`spec/trails/11-cli.md`, "Output and errors").
+#[test]
+fn a_trail_or_step_command_prints_one_json_object_a_line_with_json() {
+    let repo = Repo::plain();
+    let id = step_id(&repo, "one");
+    let trail = trail_id(&repo, "g");
+    let scope = format!("trail:{trail}");
+    for args in [
+        vec!["decide", "--json", "--scope", &scope, "--", "80%"],
+        vec!["tree", "--json", &trail],
+        vec!["read", "--json", "--like", "one"],
+        vec!["step", "done", "--json", &id, "--", "p"],
+    ] {
+        let o = repo.run(&repo.path(), &args, &[], "");
+        assert!(o.status.success(), "{args:?}: {}", err(&o));
+        for line in out(&o).lines() {
+            assert!(serde_json::from_str::<Value>(line).unwrap().is_object());
+        }
+    }
+}
+
+/// `read` accepts `--json` and prints one JSON object a line, and nothing else (`spec/trails/11-cli.md`,
+/// "Output and errors").
+#[test]
+fn read_prints_one_json_object_a_line_with_json() {
+    let repo = Repo::plain();
+    trail_id(&repo, "g");
+    step_id(&repo, "one");
+    let o = repo.run(&repo.path(), &["decide", "--", "one"], &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+    let o = repo.run(&repo.path(), &["read", "--json"], &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+    assert_eq!(objects(&out(&o)).len(), 3, "{}", out(&o));
+}
+
+/// `decide` and `read` accept `--json` and print one JSON object a line (`spec/trails/11-cli.md`,
+/// "Output and errors").
+#[test]
+fn decide_and_read_print_one_json_object_a_line_with_json() {
+    let repo = Repo::plain();
+    for args in [
+        vec!["decide", "--json", "--", "one"],
+        vec!["read", "--json"],
+    ] {
+        let o = repo.run(&repo.path(), &args, &[], "");
+        assert!(o.status.success(), "{args:?}: {}", err(&o));
+        assert_eq!(objects(&out(&o)).len(), 1, "{args:?}");
+    }
+}
+
+/// A trail or step command that writes a record prints its id, and `{"id"}` with `--json`
+/// (`spec/trails/11-cli.md`, "Output and errors").
+#[test]
+fn a_command_that_writes_a_record_prints_its_id() {
+    let repo = Repo::plain();
+    for args in [vec!["decide", "--", "g"], vec!["step", "add", "--", "p"]] {
+        let o = repo.run(&repo.path(), &args, &[], "");
+        assert!(o.status.success(), "{args:?}: {}", err(&o));
+        assert!(is_id(out(&o).trim()), "{args:?}: {}", out(&o));
+    }
+    for args in [
+        vec!["decide", "--json", "--", "g2"],
+        vec!["step", "add", "--json", "--", "p2"],
+    ] {
+        let o = repo.run(&repo.path(), &args, &[], "");
+        assert!(o.status.success(), "{args:?}: {}", err(&o));
+        let lines = objects(&out(&o));
+        assert_eq!(lines.len(), 1);
+        assert_eq!(lines[0].as_object().unwrap().len(), 1, "{}", lines[0]);
+        assert!(is_id(lines[0]["id"].as_str().unwrap()));
+    }
+}
+
+/// `decide` prints the id of its record, and `{"id"}` with `--json` (`spec/trails/11-cli.md`,
+/// "Output and errors").
+#[test]
+fn decide_prints_its_id() {
+    let repo = Repo::new();
+    let o = repo.run(&repo.path(), &["decide", "--", "one"], &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+    assert!(is_id(out(&o).trim()), "{}", out(&o));
+    let o = repo.run(&repo.path(), &["decide", "--json", "--", "two"], &[], "");
+    let lines = objects(&out(&o));
+    assert_eq!(lines[0].as_object().unwrap().len(), 1);
+    assert!(is_id(lines[0]["id"].as_str().unwrap()));
+}
+
+/// With `--json`, a `--replaces` no live decision has is named `no-decision`
+/// (`spec/trails/11-cli.md`, "Output and errors").
+#[test]
+fn a_replaces_no_live_decision_has_is_named_no_decision_under_json() {
+    let repo = Repo::new();
+    let none = "0".repeat(64);
+    let args = ["decide", "--json", "--replaces", &none, "--", "x"];
+    let o = repo.run(&repo.path(), &args, &[], "");
+    assert_eq!(o.status.code(), Some(1), "{}", err(&o));
+    let object: Value = serde_json::from_str(err(&o).trim()).expect("one JSON object");
+    assert_eq!(object["error"], "no-decision");
+}
+
+/// A usage error names the narrowest help page that covers it (`spec/trails/11-cli.md`, "Output and errors").
 #[test]
 fn a_usage_error_names_the_narrowest_help_page() {
     let repo = Repo::new();
     let dir = repo.path();
     for (args, page) in [
-        (&["list", "--nope"][..], "celis cairn list --help"),
-        (&["frobnicate"][..], "celis cairn help"),
+        (&["read", "--nope"][..], "celis read --help"),
+        (&["frobnicate"][..], "celis help"),
     ] {
         let usage = repo.run(&dir, args, &[], "");
         assert_eq!(usage.status.code(), Some(2), "{args:?}");
@@ -286,17 +287,17 @@ fn a_usage_error_names_the_narrowest_help_page() {
 }
 
 /// An unknown command names the known one nearest it, when two edits or fewer turn one into the other
-/// (`spec/cairns/11-cli.md`, "Output and errors").
+/// (`spec/trails/11-cli.md`, "Output and errors").
 #[test]
 fn an_unknown_command_names_the_known_one_nearest_it() {
     let repo = Repo::new();
-    let usage = repo.run(&repo.path(), &["lsit"], &[], "");
+    let usage = repo.run(&repo.path(), &["decid"], &[], "");
     assert_eq!(usage.status.code(), Some(2));
-    assert!(err(&usage).contains("\"list\""), "{}", err(&usage));
+    assert!(err(&usage).contains("\"decide\""), "{}", err(&usage));
 }
 
 /// Without `--json`, an error is one line on stderr: `celis: <message>`; with `--json` it is one object
-/// (`spec/cairns/11-cli.md`, "Output and errors").
+/// (`spec/trails/11-cli.md`, "Output and errors").
 #[test]
 fn without_json_an_error_is_one_line() {
     let repo = Repo::new();
@@ -314,14 +315,14 @@ fn without_json_an_error_is_one_line() {
 }
 
 /// A code-1 error without `--json` is one line on stderr, `celis: <message>`
-/// (`spec/cairns/11-cli.md`, "Output and errors").
+/// (`spec/trails/11-cli.md`, "Output and errors").
 #[test]
 fn a_code_1_error_without_json_is_one_celis_line() {
-    let repo = Repo::new();
+    let repo = Repo::plain();
     let o = repo.run(
         &repo.path(),
-        &["rate", "deadbeef", "+"],
-        &[("CELIS_SESSION", "s2")],
+        &["step", "done", "deadbeef", "--", "p"],
+        &[],
         "",
     );
     assert_eq!(o.status.code(), Some(1), "{}", err(&o));
@@ -334,56 +335,15 @@ fn a_code_1_error_without_json_is_one_celis_line() {
     assert_eq!(out(&o), "");
 }
 
-/// `init` with no terminal finishes without waiting and asks no question
-/// (`spec/cairns/11-cli.md`, "Output and errors").
-#[test]
-fn init_with_no_terminal_asks_no_question() {
-    for agent_args in [&["--for", "claude"][..], &[][..]] {
-        for closed in [true, false] {
-            let repo = Repo::new();
-            let mut cmd = Command::new(env!("CARGO_BIN_EXE_celis"));
-            cmd.arg("init")
-                .args(agent_args)
-                .current_dir(repo.path())
-                .env_clear()
-                .env("PATH", "/usr/bin:/bin")
-                .env("HOME", repo.home())
-                .env("CELIS_HOME", repo.home())
-                .stdout(Stdio::piped())
-                .stderr(Stdio::piped());
-            let mut child = if closed {
-                cmd.stdin(Stdio::null()).spawn().unwrap()
-            } else {
-                cmd.stdin(Stdio::piped()).spawn().unwrap()
-            };
-            let held = child.stdin.take();
-            let start = Instant::now();
-            while child.try_wait().unwrap().is_none() {
-                if start.elapsed() > Duration::from_secs(20) {
-                    child.kill().unwrap();
-                    panic!("init {agent_args:?} waited on stdin");
-                }
-                std::thread::sleep(Duration::from_millis(20));
-            }
-            drop(held);
-            let o = child.wait_with_output().unwrap();
-            assert!(o.status.success(), "init {agent_args:?}: {}", err(&o));
-            let text = format!("{}{}", out(&o), err(&o));
-            assert!(!text.contains('?'), "{text}");
-        }
-    }
-}
-
-/// Any other error exits 1, and with `--json` it is one object on stderr (`spec/cairns/11-cli.md`,
+/// Any other error exits 1, and with `--json` it is one object on stderr (`spec/trails/11-cli.md`,
 /// "Output and errors").
 #[test]
 fn any_other_error_exits_1() {
-    let repo = Repo::new();
-    let env = [("CELIS_SESSION", "s2")];
+    let repo = Repo::plain();
     let other = repo.run(
         &repo.path(),
-        &["rate", &"0".repeat(64), "+", "--json"],
-        &env,
+        &["step", "done", &"0".repeat(64), "--json", "--", "p"],
+        &[],
         "",
     );
     assert_eq!(other.status.code(), Some(1));
@@ -392,93 +352,145 @@ fn any_other_error_exits_1() {
     assert_eq!(out(&other), "");
 }
 
-/// `rate` refuses an 8-character start two cairns share, and takes a full id of either
-/// (`spec/cairns/11-cli.md`, "Output and errors").
+/// A command refuses an 8-character start two steps share, and takes a full id of either
+/// (`spec/trails/11-cli.md`, "Output and errors").
 #[test]
-fn rate_refuses_an_8_character_start_two_cairns_share() {
-    let repo = Repo::new();
-    let by = agent(&repo, "s1");
-    let (a, b) = sharing_a_start(&repo, &by, "finding", "finding");
+fn a_command_refuses_an_8_character_start_two_steps_share() {
+    let repo = Repo::plain();
+    let by = &account();
+    let (a, b) = sharing_a_start(&repo, by, "step", "step");
     assert_eq!(a.id[..8], b.id[..8]);
     assert_ne!(a.id, b.id);
     put(&repo, &a);
     put(&repo, &b);
-    let other = [("CELIS_SESSION", "s2")];
 
-    let refused = repo.run(&repo.path(), &["rate", &a.id[..8], "+"], &other, "");
+    let args = ["step", "done", &a.id[..8], "--", "p"];
+    let refused = repo.run(&repo.path(), &args, &[], "");
     assert!(!refused.status.success());
     assert_eq!(out(&refused), "");
 
-    let o = repo.run(&repo.path(), &["rate", &a.id, "+"], &other, "");
+    let o = repo.run(&repo.path(), &["step", "done", &a.id, "--", "p"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
-    assert_rating_cites(&repo, out(&o).trim(), &a.id);
 }
 
-/// `log`, `show` and `stats` print only JSON objects, one a line, on stdout with `--json`
-/// (`spec/cairns/11-cli.md`, "Output and errors").
+/// A command refuses an 8-character start two steps share with `no-step`, or `no-trail` as a scope, and
+/// two decisions share with `no-decision`, under `--json` (`spec/trails/11-cli.md`, "Output and errors").
 #[test]
-fn log_show_and_stats_print_only_json_objects_with_json() {
-    let repo = Repo::new();
-    let dir = repo.path();
-    let id = id_of(&repo);
-    let listed = repo.run(&dir, &["list"], &SESSION, "");
-    assert!(listed.status.success(), "{}", err(&listed));
+fn a_command_refuses_an_8_character_start_two_trails_decisions_or_steps_share() {
+    let repo = Repo::plain();
+    let project = (repo.project_id(), "repo".to_string());
+    let project = (project.0.as_str(), project.1.as_str());
+    let at = support::now() - 86400;
 
-    for args in [
-        vec!["log", "--json"],
-        vec!["show", id.as_str(), "--json"],
-        vec!["stats", "--json"],
+    let (g1, g2) = sharing_a_start_with(&account(), at, &step_tags(project));
+    put(&repo, &g1);
+    put(&repo, &g2);
+    assert_eq!(g1.id[..8], g2.id[..8]);
+    let scope = format!("trail:{}", &g1.id[..8]);
+    for (args, name) in [
+        (vec!["tree", "--json", &g1.id[..8]], "no-step"),
+        (
+            vec!["decide", "--json", "--scope", &scope, "--", "x"],
+            "no-trail",
+        ),
     ] {
-        let o = repo.run(&dir, &args, &[], "");
+        let o = repo.run(&repo.path(), &args, &[], "");
+        support::refusal(&o, 1, name);
+        assert_eq!(out(&o), "");
+    }
+    let o = repo.run(&repo.path(), &["tree", &g2.id], &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+
+    let (d1, d2) = sharing_a_start_with(&account(), at, &decision_tags(project));
+    put(&repo, &d1);
+    put(&repo, &d2);
+    assert_eq!(d1.id[..8], d2.id[..8]);
+    let args = ["decide", "--json", "--replaces", &d1.id[..8], "--", "x"];
+    let o = repo.run(&repo.path(), &args, &[], "");
+    support::refusal(&o, 1, "no-decision");
+    assert_eq!(out(&o), "");
+    let args = ["decide", "--replaces", &d1.id, "--", "x"];
+    let o = repo.run(&repo.path(), &args, &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+
+    let by = &account();
+    let (a, b) = sharing_a_start(&repo, by, "step", "step");
+    put(&repo, &a);
+    put(&repo, &b);
+    let args = ["step", "done", "--json", &a.id[..8], "--", "p"];
+    let o = repo.run(&repo.path(), &args, &[], "");
+    support::refusal(&o, 1, "no-step");
+    assert_eq!(out(&o), "");
+}
+
+/// `step done` and `step steer` print one JSON object a line with `--json`
+/// (`spec/trails/11-cli.md`, "Output and errors").
+#[test]
+fn step_done_and_steer_print_json_objects_with_json() {
+    let repo = Repo::plain();
+    let id = step_id(&repo, "one");
+    for args in [
+        vec!["step", "steer", "--json", &id, "--", "Use a token."],
+        vec!["step", "done", "--json", &id, "--", "it passes"],
+    ] {
+        let o = repo.run(&repo.path(), &args, &[], "");
         assert!(o.status.success(), "{args:?}: {}", err(&o));
-        let text = out(&o);
-        assert!(!text.trim().is_empty(), "{args:?}");
-        for line in text.lines() {
-            let value: Value = serde_json::from_str(line)
-                .unwrap_or_else(|_| panic!("{args:?}: not JSON: {line:?}"));
-            assert!(value.is_object(), "{args:?}: {line:?}");
-        }
+        let lines = objects(&out(&o));
+        assert_eq!(lines.len(), 1, "{args:?}");
+        assert_eq!(lines[0].as_object().unwrap().len(), 1, "{}", lines[0]);
+        assert!(is_id(lines[0]["id"].as_str().unwrap()), "{args:?}");
     }
 }
 
 /// An unknown command more than two edits from every known one names no "did you mean"
-/// (`spec/cairns/11-cli.md`, "Output and errors").
+/// (`spec/trails/11-cli.md`, "Output and errors").
 #[test]
 fn an_unknown_command_far_from_every_known_one_names_no_suggestion() {
-    let repo = Repo::new();
+    let repo = Repo::plain();
     let usage = repo.run(&repo.path(), &["frobnicate"], &[], "");
     assert_eq!(usage.status.code(), Some(2));
     assert!(err(&usage).contains("frobnicate"), "{}", err(&usage));
     assert!(!err(&usage).contains("did you mean"), "{}", err(&usage));
 }
 
-/// `list` names the project of each cairn, and `--json` names its project and task (`spec/cairns/11-cli.md`, "Output and errors").
+/// With `--json`, each refusal names itself: `usage`, `no-decision`, `no-step` and `closed`, and
+/// any other failure `error` (`spec/trails/11-cli.md`, "Output and errors").
 #[test]
-fn list_marks_a_cairn_of_another_project_with_its_name() {
-    let repo = Repo::new();
-    let shop = repo.other("shop");
-    let args = [
-        "add",
-        "--task",
-        "add a tier",
-        "--",
-        "When pricing, use cents.",
-    ];
-    let o = repo.run(&shop, &args, &[], "");
-    assert!(o.status.success(), "{}", err(&o));
-    let id = out(&o).trim().to_string();
-    let text = repo.run(&repo.path(), &["list"], &[], "");
+fn each_refusal_names_itself_under_json() {
+    let repo = Repo::plain();
+    let dir = repo.path();
+    let name = |args: &[&str]| -> String {
+        let o = repo.run(&dir, args, &[], "");
+        assert!(!o.status.success(), "{args:?}");
+        let object: Value = serde_json::from_str(err(&o).trim()).expect("one JSON object");
+        object["error"].as_str().unwrap().to_string()
+    };
+    let none = "0".repeat(64);
+    let added = repo.run(&dir, &["step", "add", "--", "work"], &[], "");
+    assert!(added.status.success(), "{}", err(&added));
+    let id = out(&added).trim().to_string();
+
+    assert_eq!(name(&["--json", "frobnicate"]), "usage");
     assert_eq!(
-        out(&text),
-        format!("{} [shop] When pricing, use cents.\n", &id[..8])
+        name(&["--json", "decide", "--replaces", &none, "--", "x"]),
+        "no-decision"
     );
-    let there = repo.run(&shop, &["list"], &[], "");
     assert_eq!(
-        out(&there),
-        format!("{} [shop] When pricing, use cents.\n", &id[..8])
+        name(&["--json", "step", "done", &none, "--", "p"]),
+        "no-step"
     );
-    let json = repo.run(&repo.path(), &["list", "--json"], &[], "");
-    let object: Value = serde_json::from_str(out(&json).trim()).unwrap();
-    assert_eq!(object["project"], "shop");
-    assert_eq!(object["task"], "add a tier");
+    let done = repo.run(&dir, &["step", "done", &id, "--", "p"], &[], "");
+    assert!(done.status.success(), "{}", err(&done));
+    assert_eq!(name(&["--json", "step", "done", &id, "--", "p"]), "closed");
+    let file = repo.home().join("not-a-folder");
+    std::fs::write(&file, "x").unwrap();
+    let broken = repo.run(
+        &dir,
+        &["--json", "decide", "--", "x"],
+        &[("CELIS_HOME", file.to_str().unwrap())],
+        "",
+    );
+    assert_eq!(broken.status.code(), Some(1), "{}", err(&broken));
+    let object: Value = serde_json::from_str(err(&broken).trim()).expect("one JSON object");
+    assert_eq!(object["error"], "error");
 }

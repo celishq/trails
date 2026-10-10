@@ -1,186 +1,117 @@
 //! CIP-10, "Reading".
+
 mod support;
 
-use support::*;
+use support::{account, decision, now, read_ids, Repo, DAY};
 
-/// A cairn written 14 days ago with no rating has the score 0.5.
-///
-/// (`spec/cairns/10-cairns.md`, "Reading")
-#[test]
-fn a_cairn_written_14_days_ago_scores_one_half() {
-    let repo = Repo::new();
-    let writer = agent(&repo, "w");
-    let cairn = finding(&repo, &writer, now() - 14 * DAY);
-
-    assert_near(score(&repo, &cairn), 0.5);
+fn short(id: &str) -> String {
+    id[..8].to_string()
 }
 
-/// A cairn written 28 days ago and rated `+` today scores 1.25, and comes before a new cairn with no rating.
-///
-/// (`spec/cairns/10-cairns.md`, "Reading")
+/// A reader gives only live decisions of the working folder's project (`spec/trails/10-decisions.md`,
+/// "Reading").
 #[test]
-fn an_old_cairn_rated_today_scores_1_25_and_precedes_a_new_one() {
+fn a_reader_gives_only_live_decisions_of_the_working_folders_project() {
     let repo = Repo::new();
-    let (writer, b) = (agent(&repo, "w"), agent(&repo, "b"));
-    let old = finding(&repo, &writer, now() - 28 * DAY);
-    let new = finding(&repo, &writer, now() - 1000);
-    rating(&repo, &b, &old, true, now());
-
-    let ids: Vec<String> = listed(&repo, "reader", &[])
-        .iter()
-        .map(|o| o["id"].as_str().unwrap().to_string())
-        .collect();
-
-    assert_near(score(&repo, &old), 1.25);
-    assert_eq!(ids, [old.id, new.id]);
-}
-
-/// A new cairn rated `-` by two agents scores -1, and the list still prints it, last.
-///
-/// (`spec/cairns/10-cairns.md`, "Reading")
-#[test]
-fn a_cairn_rated_wrong_by_two_agents_scores_minus_one_and_prints_last() {
-    let repo = Repo::new();
-    let (writer, b, c) = (agent(&repo, "w"), agent(&repo, "b"), agent(&repo, "c"));
-    let bad = finding(&repo, &writer, now() - 1000);
-    let fine = finding(&repo, &writer, now() - 2000);
-    rating(&repo, &b, &bad, false, now() - 500);
-    rating(&repo, &c, &bad, false, now() - 400);
-
-    let ids: Vec<String> = listed(&repo, "reader", &[])
-        .iter()
-        .map(|o| o["id"].as_str().unwrap().to_string())
-        .collect();
-
-    assert_near(score(&repo, &bad), -1.0);
-    assert_eq!(ids, [fine.id, bad.id]);
-}
-
-/// A cairn stays in the list however old it is.
-///
-/// (`spec/cairns/10-cairns.md`, "Reading")
-#[test]
-fn no_cairn_leaves_the_list_for_its_age() {
-    let repo = Repo::new();
-    let writer = agent(&repo, "w");
-    let old = finding(&repo, &writer, now() - 200 * DAY);
-
-    assert!(score(&repo, &old).is_some());
-}
-
-/// A cairn of another project with a higher score comes before this project's cairn.
-///
-/// (`spec/cairns/10-cairns.md`, "Reading")
-#[test]
-fn a_reader_orders_by_score_across_projects() {
-    let repo = Repo::new();
+    let id = repo.project_id();
+    let project = (id.as_str(), "repo");
     let shop = repo.other("shop");
-    let write = |folder: &std::path::Path, text: &str| {
-        let o = repo.run(folder, &["add", "--task", "t", "--", text], &[], "");
-        assert!(o.status.success(), "{}", err(&o));
-        out(&o).trim().to_string()
+    let old = decision(
+        &repo,
+        project,
+        &account(),
+        (None, None),
+        "old",
+        now() - 4 * DAY,
+    );
+    let new = decision(
+        &repo,
+        project,
+        &account(),
+        (None, Some(&old.id)),
+        "new",
+        now() - 3 * DAY,
+    );
+    let foreign = decision(
+        &repo,
+        ("elsewhere", "shop"),
+        &account(),
+        (None, None),
+        "foreign",
+        now() - 2 * DAY,
+    );
+    assert_eq!(read_ids(&repo, &repo.path(), &[]), [short(&new.id)]);
+    let in_shop = read_ids(&repo, &shop, &[]);
+    assert!(!in_shop.contains(&short(&new.id)), "{in_shop:?}");
+    assert!(!in_shop.contains(&short(&foreign.id)), "{in_shop:?}");
+}
+
+/// A decision at a file is at that file whatever line its `at` names, and a folder holds what lies
+/// under it (`spec/trails/10-decisions.md`, "Reading").
+#[test]
+fn a_decision_at_a_file_is_at_that_file_whatever_line_and_a_folder_holds_what_lies_under_it() {
+    let repo = Repo::new();
+    let id = repo.project_id();
+    let project = (id.as_str(), "repo");
+    for file in [
+        "src/x/a.rs",
+        "src/x/ab.rs",
+        "src/x/deep/b.rs",
+        "src/xy/c.rs",
+    ] {
+        repo.write(file, "fn main() {}\n");
+    }
+    let at = |place: &str, n: u64| {
+        short(
+            &decision(
+                &repo,
+                project,
+                &account(),
+                (Some(&format!("at:{place}")), None),
+                place,
+                now() - n * DAY,
+            )
+            .id,
+        )
     };
-    write(&repo.path(), "Before you run make, here.");
-    let theirs = write(&shop, "Before you run make, in the shop.");
-    let rated = repo.run(&shop, &["rate", &theirs, "+"], &[], "");
-    assert!(rated.status.success(), "{}", err(&rated));
-
-    let here: Vec<String> = listed(&repo, "reader", &[])
-        .iter()
-        .map(|o| o["content"].as_str().unwrap().to_string())
-        .collect();
-
+    let line3 = at("src/x/a.rs:3", 6);
+    let line99 = at("src/x/a.rs:99", 5);
+    let bare = at("src/x/a.rs", 4);
+    let deep = at("src/x/deep/b.rs:1", 3);
+    let sibling = at("src/xy/c.rs:1", 2);
+    let other = at("src/x/ab.rs:1", 1);
+    let folder = repo.path();
     assert_eq!(
-        here,
-        [
-            "Before you run make, in the shop.",
-            "Before you run make, here."
-        ]
+        read_ids(&repo, &folder, &["--at", "src/x/a.rs"])[..3],
+        [bare.clone(), line99.clone(), line3.clone()]
+    );
+    assert_eq!(
+        read_ids(&repo, &folder, &["--at", "src/x"]),
+        [other, deep, bare, line99, line3, sibling]
     );
 }
 
-/// A reader orders cairns by score, then newest first.
-///
-/// (`spec/cairns/10-cairns.md`, "Reading")
+/// A reader orders decisions by scope, `at` first, then `project`, then `me`, and in one scope newest
+/// first, then by id (`spec/trails/10-decisions.md`, "Reading").
 #[test]
-fn a_reader_orders_by_score_then_newest_first() {
+fn a_reader_orders_decisions_by_scope_then_newest_first_then_by_id() {
     let repo = Repo::new();
-    let (writer, b) = (agent(&repo, "w"), agent(&repo, "b"));
-    let old = finding(&repo, &writer, now() - 3000);
-    let strong = finding(&repo, &writer, now() - 2000);
-    let new = finding(&repo, &writer, now() - 1000);
-    rating(&repo, &b, &strong, true, now() - 500);
-
-    let ids: Vec<String> = listed(&repo, "reader", &[])
+    let id = repo.project_id();
+    let project = (id.as_str(), "repo");
+    let make = |scope: Option<&str>, text: &str, at: u64| {
+        short(&decision(&repo, project, &account(), (scope, None), text, at).id)
+    };
+    let mine = make(Some("me"), "m", now() - DAY);
+    let same = now() - 3 * DAY;
+    let mut tied: Vec<String> = ["a", "b", "c"]
         .iter()
-        .map(|o| o["id"].as_str().unwrap().to_string())
+        .map(|t| make(None, t, same))
         .collect();
-
-    assert_eq!(ids, [strong.id, new.id, old.id]);
-}
-
-/// Among rated cairns the higher score comes first, even when it is older.
-///
-/// (`spec/cairns/10-cairns.md`, "Reading")
-#[test]
-fn among_confirmed_cairns_the_stronger_comes_first_even_when_older() {
-    let repo = Repo::new();
-    let (writer, b, c) = (agent(&repo, "w"), agent(&repo, "b"), agent(&repo, "c"));
-    let strong = finding(&repo, &writer, now() - 3000);
-    let weak = finding(&repo, &writer, now() - 1000);
-    rating(&repo, &b, &strong, true, now() - 900);
-    rating(&repo, &c, &strong, true, now() - 800);
-    rating(&repo, &b, &weak, true, now() - 700);
-
-    let ids: Vec<String> = listed(&repo, "reader", &[])
-        .iter()
-        .map(|o| o["id"].as_str().unwrap().to_string())
-        .collect();
-
-    assert_eq!(ids, [strong.id, weak.id]);
-}
-
-/// A cairn of weight 10 written 14 days ago scores 5, and a weight tag that is "11" or "x" scores as weight 1
-/// (`spec/cairns/10-cairns.md`, "Reading").
-#[test]
-fn a_cairn_of_weight_10_scores_5_and_a_bad_weight_scores_as_1() {
-    let repo = Repo::new();
-    let writer = agent(&repo, "w");
-    let at = now() - 14 * DAY;
-    let heavy = cairn(&repo, &writer, "finding", &[("weight", "10")], at);
-    let high = cairn(&repo, &writer, "finding", &[("weight", "11")], at);
-    let text = cairn(&repo, &writer, "finding", &[("weight", "x")], at);
-
-    assert_near(score(&repo, &heavy), 5.0);
-    assert_near(score(&repo, &high), 0.5);
-    assert_near(score(&repo, &text), 0.5);
-}
-
-/// A weight tag of "0", "11", "+5" or "x" in a record reads as weight 1.
-///
-/// (`spec/cairns/10-cairns.md`, "Reading")
-#[test]
-fn a_reader_must_read_a_weight_that_is_not_a_whole_number_from_1_to_10_as_1() {
-    let repo = Repo::new();
-    let writer = agent(&repo, "w");
-    let at = now() - 14 * DAY;
-    for bad in ["0", "11", "+5", "x"] {
-        let note = cairn(&repo, &writer, "finding", &[("weight", bad)], at);
-        assert_near(score(&repo, &note), 0.5);
-    }
-}
-
-/// A rating written after a first read changes the score of the next read.
-///
-/// (`spec/cairns/10-cairns.md`, "Reading")
-#[test]
-fn a_reader_must_work_out_the_score_from_the_records_alone_at_the_time_it_reads() {
-    let repo = Repo::new();
-    let (writer, b) = (agent(&repo, "w"), agent(&repo, "b"));
-    let note = finding(&repo, &writer, now() - 14 * DAY);
-    assert_near(score(&repo, &note), 0.5);
-
-    rating(&repo, &b, &note, true, now());
-
-    assert_near(score(&repo, &note), 1.5);
+    tied.sort();
+    let newest = make(None, "n", now() - 2 * DAY);
+    let placed = make(Some("at:src/a.rs"), "p", now() - 5 * DAY);
+    let mut want = vec![placed, newest];
+    want.extend(tied);
+    want.push(mine);
+    assert_eq!(read_ids(&repo, &repo.path(), &[]), want);
 }
