@@ -4,8 +4,8 @@ name: CLI release
 # archive on R2 under `cli/<version>/` and `cli/latest/`. The site serves them at celis.ai/updates/cli/, and
 # `workers/celis-site/public/install.sh` downloads them. A last job installs the release on clean runners.
 #
-# A `cli-v1.2.3` tag publishes version 1.2.3, which must be the version in crates/celis/Cargo.toml. A manual
-# run builds and signs, and publishes nothing.
+# A `cli-v1.2.3` tag publishes version 1.2.3, which each build reads from `CELIS_VERSION`; the repo says
+# 0.0.0. A manual run builds and signs as 0.0.0, and publishes nothing.
 
 on:
   push:
@@ -31,15 +31,11 @@ jobs:
       - id: version
         run: |
           set -euo pipefail
-          CARGO="$(sed -n 's/^version = "\(.*\)"/\1/p' crates/celis/Cargo.toml | head -1)"
+          VERSION=0.0.0
           if [ "$GITHUB_REF_TYPE" = "tag" ]; then
-            TAG="${GITHUB_REF_NAME#cli-v}"
-            if [ "$TAG" != "$CARGO" ]; then
-              echo "::error::the tag says $TAG, crates/celis/Cargo.toml says $CARGO"
-              exit 1
-            fi
+            VERSION="${GITHUB_REF_NAME#cli-v}"
           fi
-          echo "version=$CARGO" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
   linux:
     name: Linux builds
@@ -57,6 +53,8 @@ jobs:
         run: pip3 install --break-system-packages ziglang cargo-zigbuild
       - name: Build
         working-directory: crates
+        env:
+          CELIS_VERSION: ${{ needs.version.outputs.version }}
         run: |
           set -euo pipefail
           for target in x86_64-unknown-linux-musl aarch64-unknown-linux-musl; do
@@ -112,6 +110,7 @@ jobs:
       - name: Build, sign, notarize
         working-directory: crates
         env:
+          CELIS_VERSION: ${{ needs.version.outputs.version }}
           NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
           NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
         run: |

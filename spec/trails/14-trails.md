@@ -47,7 +47,7 @@ $CELIS_TRAIL    a step id, or a start of it: where `step add` with no `--under` 
 - A session's open trail MUST be the trail of its newest step, while that trail is not done or dropped.
 - `step add` with no `--under` or `--new` MUST write the step under `$CELIS_TRAIL` when it is set.
 - Else, while the session has an open trail, it MUST write the step under it.
-- Else, with a session, it MUST write the step under the newest active trail of the project.
+- Else, it MUST write a new trail. It MUST NOT join another session's trail without `--under`.
 - With `--new`, `step add` MUST write a new trail.
 - `prompt` MUST read a hook's `{"session_id", "prompt"}` on stdin. While that session has an open trail,
   it MUST write the prompt on it, and print the record's id. Else it MUST write and print nothing.
@@ -66,7 +66,8 @@ $CELIS_TRAIL    a step id, or a start of it: where `step add` with no `--under` 
 CLAUDE_CODE_SESSION_ID=95e9be99 celis step add -- "Make the badges orange."    a trail, the ask under it
 CLAUDE_CODE_SESSION_ID=95e9be99 celis step add -- "Now the buttons too."       a step under it
 CLAUDE_CODE_SESSION_ID=95e9be99 celis step add --new -- "Fix the login page."  a second trail
-CLAUDE_CODE_SESSION_ID=4c1d22e0 celis step add -- "Check the colours."        another session's step goes there
+CLAUDE_CODE_SESSION_ID=4c1d22e0 celis step add -- "Check the colours."        a trail of its own
+CLAUDE_CODE_SESSION_ID=4c1d22e0 celis step add --under 3fa2c1d0 -- "Check the colours."  goes there
 CELIS_TRAIL=3fa2c1d0 celis step add -- "Check the badge on the phone."         a step of any agent there
 echo '{"session_id": "95e9be99", "prompt": "Use the shared Badge."}' | celis prompt
 ```
@@ -93,7 +94,8 @@ celis decide --scope trail:4c1d22e0 -- "A senior pays 80% of the price, rounded 
 ## State
 
 A trail has no state record. Its state comes from its tree, so the person can see which tasks the agent
-reached alone. A trail ends 30 minutes after the newest record of its tree.
+reached alone. A trail ends when no step under it is open, or 30 minutes after the newest record of its
+tree.
 
 ```
 active              not done, dropped or ended
@@ -108,7 +110,9 @@ expired             ended with an open step under it
 - A reader MUST work out a trail's state from its tree, their `start`, `done`, `drop` and steer records,
   and the time.
 - The newest record of a tree MUST be the newest of its steps and the marks that name them.
+- A trail with steps under it MUST end when none of them is open.
 - A trail MUST end 30 minutes after the newest record of its tree.
+- A new step under an ended trail MUST make it active again.
 - A reader MUST NOT count a step of an ended trail as open.
 
 ## The commands

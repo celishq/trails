@@ -1,6 +1,6 @@
 {
   "name": "celis",
-  "version": "0.17.0",
+  "version": "0.0.0",
   "description": "The celis trail for agents: your tasks as trails of graded steps, and the decisions made at each place. /celis:trail does an ask that follows them.",
   "author": {
     "name": "Celis"

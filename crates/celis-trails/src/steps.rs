@@ -99,9 +99,15 @@ impl<'a> Steps<'a> {
             .collect()
     }
 
-    /// Whether the trail `note` is open and ended: 30 minutes after the newest record of its tree.
+    /// Whether the trail `note` is open and ended: steps sit under it and none is open, or 30 minutes
+    /// passed after the newest record of its tree.
     pub fn ended(&self, note: &'a Note) -> bool {
-        self.closed(&note.id).is_none() && self.now.saturating_sub(self.newest(note)) >= LIFE
+        if self.closed(&note.id).is_some() {
+            return false;
+        }
+        let tree = self.tree(note);
+        let idle = tree.len() > 1 && tree[1..].iter().all(|n| self.closed(&n.id).is_some());
+        idle || self.now.saturating_sub(self.newest(note)) >= LIFE
     }
 
     /// The time of the newest record of the tree of `note`: its steps, and the marks that name them.

@@ -159,7 +159,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "read",
         usage: &["celis read [--at <place>]... [--like <text>] [--full]"],
-        summary: "Print this project's active trails and their rules, open steps and decisions; with --like, the past asks and trails like the text.",
+        summary: "Print this project's active trails and today's ended ones with their rules, open steps and decisions; with --like, the past asks and trails like the text.",
         args: &[
             ("--at <place>", "a place whose decisions come first; zero or more"),
             ("--like <text>", "a new ask; prints the past work like it; optional"),

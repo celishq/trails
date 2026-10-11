@@ -32,11 +32,12 @@ $CELIS_TRAIL  the trail new steps go under (CIP-14)
 
 - Off macOS, `$CELIS_HOME` MUST default to `~/.local/share/celis`.
 - `read` MUST print the working folder's project's active trails, oldest first, each with its rules. Then
-  come its open steps that are no trail, oldest first. Then come its live decisions that are no rule
+  come its ended trails with a record from today that are not done or dropped, each with its state and
+  rules. Then come its open steps that are no trail, oldest first. Then come its live decisions that are no rule
   (CIP-10, "Reading"), 30 at most. The decisions at each `--at` place MUST come first.
 - When it leaves decisions out, `read` MUST then print `<n> more decisions`, or `{"more": <n>}` with
   `--json`.
-- `read` MUST NOT print a rule of a reached trail, or write a record.
+- `read` MUST NOT print a rule of a done or dropped trail, or write a record.
 - `home` MUST print the full path of the store, `$CELIS_HOME/trails`, and write nothing. With `--json`, it
   MUST print `{"path"}`.
 - With `--like`, `read` MUST then print the past trails like the text (CIP-14, "The past").
@@ -54,10 +55,13 @@ decision  text  <id, first 8> <scope> <text>
           json  {"id", "created_at", "project", "scope", "replaces", "content"}
 read      text  <id, first 8> [<project name>] <its title>[ · <place>]      each active trail
                   rule <id, first 8> <text>                                 each of its rules
+                <id, first 8> [<project name>] <its title>[ · <place>] · <state>   each of today's ended trails
+                  rule <id, first 8> <text>                                 each of its rules
                 <an open step, as CIP-12 "The commands" gives it>
                 <a decision>
                 <past work, as CIP-14 "The past" gives it>                  with `--like`
-          json  {"trail": {"id", "created_at", "project", "content", "rules": []}} · {"step": {...}}
+          json  {"trail": {"id", "created_at", "project", "content", "rules": []}}
+                · {"recent": {"id", "created_at", "project", "content", "rules": [], "state"}} · {"step": {...}}
                 · {"decision": {...}} · {"past": {...}}, one a line, each as its own json
 ```
 

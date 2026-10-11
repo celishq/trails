@@ -476,7 +476,7 @@ fn day(at: u64) -> String {
 }
 
 /// The time of the local midnight that starts the day of `now`.
-fn midnight(now: u64) -> u64 {
+pub(super) fn midnight(now: u64) -> u64 {
     let tm = local(now);
     let since = tm.tm_hour * 3_600 + tm.tm_min * 60 + tm.tm_sec;
     now.saturating_sub(u64::try_from(since).unwrap_or(0))

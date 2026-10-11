@@ -96,6 +96,50 @@ fn read_prints_no_reached_trail_and_no_rule_of_one() {
     assert!(lines_of(&repo, &repo.path(), &["read"]).is_empty());
 }
 
+/// `read` prints today's trails that are not active and not done or dropped, after the active ones, each
+/// with its state and its rules (`spec/trails/11-cli.md`, "Commands").
+#[test]
+fn read_prints_todays_trails_that_can_take_a_step() {
+    let repo = Repo::new();
+    let id = repo.project_id();
+    let t = now() - 5 * 60;
+    let active = step_note(&repo, &account(), None, "active", t);
+    let recent = step_note(&repo, &account(), None, "recent", t + 1);
+    let part = step_note(&repo, &account(), Some(&recent), "part", t + 2);
+    done_note(&repo, &account(), &part, t + 3);
+    let scope = format!("trail:{}", recent.id);
+    let rule = decision(
+        &repo,
+        project(&id),
+        &account(),
+        (Some(&scope), None),
+        "a rule",
+        t + 4,
+    );
+    let locked = step_note(&repo, &account(), None, "locked", t + 5);
+    done_note(&repo, &account(), &locked, t + 6);
+    let old = now() - 3 * 24 * 60 * 60;
+    let past = step_note(&repo, &account(), None, "past", old);
+    done_note(
+        &repo,
+        &account(),
+        &step_note(&repo, &account(), Some(&past), "p", old),
+        old,
+    );
+    assert_eq!(
+        lines_of(&repo, &repo.path(), &["read"]),
+        [
+            format!("{} [repo] active", short(&active.id)),
+            format!("{} [repo] recent · reached alone", short(&recent.id)),
+            format!("  rule {} a rule", short(&rule.id)),
+        ]
+    );
+    let json = lines_of(&repo, &repo.path(), &["read", "--json"]);
+    let recent_json: serde_json::Value = serde_json::from_str(&json[1]).unwrap();
+    assert_eq!(recent_json["recent"]["id"], recent.id.as_str(), "{json:?}");
+    assert_eq!(recent_json["recent"]["state"], "reached alone", "{json:?}");
+}
+
 /// `read` puts the decisions at each `--at` place first (`spec/trails/11-cli.md`, "Commands").
 #[test]
 fn read_puts_the_decisions_at_each_at_place_first() {

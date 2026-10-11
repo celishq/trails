@@ -21,7 +21,6 @@ fn a_trails_state_comes_from_its_tree_and_its_steers() {
     let part = add(&repo, &["--under", &alone[..8], "--", "part"]);
     assert_eq!(state(&repo, &alone), "active");
     finish(&repo, &part[..8]);
-    assert_eq!(state(&repo, &alone), "active");
     finish(&repo, &alone[..8]);
     assert_eq!(state(&repo, &alone), "reached alone");
 
@@ -37,6 +36,28 @@ fn a_trails_state_comes_from_its_tree_and_its_steers() {
     finish(&repo, &part[..8]);
     finish(&repo, &helped[..8]);
     assert_eq!(state(&repo, &helped), "reached with help");
+}
+
+/// A trail with steps under it and none open is reached at once; a new step under it makes it active
+/// again, and a done trail refuses one (`spec/trails/14-trails.md`, "State").
+#[test]
+fn a_trail_with_no_open_step_under_it_is_reached_at_once() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    let part = add(&repo, &["--under", &trail[..8], "--", "part"]);
+    finish(&repo, &part[..8]);
+    assert_eq!(state(&repo, &trail), "reached alone");
+    let read = out(&cli(&repo, &["read"]));
+    assert!(!read.contains(&part[..8]), "{read}");
+    add(&repo, &["--under", &trail[..8], "--", "more"]);
+    assert_eq!(state(&repo, &trail), "active");
+    let locked = add(&repo, &["--", "locked"]);
+    finish(&repo, &locked[..8]);
+    let o = cli(
+        &repo,
+        &["step", "add", "--under", &locked[..8], "--", "late"],
+    );
+    assert!(!o.status.success(), "{}", out(&o));
 }
 
 /// A trail ends 30 minutes after the newest record of its tree: reached when nothing under it is open,
@@ -60,7 +81,8 @@ fn a_trail_ends_thirty_minutes_after_its_newest_record() {
         "{tree}"
     );
     let read = out(&cli(&repo, &["read"]));
-    assert!(!read.contains(&left.id[..8]), "{read}");
+    let active = format!("{} [repo] left", &left.id[..8]);
+    assert!(!read.lines().any(|l| l == active), "{read}");
     assert!(!read.contains(&open.id[..8]), "{read}");
     let o = cli(&repo, &["step", "start", &open.id[..8]]);
     assert!(o.status.success(), "{}", err(&o));

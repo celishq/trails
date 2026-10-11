@@ -59,21 +59,39 @@ fn a_sessions_first_ask_is_a_step_under_its_trail() {
 }
 
 /// A trail carries its session, and a session's next step with no `--under` goes under its trail; a
-/// session with no trail goes under the project's newest active trail, and with `--new` or no session,
-/// a step starts a trail (`spec/trails/14-trails.md`, "Sessions").
+/// session with no trail, or no session, starts a trail, and `--under` joins another session's trail
+/// (`spec/trails/14-trails.md`, "Sessions").
 #[test]
-fn a_sessions_steps_go_under_its_trail_else_the_newest_active_trail() {
+fn a_sessions_steps_go_under_its_trail_and_a_session_with_no_trail_starts_one() {
     let repo = Repo::new();
     let trail = start(&repo, "s1", "make the badges orange");
     std::thread::sleep(std::time::Duration::from_millis(1100));
     let next = add(&repo, Some("s1"), "now the buttons too");
     std::thread::sleep(std::time::Duration::from_millis(1100));
-    let joined = add(&repo, Some("s2"), "another session");
+    let other = ids(&repo, Some("s2"), "another session");
+    let o = repo.run(
+        &repo.path(),
+        &[
+            "step",
+            "add",
+            "--under",
+            &trail[..8],
+            "--",
+            "joins on purpose",
+        ],
+        &[("CLAUDE_CODE_SESSION_ID", "s3")],
+        "",
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let joined = out(&o).trim().to_string();
     let none = add(&repo, None, "no session");
     let tree = objects(&repo, &["tree", &trail[..8]]);
     assert_eq!(tree[0]["trail"]["session"], "s1", "{tree:?}");
     assert_eq!(tree[2]["step"]["id"], next.as_str(), "{tree:?}");
     assert_eq!(tree[3]["step"]["id"], joined.as_str(), "{tree:?}");
+    assert_eq!(other.len(), 2, "{other:?}");
+    let own = objects(&repo, &["tree", &other[1][..8]]);
+    assert_eq!(own[0]["trail"]["session"], "s2", "{own:?}");
     let head = objects(&repo, &["tree", &none[..8]]);
     assert!(head[0].get("trail").is_some(), "{head:?}");
 }

@@ -58,7 +58,7 @@ fn read_like_prints_the_done_trails_that_share_most_words_and_least_help() {
 fn read_like_ranks_rare_words_first_and_finds_done_asks() {
     let repo = Repo::new();
     let by = account();
-    let t = now() - 60 * 60;
+    let t = now() - 3 * 24 * 60 * 60;
     let done = |under: Option<&Note>, text: &str, at: u64| {
         let note = step_note(&repo, &by, under, text, at);
         done_note(&repo, &by, &note, at + 1);

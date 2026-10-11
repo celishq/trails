@@ -1,6 +1,6 @@
 #!/bin/sh
 # At the start of a session, and after a compaction: says when the `celis` command is missing or older
-# than this plugin needs. Else it prints the trail card, and the project's active trails.
+# than this plugin needs. Else it prints the trail card, and the project's active and recent trails.
 NEEDS=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$(dirname "$0")/../.claude-plugin/plugin.json")
 HAVE=$(celis --version 2>/dev/null | awk '{print $2}')
 if [ -z "$HAVE" ]; then
@@ -10,9 +10,9 @@ elif [ "$(printf '%s\n%s\n' "$NEEDS" "$HAVE" | sort -V | head -1)" != "$NEEDS" ]
 else
   echo "How to do an ask with the celis plugin (\`skills/trail/card.md\`):"
   cat "$(dirname "$0")/../skills/trail/card.md"
-  if celis read --json 2>/dev/null | grep -q '^{"trail"'; then
+  if celis read --json 2>/dev/null | grep -qE '^\{"(trail|recent)"'; then
     echo
-    echo "A trail of this project is active (\`celis read\`). To go on with it, run \`celis tree <id>\`."
+    echo "This project has active or recent trails (\`celis read\`). Only when your ask goes on with one, add your first step \`--under <its id>\`."
     celis read 2>&1
   fi
 fi

@@ -18,9 +18,10 @@ fn main() {
     std::process::exit(command.run(&mut std::io::stdout(), &mut std::io::stderr()));
 }
 
-/// `celis <version>`, then the first 8 characters of the commit the build came from, when it had one.
+/// `celis <version>`, then the first 8 characters of the commit the build came from, when it had one. The
+/// version is the release's `CELIS_VERSION` at build time, else the crate's.
 fn version() -> String {
-    let version = env!("CARGO_PKG_VERSION");
+    let version = option_env!("CELIS_VERSION").unwrap_or(env!("CARGO_PKG_VERSION"));
     match option_env!("CELIS_COMMIT") {
         Some(commit) => format!("celis {version} ({})", &commit[..commit.len().min(8)]),
         None => format!("celis {version}"),
