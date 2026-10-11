@@ -12,7 +12,7 @@ The conventions in `spec/AGENTS.md` apply here unchanged.
 
 | CIP | Name | Holds | Depends |
 |---|---|---|---|
-| 10 | Decisions | the store, projects, the key, decisions, their scope, how they are read | CIP-01 |
+| 10 | Decisions | the store, projects, the account, decisions, their scope, how they are read | CIP-01 |
 | 11 | The command line | `celis`: commands, help, output and errors | CIP-10 |
 | 12 | Steps | the step, its project, closing, steering, grades, `celis step` | CIP-10, 11 |
 | 14 | Trails | the trail, its rules, its state, `celis tree`, the past, `celis watch` | CIP-10, 11, 12 |
@@ -25,7 +25,8 @@ The conventions in `spec/AGENTS.md` apply here unchanged.
 | `project:<id>` · `project` | anchor of a project, and its `K` | 10 |
 | `scope` · `replaces` | decision tags: where it holds, the decision it replaces | 10 |
 | `me` · `project` · `trail:<id>` · `at:<place>` | the scopes of a decision | 10 |
-| `$CELIS_HOME` | where celis keeps the key and the store | 11 |
+| `$CELIS_HOME` | where celis keeps the phrase and the store | 11 |
+| `$CELIS_HOME/phrase` · `celis auth` | the account's phrase, and the commands that keep it | 10 |
 | `no-decision` · `no-trail` | errors | 11 |
 | 1111 with `step` in `celis.step` | kind: a step (NIP-22) | 12 |
 | 1985 with `done` in `celis.step` | kind: a done (NIP-32) | 12 |
@@ -44,7 +45,7 @@ The conventions in `spec/AGENTS.md` apply here unchanged.
 |---|---|
 | `store` | `$CELIS_HOME/trails/`: the records of every project on this machine |
 | `project` | the code an agent works on, named by its repo's first commit |
-| `account` | the key that owns the store and signs every record in it (CIP-01) |
+| `account` | the key the phrase gives, that signs every record this machine writes (CIP-01) |
 | `agent` | one session of one agent that works for you, and signs as your account |
 | `record` | one signed nostr note in the store |
 | `trail` | one task you give, in your words: a step with no `under`, and the steps under it |
@@ -53,7 +54,7 @@ The conventions in `spec/AGENTS.md` apply here unchanged.
 | `step` | one part of the work toward a trail, at a place: open, working, done or dropped |
 | `steer` | what you asked for while a step was open, written by the agent |
 | `decision` | one sentence an agent writes, that holds in its scope until another replaces it |
-| `live` | a decision no counted decision replaces |
+| `live` | a decision no other decision replaces |
 | `rework` | a step that fixes the work of a done step |
 | `place` | a file, a `file:line`, a folder or a URL that a step or a decision is at |
 

@@ -19,8 +19,8 @@ fn trail(repo: &Repo, folder: &Path, text: &str, steered: bool) -> String {
     if steered {
         run(&["step", "steer", &part[..8], "--", "Use the shared table."]);
     }
-    run(&["step", "done", &part[..8], "--", "p"]);
-    run(&["step", "done", &trail[..8], "--", "p"]);
+    run(&["step", "done", &part[..8], "--as-planned", "--", "p"]);
+    run(&["step", "done", &trail[..8], "--as-planned", "--", "p"]);
     std::thread::sleep(Duration::from_millis(1100));
     trail
 }

@@ -54,6 +54,11 @@ $CELIS_TRAIL    a step id, or a start of it: where `step add` with no `--under` 
 - The prompt MUST be a steer on the oldest working step of the trail. With no working step, it MUST be a
   prompt mark on the trail. Its text MUST be the prompt's first line, cut to 200 characters.
 - A reader MUST NOT count a prompt mark as a steer.
+- `prompt` MUST write nothing for a prompt that starts with `<task-notification>`. The harness wrote it,
+  not the person.
+- With a working step, `prompt` MUST then name it on stderr. The line asks for a step under it, or a
+  replacement, when the next work does not fit it.
+- The hook MUST give that line to the agent.
 
 **Examples**
 
@@ -74,6 +79,10 @@ sentence a check can fail.
 **Rules**
 
 - A reader MUST count a decision as a rule of a trail only when its scope names that trail.
+- `done` on an ask MUST print its retro on stderr, so the agent writes the rules it shows.
+- The retro MUST count the steps under the ask written before the first of them started.
+- It MUST then list the steps added after, those dropped with their reason, and each `changed`.
+- It MUST then list each prompt and steer on the ask's tree, and on its trail since the ask.
 
 **Examples**
 
@@ -118,9 +127,9 @@ celis tree --all [--full]         every trail in the store, by day
 - `tree --all` MUST print every trail in the store, of every project, newest first, as `tree` with no id
   prints them. Before the first trail of each day, it MUST print the day, as `Oct 9`.
 - `tree --all` with an id MUST refuse as a usage error.
-- With `--all`, the styled tree MUST print each trail's project name after its id, and no project line.
-- In the short tree with no id, a trail that is not active MUST print only its own line. Its line MUST end
-  with ` · 1 step` or ` · <n> steps` when steps are under it.
+- With `--all`, the tree MUST print each trail's project name after its id, and no project line.
+- In the short tree with no id, a trail that is not active MUST print only its own line. Its details MUST
+  hold `1 step` or `<n> steps` when steps are under it.
 - `tree` MUST print the step with its state and its rules; `--full` adds its proof
   and grade when done. Then come the steps under it, oldest first, each followed by its own steps.
 - `tree` MUST mark a done step `✓`, a dropped one `✗`, a working one `◐`, and an open one `○` (CIP-12,
@@ -131,43 +140,46 @@ celis tree --all [--full]         every trail in the store, by day
   print the full tree, with the proof, grade and reason lines.
 - The short tree MUST fit each line to the width of the terminal. Off a terminal, it MUST use `COLUMNS` as
   the width, and cut nothing when `COLUMNS` is not set.
-- The short tree MUST cut a step's text and end it with `…`, and keep its id, place, state and link whole.
-- `tree` and `watch` MUST print the styled tree when stdout is a terminal, or when `CLICOLOR_FORCE` is set
-  and not `0`. They MUST NOT when `NO_COLOR` is set.
-- With no id, the styled tree MUST print the project's name once, as its first line. Its steps MUST NOT
-  carry the project name.
-- Each styled line of a step MUST start with its mark. A trail MUST be marked `●` when active, `✓` when
+- The short tree MUST cut a step's text and end it with `…`, and keep its id and details whole.
+- `tree` and `watch` MUST print in colour when stdout is a terminal, or when `CLICOLOR_FORCE` is set and
+  not `0`. They MUST NOT when `NO_COLOR` is set.
+- Without colour, `tree` and `watch` MUST print the same lines, with no colour codes.
+- With no id, the tree MUST print the project's name once, as its first line. Its steps MUST NOT carry the
+  project name.
+- Each line of a step MUST start with its mark. A trail MUST be marked `●` when active, `✓` when
   reached, `✗` when dropped, and `!` when expired.
-- When a trail's first ask has the trail's text, the styled tree MUST NOT print the ask. It MUST print the
-  ask's steps first under the trail, then the trail's other asks.
-- The styled tree MUST draw a step under its parent with `├─` before its mark, and the last one with `└─`.
+- When a trail's first ask has the trail's text, the tree MUST NOT print the ask, except with `--json`. It
+  MUST print the ask's steps first under the trail, then the trail's other asks.
+- The tree MUST draw a step under its parent with `├─` before its mark, and the last one with `└─`.
   A `│` MUST run from a step down to its next sibling.
-- A styled step line MUST end with dim details: the last part of its place and `↳ fixes <id, first 8>`.
+- A step line MUST end with dim details: the last part of its place and `↳ fixes <id, first 8>`.
   Then come how long it has worked or took, and when it started.
-- A styled trail line MUST end with dim details: the last part of its place, its state, and its steps.
+- A trail line MUST end with dim details: the last part of its place, its state, and its steps.
   It MUST leave out the state when active or reached alone, and the steps unless folded. Then come how
   long its tree ran, and when it started.
-- The styled tree MUST print the details in four columns, in that order, two spaces apart, and the same
+- The tree MUST print the details in four columns, in that order, two spaces apart, and the same
   for every line. A place and a state MUST align left, a time right. A column no line fills MUST be left out.
 - With a width, the short tree MUST end the details at the right edge. It MUST leave out the start time
   when a title would be cut below 20 characters. Else they MUST start two spaces
   after the widest title. A time MUST print as `14:02` on the day it is, else as `Oct 9`.
-- The styled tree MUST underline the shortest start of each id, 4 characters or more, that no other
+- The short tree MUST print a rule without its reason: the text from `, because` on.
+- In the tree, each line under a step MUST start at the column of the step's title. A label
+  (`rule`, `done`, `took`, `dropped`) MUST end one space before that column.
+- With a width, the full tree MUST wrap a line under a step between words. Each wrapped line MUST
+  start at the same column, after the step's branch lines.
+- In colour, the tree MUST underline the shortest start of each id, 4 characters or more, that no other
   step's id has. It MUST colour each mark.
 
 ```
-tree  text  <id, first 8> [<project name>] <title> · <active | reached alone | reached with help | dropped
-            | expired>[ · <n> steps]
-                <the next line of its text>
-                done <proof>
-                <its grade>
-                dropped <reason>
-              rule <id, first 8> <text>
-            <mark> <a step, as CIP-12 "The commands" gives it>    two spaces more for each level
-                <the next line of its text>
-                done <proof>
-                <its grade>
-                dropped <reason>
+tree  text  <mark> <id, first 8> <title>   <place>  <state> · <n> steps  <ran>  <started>
+                       <the next line of its text>
+                  done <proof>
+                  took <its grade, without "took">
+               dropped <reason>
+                  rule <id, first 8> <text>
+              ├─ <mark> <id, first 8> <title>   <place>  ↳ fixes <id, first 8>  <took>  <started>
+              │           <the lines under it, as under the trail>
+              └─ <mark> <id, first 8> <title>   ...
       json  {"trail": {"id", "created_at", "project", "content", "state", "links", "places", "proof", "grade",
             "reason"}}
             · {"step": {<as CIP-12 "The commands" gives it>, "state": "done | dropped | working | open
@@ -179,7 +191,6 @@ tree  text  <id, first 8> [<project name>] <title> · <active | reached alone | 
 ```
 celis tree 3fa2c1d0
 
-styled, colours left out:
 ● 3fa2c1d0 Add a senior tier to the price list                                12m  14:02
   rule 4c1d22e0 A senior pays 80% of the price, rounded down to the cent.
   ├─ ✓ 9b0e11aa A senior pays 80%      prices.py:40                   1m 30s  14:03
@@ -231,9 +242,12 @@ celis watch [<step id>] [--full]   a trail's tree, printed again on each change 
 - `watch <id>` MUST print the tree of the step `<id>` as `tree` prints it. It MUST refuse an id no step
   has, with `no-step`.
 - `watch` with no id MUST print every active trail of every project, as `tree --all` prints them. With
-  no active trail, it MUST print nothing until one starts.
+  no active trail, it MUST say so and name `/celis:trail`, and with `--json` print nothing. With no
+  store, `watch <id>` MUST refuse with `no-step`.
 - On a terminal, `watch` MUST print the tree again as soon as the terminal's width changes. It MUST print
   it again within one second after a time it shows changes.
+- Between two trees, `watch` MUST sleep until a record lands, a time it shows changes, or the width
+  changes. With no time that runs, it MUST NOT wake on a timer.
 - `watch` MUST print the tree again within one second after a record lands in the store, and only when
   the tree changed.
 - On a terminal, `watch` MUST clear the screen and its scrollback, and print each tree from the top

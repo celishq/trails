@@ -1,15 +1,17 @@
 //! One run of `celis`.
 
 mod args;
+mod auth;
 mod decision;
 mod prompt;
 mod read;
+mod retro;
 mod snapshot;
 mod step;
 mod tree;
 mod watch;
 
-use crate::help::{self, Verb, VERBS};
+use crate::help::{self, VERBS};
 use crate::{Failure, Project, Store};
 use args::Args;
 use celis_wire::Note;
@@ -46,18 +48,7 @@ impl Command {
             Err(failure) => failure,
         };
         if failure.code == 2 {
-            let words: Vec<&str> = self
-                .args
-                .iter()
-                .map(String::as_str)
-                .take_while(|a| *a != "--")
-                .filter(|a| !a.starts_with("--"))
-                .collect();
-            let page = match Verb::of(&words) {
-                Some(verb) => format!("celis {} --help", verb.command),
-                None => "celis help".to_string(),
-            };
-            failure = failure.see(&page);
+            failure = failure.see(&help::see(&self.args));
         }
         let line = if json {
             json!({"error": failure.name, "message": failure.message}).to_string()
@@ -76,7 +67,8 @@ impl Command {
             "tree" => self.tree(args, out, &self.project()),
             "watch" => self.watch(args, out),
             "home" => self.store_path(args, out),
-            "prompt" => self.prompt(args, out, &self.project()),
+            "prompt" => self.prompt(args, out, err, &self.project()),
+            "auth" => self.auth(args, out, err),
             "" => Err(Failure::usage("expected: celis <command>")),
             verb => Err(Failure::unknown(verb, verbs())),
         }
@@ -93,9 +85,9 @@ impl Command {
         show(out, args.json, "path", json!(path), &path)
     }
 
-    /// Whether `tree` and `watch` print styled: on a terminal, or with `CLICOLOR_FORCE` set and not `0`;
-    /// never with `NO_COLOR` set.
-    fn styled(&self) -> bool {
+    /// Whether `tree` and `watch` print in colour: on a terminal, or with `CLICOLOR_FORCE` set and not
+    /// `0`; never with `NO_COLOR` set.
+    fn colour(&self) -> bool {
         let set = |name: &str| self.env.get(name).is_some_and(|v| !v.is_empty());
         if set("NO_COLOR") {
             return false;
@@ -145,8 +137,9 @@ impl Command {
         home.ok_or_else(|| Failure::from(anyhow::anyhow!("neither CELIS_HOME nor HOME is set")))
     }
 
-    fn store(&self) -> Result<Store, Failure> {
-        Store::open(&self.home()?)
+    /// The store, opened now.
+    fn snapshot(&self) -> Result<Snapshot, Failure> {
+        Ok(Snapshot::of(Store::open(&self.home()?)?))
     }
 
     fn id(&self, out: &mut dyn Write, args: &Args, note: &Note) -> Result<(), Failure> {

@@ -51,6 +51,13 @@ impl Decision {
         format!("  rule {} {}", short(&note.id), self.content)
     }
 
+    /// The text up to `, because`: when it applies and what to do, without the reason.
+    pub fn brief(&self) -> &str {
+        self.content
+            .split_once(", because ")
+            .map_or(self.content.as_str(), |(rule, _)| rule)
+    }
+
     /// The `--json` object for this decision, as `note` holds it.
     pub fn json(&self, note: &Note) -> serde_json::Value {
         serde_json::json!({
@@ -78,10 +85,7 @@ impl Decision {
         };
         let owned = |name: &str| note.tag(name).map(str::to_string);
         Some(Decision {
-            anchor: Anchor {
-                project: note.tag("I")?.strip_prefix("project:")?.to_string(),
-                name: note.tag("project").unwrap_or_default().to_string(),
-            },
+            anchor: Anchor::read(note)?,
             scope,
             replaces: owned("replaces"),
             content: note.content.clone(),

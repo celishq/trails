@@ -1,5 +1,7 @@
 //! What a decision, trail or step is on.
 
+use celis_wire::Note;
+
 /// What a decision, trail or step is on: the project of this id, and the name it goes by.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Anchor {
@@ -8,6 +10,14 @@ pub struct Anchor {
 }
 
 impl Anchor {
+    /// The anchor `note` carries in its `I` and `project` tags; `None` without a project `I` tag.
+    pub fn read(note: &Note) -> Option<Anchor> {
+        Some(Anchor {
+            project: note.tag("I")?.strip_prefix("project:")?.to_string(),
+            name: note.tag("project").unwrap_or_default().to_string(),
+        })
+    }
+
     /// The `I` value a record carries: `project:<id>`.
     pub fn id(&self) -> String {
         format!("project:{}", self.project)

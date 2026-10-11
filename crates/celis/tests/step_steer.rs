@@ -42,7 +42,10 @@ fn a_steer_does_not_close_its_step_and_one_with_no_content_is_ignored() {
     );
     let read = out(&run(&repo, &["read"]));
     assert!(read.contains(&id[..8]), "{read}");
-    let o = run(&repo, &["step", "done", &id[..8], "--", "done"]);
+    let o = run(
+        &repo,
+        &["step", "done", &id[..8], "--as-planned", "--", "done"],
+    );
     assert!(o.status.success(), "{}", err(&o));
     let tree = out(&run(&repo, &["tree", &id[..8], "--full"]));
     assert!(tree.contains(" · steered 1"), "{tree}");
@@ -55,9 +58,12 @@ fn steer_refuses_unknown_and_closed_steps_and_empty_text_and_prints_its_id() {
     let repo = Repo::new();
     let open = add(&repo, &["--", "open"]);
     let closed = add(&repo, &["--", "closed"]);
-    assert!(run(&repo, &["step", "done", &closed[..8], "--", "p"])
-        .status
-        .success());
+    assert!(run(
+        &repo,
+        &["step", "done", &closed[..8], "--as-planned", "--", "p"]
+    )
+    .status
+    .success());
     refusal(
         &run(&repo, &["step", "steer", "deadbeef", "--json", "--", "x"]),
         1,

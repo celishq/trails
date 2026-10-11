@@ -104,24 +104,24 @@ fn records(repo: &Repo) -> usize {
 }
 
 /// `watch <id>` prints the tree, then prints it again within a second after a record lands, only when
-/// the tree changed, with an empty line between two trees off a terminal, and writes no record
-/// (`spec/trails/14-trails.md`, "Watching").
+/// the tree changed, with an empty line between two trees off a terminal, and writes no record. Its
+/// `--json` tree shows no time, so it changes only by a record (`spec/trails/14-trails.md`, "Watching").
 #[test]
 fn watch_prints_the_tree_again_when_it_changes() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the trail"]);
-    let mut watch = Watch::start(&repo, &[&trail[..8]]);
+    let mut watch = Watch::start(&repo, &[&trail[..8], "--json"]);
     watch.until("the trail");
     let quiet = records(&repo);
     assert_eq!(watch.trees(Duration::from_millis(1200)).len(), 1);
     assert_eq!(records(&repo), quiet);
 
     let step = add(&repo, &["--under", &trail[..8], "--", "the step"]);
-    let took = watch.until(&format!("○ {}", &step[..8]));
+    let took = watch.until(&step);
     assert!(took < Duration::from_millis(1500), "{took:?}");
     let o = cli(&repo, &["step", "start", &step[..8]]);
     assert!(o.status.success(), "{}", err(&o));
-    watch.until(&format!("◐ {}", &step[..8]));
+    watch.until("\"working\"");
     let shown = watch.trees(Duration::from_millis(200)).len();
 
     let o = cli(
@@ -132,15 +132,16 @@ fn watch_prints_the_tree_again_when_it_changes() {
     assert_eq!(watch.trees(Duration::from_millis(1500)).len(), shown);
 }
 
-/// `watch` with no id prints nothing while no trail is active, then every active trail of every
-/// project, newest first, and leaves out a trail once it is done (`spec/trails/14-trails.md`,
-/// "Watching").
+/// `watch` with no id says no trail is active and how to start one, then prints every active trail of
+/// every project, newest first, and says it again once the last trail is done
+/// (`spec/trails/14-trails.md`, "Watching").
 #[test]
 fn watch_with_no_id_prints_every_active_trail_of_every_project() {
     let repo = Repo::new();
     let mut watch = Watch::start(&repo, &[]);
+    watch.until("No active trail");
     assert!(
-        watch.trees(Duration::from_millis(800)).is_empty(),
+        watch.seen.join("\n").contains("/celis:trail"),
         "{:?}",
         watch.seen
     );
@@ -150,12 +151,29 @@ fn watch_with_no_id_prints_every_active_trail_of_every_project() {
     let shop = repo.other("shop");
     let o = repo.run(&shop, &["step", "add", "--", "the shop trail"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
-    watch.until("[shop] the shop trail");
+    let shop_trail = support::out(&o).trim().to_string();
+    watch.until("shop the shop trail");
     let both = watch.trees(Duration::from_millis(200)).pop().unwrap();
     let at = |text: &str| both.find(text).unwrap_or_else(|| panic!("{both}"));
     assert!(at("the shop trail") < at(&first[..8]), "{both}");
     finish(&repo, &first[..8]);
     watch.until_not(&first[..8]);
+    finish(&repo, &shop_trail[..8]);
+    watch.until("No active trail");
+}
+
+/// On a home with no store and no phrase, `watch` shows the empty state, writes nothing, and shows the
+/// first trail once another command writes it (`spec/trails/10-decisions.md`, "The store").
+#[test]
+fn watch_on_an_empty_home_writes_nothing_and_waits_for_the_store() {
+    let repo = Repo::new();
+    std::fs::remove_file(repo.home().join("phrase")).unwrap();
+    let mut watch = Watch::start(&repo, &[]);
+    watch.until("No active trail");
+    assert!(!repo.home().join("phrase").exists());
+    assert!(!repo.store().exists());
+    let trail = add(&repo, &["--", "the first trail"]);
+    watch.until(&trail[..8]);
 }
 
 /// `watch` refuses an id no step has, with `no-step` (`spec/trails/14-trails.md`, "Watching").

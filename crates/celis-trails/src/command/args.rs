@@ -10,6 +10,7 @@ pub(crate) struct Args {
     pub full: bool,
     pub all: bool,
     pub new: bool,
+    pub planned: bool,
     pub words: Vec<String>,
     pub text: Option<String>,
     pub places: Vec<String>,
@@ -20,6 +21,7 @@ pub(crate) struct Args {
     pub check: Option<String>,
     pub like: Option<String>,
     pub pitfall: Option<String>,
+    pub changed: Option<String>,
 }
 
 impl Args {
@@ -46,6 +48,7 @@ impl Args {
                 "--full" => parsed.full = true,
                 "--all" => parsed.all = true,
                 "--new" => parsed.new = true,
+                "--as-planned" => parsed.planned = true,
                 "--at" => parsed.places.push(value(arg, rest.next())?),
                 "--under" => parsed.under = Some(value(arg, rest.next())?),
                 "--fixes" => parsed.fixes = Some(value(arg, rest.next())?),
@@ -54,6 +57,7 @@ impl Args {
                 "--check" => parsed.check = Some(value(arg, rest.next())?),
                 "--like" => parsed.like = Some(value(arg, rest.next())?),
                 "--pitfall" => parsed.pitfall = Some(value(arg, rest.next())?),
+                "--changed" => parsed.changed = Some(value(arg, rest.next())?),
                 flag if flag.starts_with("--") => {
                     bad.get_or_insert(Failure::usage(format!("{flag} is not a flag")));
                 }

@@ -63,7 +63,7 @@ fn usages() -> Vec<(String, String)> {
         let usage = line.split("   ").next().unwrap().trim().to_string();
         let words: Vec<&str> = usage.split(' ').collect();
         let command = match words[1] {
-            "step" => format!("step {}", words[2]),
+            "step" | "auth" => format!("{} {}", words[1], words[2]),
             word => word.to_string(),
         };
         found.push((command, usage));
@@ -101,7 +101,7 @@ fn celis_and_celis_help_print_the_page() {
 #[test]
 fn help_anywhere_prints_the_command_page_its_words_name() {
     let commands = usages();
-    assert_eq!(commands.len(), 12, "{commands:?}");
+    assert_eq!(commands.len(), 15, "{commands:?}");
     for (command, usage) in &commands {
         let mut args: Vec<&str> = command.split(' ').collect();
         args.extend(["4c1d22e0", "--help", "--json"]);
@@ -111,8 +111,37 @@ fn help_anywhere_prints_the_command_page_its_words_name() {
             "{command}:\n{shown}"
         );
     }
-    for args in [&["nope", "--help"][..], &["step", "--help"]] {
-        assert_eq!(page(args).trim_end(), the_page().trim_end(), "{args:?}");
+    let args = ["nope", "--help"];
+    assert_eq!(page(&args).trim_end(), the_page().trim_end(), "{args:?}");
+}
+
+/// `--help` after a group's name alone prints the group page: each of its commands with what it does
+/// (`spec/trails/11-cli.md`, "Help").
+#[test]
+fn help_after_a_group_prints_its_commands() {
+    for (group, commands) in [
+        ("auth", &["login", "status", "phrase"][..]),
+        ("step", &["add", "start", "done", "steer", "drop", "edit"]),
+    ] {
+        let shown = page(&[group, "--help"]);
+        assert!(
+            shown.starts_with(&format!("celis {group} <command>")),
+            "{shown}"
+        );
+        for command in commands {
+            let line = format!("  {command} ");
+            assert!(
+                shown.lines().any(|l| l.starts_with(&line)),
+                "{group} {command}:\n{shown}"
+            );
+        }
+        assert!(
+            shown.contains(&format!("celis {group} <command> --help")),
+            "{shown}"
+        );
+        for line in shown.lines() {
+            assert!(line.chars().count() <= 80, "{line:?}");
+        }
     }
 }
 

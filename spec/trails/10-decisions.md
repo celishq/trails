@@ -22,7 +22,7 @@ $CELIS_HOME   CIP-11, "Commands"
 **Rules**
 
 - A command MUST open the store in `$CELIS_HOME/trails/`, whatever the working folder.
-- With no store, `read` and `tree` MUST answer as an empty store, and write nothing.
+- With no store, `read`, `tree` and `watch` MUST answer as an empty store, and write nothing.
 - With no store, every other command MUST create it.
 - A record MUST be written to a file named `<created_at>-<id>.json`, holding the record as NIP-01 JSON.
 - A record file MUST NOT change once written. A reader MUST NOT see a file that is half written.
@@ -53,18 +53,41 @@ three share one store; C reads only the decisions of `shop`.
 > **Why the first commit.** A path changes from clone to clone and from worktree to worktree. The first
 > commit does not, so a later sync between machines keeps the same project.
 
-## The key
+## The account
 
 ```
-account   $CELIS_HOME/key (CIP-01), minted at random on first use when it does not exist
+phrase    $CELIS_HOME/phrase: 12 BIP-39 words, minted on first use when it does not exist
+account   the key the phrase gives (CIP-01, "The account")
+
+celis auth   CIP-11, "Commands"
 ```
 
 **Rules**
 
-- The engine MUST write a minted `$CELIS_HOME/key` readable by its owner alone. Two commands that mint at
-  once MUST end with one key.
-- A record MUST count only when the account of `$CELIS_HOME/key` signed it.
+- The engine MUST write `$CELIS_HOME/phrase` readable by its owner alone. Two commands that mint at once
+  MUST end with one phrase.
+- A phrase MUST give the account the Celis app gives for it.
+- A command MUST mint a phrase only when it writes a record.
+- Every record that verifies MUST count, whatever account signed it.
 - Every command MUST sign as the account. An agent that works for you signs as you.
+- `auth login` MUST read the phrase from stdin. On a terminal, it MUST NOT echo the phrase.
+- `auth login` MUST refuse a phrase given as words of the command, as a usage error.
+- `auth login` MUST refuse a text that is not a BIP-39 phrase, and keep the phrase it had.
+- `auth status` MUST NOT print the phrase. With `--json`, it MUST print `{"npub", "path"}`.
+- `auth status` and `auth phrase` MUST refuse when no phrase is kept, and MUST NOT mint one.
+- `auth` MUST have only `login`, `status` and `phrase`. You forget a phrase by removing its file.
+- `auth login` MUST remove `$CELIS_HOME/key`, the key of older versions.
+
+**Examples**
+
+You copy the phrase from the Celis app and run `celis auth login`. The steps you add now count in the
+app's account. The steps the old phrase signed still count.
+
+> **Why every signer counts.** Records from your other accounts, and later from other people over the
+> wire, land in one store. A record the store holds is one you chose to keep.
+>
+> **Why a file.** The phrase is kept as `$CELIS_HOME/key` was, so the command works the same on every
+> system. The Keychain can hold it later.
 
 ## Decisions
 
@@ -87,7 +110,7 @@ kind 1111, signed by the account (NIP-22)
 
 **Rules**
 
-- A decision MUST be live until a counted decision names it in `replaces`.
+- A decision MUST be live until another decision names it in `replaces`.
 - A reader MUST ignore cairns (kind 1111 in `celis.cairn`), ratings (kind 7), outcomes (`celis.outcome`),
   source records (`celis.source`) and splits a store holds from before.
 

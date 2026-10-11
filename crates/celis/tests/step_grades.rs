@@ -21,7 +21,7 @@ fn add(repo: &Repo, args: &[&str]) -> String {
 }
 
 fn done(repo: &Repo, id: &str, extra: &[&str]) -> Output {
-    let mut all = vec!["step", "done", id];
+    let mut all = vec!["step", "done", id, "--as-planned"];
     all.extend(extra);
     all.extend(["--", "failed before, passes now"]);
     run(repo, &all)
@@ -57,7 +57,7 @@ fn done_runs_the_check_at_the_top_folder_and_stops_a_slow_one() {
     let top = add(&repo, &["--check", "test -f marker", "--", "at the top"]);
     let o = repo.run(
         &repo.path().join("sub"),
-        &["step", "done", &top[..8], "--", "p"],
+        &["step", "done", &top[..8], "--as-planned", "--", "p"],
         &[],
         "",
     );
@@ -66,7 +66,15 @@ fn done_runs_the_check_at_the_top_folder_and_stops_a_slow_one() {
     let started = std::time::Instant::now();
     let o = repo.run(
         &repo.path(),
-        &["step", "done", &slow[..8], "--json", "--", "p"],
+        &[
+            "step",
+            "done",
+            &slow[..8],
+            "--json",
+            "--as-planned",
+            "--",
+            "p",
+        ],
         &[("CELIS_CHECK_SECONDS", "1")],
         "",
     );
@@ -104,14 +112,11 @@ fn tree_prints_the_grade_of_each_done_step() {
     let lines: Vec<&str> = text.lines().collect();
     let at = lines
         .iter()
-        .position(|l| l.contains(&badge[..8]))
+        .position(|l| l.contains(&format!("✓ {}", &badge[..8])))
         .expect("the badge");
-    assert_eq!(
-        lines[at + 1],
-        "    done failed before, passes now",
-        "{text}"
-    );
-    assert!(lines[at + 2].starts_with("    took "), "{text}");
+    let under = |n: usize| lines[at + n].trim_start_matches([' ', '│']);
+    assert_eq!(under(1), "done failed before, passes now", "{text}");
+    assert!(under(2).starts_with("took "), "{text}");
     assert!(
         lines[at + 2].ends_with("s · rework 1 · steered 1"),
         "{text}"
@@ -163,7 +168,7 @@ fn took_counts_from_the_first_start_else_from_the_step() {
     let took = |id: &str| {
         let lines: Vec<&str> = text.lines().collect();
         let at = lines.iter().position(|l| l.contains(id)).expect("the step");
-        lines[at + 2].trim().to_string()
+        lines[at + 2].trim_start_matches([' ', '│']).to_string()
     };
     assert!(took(&started.id[..8]).starts_with("took 1m 30s "), "{text}");
     assert!(

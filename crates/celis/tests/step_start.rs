@@ -100,3 +100,46 @@ fn start_prints_the_decisions_at_the_steps_places() {
     }
     assert!(!text.contains("lib is frozen"), "{text}");
 }
+
+/// A new `start` runs the step's check and records whether it fails before the work; a check that passes
+/// already draws a note on stderr, and a step with no check records nothing (`spec/trails/12-steps.md`,
+/// "Starting").
+#[test]
+fn start_records_whether_the_check_fails_before_the_work() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    let red = add(
+        &repo,
+        &[
+            "--under",
+            &trail[..8],
+            "--check",
+            "test -f made",
+            "--",
+            "make it",
+        ],
+    );
+    let green = add(
+        &repo,
+        &["--under", &trail[..8], "--check", "true", "--", "weak"],
+    );
+    let none = add(&repo, &["--under", &trail[..8], "--", "no check"]);
+    for id in [&red, &green, &none] {
+        let o = cli(&repo, &["step", "start", &id[..8]]);
+        assert!(o.status.success(), "{}", err(&o));
+        let note = format!(
+            "celis: the check of {} passes before the work, so it cannot prove it; give a check that fails now with step edit --check.\n",
+            &id[..8]
+        );
+        assert_eq!(err(&o), if *id == green { note } else { String::new() });
+    }
+    let before = |id: &str| {
+        objects(&repo, &["tree", &trail[..8]])
+            .into_iter()
+            .find_map(|v| Some(v.get("step").filter(|s| s["id"] == id)?["before"].clone()))
+            .unwrap()
+    };
+    assert_eq!(before(&red), "fails");
+    assert_eq!(before(&green), "passes");
+    assert_eq!(before(&none), Value::Null);
+}

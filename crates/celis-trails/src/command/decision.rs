@@ -1,6 +1,6 @@
 //! `celis decide`: write a decision.
 
-use super::{Args, Command, Snapshot};
+use super::{Args, Command};
 use crate::{Decision, Failure, Project, Scope, State, Step};
 use std::io::Write;
 
@@ -22,8 +22,7 @@ impl Command {
             })?,
             None => Scope::Project,
         };
-        let store = self.store()?;
-        let snapshot = Snapshot::of(&store);
+        let snapshot = self.snapshot()?;
         let scope = match scope {
             Scope::Trail(id) => {
                 let steps = snapshot.steps();
@@ -49,8 +48,7 @@ impl Command {
             replaces,
             content,
         };
-        let written = decision.record(store.account(), snapshot.now)?;
-        store.write(&written)?;
+        let written = snapshot.sign(|account, now| decision.record(account, now))?;
         self.id(out, args, &written)
     }
 }

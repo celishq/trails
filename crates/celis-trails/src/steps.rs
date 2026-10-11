@@ -2,68 +2,43 @@
 
 use crate::{Failure, Grade, Mark, State, Status, Step};
 use celis_wire::Note;
+use std::collections::HashMap;
 
 /// The step records and marks of a store at the time `now`: which steps are open, how they nest, and how
 /// each went.
 pub struct Steps<'a> {
-    pub records: &'a [Note],
     pub now: u64,
+    index: Index<'a>,
 }
 
 impl<'a> Steps<'a> {
+    pub fn new(records: &'a [Note], now: u64) -> Steps<'a> {
+        Steps {
+            now,
+            index: Index::of(records),
+        }
+    }
+
     /// Every step record, oldest first.
     pub fn all(&self) -> Vec<&'a Note> {
-        let mut all: Vec<&'a Note> = self
-            .records
-            .iter()
-            .filter(|n| Step::read(n).is_some())
-            .collect();
-        all.sort_by(|a, b| (a.created_at, &a.id).cmp(&(b.created_at, &b.id)));
-        all
+        self.index.all.clone()
     }
 
     /// The step `note` holds, with each of its edits, oldest first; `None` when it is not a step.
     pub fn step(&self, note: &Note) -> Option<Step> {
-        let mut step = Step::read(note)?;
-        let mut edits: Vec<(&Note, Mark)> = self
-            .records
-            .iter()
-            .filter_map(|n| match Mark::read(n) {
-                Some((id, edit @ Mark::Edit { .. })) if id == note.id => Some((n, edit)),
-                _ => None,
-            })
-            .collect();
-        edits.sort_by(|(a, _), (b, _)| (a.created_at, &a.id).cmp(&(b.created_at, &b.id)));
-        for (_, edit) in edits {
-            let Mark::Edit {
-                text,
-                places,
-                check,
-            } = edit
-            else {
-                continue;
-            };
-            step.content = match (
-                text.trim().is_empty(),
-                text.lines().count(),
-                step.content.split_once('\n'),
-            ) {
-                (true, _, _) => step.content,
-                (false, 1, Some((_, detail))) => format!("{}\n{detail}", text.trim_end()),
-                (false, _, _) => text,
-            };
-            if !places.is_empty() {
-                step.places = places;
-            }
-            step.check = check.or(step.check);
-        }
-        Some(step)
+        Some(self.entry(&note.id)?.step.clone())
     }
 
     /// The step whose id is `id`, or the only record whose id starts with `id` when `id` is 4 or more
     /// characters.
     pub fn find(&self, id: &str) -> Result<&'a Note, Failure> {
-        crate::id::find(self.all(), id).ok_or_else(|| Failure::no_step(id))
+        let index = &self.index;
+        match index.entries.get(id) {
+            Some(entry) => Ok(entry.note),
+            None => {
+                crate::id::find(index.all.iter().copied(), id).ok_or_else(|| Failure::no_step(id))
+            }
+        }
     }
 
     /// The step `find` gives for `id`; `closed` when a done or a drop names it.
@@ -78,43 +53,41 @@ impl<'a> Steps<'a> {
     /// The first done record with a proof, or drop record with a reason, naming the step `id`; `None`
     /// while it is open.
     pub fn closed(&self, id: &str) -> Option<&'a Note> {
-        self.records
-            .iter()
-            .filter(|n| match Mark::read(n) {
-                Some((p, Mark::Done { proof: text, .. }))
-                | Some((p, Mark::Drop { reason: text })) => p == id && !text.trim().is_empty(),
-                _ => false,
-            })
-            .min_by(|a, b| (a.created_at, &a.id).cmp(&(b.created_at, &b.id)))
+        self.entry(id)?.close.map(|(note, _)| note)
     }
 
     /// The done record that closed the step `id`; `None` while it is open or when it was dropped.
     pub fn done(&self, id: &str) -> Option<&'a Note> {
-        self.closed(id)
-            .filter(|n| matches!(Mark::read(n), Some((_, Mark::Done { .. }))))
+        match self.entry(id)?.close {
+            Some((note, Status::Done)) => Some(note),
+            _ => None,
+        }
     }
 
     /// The drop record that closed the step `id`; `None` while it is open or when it was done.
     pub fn dropped(&self, id: &str) -> Option<&'a Note> {
-        self.closed(id)
-            .filter(|n| matches!(Mark::read(n), Some((_, Mark::Drop { .. }))))
+        match self.entry(id)?.close {
+            Some((note, Status::Dropped)) => Some(note),
+            _ => None,
+        }
     }
 
     /// The first start record naming the step `id`; `None` before one.
     pub fn started(&self, id: &str) -> Option<&'a Note> {
-        self.records
-            .iter()
-            .filter(|n| matches!(Mark::read(n), Some((s, Mark::Start)) if s == id))
-            .min_by(|a, b| (a.created_at, &a.id).cmp(&(b.created_at, &b.id)))
+        self.entry(id)?.start
     }
 
-    /// Whether the step `id` is done, dropped, working or open, by its marks alone.
+    /// Whether the step `id` is done, dropped, working or open; expired when it is open and its trail
+    /// ended.
     pub fn status(&self, id: &str) -> Status {
-        match (self.done(id), self.dropped(id), self.started(id)) {
-            (Some(_), _, _) => Status::Done,
-            (None, Some(_), _) => Status::Dropped,
-            (None, None, Some(_)) => Status::Working,
-            (None, None, None) => Status::Open,
+        let Some(entry) = self.entry(id) else {
+            return Status::Open;
+        };
+        match (entry.close, entry.start) {
+            (Some((_, status)), _) => status,
+            _ if self.ended(self.trail(entry.note)) => Status::Expired,
+            (None, Some(_)) => Status::Working,
+            (None, None) => Status::Open,
         }
     }
 
@@ -133,14 +106,9 @@ impl<'a> Steps<'a> {
 
     /// The time of the newest record of the tree of `note`: its steps, and the marks that name them.
     pub fn newest(&self, note: &'a Note) -> u64 {
-        let tree: Vec<&str> = self.tree(note).iter().map(|n| n.id.as_str()).collect();
-        self.records
+        self.tree(note)
             .iter()
-            .filter(|n| {
-                tree.contains(&n.id.as_str())
-                    || Mark::read(n).is_some_and(|(id, _)| tree.contains(&id.as_str()))
-            })
-            .map(|n| n.created_at)
+            .filter_map(|n| self.entry(&n.id).map(|e| e.newest))
             .max()
             .unwrap_or(note.created_at)
     }
@@ -149,7 +117,10 @@ impl<'a> Steps<'a> {
     pub fn trails(&self, project: &str) -> Vec<&'a Note> {
         self.roots()
             .into_iter()
-            .filter(|n| Step::read(n).is_some_and(|s| s.anchor.project == project))
+            .filter(|n| {
+                self.entry(&n.id)
+                    .is_some_and(|e| e.step.anchor.project == project)
+            })
             .collect()
     }
 
@@ -157,7 +128,7 @@ impl<'a> Steps<'a> {
     pub fn roots(&self) -> Vec<&'a Note> {
         self.all()
             .into_iter()
-            .filter(|n| Step::read(n).is_some_and(|s| s.under.is_none()))
+            .filter(|n| self.entry(&n.id).is_some_and(|e| e.step.under.is_none()))
             .collect()
     }
 
@@ -165,8 +136,8 @@ impl<'a> Steps<'a> {
     /// when it is not done or dropped.
     pub fn session(&self, project: &str, session: &str) -> Option<&'a Note> {
         let newest = self.all().into_iter().rev().find(|n| {
-            Step::read(n).is_some_and(|s| {
-                s.anchor.project == project && s.session.as_deref() == Some(session)
+            self.entry(&n.id).is_some_and(|e| {
+                e.step.anchor.project == project && e.step.session.as_deref() == Some(session)
             })
         })?;
         let trail = self.trail(newest);
@@ -175,22 +146,34 @@ impl<'a> Steps<'a> {
 
     /// The steps directly under the step `id`, oldest first.
     pub fn under(&self, id: &str) -> Vec<&'a Note> {
-        self.all()
-            .into_iter()
-            .filter(|n| Step::read(n).is_some_and(|s| s.under.as_deref() == Some(id)))
-            .collect()
+        self.entry(id).map_or(Vec::new(), |e| e.children.clone())
     }
 
     /// The trail at the top of the `under` chain of the step `note`.
     pub fn trail(&self, note: &'a Note) -> &'a Note {
         let mut top = note;
-        while let Some(up) = Step::read(top)
-            .and_then(|s| s.under)
-            .and_then(|id| self.find(&id).ok())
+        while let Some(up) = self
+            .entry(&top.id)
+            .and_then(|e| e.step.under.as_deref())
+            .and_then(|id| self.find(id).ok())
         {
             top = up;
         }
         top
+    }
+
+    /// The ask of the step `note`: the step on its `under` chain right under its trail; `None` for a trail.
+    pub fn ask(&self, note: &'a Note) -> Option<&'a Note> {
+        let trail = self.trail(note);
+        let mut ask = note;
+        while let Some(up) = self
+            .entry(&ask.id)
+            .and_then(|e| e.step.under.as_deref())
+            .filter(|up| *up != trail.id)
+        {
+            ask = self.find(up).ok()?;
+        }
+        (ask.id != trail.id).then_some(ask)
     }
 
     /// The step `note` and every step under it, at any depth.
@@ -227,30 +210,133 @@ impl<'a> Steps<'a> {
     /// How the work of the done step `note` went; `None` while it is open.
     pub fn grade(&self, note: &Note) -> Option<Grade> {
         let done = self.done(&note.id)?;
-        let from = self.started(&note.id).unwrap_or(note).created_at;
-        let rework = self
-            .all()
-            .into_iter()
-            .filter(|n| Step::read(n).is_some_and(|s| s.fixes.as_deref() == Some(&note.id)))
-            .count();
+        let entry = self.entry(&note.id)?;
+        let from = entry.start.unwrap_or(entry.note).created_at;
         Some(Grade {
             took: done.created_at.saturating_sub(from),
-            rework,
-            steered: self.steers(&note.id),
+            rework: entry.rework,
+            steered: entry.steers,
         })
     }
 
     /// The steers with content that name the step `id`.
     pub fn steers(&self, id: &str) -> usize {
-        self.records
-            .iter()
-            .filter(|n| matches!(Mark::read(n), Some((s, Mark::Steer { text })) if s == id && !text.trim().is_empty()))
-            .count()
+        self.entry(id).map_or(0, |e| e.steers)
+    }
+
+    fn entry(&self, id: &str) -> Option<&Entry<'a>> {
+        self.index.entries.get(id)
     }
 }
 
 /// The seconds a trail stays active after the newest record of its tree.
 pub const LIFE: u64 = 30 * 60;
+
+/// The step records, oldest first, and what the marks say of each step.
+struct Index<'a> {
+    all: Vec<&'a Note>,
+    entries: HashMap<&'a str, Entry<'a>>,
+}
+
+/// One step: its record, its text with its edits, its links and how its marks left it.
+struct Entry<'a> {
+    note: &'a Note,
+    step: Step,
+    children: Vec<&'a Note>,
+    start: Option<&'a Note>,
+    close: Option<(&'a Note, Status)>,
+    steers: usize,
+    rework: usize,
+    newest: u64,
+}
+
+impl<'a> Index<'a> {
+    /// The index of `records`, read in the order they were written.
+    fn of(records: &'a [Note]) -> Index<'a> {
+        let mut sorted: Vec<&'a Note> = records.iter().collect();
+        sorted.sort_by(|a, b| (a.created_at, &a.id).cmp(&(b.created_at, &b.id)));
+        let mut all = Vec::new();
+        let mut entries: HashMap<&'a str, Entry<'a>> = HashMap::new();
+        for &note in &sorted {
+            if let Some(step) = Step::read(note) {
+                all.push(note);
+                entries.insert(
+                    &note.id,
+                    Entry {
+                        note,
+                        step,
+                        children: Vec::new(),
+                        start: None,
+                        close: None,
+                        steers: 0,
+                        rework: 0,
+                        newest: note.created_at,
+                    },
+                );
+            }
+        }
+        for &note in &all {
+            let step = &entries[note.id.as_str()].step;
+            let (under, fixes) = (step.under.clone(), step.fixes.clone());
+            if let Some(parent) = under.and_then(|id| entries.get_mut(id.as_str())) {
+                parent.children.push(note);
+            }
+            if let Some(fixed) = fixes.and_then(|id| entries.get_mut(id.as_str())) {
+                fixed.rework += 1;
+            }
+        }
+        for &note in &sorted {
+            let Some((id, mark)) = Mark::read(note) else {
+                continue;
+            };
+            let Some(entry) = entries.get_mut(id.as_str()) else {
+                continue;
+            };
+            entry.newest = entry.newest.max(note.created_at);
+            entry.mark(note, mark);
+        }
+        Index { all, entries }
+    }
+}
+
+impl<'a> Entry<'a> {
+    /// Takes in the mark `mark` that the record `note` holds, in the order the marks were written.
+    fn mark(&mut self, note: &'a Note, mark: Mark) {
+        match mark {
+            Mark::Start { .. } => {
+                self.start.get_or_insert(note);
+            }
+            Mark::Done { proof, .. } if !proof.trim().is_empty() => {
+                self.close.get_or_insert((note, Status::Done));
+            }
+            Mark::Drop { reason } if !reason.trim().is_empty() => {
+                self.close.get_or_insert((note, Status::Dropped));
+            }
+            Mark::Steer { text } if !text.trim().is_empty() => self.steers += 1,
+            Mark::Edit {
+                text,
+                places,
+                check,
+            } => {
+                let step = &mut self.step;
+                step.content = match (
+                    text.trim().is_empty(),
+                    text.lines().count(),
+                    step.content.split_once('\n'),
+                ) {
+                    (true, _, _) => std::mem::take(&mut step.content),
+                    (false, 1, Some((_, detail))) => format!("{}\n{detail}", text.trim_end()),
+                    (false, _, _) => text,
+                };
+                if !places.is_empty() {
+                    step.places = places;
+                }
+                step.check = check.or(step.check.take());
+            }
+            _ => {}
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests;

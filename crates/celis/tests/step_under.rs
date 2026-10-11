@@ -70,7 +70,18 @@ fn done_refuses_a_step_with_an_open_step_under_it() {
     let trail = add(&repo, &["--", "the trail"]);
     let part = add(&repo, &["--under", &trail[..8], "--", "part"]);
     let before = records(&repo);
-    let o = cli(&repo, &["step", "done", &trail[..8], "--json", "--", "p"]);
+    let o = cli(
+        &repo,
+        &[
+            "step",
+            "done",
+            &trail[..8],
+            "--json",
+            "--as-planned",
+            "--",
+            "p",
+        ],
+    );
     refusal(&o, 1, "open-steps");
     assert_eq!(records(&repo), before);
     finish(&repo, &part[..8]);

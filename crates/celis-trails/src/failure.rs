@@ -11,11 +11,7 @@ pub struct Failure {
 impl Failure {
     /// A command used wrongly.
     pub fn usage(message: impl Into<String>) -> Self {
-        Self {
-            name: "usage".into(),
-            message: message.into(),
-            code: 2,
-        }
+        Self::new("usage", 2, message.into())
     }
 
     /// Ends the message by naming the help `page`.
@@ -44,71 +40,73 @@ impl Failure {
 
     /// No step in the store has this id.
     pub fn no_step(id: &str) -> Self {
-        Self {
-            name: "no-step".into(),
-            message: format!("no step has the id {id}; find it with `celis tree --all`"),
-            code: 1,
-        }
+        Self::new(
+            "no-step",
+            1,
+            format!("no step has the id {id}; find it with `celis tree --all`"),
+        )
     }
 
     /// No live decision has this id.
     pub fn no_decision(id: &str) -> Self {
-        Self {
-            name: "no-decision".into(),
-            message: format!(
-                "no live decision has the id {id}; see the live ones with `celis read`"
-            ),
-            code: 1,
-        }
+        Self::new(
+            "no-decision",
+            1,
+            format!("no live decision has the id {id}; see the live ones with `celis read`"),
+        )
     }
 
     /// No trail in the store has this id.
     pub fn no_trail(id: &str) -> Self {
-        Self {
-            name: "no-trail".into(),
-            message: format!("no trail has the id {id}; find it with `celis tree --all`"),
-            code: 1,
-        }
+        Self::new(
+            "no-trail",
+            1,
+            format!("no trail has the id {id}; find it with `celis tree --all`"),
+        )
     }
 
     /// The step's check fails; `output` is the end of what it printed.
     pub fn check_failed(output: &str) -> Self {
-        Self {
-            name: "check-failed".into(),
-            message: format!("the step's check fails:\n{output}"),
-            code: 1,
-        }
+        Self::new(
+            "check-failed",
+            1,
+            format!("the step's check fails:\n{output}"),
+        )
     }
 
     /// The step has an open step under it.
     pub fn open_steps(id: &str) -> Self {
-        Self {
-            name: "open-steps".into(),
-            message: format!(
+        Self::new(
+            "open-steps",
+            1,
+            format!(
                 "the step {id} has an open step under it; see it with `celis tree {}`",
                 crate::id::short(id)
             ),
-            code: 1,
-        }
+        )
     }
 
     /// The step is done.
     pub fn closed(id: &str) -> Self {
+        Self::new(
+            "closed",
+            1,
+            format!("the step {id} is closed; add a new step with `celis step add`"),
+        )
+    }
+
+    fn new(name: &str, code: i32, message: String) -> Self {
         Self {
-            name: "closed".into(),
-            message: format!("the step {id} is closed; add a new step with `celis step add`"),
-            code: 1,
+            name: name.into(),
+            message,
+            code,
         }
     }
 }
 
 impl From<anyhow::Error> for Failure {
     fn from(error: anyhow::Error) -> Self {
-        Self {
-            name: "error".into(),
-            message: format!("{error:#}"),
-            code: 1,
-        }
+        Self::new("error", 1, format!("{error:#}"))
     }
 }
 

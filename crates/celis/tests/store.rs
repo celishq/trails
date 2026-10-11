@@ -4,7 +4,7 @@ mod support;
 
 use celis_trails::Store;
 use celis_wire::Note;
-use support::{account, err, out, Repo};
+use support::{account, err, out, Repo, PHRASE};
 
 /// A command opens the store in `$CELIS_HOME`, so a trail written in one folder lists in another, inside
 /// git or not (`spec/trails/10-decisions.md`, "The store").
@@ -143,7 +143,7 @@ fn a_reader_must_skip_a_file_that_does_not_parse_or_verify() {
     assert_eq!(store.records(), vec![good]);
 }
 
-/// No record file carries the account's secret
+/// No record file carries the phrase or the account's secret
 /// (`spec/trails/10-decisions.md`, "The store").
 #[test]
 fn no_record_file_must_carry_the_accounts_secret() {
@@ -155,10 +155,14 @@ fn no_record_file_must_carry_the_accounts_secret() {
         "",
     );
     assert!(wrote.status.success(), "{}", err(&wrote));
-    let secret = std::fs::read_to_string(repo.home().join("key")).unwrap();
+    let secret: String = account()
+        .secret()
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect();
     for entry in std::fs::read_dir(repo.store().join("shared")).unwrap() {
         let text = std::fs::read_to_string(entry.unwrap().path()).unwrap();
-        assert!(!text.contains(secret.trim()));
+        assert!(!text.contains(PHRASE) && !text.contains(&secret));
     }
 }
 

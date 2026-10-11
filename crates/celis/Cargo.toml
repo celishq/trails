@@ -1,6 +1,6 @@
 [package]
 name = "celis"
-version = "0.16.0"
+version = "0.17.0"
 edition = "2021"
 
 [[bin]]
@@ -9,6 +9,7 @@ path = "src/main.rs"
 
 [dependencies]
 celis-trails = { path = "../celis-trails" }
+libc = "0.2"
 
 [dev-dependencies]
 celis-trails = { path = "../celis-trails" }

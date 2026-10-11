@@ -9,9 +9,9 @@ fn short(id: &str) -> String {
     id[..8].to_string()
 }
 
-/// A reader counts a decision only when the account signed it (`spec/trails/10-decisions.md`, "The key").
+/// A reader counts a decision whatever account signed it (`spec/trails/10-decisions.md`, "The account").
 #[test]
-fn a_decision_of_yours_counts_only_when_the_account_signed_it() {
+fn a_decision_counts_whatever_account_signed_it() {
     let repo = Repo::plain();
     let id = repo.project_id();
     let project = (id.as_str(), "repo");
@@ -24,7 +24,7 @@ fn a_decision_of_yours_counts_only_when_the_account_signed_it() {
         "mine",
         now() - 3 * DAY,
     );
-    decision(
+    let theirs = decision(
         &repo,
         project,
         &stranger,
@@ -32,13 +32,16 @@ fn a_decision_of_yours_counts_only_when_the_account_signed_it() {
         "theirs",
         now() - 2 * DAY,
     );
-    assert_eq!(read_ids(&repo, &repo.path(), &[]), [short(&signed.id)]);
+    assert_eq!(
+        read_ids(&repo, &repo.path(), &[]),
+        [short(&theirs.id), short(&signed.id)]
+    );
 }
 
-/// A decision is live until a counted decision names it in `replaces` (`spec/trails/10-decisions.md`,
+/// A decision is live until another decision names it in `replaces` (`spec/trails/10-decisions.md`,
 /// "Decisions").
 #[test]
-fn a_decision_is_live_until_a_counted_decision_replaces_it() {
+fn a_decision_is_live_until_another_decision_replaces_it() {
     let repo = Repo::plain();
     let id = repo.project_id();
     let project = (id.as_str(), "repo");
@@ -59,7 +62,7 @@ fn a_decision_is_live_until_a_counted_decision_replaces_it() {
         "kept",
         now() - 3 * DAY,
     );
-    decision(
+    let gone = decision(
         &repo,
         project,
         &stranger,
@@ -77,7 +80,7 @@ fn a_decision_is_live_until_a_counted_decision_replaces_it() {
     );
     assert_eq!(
         read_ids(&repo, &repo.path(), &[]),
-        [short(&new.id), short(&kept.id)]
+        [short(&new.id), short(&gone.id)]
     );
 }
 

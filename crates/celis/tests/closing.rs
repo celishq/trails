@@ -3,7 +3,7 @@
 mod support;
 
 use celis_wire::{Account, Note};
-use support::{account, err, now, out, put, Repo};
+use support::{account, err, now, objects, out, put, Repo};
 
 fn step(repo: &Repo, by: &Account, text: &str, extra: &[(&str, &str)], at: u64) -> Note {
     let anchor = format!("project:{}", repo.project_id());
@@ -55,7 +55,7 @@ fn a_step_is_open_until_a_done_names_it_and_done_carries_its_proof() {
     let p = step(&repo, by, "work.", &[], now() - 4 * 60).id;
     let q = step(&repo, by, "other.", &[], now() - 4 * 60 + 1).id;
     assert!(ready(&repo).contains(&p[..8]));
-    let o = run(&repo, &["done", &p, "--", "proof"]);
+    let o = run(&repo, &["done", &p, "--as-planned", "--", "proof"]);
     assert!(o.status.success(), "{}", err(&o));
     let all = ready(&repo);
     assert!(!all.contains(&p[..8]) && all.contains(&q[..8]), "{all}");
@@ -93,6 +93,44 @@ fn done_refuses_an_empty_proof_as_a_usage_error() {
     let repo = Repo::plain();
     let by = &account();
     let p = step(&repo, by, "work", &[], now() - 4 * 60);
-    let o = run(&repo, &["done", &p.id[..8], "--", ""]);
+    let o = run(&repo, &["done", &p.id[..8], "--as-planned", "--", ""]);
     assert_eq!(o.status.code(), Some(2), "{}", err(&o));
+}
+
+/// `done` asks what changed from the step's title, or that the work went as planned, and refuses neither
+/// or both as a usage error; the done record carries the change (`spec/trails/12-steps.md`, "Closing").
+#[test]
+fn done_says_what_changed_or_that_it_went_as_planned() {
+    let repo = Repo::new();
+    let by = &account();
+    let moved = step(&repo, by, "moved", &[], now() - 4 * 60).id;
+    let kept = step(&repo, by, "kept", &[], now() - 4 * 60 + 1).id;
+    let neither = run(&repo, &["done", &moved[..8], "--", "p"]);
+    assert_eq!(neither.status.code(), Some(2), "{}", err(&neither));
+    let both = [
+        "done",
+        &moved[..8],
+        "--as-planned",
+        "--changed",
+        "x",
+        "--",
+        "p",
+    ];
+    assert_eq!(run(&repo, &both).status.code(), Some(2));
+    assert!(done_records(&repo).is_empty());
+    let changed = [
+        "done",
+        &moved[..8],
+        "--changed",
+        "Read prints each step's own line.",
+        "--",
+        "p",
+    ];
+    let o = run(&repo, &changed);
+    assert!(o.status.success(), "{}", err(&o));
+    let o = run(&repo, &["done", &kept[..8], "--as-planned", "--", "p"]);
+    assert!(o.status.success(), "{}", err(&o));
+    let change = |id: &str| objects(&repo, &["tree", &id[..8]])[0]["trail"]["changed"].clone();
+    assert_eq!(change(&moved), "Read prints each step's own line.");
+    assert!(change(&kept).is_null());
 }

@@ -19,8 +19,11 @@ celis step add | start | done | steer | drop | edit   the steps of a trail (CIP-
 celis watch [<id>] [--full]                           the active trees, again on each change (CIP-14)
 celis home                                            the folder of the store, to open it
 celis prompt                                          a person's prompt, from a hook (CIP-14)
+celis auth login                                      keep the phrase stdin gives (CIP-10)
+celis auth status                                     the account's npub (CIP-10)
+celis auth phrase                                     print the phrase (CIP-10)
 
-$CELIS_HOME   where celis keeps the key and the store
+$CELIS_HOME   where celis keeps the phrase and the store
               default: ~/Library/Application Support/Celis
 $CELIS_TRAIL  the trail new steps go under (CIP-14)
 ```
@@ -49,7 +52,7 @@ $CELIS_TRAIL  the trail new steps go under (CIP-14)
 ```
 decision  text  <id, first 8> <scope> <text>
           json  {"id", "created_at", "project", "scope", "replaces", "content"}
-read      text  <id, first 8> [<project name>] <the trail's first line>      each active trail
+read      text  <id, first 8> [<project name>] <its title>[ · <place>]      each active trail
                   rule <id, first 8> <text>                                 each of its rules
                 <an open step, as CIP-12 "The commands" gives it>
                 <a decision>
@@ -73,6 +76,7 @@ The page is the reference for a person.
 ```
 celis  ·  celis help  ·  celis --help     the page
 celis <command> --help                    the command page
+celis step --help · celis auth --help     the group page
 celis --version                           celis <version> (<commit, first 8>)
 ```
 
@@ -90,9 +94,10 @@ Commands
   step     the steps of a trail: add, start, done, steer, drop, edit
   watch    a trail's tree, printed again on each change
   home     the folder of the store, to open it
+  auth     the account's phrase: login, status, phrase
 
-$CELIS_HOME holds the key and the store. $CELIS_TRAIL names the trail new steps
-go under.
+$CELIS_HOME holds the phrase and the store. $CELIS_TRAIL names the trail new
+steps go under.
 
 See `celis <command> --help`.
 ```
@@ -114,6 +119,8 @@ Examples
 
 - `celis`, `celis help` and `celis --help` MUST print the page and exit 0.
 - `--help` anywhere in a command MUST print the command page its words name, and else the page.
+- `--help` after only a group's name, `step` or `auth`, MUST print the group page. It MUST list each
+  command of the group with the first sentence of its summary, wrapped under its column.
 - A command page MUST give a line to each argument and flag its usage names, and at least one example.
 - Every help page MUST exit 0, and print to stdout.
 - A line of a help page MUST NOT be longer than 80 characters.
@@ -128,12 +135,13 @@ Examples
   starts with them.
 - Every command MUST accept `--json`, and then print one JSON object a line, and nothing else, to stdout.
 - A command that writes a record MUST print its id. With `--json`, it prints `{"id"}`.
-- A command MUST NOT ask a question.
+- A command MUST NOT ask a question. On a terminal, `auth login` asks for the phrase.
 - A usage error MUST name the narrowest help page that covers it: `celis <command> --help`, or else
   `celis help`.
 - An unknown command MUST name the known one nearest it, when two edits or fewer turn one into the other.
 - A command MUST exit 0 when done, 2 on a usage error, and 1 on any other error.
 - Without `--json`, an error MUST be one line on stderr: `celis: <message>`.
+- A command whose reader closes stdout MUST stop, and print no message.
 - The message of `no-step`, `no-decision`, `no-trail`, `closed` and `open-steps` MUST name a `celis`
   command that shows or fixes what went wrong.
 - With `--json`, an error MUST be one object on stderr: `{"error": "<name>", "message": "<text>"}`.

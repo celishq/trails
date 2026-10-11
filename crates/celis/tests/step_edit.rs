@@ -70,7 +70,17 @@ fn edit_changes_the_check_and_places_and_a_title_keeps_the_detail() {
         tree[0]["trail"]["places"],
         serde_json::json!(["b.rs", "c.rs"])
     );
-    let o = cli(&repo, &["step", "done", &step[..8], "--", "it passes"]);
+    let o = cli(
+        &repo,
+        &[
+            "step",
+            "done",
+            &step[..8],
+            "--as-planned",
+            "--",
+            "it passes",
+        ],
+    );
     assert!(o.status.success(), "{}", err(&o));
     refusal(
         &cli(&repo, &["step", "edit", &step[..8], "--json"]),

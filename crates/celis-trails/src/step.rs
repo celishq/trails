@@ -4,14 +4,15 @@ use crate::Anchor;
 use anyhow::Result;
 use celis_wire::{Account, Note};
 
-/// One part of the work on its project: the step it is a part of, the done step it fixes, the places the
-/// work goes, the check that proves it, the session that wrote it, and the words. A step under no other
-/// is a trail.
+/// One part of the work on its project: the step it is a part of, the done step it fixes, the step whose
+/// plan it replaces, the places the work goes, the check that proves it, the session that wrote it, and
+/// the words. A step under no other is a trail.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Step {
     pub anchor: Anchor,
     pub under: Option<String>,
     pub fixes: Option<String>,
+    pub replaces: Option<String>,
     pub places: Vec<String>,
     pub check: Option<String>,
     pub session: Option<String>,
@@ -25,6 +26,7 @@ impl Step {
         let mut tags = self.anchor.tags();
         tags.extend(self.under.iter().map(|u| tag("under", u)));
         tags.extend(self.fixes.iter().map(|f| tag("fixes", f)));
+        tags.extend(self.replaces.iter().map(|r| tag("replaces", r)));
         tags.extend(self.places.iter().map(|p| tag("at", p)));
         tags.extend(self.check.iter().map(|c| tag("check", c)));
         tags.extend(self.session.iter().map(|s| tag("session", s)));
@@ -47,8 +49,6 @@ impl Step {
         if !labelled {
             return None;
         }
-        let project = note.tag("I")?.strip_prefix("project:")?.to_string();
-        let name = note.tag("project").unwrap_or_default().to_string();
         let owned = |name: &str| note.tag(name).map(str::to_string);
         let tagged = |name: &str| {
             note.tags
@@ -58,9 +58,10 @@ impl Step {
                 .collect::<Vec<_>>()
         };
         Some(Step {
-            anchor: Anchor { project, name },
+            anchor: Anchor::read(note)?,
             under: owned("under"),
             fixes: owned("fixes"),
+            replaces: owned("replaces"),
             places: [tagged("at"), tagged("file")].concat(),
             check: owned("check"),
             session: owned("session"),
@@ -81,9 +82,14 @@ impl Step {
         })
     }
 
-    /// The `--json` links of this step: its `under` and `fixes`, in that order.
+    /// The `--json` links of this step: its `under`, `fixes` and `replaces`, in that order.
     pub fn links(&self) -> serde_json::Value {
-        let links: Vec<serde_json::Value> = [("under", &self.under), ("fixes", &self.fixes)]
+        let links = [
+            ("under", &self.under),
+            ("fixes", &self.fixes),
+            ("replaces", &self.replaces),
+        ];
+        let links: Vec<serde_json::Value> = links
             .into_iter()
             .filter_map(|(kind, to)| Some(serde_json::json!({"to": to.as_ref()?, "kind": kind})))
             .collect();

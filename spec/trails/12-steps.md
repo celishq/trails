@@ -23,6 +23,7 @@ and the lines after it hold the detail.
     ["project", "<project name>"],
     ["under", "<id of the step it is a part of>"],                    optional
     ["fixes", "<id of a done step whose work it fixes>"],             optional
+    ["replaces", "<id of an open step whose plan it takes over>"],    optional
     ["at", "<a place the work goes: file:line, a URL, any text>"],   zero or more
     ["check", "<the command that proves the work>"],                  optional
     ["session", "<the session of a trail>"],                          optional, a trail only (CIP-14)
@@ -36,7 +37,7 @@ and the lines after it hold the detail.
 **Rules**
 
 - A step MUST carry content, the anchor `project:<project id>` and the project name.
-- A step MAY carry one `under`, one `fixes`, one `check`, and any number of `at`.
+- A step MAY carry one `under`, one `fixes`, one `replaces`, one `check`, and any number of `at`.
 - A reader MUST count each `file` tag of a step as a place, after its `at` places.
 - A reader MUST count a kind 1111 record as a step only when it carries the label `step` in
   `celis.step`. It MUST ignore tags it does not know.
@@ -78,12 +79,13 @@ project name the file name in a Figma URL, else the host, else as CIP-10 "Projec
 ## Starting
 
 A step starts when an agent takes it up. A started step is working until it closes, so the person sees
-which step the agent is on.
+which step the agent is on. The start states whether the step's check failed before the work.
 
 ```json
 start  kind 1985, signed by the account (NIP-32)
 { "kind": 1985, "content": "",
-  "tags": [["L", "celis.step"], ["l", "start", "celis.step"], ["e", "<step id>"]] }
+  "tags": [["L", "celis.step"], ["l", "start", "celis.step"], ["e", "<step id>"],
+           ["before", "fails" | "passes"]] }                    before: only on a step with a check
 ```
 
 ```
@@ -97,22 +99,29 @@ dropped   a `drop` names the step
 
 - A reader MUST work out a step's state from its `start`, `done` and `drop` records.
 - A `start` MUST NOT close its step.
+- A new `start` MUST run the step's check, when it has one, and carry its result as `before`.
+- When the check passes before the work, `start` MUST say so on stderr and still start the step.
+- `tree --json` MUST print the `before` of a started step.
 
 ## Closing
 
-A step closes when it is done. A done step carries its proof. What cost time becomes a decision, so the
-next agent at that place reads it.
+A step closes when it is done. A done step carries its proof, and what changed from its plan. What cost
+time becomes a decision, so the next agent at that place reads it.
 
 ```json
 done   kind 1985, signed by an agent (NIP-32)
 { "kind": 1985, "content": "<the proof: the check that failed before and passes now>",
-  "tags": [["L", "celis.step"], ["l", "done", "celis.step"], ["e", "<step id>"]] }
+  "tags": [["L", "celis.step"], ["l", "done", "celis.step"], ["e", "<step id>"],
+           ["changed", "<how the work differs from the step's title>"]] }      changed: optional
 ```
 
 **Rules**
 
 - A step MUST be open until a `done` or a `drop` names it. The first of them MUST settle it.
 - A reader MUST ignore a `done` record with no content. It does not close the step.
+- `done` MUST take `--changed <text>` or `--as-planned`. It MUST refuse neither or both as a usage error.
+- `done --changed` MUST carry its text as the `changed` tag. A `done` with no `changed` went as planned.
+- `tree --json` MUST print the `changed` of a done step. `tree --full` MUST print it after the proof.
 
 ## Steering
 
@@ -145,6 +154,9 @@ drop   kind 1985, signed by an agent (NIP-32)
 
 - A reader MUST ignore a drop with no content. It does not close the step.
 - A dropped step MUST NOT have a grade.
+- `add --replaces <id>` MUST write the new step under the old step's `under`, when no `--under` is given.
+- It MUST then drop the old step and each open step under it, with `replaced by <new id, first 8>`.
+- It MUST refuse a trail as a usage error, and a closed step with `closed`.
 
 ## Editing
 
@@ -184,10 +196,10 @@ The store is the only source of steps. A project that keeps `@todo` lines in its
 ## The commands
 
 ```
-celis step add [--under <id>] [--fixes <id>] [--at <place>]... [--check <command>] [--new] -- <text>
+celis step add [--under <id>] [--fixes <id>] [--replaces <id>] [--at <place>]... [--check <command>] [--new] -- <text>
                                                                leave a step
 celis step start <id>                                         take up a step, and see its decisions
-celis step done <id> [--pitfall <text>] -- <proof>
+celis step done <id> [--changed <text>] [--as-planned] [--pitfall <text>] -- <proof>
                                                               close a step with its proof
 celis step steer <id> -- <text>                                record what the person asked
 celis step drop <id> -- <reason>                              close a step whose work is no longer wanted
@@ -202,6 +214,7 @@ celis step edit <id> [--at <place>]... [--check <command>] [-- <text>]
 - `add` MUST refuse empty text as a usage error.
 - `add` MUST refuse an `--under` or a `--fixes` that no step has, with `no-step`. It MUST refuse an
   `--under` step that is closed, with `closed`.
+- `add` MUST say on stderr when the title has more than 8 words. It MUST still write the step.
 - `add` MUST carry the whole ids of `--under` and `--fixes`, each `--at` and the `--check` as their tags.
   It MUST write each `--at` as CIP-10 "Places" states.
 - `add` MUST NOT write a step when an open step of the same project and `under` has the same text. It
@@ -220,6 +233,10 @@ celis step edit <id> [--at <place>]... [--check <command>] [-- <text>]
 - `done` MUST stop a check that runs past `CELIS_CHECK_SECONDS`, 600 when not set, and count it as failed.
 - `done` MUST say when a trail's tree holds a multiple of 5 done steps under the trail. It MUST print
   `celis: <n> steps of the trail <id, first 8> are done; check its direction.` on stderr, and exit 0.
+- It MUST then name the ask of the step, and each open step of that ask. It MUST ask to drop or
+  replace each open step that does not serve the ask.
+- When the ask has a check, the direction check MUST run it under the ask's line. It MUST say whether
+  it passes, with the last line it printed when it fails.
 - `steer` MUST refuse an id no step has, with `no-step`, and a closed step, with `closed`. It MUST refuse
   empty text as a usage error.
 - `drop` MUST refuse an id no step has, with `no-step`, and a closed step, with `closed`. It MUST refuse
@@ -248,7 +265,7 @@ celis step add --under 3fa2c1d0 --fixes 4c1d22e0 -- "Round the senior price down
 celis step add --under 3fa2c1d0 --at https://figma.com/design/Ab12/Shop \
   -- "The price list frame shows the senior tier."
 celis step start 4c1d22e0
-celis step done 4c1d22e0 -- "python3 -m unittest: test_senior failed before, passes now."
+celis step done 4c1d22e0 --as-planned -- "python3 -m unittest: test_senior failed before, passes now."
 celis step drop 3fa2c1d0 -- "The person chose the shared price table instead."
 ```
 

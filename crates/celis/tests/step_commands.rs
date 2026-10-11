@@ -62,11 +62,14 @@ fn step_add_refuses_empty_text_and_the_other_commands_refuse_unknown_and_closed_
     record(&repo, by, "done", &shut.id, now() - 2 * 60);
     refusal(&run(&repo, &["add", "--json", "--", ""]), 2, "usage");
     let nowhere = "0".repeat(64);
-    let gone = ["done", "--json", &nowhere, "--", "p"];
-    let closed = ["done", "--json", &shut.id[..8], "--", "p"];
+    let gone = ["done", "--json", &nowhere, "--as-planned", "--", "p"];
+    let closed = ["done", "--json", &shut.id[..8], "--as-planned", "--", "p"];
     refusal(&run(&repo, &gone), 1, "no-step");
     refusal(&run(&repo, &closed), 1, "closed");
-    let o = run(&repo, &["done", &open.id[..8], "--", "proof"]);
+    let o = run(
+        &repo,
+        &["done", &open.id[..8], "--as-planned", "--", "proof"],
+    );
     assert!(o.status.success(), "{}", err(&o));
 }
 
@@ -169,14 +172,17 @@ fn the_step_commands_print_the_ids_they_wrote() {
             .id[..8]
     ));
 
-    let o = run(&repo, &["done", "--json", &notes[0].id, "--", "p"]);
+    let o = run(
+        &repo,
+        &["done", "--json", &notes[0].id, "--as-planned", "--", "p"],
+    );
     assert!(o.status.success(), "{}", err(&o));
     let closed = written(&repo, "done", &notes[0].id);
     assert_eq!(closed.len(), 1);
     let printed: Value = serde_json::from_str(out(&o).trim()).unwrap();
     assert_eq!(printed["id"], closed[0].id.as_str());
 
-    let o = run(&repo, &["done", &notes[1].id, "--", "p"]);
+    let o = run(&repo, &["done", &notes[1].id, "--as-planned", "--", "p"]);
     assert!(o.status.success(), "{}", err(&o));
     let closed = written(&repo, "done", &notes[1].id);
     assert!(out(&o).contains(&closed[0].id[..8]), "{}", out(&o));
@@ -287,7 +293,7 @@ fn done_says_a_direction_check_is_due_every_five_done_steps_of_a_trail() {
         let id = out(&run(&repo, &["add", "--under", &part[..8], "--", &text]))
             .trim()
             .to_string();
-        let o = run(&repo, &["done", &id[..8], "--", "proof"]);
+        let o = run(&repo, &["done", &id[..8], "--as-planned", "--", "proof"]);
         assert!(o.status.success(), "{}", err(&o));
         said.push(err(&o));
     }
@@ -295,7 +301,7 @@ fn done_says_a_direction_check_is_due_every_five_done_steps_of_a_trail() {
         "celis: 5 steps of the trail {} are done; check its direction.\n",
         &trail[..8]
     );
-    assert_eq!(said[4], due);
+    assert_eq!(said[4].lines().next(), due.lines().next());
     assert!(
         said.iter().enumerate().all(|(i, e)| i == 4 || e.is_empty()),
         "{said:?}"
@@ -323,6 +329,7 @@ fn done_writes_a_pitfall_as_a_decision_at_the_steps_place() {
                 "step",
                 "done",
                 &step[..8],
+                "--as-planned",
                 "--pitfall",
                 pitfall,
                 "--",
@@ -344,5 +351,116 @@ fn done_writes_a_pitfall_as_a_decision_at_the_steps_place() {
             .lines()
             .any(|l| l.contains("at:src/a.rs the fixture needs --yes")),
         "{later}"
+    );
+}
+
+/// The direction check names the ask of the step just done and the open steps of that ask, and asks to
+/// drop or replace each that does not serve it (`spec/trails/12-steps.md`, "The commands").
+#[test]
+fn the_direction_check_names_the_ask_and_its_open_steps() {
+    let repo = Repo::new();
+    let id = |o: std::process::Output| out(&o).trim().to_string();
+    let trail = id(run(&repo, &["add", "--", "the trail"]));
+    let ask = id(run(
+        &repo,
+        &["add", "--under", &trail[..8], "--", "the ask"],
+    ));
+    let open = id(run(
+        &repo,
+        &["add", "--under", &ask[..8], "--", "still open"],
+    ));
+    let mut said = String::new();
+    for n in 1..=5 {
+        let text = format!("piece {n}");
+        let piece = id(run(&repo, &["add", "--under", &ask[..8], "--", &text]));
+        let o = run(&repo, &["done", &piece[..8], "--as-planned", "--", "proof"]);
+        assert!(o.status.success(), "{}", err(&o));
+        said = err(&o);
+    }
+    let expected = [
+        format!(
+            "celis: 5 steps of the trail {} are done; check its direction.",
+            &trail[..8]
+        ),
+        format!("  ask  {} the ask", &ask[..8]),
+        format!("  open {} still open", &open[..8]),
+        "celis: drop or replace each open step that does not serve the ask.".to_string(),
+    ];
+    assert_eq!(said.lines().collect::<Vec<_>>(), expected);
+}
+
+/// The direction check runs the ask's check, when it has one, and says under the ask whether it passes,
+/// with the last line it printed when it fails (`spec/trails/12-steps.md`, "The commands").
+#[test]
+fn the_direction_check_runs_the_asks_check() {
+    let repo = Repo::new();
+    let id = |o: std::process::Output| out(&o).trim().to_string();
+    let trail = id(run(&repo, &["add", "--", "the trail"]));
+    let check = "echo running; echo 3 failing; exit 1";
+    let ask = id(run(
+        &repo,
+        &[
+            "add",
+            "--under",
+            &trail[..8],
+            "--check",
+            check,
+            "--",
+            "the ask",
+        ],
+    ));
+    let mut said = Vec::new();
+    for n in 1..=10 {
+        if n == 6 {
+            let o = run(&repo, &["edit", &ask[..8], "--check", "true"]);
+            assert!(o.status.success(), "{}", err(&o));
+        }
+        let text = format!("piece {n}");
+        let piece = id(run(&repo, &["add", "--under", &ask[..8], "--", &text]));
+        let o = run(&repo, &["done", &piece[..8], "--as-planned", "--", "proof"]);
+        assert!(o.status.success(), "{}", err(&o));
+        said.push(err(&o));
+    }
+    assert_eq!(
+        said[4].lines().nth(2),
+        Some("  check fails: 3 failing"),
+        "{}",
+        said[4]
+    );
+    assert_eq!(
+        said[9].lines().nth(2),
+        Some("  check passes"),
+        "{}",
+        said[9]
+    );
+}
+
+/// `add` says on stderr when the title, the first line of the text, has more than 8 words, and still
+/// writes the step (`spec/trails/12-steps.md`, "The commands").
+#[test]
+fn add_says_when_a_title_is_longer_than_eight_words() {
+    let repo = Repo::new();
+    let short = run(
+        &repo,
+        &[
+            "add",
+            "--",
+            "Round the senior price down\nThe test expects 7.99 for 9.99 here.",
+        ],
+    );
+    assert!(short.status.success(), "{}", err(&short));
+    assert_eq!(err(&short), "");
+    let long = run(
+        &repo,
+        &[
+            "add",
+            "--",
+            "Round the senior price down to the nearest cent always",
+        ],
+    );
+    assert!(long.status.success(), "{}", err(&long));
+    assert_eq!(
+        err(&long),
+        "celis: the title has 10 words; keep it to 8 or fewer with step edit, and put the detail on the lines after it.\n"
     );
 }

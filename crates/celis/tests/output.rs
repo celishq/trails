@@ -101,7 +101,7 @@ fn a_trail_or_step_command_with_stdin_left_open_asks_nothing() {
         vec!["tree", &trail[..8]],
         vec!["step", "add", "--", "four"],
         vec!["read", "--like", "senior tier"],
-        vec!["step", "done", &closed, "--", "it passes"],
+        vec!["step", "done", &closed, "--as-planned", "--", "it passes"],
     ];
     for args in runs {
         without_asking(&repo, &args);
@@ -146,10 +146,20 @@ fn a_command_takes_an_id_whole_or_as_a_start_of_4_or_more_characters() {
         step_id(&repo, "two"),
         step_id(&repo, "three"),
     );
-    let o = repo.run(&repo.path(), &["step", "done", &c[..3], "--", "p"], &[], "");
+    let o = repo.run(
+        &repo.path(),
+        &["step", "done", &c[..3], "--as-planned", "--", "p"],
+        &[],
+        "",
+    );
     assert!(!o.status.success(), "{}", out(&o));
     for text in [a.as_str(), &b[..8], &c[..4]] {
-        let o = repo.run(&repo.path(), &["step", "done", text, "--", "p"], &[], "");
+        let o = repo.run(
+            &repo.path(),
+            &["step", "done", text, "--as-planned", "--", "p"],
+            &[],
+            "",
+        );
         assert!(o.status.success(), "{text}: {}", err(&o));
     }
     let (g, h) = (trail_id(&repo, "one"), trail_id(&repo, "two"));
@@ -187,7 +197,7 @@ fn a_trail_or_step_command_prints_one_json_object_a_line_with_json() {
         vec!["decide", "--json", "--scope", &scope, "--", "80%"],
         vec!["tree", "--json", &trail],
         vec!["read", "--json", "--like", "one"],
-        vec!["step", "done", "--json", &id, "--", "p"],
+        vec!["step", "done", "--json", &id, "--as-planned", "--", "p"],
     ] {
         let o = repo.run(&repo.path(), &args, &[], "");
         assert!(o.status.success(), "{args:?}: {}", err(&o));
@@ -327,7 +337,7 @@ fn a_code_1_error_without_json_is_one_celis_line() {
     let repo = Repo::plain();
     let o = repo.run(
         &repo.path(),
-        &["step", "done", "deadbeef", "--", "p"],
+        &["step", "done", "deadbeef", "--as-planned", "--", "p"],
         &[],
         "",
     );
@@ -348,7 +358,15 @@ fn any_other_error_exits_1() {
     let repo = Repo::plain();
     let other = repo.run(
         &repo.path(),
-        &["step", "done", &"0".repeat(64), "--json", "--", "p"],
+        &[
+            "step",
+            "done",
+            &"0".repeat(64),
+            "--json",
+            "--as-planned",
+            "--",
+            "p",
+        ],
         &[],
         "",
     );
@@ -370,12 +388,17 @@ fn a_command_refuses_an_8_character_start_two_steps_share() {
     put(&repo, &a);
     put(&repo, &b);
 
-    let args = ["step", "done", &a.id[..8], "--", "p"];
+    let args = ["step", "done", &a.id[..8], "--as-planned", "--", "p"];
     let refused = repo.run(&repo.path(), &args, &[], "");
     assert!(!refused.status.success());
     assert_eq!(out(&refused), "");
 
-    let o = repo.run(&repo.path(), &["step", "done", &a.id, "--", "p"], &[], "");
+    let o = repo.run(
+        &repo.path(),
+        &["step", "done", &a.id, "--as-planned", "--", "p"],
+        &[],
+        "",
+    );
     assert!(o.status.success(), "{}", err(&o));
 }
 
@@ -423,7 +446,15 @@ fn a_command_refuses_an_8_character_start_two_trails_decisions_or_steps_share() 
     let (a, b) = sharing_a_start(&repo, by, "step", "step");
     put(&repo, &a);
     put(&repo, &b);
-    let args = ["step", "done", "--json", &a.id[..8], "--", "p"];
+    let args = [
+        "step",
+        "done",
+        "--json",
+        &a.id[..8],
+        "--as-planned",
+        "--",
+        "p",
+    ];
     let o = repo.run(&repo.path(), &args, &[], "");
     support::refusal(&o, 1, "no-step");
     assert_eq!(out(&o), "");
@@ -437,7 +468,15 @@ fn step_done_and_steer_print_json_objects_with_json() {
     let id = step_id(&repo, "one");
     for args in [
         vec!["step", "steer", "--json", &id, "--", "Use a token."],
-        vec!["step", "done", "--json", &id, "--", "it passes"],
+        vec![
+            "step",
+            "done",
+            "--json",
+            &id,
+            "--as-planned",
+            "--",
+            "it passes",
+        ],
     ] {
         let o = repo.run(&repo.path(), &args, &[], "");
         assert!(o.status.success(), "{args:?}: {}", err(&o));
@@ -482,12 +521,20 @@ fn each_refusal_names_itself_under_json() {
         "no-decision"
     );
     assert_eq!(
-        name(&["--json", "step", "done", &none, "--", "p"]),
+        name(&["--json", "step", "done", &none, "--as-planned", "--", "p"]),
         "no-step"
     );
-    let done = repo.run(&dir, &["step", "done", &id, "--", "p"], &[], "");
+    let done = repo.run(
+        &dir,
+        &["step", "done", &id, "--as-planned", "--", "p"],
+        &[],
+        "",
+    );
     assert!(done.status.success(), "{}", err(&done));
-    assert_eq!(name(&["--json", "step", "done", &id, "--", "p"]), "closed");
+    assert_eq!(
+        name(&["--json", "step", "done", &id, "--as-planned", "--", "p"]),
+        "closed"
+    );
     let file = repo.home().join("not-a-folder");
     std::fs::write(&file, "x").unwrap();
     let broken = repo.run(
@@ -499,4 +546,24 @@ fn each_refusal_names_itself_under_json() {
     assert_eq!(broken.status.code(), Some(1), "{}", err(&broken));
     let object: Value = serde_json::from_str(err(&broken).trim()).expect("one JSON object");
     assert_eq!(object["error"], "error");
+}
+
+/// A command whose reader closes stdout stops with no message (`spec/trails/11-cli.md`, "Output and
+/// errors").
+#[test]
+fn a_closed_reader_stops_a_command_with_no_message() {
+    let repo = Repo::plain();
+    let o = repo.run(&repo.path(), &["step", "add", "--", "work"], &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+    let mut child = std::process::Command::new(env!("CARGO_BIN_EXE_celis"))
+        .args(["tree", "--all"])
+        .current_dir(repo.path())
+        .env("CELIS_HOME", repo.home())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .unwrap();
+    drop(child.stdout.take());
+    let o = child.wait_with_output().unwrap();
+    assert_eq!(String::from_utf8_lossy(&o.stderr), "");
 }

@@ -11,10 +11,11 @@ use std::process::{Command, Output, Stdio};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tempfile::TempDir;
 
-/// The account secret of every test home.
-pub const SECRET: &str = "0101010101010101010101010101010101010101010101010101010101010101";
+/// The phrase of every test home.
+pub const PHRASE: &str =
+    "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
 
-/// A git repo with one commit, and a `$CELIS_HOME` beside it whose key is [`SECRET`].
+/// A git repo with one commit, and a `$CELIS_HOME` beside it whose phrase is [`PHRASE`].
 pub struct Repo {
     dir: TempDir,
 }
@@ -38,18 +39,18 @@ impl Repo {
             "first",
         ]);
         std::fs::create_dir_all(repo.home()).unwrap();
-        std::fs::write(repo.home().join("key"), format!("{SECRET}\n")).unwrap();
+        std::fs::write(repo.home().join("phrase"), format!("{PHRASE}\n")).unwrap();
         repo
     }
 
-    /// A folder outside git, with a `$CELIS_HOME` beside it whose key is [`SECRET`].
+    /// A folder outside git, with a `$CELIS_HOME` beside it whose phrase is [`PHRASE`].
     pub fn plain() -> Repo {
         let root = std::fs::canonicalize(std::env::temp_dir()).unwrap();
         let dir = tempfile::tempdir_in(root).expect("a temp folder");
         let repo = Repo { dir };
         std::fs::create_dir_all(repo.path()).unwrap();
         std::fs::create_dir_all(repo.home()).unwrap();
-        std::fs::write(repo.home().join("key"), format!("{SECRET}\n")).unwrap();
+        std::fs::write(repo.home().join("phrase"), format!("{PHRASE}\n")).unwrap();
         repo
     }
 
@@ -221,12 +222,12 @@ pub fn labelled(repo: &Repo, label: &str) -> Vec<Note> {
         .collect()
 }
 
-/// [`SECRET`] as an account.
+/// The account [`PHRASE`] gives.
 pub fn account() -> Account {
-    let bytes: Vec<u8> = (0..32)
-        .map(|i| u8::from_str_radix(&SECRET[i * 2..i * 2 + 2], 16).unwrap())
-        .collect();
-    Account::new(&bytes.try_into().unwrap()).unwrap()
+    celis_wire::Identity::from_phrase(PHRASE)
+        .unwrap()
+        .account()
+        .clone()
 }
 
 /// What `o` wrote to stdout.
@@ -452,7 +453,14 @@ pub fn add(repo: &Repo, args: &[&str]) -> String {
 pub fn finish(repo: &Repo, id: &str) {
     let o = cli(
         repo,
-        &["step", "done", id, "--", "failed before, passes now"],
+        &[
+            "step",
+            "done",
+            id,
+            "--as-planned",
+            "--",
+            "failed before, passes now",
+        ],
     );
     assert!(o.status.success(), "{}", err(&o));
 }

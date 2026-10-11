@@ -1,12 +1,11 @@
 //! The live decisions of a store.
 
 use crate::{Decision, Failure, Scope};
-use celis_wire::{Note, Pubkey};
+use celis_wire::Note;
 
-/// The decisions of a store that count: those `account` signed.
+/// The decisions of a store.
 pub struct Decisions<'a> {
     pub records: &'a [Note],
-    pub account: Pubkey,
 }
 
 impl<'a> Decisions<'a> {
@@ -16,7 +15,6 @@ impl<'a> Decisions<'a> {
         let counted: Vec<(&'a Note, Decision)> = self
             .records
             .iter()
-            .filter(|n| n.pubkey == self.account)
             .filter_map(|n| Some((n, Decision::read(n)?)))
             .collect();
         let replaced: Vec<String> = counted

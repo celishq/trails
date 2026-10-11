@@ -37,3 +37,15 @@ pub(crate) fn took(seconds: u64) -> String {
         s => format!("{}d {}h", s / 86_400, s % 86_400 / 3_600),
     }
 }
+
+/// The seconds until `took` shows another value for `seconds`.
+pub(crate) fn stride(seconds: u64) -> u64 {
+    match seconds {
+        s if s < 3_600 => 1,
+        s if s < 86_400 => 60 - s % 60,
+        s => 3_600 - s % 3_600,
+    }
+}
+
+#[cfg(test)]
+mod tests;

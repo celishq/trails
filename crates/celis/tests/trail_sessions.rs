@@ -46,7 +46,7 @@ fn a_sessions_first_ask_is_a_step_under_its_trail() {
     );
     let o = repo.run(
         &repo.path(),
-        &["step", "done", &written[0][..8], "--", "p"],
+        &["step", "done", &written[0][..8], "--as-planned", "--", "p"],
         &[],
         "",
     );
@@ -227,4 +227,48 @@ fn celis_trail_names_where_new_steps_go() {
         "",
     );
     support::refusal(&o, 1, "no-step");
+}
+
+/// `prompt` names the working step of the session's trail on stderr, and asks for a step under it when
+/// the next work does not fit; with no working step, it names none (`spec/trails/14-trails.md`,
+/// "Sessions").
+#[test]
+fn the_prompt_hook_names_the_working_step() {
+    let repo = Repo::new();
+    let hook = |prompt: &str| {
+        let json = serde_json::json!({"session_id": "s1", "prompt": prompt}).to_string();
+        repo.run(&repo.path(), &["prompt"], &[], &json)
+    };
+    start(&repo, "s1", "the trail");
+    let o = hook("first");
+    assert!(o.status.success(), "{}", err(&o));
+    assert_eq!(err(&o), "");
+    let step = add(&repo, Some("s1"), "Cache the price list");
+    let o = repo.run(&repo.path(), &["step", "start", &step[..8]], &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+    let o = hook("now make it blue");
+    assert!(o.status.success(), "{}", err(&o));
+    assert_eq!(
+        err(&o).trim(),
+        format!(
+            "celis: you work on {} \"Cache the price list\"; when the next work does not fit it, \
+             add a step under it first, or replace it with step add --replaces.",
+            &step[..8]
+        )
+    );
+}
+
+/// `prompt` writes and prints nothing for a prompt that is a task notification of the harness, not the
+/// person's words (`spec/trails/14-trails.md`, "Sessions").
+#[test]
+fn prompt_skips_a_task_notification() {
+    let repo = Repo::new();
+    start(&repo, "s1", "the trail");
+    let json = serde_json::json!({"session_id": "s1",
+        "prompt": "<task-notification>\n<task-id>b1</task-id>\n</task-notification>"})
+    .to_string();
+    let o = repo.run(&repo.path(), &["prompt"], &[], &json);
+    assert!(o.status.success(), "{}", err(&o));
+    assert_eq!(out(&o), "");
+    assert!(marks(&repo, "prompt").is_empty());
 }
