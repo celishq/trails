@@ -4,17 +4,14 @@ use crate::step::NAMESPACE;
 use anyhow::Result;
 use celis_wire::{Account, Note};
 
-/// What an agent does to a step: takes it up, closes it done with its proof and what it learned, records
-/// what the person asked for while it was open, or drops it with the reason its work is no longer wanted.
-/// It gives a step new text. On a trail, a session joins it, the hooks record a prompt while no step
-/// works, and the end of the session.
+/// What an agent does to a step: takes it up, closes it done with its proof, records what the person
+/// asked for while it was open, or drops it with the reason its work is no longer wanted. It gives a step
+/// a new title or text, places or check. On a trail, the hook records a prompt while no step works.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Mark {
     Start,
     Done {
         proof: String,
-        path: Option<String>,
-        pitfall: Option<String>,
     },
     Steer {
         text: String,
@@ -24,15 +21,11 @@ pub enum Mark {
     },
     Edit {
         text: String,
+        places: Vec<String>,
+        check: Option<String>,
     },
-    Ask {
+    Prompt {
         text: String,
-    },
-    Join {
-        session: String,
-    },
-    End {
-        session: Option<String>,
     },
 }
 
@@ -44,29 +37,17 @@ impl Mark {
             Mark::Done { proof, .. } => ("done", proof.as_str()),
             Mark::Steer { text } => ("steer", text.as_str()),
             Mark::Drop { reason } => ("drop", reason.as_str()),
-            Mark::Edit { text } => ("edit", text.as_str()),
-            Mark::Ask { text } => ("ask", text.as_str()),
-            Mark::Join { .. } => ("join", ""),
-            Mark::End { .. } => ("end", ""),
+            Mark::Edit { text, .. } => ("edit", text.as_str()),
+            Mark::Prompt { text } => ("prompt", text.as_str()),
         };
         let mut tags = vec![
             vec!["L".to_string(), NAMESPACE.to_string()],
             vec!["l".to_string(), label.to_string(), NAMESPACE.to_string()],
             vec!["e".to_string(), step.to_string()],
         ];
-        let session = match self {
-            Mark::Join { session } => Some(session),
-            Mark::End { session } => session.as_ref(),
-            _ => None,
-        };
-        tags.extend(session.map(|s| vec!["session".to_string(), s.clone()]));
-        if let Mark::Done { path, pitfall, .. } = self {
-            tags.extend(path.iter().map(|p| vec!["path".to_string(), p.clone()]));
-            tags.extend(
-                pitfall
-                    .iter()
-                    .map(|p| vec!["pitfall".to_string(), p.clone()]),
-            );
+        if let Mark::Edit { places, check, .. } = self {
+            tags.extend(places.iter().map(|p| vec!["at".to_string(), p.clone()]));
+            tags.extend(check.iter().map(|c| vec!["check".to_string(), c.clone()]));
         }
         Note::write(signer, 1985u16, at, tags, content)
     }
@@ -84,8 +65,6 @@ impl Mark {
             "start" => Mark::Start,
             "done" => Mark::Done {
                 proof: note.content.clone(),
-                path: note.tag("path").map(str::to_string),
-                pitfall: note.tag("pitfall").map(str::to_string),
             },
             "steer" => Mark::Steer {
                 text: note.content.clone(),
@@ -95,15 +74,16 @@ impl Mark {
             },
             "edit" => Mark::Edit {
                 text: note.content.clone(),
+                places: note
+                    .tags
+                    .iter()
+                    .filter(|t| t.len() >= 2 && t[0] == "at")
+                    .map(|t| t[1].clone())
+                    .collect(),
+                check: note.tag("check").map(str::to_string),
             },
-            "ask" => Mark::Ask {
+            "prompt" => Mark::Prompt {
                 text: note.content.clone(),
-            },
-            "join" => Mark::Join {
-                session: note.tag("session")?.to_string(),
-            },
-            "end" => Mark::End {
-                session: note.tag("session").map(str::to_string),
             },
             _ => return None,
         };

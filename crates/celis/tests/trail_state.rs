@@ -53,6 +53,11 @@ fn a_trail_ends_thirty_minutes_after_its_newest_record() {
     let open = step_note(&repo, &account(), Some(&left), "open part", old);
     assert!(head(&repo, &finished.id).ends_with(" · reached alone"));
     assert!(head(&repo, &left.id).ends_with(" · expired"));
+    let tree = out(&cli(&repo, &["tree", &left.id[..8]]));
+    assert!(
+        tree.lines().nth(1).unwrap_or("").starts_with("! "),
+        "{tree}"
+    );
     let read = out(&cli(&repo, &["read"]));
     assert!(!read.contains(&left.id[..8]), "{read}");
     assert!(!read.contains(&open.id[..8]), "{read}");
@@ -61,10 +66,10 @@ fn a_trail_ends_thirty_minutes_after_its_newest_record() {
     assert!(head(&repo, &left.id).ends_with(" · active"));
 }
 
-/// A trail with a session lives 12 hours after the newest record of its tree, not 30 minutes
+/// A trail whose session wrote no end ends 30 minutes after the newest record of its tree
 /// (`spec/trails/14-trails.md`, "State").
 #[test]
-fn a_sessions_trail_ends_twelve_hours_after_its_newest_record() {
+fn a_sessions_trail_with_no_end_ends_thirty_minutes_after_its_newest_record() {
     use support::{account, now, put, step_tags};
     let repo = Repo::new();
     let trail = |text: &str, at: u64| {
@@ -74,8 +79,8 @@ fn a_sessions_trail_ends_twelve_hours_after_its_newest_record() {
         put(&repo, &note);
         note
     };
-    let hour = trail("an hour ago", now() - 60 * 60);
-    let day = trail("a day ago", now() - 13 * 60 * 60);
-    assert!(head(&repo, &hour.id).ends_with(" · active"));
-    assert!(head(&repo, &day.id).ends_with(" · reached alone"));
+    let recent = trail("ten minutes ago", now() - 10 * 60);
+    let quiet = trail("an hour ago", now() - 60 * 60);
+    assert!(head(&repo, &recent.id).ends_with(" · active"));
+    assert!(head(&repo, &quiet.id).ends_with(" · reached alone"));
 }

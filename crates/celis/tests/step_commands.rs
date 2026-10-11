@@ -197,14 +197,14 @@ fn step_split_is_an_unknown_command_and_a_usage_error() {
     assert_eq!(o.status.code(), Some(2), "{}", err(&o));
 }
 
-/// `add` carries each `--file` and the `--check` as their tags (`spec/trails/12-steps.md`, "The commands").
+/// `add` carries each `--at` and the `--check` as their tags (`spec/trails/12-steps.md`, "The commands").
 #[test]
-fn add_carries_each_file_and_the_check_as_their_tags() {
+fn add_carries_each_place_and_the_check_as_their_tags() {
     let repo = Repo::plain();
     let o = run(
         &repo,
         &[
-            "add", "--file", "a.rs", "--file", "b.rs", "--check", "make t", "--", "text",
+            "add", "--at", "a.rs", "--at", "b.rs", "--check", "make t", "--", "text",
         ],
     );
     assert!(o.status.success(), "{}", err(&o));
@@ -219,11 +219,33 @@ fn add_carries_each_file_and_the_check_as_their_tags() {
             .map(|t| t[1].clone())
             .collect()
     };
-    assert_eq!(values("file"), ["a.rs", "b.rs"]);
+    assert_eq!(values("at"), ["a.rs", "b.rs"]);
     assert_eq!(values("check"), ["make t"]);
 }
 
-/// `add` writes `--at` and each `--file` as paths from the project's top folder
+/// A reader counts a step's old `file` tags as places after its `at` tags (`spec/trails/12-steps.md`,
+/// "Steps").
+#[test]
+fn a_steps_file_tags_read_as_places() {
+    let repo = Repo::new();
+    let project = (repo.project_id(), "repo".to_string());
+    let extra = [("at", "a.rs"), ("file", "b.rs")];
+    let old = step(
+        &account(),
+        (&project.0, &project.1),
+        "old",
+        &extra,
+        now() - 60,
+    );
+    put(&repo, &old);
+    let tree = support::objects(&repo, &["tree", &old.id[..8]]);
+    assert_eq!(
+        tree[0]["trail"]["places"],
+        serde_json::json!(["a.rs", "b.rs"])
+    );
+}
+
+/// `add` writes each `--at` as a path from the project's top folder
 /// (`spec/trails/12-steps.md`, "The commands").
 #[test]
 fn add_writes_its_places_from_the_projects_top_folder() {
@@ -231,7 +253,7 @@ fn add_writes_its_places_from_the_projects_top_folder() {
     repo.write("src/a.rs", "fn main() {}\n");
     let src = repo.path().join("src");
     let args = [
-        "step", "add", "--at", "./a.rs:4", "--file", "../b.rs", "--", "text",
+        "step", "add", "--at", "./a.rs:4", "--at", "../b.rs", "--", "text",
     ];
     let o = repo.run(&src, &args, &[], "");
     assert!(o.status.success(), "{}", err(&o));
@@ -239,8 +261,13 @@ fn add_writes_its_places_from_the_projects_top_folder() {
         .into_iter()
         .find(|n| n.id == out(&o).trim())
         .unwrap();
-    assert_eq!(note.tag("at"), Some("src/a.rs:4"));
-    assert_eq!(note.tag("file"), Some("b.rs"));
+    let at: Vec<&str> = note
+        .tags
+        .iter()
+        .filter(|t| t[0] == "at")
+        .map(|t| t[1].as_str())
+        .collect();
+    assert_eq!(at, ["src/a.rs:4", "b.rs"]);
 }
 
 /// `done` says on stderr that a direction check is due each time 5 more steps under a trail are done
@@ -275,37 +302,47 @@ fn done_says_a_direction_check_is_due_every_five_done_steps_of_a_trail() {
     );
 }
 
-/// `done` carries `--path` and `--pitfall` as tags: `tree --full` prints them under the proof, and `read`
-/// prints each pitfall of an active trail's tree under the trail (`spec/trails/12-steps.md`, "The
-/// commands"; `spec/trails/11-cli.md`, "Commands").
+/// `done --pitfall` writes the pitfall as a decision at the step's place, which `read --at` gives in a
+/// later trail; with no place, as a rule of the step's trail (`spec/trails/12-steps.md`, "The commands").
 #[test]
-fn done_carries_a_path_and_a_pitfall_that_tree_and_read_print() {
+fn done_writes_a_pitfall_as_a_decision_at_the_steps_place() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the trail"]);
-    let part = add(&repo, &["--under", &trail[..8], "--", "the part"]);
-    let args = [
-        "step",
-        "done",
-        &part[..8],
-        "--path",
-        "test first",
-        "--pitfall",
-        "the fixture needs --yes",
-        "--",
-        "it passes",
-    ];
-    let o = cli(&repo, &args);
-    assert!(o.status.success(), "{}", err(&o));
-    let full = out(&cli(&repo, &["tree", &trail[..8], "--full"]));
-    let lines: Vec<&str> = full.lines().collect();
-    assert_eq!(lines[2], "    done it passes", "{full}");
-    assert_eq!(lines[3], "    path test first", "{full}");
-    assert_eq!(lines[4], "    pitfall the fixture needs --yes", "{full}");
-    let read = out(&cli(&repo, &["read"]));
-    let lines: Vec<&str> = read.lines().collect();
-    assert_eq!(
-        lines[1],
-        format!("  pitfall {} the fixture needs --yes", &part[..8]),
-        "{read}"
+    let placed = add(
+        &repo,
+        &["--under", &trail[..8], "--at", "src/a.rs", "--", "placed"],
+    );
+    let loose = add(&repo, &["--under", &trail[..8], "--", "loose"]);
+    for (step, pitfall) in [
+        (&placed, "the fixture needs --yes"),
+        (&loose, "wait a second"),
+    ] {
+        let o = cli(
+            &repo,
+            &[
+                "step",
+                "done",
+                &step[..8],
+                "--pitfall",
+                pitfall,
+                "--",
+                "it passes",
+            ],
+        );
+        assert!(o.status.success(), "{}", err(&o));
+        assert_eq!(out(&o).lines().count(), 2, "{}", out(&o));
+    }
+    let rules = out(&cli(&repo, &["tree", &trail[..8]]));
+    assert!(
+        rules.contains("  rule ") && rules.contains("wait a second"),
+        "{rules}"
+    );
+    support::finish(&repo, &trail[..8]);
+    let later = out(&cli(&repo, &["read", "--at", "src/a.rs"]));
+    assert!(
+        later
+            .lines()
+            .any(|l| l.contains("at:src/a.rs the fixture needs --yes")),
+        "{later}"
     );
 }

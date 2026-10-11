@@ -8,20 +8,17 @@ pub(crate) struct Args {
     pub json: bool,
     pub help: bool,
     pub full: bool,
+    pub all: bool,
     pub new: bool,
     pub words: Vec<String>,
     pub text: Option<String>,
-    pub at: Option<String>,
     pub places: Vec<String>,
     pub under: Option<String>,
     pub fixes: Option<String>,
-    pub follows: Option<String>,
     pub scope: Option<String>,
     pub replaces: Option<String>,
-    pub files: Vec<String>,
     pub check: Option<String>,
     pub like: Option<String>,
-    pub path: Option<String>,
     pub pitfall: Option<String>,
 }
 
@@ -47,21 +44,15 @@ impl Args {
                 "--json" => parsed.json = true,
                 "--help" => parsed.help = true,
                 "--full" => parsed.full = true,
+                "--all" => parsed.all = true,
                 "--new" => parsed.new = true,
-                "--at" => {
-                    let place = value(arg, rest.next())?;
-                    parsed.places.push(place.clone());
-                    parsed.at = Some(place);
-                }
+                "--at" => parsed.places.push(value(arg, rest.next())?),
                 "--under" => parsed.under = Some(value(arg, rest.next())?),
                 "--fixes" => parsed.fixes = Some(value(arg, rest.next())?),
-                "--follows" => parsed.follows = Some(value(arg, rest.next())?),
                 "--scope" => parsed.scope = Some(value(arg, rest.next())?),
                 "--replaces" => parsed.replaces = Some(value(arg, rest.next())?),
-                "--file" => parsed.files.push(value(arg, rest.next())?),
                 "--check" => parsed.check = Some(value(arg, rest.next())?),
                 "--like" => parsed.like = Some(value(arg, rest.next())?),
-                "--path" => parsed.path = Some(value(arg, rest.next())?),
                 "--pitfall" => parsed.pitfall = Some(value(arg, rest.next())?),
                 flag if flag.starts_with("--") => {
                     bad.get_or_insert(Failure::usage(format!("{flag} is not a flag")));
@@ -73,6 +64,14 @@ impl Args {
             Some(failure) if !parsed.help => Err(failure),
             _ => Ok(parsed),
         }
+    }
+
+    /// The id after the words of `command`; a usage error when it is absent.
+    pub fn id(&self, command: &str) -> Result<&str, Failure> {
+        self.words
+            .get(command.split(' ').count())
+            .map(String::as_str)
+            .ok_or_else(|| Failure::usage(format!("{command} needs an id")))
     }
 
     /// The text after `--`; a usage error with `missing` when it is absent or blank.

@@ -1,10 +1,9 @@
 //! `celis tree`: a trail with its state, its rules and the steps under it.
 
-use super::{Args, Command};
+use super::{Args, Command, Snapshot};
 use crate::grade::took;
 use crate::id::short;
-use crate::steps::{ACTIVE, DROPPED, EXPIRED};
-use crate::{Decisions, Failure, Grade, Project, Step, Steps};
+use crate::{Decisions, Failure, Grade, Project, State, Status, Step, Steps};
 use celis_wire::Note;
 use serde_json::json;
 use std::io::Write;
@@ -19,28 +18,25 @@ impl Command {
         project: &Project,
     ) -> Result<(), Failure> {
         let id = args.words.get(1);
+        if args.all && id.is_some() {
+            return Err(Failure::usage("tree takes an id or --all, not both"));
+        }
         if !self.held()? {
             return id.map_or(Ok(()), |id| Err(Failure::no_step(id)));
         }
         let store = self.store()?;
-        let records = store.records();
-        let now = super::now();
-        let steps = Steps {
-            records: &records,
-            now,
-        };
-        let decisions = Decisions {
-            records: &records,
-            account: store.account().pubkey(),
-        };
-        let today = midnight(now);
-        let chosen: Vec<&Note> = match id {
-            Some(id) => vec![steps.find(id)?],
-            None => steps
+        let snapshot = Snapshot::of(&store);
+        let steps = snapshot.steps();
+        let decisions = snapshot.decisions();
+        let today = midnight(snapshot.now);
+        let chosen: Vec<&Note> = match (id, args.all) {
+            (Some(id), _) => vec![steps.find(id)?],
+            (None, true) => steps.roots().into_iter().rev().collect(),
+            (None, false) => steps
                 .trails(&project.id)
                 .into_iter()
                 .rev()
-                .filter(|n| steps.state(n) == ACTIVE || steps.newest(n) >= today)
+                .filter(|n| steps.state(n) == State::Active || steps.newest(n) >= today)
                 .collect(),
         };
         let tree = Tree {
@@ -49,9 +45,10 @@ impl Command {
             styled: self.styled(),
             full: args.full,
             fold: id.is_none() && !args.full,
+            all: args.all,
             width: self.columns(),
         };
-        if tree.styled && id.is_none() && !args.json && !chosen.is_empty() {
+        if tree.styled && id.is_none() && !args.all && !args.json && !chosen.is_empty() {
             super::put(out, &tree.paint(BOLD, &project.name))?;
         }
         tree.print(&chosen, "trail", args.json, out)
@@ -60,13 +57,14 @@ impl Command {
 
 /// The steps and decisions a tree is printed from, and how: styled, in colour with branch lines and dim
 /// details in columns; full, with the lines under each step; fold, with each trail that is not active as
-/// one line; else each line cut to `width`.
+/// one line; all, by day with each trail's project; else each line cut to `width`.
 pub(super) struct Tree<'a> {
     pub steps: &'a Steps<'a>,
     pub decisions: &'a Decisions<'a>,
     pub styled: bool,
     pub full: bool,
     pub fold: bool,
+    pub all: bool,
     pub width: Option<usize>,
 }
 
@@ -81,7 +79,8 @@ enum Line {
 }
 
 impl Tree<'_> {
-    /// Prints each step of `notes` as `trail` gives it, the details of all their rows in the same columns.
+    /// Prints each step of `notes` as `trail` gives it, the details of all their rows in the same columns;
+    /// with `all`, each day's steps after a line with the day.
     pub fn print(
         &self,
         notes: &[&Note],
@@ -90,14 +89,20 @@ impl Tree<'_> {
         out: &mut dyn Write,
     ) -> Result<(), Failure> {
         let mut lines = vec![];
+        let mut last = None;
         for note in notes {
+            let day = day(note.created_at);
+            if self.all && !json && last.as_ref() != Some(&day) {
+                lines.push(Line::Text(self.paint(BOLD, &day)));
+                last = Some(day);
+            }
             self.trail(note, key, json, &mut lines);
         }
         self.show(lines, out)
     }
 
-    /// Adds the step `note` with its state, its proof and grade when done, the trail it follows, and its
-    /// rules, then the steps under it. With `json`, its object is named `key`.
+    /// Adds the step `note` with its state, its proof and grade when done, and its rules, then the steps
+    /// under it; styled, a first ask with its text stands on its line. With `json`, its object is `key`.
     fn trail(&self, note: &Note, key: &str, json: bool, lines: &mut Vec<Line>) {
         let Some(step) = self.steps.step(note) else {
             return;
@@ -105,19 +110,18 @@ impl Tree<'_> {
         let state = self.steps.state(note);
         let done = self.steps.done(&note.id);
         let proof = done.map(|d| d.content.clone());
-        let (path, pitfall) = learned(done);
         let grade = self.steps.grade(note);
         let reason = self.steps.dropped(&note.id).map(|d| d.content.clone());
         if json {
             let head = json!({"id": note.id, "created_at": note.created_at,
-                "project": step.anchor.project, "content": step.content, "state": state,
-                "links": step.links(), "session": step.session, "proof": proof, "path": path,
-                "pitfall": pitfall, "grade": grade.as_ref().map(|g| g.value()),
+                "project": step.anchor.project, "content": step.content, "state": state.text(),
+                "links": step.links(), "places": step.places, "session": step.session, "proof": proof,
+                "grade": grade.as_ref().map(|g| g.value()),
                 "reason": reason});
             lines.push(Line::Text(json!({ key: head }).to_string()));
-            return self.under(&note.id, 0, "", json, lines);
+            return self.under(self.steps.under(&note.id), 0, "", json, lines);
         }
-        let folded = self.fold && state != ACTIVE;
+        let folded = self.fold && state != State::Active;
         let count = self.steps.tree(note).len() - 1;
         let steps = match (folded, count) {
             (false, _) | (true, 0) => None,
@@ -126,19 +130,19 @@ impl Tree<'_> {
         };
         let line = match self.styled {
             true => {
-                let mark = match state {
-                    ACTIVE => "●",
-                    DROPPED => "✗",
-                    EXPIRED => "!",
-                    _ => "✓",
+                let (mark, colour) = trail_look(state);
+                let project = match self.all {
+                    true => format!("{} ", self.paint(DIM, &step.anchor.name)),
+                    false => String::new(),
                 };
-                let lead = format!("{} {} ", self.paint(colour(state), mark), self.id(note));
+                let lead = format!("{} {} {project}", self.paint(colour, mark), self.id(note));
                 let ran = match state {
-                    ACTIVE => self.steps.now,
+                    State::Active => self.steps.now,
                     _ => self.steps.newest(note),
                 };
                 let note_cell: Vec<String> = [
-                    (state != ACTIVE && state != "reached alone").then(|| state.to_string()),
+                    (state != State::Active && state != State::ReachedAlone)
+                        .then(|| state.text().to_string()),
                     steps,
                 ]
                 .into_iter()
@@ -148,7 +152,7 @@ impl Tree<'_> {
                     lead,
                     title: self.paint(BOLD, step.title()),
                     cells: [
-                        step.at.as_deref().map(last),
+                        step.at().map(last),
                         (!note_cell.is_empty()).then(|| note_cell.join(" · ")),
                         Some(took(ran.saturating_sub(note.created_at))),
                         Some(clock(note.created_at, self.steps.now)),
@@ -156,7 +160,7 @@ impl Tree<'_> {
                 }
             }
             false => {
-                let mut tail = format!(" · {state}");
+                let mut tail = format!(" · {}", state.text());
                 if let Some(steps) = steps {
                     tail.push_str(&format!(" · {steps}"));
                 }
@@ -168,22 +172,19 @@ impl Tree<'_> {
         if folded {
             return;
         }
-        if let Some(past) = step
-            .follows
-            .as_deref()
-            .and_then(|id| self.steps.find(id).ok())
-            .and_then(|past| Some((past, self.steps.step(past)?)))
-        {
-            let (past, step) = past;
-            self.put(
-                lines,
-                &format!("  follows {} {}", short(&past.id), step.title()),
-            );
-        }
         for (rule, decision) in self.decisions.rules(&step.anchor.project, &note.id) {
             self.put(lines, &decision.rule(rule));
         }
-        self.under(&note.id, 0, "", json, lines)
+        let mut notes = self.steps.under(&note.id);
+        let twin = notes
+            .first()
+            .and_then(|n| self.steps.step(n))
+            .is_some_and(|ask| self.styled && ask.content == step.content);
+        if twin {
+            let ask = notes.remove(0);
+            notes.splice(0..0, self.steps.under(&ask.id));
+        }
+        self.under(notes, 0, "", json, lines)
     }
 
     /// Prints `lines`, each row's details in columns at the right edge of the width, or after the widest
@@ -260,10 +261,16 @@ impl Tree<'_> {
         Ok(())
     }
 
-    /// Adds the steps under the step `id` at `depth`, each followed by its own; styled, after the branch
-    /// lines `branch` of the steps above.
-    fn under(&self, id: &str, depth: usize, branch: &str, json: bool, lines: &mut Vec<Line>) {
-        let notes = self.steps.under(id);
+    /// Adds the steps `notes` at `depth`, each followed by its own; styled, after the branch lines
+    /// `branch` of the steps above.
+    fn under(
+        &self,
+        notes: Vec<&Note>,
+        depth: usize,
+        branch: &str,
+        json: bool,
+        lines: &mut Vec<Line>,
+    ) {
         let count = notes.len();
         for (n, note) in notes.into_iter().enumerate() {
             let (fork, below) = match n + 1 == count {
@@ -276,38 +283,35 @@ impl Tree<'_> {
             };
             let done = self.steps.done(&note.id);
             let proof = done.map(|d| d.content.clone());
-            let (path, pitfall) = learned(done);
             let grade = self.steps.grade(note);
             let reason = self.steps.dropped(&note.id).map(|d| d.content.clone());
-            let status = self.steps.status(&note.id);
+            let status = match self.steps.status(&note.id) {
+                Status::Working | Status::Open if self.steps.ended(self.steps.trail(note)) => {
+                    Status::Expired
+                }
+                status => status,
+            };
             if json {
                 let mut value = step.value(note);
-                value["state"] = json!(status);
+                value["state"] = json!(status.text());
                 value["proof"] = json!(proof);
-                value["path"] = json!(path);
-                value["pitfall"] = json!(pitfall);
                 value["grade"] = json!(grade.as_ref().map(|g| g.value()));
                 value["reason"] = json!(reason);
                 lines.push(Line::Text(json!({ "step": value }).to_string()));
             } else {
-                let mark = match status {
-                    "done" => "✓",
-                    DROPPED => "✗",
-                    "working" => "◐",
-                    _ => "○",
-                };
+                let (mark, colour) = step_look(status);
                 let (line, pad) = match self.styled {
                     true => {
                         let lead = format!(
                             "{}{} {} ",
                             self.paint(DIM, &format!("  {branch}{fork}")),
-                            self.paint(colour(status), mark),
+                            self.paint(colour, mark),
                             self.id(note)
                         );
                         let start = self.steps.started(&note.id);
                         let time = match (&grade, start) {
                             (Some(grade), _) => Some(took(grade.took)),
-                            (None, Some(start)) if status == "working" => {
+                            (None, Some(start)) if status == Status::Working => {
                                 Some(took(self.steps.now.saturating_sub(start.created_at)))
                             }
                             _ => None,
@@ -316,7 +320,7 @@ impl Tree<'_> {
                             lead,
                             title: step.title().to_string(),
                             cells: [
-                                step.at.as_deref().map(last),
+                                step.at().map(last),
                                 step.fixes
                                     .as_deref()
                                     .map(|f| format!("↳ fixes {}", short(f))),
@@ -335,11 +339,11 @@ impl Tree<'_> {
                 lines.push(line);
                 self.closing(&step, done, &grade, &reason, &pad, lines);
             }
-            self.under(&note.id, depth + 1, &next, json, lines);
+            self.under(self.steps.under(&note.id), depth + 1, &next, json, lines);
         }
     }
 
-    /// Adds under `step`, after `pad`, the detail of its text, its proof, path, pitfall and grade when
+    /// Adds under `step`, after `pad`, the detail of its text, its proof and grade when
     /// `done`, or its reason when dropped.
     fn closing(
         &self,
@@ -356,9 +360,6 @@ impl Tree<'_> {
         let mut lines: Vec<String> = step.detail().map(|l| format!("{pad}    {l}")).collect();
         if let (Some(done), Some(grade)) = (done, grade) {
             lines.push(format!("{pad}    done {}", done.content));
-            let (path, pitfall) = learned(Some(done));
-            lines.extend(path.map(|p| format!("{pad}    path {p}")));
-            lines.extend(pitfall.map(|p| format!("{pad}    pitfall {p}")));
             lines.push(format!("{pad}    {}", grade.line()));
         }
         if let Some(reason) = reason {
@@ -371,10 +372,7 @@ impl Tree<'_> {
     /// the line fits the width.
     fn line(&self, step: &Step, note: &Note, lead: &str, tail: &str) -> String {
         let head = format!("{lead}{} [{}] ", short(&note.id), step.anchor.name);
-        let place = step
-            .at
-            .as_ref()
-            .map_or(String::new(), |at| format!(" · {at}"));
+        let place = step.at().map_or(String::new(), |at| format!(" · {at}"));
         let tail = format!("{place}{tail}");
         let text = match (self.full, self.width) {
             (false, Some(width)) => {
@@ -440,12 +438,6 @@ fn room(widths: &[usize; 4]) -> usize {
     }
 }
 
-/// The path and the pitfall that the done record `done` carries.
-fn learned(done: Option<&Note>) -> (Option<String>, Option<String>) {
-    let tag = |name: &str| done.and_then(|d| d.tag(name)).map(str::to_string);
-    (tag("path"), tag("pitfall"))
-}
-
 /// The last part of the place `at`: a file's name with its line, a folder's name, or a URL's last part.
 fn last(at: &str) -> String {
     let at = at.trim_end_matches('/');
@@ -463,6 +455,12 @@ fn clock(at: u64, now: u64) -> String {
             then.tm_mday
         ),
     }
+}
+
+/// The local day of `at`, as `Oct 9`.
+fn day(at: u64) -> String {
+    let tm = local(at);
+    format!("{} {}", MONTHS[tm.tm_mon.clamp(0, 11) as usize], tm.tm_mday)
 }
 
 /// The time of the local midnight that starts the day of `now`.
@@ -514,13 +512,24 @@ fn cut(line: &str, width: usize) -> String {
     kept
 }
 
-/// The colour of a step's or a trail's state.
-fn colour(state: &str) -> &'static str {
+/// The mark and colour of a trail in `state`.
+fn trail_look(state: State) -> (&'static str, &'static str) {
     match state {
-        "done" | "reached alone" => "32",
-        DROPPED | EXPIRED => "31",
-        "working" | ACTIVE => "33",
-        "reached with help" => "36",
-        _ => "39",
+        State::Active => ("●", "33"),
+        State::ReachedAlone => ("✓", "32"),
+        State::ReachedWithHelp => ("✓", "36"),
+        State::Dropped => ("✗", "31"),
+        State::Expired => ("!", "31"),
+    }
+}
+
+/// The mark and colour of a step in `status`.
+fn step_look(status: Status) -> (&'static str, &'static str) {
+    match status {
+        Status::Open => ("○", "39"),
+        Status::Working => ("◐", "33"),
+        Status::Done => ("✓", "32"),
+        Status::Dropped => ("✗", "31"),
+        Status::Expired => ("!", "31"),
     }
 }

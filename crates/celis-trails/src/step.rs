@@ -4,17 +4,15 @@ use crate::Anchor;
 use anyhow::Result;
 use celis_wire::{Account, Note};
 
-/// One part of the work on its project: the step it is a part of, the done step it fixes, the past trail
-/// it follows, the place the work goes, the files it may change, the check that proves it, the session of
-/// a trail, and the words. A step under no other is a trail.
+/// One part of the work on its project: the step it is a part of, the done step it fixes, the places the
+/// work goes, the check that proves it, the session that wrote it, and the words. A step under no other
+/// is a trail.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Step {
     pub anchor: Anchor,
     pub under: Option<String>,
     pub fixes: Option<String>,
-    pub follows: Option<String>,
-    pub at: Option<String>,
-    pub files: Vec<String>,
+    pub places: Vec<String>,
     pub check: Option<String>,
     pub session: Option<String>,
     pub content: String,
@@ -27,9 +25,7 @@ impl Step {
         let mut tags = self.anchor.tags();
         tags.extend(self.under.iter().map(|u| tag("under", u)));
         tags.extend(self.fixes.iter().map(|f| tag("fixes", f)));
-        tags.extend(self.follows.iter().map(|f| tag("follows", f)));
-        tags.extend(self.at.iter().map(|a| tag("at", a)));
-        tags.extend(self.files.iter().map(|f| tag("file", f)));
+        tags.extend(self.places.iter().map(|p| tag("at", p)));
         tags.extend(self.check.iter().map(|c| tag("check", c)));
         tags.extend(self.session.iter().map(|s| tag("session", s)));
         tags.extend([
@@ -54,18 +50,18 @@ impl Step {
         let project = note.tag("I")?.strip_prefix("project:")?.to_string();
         let name = note.tag("project").unwrap_or_default().to_string();
         let owned = |name: &str| note.tag(name).map(str::to_string);
+        let tagged = |name: &str| {
+            note.tags
+                .iter()
+                .filter(|t| t.len() >= 2 && t[0] == name)
+                .map(|t| t[1].clone())
+                .collect::<Vec<_>>()
+        };
         Some(Step {
             anchor: Anchor { project, name },
             under: owned("under"),
             fixes: owned("fixes"),
-            follows: owned("follows"),
-            at: owned("at"),
-            files: note
-                .tags
-                .iter()
-                .filter(|t| t.len() >= 2 && t[0] == "file")
-                .map(|t| t[1].clone())
-                .collect(),
+            places: [tagged("at"), tagged("file")].concat(),
             check: owned("check"),
             session: owned("session"),
             content: note.content.clone(),
@@ -79,23 +75,18 @@ impl Step {
             "created_at": note.created_at,
             "project": self.anchor.project,
             "links": self.links(),
-            "at": self.at,
-            "files": self.files,
+            "places": self.places,
             "check": self.check,
             "content": self.content,
         })
     }
 
-    /// The `--json` links of this step: its `under`, `fixes` and `follows`, in that order.
+    /// The `--json` links of this step: its `under` and `fixes`, in that order.
     pub fn links(&self) -> serde_json::Value {
-        let links: Vec<serde_json::Value> = [
-            ("under", &self.under),
-            ("fixes", &self.fixes),
-            ("follows", &self.follows),
-        ]
-        .into_iter()
-        .filter_map(|(kind, to)| Some(serde_json::json!({"to": to.as_ref()?, "kind": kind})))
-        .collect();
+        let links: Vec<serde_json::Value> = [("under", &self.under), ("fixes", &self.fixes)]
+            .into_iter()
+            .filter_map(|(kind, to)| Some(serde_json::json!({"to": to.as_ref()?, "kind": kind})))
+            .collect();
         serde_json::Value::Array(links)
     }
 
@@ -113,10 +104,15 @@ impl Step {
     pub fn line(&self, note: &Note) -> String {
         let id: String = crate::id::short(&note.id);
         let mut line = format!("{} [{}] {}", id, self.anchor.name, self.title());
-        if let Some(at) = &self.at {
+        if let Some(at) = self.at() {
             line.push_str(&format!(" · {at}"));
         }
         line
+    }
+
+    /// The first place of this step, which its line shows.
+    pub fn at(&self) -> Option<&str> {
+        self.places.first().map(String::as_str)
     }
 }
 

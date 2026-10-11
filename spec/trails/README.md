@@ -32,7 +32,9 @@ The conventions in `spec/AGENTS.md` apply here unchanged.
 | 1985 with `start` in `celis.step` | kind: a start (NIP-32) | 12 |
 | 1985 with `steer` in `celis.step` | kind: a steer (NIP-32) | 12 |
 | 1985 with `drop` in `celis.step` | kind: a drop (NIP-32) | 12 |
-| `under` · `fixes` · `follows` · `at` · `file` · `check` | step tags | 12 |
+| 1985 with `edit` in `celis.step` | kind: an edit (NIP-32) | 12 |
+| 1985 with `prompt` in `celis.step` | kind: a prompt while no step works (NIP-32) | 14 |
+| `under` · `fixes` · `at` · `check` | step tags; an old `file` reads as an `at` | 12 |
 | `figma:<key>` · `web:<host>` | project id of a step outside git | 12 |
 | `no-step` · `closed` · `open-steps` · `check-failed` | errors | 12 |
 

@@ -41,16 +41,16 @@ impl<'a> Decisions<'a> {
         crate::id::find(live, id).ok_or_else(|| Failure::no_decision(id))
     }
 
-    /// The live decisions of `project` at `place`: those whose place, without its `:<line>`, is `place`
-    /// or lies under it.
+    /// The live decisions of `project` at `place`: those whose place, without its `:<line>`, is `place`,
+    /// lies under it, or is a folder that holds it.
     pub fn at(&self, project: &str, place: &str) -> Vec<(&'a Note, Decision)> {
-        let place = place.trim_end_matches('/');
+        let place = path(place).trim_end_matches('/');
         self.live(project)
             .into_iter()
             .filter(|(_, d)| match &d.scope {
                 Scope::At(at) => {
                     let path = path(at);
-                    path == place || under(path, place)
+                    path == place || under(path, place) || under(place, path)
                 }
                 _ => false,
             })

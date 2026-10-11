@@ -180,13 +180,8 @@ fn read_with_like_prints_the_past_trails_after_the_decisions() {
     let cents = decision(&repo, project(&id), &account(), (None, None), WORK, t + 2);
     let lines = lines_of(&repo, &repo.path(), &["read", "--like", "Build a page"]);
     assert_eq!(lines[0], format!("{} project {WORK}", short(&cents.id)));
-    assert_eq!(
-        lines[1],
-        format!(
-            "{} [repo] Build the Vendors page · reached alone",
-            short(&past.id)
-        )
-    );
+    let head = format!("{} [repo] Build the Vendors page · took ", short(&past.id));
+    assert!(lines[1].starts_with(&head), "{lines:?}");
 }
 
 /// `read` writes no record (`spec/trails/11-cli.md`, "Commands").

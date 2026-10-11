@@ -14,9 +14,7 @@ fn step(text: &str, at: u64) -> Note {
         },
         under: None,
         fixes: None,
-        follows: None,
-        at: None,
-        files: Vec::new(),
+        places: Vec::new(),
         check: None,
         session: None,
         content: text.into(),
@@ -28,8 +26,6 @@ fn step(text: &str, at: u64) -> Note {
 fn done(id: &str, proof: &str, at: u64) -> Note {
     let mark = Mark::Done {
         proof: proof.into(),
-        path: None,
-        pitfall: None,
     };
     mark.record(&account(), id, at).unwrap()
 }

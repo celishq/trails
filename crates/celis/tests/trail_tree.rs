@@ -316,3 +316,61 @@ fn tree_prints_the_short_tree_and_the_full_tree_with_full() {
     assert!(first.ends_with("… · active"), "{cut}");
     assert!(cut.lines().all(|l| l.chars().count() <= 30), "{cut}");
 }
+
+/// `tree --all` prints every trail in the store, of every project, newest first, each day's trails
+/// after a line with the day (`spec/trails/14-trails.md`, "The commands").
+#[test]
+fn tree_all_prints_every_trail_of_every_project_by_day() {
+    let repo = Repo::new();
+    let past = support::step_note(
+        &repo,
+        &support::account(),
+        None,
+        "an old trail",
+        support::now() - 2 * support::DAY,
+    );
+    let shop = repo.other("shop");
+    let o = repo.run(&shop, &["step", "add", "--", "a shop trail"], &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+    let o = cli(&repo, &["tree"]);
+    assert!(!out(&o).contains("an old trail"), "{}", out(&o));
+    let o = cli(&repo, &["tree", "--all"]);
+    assert!(o.status.success(), "{}", err(&o));
+    let text = out(&o);
+    let lines: Vec<&str> = text.lines().collect();
+    let at = |what: &str| lines.iter().position(|l| l.contains(what));
+    let (shop, old) = (at("a shop trail").unwrap(), at(&past.id[..8]).unwrap());
+    assert!(shop < old, "{text}");
+    for trail in [shop, old] {
+        assert!(!lines[trail - 1].contains('['), "{text}");
+    }
+    assert!(lines[shop].contains("[shop]"), "{text}");
+    refusal(
+        &cli(&repo, &["tree", &past.id[..8], "--all", "--json"]),
+        2,
+        "usage",
+    );
+}
+
+/// The styled tree prints a trail's first ask on the trail's line when their texts match, and the ask's
+/// steps one level up; the plain tree prints both (`spec/trails/14-trails.md`, "The commands").
+#[test]
+fn the_styled_tree_folds_a_trails_twin_first_ask() {
+    let repo = Repo::new();
+    let env = [("CLAUDE_CODE_SESSION_ID", "s1")];
+    let o = repo.run(&repo.path(), &["step", "add", "--", "the trail"], &env, "");
+    let ids: Vec<String> = out(&o).lines().map(str::to_string).collect();
+    let (ask, trail) = (&ids[0], &ids[1]);
+    let part = add(&repo, &["--under", &ask[..8], "--", "the part"]);
+    let styled = [("CLICOLOR_FORCE", "1")];
+    let o = repo.run(&repo.path(), &["tree", &trail[..8]], &styled, "");
+    let text = out(&o);
+    assert!(!text.contains(&ask[4..8]), "{text}");
+    let line = text.lines().find(|l| l.contains("the part")).unwrap();
+    assert!(line.starts_with("\u{1b}[2m  └─ "), "{text}");
+    let plain = out(&cli(&repo, &["tree", &trail[..8]]));
+    assert!(
+        plain.contains(&ask[..8]) && plain.contains(&part[..8]),
+        "{plain}"
+    );
+}

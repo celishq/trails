@@ -2,9 +2,10 @@
 
 mod support;
 
+use celis_wire::Note;
 use std::path::Path;
 use std::time::Duration;
-use support::{add, cli, err, objects, out, Repo};
+use support::{account, add, cli, done_note, err, now, objects, out, step_note, Repo};
 
 /// A done trail saying `text` in `folder`, with a done step under it, steered when `steered`.
 fn trail(repo: &Repo, folder: &Path, text: &str, steered: bool) -> String {
@@ -45,7 +46,38 @@ fn read_like_prints_the_done_trails_that_share_most_words_and_least_help() {
     assert_eq!(past, [settings, vendors.clone(), admin]);
     let o = cli(&repo, &["read", "--like", "Build the Vendors page"]);
     assert!(out(&o).contains(&format!(
-        "{} [repo] Build the Vendors page · reached alone",
+        "{} [repo] Build the Vendors page · took ",
         &vendors[..8]
     )));
+}
+
+/// `read --like` weighs each word by how few asks and trails hold it, so one rare shared word outranks
+/// two common ones. It finds a done ask under a trail that ended with no `done`, and prints it on one line
+/// (`spec/trails/14-trails.md`, "The past").
+#[test]
+fn read_like_ranks_rare_words_first_and_finds_done_asks() {
+    let repo = Repo::new();
+    let by = account();
+    let t = now() - 60 * 60;
+    let done = |under: Option<&Note>, text: &str, at: u64| {
+        let note = step_note(&repo, &by, under, text, at);
+        done_note(&repo, &by, &note, at + 1);
+        note
+    };
+    for (n, text) in [
+        "celis tree columns",
+        "celis tree colours",
+        "celis tree layout",
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        done(None, text, t + 10 * n as u64);
+    }
+    let ended = step_note(&repo, &by, None, "Polish the terminal", t + 40);
+    let watch = done(Some(&ended), "watch redraws on resize", t + 41);
+    let text = out(&cli(&repo, &["read", "--like", "celis tree watch"]));
+    let lines: Vec<&str> = text.lines().collect();
+    assert!(lines[0].starts_with(&watch.id[..8]), "{text}");
+    assert_eq!(lines.len(), 3, "{text}");
 }

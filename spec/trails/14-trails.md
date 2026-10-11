@@ -27,50 +27,33 @@ under it, and the steps under those, are its tree.
 ## Sessions
 
 A session is one run of an agent. Claude Code names it in `CLAUDE_CODE_SESSION_ID`, and a subagent shares
-it. Many sessions can work on one trail: each joins it, and the trail stays active while one of them works.
-The hooks write the person's prompts and the end of the session on the trails it joined.
+it. Many sessions can work on one trail. The hook writes the person's prompts on the session's trail.
 
 ```
-["session", "<$CLAUDE_CODE_SESSION_ID>"]     a trail's tag, optional: the session that started it
+["session", "<$CLAUDE_CODE_SESSION_ID>"]     a step's tag, optional: the session that wrote it
 
-join   kind 1985, a session joined the trail
-{ "kind": 1985, "content": "",
-  "tags": [["L", "celis.step"], ["l", "join", "celis.step"], ["e", "<trail id>"],
-           ["session", "<session>"]] }
-
-ask    kind 1985, a prompt while no step works
+prompt kind 1985, a prompt while no step works
 { "kind": 1985, "content": "<the prompt's first line, 200 characters at most>",
-  "tags": [["L", "celis.step"], ["l", "ask", "celis.step"], ["e", "<trail id>"]] }
-
-end    kind 1985, the session ended
-{ "kind": 1985, "content": "",
-  "tags": [["L", "celis.step"], ["l", "end", "celis.step"], ["e", "<trail id>"],
-           ["session", "<session>"]] }
+  "tags": [["L", "celis.step"], ["l", "prompt", "celis.step"], ["e", "<trail id>"]] }
 
 $CELIS_TRAIL    a step id, or a start of it: where `step add` with no `--under` puts the step
 ```
 
 **Rules**
 
-- `step add` with no `--under` MUST write a `session` tag with `$CLAUDE_CODE_SESSION_ID`, when it is set.
+- `step add` MUST write a `session` tag with `$CLAUDE_CODE_SESSION_ID` on each step, when it is set.
 - A trail with a session MUST hold each ask as a step under it, the first ask too. So `step add` MUST write
   the trail, then the ask under it with the same text, and print the ask's id first.
-- A session joins a trail when it starts it, and with a join. A session's join is live until it writes
-  an end on that trail. An end with no session ends every join.
-- A session's open trail MUST be the trail it joined last that is not done or dropped.
-- `step add` with no `--under`, `--follows` or `--new` MUST write the step under `$CELIS_TRAIL` when it is
-  set. Else, while the session has an open trail, it MUST write the step under it.
+- A session's open trail MUST be the trail of its newest step, while that trail is not done or dropped.
+- `step add` with no `--under` or `--new` MUST write the step under `$CELIS_TRAIL` when it is set.
+- Else, while the session has an open trail, it MUST write the step under it.
+- Else, with a session, it MUST write the step under the newest active trail of the project.
 - With `--new`, `step add` MUST write a new trail.
-- When `step add` writes a step into a trail its session has no live join on, it MUST write a join.
-- `join <id>` MUST write a join of the session on the trail of the step `<id>`, and print its id. With no
-  session, it MUST refuse with a usage error. It MUST refuse a done or dropped trail with `closed`.
 - `prompt` MUST read a hook's `{"session_id", "prompt"}` on stdin. While that session has an open trail,
   it MUST write the prompt on it, and print the record's id. Else it MUST write and print nothing.
-- The prompt MUST be a steer on the oldest working step of the trail. With no working step, it MUST be an
-  ask on the trail. Its text MUST be the prompt's first line, cut to 200 characters.
-- A reader MUST NOT count an ask as a steer.
-- `end` MUST read a hook's `{"session_id"}` on stdin. It MUST write an end on each open trail where the
-  session's join is live, and print their ids.
+- The prompt MUST be a steer on the oldest working step of the trail. With no working step, it MUST be a
+  prompt mark on the trail. Its text MUST be the prompt's first line, cut to 200 characters.
+- A reader MUST NOT count a prompt mark as a steer.
 
 **Examples**
 
@@ -78,10 +61,9 @@ $CELIS_TRAIL    a step id, or a start of it: where `step add` with no `--under` 
 CLAUDE_CODE_SESSION_ID=95e9be99 celis step add -- "Make the badges orange."    a trail, the ask under it
 CLAUDE_CODE_SESSION_ID=95e9be99 celis step add -- "Now the buttons too."       a step under it
 CLAUDE_CODE_SESSION_ID=95e9be99 celis step add --new -- "Fix the login page."  a second trail
-CLAUDE_CODE_SESSION_ID=4c1d22e0 celis join 3fa2c1d0                            another session joins
+CLAUDE_CODE_SESSION_ID=4c1d22e0 celis step add -- "Check the colours."        another session's step goes there
 CELIS_TRAIL=3fa2c1d0 celis step add -- "Check the badge on the phone."         a step of any agent there
 echo '{"session_id": "95e9be99", "prompt": "Use the shared Badge."}' | celis prompt
-echo '{"session_id": "95e9be99"}' | celis end
 ```
 
 ## Rules
@@ -102,8 +84,7 @@ celis decide --scope trail:4c1d22e0 -- "A senior pays 80% of the price, rounded 
 ## State
 
 A trail has no state record. Its state comes from its tree, so the person can see which tasks the agent
-reached alone. A trail ends when the last session that joined it ends. A trail with no live join ends 30
-minutes after the newest record of its tree.
+reached alone. A trail ends 30 minutes after the newest record of its tree.
 
 ```
 active              not done, dropped or ended
@@ -118,14 +99,14 @@ expired             ended with an open step under it
 - A reader MUST work out a trail's state from its tree, their `start`, `done`, `drop` and steer records,
   and the time.
 - The newest record of a tree MUST be the newest of its steps and the marks that name them.
-- While a join is live, a trail MUST end 12 hours after the newest record of its tree.
-- With no live join, a trail MUST end when an end is newer than that record, or 30 minutes after it.
+- A trail MUST end 30 minutes after the newest record of its tree.
 - A reader MUST NOT count a step of an ended trail as open.
 
 ## The commands
 
 ```
 celis tree [<step id>] [--full]   a trail, its rules and its tree; with no id, today's trails
+celis tree --all [--full]         every trail in the store, by day
 ```
 
 **Rules**
@@ -134,13 +115,17 @@ celis tree [<step id>] [--full]   a trail, its rules and its tree; with no id, t
   refuse an id no step has, with `no-step`.
 - `tree` with no id MUST print each trail of the working folder's project that is active or has a record
   from today, newest first. A day MUST start at midnight, local time.
+- `tree --all` MUST print every trail in the store, of every project, newest first, as `tree` with no id
+  prints them. Before the first trail of each day, it MUST print the day, as `Oct 9`.
+- `tree --all` with an id MUST refuse as a usage error.
+- With `--all`, the styled tree MUST print each trail's project name after its id, and no project line.
 - In the short tree with no id, a trail that is not active MUST print only its own line. Its line MUST end
   with ` · 1 step` or ` · <n> steps` when steps are under it.
-- `tree` MUST print the step with its state, the trail it follows, and its rules; `--full` adds its proof
+- `tree` MUST print the step with its state and its rules; `--full` adds its proof
   and grade when done. Then come the steps under it, oldest first, each followed by its own steps.
 - `tree` MUST mark a done step `✓`, a dropped one `✗`, a working one `◐`, and an open one `○` (CIP-12,
-  "Starting"). With `--full`, under a step come the lines of its text after its title (CIP-12, "Steps").
-  Then come the proof, path, pitfall and grade of a done step (CIP-12, "Grades"), or a dropped one's reason.
+  "Starting"). A step of an ended trail that is not done or dropped MUST be marked `!`, as `expired`. With `--full`, under a step come the lines of its text after its title (CIP-12, "Steps").
+  Then come the proof and grade of a done step (CIP-12, "Grades"), or a dropped one's reason.
 - `tree` MUST NOT write a record.
 - `tree` and `watch` MUST print the short tree, with no line under a step. With `--full`, they MUST
   print the full tree, with the proof, grade and reason lines.
@@ -153,6 +138,8 @@ celis tree [<step id>] [--full]   a trail, its rules and its tree; with no id, t
   carry the project name.
 - Each styled line of a step MUST start with its mark. A trail MUST be marked `●` when active, `✓` when
   reached, `✗` when dropped, and `!` when expired.
+- When a trail's first ask has the trail's text, the styled tree MUST NOT print the ask. It MUST print the
+  ask's steps first under the trail, then the trail's other asks.
 - The styled tree MUST draw a step under its parent with `├─` before its mark, and the last one with `└─`.
   A `│` MUST run from a step down to its next sibling.
 - A styled step line MUST end with dim details: the last part of its place and `↳ fixes <id, first 8>`.
@@ -173,23 +160,18 @@ tree  text  <id, first 8> [<project name>] <title> · <active | reached alone | 
             | expired>[ · <n> steps]
                 <the next line of its text>
                 done <proof>
-                path <path>
-                pitfall <pitfall>
                 <its grade>
                 dropped <reason>
-              follows <id, first 8> <the first line of that trail>
               rule <id, first 8> <text>
             <mark> <a step, as CIP-12 "The commands" gives it>    two spaces more for each level
                 <the next line of its text>
                 done <proof>
-                path <path>
-                pitfall <pitfall>
                 <its grade>
                 dropped <reason>
-      json  {"trail": {"id", "created_at", "project", "content", "state", "links", "proof", "path",
-            "pitfall", "grade", "reason"}}
-            · {"step": {<as CIP-12 "The commands" gives it>, "state": "done | dropped | working | open",
-            "proof", "path", "pitfall", "grade", "reason"}}, one a line
+      json  {"trail": {"id", "created_at", "project", "content", "state", "links", "places", "proof", "grade",
+            "reason"}}
+            · {"step": {<as CIP-12 "The commands" gives it>, "state": "done | dropped | working | open
+            | expired", "proof", "grade", "reason"}}, one a line
 ```
 
 **Examples**
@@ -219,21 +201,26 @@ The past shows how a task like a new one was done, so a new plan can follow the 
 
 **Rules**
 
-- `read --like` MUST print the done trails of every project that share a word with the text, 3 at most.
-  It MUST print each as `tree --full` prints it. With `--json`, the trail's object is named `past`.
-- The most shared words MUST come first, then the fewest steers and rework in the tree, then the newest.
+- `read --like` MUST print the past work of every project that shares a word with the text, 3 at most.
+- Past work MUST be a done ask, or a reached trail. An ask is a step right under a trail.
+- A trail with an ask of its own text MUST NOT count as past work, so the ask stands for it.
 - A word MUST be 4 or more letters or digits, in lower case.
-- `step add --follows <id>` MUST write a trail that follows the past trail `<id>`. It MUST refuse an id
-  no trail has, with `no-trail`. With `--under`, it MUST refuse as a usage error.
+- A word MUST weigh `ln(1 + (n - m + 0.5) / (m + 0.5))`. Here `n` counts the past work, and `m` the
+  past work that holds the word.
+- The highest sum of the shared words' weights MUST come first. Then come the fewest steers and rework
+  in its tree, then the newest.
+- Each MUST print as one line: its id, project, title and place, then its grade, else its state.
+  Under it come the rules of its trail, then the live decisions at its place.
+- With `--full`, each MUST print as `tree --full` prints it.
+- With `--json`, each object MUST be named `past`.
 
 ```
 celis read --like "Add an Invoices page from the frame"
-celis step add --follows 3fa2c1d0 -- "Add an Invoices page from the frame."
 ```
 
 ## Watching
 
-`watch` shows a trail while the agents work on it, so the person sees each step start and close.
+`watch` shows the trails while the agents work on them, so the person sees each step start and close.
 
 ```
 celis watch [<step id>] [--full]   a trail's tree, printed again on each change to the store
@@ -243,8 +230,8 @@ celis watch [<step id>] [--full]   a trail's tree, printed again on each change 
 
 - `watch <id>` MUST print the tree of the step `<id>` as `tree` prints it. It MUST refuse an id no step
   has, with `no-step`.
-- `watch` with no id MUST print the newest active trail of the working folder's project. When a newer
-  trail starts, it MUST print that one. With no active trail, it MUST print nothing until one starts.
+- `watch` with no id MUST print every active trail of every project, as `tree --all` prints them. With
+  no active trail, it MUST print nothing until one starts.
 - On a terminal, `watch` MUST print the tree again as soon as the terminal's width changes. It MUST print
   it again within one second after a time it shows changes.
 - `watch` MUST print the tree again within one second after a record lands in the store, and only when

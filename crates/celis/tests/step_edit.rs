@@ -42,6 +42,43 @@ fn edit_gives_a_step_new_text() {
     );
 }
 
+/// `edit --check` and `--at` give a step a new check and places, and keep its text; a one-line text
+/// changes only the title and keeps the detail (`spec/trails/12-steps.md`, "Editing").
+#[test]
+fn edit_changes_the_check_and_places_and_a_title_keeps_the_detail() {
+    let repo = Repo::new();
+    let args = [
+        "--at",
+        "a.rs",
+        "--check",
+        "false",
+        "--",
+        "Old title\nThe detail.",
+    ];
+    let step = add(&repo, &args);
+    let edit = |args: &[&str]| {
+        let mut all = vec!["step", "edit", &step[..8]];
+        all.extend(args);
+        let o = cli(&repo, &all);
+        assert!(o.status.success(), "{}", err(&o));
+    };
+    edit(&["--check", "true", "--at", "b.rs", "--at", "c.rs"]);
+    edit(&["--", "New title"]);
+    let tree = objects(&repo, &["tree", &step[..8]]);
+    assert_eq!(tree[0]["trail"]["content"], "New title\nThe detail.");
+    assert_eq!(
+        tree[0]["trail"]["places"],
+        serde_json::json!(["b.rs", "c.rs"])
+    );
+    let o = cli(&repo, &["step", "done", &step[..8], "--", "it passes"]);
+    assert!(o.status.success(), "{}", err(&o));
+    refusal(
+        &cli(&repo, &["step", "edit", &step[..8], "--json"]),
+        2,
+        "usage",
+    );
+}
+
 /// `step add` says on stderr when a session's step joins its trail (`spec/trails/12-steps.md`,
 /// "Editing").
 #[test]

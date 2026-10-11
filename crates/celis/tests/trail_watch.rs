@@ -6,7 +6,7 @@ use std::io::{BufRead, BufReader};
 use std::process::{Child, Command, Stdio};
 use std::sync::mpsc::{channel, Receiver};
 use std::time::{Duration, Instant};
-use support::{add, cli, err, refusal, Repo};
+use support::{add, cli, err, finish, refusal, Repo};
 
 /// A running `celis watch`, and the lines it printed so far.
 struct Watch {
@@ -73,6 +73,21 @@ impl Watch {
         }
         panic!("no tree holds {text:?}: {:?}", self.seen);
     }
+
+    /// Waits until the newest tree no longer holds `text`.
+    fn until_not(&mut self, text: &str) {
+        let start = Instant::now();
+        while start.elapsed() < Duration::from_secs(5) {
+            if self
+                .trees(Duration::from_millis(50))
+                .last()
+                .is_some_and(|t| !t.contains(text))
+            {
+                return;
+            }
+        }
+        panic!("every tree holds {text:?}: {:?}", self.seen);
+    }
 }
 
 impl Drop for Watch {
@@ -117,10 +132,11 @@ fn watch_prints_the_tree_again_when_it_changes() {
     assert_eq!(watch.trees(Duration::from_millis(1500)).len(), shown);
 }
 
-/// `watch` with no id prints nothing while no trail is active, then the newest active trail, and
-/// moves to a newer trail when one starts (`spec/trails/14-trails.md`, "Watching").
+/// `watch` with no id prints nothing while no trail is active, then every active trail of every
+/// project, newest first, and leaves out a trail once it is done (`spec/trails/14-trails.md`,
+/// "Watching").
 #[test]
-fn watch_with_no_id_follows_the_newest_active_trail() {
+fn watch_with_no_id_prints_every_active_trail_of_every_project() {
     let repo = Repo::new();
     let mut watch = Watch::start(&repo, &[]);
     assert!(
@@ -131,10 +147,15 @@ fn watch_with_no_id_follows_the_newest_active_trail() {
     let first = add(&repo, &["--", "the first trail"]);
     watch.until(&first[..8]);
     std::thread::sleep(Duration::from_millis(1100));
-    let second = add(&repo, &["--", "the second trail"]);
-    watch.until(&second[..8]);
-    let newest = watch.trees(Duration::from_millis(200)).pop().unwrap();
-    assert!(!newest.contains(&first[..8]), "{newest}");
+    let shop = repo.other("shop");
+    let o = repo.run(&shop, &["step", "add", "--", "the shop trail"], &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+    watch.until("[shop] the shop trail");
+    let both = watch.trees(Duration::from_millis(200)).pop().unwrap();
+    let at = |text: &str| both.find(text).unwrap_or_else(|| panic!("{both}"));
+    assert!(at("the shop trail") < at(&first[..8]), "{both}");
+    finish(&repo, &first[..8]);
+    watch.until_not(&first[..8]);
 }
 
 /// `watch` refuses an id no step has, with `no-step` (`spec/trails/14-trails.md`, "Watching").

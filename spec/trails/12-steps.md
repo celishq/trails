@@ -23,9 +23,7 @@ and the lines after it hold the detail.
     ["project", "<project name>"],
     ["under", "<id of the step it is a part of>"],                    optional
     ["fixes", "<id of a done step whose work it fixes>"],             optional
-    ["follows", "<id of the past trail whose path it follows>"],      optional, a trail only (CIP-14)
-    ["at", "<the place the work goes: file:line, a URL, any text>"],  optional
-    ["file", "<a file the work may change or create>"],               zero or more
+    ["at", "<a place the work goes: file:line, a URL, any text>"],   zero or more
     ["check", "<the command that proves the work>"],                  optional
     ["session", "<the session of a trail>"],                          optional, a trail only (CIP-14)
     ["L", "celis.step"],
@@ -38,8 +36,8 @@ and the lines after it hold the detail.
 **Rules**
 
 - A step MUST carry content, the anchor `project:<project id>` and the project name.
-- A step MAY carry one `under`, one `fixes`, one `follows`, one `at`, one `check`, and any number of
-  `file`.
+- A step MAY carry one `under`, one `fixes`, one `check`, and any number of `at`.
+- A reader MUST count each `file` tag of a step as a place, after its `at` places.
 - A reader MUST count a kind 1111 record as a step only when it carries the label `step` in
   `celis.step`. It MUST ignore tags it does not know.
 - A reader of decisions MUST NOT count a step as a decision (CIP-10, "Decisions").
@@ -60,7 +58,7 @@ A step names a project as CIP-10 "Projects" states. Outside git, the place of th
 
 ```
 project id   inside git: as CIP-10 "Projects" states
-             outside git, with an `at` that is a URL:
+             outside git, with a first place that is a URL:
                figma:<file key>   a figma.com URL, /file/<key>/… or /design/<key>/…
                web:<host>         any other URL
              else: as CIP-10 "Projects" states
@@ -69,7 +67,7 @@ project name the file name in a Figma URL, else the host, else as CIP-10 "Projec
 
 **Rules**
 
-- `step add` outside git, with an `at` that is a URL, MUST name the project of that URL.
+- `step add` outside git, with a first `--at` that is a URL, MUST name the project of that URL.
 - Two steps at the same Figma file MUST name the same project id, whatever the working folder.
 - Each step MUST carry the project name its own URL holds. Two steps of one project MAY carry two
   names.
@@ -102,14 +100,13 @@ dropped   a `drop` names the step
 
 ## Closing
 
-A step closes when it is done. A done step carries its proof, and what the next agent can learn from it.
+A step closes when it is done. A done step carries its proof. What cost time becomes a decision, so the
+next agent at that place reads it.
 
 ```json
 done   kind 1985, signed by an agent (NIP-32)
 { "kind": 1985, "content": "<the proof: the check that failed before and passes now>",
-  "tags": [["L", "celis.step"], ["l", "done", "celis.step"], ["e", "<step id>"],
-           ["path", "<the steps that worked>"],                         optional
-           ["pitfall", "<what cost time>"]] }                           optional
+  "tags": [["L", "celis.step"], ["l", "done", "celis.step"], ["e", "<step id>"]] }
 ```
 
 **Rules**
@@ -151,19 +148,23 @@ drop   kind 1985, signed by an agent (NIP-32)
 
 ## Editing
 
-An edit gives a step new text. A trail takes more asks as its session goes on, so its first text stops
-covering the work; the agent then edits it.
+An edit gives a step a new title or text, new places, or a new check. A trail takes more asks as its
+session goes on, so its first title stops covering the work; the agent then edits it.
 
 ```json
 edit   kind 1985, signed by an agent (NIP-32)
-{ "kind": 1985, "content": "<the new text: a title, then the detail>",
-  "tags": [["L", "celis.step"], ["l", "edit", "celis.step"], ["e", "<step id>"]] }
+{ "kind": 1985, "content": "<a new title, or a title and the detail; may be empty>",
+  "tags": [["L", "celis.step"], ["l", "edit", "celis.step"], ["e", "<step id>"],
+           ["at", "<a place>"],                                          zero or more
+           ["check", "<the command that proves the work>"]] }           optional
 ```
 
 **Rules**
 
-- A reader MUST read a step's text from its newest edit, else from the step.
-- A reader MUST ignore an edit with no content.
+- A reader MUST apply a step's edits oldest first.
+- An edit with one line of content MUST change only the title, and keep the detail.
+- An edit with more lines MUST replace the text. One with no content MUST keep the text.
+- An edit with `at` tags MUST replace the step's places. One with a `check` MUST replace its check.
 - `step add` MUST say when a session's step joins its trail. It MUST print `celis: the step joined the
   trail <id, first 8>; edit its title when it no longer covers the work.` on stderr.
 
@@ -183,14 +184,15 @@ The store is the only source of steps. A project that keeps `@todo` lines in its
 ## The commands
 
 ```
-celis step add [--under <id>] [--follows <id>] [--fixes <id>] [--at <place>] [--file <path>]... [--check <command>] [--new] -- <text>
+celis step add [--under <id>] [--fixes <id>] [--at <place>]... [--check <command>] [--new] -- <text>
                                                                leave a step
-celis step start <id>                                         take up a step
-celis step done <id> [--path <text>] [--pitfall <text>] -- <proof>
+celis step start <id>                                         take up a step, and see its decisions
+celis step done <id> [--pitfall <text>] -- <proof>
                                                               close a step with its proof
 celis step steer <id> -- <text>                                record what the person asked
 celis step drop <id> -- <reason>                              close a step whose work is no longer wanted
-celis step edit <id> -- <text>                                give a step new text
+celis step edit <id> [--at <place>]... [--check <command>] [-- <text>]
+                                                              give a step a new title, places or check
 ```
 
 **Rules**
@@ -200,15 +202,18 @@ celis step edit <id> -- <text>                                give a step new te
 - `add` MUST refuse empty text as a usage error.
 - `add` MUST refuse an `--under` or a `--fixes` that no step has, with `no-step`. It MUST refuse an
   `--under` step that is closed, with `closed`.
-- `add` MUST carry the whole ids of `--under` and `--fixes`, each `--file` and the `--check` as their tags.
-  It MUST write `--at` and each `--file` as CIP-10 "Places" states.
+- `add` MUST carry the whole ids of `--under` and `--fixes`, each `--at` and the `--check` as their tags.
+  It MUST write each `--at` as CIP-10 "Places" states.
 - `add` MUST NOT write a step when an open step of the same project and `under` has the same text. It
   MUST print the id of that step.
 - `start` MUST refuse an id no step has, with `no-step`, and a closed step, with `closed`. On a working
   step, it MUST write nothing and print the id of the step's first `start`.
+- `start` MUST then print the live decisions at the step's places (CIP-10, "Reading"),
+  each once.
 - `done` MUST refuse an id no step has, with `no-step`, and a closed step, with `closed`.
 - `done` MUST refuse an empty proof, as a usage error.
-- `done` MUST carry `--path` and `--pitfall` as their tags.
+- `done` with `--pitfall` MUST also write it as a decision on the step's project (CIP-10, "Decisions").
+- The scope of that decision MUST be `at:<the step's at>`, else `trail:<id of the step's trail>`.
 - `done` MUST refuse a step with an open step under it, with `open-steps`, and write nothing.
 - `done` MUST run the step's `check` in the project's top folder, when it has one. When the check fails,
   it MUST refuse with `check-failed`, print the end of the check's output, and write nothing.
@@ -220,17 +225,18 @@ celis step edit <id> -- <text>                                give a step new te
 - `drop` MUST refuse an id no step has, with `no-step`, and a closed step, with `closed`. It MUST refuse
   an empty reason as a usage error.
 - `drop` MUST write a drop for the step and for each open step under it, at any depth.
-- `edit` MUST refuse an id no step has, with `no-step`. It MUST refuse empty text as a usage error.
-- The JSON of a step MUST carry its `under`, `fixes` and `follows` as `links`, in that order. A step with
-  none of them MUST carry an empty `links`.
+- `edit` MUST refuse an id no step has, with `no-step`. It MUST refuse an edit with no text, `--at` or
+  `--check`, as a usage error. It MUST write each `--at` as CIP-10 "Places" states.
+- The JSON of a step MUST carry its `under` and `fixes` as `links`, in that order. A step with neither
+  MUST carry an empty `links`.
 - `add`, `start`, `done`, `steer`, `drop` and `edit` MUST print the id of each record they wrote, the step's own
   first. With `--json`, each prints `{"id"}`, one a line.
 
 ```
 text   <id, first 8> [<project name>] <title>               a step
-       <id, first 8> [<project name>] <title> · <at>         a step with an `at`
-json   {"id", "created_at", "project", "links": [{"to", "kind": "under | fixes | follows"}], "at",
-       "files": [], "check", "content"}
+       <id, first 8> [<project name>] <title> · <at>         a step with a place: its first
+json   {"id", "created_at", "project", "links": [{"to", "kind": "under | fixes"}], "places": [], "check",
+       "content"}
 ```
 
 **Examples**

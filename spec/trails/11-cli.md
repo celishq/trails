@@ -10,16 +10,15 @@ depends: [CIP-10]
 ## Commands
 
 ```
-celis read [--at <place>]... [--like <text>]          this project's active trails, open steps and decisions
+celis read [--at <place>]... [--like <text>] [--full]
+                                                       this project's active trails, open steps and decisions
 celis decide [--scope <scope>] [--replaces <id>] -- <text>
                                                        a decision, in its scope
-celis tree [<id>] [--full]                            a trail and its steps (CIP-14)
+celis tree [<id>] [--full] [--all]                    a trail and its steps (CIP-14)
 celis step add | start | done | steer | drop | edit   the steps of a trail (CIP-12)
-celis watch [<id>] [--full]                           a trail's tree, again on each change (CIP-14)
+celis watch [<id>] [--full]                           the active trees, again on each change (CIP-14)
 celis home                                            the folder of the store, to open it
 celis prompt                                          a person's prompt, from a hook (CIP-14)
-celis end                                             the end of a session, from a hook (CIP-14)
-celis join <id>                                       join this session to a trail (CIP-14)
 
 $CELIS_HOME   where celis keeps the key and the store
               default: ~/Library/Application Support/Celis
@@ -29,9 +28,8 @@ $CELIS_TRAIL  the trail new steps go under (CIP-14)
 **Rules**
 
 - Off macOS, `$CELIS_HOME` MUST default to `~/.local/share/celis`.
-- `read` MUST print the working folder's project's active trails, oldest first, each with its rules. The
-  pitfall of each done step of its tree MUST come next. Then come its open steps that are no trail, oldest
-  first. Then come its live decisions that are no rule
+- `read` MUST print the working folder's project's active trails, oldest first, each with its rules. Then
+  come its open steps that are no trail, oldest first. Then come its live decisions that are no rule
   (CIP-10, "Reading"), 30 at most. The decisions at each `--at` place MUST come first.
 - When it leaves decisions out, `read` MUST then print `<n> more decisions`, or `{"more": <n>}` with
   `--json`.
@@ -53,12 +51,10 @@ decision  text  <id, first 8> <scope> <text>
           json  {"id", "created_at", "project", "scope", "replaces", "content"}
 read      text  <id, first 8> [<project name>] <the trail's first line>      each active trail
                   rule <id, first 8> <text>                                 each of its rules
-                  pitfall <id, first 8> <text>                              each pitfall of its tree
                 <an open step, as CIP-12 "The commands" gives it>
                 <a decision>
-                <a past trail, as `tree` prints it>                         with `--like`
-          json  {"trail": {"id", "created_at", "project", "content", "rules": [], "pitfalls": [{"id",
-                "text"}]}} · {"step": {...}}
+                <past work, as CIP-14 "The past" gives it>                  with `--like`
+          json  {"trail": {"id", "created_at", "project", "content", "rules": []}} · {"step": {...}}
                 · {"decision": {...}} · {"past": {...}}, one a line, each as its own json
 ```
 
@@ -94,9 +90,6 @@ Commands
   step     the steps of a trail: add, start, done, steer, drop, edit
   watch    a trail's tree, printed again on each change
   home     the folder of the store, to open it
-  prompt   a person's prompt, from a hook
-  end      the end of a session, from a hook
-  join     join this session to a trail
 
 $CELIS_HOME holds the key and the store. $CELIS_TRAIL names the trail new steps
 go under.
@@ -141,6 +134,8 @@ Examples
 - An unknown command MUST name the known one nearest it, when two edits or fewer turn one into the other.
 - A command MUST exit 0 when done, 2 on a usage error, and 1 on any other error.
 - Without `--json`, an error MUST be one line on stderr: `celis: <message>`.
+- The message of `no-step`, `no-decision`, `no-trail`, `closed` and `open-steps` MUST name a `celis`
+  command that shows or fixes what went wrong.
 - With `--json`, an error MUST be one object on stderr: `{"error": "<name>", "message": "<text>"}`.
 - An error MUST be named `usage`, `no-decision`, `no-trail`, `no-step`, `closed`, `open-steps`,
   `check-failed` (CIP-12), else `error`.

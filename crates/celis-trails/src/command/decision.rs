@@ -1,19 +1,17 @@
 //! `celis decide`: write a decision.
 
-use super::{Args, Command};
-use crate::steps::ACTIVE;
-use crate::{Decision, Decisions, Failure, Project, Scope, Step, Steps};
+use super::{Args, Command, Snapshot};
+use crate::{Decision, Failure, Project, Scope, State, Step};
 use std::io::Write;
 
 impl Command {
-    /// Writes the decision `args` states on `project`, in its scope, signed by the account at `now`, and
+    /// Writes the decision `args` states on `project`, in its scope, signed by the account now, and
     /// prints its id.
     pub(super) fn decide(
         &self,
         args: &Args,
         out: &mut dyn Write,
         project: &Project,
-        now: u64,
     ) -> Result<(), Failure> {
         let content = args.required_text("decide needs its text after --")?;
         let scope = match &args.scope {
@@ -25,15 +23,12 @@ impl Command {
             None => Scope::Project,
         };
         let store = self.store()?;
-        let records = store.records();
+        let snapshot = Snapshot::of(&store);
         let scope = match scope {
             Scope::Trail(id) => {
-                let steps = Steps {
-                    records: &records,
-                    now: super::now(),
-                };
+                let steps = snapshot.steps();
                 let note = steps.find(&id).map_err(|_| Failure::no_trail(&id))?;
-                let active = steps.state(note) == ACTIVE
+                let active = steps.state(note) == State::Active
                     && Step::read(note)
                         .is_some_and(|s| s.under.is_none() && s.anchor.project == project.id);
                 match active {
@@ -45,13 +40,7 @@ impl Command {
             scope => scope,
         };
         let replaces = match &args.replaces {
-            Some(id) => {
-                let decisions = Decisions {
-                    records: &records,
-                    account: store.account().pubkey(),
-                };
-                Some(decisions.find(&project.id, id)?.id.clone())
-            }
+            Some(id) => Some(snapshot.decisions().find(&project.id, id)?.id.clone()),
             None => None,
         };
         let decision = Decision {
@@ -60,7 +49,7 @@ impl Command {
             replaces,
             content,
         };
-        let written = decision.record(store.account(), now)?;
+        let written = decision.record(store.account(), snapshot.now)?;
         store.write(&written)?;
         self.id(out, args, &written)
     }

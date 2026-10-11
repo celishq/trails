@@ -46,7 +46,7 @@ impl Failure {
     pub fn no_step(id: &str) -> Self {
         Self {
             name: "no-step".into(),
-            message: format!("no step has the id {id}"),
+            message: format!("no step has the id {id}; find it with `celis tree --all`"),
             code: 1,
         }
     }
@@ -55,7 +55,9 @@ impl Failure {
     pub fn no_decision(id: &str) -> Self {
         Self {
             name: "no-decision".into(),
-            message: format!("no live decision has the id {id}"),
+            message: format!(
+                "no live decision has the id {id}; see the live ones with `celis read`"
+            ),
             code: 1,
         }
     }
@@ -64,7 +66,7 @@ impl Failure {
     pub fn no_trail(id: &str) -> Self {
         Self {
             name: "no-trail".into(),
-            message: format!("no trail has the id {id}"),
+            message: format!("no trail has the id {id}; find it with `celis tree --all`"),
             code: 1,
         }
     }
@@ -82,7 +84,10 @@ impl Failure {
     pub fn open_steps(id: &str) -> Self {
         Self {
             name: "open-steps".into(),
-            message: format!("the step {id} has an open step under it"),
+            message: format!(
+                "the step {id} has an open step under it; see it with `celis tree {}`",
+                crate::id::short(id)
+            ),
             code: 1,
         }
     }
@@ -91,7 +96,7 @@ impl Failure {
     pub fn closed(id: &str) -> Self {
         Self {
             name: "closed".into(),
-            message: format!("the step {id} is closed"),
+            message: format!("the step {id} is closed; add a new step with `celis step add`"),
             code: 1,
         }
     }

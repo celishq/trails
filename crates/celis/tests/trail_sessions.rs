@@ -58,23 +58,24 @@ fn a_sessions_first_ask_is_a_step_under_its_trail() {
     assert_eq!(ids(&repo, None, "no session").len(), 1);
 }
 
-/// A trail carries its session, and a session's next step with no `--under` goes under its active trail;
-/// another session, or none, starts a trail (`spec/trails/14-trails.md`, "Sessions").
+/// A trail carries its session, and a session's next step with no `--under` goes under its trail; a
+/// session with no trail goes under the project's newest active trail, and with `--new` or no session,
+/// a step starts a trail (`spec/trails/14-trails.md`, "Sessions").
 #[test]
-fn a_sessions_steps_go_under_its_active_trail() {
+fn a_sessions_steps_go_under_its_trail_else_the_newest_active_trail() {
     let repo = Repo::new();
     let trail = start(&repo, "s1", "make the badges orange");
     std::thread::sleep(std::time::Duration::from_millis(1100));
     let next = add(&repo, Some("s1"), "now the buttons too");
-    let other = start(&repo, "s2", "another session");
+    std::thread::sleep(std::time::Duration::from_millis(1100));
+    let joined = add(&repo, Some("s2"), "another session");
     let none = add(&repo, None, "no session");
     let tree = objects(&repo, &["tree", &trail[..8]]);
     assert_eq!(tree[0]["trail"]["session"], "s1", "{tree:?}");
     assert_eq!(tree[2]["step"]["id"], next.as_str(), "{tree:?}");
-    for id in [&other, &none] {
-        let head = objects(&repo, &["tree", &id[..8]]);
-        assert!(head[0].get("trail").is_some(), "{head:?}");
-    }
+    assert_eq!(tree[3]["step"]["id"], joined.as_str(), "{tree:?}");
+    let head = objects(&repo, &["tree", &none[..8]]);
+    assert!(head[0].get("trail").is_some(), "{head:?}");
 }
 
 /// The marks labelled `label` in the store, as (the step they name, their text).
@@ -96,10 +97,10 @@ fn hook(repo: &Repo, hook: &str, json: serde_json::Value) -> std::process::Outpu
 }
 
 /// `prompt` writes a hook's prompt as a steer on the oldest working step of the session's open trail,
-/// else as an ask on the trail, its first line cut to 200 characters; with no such trail, it writes
+/// else as a prompt mark on the trail, its first line cut to 200 characters; with no such trail, it writes
 /// nothing (`spec/trails/14-trails.md`, "Sessions").
 #[test]
-fn prompt_writes_the_prompt_as_a_steer_or_an_ask_on_the_sessions_trail() {
+fn prompt_writes_the_prompt_as_a_steer_or_a_prompt_mark_on_the_sessions_trail() {
     let repo = Repo::new();
     let hook = |session: &str, prompt: &str| {
         let json = serde_json::json!({"session_id": session, "prompt": prompt}).to_string();
@@ -120,15 +121,15 @@ fn prompt_writes_the_prompt_as_a_steer_or_an_ask_on_the_sessions_trail() {
     assert_eq!(out(&hook("s2", "another session")), "");
     assert_eq!(marks(&repo, "steer"), [(step.clone(), "x".repeat(200))]);
     assert_eq!(
-        marks(&repo, "ask"),
+        marks(&repo, "prompt"),
         [(trail.clone(), "make it blue".to_string())]
     );
 }
 
-/// An ask is no steer: a trail asked twice is still reached alone (`spec/trails/14-trails.md`,
+/// A prompt mark is no steer: a trail asked twice is still reached alone (`spec/trails/14-trails.md`,
 /// "Sessions").
 #[test]
-fn an_ask_is_no_steer() {
+fn a_prompt_mark_is_no_steer() {
     let repo = Repo::new();
     let written = ids(&repo, Some("s1"), "the trail");
     let trail = &written[1];
@@ -143,28 +144,14 @@ fn an_ask_is_no_steer() {
     assert_eq!(head[0]["trail"]["state"], "reached alone", "{head:?}");
 }
 
-/// `end` writes an end on the session's open trail, which ends it; a later step of the session opens it
-/// again; `step add --new` starts a second trail, which takes the next steps (`spec/trails/14-trails.md`,
-/// "Sessions").
+/// `step add --new` starts a second trail, which takes the session's next steps
+/// (`spec/trails/14-trails.md`, "Sessions").
 #[test]
-fn end_ends_the_sessions_trail_and_new_starts_another() {
+fn new_starts_a_trail_that_takes_the_sessions_next_steps() {
     let repo = Repo::new();
-    let none = hook(&repo, "end", serde_json::json!({"session_id": "s1"}));
-    assert_eq!(out(&none), "");
-    let written = ids(&repo, Some("s1"), "the trail");
-    let trail = written[1].clone();
-    support::finish(&repo, &written[0][..8]);
-    let o = hook(&repo, "end", serde_json::json!({"session_id": "s1"}));
-    assert_eq!(out(&o).trim().len(), 64, "{}", out(&o));
-    assert_eq!(marks(&repo, "end"), [(trail.clone(), String::new())]);
-    let head = objects(&repo, &["tree", &trail[..8]]);
-    assert_eq!(head[0]["trail"]["state"], "reached alone", "{head:?}");
-    std::thread::sleep(std::time::Duration::from_millis(1100));
-    let next = add(&repo, Some("s1"), "after the end");
-    let head = objects(&repo, &["tree", &trail[..8]]);
-    assert_eq!(head[0]["trail"]["state"], "active", "{head:?}");
-    assert_eq!(head[2]["step"]["id"], next.as_str(), "{head:?}");
+    ids(&repo, Some("s1"), "the trail");
     let env = [("CLAUDE_CODE_SESSION_ID", "s1")];
+    std::thread::sleep(std::time::Duration::from_millis(1100));
     let o = repo.run(
         &repo.path(),
         &["step", "add", "--new", "--", "second"],
@@ -191,37 +178,31 @@ fn run_add(repo: &Repo, session: Option<&str>, env: &[(&str, &str)], args: &[&st
     out(&o).lines().map(str::to_string).collect()
 }
 
-/// A session that adds a step to a trail joins it, and its next steps go there; the trail stays active
-/// until each joined session ends (`spec/trails/14-trails.md`, "Sessions").
+/// A session's open trail is the trail of its newest step: after a step `--under` another session's
+/// trail, its next steps go there (`spec/trails/14-trails.md`, "Sessions").
 #[test]
-fn a_trail_ends_when_every_joined_session_ends() {
+fn a_sessions_open_trail_is_the_trail_of_its_newest_step() {
     let repo = Repo::new();
-    let written = ids(&repo, Some("s1"), "the trail");
-    let trail = written[1].clone();
-    support::finish(&repo, &written[0][..8]);
+    let first = ids(&repo, Some("s1"), "the trail")[1].clone();
     std::thread::sleep(std::time::Duration::from_millis(1100));
-    let part = run_add(
+    let other = run_add(&repo, Some("s2"), &[], &["--new", "--", "its own"])[1].clone();
+    std::thread::sleep(std::time::Duration::from_millis(1100));
+    run_add(
         &repo,
         Some("s2"),
         &[],
-        &["--under", &trail[..8], "--", "a part"],
+        &["--under", &first[..8], "--", "a part"],
     );
     std::thread::sleep(std::time::Duration::from_millis(1100));
     let next = add(&repo, Some("s2"), "another part");
-    support::finish(&repo, &part[0][..8]);
-    support::finish(&repo, &next[..8]);
-    let head = objects(&repo, &["tree", &trail[..8]]);
+    let head = objects(&repo, &["tree", &first[..8]]);
     assert_eq!(head[3]["step"]["id"], next.as_str(), "{head:?}");
-    hook(&repo, "end", serde_json::json!({"session_id": "s1"}));
-    let head = objects(&repo, &["tree", &trail[..8]]);
-    assert_eq!(head[0]["trail"]["state"], "active", "{head:?}");
-    hook(&repo, "end", serde_json::json!({"session_id": "s2"}));
-    let head = objects(&repo, &["tree", &trail[..8]]);
-    assert_eq!(head[0]["trail"]["state"], "reached alone", "{head:?}");
+    let own = objects(&repo, &["tree", &other[..8]]);
+    assert_eq!(own.len(), 2, "{own:?}");
 }
 
-/// With `CELIS_TRAIL`, `step add` with no `--under` goes under that step, and the session joins its
-/// trail; with no session, the step goes there too (`spec/trails/14-trails.md`, "Sessions").
+/// With `CELIS_TRAIL`, `step add` with no `--under` goes under that step, and the session's next steps
+/// follow it; with no session, the step goes there too (`spec/trails/14-trails.md`, "Sessions").
 #[test]
 fn celis_trail_names_where_new_steps_go() {
     let repo = Repo::new();
@@ -246,23 +227,4 @@ fn celis_trail_names_where_new_steps_go() {
         "",
     );
     support::refusal(&o, 1, "no-step");
-}
-
-/// `join` joins the session to the trail of a step, and prints the join's id; the session's next steps go
-/// there. With no session it refuses (`spec/trails/14-trails.md`, "Sessions").
-#[test]
-fn join_joins_the_session_to_a_trail() {
-    let repo = Repo::new();
-    let trail = ids(&repo, Some("s1"), "the trail")[1].clone();
-    let env = [("CLAUDE_CODE_SESSION_ID", "s2")];
-    let o = repo.run(&repo.path(), &["join", &trail[..8]], &env, "");
-    assert!(o.status.success(), "{}", err(&o));
-    assert_eq!(out(&o).trim().len(), 64, "{}", out(&o));
-    assert_eq!(marks(&repo, "join"), [(trail.clone(), String::new())]);
-    std::thread::sleep(std::time::Duration::from_millis(1100));
-    let next = add(&repo, Some("s2"), "from s2");
-    let head = objects(&repo, &["tree", &trail[..8]]);
-    assert_eq!(head[2]["step"]["id"], next.as_str(), "{head:?}");
-    let o = repo.run(&repo.path(), &["join", &trail[..8]], &[], "");
-    assert_eq!(o.status.code(), Some(2), "{}", err(&o));
 }

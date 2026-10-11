@@ -12,9 +12,6 @@ Commands
   step     the steps of a trail: add, start, done, steer, drop, edit
   watch    a trail's tree, printed again on each change
   home     the folder of the store, to open it
-  prompt   a person's prompt, from a hook
-  end      the end of a session, from a hook
-  join     join this session to a trail
 
 $CELIS_HOME holds the key and the store. $CELIS_TRAIL names the trail new steps
 go under.
@@ -85,11 +82,12 @@ impl Verb {
 pub const VERBS: &[Verb] = &[
     Verb {
         command: "read",
-        usage: &["celis read [--at <place>]... [--like <text>]"],
-        summary: "Print this project's active trails and their rules, open steps and decisions; with --like, the past trails like the text.",
+        usage: &["celis read [--at <place>]... [--like <text>] [--full]"],
+        summary: "Print this project's active trails and their rules, open steps and decisions; with --like, the past asks and trails like the text.",
         args: &[
             ("--at <place>", "a place whose decisions come first; zero or more"),
-            ("--like <text>", "a new ask; prints the done trails like it; optional"),
+            ("--like <text>", "a new ask; prints the past work like it; optional"),
+            ("--full", "print each past trail as tree --full does; optional"),
         ],
         examples: &[
             "celis read --at shelf/prices.py",
@@ -112,18 +110,19 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "tree",
-        usage: &["celis tree [<id>] [--full]"],
+        usage: &["celis tree [<id>] [--full] [--all]"],
         summary: "Print a trail with its state, its rules and its steps with their grades; with no id, the active trails and those from today.",
         args: &[
             ("<id>", "the step id, or a start of 4 or more characters; optional"),
             ("--full", "add the proof, grade and reason under each step; optional"),
+            ("--all", "every trail of every project, by day, in place of an id; optional"),
         ],
-        examples: &["celis tree 3fa2c1d0 --full"],
+        examples: &["celis tree 3fa2c1d0 --full", "celis tree --all"],
     },
     Verb {
         command: "watch",
         usage: &["celis watch [<id>] [--full]"],
-        summary: "Print a trail's tree, and print it again each time it changes, until you stop it; with no id, the newest active trail.",
+        summary: "Print a trail's tree, and print it again each time it changes, until you stop it; with no id, every active trail of every project.",
         args: &[
             ("<id>", "the step id, or a start of 4 or more characters; optional"),
             ("--full", "add the proof, grade and reason under each step; optional"),
@@ -140,34 +139,18 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "prompt",
         usage: &["celis prompt"],
-        summary: "Read a hook's JSON on stdin, and record the person's prompt on the open trail of its session: a steer on the working step, else an ask. A hook runs it on each prompt.",
+        summary: "Read a hook's JSON on stdin, and record the person's prompt on the open trail of its session: a steer on the working step, else a prompt mark. A hook runs it on each prompt.",
         args: &[],
         examples: &["celis prompt < hook.json"],
     },
     Verb {
-        command: "end",
-        usage: &["celis end"],
-        summary: "Read a hook's JSON on stdin, and end the open trail of its session. A hook runs it when the session ends.",
-        args: &[],
-        examples: &["celis end < hook.json"],
-    },
-    Verb {
-        command: "join",
-        usage: &["celis join <id>"],
-        summary: "Join this session to the trail of a step. The session's next steps go under it, and its prompts go to it, until it joins another.",
-        args: &[("<id>", "a step id, or a start of 4 or more characters")],
-        examples: &["celis join 3fa2c1d0"],
-    },
-    Verb {
         command: "step add",
-        usage: &["celis step add [--under <id>] [--follows <id>] [--fixes <id>] [--at <place>] [--file <path>]... [--check <command>] [--new] -- <text>"],
+        usage: &["celis step add [--under <id>] [--fixes <id>] [--at <place>]... [--check <command>] [--new] -- <text>"],
         summary: "Leave a step. With no --under, it goes under $CELIS_TRAIL, else under the session's trail, else it starts a trail.",
         args: &[
             ("--under <id>", "the open step it is a part of; optional"),
-            ("--follows <id>", "the past trail whose path a new trail follows; optional"),
             ("--fixes <id>", "a done step whose work it fixes; optional"),
-            ("--at <place>", "file:line, a URL, or any text; optional"),
-            ("--file <path>", "a file the work may change or create; zero or more"),
+            ("--at <place>", "file:line, a URL or any text; zero or more"),
             ("--check <command>", "the command that proves the work; optional"),
             ("--new", "a new trail, not a step of the session's trail; optional"),
             ("<text>", "a short title, then the work a stranger can do"),
@@ -180,18 +163,17 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "step start",
         usage: &["celis step start <id>"],
-        summary: "Take up a step. It is working until it is done.",
+        summary: "Take up a step, and print the decisions at its places. It is working until it is done.",
         args: &[("<id>", "the step id, or a start of 4 or more characters")],
         examples: &["celis step start 4c1d22e0"],
     },
     Verb {
         command: "step done",
-        usage: &["celis step done <id> [--path <text>] [--pitfall <text>] -- <proof>"],
+        usage: &["celis step done <id> [--pitfall <text>] -- <proof>"],
         summary: "Close a step with its proof, once the steps under it are done.",
         args: &[
             ("<id>", "the step id, or a start of 4 or more characters"),
-            ("--path", "the steps that worked"),
-            ("--pitfall", "what cost time, which read shows the next agent"),
+            ("--pitfall", "what cost time, kept as a decision at the step's place"),
             ("<proof>", "the check that failed before and passes now"),
         ],
         examples: &[
@@ -221,13 +203,18 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "step edit",
-        usage: &["celis step edit <id> -- <text>"],
-        summary: "Give a step new text, such as a trail's title once more asks joined it.",
+        usage: &["celis step edit <id> [--at <place>]... [--check <command>] [-- <text>]"],
+        summary: "Give a step a new title, places or check. A title alone keeps the detail.",
         args: &[
             ("<id>", "the step id, or a start of 4 or more characters"),
-            ("<text>", "a short title, then the detail"),
+            ("--at <place>", "the places in place of the step's; zero or more"),
+            ("--check <command>", "the check in place of the step's; optional"),
+            ("<text>", "a new title, or a title and the detail; optional"),
         ],
-        examples: &["celis step edit 3fa2c1d0 -- \"Orange badges and buttons\""],
+        examples: &[
+            "celis step edit 3fa2c1d0 -- \"Orange badges and buttons\"",
+            "celis step edit 4c1d22e0 --check \"cargo test -p shop\"",
+        ],
     },
 ];
 

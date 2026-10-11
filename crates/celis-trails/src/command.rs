@@ -4,6 +4,7 @@ mod args;
 mod decision;
 mod prompt;
 mod read;
+mod snapshot;
 mod step;
 mod tree;
 mod watch;
@@ -13,6 +14,7 @@ use crate::{Failure, Project, Store};
 use args::Args;
 use celis_wire::Note;
 use serde_json::json;
+use snapshot::Snapshot;
 use std::collections::HashMap;
 use std::io::{IsTerminal, Write};
 use std::path::{Path, PathBuf};
@@ -67,17 +69,14 @@ impl Command {
     }
 
     fn go(&self, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> Result<(), Failure> {
-        let now = now();
         match args.words.first().map(String::as_str).unwrap_or("") {
-            "step" => self.step(args, out, err, &self.project(), now),
+            "step" => self.step(args, out, err, &self.project()),
             "read" => self.read(args, out, &self.project()),
-            "decide" => self.decide(args, out, &self.project(), now),
+            "decide" => self.decide(args, out, &self.project()),
             "tree" => self.tree(args, out, &self.project()),
-            "watch" => self.watch(args, out, &self.project()),
+            "watch" => self.watch(args, out),
             "home" => self.store_path(args, out),
-            "prompt" => self.prompt(args, out, &self.project(), now),
-            "end" => self.end(args, out, &self.project(), now),
-            "join" => self.join(args, out, now),
+            "prompt" => self.prompt(args, out, &self.project()),
             "" => Err(Failure::usage("expected: celis <command>")),
             verb => Err(Failure::unknown(verb, verbs())),
         }
@@ -91,10 +90,7 @@ impl Command {
     /// Prints the folder of the store. Writes nothing.
     fn store_path(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let path = Store::root(&self.home()?).display().to_string();
-        match args.json {
-            true => put(out, &json!({ "path": path }).to_string()),
-            false => put(out, &path),
-        }
+        show(out, args.json, "path", json!(path), &path)
     }
 
     /// Whether `tree` and `watch` print styled: on a terminal, or with `CLICOLOR_FORCE` set and not `0`;
@@ -154,10 +150,7 @@ impl Command {
     }
 
     fn id(&self, out: &mut dyn Write, args: &Args, note: &Note) -> Result<(), Failure> {
-        match args.json {
-            true => put(out, &json!({"id": note.id}).to_string()),
-            false => put(out, &note.id),
-        }
+        show(out, args.json, "id", json!(note.id), &note.id)
     }
 }
 
@@ -165,6 +158,20 @@ fn put(out: &mut dyn Write, line: &str) -> Result<(), Failure> {
     writeln!(out, "{line}")
         .map_err(anyhow::Error::from)
         .map_err(Failure::from)
+}
+
+/// Prints `{key: value}` as one JSON line with `json`, else `line`.
+fn show(
+    out: &mut dyn Write,
+    json: bool,
+    key: &str,
+    value: serde_json::Value,
+    line: &str,
+) -> Result<(), Failure> {
+    match json {
+        true => put(out, &json!({ key: value }).to_string()),
+        false => put(out, line),
+    }
 }
 
 /// The first word of each command.

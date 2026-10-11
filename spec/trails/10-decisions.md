@@ -149,7 +149,8 @@ in ~/code/shop:       --at /Users/me/code/shop/src/prices.py   →   src/prices.
 A reader gives the live decisions in scope, narrow first.
 
 ```
-at a place   a decision with `at:<place>` at the place, or under it when the place is a folder
+at a place   a decision with `at:<place>` at the place, under it when the place is a folder, or at a
+             folder that holds the place
 in scope     every live decision of the working folder's project, and every live `me` decision
 ```
 
@@ -157,5 +158,6 @@ in scope     every live decision of the working folder's project, and every live
 
 - A reader MUST give only live decisions in scope.
 - A decision at a file MUST be at that file whatever line its place names.
+- A decision at a folder MUST be at each place under that folder.
 - A reader MUST order decisions by scope, `at` first, then `trail`, then `project`, then `me`. In one
   scope, it MUST order them newest first, then by id.

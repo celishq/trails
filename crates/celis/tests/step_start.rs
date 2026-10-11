@@ -65,3 +65,38 @@ fn start_refuses_unknown_and_closed_steps_and_starts_a_step_once() {
     assert_eq!(out(&o).trim(), first["id"].as_str().unwrap());
     assert_eq!(files(), before);
 }
+
+/// `start` prints, after its id, the live decisions at the step's places, a folder's decisions holding
+/// for each file under it (`spec/trails/12-steps.md`, "The commands"; `spec/trails/10-decisions.md`,
+/// "Reading").
+#[test]
+fn start_prints_the_decisions_at_the_steps_places() {
+    let repo = Repo::new();
+    let decide = |scope: &str, text: &str| {
+        let o = cli(&repo, &["decide", "--scope", scope, "--", text]);
+        assert!(o.status.success(), "{}", err(&o));
+    };
+    decide("at:src", "keep src small");
+    decide("at:src/a.rs", "a.rs holds cents");
+    decide("at:docs/b.md", "b.md stays short");
+    decide("at:lib", "lib is frozen");
+    let trail = add(&repo, &["--", "the trail"]);
+    let args = [
+        "--under",
+        &trail[..8],
+        "--at",
+        "src/a.rs:4",
+        "--at",
+        "docs/b.md",
+        "--",
+        "s",
+    ];
+    let step = add(&repo, &args);
+    let o = cli(&repo, &["step", "start", &step[..8]]);
+    assert!(o.status.success(), "{}", err(&o));
+    let text = out(&o);
+    for said in ["keep src small", "a.rs holds cents", "b.md stays short"] {
+        assert!(text.contains(said), "{text}");
+    }
+    assert!(!text.contains("lib is frozen"), "{text}");
+}
