@@ -93,6 +93,31 @@ fn tree_prints_the_trail_its_rules_and_the_steps_under_it() {
     );
 }
 
+/// `tree <id>` of an ask prints its trail's rules under its line (`spec/trails/14-trails.md`, "The
+/// commands").
+#[test]
+fn tree_of_an_ask_prints_its_trails_rules() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "build the CRM"]);
+    let scope = format!("trail:{}", short(&trail));
+    let o = cli(
+        &repo,
+        &["decide", "--scope", &scope, "--", "colours are tokens"],
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let rule = out(&o).trim().to_string();
+    let ask = add(&repo, &["--under", short(&trail), "--", "customers page"]);
+    let badge = add(&repo, &["--under", short(&ask), "--", "badge"]);
+    assert_eq!(
+        printed(&repo, &[short(&ask)]),
+        [
+            format!("● {} customers page", short(&ask)),
+            format!("      rule {} colours are tokens", short(&rule)),
+            format!("  └─ ○ {} badge", short(&badge)),
+        ]
+    );
+}
+
 /// `tree` prints a done trail's proof and grade under its first line (`spec/trails/14-trails.md`, "The
 /// commands").
 #[test]

@@ -4,6 +4,7 @@ use std::process::{Command, Output};
 
 const CLI: &str = include_str!("../../../spec/trails/11-cli.md");
 const STEPS: &str = include_str!("../../../spec/trails/12-steps.md");
+const CARD: &str = include_str!("../../../plugins/celis/skills/trail/card.md");
 
 fn run(args: &[&str]) -> Output {
     let home = tempfile::tempdir().unwrap();
@@ -101,7 +102,7 @@ fn celis_and_celis_help_print_the_page() {
 #[test]
 fn help_anywhere_prints_the_command_page_its_words_name() {
     let commands = usages();
-    assert_eq!(commands.len(), 15, "{commands:?}");
+    assert_eq!(commands.len(), 16, "{commands:?}");
     for (command, usage) in &commands {
         let mut args: Vec<&str> = command.split(' ').collect();
         args.extend(["4c1d22e0", "--help", "--json"]);
@@ -212,4 +213,32 @@ fn celis_version_names_the_commit_the_build_came_from() {
         page(&["--version"]).trim_end(),
         format!("celis {version} ({})", &head[..8])
     );
+}
+
+/// Each command line of the trail card names the flags its command's usage names, and no other
+/// (`spec/trails/11-cli.md`, "Help").
+#[test]
+fn the_card_names_each_commands_flags() {
+    let flags = |usage: &str| -> Vec<String> {
+        let mut found: Vec<String> = names(usage)
+            .into_iter()
+            .filter(|n| n.starts_with("--"))
+            .collect();
+        found.sort();
+        found
+    };
+    let card = &blocks(&format!("\n## Card\n{CARD}"), "Card")[0];
+    let commands = usages();
+    for line in card.lines() {
+        let words: Vec<&str> = line.split(' ').collect();
+        let command = match words[1] {
+            "step" => format!("step {}", words[2]),
+            word => word.to_string(),
+        };
+        let (_, usage) = commands
+            .iter()
+            .find(|(c, _)| *c == command)
+            .unwrap_or_else(|| panic!("{command} is no command"));
+        assert_eq!(flags(line), flags(usage), "{line}");
+    }
 }

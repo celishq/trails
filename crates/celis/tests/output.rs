@@ -100,7 +100,7 @@ fn a_trail_or_step_command_with_stdin_left_open_asks_nothing() {
         vec!["decide", "--scope", &scope, "--", "80%"],
         vec!["tree", &trail[..8]],
         vec!["step", "add", "--", "four"],
-        vec!["read", "--like", "senior tier"],
+        vec!["past"],
         vec!["step", "done", &closed, "--as-planned", "--", "it passes"],
     ];
     for args in runs {
@@ -196,7 +196,7 @@ fn a_trail_or_step_command_prints_one_json_object_a_line_with_json() {
     for args in [
         vec!["decide", "--json", "--scope", &scope, "--", "80%"],
         vec!["tree", "--json", &trail],
-        vec!["read", "--json", "--like", "one"],
+        vec!["past", "--json"],
         vec!["step", "done", "--json", &id, "--as-planned", "--", "p"],
     ] {
         let o = repo.run(&repo.path(), &args, &[], "");

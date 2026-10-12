@@ -2,21 +2,21 @@
 
 mod args;
 mod auth;
+mod clock;
 mod decision;
+mod past;
 mod prompt;
 mod read;
 mod retro;
-mod snapshot;
 mod step;
 mod tree;
 mod watch;
 
 use crate::help::{self, VERBS};
-use crate::{Failure, Project, Store};
 use args::Args;
+use celis_trails::{Failure, Project, Store, Trails};
 use celis_wire::Note;
 use serde_json::json;
-use snapshot::Snapshot;
 use std::collections::HashMap;
 use std::io::{IsTerminal, Write};
 use std::path::{Path, PathBuf};
@@ -65,6 +65,7 @@ impl Command {
             "read" => self.read(args, out, &self.project()),
             "decide" => self.decide(args, out, &self.project()),
             "tree" => self.tree(args, out, &self.project()),
+            "past" => self.past(args, out),
             "watch" => self.watch(args, out),
             "home" => self.store_path(args, out),
             "prompt" => self.prompt(args, out, err, &self.project()),
@@ -137,9 +138,14 @@ impl Command {
         home.ok_or_else(|| Failure::from(anyhow::anyhow!("neither CELIS_HOME nor HOME is set")))
     }
 
-    /// The store, opened now.
-    fn snapshot(&self) -> Result<Snapshot, Failure> {
-        Ok(Snapshot::of(Store::open(&self.home()?)?))
+    /// The trails of the store, opened now; a check runs for `CELIS_CHECK_SECONDS`, 600 when not set.
+    fn trails(&self) -> Result<Trails, Failure> {
+        let limit = self
+            .env
+            .get("CELIS_CHECK_SECONDS")
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(600);
+        Ok(Trails::open(Store::open(&self.home()?)?, now(), limit))
     }
 
     fn id(&self, out: &mut dyn Write, args: &Args, note: &Note) -> Result<(), Failure> {

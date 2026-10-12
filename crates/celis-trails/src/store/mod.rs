@@ -1,5 +1,10 @@
 //! The records of every project on this machine.
 
+pub mod anchor;
+pub mod phrase;
+pub mod project;
+pub mod retrieval_log;
+
 use crate::{Failure, Phrase};
 use anyhow::{Context, Result};
 use celis_wire::{Account, Note};

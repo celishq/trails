@@ -29,7 +29,7 @@ impl Grade {
 }
 
 /// `seconds` in its two largest units.
-pub(crate) fn took(seconds: u64) -> String {
+pub fn took(seconds: u64) -> String {
     match seconds {
         s if s < 60 => format!("{s}s"),
         s if s < 3_600 => format!("{}m {}s", s / 60, s % 60),
@@ -39,7 +39,7 @@ pub(crate) fn took(seconds: u64) -> String {
 }
 
 /// The seconds until `took` shows another value for `seconds`.
-pub(crate) fn stride(seconds: u64) -> u64 {
+pub fn stride(seconds: u64) -> u64 {
     match seconds {
         s if s < 3_600 => 1,
         s if s < 86_400 => 60 - s % 60,

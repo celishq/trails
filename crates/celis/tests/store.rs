@@ -166,12 +166,12 @@ fn no_record_file_must_carry_the_accounts_secret() {
     }
 }
 
-/// With no store, `read --like` answers as an empty store and creates nothing
+/// With no store, `past` answers as an empty store and creates nothing
 /// (`spec/trails/10-decisions.md`, "The store").
 #[test]
-fn a_read_like_with_no_store_must_answer_empty_and_create_nothing() {
+fn past_with_no_store_must_answer_empty_and_create_nothing() {
     let repo = Repo::plain();
-    let o = repo.run(&repo.path(), &["read", "--like", "a task"], &[], "");
+    let o = repo.run(&repo.path(), &["past"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     assert!(out(&o).is_empty(), "{}", out(&o));
     assert!(!repo.store().exists());

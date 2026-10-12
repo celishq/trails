@@ -1,6 +1,6 @@
 //! The words of one command line.
 
-use crate::Failure;
+use celis_trails::Failure;
 
 /// The words of one command line, split into the verb and its words, the flags and the text after `--`.
 #[derive(Default)]
@@ -19,7 +19,6 @@ pub(crate) struct Args {
     pub scope: Option<String>,
     pub replaces: Option<String>,
     pub check: Option<String>,
-    pub like: Option<String>,
     pub pitfall: Option<String>,
     pub changed: Option<String>,
 }
@@ -55,7 +54,6 @@ impl Args {
                 "--scope" => parsed.scope = Some(value(arg, rest.next())?),
                 "--replaces" => parsed.replaces = Some(value(arg, rest.next())?),
                 "--check" => parsed.check = Some(value(arg, rest.next())?),
-                "--like" => parsed.like = Some(value(arg, rest.next())?),
                 "--pitfall" => parsed.pitfall = Some(value(arg, rest.next())?),
                 "--changed" => parsed.changed = Some(value(arg, rest.next())?),
                 flag if flag.starts_with("--") => {

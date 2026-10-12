@@ -1,8 +1,8 @@
 //! `celis watch`: a trail's tree, printed again each time the store changes.
 
 use super::tree::Tree;
-use super::{Args, Command, Snapshot};
-use crate::{Failure, State};
+use super::{Args, Command};
+use celis_trails::{Failure, State, Trails};
 use notify::{RecursiveMode, Watcher};
 use std::io::Read;
 use std::io::{IsTerminal, Write};
@@ -29,9 +29,9 @@ impl Command {
                 std::thread::sleep(Duration::from_millis(250));
             }
         }
-        let mut snapshot = self.snapshot()?;
+        let mut trails = self.trails()?;
         let id = match args.words.get(1) {
-            Some(id) => Some(snapshot.steps().find(id)?.id.clone()),
+            Some(id) => Some(trails.steps().find(id)?.id.clone()),
             None => None,
         };
         let (send, events) = channel();
@@ -50,8 +50,8 @@ impl Command {
             .map_err(anyhow::Error::from)?;
         let mut width = self.columns();
         loop {
-            snapshot.now = super::now();
-            let (tree, next) = self.frame(&snapshot, id.as_deref(), args, width)?;
+            trails.now = super::now();
+            let (tree, next) = self.frame(&trails, id.as_deref(), args, width)?;
             show(out, &tree, &mut shown, terminal)?;
             let wake = match next {
                 Some(at) => events.recv_timeout(until(at)),
@@ -60,7 +60,7 @@ impl Command {
             match wake {
                 Ok(Wake::Record) => {
                     while events.recv_timeout(Duration::from_millis(50)).is_ok() {}
-                    snapshot = self.snapshot()?;
+                    trails = self.trails()?;
                 }
                 Ok(Wake::Resize) => {}
                 Err(RecvTimeoutError::Timeout) => continue,
@@ -73,18 +73,18 @@ impl Command {
         }
     }
 
-    /// The tree of `snapshot` that `watch` prints now, `width` wide, short or full as `args` asks: of the
+    /// The tree of `trails` that `watch` prints now, `width` wide, short or full as `args` asks: of the
     /// step `id`, or of every active trail of every project, newest first; with none, what to do to start
     /// one. Then the time it changes next, if any.
     fn frame(
         &self,
-        snapshot: &Snapshot,
+        trails: &Trails,
         id: Option<&str>,
         args: &Args,
         width: Option<usize>,
     ) -> Result<(String, Option<u64>), Failure> {
-        let steps = snapshot.steps();
-        let decisions = snapshot.decisions();
+        let steps = trails.steps();
+        let decisions = trails.decisions();
         let notes: Vec<_> = match id {
             Some(id) => steps.find(id).ok().into_iter().collect(),
             None => steps

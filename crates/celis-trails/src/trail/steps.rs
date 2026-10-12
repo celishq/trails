@@ -182,6 +182,28 @@ impl<'a> Steps<'a> {
         (ask.id != trail.id).then_some(ask)
     }
 
+    /// Whether the step `note` is an ask: a step right under its trail.
+    pub fn is_ask(&self, note: &'a Note) -> bool {
+        let under = self.entry(&note.id).and_then(|e| e.step.under.as_deref());
+        under == Some(self.trail(note).id.as_str())
+    }
+
+    /// The first ask under the trail `trail`, when it has the trail's text.
+    pub fn twin(&self, trail: &Note) -> Option<&'a Note> {
+        let text = &self.entry(&trail.id)?.step.content;
+        let first = self.under(&trail.id).into_iter().next()?;
+        self.entry(&first.id)
+            .is_some_and(|e| e.step.content == *text)
+            .then_some(first)
+    }
+
+    /// The title of the step `note`; empty when it is not a step.
+    pub fn title(&self, note: &Note) -> String {
+        self.entry(&note.id)
+            .map(|e| e.step.title().to_string())
+            .unwrap_or_default()
+    }
+
     /// The step `note` and every step under it, at any depth.
     pub fn tree(&self, note: &'a Note) -> Vec<&'a Note> {
         let mut tree = vec![note];

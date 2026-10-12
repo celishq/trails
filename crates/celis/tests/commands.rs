@@ -214,26 +214,6 @@ fn read_prints_30_decisions_at_most_those_at_a_place_first() {
     assert_eq!(got[29], short(&others[6].id));
 }
 
-/// With `--like`, `read` prints the past trails after the decisions (`spec/trails/11-cli.md`,
-/// "Commands").
-#[test]
-fn read_with_like_prints_the_past_trails_after_the_decisions() {
-    let repo = Repo::new();
-    let id = repo.project_id();
-    let t = now() - 5 * 60;
-    let past = step_note(&repo, &account(), None, "Build the Vendors page", t);
-    done_note(&repo, &account(), &past, t + 1);
-    let cents = decision(&repo, project(&id), &account(), (None, None), WORK, t + 2);
-    let lines = lines_of(
-        &repo,
-        &repo.path(),
-        &["read", "--like", "Build the Vendors page"],
-    );
-    assert_eq!(lines[0], format!("{} project {WORK}", short(&cents.id)));
-    let head = format!("{} [repo] Build the Vendors page · took ", short(&past.id));
-    assert!(lines[1].starts_with(&head), "{lines:?}");
-}
-
 /// `read` writes no record (`spec/trails/11-cli.md`, "Commands").
 #[test]
 fn read_writes_no_record() {
@@ -253,7 +233,7 @@ fn read_writes_no_record() {
     for args in [
         vec!["read"],
         vec!["read", "--at", "a.py"],
-        vec!["read", "--json", "--like", "a trail"],
+        vec!["read", "--json"],
     ] {
         let o = repo.run(&repo.path(), &args, &[], "");
         assert!(o.status.success(), "{args:?}: {}", err(&o));

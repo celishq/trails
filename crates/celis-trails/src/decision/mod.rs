@@ -1,5 +1,8 @@
 //! A decision: one sentence that holds in its scope until another replaces it.
 
+pub mod decisions;
+pub mod scope;
+
 use crate::id::short;
 use crate::{Anchor, Scope};
 use anyhow::Result;

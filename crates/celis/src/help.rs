@@ -9,6 +9,7 @@ Commands
   read     this project's active trails, open steps and decisions
   decide   a decision, in its scope
   tree     a trail and its steps, with their grades
+  past     every project's past work, one line each
   step     the steps of a trail: add, start, done, steer, drop, edit
   watch    a trail's tree, printed again on each change
   home     the folder of the store, to open it
@@ -158,17 +159,17 @@ impl Verb {
 pub const VERBS: &[Verb] = &[
     Verb {
         command: "read",
-        usage: &["celis read [--at <place>]... [--like <text>] [--full]"],
-        summary: "Print this project's active trails and today's ended ones with their rules, open steps and decisions; with --like, the past asks and trails like the text.",
-        args: &[
-            ("--at <place>", "a place whose decisions come first; zero or more"),
-            ("--like <text>", "a new ask; prints the past work like it; optional"),
-            ("--full", "print each past trail as tree --full does; optional"),
-        ],
-        examples: &[
-            "celis read --at shelf/prices.py",
-            "celis read --like \"Add an Invoices page from the frame\"",
-        ],
+        usage: &["celis read [--at <place>]..."],
+        summary: "Print this project's active trails and today's ended ones with their rules, open steps and decisions.",
+        args: &[("--at <place>", "a place whose decisions come first; zero or more")],
+        examples: &["celis read --at shelf/prices.py"],
+    },
+    Verb {
+        command: "past",
+        usage: &["celis past"],
+        summary: "Print the done asks and reached trails of every project, newest first, one line each with its project, place, grade and day.",
+        args: &[],
+        examples: &["celis past", "celis past --json"],
     },
     Verb {
         command: "decide",

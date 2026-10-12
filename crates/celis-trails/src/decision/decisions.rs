@@ -2,34 +2,41 @@
 
 use crate::{Decision, Failure, Scope};
 use celis_wire::Note;
+use std::collections::HashSet;
 
-/// The decisions of a store.
+/// The decisions of a store that no other replaces, read once: by scope, narrowest first, then newest
+/// first, then by id.
 pub struct Decisions<'a> {
-    pub records: &'a [Note],
+    live: Vec<(&'a Note, Decision)>,
 }
 
 impl<'a> Decisions<'a> {
-    /// The live decisions in scope in the project `project`: by scope, narrowest first, then newest
-    /// first, then by id.
-    pub fn live(&self, project: &str) -> Vec<(&'a Note, Decision)> {
-        let counted: Vec<(&'a Note, Decision)> = self
-            .records
+    pub fn new(records: &'a [Note]) -> Decisions<'a> {
+        let counted: Vec<(&'a Note, Decision)> = records
             .iter()
             .filter_map(|n| Some((n, Decision::read(n)?)))
             .collect();
-        let replaced: Vec<String> = counted
+        let replaced: HashSet<String> = counted
             .iter()
             .filter_map(|(_, d)| d.replaces.clone())
             .collect();
         let mut live: Vec<(&'a Note, Decision)> = counted
             .into_iter()
-            .filter(|(_, d)| d.scope == Scope::Me || d.anchor.project == project)
             .filter(|(n, _)| !replaced.contains(&n.id))
             .collect();
         live.sort_by(|(a, x), (b, y)| {
             (x.scope.rank(), b.created_at, &a.id).cmp(&(y.scope.rank(), a.created_at, &b.id))
         });
-        live
+        Decisions { live }
+    }
+
+    /// The live decisions in scope in the project `project`.
+    pub fn live(&self, project: &str) -> Vec<(&'a Note, Decision)> {
+        self.live
+            .iter()
+            .filter(|(_, d)| d.scope == Scope::Me || d.anchor.project == project)
+            .cloned()
+            .collect()
     }
 
     /// The live decision in scope in `project` whose id is `id`, or the only one whose id starts with `id`

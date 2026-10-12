@@ -1,5 +1,5 @@
 use super::*;
-use crate::{Anchor, Mark};
+use celis_trails::{Anchor, Mark};
 use celis_wire::Account;
 
 fn account() -> Account {
@@ -27,7 +27,7 @@ fn step(under: Option<&Note>, at: u64) -> Note {
 /// The time the tree of `records` at `now` changes next.
 fn next(records: &[Note], now: u64) -> Option<u64> {
     let steps = Steps::new(records, now);
-    let decisions = Decisions { records };
+    let decisions = Decisions::new(records);
     let tree = Tree {
         steps: &steps,
         decisions: &decisions,

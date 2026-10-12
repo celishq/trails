@@ -1,5 +1,8 @@
 //! celis — the command line over the trail.
 
+mod command;
+mod help;
+
 use std::io::Write;
 
 fn main() {
@@ -10,7 +13,7 @@ fn main() {
         let _ = writeln!(std::io::stdout(), "{}", version());
         return;
     }
-    let command = celis_trails::Command {
+    let command = command::Command {
         args,
         env: std::env::vars().collect(),
         folder: std::env::current_dir().unwrap_or_default(),

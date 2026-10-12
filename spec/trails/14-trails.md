@@ -51,14 +51,13 @@ $CELIS_TRAIL    a step id, or a start of it: where `step add` with no `--under` 
 - With `--new`, `step add` MUST write a new trail.
 - `prompt` MUST read a hook's `{"session_id", "prompt"}` on stdin. While that session has an open trail,
   it MUST write the prompt on it, and print the record's id. Else it MUST write nothing.
-- With no open trail, `prompt` MUST print the past work like the prompt on stderr ("The past").
-  Each MUST print as its one line, with no rules or decisions under it.
-- A line above them MUST say how to copy one. With no past work like the prompt, it MUST print nothing.
+- With no open trail, `prompt` MUST print one line on stderr that names the `celis:past` agent ("The past").
+- With no past work in the store, it MUST print nothing.
 - The prompt MUST be a steer on the oldest working step of the trail. With no working step, it MUST be a
   prompt mark on the trail. Its text MUST be the prompt's first line, cut to 200 characters.
 - A reader MUST NOT count a prompt mark as a steer.
-- `prompt` MUST write nothing for a prompt that starts with `<task-notification>`. The harness wrote it,
-  not the person.
+- `prompt` MUST write nothing for a prompt that starts with `<task-notification>` or `<agent-message`.
+  The harness wrote it, not the person.
 - With a working step, `prompt` MUST then name it on stderr. The line asks for a step under it, or a
   replacement, when the next work does not fit it.
 - The hook MUST give that line to the agent.
@@ -138,7 +137,7 @@ celis tree --all [--full]         every trail in the store, by day
 - In the short tree with no id, a trail that is not active MUST print only its own line. Its details MUST
   hold `1 step` or `<n> steps` when steps are under it.
 - `tree` MUST print the step with its state and its rules; `--full` adds its proof
-  and grade when done. Then come the steps under it, oldest first, each followed by its own steps.
+  and grade when done. An ask MUST print its trail's rules. Then come the steps under it, oldest first, each followed by its own steps.
 - `tree` MUST mark a done step `✓`, a dropped one `✗`, a working one `◐`, and an open one `○` (CIP-12,
   "Starting"). A step of an ended trail that is not done or dropped MUST be marked `!`, as `expired`. With `--full`, under a step come the lines of its text after its title (CIP-12, "Steps").
   Then come the proof and grade of a done step (CIP-12, "Grades"), or a dropped one's reason.
@@ -215,51 +214,33 @@ shop
 
 ## The past
 
-The past shows how a task like a new one was done, so a new plan can follow the path that worked.
+The past shows how a task like a new one was done, so a new plan can follow the path that worked. An
+agent chooses it: `past` lists, and the plugin's `celis:past` agent reads the list and opens the trees.
 
 **Rules**
 
-- `read --like` MUST print the past work of every project like the text, 3 at most.
+- `past` MUST print the past work of every project, newest first.
 - Past work MUST be a done ask, or a reached trail. An ask is a step right under a trail.
 - A trail with an ask of its own text MUST NOT count as past work, so the ask stands for it.
-- The text of past work MUST hold its tree's titles, details, places, proofs and changed lines.
-- It MUST also hold its trail's rules, the live decisions at its places, and its project's name.
-- A trail's text MUST NOT hold the trees of the past work under it.
-- A term MUST be a run of letters or of digits, 3 or more long, in lower case.
-- A term MUST also end where a lower-case letter meets an upper-case one, so `invoicesPage` holds two.
-- Two terms MUST match when they are equal, with a likeness of 1.
-- Two terms MUST also match when their first two letters are equal and their trigram Dice is 0.5 or more.
-  That Dice is their likeness. A term's trigrams mark both its ends.
-- Each term of the text MUST weigh `ln(1 + (n - m + 0.5) / (m + 0.5))`. Here `n` counts the past work,
-  and `m` the past work that holds a match.
-- Past work MUST score by BM25, with `k1` 1.2 and `b` 0.75, over its terms. A matched term counts its
-  best likeness in place of a count.
-- The working project's name and each `--at` place MUST add their terms to the score.
-- Past work whose text terms score under `ln 2` MUST NOT print.
-- The highest score MUST come first. Then come the fewest steers and rework in its tree, then the newest.
-- Each MUST print as one line: its id, project, title and place, then its grade, else its state.
-  Under it come the rules of its trail, then the live decisions at its place.
-- With `--full`, each MUST print as `tree --full` prints it.
-- With `--json`, each object MUST be named `past`. It MUST carry its `score` and its matched `terms`.
-- A search MUST read its query as the `request` of `spec/fixtures/retrieve.json`. Its `past` MUST carry
-  the fixture's keys.
-- `read --like` MUST append a `shown` line to `$CELIS_HOME/retrieval.log`, with the ids it printed.
+- Each MUST print as one line: its id, project, title and place, its grade or else its state, and its day.
+- With `--json`, each object MUST be named `past`, with its id, project, title, places, state, grade and day.
+- `past` MUST append a `listed` line to `$CELIS_HOME/retrieval.log`, with how many it printed.
 - `tree <id>` MUST append an `opened` line with the whole id of the step it prints.
 - The log MUST NOT be a record. A failed append MUST NOT fail the command.
 
 ```
-retrieval.log  {"at": <unix seconds>, "shown": {"from": "read" | "prompt", "text", "project",
-                "places": [], "ids": []}}
+past           <id, first 8> [<project name>] <its title>[ · <place>] · <grade | state> · <yyyy-mm-dd>
+               json  {"past": {"id", "created_at", "day", "project", "content", "places", "state", "grade"}}
+retrieval.log  {"at": <unix seconds>, "listed": <count>}
                {"at": <unix seconds>, "opened": "<a step's id>"}
 ```
 
 ```
-celis read --like "Add an Invoices page from the frame"
+celis past
 ```
 
-> Why the first two letters: without them, `site` matches `offsite`. Why `ln 2`: a term that half the past
-> work holds is no evidence on its own. The project and places rank work, but never qualify it alone.
-> `spec/fixtures/past.json` holds the prompts each rule must answer.
+> Why an agent chooses: it reads an ask in any language, and it tells the same kind of task from the same
+> words. The list stays one line a work, so it fits the agent's context for thousands of asks.
 
 ## Watching
 

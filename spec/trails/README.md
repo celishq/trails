@@ -1,6 +1,6 @@
 # CIPs — Trails
 
-These specs hold the contract of the trail, the crate `celis-trails`. A trail is one task the person gives,
+These specs hold the contract of the trail, the crates `celis-trails` and `celis`. A trail is one task the person gives,
 broken into steps that agents take and close, with the decisions made on the way, each at its place. The
 trails of every project on the machine share one store, so later work can follow the paths that worked.
 Records are nostr notes your account signs. They follow the vault's CIP rules
@@ -61,7 +61,7 @@ The conventions in `spec/AGENTS.md` apply here unchanged.
 ## A decision, end to end
 
 ```
-1  you give a task; the agent reads the past trails like it          CIP-14 — The past
+1  you give a task; an agent finds the past trails like it          CIP-14 — The past
 2  the agent starts a trail, and records the rules you state          CIP-14 — Trails, Rules
 3  it adds the first steps under the trail, at their places          CIP-12 — The commands
 4  agent A finds the tests need SHELF_OFFLINE=1, and decides it       CIP-10 — Decisions, Scope

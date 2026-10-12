@@ -276,40 +276,31 @@ fn the_prompt_hook_names_the_working_step() {
     );
 }
 
-/// `prompt` writes and prints nothing for a prompt that is a task notification of the harness, not the
-/// person's words (`spec/trails/14-trails.md`, "Sessions").
+/// `prompt` writes and prints nothing for a prompt that is a task notification or an agent's message of
+/// the harness, not the person's words (`spec/trails/14-trails.md`, "Sessions").
 #[test]
-fn prompt_skips_a_task_notification() {
+fn prompt_skips_a_harness_message() {
     let repo = Repo::new();
     start(&repo, "s1", "the trail");
-    let json = serde_json::json!({"session_id": "s1",
-        "prompt": "<task-notification>\n<task-id>b1</task-id>\n</task-notification>"})
-    .to_string();
-    let o = repo.run(&repo.path(), &["prompt"], &[], &json);
-    assert!(o.status.success(), "{}", err(&o));
-    assert_eq!(out(&o), "");
+    for prompt in [
+        "<task-notification>\n<task-id>b1</task-id>\n</task-notification>",
+        "<agent-message from=\"a1\">\nThe report.\n</agent-message>",
+    ] {
+        let json = serde_json::json!({"session_id": "s1", "prompt": prompt}).to_string();
+        let o = repo.run(&repo.path(), &["prompt"], &[], &json);
+        assert!(o.status.success(), "{}", err(&o));
+        assert_eq!(out(&o), "", "{prompt}");
+        assert_eq!(err(&o), "", "{prompt}");
+    }
     assert!(marks(&repo, "prompt").is_empty());
 }
 
-/// With no open trail in the session, `prompt` writes nothing and prints the past work like the prompt on
-/// stderr, under a line that says how to copy one; nothing when none is like it
+/// With no open trail in the session, `prompt` writes nothing and prints one line on stderr naming the
+/// agent that finds past work; nothing while the store holds no past work
 /// (`spec/trails/14-trails.md`, "Sessions").
 #[test]
-fn a_prompt_with_no_open_trail_prints_past_work_like_it() {
+fn a_prompt_with_no_open_trail_names_the_past_agent() {
     let repo = Repo::new();
-    let close = |id: &str| {
-        let o = repo.run(
-            &repo.path(),
-            &["step", "done", &id[..8], "--as-planned", "--", "p"],
-            &[],
-            "",
-        );
-        assert!(o.status.success(), "{}", err(&o));
-    };
-    let vendors = add(&repo, None, "Build the Vendors page");
-    close(&vendors);
-    std::thread::sleep(std::time::Duration::from_millis(1100));
-    close(&add(&repo, None, "Fix the login form"));
     let hook = |prompt: &str| {
         let json = serde_json::json!({"session_id": "s9", "prompt": prompt}).to_string();
         let o = repo.run(&repo.path(), &["prompt"], &[], &json);
@@ -317,13 +308,17 @@ fn a_prompt_with_no_open_trail_prints_past_work_like_it() {
         assert_eq!(out(&o), "");
         err(&o)
     };
-    let like = hook("Build a Vendors table");
-    let lines: Vec<&str> = like.lines().collect();
-    assert!(
-        lines[0].starts_with("celis: past work like this ask"),
-        "{like}"
+    let open = add(&repo, None, "Fix the login form");
+    assert_eq!(hook("Build a Vendors table"), "");
+    let o = repo.run(
+        &repo.path(),
+        &["step", "done", &open[..8], "--as-planned", "--", "p"],
+        &[],
+        "",
     );
-    assert!(lines[1].starts_with(&vendors[..8]), "{like}");
-    assert_eq!(hook("Plan the team offsite"), "");
+    assert!(o.status.success(), "{}", err(&o));
+    let said = hook("Build a Vendors table");
+    assert_eq!(said.lines().count(), 1, "{said}");
+    assert!(said.contains("run the celis:past agent"), "{said}");
     assert!(marks(&repo, "prompt").is_empty());
 }

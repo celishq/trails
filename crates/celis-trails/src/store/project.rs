@@ -98,7 +98,7 @@ impl Project {
         if place.contains("://") {
             return place.to_string();
         }
-        let path = crate::decisions::path(place);
+        let path = crate::decision::decisions::path(place);
         let line = &place[path.len()..];
         let cwd = cwd.canonicalize().unwrap_or_else(|_| cwd.to_path_buf());
         let top = self

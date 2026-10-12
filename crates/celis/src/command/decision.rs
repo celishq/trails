@@ -1,7 +1,7 @@
 //! `celis decide`: write a decision.
 
 use super::{Args, Command};
-use crate::{Decision, Failure, Project, Scope, State, Step};
+use celis_trails::{Decision, Failure, Project, Scope};
 use std::io::Write;
 
 impl Command {
@@ -22,33 +22,17 @@ impl Command {
             })?,
             None => Scope::Project,
         };
-        let snapshot = self.snapshot()?;
         let scope = match scope {
-            Scope::Trail(id) => {
-                let steps = snapshot.steps();
-                let note = steps.find(&id).map_err(|_| Failure::no_trail(&id))?;
-                let active = steps.state(note) == State::Active
-                    && Step::read(note)
-                        .is_some_and(|s| s.under.is_none() && s.anchor.project == project.id);
-                match active {
-                    true => Scope::Trail(note.id.clone()),
-                    false => return Err(Failure::no_trail(&id)),
-                }
-            }
             Scope::At(place) => Scope::At(project.place(&place, &self.folder)),
             scope => scope,
-        };
-        let replaces = match &args.replaces {
-            Some(id) => Some(snapshot.decisions().find(&project.id, id)?.id.clone()),
-            None => None,
         };
         let decision = Decision {
             anchor: project.anchor(),
             scope,
-            replaces,
+            replaces: args.replaces.clone(),
             content,
         };
-        let written = snapshot.sign(|account, now| decision.record(account, now))?;
-        self.id(out, args, &written)
+        let written = self.trails()?.decide(decision)?;
+        self.print(written, args, out, &mut std::io::sink())
     }
 }

@@ -10,11 +10,11 @@ depends: [CIP-10]
 ## Commands
 
 ```
-celis read [--at <place>]... [--like <text>] [--full]
-                                                       this project's active trails, open steps and decisions
+celis read [--at <place>]...                          this project's active trails, open steps and decisions
 celis decide [--scope <scope>] [--replaces <id>] -- <text>
                                                        a decision, in its scope
 celis tree [<id>] [--full] [--all]                    a trail and its steps (CIP-14)
+celis past                                            every project's past work, one line each (CIP-14)
 celis step add | start | done | steer | drop | edit   the steps of a trail (CIP-12)
 celis watch [<id>] [--full]                           the active trees, again on each change (CIP-14)
 celis home                                            the folder of the store, to open it
@@ -41,7 +41,6 @@ $CELIS_TRAIL  the trail new steps go under (CIP-14)
 - `read` MUST NOT print a rule of a done or dropped trail, or write a record.
 - `home` MUST print the full path of the store, `$CELIS_HOME/trails`, and write nothing. With `--json`, it
   MUST print `{"path"}`.
-- With `--like`, `read` MUST then print the past trails like the text (CIP-14, "The past").
 - `decide` MUST write a decision on the working folder's project (CIP-10, "Decisions"), with
   `--scope` and `--replaces` as its tags. With `--scope project`, or no `--scope`, it MUST write no
   `scope` tag.
@@ -60,10 +59,9 @@ read      text  <id, first 8> [<project name>] <its title>[ · <place>]      eac
                   rule <id, first 8> <text>                                 each of its rules
                 <an open step, as CIP-12 "The commands" gives it>
                 <a decision>
-                <past work, as CIP-14 "The past" gives it>                  with `--like`
           json  {"trail": {"id", "created_at", "project", "content", "rules": []}}
                 · {"recent": {"id", "created_at", "project", "content", "rules": [], "state"}} · {"step": {...}}
-                · {"decision": {...}} · {"past": {...}}, one a line, each as its own json
+                · {"decision": {...}}, one a line, each as its own json
 ```
 
 **Examples**
@@ -71,7 +69,7 @@ read      text  <id, first 8> [<project name>] <its title>[ · <place>]      eac
 ```
 celis decide --scope at:shelf/prices.py -- "When you change prices: keep them in cents, because floats lost a cent."
 celis decide --scope me -- "When you write a commit message: use plain words, because the team reads them."
-celis read --at shelf/prices.py --like "Add a senior tier to the price list"
+celis read --at shelf/prices.py
 ```
 
 ## Help
@@ -96,6 +94,7 @@ Commands
   read     this project's active trails, open steps and decisions
   decide   a decision, in its scope
   tree     a trail and its steps, with their grades
+  past     every project's past work, one line each
   step     the steps of a trail: add, start, done, steer, drop, edit
   watch    a trail's tree, printed again on each change
   home     the folder of the store, to open it
@@ -131,6 +130,8 @@ Examples
 - A line of a help page MUST NOT be longer than 80 characters.
 - A help page MUST NOT name a spec file.
 - `celis --version` MUST print `celis <version>`, and the commit it was built from, when the build had one.
+- Each command line of the `/celis:trail` card MUST name the flags its command's usage names,
+  and no other.
 
 ## Output and errors
 

@@ -1,10 +1,11 @@
 //! `celis tree`: a trail with its state, its rules and the steps under it.
 
+use super::clock::{clock, day, midnight};
 use super::{Args, Command};
-use crate::grade::{stride, took};
-use crate::id::short;
-use crate::steps::LIFE;
-use crate::{Decisions, Failure, Grade, Project, RetrievalLog, State, Status, Step, Steps};
+use celis_trails::id::short;
+use celis_trails::trail::grade::{stride, took};
+use celis_trails::trail::steps::LIFE;
+use celis_trails::{Decisions, Failure, Grade, Project, RetrievalLog, State, Status, Step, Steps};
 use celis_wire::Note;
 use serde_json::json;
 use std::cell::Cell;
@@ -27,14 +28,14 @@ impl Command {
         if !self.held()? {
             return id.map_or(Ok(()), |id| Err(Failure::no_step(id)));
         }
-        let snapshot = self.snapshot()?;
-        let steps = snapshot.steps();
-        let decisions = snapshot.decisions();
-        let today = midnight(snapshot.now);
+        let trails = self.trails()?;
+        let steps = trails.steps();
+        let decisions = trails.decisions();
+        let today = midnight(trails.now);
         let chosen: Vec<&Note> = match (id, args.all) {
             (Some(id), _) => {
                 let note = steps.find(id)?;
-                let _ = RetrievalLog::at(&self.home()?).opened(&note.id, snapshot.now);
+                let _ = RetrievalLog::at(&self.home()?).opened(&note.id, trails.now);
                 vec![note]
             }
             (None, true) => steps.roots().into_iter().rev().collect(),
@@ -109,8 +110,9 @@ impl Tree<'_> {
         self.show(lines, out)
     }
 
-    /// Adds the step `note` with its state, its proof and grade when done, and its rules, then the steps
-    /// under it; a first ask with its text stands on its line. With `json`, its object is `key`.
+    /// Adds the step `note` with its state, its proof and grade when done, and its rules or an ask's
+    /// trail's rules, then the steps under it; a first ask with its text stands on its line. With `json`,
+    /// its object is `key`.
     fn trail(&self, note: &Note, key: &str, json: bool, lines: &mut Vec<Line>) {
         let Some(step) = self.steps.step(note) else {
             return;
@@ -173,7 +175,12 @@ impl Tree<'_> {
         if folded {
             return;
         }
-        for (rule, decision) in self.decisions.rules(&step.anchor.project, &note.id) {
+        let trail = self.steps.trail(note);
+        let owner = match self.steps.is_ask(note) {
+            true => &trail.id,
+            false => &note.id,
+        };
+        for (rule, decision) in self.decisions.rules(&step.anchor.project, owner) {
             let content = match self.full {
                 true => decision.content.as_str(),
                 false => decision.brief(),
@@ -182,12 +189,8 @@ impl Tree<'_> {
             self.labelled(lines, ("", column), "rule", &text);
         }
         let mut notes = self.steps.under(&note.id);
-        let twin = notes
-            .first()
-            .and_then(|n| self.steps.step(n))
-            .is_some_and(|ask| ask.content == step.content);
-        if twin {
-            let ask = notes.remove(0);
+        if let Some(ask) = self.steps.twin(note) {
+            notes.remove(0);
             notes.splice(0..0, self.steps.under(&ask.id));
         }
         self.under(notes, "", json, lines)
@@ -441,10 +444,6 @@ impl Tree<'_> {
 const DIM: &str = "2";
 const BOLD: &str = "1";
 const UNDERLINE: &str = "4;34";
-const MONTHS: [&str; 12] = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
-
 /// The characters the detail columns of `widths` take with the two spaces before them; none when all are
 /// empty.
 fn room(widths: &[usize; 4]) -> usize {
@@ -459,40 +458,6 @@ fn room(widths: &[usize; 4]) -> usize {
 fn last(at: &str) -> String {
     let at = at.trim_end_matches('/');
     at.rsplit('/').next().unwrap_or(at).to_string()
-}
-
-/// The time `at` as `14:02` on the local day of `now`, else as `Oct 9`.
-fn clock(at: u64, now: u64) -> String {
-    let (then, today) = (local(at), local(now));
-    match (then.tm_year, then.tm_yday) == (today.tm_year, today.tm_yday) {
-        true => format!("{:02}:{:02}", then.tm_hour, then.tm_min),
-        false => format!(
-            "{} {}",
-            MONTHS[then.tm_mon.clamp(0, 11) as usize],
-            then.tm_mday
-        ),
-    }
-}
-
-/// The local day of `at`, as `Oct 9`.
-fn day(at: u64) -> String {
-    let tm = local(at);
-    format!("{} {}", MONTHS[tm.tm_mon.clamp(0, 11) as usize], tm.tm_mday)
-}
-
-/// The time of the local midnight that starts the day of `now`.
-pub(super) fn midnight(now: u64) -> u64 {
-    let tm = local(now);
-    let since = tm.tm_hour * 3_600 + tm.tm_min * 60 + tm.tm_sec;
-    now.saturating_sub(u64::try_from(since).unwrap_or(0))
-}
-
-/// The local calendar time of `at`.
-fn local(at: u64) -> libc::tm {
-    let time = libc::time_t::try_from(at).unwrap_or(0);
-    let mut tm: libc::tm = unsafe { std::mem::zeroed() };
-    unsafe { libc::localtime_r(&time, &mut tm) };
-    tm
 }
 
 /// The characters of `text` a terminal shows; colour codes count none.
