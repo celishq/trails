@@ -137,7 +137,7 @@ fn a_place_reads_as_a_path_from_the_projects_top_folder() {
     assert_eq!(read_ids(&repo, &root, &["--at", &full]), [id.as_str()]);
     assert_eq!(read_ids(&repo, &src, &["--at", "a.rs"]), [id.as_str()]);
     assert_eq!(read_ids(&repo, &src, &["--at", "../src"]), [id.as_str()]);
-    let o = repo.run(&root, &["read", "--json", "--at", "src/a.rs"], &[], "");
+    let o = repo.run(&root, &["past", "--json", "--at", "src/a.rs"], &[], "");
     assert!(
         support::out(&o).contains("\"at:src/a.rs:3\""),
         "{}",

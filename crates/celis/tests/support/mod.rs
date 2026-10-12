@@ -159,6 +159,19 @@ pub fn put(repo: &Repo, note: &Note) {
     Store::open(&repo.home()).unwrap().write(note).unwrap();
 }
 
+/// Writes a steer with `text` on the step `id`, as the prompt hook does.
+pub fn steer(repo: &Repo, id: &str, text: &str) {
+    let tags: Vec<Vec<String>> = vec![
+        vec!["L".into(), "celis.step".into()],
+        vec!["l".into(), "steer".into(), "celis.step".into()],
+        vec!["e".into(), id.into()],
+    ];
+    put(
+        repo,
+        &Note::write(&account(), 1985u16, now(), tags, text).unwrap(),
+    );
+}
+
 /// A cairn on the repo that `by` signed at `at`, with the extra tags `extra`.
 pub fn cairn(repo: &Repo, by: &Account, label: &str, extra: &[(&str, &str)], at: u64) -> Note {
     let anchor = format!("project:{}", repo.project_id());
@@ -424,9 +437,9 @@ pub fn decision_tags(project: (&str, &str)) -> Vec<Vec<String>> {
     ]
 }
 
-/// The trail objects that `celis read --json` prints in `folder`, in order.
+/// The trail objects that `celis past --json` prints in `folder`, in order.
 pub fn read_trails(repo: &Repo, folder: &Path) -> Vec<serde_json::Value> {
-    let o = repo.run(folder, &["read", "--json"], &[], "");
+    let o = repo.run(folder, &["past", "--json"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     out(&o)
         .lines()
@@ -477,10 +490,10 @@ pub fn objects(repo: &Repo, args: &[&str]) -> Vec<serde_json::Value> {
         .collect()
 }
 
-/// The ids, first 8 characters, of the decisions `celis read <args> --json` prints in `folder`, in
+/// The ids, first 8 characters, of the decisions `celis past <args> --json` prints in `folder`, in
 /// order.
 pub fn read_ids(repo: &Repo, folder: &Path, args: &[&str]) -> Vec<String> {
-    let mut all = vec!["read"];
+    let mut all = vec!["past"];
     all.extend(args);
     all.push("--json");
     let o = repo.run(folder, &all, &[], "");

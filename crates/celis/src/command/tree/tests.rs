@@ -13,7 +13,6 @@ fn step(under: Option<&Note>, at: u64) -> Note {
             name: "repo".into(),
         },
         under: under.map(|n| n.id.clone()),
-        fixes: None,
         replaces: None,
         places: Vec::new(),
         check: None,

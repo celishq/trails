@@ -1,13 +1,13 @@
 //! `celis prompt`: what a session's hook writes on the trail it works on.
 
 use super::{Args, Command};
-use celis_trails::{Failure, Past, Project, Trails};
+use celis_trails::{Failure, Project, Trails};
 use std::io::{Read, Write};
 
 impl Command {
     /// Writes a hook's prompt as a steer on the oldest working step of the session's open trail, else on
     /// the trail, signed now; prints its id, and names that step on `err`. With no open trail, writes
-    /// nothing and names the agent that finds past work on `err`. For a harness message, does neither.
+    /// nothing, and names the agent that brings past work on `err`. For a harness message, does neither.
     pub(super) fn prompt(
         &self,
         args: &Args,
@@ -36,7 +36,7 @@ impl Command {
         let trails = self.trails()?;
         let steps = trails.steps();
         let Some(trail) = steps.session(&project.id, session) else {
-            return self.recall(&trails, err);
+            return self.recall(&trails, err, project);
         };
         let (record, working) = trails.prompt(&steps, trail, text)?;
         self.id(out, args, &record)?;
@@ -52,16 +52,23 @@ impl Command {
         super::put(err, &line)
     }
 
-    /// Prints a line that names the agent which finds past work, when the store holds any.
-    fn recall(&self, trails: &Trails, err: &mut dyn Write) -> Result<(), Failure> {
-        let steps = trails.steps();
-        if Past::new(&steps).all().is_empty() {
+    /// Names the agent that brings what `past` prints, when it prints anything.
+    fn recall(
+        &self,
+        trails: &Trails,
+        err: &mut dyn Write,
+        project: &Project,
+    ) -> Result<(), Failure> {
+        let mut listed = Vec::new();
+        self.list(trails, &Args::default(), &mut listed, project)?;
+        if listed.is_empty() {
             return Ok(());
         }
         super::put(
             err,
-            "celis: a new ask. Before you plan a change, run the celis:past agent with the ask and the \
-             places it will touch; it brings the past work like it and the decisions there.",
+            "celis: a new ask in this session; before any other tool, run the celis:past agent in the \
+             foreground with the ask and the places it may touch, and wait for its answer; it brings this \
+             project's active trails and decisions, and the past work like the ask.",
         )
     }
 }

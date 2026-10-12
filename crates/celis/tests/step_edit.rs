@@ -22,7 +22,7 @@ fn edit_gives_a_step_new_text() {
     );
     assert!(o.status.success(), "{}", err(&o));
     assert_eq!(out(&o).trim().len(), 64, "{}", out(&o));
-    let read = out(&cli(&repo, &["read"]));
+    let read = out(&cli(&repo, &["past"]));
     assert!(read.contains("Orange badges and buttons"), "{read}");
     assert!(!read.contains("Make the badges"), "{read}");
     let tree = objects(&repo, &["tree", &trail[..8]]);

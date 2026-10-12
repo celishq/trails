@@ -11,7 +11,7 @@ fn a_reader_counts_a_step_with_no_under_as_a_trail() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "senior tier"]);
     let part = add(&repo, &["--under", &trail[..8], "--", "the price"]);
-    let read = objects(&repo, &["read"]);
+    let read = objects(&repo, &["tree", &trail[..8]]);
     let trails: Vec<&str> = read
         .iter()
         .filter_map(|v| v.get("trail")?["id"].as_str())

@@ -20,7 +20,7 @@ fn drop_closes_the_step_and_the_open_steps_under_it() {
     );
     assert!(o.status.success(), "{}", err(&o));
     assert_eq!(out(&o).lines().count(), 3, "{}", out(&o));
-    let read = out(&cli(&repo, &["read"]));
+    let read = out(&cli(&repo, &["past"]));
     for id in [&trail, &open, &deeper] {
         assert!(!read.contains(&id[..8]), "{read}");
     }

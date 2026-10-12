@@ -1,8 +1,7 @@
-//! `celis watch`: a trail's tree, printed again each time the store changes.
+//! `celis tree --watch`: the tree, printed again each time the store changes.
 
-use super::tree::Tree;
 use super::{Args, Command};
-use celis_trails::{Failure, State, Trails};
+use celis_trails::{Failure, Project};
 use notify::{RecursiveMode, Watcher};
 use std::io::Read;
 use std::io::{IsTerminal, Write};
@@ -12,10 +11,15 @@ use std::sync::mpsc::{channel, RecvTimeoutError, Sender};
 use std::time::Duration;
 
 impl Command {
-    /// Prints the tree of the step `args` names, or with no id every active trail, then prints it again
-    /// when a record lands, a time it shows changes, or the terminal's width changes, and sleeps between.
-    /// With no store, it writes nothing and waits for one. Runs until it is stopped.
-    pub(super) fn watch(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
+    /// Prints the tree `args` names, then prints it again when a record lands, a time it shows changes, or
+    /// the terminal's width changes, and sleeps between. With no store, it writes nothing and waits for
+    /// one. Runs until it is stopped.
+    pub(super) fn watch(
+        &self,
+        args: &Args,
+        out: &mut dyn Write,
+        project: &Project,
+    ) -> Result<(), Failure> {
         let terminal = std::io::stdout().is_terminal();
         let mut shown = String::new();
         if !self.held()? {
@@ -30,10 +34,9 @@ impl Command {
             }
         }
         let mut trails = self.trails()?;
-        let id = match args.words.get(1) {
-            Some(id) => Some(trails.steps().find(id)?.id.clone()),
-            None => None,
-        };
+        if let Some(id) = args.words.get(1) {
+            trails.steps().find(id)?;
+        }
         let (send, events) = channel();
         resizes(send.clone());
         let landed = move |event: notify::Result<notify::Event>| {
@@ -51,7 +54,10 @@ impl Command {
         let mut width = self.columns();
         loop {
             trails.now = super::now();
-            let (tree, next) = self.frame(&trails, id.as_deref(), args, width)?;
+            let (mut tree, next) = self.frame(&trails, args, project, width)?;
+            if tree.is_empty() && args.words.len() < 2 && !args.json {
+                tree = format!("{EMPTY}\n");
+            }
             show(out, &tree, &mut shown, terminal)?;
             let wake = match next {
                 Some(at) => events.recv_timeout(until(at)),
@@ -71,48 +77,6 @@ impl Command {
                 shown.clear();
             }
         }
-    }
-
-    /// The tree of `trails` that `watch` prints now, `width` wide, short or full as `args` asks: of the
-    /// step `id`, or of every active trail of every project, newest first; with none, what to do to start
-    /// one. Then the time it changes next, if any.
-    fn frame(
-        &self,
-        trails: &Trails,
-        id: Option<&str>,
-        args: &Args,
-        width: Option<usize>,
-    ) -> Result<(String, Option<u64>), Failure> {
-        let steps = trails.steps();
-        let decisions = trails.decisions();
-        let notes: Vec<_> = match id {
-            Some(id) => steps.find(id).ok().into_iter().collect(),
-            None => steps
-                .roots()
-                .into_iter()
-                .rev()
-                .filter(|n| steps.state(n) == State::Active)
-                .collect(),
-        };
-        let mut printed = Vec::new();
-        let mut next = None;
-        if !notes.is_empty() {
-            let tree = Tree {
-                steps: &steps,
-                decisions: &decisions,
-                colour: self.colour(),
-                full: args.full,
-                fold: false,
-                all: id.is_none(),
-                width,
-                next: Default::default(),
-            };
-            tree.print(&notes, "trail", args.json, &mut printed)?;
-            next = tree.next.get();
-        } else if id.is_none() && !args.json {
-            return Ok((format!("{EMPTY}\n"), None));
-        }
-        Ok((String::from_utf8_lossy(&printed).into_owned(), next))
     }
 }
 
@@ -146,10 +110,10 @@ fn until(at: u64) -> Duration {
         .unwrap_or_default()
 }
 
-/// What `watch` with no id prints while no trail is active.
-const EMPTY: &str = "No active trail. Start one in your agent with /celis:trail <what you want>,\nand it shows here as the agent works.";
+/// What `tree --watch` with no id prints while it has no trail to print.
+const EMPTY: &str = "No trail today. Give your agent a task with the celis plugin on,\nand it shows here as the agent works.";
 
-/// What wakes `watch` before its next tick.
+/// What wakes `tree --watch` before its next tick.
 enum Wake {
     Record,
     Resize,

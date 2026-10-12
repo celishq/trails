@@ -11,8 +11,6 @@ pub struct Draft {
     pub check: Option<String>,
     pub under: Option<String>,
     pub replaces: Option<String>,
-    pub fixes: Option<String>,
     pub session: Option<String>,
-    pub trail: Option<String>,
     pub new: bool,
 }

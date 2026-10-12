@@ -1,4 +1,4 @@
-//! CIP-12, "The commands": `--under`, `--fixes`, and a step with open steps under it.
+//! CIP-12, "The commands": `--under`, and a step with open steps under it.
 
 mod support;
 
@@ -8,20 +8,18 @@ fn records(repo: &Repo) -> usize {
     std::fs::read_dir(repo.store().join("shared")).map_or(0, |d| d.count())
 }
 
-/// `add` refuses an `--under` or `--fixes` no step has with `no-step`, and a closed `--under` with
-/// `closed` (`spec/trails/12-steps.md`, "The commands").
+/// `add` refuses an `--under` no step has with `no-step`, and a closed one with `closed`
+/// (`spec/trails/12-steps.md`, "The commands").
 #[test]
-fn add_refuses_an_unknown_under_or_fixes_and_a_closed_under() {
+fn add_refuses_an_unknown_or_closed_under() {
     let repo = Repo::new();
     let closed = add(&repo, &["--", "closed"]);
     finish(&repo, &closed[..8]);
-    for flag in ["--under", "--fixes"] {
-        let o = cli(
-            &repo,
-            &["step", "add", flag, "deadbeef", "--json", "--", "x"],
-        );
-        refusal(&o, 1, "no-step");
-    }
+    let o = cli(
+        &repo,
+        &["step", "add", "--under", "deadbeef", "--json", "--", "x"],
+    );
+    refusal(&o, 1, "no-step");
     let o = cli(
         &repo,
         &["step", "add", "--under", &closed[..8], "--json", "--", "x"],
@@ -29,34 +27,25 @@ fn add_refuses_an_unknown_under_or_fixes_and_a_closed_under() {
     refusal(&o, 1, "closed");
 }
 
-/// `add` carries the whole ids of `--under` and `--fixes` (`spec/trails/12-steps.md`, "The commands").
+/// `add` carries the whole id of `--under`, and the JSON of a step gives its `under` and `replaces` as
+/// `links` (`spec/trails/12-steps.md`, "The commands").
 #[test]
-fn add_carries_the_whole_ids_of_under_and_fixes() {
+fn add_carries_the_whole_id_of_under_and_links_it() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the trail"]);
     let first = add(&repo, &["--under", &trail[..8], "--", "first"]);
-    finish(&repo, &first[..8]);
-    let fix = add(
-        &repo,
-        &[
-            "--under",
-            &trail[..8],
-            "--fixes",
-            &first[..8],
-            "--",
-            "fix it",
-        ],
-    );
+    let fix = add(&repo, &["--replaces", &first[..8], "--", "fix it"]);
+    let fix = fix.lines().next().unwrap();
     let step = objects(&repo, &["tree", &trail[..8]])
         .into_iter()
         .filter_map(|v| v.get("step").cloned())
-        .find(|s| s["id"] == fix.as_str())
-        .expect("the fix");
+        .find(|s| s["id"] == fix)
+        .expect("the replacement");
     assert_eq!(
         step["links"],
         serde_json::json!([
             {"to": trail, "kind": "under"},
-            {"to": first, "kind": "fixes"},
+            {"to": first, "kind": "replaces"},
         ])
     );
     assert!(step.get("under").is_none(), "{step}");

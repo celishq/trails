@@ -58,7 +58,7 @@ fn a_record_counts_whatever_account_signed_it() {
     let by_account = step_signed(&repo, &account(), "By the account.", at).id;
     let by_stranger = step_signed(&repo, &stranger, "By a stranger.", at).id;
 
-    let o = repo.run(&repo.path(), &["read", "--json"], &[], "");
+    let o = repo.run(&repo.path(), &["past", "--json"], &[], "");
     assert!(o.status.success(), "{o:?}");
     let listed = out(&o);
     assert!(listed.contains(&by_account), "{listed}");
@@ -77,7 +77,7 @@ fn every_command_signs_as_the_account() {
         out(&o).trim().to_string()
     };
     let step = run(&["step", "add", "--", "work"]);
-    run(&["step", "steer", &step[..8], "--", "Use cents."]);
+    run(&["step", "start", &step[..8]]);
     run(&["step", "done", &step[..8], "--as-planned", "--", "proof"]);
     run(&["decide", "--", "When you price: use cents."]);
     let files: Vec<_> = std::fs::read_dir(repo.store().join("shared"))
@@ -188,7 +188,7 @@ fn a_command_that_only_reads_mints_no_phrase() {
     let o = repo.run(&repo.path(), &["step", "add", "--", "work"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     std::fs::remove_file(repo.home().join("phrase")).unwrap();
-    for args in [&["read"][..], &["tree", "--all"], &["home"]] {
+    for args in [&["past"][..], &["tree", "--all"]] {
         let o = repo.run(&repo.path(), args, &[], "");
         assert!(o.status.success(), "{args:?}: {}", err(&o));
     }

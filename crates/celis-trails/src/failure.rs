@@ -52,7 +52,7 @@ impl Failure {
         Self::new(
             "no-decision",
             1,
-            format!("no live decision has the id {id}; see the live ones with `celis read`"),
+            format!("no live decision has the id {id}; see the live ones with `celis past`"),
         )
     }
 

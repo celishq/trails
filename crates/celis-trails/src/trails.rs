@@ -1,15 +1,14 @@
 //! The trails and decisions of a store at one moment, and what the account writes on them.
 
-pub mod direction;
 pub mod draft;
 pub mod notice;
-pub mod retro;
+pub mod review;
 pub mod written;
 
 use crate::id::short;
 use crate::{
-    Check, Decision, Decisions, Direction, Draft, Failure, Mark, Notice, Retro, Scope, State,
-    Status, Step, Steps, Store, Written,
+    Check, Decision, Decisions, Draft, Failure, Mark, Notice, Review, Scope, Status, Step, Steps,
+    Store, Written,
 };
 use celis_wire::{Account, Note};
 use std::path::Path;
@@ -42,8 +41,8 @@ impl Trails {
         Decisions::new(&self.records)
     }
 
-    /// Writes the step `draft` states. With no `under`, it goes in the replaced step's place, under
-    /// `trail`, or under the session's trail, else starts a trail; a session's new trail holds its first
+    /// Writes the step `draft` states. With no `under`, it goes in the replaced step's place, or under
+    /// the session's trail, else starts a trail; a session's new trail holds its first
     /// ask. A replaced step's open tree drops. An open step with the same place and words is given back.
     pub fn add(&self, draft: Draft) -> Result<Written, Failure> {
         let steps = self.steps();
@@ -56,13 +55,11 @@ impl Trails {
                 Some(old) => old.under,
                 None => None,
             };
-        let named = match (draft.new, &draft.under, &place) {
-            (_, None, Some(place)) => Some(place),
-            (false, None, None) => draft.trail.as_ref().filter(|t| !t.is_empty()),
-            (_, under, _) => under.as_ref(),
+        let named = match (&draft.under, &place) {
+            (None, Some(place)) => Some(place),
+            (under, _) => under.as_ref(),
         };
         let under = self.resolve(&steps, named.map(String::as_str), true)?;
-        let fixes = self.resolve(&steps, draft.fixes.as_deref(), false)?;
         let under = match (under, &draft.session) {
             (None, Some(session)) if !draft.new => steps.session(&draft.anchor.project, session),
             (under, _) => under,
@@ -85,17 +82,12 @@ impl Trails {
         let step = Step {
             anchor: draft.anchor,
             under,
-            fixes: fixes.map(|n| n.id.clone()),
             replaces: replaced.map(|n| n.id.clone()),
             places: draft.places,
             check: draft.check,
             session: draft.session,
             content: draft.content,
         };
-        let words = step.title().split_whitespace().count();
-        if words > 8 {
-            written.notices.push(Notice::LongTitle(words));
-        }
         if step.under.is_none() && step.session.is_some() {
             let head = Step {
                 places: Vec::new(),
@@ -113,6 +105,18 @@ impl Trails {
             written.records.push(trail);
             return Ok(written);
         }
+        let parent = step.under.as_deref().and_then(|u| steps.find(u).ok());
+        let ahead = parent
+            .filter(|p| steps.ask(p).is_some_and(|a| a.id != p.id))
+            .and_then(|p| {
+                steps
+                    .under(&p.id)
+                    .into_iter()
+                    .find(|n| steps.status(&n.id) == Status::Open)
+            });
+        written
+            .notices
+            .extend(ahead.map(|n| Notice::NotStarted(n.id.clone())));
         let note = self.sign(|account, now| step.record(account, now))?;
         let reason = format!("replaced by {}", short(&note.id));
         written.records.push(note);
@@ -125,30 +129,18 @@ impl Trails {
         Ok(written)
     }
 
-    /// Starts the open step `id` with whether its check passes in `folder` before the work, or gives back
-    /// the first start of a working step; then the live decisions at the step's places.
-    pub fn start(&self, id: &str, folder: &Path) -> Result<Written, Failure> {
+    /// Starts the open step `id`, or gives back the first start of a working step; then the live
+    /// decisions at the step's places.
+    pub fn start(&self, id: &str) -> Result<Written, Failure> {
         let steps = self.steps();
         let note = steps.find_open(id)?;
         let step = steps.step(note).ok_or_else(|| Failure::no_step(id))?;
         let mut written = Written::default();
         match steps.started(&note.id) {
             Some(start) => written.records.push(start.clone()),
-            None => {
-                let passed = step
-                    .check
-                    .as_ref()
-                    .map(|check| self.check(check, folder).is_ok());
-                let mark = Mark::Start { passed };
-                written
-                    .records
-                    .push(self.sign(|account, now| mark.record(account, &note.id, now))?);
-                if passed == Some(true) {
-                    written
-                        .notices
-                        .push(Notice::CheckPassesBefore(note.id.clone()));
-                }
-            }
+            None => written
+                .records
+                .push(self.sign(|account, now| Mark::Start.record(account, &note.id, now))?),
         }
         let decisions = self.decisions();
         for place in &step.places {
@@ -163,7 +155,7 @@ impl Trails {
 
     /// Closes the open step `id` done, with its proof and what changed from its plan, once nothing under
     /// it is open and its check passes in `folder`; a pitfall becomes a decision at its place, else on its
-    /// trail. A done ask gives its retro, and each 5th done step of a trail a direction check.
+    /// trail. It gives the step's review.
     pub fn done(
         &self,
         id: &str,
@@ -209,34 +201,9 @@ impl Trails {
                 .records
                 .push(self.sign(|account, now| decision.record(account, now))?);
         }
-        if steps.is_ask(note) {
-            let retro = self.retro(&steps, note, changed.as_deref());
-            written.notices.push(Notice::Retro(retro));
-        }
-        if trail.id != note.id {
-            let done = 1 + steps
-                .tree(trail)
-                .iter()
-                .filter(|s| s.id != trail.id && steps.done(&s.id).is_some())
-                .count();
-            if done % 5 == 0 {
-                let direction = self.direction(&steps, note, done, folder);
-                written.notices.push(Notice::Direction(direction));
-            }
-        }
+        let review = self.review(&steps, note, changed.as_deref());
+        written.notices.push(Notice::Review(review));
         Ok(written)
-    }
-
-    /// Writes what the person asked for while the open step `id` was open.
-    pub fn steer(&self, id: &str, text: String) -> Result<Written, Failure> {
-        let steps = self.steps();
-        let note = steps.find_open(id)?;
-        let steer =
-            self.sign(|account, now| Mark::Steer { text }.record(account, &note.id, now))?;
-        Ok(Written {
-            records: vec![steer],
-            ..Written::default()
-        })
     }
 
     /// Drops the open step `id`, and each open step under it, with the reason its work is no longer
@@ -272,17 +239,18 @@ impl Trails {
         })
     }
 
-    /// Writes `decision`, its trail scope taken whole from an active trail of its project, and its
+    /// Writes `decision`, its trail scope taken whole from a trail of its project that is not done or
+    /// dropped, and its
     /// `replaces` from a live decision there.
     pub fn decide(&self, mut decision: Decision) -> Result<Written, Failure> {
         let project = decision.anchor.project.clone();
         if let Scope::Trail(id) = &decision.scope {
             let steps = self.steps();
             let note = steps.find(id).map_err(|_| Failure::no_trail(id))?;
-            let active = steps.state(note) == State::Active
+            let open = steps.closed(&note.id).is_none()
                 && Step::read(note)
                     .is_some_and(|s| s.under.is_none() && s.anchor.project == project);
-            if !active {
+            if !open {
                 return Err(Failure::no_trail(id));
             }
             decision.scope = Scope::Trail(note.id.clone());
@@ -345,9 +313,9 @@ impl Trails {
         .collect()
     }
 
-    /// How the ask `ask`, just done with `changed`, went against its plan.
-    fn retro(&self, steps: &Steps, ask: &Note, changed: Option<&str>) -> Retro {
-        let tree = steps.tree(ask);
+    /// How `note`, just done with `changed`, went against its plan.
+    fn review(&self, steps: &Steps, note: &Note, changed: Option<&str>) -> Review {
+        let tree = steps.tree(note);
         let parts = &tree[1..];
         let began = parts
             .iter()
@@ -359,17 +327,29 @@ impl Trails {
         let done = parts
             .iter()
             .filter_map(|n| Some((n.id.clone(), steps.done(&n.id)?.tag("changed")?.to_string())));
-        let own = changed.map(|c| (ask.id.clone(), c.to_string()));
-        let trail = steps.trail(ask);
-        let asked = self.records.iter().filter_map(|note| {
-            let (on, Mark::Prompt { text } | Mark::Steer { text }) = Mark::read(note)? else {
+        let own = changed.map(|c| (note.id.clone(), c.to_string()));
+        let ask = steps.is_ask(note);
+        let trail = steps.trail(note);
+        let asked = self.records.iter().filter_map(|record| {
+            let (on, Mark::Prompt { text } | Mark::Steer { text }) = Mark::read(record)? else {
                 return None;
             };
-            let during = on == trail.id && note.created_at >= ask.created_at;
+            let during = ask && on == trail.id && record.created_at >= note.created_at;
             (during || tree.iter().any(|n| n.id == on)).then_some(text)
         });
-        Retro {
-            ask: ask.id.clone(),
+        let step = steps.step(note);
+        let under = step.as_ref().and_then(|s| s.under.clone());
+        let expect = step.as_ref().and_then(|s| {
+            s.detail()
+                .find_map(|l| l.trim().strip_prefix("expect:"))
+                .map(|e| e.trim().to_string())
+        });
+        let open = under.as_deref().map_or(Vec::new(), |u| steps.under(u));
+        Review {
+            step: note.id.clone(),
+            ask,
+            expect,
+            as_planned: changed.is_none(),
             planned: parts.iter().filter(|n| n.created_at <= began).count(),
             added: parts
                 .iter()
@@ -385,29 +365,12 @@ impl Trails {
                 .collect(),
             changed: done.chain(own).collect(),
             asked: asked.collect(),
-        }
-    }
-
-    /// The direction check after `done` steps of the trail of `note`, just done: its ask, whether the
-    /// ask's check passes in `folder`, and the ask's other open steps.
-    fn direction(&self, steps: &Steps, note: &Note, done: usize, folder: &Path) -> Direction {
-        let ask = steps.ask(note);
-        let check = ask.and_then(|a| steps.step(a)).and_then(|s| s.check);
-        let check = check.map(|c| {
-            self.check(&c, folder)
-                .map_err(|failure| failure.message.lines().last().unwrap_or("").to_string())
-        });
-        let open = ask.map_or(Vec::new(), |a| steps.tree(a).into_iter().skip(1).collect());
-        Direction {
-            done,
-            trail: steps.trail(note).id.clone(),
-            ask: ask.map(|a| (a.id.clone(), steps.title(a))),
-            check,
             open: open
                 .into_iter()
                 .filter(|n| n.id != note.id && steps.closed(&n.id).is_none())
-                .map(|n| (n.id.clone(), steps.title(n)))
+                .map(line)
                 .collect(),
+            under,
         }
     }
 

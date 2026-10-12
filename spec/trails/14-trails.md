@@ -35,8 +35,6 @@ it. Many sessions can work on one trail. The hook writes the person's prompts on
 prompt kind 1985, a prompt while no step works
 { "kind": 1985, "content": "<the prompt's first line, 200 characters at most>",
   "tags": [["L", "celis.step"], ["l", "prompt", "celis.step"], ["e", "<trail id>"]] }
-
-$CELIS_TRAIL    a step id, or a start of it: where `step add` with no `--under` puts the step
 ```
 
 **Rules**
@@ -45,14 +43,15 @@ $CELIS_TRAIL    a step id, or a start of it: where `step add` with no `--under` 
 - A trail with a session MUST hold each ask as a step under it, the first ask too. So `step add` MUST write
   the trail, then the ask under it with the same text, and print the ask's id first.
 - A session's open trail MUST be the trail of its newest step, while that trail is not done or dropped.
-- `step add` with no `--under` or `--new` MUST write the step under `$CELIS_TRAIL` when it is set.
-- Else, while the session has an open trail, it MUST write the step under it.
+- `step add` with no `--under` or `--new`, while the session has an open trail, MUST write the step
+  under it.
 - Else, it MUST write a new trail. It MUST NOT join another session's trail without `--under`.
 - With `--new`, `step add` MUST write a new trail.
 - `prompt` MUST read a hook's `{"session_id", "prompt"}` on stdin. While that session has an open trail,
   it MUST write the prompt on it, and print the record's id. Else it MUST write nothing.
-- With no open trail, `prompt` MUST print one line on stderr that names the `celis:past` agent ("The past").
-- With no past work in the store, it MUST print nothing.
+- With no open trail, `prompt` MUST print one line on stderr, when `past` prints anything ("The past").
+  The line MUST ask to run the `celis:past` agent with the ask before any other tool, and to wait for it.
+- With no open trail and nothing `past` prints, it MUST print nothing.
 - The prompt MUST be a steer on the oldest working step of the trail. With no working step, it MUST be a
   prompt mark on the trail. Its text MUST be the prompt's first line, cut to 200 characters.
 - A reader MUST NOT count a prompt mark as a steer.
@@ -70,7 +69,6 @@ CLAUDE_CODE_SESSION_ID=95e9be99 celis step add -- "Now the buttons too."       a
 CLAUDE_CODE_SESSION_ID=95e9be99 celis step add --new -- "Fix the login page."  a second trail
 CLAUDE_CODE_SESSION_ID=4c1d22e0 celis step add -- "Check the colours."        a trail of its own
 CLAUDE_CODE_SESSION_ID=4c1d22e0 celis step add --under 3fa2c1d0 -- "Check the colours."  goes there
-CELIS_TRAIL=3fa2c1d0 celis step add -- "Check the badge on the phone."         a step of any agent there
 echo '{"session_id": "95e9be99", "prompt": "Use the shared Badge."}' | celis prompt
 ```
 
@@ -82,10 +80,7 @@ sentence a check can fail.
 **Rules**
 
 - A reader MUST count a decision as a rule of a trail only when its scope names that trail.
-- `done` on an ask MUST print its retro on stderr, so the agent writes the rules it shows.
-- The retro MUST count the steps under the ask written before the first of them started.
-- It MUST then list the steps added after, those dropped with their reason, and each `changed`.
-- It MUST then list each prompt and steer on the ask's tree, and on its trail since the ask.
+- `done` on an ask MUST end its review by asking for rules (CIP-12, "Reviewing").
 
 **Examples**
 
@@ -142,14 +137,14 @@ celis tree --all [--full]         every trail in the store, by day
   "Starting"). A step of an ended trail that is not done or dropped MUST be marked `!`, as `expired`. With `--full`, under a step come the lines of its text after its title (CIP-12, "Steps").
   Then come the proof and grade of a done step (CIP-12, "Grades"), or a dropped one's reason.
 - `tree` MUST NOT write a record.
-- `tree` and `watch` MUST print the short tree, with no line under a step. With `--full`, they MUST
+- `tree` MUST print the short tree, with no line under a step. With `--full`, it MUST
   print the full tree, with the proof, grade and reason lines.
 - The short tree MUST fit each line to the width of the terminal. Off a terminal, it MUST use `COLUMNS` as
   the width, and cut nothing when `COLUMNS` is not set.
 - The short tree MUST cut a step's text and end it with `…`, and keep its id and details whole.
-- `tree` and `watch` MUST print in colour when stdout is a terminal, or when `CLICOLOR_FORCE` is set and
+- `tree` MUST print in colour when stdout is a terminal, or when `CLICOLOR_FORCE` is set and
   not `0`. They MUST NOT when `NO_COLOR` is set.
-- Without colour, `tree` and `watch` MUST print the same lines, with no colour codes.
+- Without colour, `tree` MUST print the same lines, with no colour codes.
 - With no id, the tree MUST print the project's name once, as its first line. Its steps MUST NOT carry the
   project name.
 - Each line of a step MUST start with its mark. A trail MUST be marked `●` when active, `✓` when
@@ -158,7 +153,7 @@ celis tree --all [--full]         every trail in the store, by day
   MUST print the ask's steps first under the trail, then the trail's other asks.
 - The tree MUST draw a step under its parent with `├─` before its mark, and the last one with `└─`.
   A `│` MUST run from a step down to its next sibling.
-- A step line MUST end with dim details: the last part of its place and `↳ fixes <id, first 8>`.
+- A step line MUST end with dim details: the last part of its place.
   Then come how long it has worked or took, and when it started.
 - A trail line MUST end with dim details: the last part of its place, its state, and its steps.
   It MUST leave out the state when active or reached alone, and the steps unless folded. Then come how
@@ -183,7 +178,7 @@ tree  text  <mark> <id, first 8> <title>   <place>  <state> · <n> steps  <ran> 
                   took <its grade, without "took">
                dropped <reason>
                   rule <id, first 8> <text>
-              ├─ <mark> <id, first 8> <title>   <place>  ↳ fixes <id, first 8>  <took>  <started>
+              ├─ <mark> <id, first 8> <title>   <place>  <took>  <started>
               │           <the lines under it, as under the trail>
               └─ <mark> <id, first 8> <title>   ...
       json  {"trail": {"id", "created_at", "project", "content", "state", "links", "places", "proof", "grade",
@@ -202,7 +197,7 @@ celis tree 3fa2c1d0
   ├─ ✓ 9b0e11aa A senior pays 80%      prices.py:40                   1m 30s  14:03
   ├─ ◐ 5d7f3c21 The frame shows the tier                              7m 12s  14:05
   │  └─ ○ 0a4e9d10 Add the badge to the frame
-  └─ ○ 6c1b8e52 Round the price down                 ↳ fixes 9b0e11aa
+  └─ ○ 6c1b8e52 Round the price down
 
 celis tree
 
@@ -216,27 +211,32 @@ shop
 
 The past shows how a task like a new one was done, so a new plan can follow the path that worked. An
 agent chooses it: `past` lists, and the plugin's `celis:past` agent reads the list and opens the trees.
+The list starts with what a new ask of the project must keep: its active trails and its decisions.
 
 **Rules**
 
-- `past` MUST print the past work of every project, newest first.
+- `past` MUST print the working folder's project's active trails, oldest first, each with its rules.
+- Then it MUST print the live decisions at each `--at` place, then the project's live `project` and `me`
+  decisions (CIP-10, "Reading"). It MUST NOT print a decision at a place unless an `--at` place is at it.
+- Then it MUST print the past work of every project, newest first.
 - Past work MUST be a done ask, or a reached trail. An ask is a step right under a trail.
 - A trail with an ask of its own text MUST NOT count as past work, so the ask stands for it.
 - Each MUST print as one line: its id, project, title and place, its grade or else its state, and its day.
 - With `--json`, each object MUST be named `past`, with its id, project, title, places, state, grade and day.
-- `past` MUST append a `listed` line to `$CELIS_HOME/retrieval.log`, with how many it printed.
-- `tree <id>` MUST append an `opened` line with the whole id of the step it prints.
-- The log MUST NOT be a record. A failed append MUST NOT fail the command.
+- `past` MUST NOT write a record.
 
 ```
-past           <id, first 8> [<project name>] <its title>[ · <place>] · <grade | state> · <yyyy-mm-dd>
-               json  {"past": {"id", "created_at", "day", "project", "content", "places", "state", "grade"}}
-retrieval.log  {"at": <unix seconds>, "listed": <count>}
-               {"at": <unix seconds>, "opened": "<a step's id>"}
+past           <id, first 8> [<project name>] <its title>[ · <place>]          each active trail
+                 rule <id, first 8> <text>                                     each of its rules
+               <a decision, as CIP-11 "Commands" gives it>
+               <id, first 8> [<project name>] <its title>[ · <place>] · <grade | state> · <yyyy-mm-dd>
+               json  {"trail": {"id", "created_at", "project", "content", "session", "rules": []}}
+                     · {"decision": {...}} · {"past": {"id", "created_at", "day", "project", "content",
+                     "places", "state", "grade"}}
 ```
 
 ```
-celis past
+celis past --at shelf/prices.py
 ```
 
 > Why an agent chooses: it reads an ask in any language, and it tells the same kind of task from the same
@@ -244,31 +244,31 @@ celis past
 
 ## Watching
 
-`watch` shows the trails while the agents work on them, so the person sees each step start and close.
+`tree --watch` shows the trails while the agents work on them, so the person sees each step start and
+close.
 
 ```
-celis watch [<step id>] [--full]   a trail's tree, printed again on each change to the store
+celis tree [<step id>] [--all] [--full] --watch   the tree, printed again on each change to the store
 ```
 
 **Rules**
 
-- `watch <id>` MUST print the tree of the step `<id>` as `tree` prints it. It MUST refuse an id no step
-  has, with `no-step`.
-- `watch` with no id MUST print every active trail of every project, as `tree --all` prints them. With
-  no active trail, it MUST say so and name `/celis:trail`, and with `--json` print nothing. With no
-  store, `watch <id>` MUST refuse with `no-step`.
-- On a terminal, `watch` MUST print the tree again as soon as the terminal's width changes. It MUST print
+- `tree --watch` MUST print what `tree` with the same words prints. It MUST refuse an id no step has,
+  with `no-step`, also with no store.
+- With no id and no trail to print, it MUST say so and name the celis plugin, and with `--json` print
+  nothing.
+- On a terminal, it MUST print the tree again as soon as the terminal's width changes. It MUST print
   it again within one second after a time it shows changes.
-- Between two trees, `watch` MUST sleep until a record lands, a time it shows changes, or the width
+- Between two trees, it MUST sleep until a record lands, a time it shows changes, or the width
   changes. With no time that runs, it MUST NOT wake on a timer.
-- `watch` MUST print the tree again within one second after a record lands in the store, and only when
+- It MUST print the tree again within one second after a record lands in the store, and only when
   the tree changed.
-- On a terminal, `watch` MUST clear the screen and its scrollback, and print each tree from the top
+- On a terminal, it MUST clear the screen and its scrollback, and print each tree from the top
   left. Else it MUST print an empty line between two trees.
-- `watch` MUST run until it is stopped, and MUST NOT write a record.
+- It MUST run until it is stopped, and MUST NOT write a record.
 
 **Examples**
 
 ```
-celis watch 3fa2c1d0
+celis tree 3fa2c1d0 --watch
 ```

@@ -5,7 +5,7 @@ use super::{Args, Command};
 use celis_trails::id::short;
 use celis_trails::trail::grade::{stride, took};
 use celis_trails::trail::steps::LIFE;
-use celis_trails::{Decisions, Failure, Grade, Project, RetrievalLog, State, Status, Step, Steps};
+use celis_trails::{Decisions, Failure, Grade, Project, State, Status, Step, Steps, Trails};
 use celis_wire::Note;
 use serde_json::json;
 use std::cell::Cell;
@@ -13,8 +13,8 @@ use std::io::Write;
 
 impl Command {
     /// Prints the step `args` names with every step under it, or with no id each trail of `project` that
-    /// is active or has a record from today, newest first. Writes no record; the retrieval log keeps the
-    /// named step.
+    /// is active or has a record from today, newest first; with `--watch`, again on each change. Writes
+    /// no record.
     pub(super) fn tree(
         &self,
         args: &Args,
@@ -25,19 +25,33 @@ impl Command {
         if args.all && id.is_some() {
             return Err(Failure::usage("tree takes an id or --all, not both"));
         }
+        if args.watch {
+            return self.watch(args, out, project);
+        }
         if !self.held()? {
             return id.map_or(Ok(()), |id| Err(Failure::no_step(id)));
         }
         let trails = self.trails()?;
+        let (tree, _) = self.frame(&trails, args, project, self.columns())?;
+        write!(out, "{tree}").map_err(anyhow::Error::from)?;
+        Ok(())
+    }
+
+    /// The tree of `trails` that `args` names, `width` wide, and the earliest time a time it shows
+    /// changes.
+    pub(super) fn frame(
+        &self,
+        trails: &Trails,
+        args: &Args,
+        project: &Project,
+        width: Option<usize>,
+    ) -> Result<(String, Option<u64>), Failure> {
+        let id = args.words.get(1);
         let steps = trails.steps();
         let decisions = trails.decisions();
         let today = midnight(trails.now);
         let chosen: Vec<&Note> = match (id, args.all) {
-            (Some(id), _) => {
-                let note = steps.find(id)?;
-                let _ = RetrievalLog::at(&self.home()?).opened(&note.id, trails.now);
-                vec![note]
-            }
+            (Some(id), _) => vec![steps.find(id)?],
             (None, true) => steps.roots().into_iter().rev().collect(),
             (None, false) => steps
                 .trails(&project.id)
@@ -53,13 +67,16 @@ impl Command {
             full: args.full,
             fold: id.is_none() && !args.full,
             all: args.all,
-            width: self.columns(),
+            width,
             next: Cell::default(),
         };
+        let mut printed = Vec::new();
         if id.is_none() && !args.all && !args.json && !chosen.is_empty() {
-            super::put(out, &tree.paint(BOLD, &project.name))?;
+            super::put(&mut printed, &tree.paint(BOLD, &project.name))?;
         }
-        tree.print(&chosen, "trail", args.json, out)
+        tree.print(&chosen, "trail", args.json, &mut printed)?;
+        let next = tree.next.get();
+        Ok((String::from_utf8_lossy(&printed).into_owned(), next))
     }
 }
 
@@ -291,7 +308,6 @@ impl Tree<'_> {
                 value["state"] = json!(status.text());
                 value["proof"] = json!(done.map(|d| d.content.clone()));
                 value["changed"] = json!(done.and_then(|d| d.tag("changed")));
-                value["before"] = json!(self.steps.started(&note.id).and_then(|s| s.tag("before")));
                 value["grade"] = json!(grade.as_ref().map(|g| g.value()));
                 value["reason"] = json!(reason);
                 lines.push(Line::Text(json!({ "step": value }).to_string()));
@@ -320,9 +336,7 @@ impl Tree<'_> {
                     title: step.title().to_string(),
                     cells: [
                         step.at().map(last),
-                        step.fixes
-                            .as_deref()
-                            .map(|f| format!("↳ fixes {}", short(f))),
+                        None,
                         time,
                         start.map(|s| self.clock(s.created_at)),
                     ],

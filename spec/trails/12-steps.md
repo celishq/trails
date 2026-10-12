@@ -22,7 +22,6 @@ and the lines after it hold the detail.
     ["i", "project:<project id>"], ["k", "project"],
     ["project", "<project name>"],
     ["under", "<id of the step it is a part of>"],                    optional
-    ["fixes", "<id of a done step whose work it fixes>"],             optional
     ["replaces", "<id of an open step whose plan it takes over>"],    optional
     ["at", "<a place the work goes: file:line, a URL, any text>"],   zero or more
     ["check", "<the command that proves the work>"],                  optional
@@ -37,7 +36,7 @@ and the lines after it hold the detail.
 **Rules**
 
 - A step MUST carry content, the anchor `project:<project id>` and the project name.
-- A step MAY carry one `under`, one `fixes`, one `replaces`, one `check`, and any number of `at`.
+- A step MAY carry one `under`, one `replaces`, one `check`, and any number of `at`.
 - A reader MUST count each `file` tag of a step as a place, after its `at` places.
 - A reader MUST count a kind 1111 record as a step only when it carries the label `step` in
   `celis.step`. It MUST ignore tags it does not know.
@@ -79,13 +78,12 @@ project name the file name in a Figma URL, else the host, else as CIP-10 "Projec
 ## Starting
 
 A step starts when an agent takes it up. A started step is working until it closes, so the person sees
-which step the agent is on. The start states whether the step's check failed before the work.
+which step the agent is on.
 
 ```json
 start  kind 1985, signed by the account (NIP-32)
 { "kind": 1985, "content": "",
-  "tags": [["L", "celis.step"], ["l", "start", "celis.step"], ["e", "<step id>"],
-           ["before", "fails" | "passes"]] }                    before: only on a step with a check
+  "tags": [["L", "celis.step"], ["l", "start", "celis.step"], ["e", "<step id>"]] }
 ```
 
 ```
@@ -99,9 +97,7 @@ dropped   a `drop` names the step
 
 - A reader MUST work out a step's state from its `start`, `done` and `drop` records.
 - A `start` MUST NOT close its step.
-- A new `start` MUST run the step's check, when it has one, and carry its result as `before`.
-- When the check passes before the work, `start` MUST say so on stderr and still start the step.
-- `tree --json` MUST print the `before` of a started step.
+- A `start` MUST NOT run the step's check. `done` runs it.
 
 ## Closing
 
@@ -123,10 +119,43 @@ done   kind 1985, signed by an agent (NIP-32)
 - `done --changed` MUST carry its text as the `changed` tag. A `done` with no `changed` went as planned.
 - `tree --json` MUST print the `changed` of a done step. `tree --full` MUST print it after the proof.
 
+## Reviewing
+
+A review compares a done step with its plan, so the agent adds the next step only after it has seen the
+last one land. A step states its plan in its title, and in a line of its text that starts with `expect:`.
+
+```
+text  celis: <id, first 8> is done; compare the result with its plan:
+        expect  <the text after expect:>               when the step has the line
+        planned <n> steps                              when steps are under it
+        added   <id, first 8> <title>                  each step under it added after the first started
+        dropped <id, first 8> <title> · <reason>       each step under it dropped
+        changed <id, first 8> <text>                   each done step under it with a changed, then its own
+        asked   <text>                                 each steer and prompt on its tree
+        open    <id, first 8> <title>                  each open step beside it
+      celis: <the next move>
+
+next move  ask      celis: write what a later plan should keep as rules with celis decide.
+           changed  celis: it went otherwise than planned; replace or drop each open step it voids,
+                    then add one step under <under, first 8>.
+           planned  celis: take an open step beside it, add one step under <under, first 8>, or close
+                    <under, first 8> when its work is done.
+```
+
+**Rules**
+
+- `done` MUST print the review of the step it closed, every time.
+- `planned` MUST count the steps under it written before the first of them started.
+- On an ask, `asked` MUST also hold each prompt on its trail since the ask.
+- `open` MUST list the open steps under the step's `under`, other than the step.
+- The next move of an ask MUST be its `ask` line. Else, a done `--changed` MUST print the `changed`
+  line, and any other done the `planned` line.
+- A trail's review MUST NOT print a next move.
+
 ## Steering
 
-A steer records what the person asked for while a step was open. The agent writes it, in one sentence, so
-the trail shows which steps the person had to steer.
+A steer records what the person asked for while a step was open, so the trail shows which steps the
+person had to steer. The prompt hook writes it (CIP-14, "Sessions").
 
 ```json
 steer  kind 1985, signed by an agent (NIP-32)
@@ -196,12 +225,11 @@ The store is the only source of steps. A project that keeps `@todo` lines in its
 ## The commands
 
 ```
-celis step add [--under <id>] [--fixes <id>] [--replaces <id>] [--at <place>]... [--check <command>] [--new] -- <text>
+celis step add [--under <id>] [--replaces <id>] [--at <place>]... [--check <command>] [--new] -- <text>
                                                                leave a step
 celis step start <id>                                         take up a step, and see its decisions
 celis step done <id> [--changed <text>] [--as-planned] [--pitfall <text>] -- <proof>
                                                               close a step with its proof
-celis step steer <id> -- <text>                                record what the person asked
 celis step drop <id> -- <reason>                              close a step whose work is no longer wanted
 celis step edit <id> [--at <place>]... [--check <command>] [-- <text>]
                                                               give a step a new title, places or check
@@ -212,10 +240,10 @@ celis step edit <id> [--at <place>]... [--check <command>] [-- <text>]
 - Every command MUST take an id as CIP-11 "Output and errors" states.
 - A command MUST refuse a start that more than one step's id has, with `no-step`.
 - `add` MUST refuse empty text as a usage error.
-- `add` MUST refuse an `--under` or a `--fixes` that no step has, with `no-step`. It MUST refuse an
-  `--under` step that is closed, with `closed`.
-- `add` MUST say on stderr when the title has more than 8 words. It MUST still write the step.
-- `add` MUST carry the whole ids of `--under` and `--fixes`, each `--at` and the `--check` as their tags.
+- `add` MUST refuse an `--under` that no step has, with `no-step`, and one that is closed, with `closed`.
+- `add` MUST print `ahead` on stderr when its `under` is below an ask and holds an open step that has
+  not started. It MUST still write the step.
+- `add` MUST carry the whole id of `--under`, each `--at` and the `--check` as their tags.
   It MUST write each `--at` as CIP-10 "Places" states.
 - `add` MUST NOT write a step when an open step of the same project and `under` has the same text. It
   MUST print the id of that step.
@@ -231,28 +259,22 @@ celis step edit <id> [--at <place>]... [--check <command>] [-- <text>]
 - `done` MUST run the step's `check` in the project's top folder, when it has one. When the check fails,
   it MUST refuse with `check-failed`, print the end of the check's output, and write nothing.
 - `done` MUST stop a check that runs past `CELIS_CHECK_SECONDS`, 600 when not set, and count it as failed.
-- `done` MUST say when a trail's tree holds a multiple of 5 done steps under the trail. It MUST print
-  `celis: <n> steps of the trail <id, first 8> are done; check its direction.` on stderr, and exit 0.
-- It MUST then name the ask of the step, and each open step of that ask. It MUST ask to drop or
-  replace each open step that does not serve the ask.
-- When the ask has a check, the direction check MUST run it under the ask's line. It MUST say whether
-  it passes, with the last line it printed when it fails.
-- `steer` MUST refuse an id no step has, with `no-step`, and a closed step, with `closed`. It MUST refuse
-  empty text as a usage error.
+- `done` MUST print the step's review on stderr ("Reviewing"), and exit 0.
 - `drop` MUST refuse an id no step has, with `no-step`, and a closed step, with `closed`. It MUST refuse
   an empty reason as a usage error.
 - `drop` MUST write a drop for the step and for each open step under it, at any depth.
 - `edit` MUST refuse an id no step has, with `no-step`. It MUST refuse an edit with no text, `--at` or
   `--check`, as a usage error. It MUST write each `--at` as CIP-10 "Places" states.
-- The JSON of a step MUST carry its `under` and `fixes` as `links`, in that order. A step with neither
-  MUST carry an empty `links`.
-- `add`, `start`, `done`, `steer`, `drop` and `edit` MUST print the id of each record they wrote, the step's own
+- The JSON of a step MUST carry its `under` and `replaces` as `links`, in that order. A step with
+  neither MUST carry an empty `links`.
+- `add`, `start`, `done`, `drop` and `edit` MUST print the id of each record they wrote, the step's own
   first. With `--json`, each prints `{"id"}`, one a line.
 
 ```
+ahead  celis: <that step, first 8> has not started; keep one step ahead: take it first, or drop it.
 text   <id, first 8> [<project name>] <title>               a step
        <id, first 8> [<project name>] <title> · <at>         a step with a place: its first
-json   {"id", "created_at", "project", "links": [{"to", "kind": "under | fixes"}], "places": [], "check",
+json   {"id", "created_at", "project", "links": [{"to", "kind": "under | replaces"}], "places": [], "check",
        "content"}
 ```
 
@@ -261,7 +283,6 @@ json   {"id", "created_at", "project", "links": [{"to", "kind": "under | fixes"}
 ```
 celis step add --under 3fa2c1d0 --at shelf/prices.py:40 \
   -- "Write a test: a senior pays 80% of the price."
-celis step add --under 3fa2c1d0 --fixes 4c1d22e0 -- "Round the senior price down, not up."
 celis step add --under 3fa2c1d0 --at https://figma.com/design/Ab12/Shop \
   -- "The price list frame shows the senior tier."
 celis step start 4c1d22e0
@@ -276,7 +297,6 @@ A grade shows how the work of a closed step went, so a new plan can follow the b
 ```
 took      the time from the step's first `start` to the `done` that settled it; with no `start`, from
           the step
-rework    the steps whose `fixes` names it
 steered   the steers that name it
 ```
 
@@ -286,6 +306,6 @@ steered   the steers that name it
 - `tree --full` MUST print a done step's grade under it, after its proof.
 
 ```
-text   took <45s | 1m 30s | 2h 5m | 3d 2h> · rework <n> · steered <n>
-json   "grade": {"took": <seconds>, "rework": 0, "steered": 0}
+text   took <45s | 1m 30s | 2h 5m | 3d 2h> · steered <n>
+json   "grade": {"took": <seconds>, "steered": 0}
 ```

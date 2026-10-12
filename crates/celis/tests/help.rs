@@ -4,7 +4,7 @@ use std::process::{Command, Output};
 
 const CLI: &str = include_str!("../../../spec/trails/11-cli.md");
 const STEPS: &str = include_str!("../../../spec/trails/12-steps.md");
-const CARD: &str = include_str!("../../../plugins/celis/skills/trail/card.md");
+const CARD: &str = include_str!("../../../plugins/celis/card.md");
 
 fn run(args: &[&str]) -> Output {
     let home = tempfile::tempdir().unwrap();
@@ -52,7 +52,7 @@ fn squeeze(text: &str) -> String {
     text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
-/// Each command of the spec with its usage: `read`, `decide` and `tree` of CIP-11, and the step
+/// Each command of the spec with its usage: `decide`, `tree` and `past` of CIP-11, and the step
 /// commands of CIP-12.
 fn usages() -> Vec<(String, String)> {
     let mut found = Vec::new();
@@ -102,7 +102,7 @@ fn celis_and_celis_help_print_the_page() {
 #[test]
 fn help_anywhere_prints_the_command_page_its_words_name() {
     let commands = usages();
-    assert_eq!(commands.len(), 16, "{commands:?}");
+    assert_eq!(commands.len(), 12, "{commands:?}");
     for (command, usage) in &commands {
         let mut args: Vec<&str> = command.split(' ').collect();
         args.extend(["4c1d22e0", "--help", "--json"]);
@@ -122,7 +122,7 @@ fn help_anywhere_prints_the_command_page_its_words_name() {
 fn help_after_a_group_prints_its_commands() {
     for (group, commands) in [
         ("auth", &["login", "status", "phrase"][..]),
-        ("step", &["add", "start", "done", "steer", "drop", "edit"]),
+        ("step", &["add", "start", "done", "drop", "edit"]),
     ] {
         let shown = page(&[group, "--help"]);
         assert!(
@@ -215,14 +215,14 @@ fn celis_version_names_the_commit_the_build_came_from() {
     );
 }
 
-/// Each command line of the trail card names the flags its command's usage names, and no other
-/// (`spec/trails/11-cli.md`, "Help").
+/// Each command line of the trail card names the flags its command's usage names, and no other, except
+/// `--watch` (`spec/trails/11-cli.md`, "Help").
 #[test]
 fn the_card_names_each_commands_flags() {
     let flags = |usage: &str| -> Vec<String> {
         let mut found: Vec<String> = names(usage)
             .into_iter()
-            .filter(|n| n.starts_with("--"))
+            .filter(|n| n.starts_with("--") && n != "--watch")
             .collect();
         found.sort();
         found

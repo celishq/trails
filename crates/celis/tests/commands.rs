@@ -33,10 +33,10 @@ fn project(id: &str) -> (&str, &str) {
     (id, "repo")
 }
 
-/// `read` prints the active trails, oldest first, each with its rules, then the open steps that are no
-/// trail, then the live decisions that are no rule (`spec/trails/11-cli.md`, "Commands").
+/// `past` prints the active trails, oldest first, each with its rules, then the live decisions that are no
+/// rule, then the past work (`spec/trails/14-trails.md`, "The past").
 #[test]
-fn read_prints_the_trails_with_their_rules_then_the_open_steps_then_the_decisions() {
+fn past_prints_the_trails_with_their_rules_then_the_decisions_then_the_past_work() {
     let repo = Repo::new();
     let id = repo.project_id();
     let t = now() - 5 * 60;
@@ -55,22 +55,28 @@ fn read_prints_the_trails_with_their_rules_then_the_open_steps_then_the_decision
     let finished = step_note(&repo, &account(), Some(&first), "finished", t + 4);
     done_note(&repo, &account(), &finished, t + 5);
     let cents = decision(&repo, project(&id), &account(), (None, None), WORK, t + 6);
+    let lines = lines_of(&repo, &repo.path(), &["past"]);
     assert_eq!(
-        lines_of(&repo, &repo.path(), &["read"]),
+        lines[..4],
         [
             format!("{} [repo] first", short(&first.id)),
             format!("{} [repo] second", short(&second.id)),
             format!("  rule {} a rule", short(&rule.id)),
-            format!("{} [repo] work", short(&work.id)),
             format!("{} project {WORK}", short(&cents.id)),
         ]
     );
+    assert_eq!(lines.len(), 5, "{lines:?}");
+    assert!(lines[4].starts_with(&format!("{} [repo] finished · ", short(&finished.id))));
+    assert!(
+        !lines.iter().any(|l| l.contains(&short(&work.id))),
+        "{lines:?}"
+    );
 }
 
-/// `read` prints only the working folder's project, and no trail that is reached, nor its rules
-/// (`spec/trails/11-cli.md`, "Commands").
+/// `past` prints the trails and decisions of the working folder's project only, and a reached trail only
+/// as past work, with no rule of it (`spec/trails/14-trails.md`, "The past").
 #[test]
-fn read_prints_no_reached_trail_and_no_rule_of_one() {
+fn past_prints_a_reached_trail_only_as_past_work() {
     let repo = Repo::new();
     let id = repo.project_id();
     let t = now() - 5 * 60;
@@ -93,57 +99,14 @@ fn read_prints_no_reached_trail_and_no_rule_of_one() {
         "theirs",
         t + 3,
     );
-    assert!(lines_of(&repo, &repo.path(), &["read"]).is_empty());
+    let lines = lines_of(&repo, &repo.path(), &["past"]);
+    assert_eq!(lines.len(), 1, "{lines:?}");
+    assert!(lines[0].starts_with(&format!("{} [repo] reached · ", short(&reached.id))));
 }
 
-/// `read` prints today's trails that are not active and not done or dropped, after the active ones, each
-/// with its state and its rules (`spec/trails/11-cli.md`, "Commands").
+/// `past` prints a decision at a place only for an `--at` place it is at (`spec/trails/14-trails.md`, "The past").
 #[test]
-fn read_prints_todays_trails_that_can_take_a_step() {
-    let repo = Repo::new();
-    let id = repo.project_id();
-    let t = now() - 5 * 60;
-    let active = step_note(&repo, &account(), None, "active", t);
-    let recent = step_note(&repo, &account(), None, "recent", t + 1);
-    let part = step_note(&repo, &account(), Some(&recent), "part", t + 2);
-    done_note(&repo, &account(), &part, t + 3);
-    let scope = format!("trail:{}", recent.id);
-    let rule = decision(
-        &repo,
-        project(&id),
-        &account(),
-        (Some(&scope), None),
-        "a rule",
-        t + 4,
-    );
-    let locked = step_note(&repo, &account(), None, "locked", t + 5);
-    done_note(&repo, &account(), &locked, t + 6);
-    let old = now() - 3 * 24 * 60 * 60;
-    let past = step_note(&repo, &account(), None, "past", old);
-    done_note(
-        &repo,
-        &account(),
-        &step_note(&repo, &account(), Some(&past), "p", old),
-        old,
-    );
-    assert_eq!(
-        lines_of(&repo, &repo.path(), &["read"]),
-        [
-            format!("{} [repo] active", short(&active.id)),
-            format!("{} [repo] recent · reached alone", short(&recent.id)),
-            format!("  rule {} a rule", short(&rule.id)),
-        ]
-    );
-    let json = lines_of(&repo, &repo.path(), &["read", "--json"]);
-    let recent_json: serde_json::Value = serde_json::from_str(&json[1]).unwrap();
-    assert_eq!(recent_json["recent"]["id"], recent.id.as_str(), "{json:?}");
-    assert_eq!(recent_json["recent"]["state"], "reached alone", "{json:?}");
-}
-
-/// `read` prints a decision at a place only for an `--at` place it is at (`spec/trails/11-cli.md`,
-/// "Commands").
-#[test]
-fn read_prints_a_decision_at_a_place_only_at_its_at_place() {
+fn past_prints_a_decision_at_a_place_only_at_its_at_place() {
     let repo = Repo::new();
     let id = repo.project_id();
     let t = now() - 5 * 60;
@@ -169,15 +132,14 @@ fn read_prints_a_decision_at_a_place_only_at_its_at_place() {
             .map(|l| l[..8].to_string())
             .collect()
     };
-    assert_eq!(ids(&["read"]), Vec::<String>::new());
-    assert_eq!(ids(&["read", "--at", "a.py"]), [short(&a.id)]);
-    assert_eq!(ids(&["read", "--at", "b.py"]), [short(&b.id)]);
+    assert_eq!(ids(&["past"]), Vec::<String>::new());
+    assert_eq!(ids(&["past", "--at", "a.py"]), [short(&a.id)]);
+    assert_eq!(ids(&["past", "--at", "b.py"]), [short(&b.id)]);
 }
 
-/// `read` prints 30 decisions at most, those at an `--at` place first, then how many it left out
-/// (`spec/trails/11-cli.md`, "Commands").
+/// `past` prints every live decision, those at an `--at` place first, then the newest (`spec/trails/14-trails.md`, "The past").
 #[test]
-fn read_prints_30_decisions_at_most_those_at_a_place_first() {
+fn past_prints_every_decision_those_at_a_place_first() {
     let repo = Repo::new();
     let id = repo.project_id();
     let t = now() - 5 * 60;
@@ -201,22 +163,17 @@ fn read_prints_30_decisions_at_most_those_at_a_place_first() {
             )
         })
         .collect();
-    let mut lines = lines_of(&repo, &repo.path(), &["read", "--at", "a.py"]);
-    assert_eq!(
-        lines.pop().as_deref(),
-        Some("6 more decisions"),
-        "{lines:?}"
-    );
+    let lines = lines_of(&repo, &repo.path(), &["past", "--at", "a.py"]);
     let got: Vec<String> = lines.iter().map(|l| l[..8].to_string()).collect();
-    assert_eq!(got.len(), 30, "{got:?}");
+    assert_eq!(got.len(), 36, "{got:?}");
     assert_eq!(got[0], short(&there.id));
     assert_eq!(got[1], short(&others[34].id));
-    assert_eq!(got[29], short(&others[6].id));
+    assert_eq!(got[35], short(&others[0].id));
 }
 
-/// `read` writes no record (`spec/trails/11-cli.md`, "Commands").
+/// `past` writes no record (`spec/trails/14-trails.md`, "The past").
 #[test]
-fn read_writes_no_record() {
+fn past_writes_no_record() {
     let repo = Repo::new();
     let id = repo.project_id();
     let trail = step_note(&repo, &account(), None, "a trail", now() - 60);
@@ -231,9 +188,9 @@ fn read_writes_no_record() {
     );
     let before = records(&repo);
     for args in [
-        vec!["read"],
-        vec!["read", "--at", "a.py"],
-        vec!["read", "--json"],
+        vec!["past"],
+        vec!["past", "--at", "a.py"],
+        vec!["past", "--json"],
     ] {
         let o = repo.run(&repo.path(), &args, &[], "");
         assert!(o.status.success(), "{args:?}: {}", err(&o));
@@ -260,7 +217,7 @@ fn a_decision_prints_its_id_scope_and_text() {
     let mine = decide(&["--scope", "me", "--", "two"]);
     let project = decide(&["--", "three"]);
     let rule = decide(&["--scope", &scope, "--", "four"]);
-    let lines = lines_of(&repo, &repo.path(), &["read", "--at", "a.py"]);
+    let lines = lines_of(&repo, &repo.path(), &["past", "--at", "a.py"]);
     for line in [
         format!("{placed} at:a.py one"),
         format!("{project} project three"),
@@ -285,7 +242,7 @@ fn the_json_form_of_a_decision_has_the_listed_fields() {
         "one",
         now() - 60,
     );
-    let o = repo.run(&repo.path(), &["read", "--json", "--at", "a.py"], &[], "");
+    let o = repo.run(&repo.path(), &["past", "--json", "--at", "a.py"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     let line: Value = serde_json::from_str(out(&o).trim()).unwrap();
     let decision = line["decision"].as_object().unwrap();
@@ -367,18 +324,18 @@ fn decide_refuses_empty_text_and_an_unknown_scope_as_a_usage_error() {
     assert_eq!(records(&repo), 0);
 }
 
-/// `decide` refuses `trail:<id>` when no active trail of the project has the id, with `no-trail`
-/// (`spec/trails/11-cli.md`, "Commands").
+/// `decide` refuses `trail:<id>` when no trail of the project that is not done or dropped has the id,
+/// with `no-trail`; it takes a reached one (`spec/trails/11-cli.md`, "Commands").
 #[test]
-fn decide_refuses_a_trail_no_active_trail_of_the_project_has() {
+fn decide_refuses_a_trail_the_project_has_not_open() {
     let repo = Repo::new();
     let t = now() - 5 * 60;
-    let reached = step_note(&repo, &account(), None, "reached", t);
-    done_note(&repo, &account(), &reached, t + 1);
+    let done = step_note(&repo, &account(), None, "done", t);
+    done_note(&repo, &account(), &done, t + 1);
     let active = step_note(&repo, &account(), None, "active", t + 2);
     let part = step_note(&repo, &account(), Some(&active), "part", t + 3);
     let unknown = "0".repeat(64);
-    for trail in [unknown.as_str(), reached.id.as_str(), part.id.as_str()] {
+    for trail in [unknown.as_str(), done.id.as_str(), part.id.as_str()] {
         let scope = format!("trail:{trail}");
         let args = ["decide", "--json", "--scope", &scope, "--", WORK];
         refusal(&repo.run(&repo.path(), &args, &[], ""), 1, "no-trail");
@@ -388,6 +345,10 @@ fn decide_refuses_a_trail_no_active_trail_of_the_project_has() {
     let args = ["decide", "--json", "--scope", &scope, "--", WORK];
     refusal(&repo.run(&shop, &args, &[], ""), 1, "no-trail");
     assert!(labelled(&repo, "decision").is_empty());
+    done_note(&repo, &account(), &part, t + 4);
+    let args = ["decide", "--scope", &scope, "--", WORK];
+    let o = repo.run(&repo.path(), &args, &[], "");
+    assert!(o.status.success(), "{}", err(&o));
 }
 
 /// `decide` refuses a `--replaces` no live decision has, with `no-decision`
@@ -425,25 +386,10 @@ fn decide_refuses_a_replaces_no_live_decision_has() {
 fn a_flag_no_command_takes_is_a_usage_error() {
     let repo = Repo::new();
     for args in [
-        vec!["read", "--json", "--bogus"],
+        vec!["past", "--json", "--bogus"],
         vec!["decide", "--json", "--bogus", "--", WORK],
         vec!["step", "add", "--json", "--needs", "x", "--", "work"],
     ] {
         refusal(&repo.run(&repo.path(), &args, &[], ""), 2, "usage");
     }
-}
-
-/// `home` prints the full path of the store and writes nothing; with `--json`, `{"path"}`
-/// (`spec/trails/11-cli.md`, "Commands").
-#[test]
-fn home_prints_the_path_of_the_store() {
-    let repo = Repo::new();
-    let o = run(&repo, &["home"]);
-    assert!(o.status.success(), "{}", err(&o));
-    let store = repo.store().display().to_string();
-    assert_eq!(out(&o).trim(), store);
-    let o = run(&repo, &["home", "--json"]);
-    let printed: Value = serde_json::from_str(out(&o).trim()).unwrap();
-    assert_eq!(printed["path"], store.as_str());
-    assert!(!repo.store().exists());
 }

@@ -3,7 +3,6 @@
 pub mod check;
 pub mod grade;
 pub mod mark;
-pub mod past;
 pub mod state;
 pub mod status;
 pub mod step;

@@ -4,14 +4,13 @@ use crate::trail::step::NAMESPACE;
 use anyhow::Result;
 use celis_wire::{Account, Note};
 
-/// What an agent does to a step: takes it up, with whether its check passed before the work, closes it done with its proof and what changed from its plan, records what the person
+/// What an agent does to a step: takes it up, closes it done with its proof and what changed from its
+/// plan, records what the person
 /// asked for while it was open, or drops it with the reason its work is no longer wanted. It gives a step
 /// a new title or text, places or check. On a trail, the hook records a prompt while no step works.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Mark {
-    Start {
-        passed: Option<bool>,
-    },
+    Start,
     Done {
         proof: String,
         changed: Option<String>,
@@ -36,7 +35,7 @@ impl Mark {
     /// This mark on the step `step` as a kind 1985 record that `signer` signs at `at`.
     pub fn record(&self, signer: &Account, step: &str, at: u64) -> Result<Note> {
         let (label, content) = match self {
-            Mark::Start { .. } => ("start", ""),
+            Mark::Start => ("start", ""),
             Mark::Done { proof, .. } => ("done", proof.as_str()),
             Mark::Steer { text } => ("steer", text.as_str()),
             Mark::Drop { reason } => ("drop", reason.as_str()),
@@ -48,13 +47,6 @@ impl Mark {
             vec!["l".to_string(), label.to_string(), NAMESPACE.to_string()],
             vec!["e".to_string(), step.to_string()],
         ];
-        if let Mark::Start {
-            passed: Some(passed),
-        } = self
-        {
-            let before = if *passed { "passes" } else { "fails" };
-            tags.push(vec!["before".to_string(), before.to_string()]);
-        }
         if let Mark::Done {
             changed: Some(changed),
             ..
@@ -79,9 +71,7 @@ impl Mark {
             .iter()
             .find(|t| t.len() >= 3 && t[0] == "l" && t[2] == NAMESPACE)?;
         let mark = match label[1].as_str() {
-            "start" => Mark::Start {
-                passed: note.tag("before").map(|b| b == "passes"),
-            },
+            "start" => Mark::Start,
             "done" => Mark::Done {
                 proof: note.content.clone(),
                 changed: note.tag("changed").map(str::to_string),

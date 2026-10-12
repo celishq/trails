@@ -13,7 +13,6 @@ fn step(text: &str, at: u64) -> Note {
             name: "repo".into(),
         },
         under: None,
-        fixes: None,
         replaces: None,
         places: Vec::new(),
         check: None,

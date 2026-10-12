@@ -1,0 +1,30 @@
+# Steps
+
+The cases that the card does not cover, and that no command prints. Do not run `--help`.
+
+## Decisions
+
+A place is a file, a `file:line`, a folder, or a URL. A scope is `at:<place>`, `trail:<id>`, `project`
+(the default), or `me` for every project of the person. A standing convention the person gives is a
+`project` decision, or `me` when it holds in all their work.
+
+When you move a file: write each decision at its old place again at the new place, with
+`decide --replaces <id> --scope at:<new place>`. Run `celis past --at <old place>` to see them.
+
+## Past work
+
+When the `celis:past` agent returns past work that went as planned, take the steps right under its ask
+as your shapes, with the `changed` lines in mind. Copy the steps under a shape only when you take that
+shape. Else outline the shapes yourself. A part that several shapes use is its own shape, first.
+
+## Subagents and other sessions
+
+When a subagent takes a step, give it the step's id. It runs `start` and `done` on that step, and adds
+its own steps `--under` it. To go on with another session's trail, add your first step `--under <its
+id>`.
+
+## Stop
+
+Never write a proof for work you did not do. Stop and tell the person what is open when two reviews in
+a row send you back to the same step, or at a limit of time or money the person set. When you lose track,
+or after a compaction, run `celis tree`, and go on.

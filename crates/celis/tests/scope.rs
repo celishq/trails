@@ -7,7 +7,7 @@ use support::{account, cli, decision_tags, err, now, objects, out, put, Repo};
 
 /// The ids of the decisions `read --json --at src/a.rs` prints in `folder`.
 fn decisions(repo: &Repo, folder: &std::path::Path) -> Vec<String> {
-    let o = repo.run(folder, &["read", "--json", "--at", "src/a.rs"], &[], "");
+    let o = repo.run(folder, &["past", "--json", "--at", "src/a.rs"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     out(&o)
         .lines()
@@ -57,7 +57,7 @@ fn no_scope_tag_is_the_project_and_an_unknown_scope_is_skipped() {
     tags.push(vec!["scope".into(), "team:design".into()]);
     let unknown = Note::write(&account(), 1111u16, now(), tags, "Team rule.").unwrap();
     put(&repo, &unknown);
-    let shown = objects(&repo, &["read"]);
+    let shown = objects(&repo, &["past"]);
     let scopes: Vec<(&str, &str)> = shown
         .iter()
         .filter_map(|v| {

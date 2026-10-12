@@ -22,7 +22,7 @@ $CELIS_HOME   CIP-11, "Commands"
 **Rules**
 
 - A command MUST open the store in `$CELIS_HOME/trails/`, whatever the working folder.
-- With no store, `read`, `tree` and `watch` MUST answer as an empty store, and write nothing.
+- With no store, `past` and `tree` MUST answer as an empty store, and write nothing.
 - With no store, every other command MUST create it.
 - A record MUST be written to a file named `<created_at>-<id>.json`, holding the record as NIP-01 JSON.
 - A record file MUST NOT change once written. A reader MUST NOT see a file that is half written.

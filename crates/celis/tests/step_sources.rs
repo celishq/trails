@@ -31,7 +31,7 @@ fn store_step(repo: &Repo, by: &Account, text: &str, at: u64) -> Note {
 
 /// The step and trail objects `read --json` prints in the repo.
 fn listed(repo: &Repo) -> Vec<Value> {
-    let o = repo.run(&repo.path(), &["read", "--json"], &[], "");
+    let o = repo.run(&repo.path(), &["past", "--json"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     out(&o)
         .lines()

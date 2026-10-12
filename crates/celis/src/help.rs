@@ -2,21 +2,17 @@
 
 /// The page: the reference for a person.
 pub const PAGE: &str = r#"celis keeps how you do your tasks. A trail is one task you give, the steps
-agents take toward it, and the decisions made on the way. Use it through the
-/celis:trail skill.
+agents take toward it, and the decisions made on the way. Your agents use it
+through the celis plugin.
 
 Commands
-  read     this project's active trails, open steps and decisions
   decide   a decision, in its scope
   tree     a trail and its steps, with their grades
-  past     every project's past work, one line each
-  step     the steps of a trail: add, start, done, steer, drop, edit
-  watch    a trail's tree, printed again on each change
-  home     the folder of the store, to open it
+  past     this project's active trails and decisions, every project's past work
+  step     the steps of a trail: add, start, done, drop, edit
   auth     the account's phrase: login, status, phrase
 
-$CELIS_HOME holds the phrase and the store. $CELIS_TRAIL names the trail new
-steps go under.
+$CELIS_HOME holds the phrase and the store.
 
 See `celis <command> --help`."#;
 
@@ -62,7 +58,7 @@ fn words(args: &[String]) -> Vec<&str> {
 pub const GROUPS: &[(&str, &str)] = &[
     (
         "step",
-        "The steps of a trail: add one, then start, close, steer, drop or edit it.",
+        "The steps of a trail: add one, then start, close, drop or edit it.",
     ),
     (
         "auth",
@@ -158,18 +154,11 @@ impl Verb {
 /// The help of each command.
 pub const VERBS: &[Verb] = &[
     Verb {
-        command: "read",
-        usage: &["celis read [--at <place>]..."],
-        summary: "Print this project's active trails and today's ended ones with their rules, open steps and decisions.",
-        args: &[("--at <place>", "a place whose decisions come first; zero or more")],
-        examples: &["celis read --at shelf/prices.py"],
-    },
-    Verb {
         command: "past",
-        usage: &["celis past"],
-        summary: "Print the done asks and reached trails of every project, newest first, one line each with its project, place, grade and day.",
-        args: &[],
-        examples: &["celis past", "celis past --json"],
+        usage: &["celis past [--at <place>]..."],
+        summary: "Print this project's active trails with their rules and its decisions, then the done asks and reached trails of every project, newest first, one line each with its project, place, grade and day.",
+        args: &[("--at <place>", "a place whose decisions come first; zero or more")],
+        examples: &["celis past", "celis past --at shelf/prices.py"],
     },
     Verb {
         command: "decide",
@@ -187,31 +176,15 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "tree",
-        usage: &["celis tree [<id>] [--full] [--all]"],
+        usage: &["celis tree [<id>] [--full] [--all] [--watch]"],
         summary: "Print a trail with its state, its rules and its steps with their grades; with no id, the active trails and those from today.",
         args: &[
             ("<id>", "the step id, or a start of 4 or more characters; optional"),
             ("--full", "add the proof, grade and reason under each step; optional"),
             ("--all", "every trail of every project, by day, in place of an id; optional"),
+            ("--watch", "print it again each time it changes, until you stop it; optional"),
         ],
-        examples: &["celis tree 3fa2c1d0 --full", "celis tree --all"],
-    },
-    Verb {
-        command: "watch",
-        usage: &["celis watch [<id>] [--full]"],
-        summary: "Print a trail's tree, and print it again each time it changes, until you stop it; with no id, every active trail of every project.",
-        args: &[
-            ("<id>", "the step id, or a start of 4 or more characters; optional"),
-            ("--full", "add the proof, grade and reason under each step; optional"),
-        ],
-        examples: &["celis watch 3fa2c1d0"],
-    },
-    Verb {
-        command: "home",
-        usage: &["celis home"],
-        summary: "Print the folder of the store, which holds every trail, step and decision as a file. On a Mac, open it with: open \"$(celis home)\"",
-        args: &[],
-        examples: &["celis home"],
+        examples: &["celis tree 3fa2c1d0 --full", "celis tree --all", "celis tree --watch"],
     },
     Verb {
         command: "prompt",
@@ -243,11 +216,10 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "step add",
-        usage: &["celis step add [--under <id>] [--fixes <id>] [--replaces <id>] [--at <place>]... [--check <command>] [--new] -- <text>"],
-        summary: "Leave a step. With no --under, it goes under $CELIS_TRAIL, else under the session's trail, else it starts a trail.",
+        usage: &["celis step add [--under <id>] [--replaces <id>] [--at <place>]... [--check <command>] [--new] -- <text>"],
+        summary: "Leave a step. With no --under, it goes under the session's trail, else it starts a trail.",
         args: &[
             ("--under <id>", "the open step it is a part of; optional"),
-            ("--fixes <id>", "a done step whose work it fixes; optional"),
             ("--replaces <id>", "an open step whose plan it takes over; optional"),
             ("--at <place>", "file:line, a URL or any text; zero or more"),
             ("--check <command>", "the command that proves the work; optional"),
@@ -281,16 +253,6 @@ pub const VERBS: &[Verb] = &[
             "celis step done 4c1d22e0 --as-planned --pitfall \"Run make_fixtures --yes.\" \\",
             "  -- \"python3 -m unittest: test_senior failed before, passes now.\"",
         ],
-    },
-    Verb {
-        command: "step steer",
-        usage: &["celis step steer <id> -- <text>"],
-        summary: "Record what the person asked for while a step was open.",
-        args: &[
-            ("<id>", "the step id, or a start of 4 or more characters"),
-            ("<text>", "what the person asked, in one sentence"),
-        ],
-        examples: &["celis step steer 4c1d22e0 -- \"Use the shared Badge, not a new one.\""],
     },
     Verb {
         command: "step drop",

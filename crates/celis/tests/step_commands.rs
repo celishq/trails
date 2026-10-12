@@ -2,7 +2,6 @@
 
 mod support;
 
-use celis_trails::Project;
 use celis_wire::{Account, Note};
 use serde_json::Value;
 use std::process::Output;
@@ -73,44 +72,41 @@ fn step_add_refuses_empty_text_and_the_other_commands_refuse_unknown_and_closed_
     assert!(o.status.success(), "{}", err(&o));
 }
 
-/// `read` prints each open step of the working folder's project oldest first, as
-/// `<id, first 8> [<project name>] <text>`, then ` · <at>` when it has one, and with `--json` the spec
-/// object (`spec/trails/12-steps.md`, "The commands").
+/// A step prints as `<id, first 8> [<project name>] <text>`, then ` · <at>` when it has one, and with
+/// `--json` as the spec object (`spec/trails/12-steps.md`, "The commands").
 #[test]
-fn read_prints_each_open_step_as_the_line_and_object_the_spec_gives() {
+fn a_step_prints_as_the_line_and_object_the_spec_gives() {
     let repo = Repo::plain();
     let by = &account();
-    let other = repo.path().with_file_name("elsewhere");
-    std::fs::create_dir_all(&other).unwrap();
     let home = (repo.project_id(), "repo".to_string());
-    let away = (Project::at(&other).id, "elsewhere".to_string());
     let t = now() - 5 * 60;
-    let trail = step(by, (&home.0, &home.1), "the trail", &[], t - 1);
+    let trail = step(
+        by,
+        (&home.0, &home.1),
+        "the trail",
+        &[("at", "a.rs:1")],
+        t - 1,
+    );
     let under = [("under", trail.id.as_str())];
-    let at = [("under", trail.id.as_str()), ("at", "a.rs:1")];
-    let second = step(by, (&home.0, &home.1), "second", &at, t + 10);
     let first = step(by, (&home.0, &home.1), "first", &under, t);
-    let elsewhere = step(by, (&away.0, &away.1), "elsewhere", &under, t + 20);
-    for n in [&trail, &second, &first, &elsewhere] {
+    for n in [&trail, &first] {
         put(&repo, n);
     }
-    let o = repo.run(&repo.path(), &["read"], &[], "");
+    let o = repo.run(&repo.path(), &["past"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     let text = out(&o);
-    let lines: Vec<&str> = text.lines().collect();
     assert_eq!(
-        lines,
-        vec![
-            format!("{} [repo] the trail", &trail.id[..8]),
-            format!("{} [repo] first", &first.id[..8]),
-            format!("{} [repo] second · a.rs:1", &second.id[..8]),
-        ],
+        text.lines().next(),
+        Some(format!("{} [repo] the trail · a.rs:1", &trail.id[..8]).as_str()),
         "{text}"
     );
-    let o = repo.run(&repo.path(), &["read", "--json"], &[], "");
+    let o = repo.run(&repo.path(), &["tree", &trail.id[..8], "--json"], &[], "");
     let json = out(&o);
-    let line: Value = serde_json::from_str(json.lines().nth(1).unwrap()).unwrap();
-    let object = &line["step"];
+    let object = json
+        .lines()
+        .map(|l| serde_json::from_str::<Value>(l).unwrap())
+        .find_map(|v| v.get("step").cloned())
+        .unwrap();
     assert_eq!(object["id"], first.id.as_str());
     assert_eq!(object["project"], home.0.as_str());
     assert!(object.get("task").is_none(), "{object}");
@@ -276,38 +272,6 @@ fn add_writes_its_places_from_the_projects_top_folder() {
     assert_eq!(at, ["src/a.rs:4", "b.rs"]);
 }
 
-/// `done` says on stderr that a direction check is due each time 5 more steps under a trail are done
-/// (`spec/trails/12-steps.md`, "The commands").
-#[test]
-fn done_says_a_direction_check_is_due_every_five_done_steps_of_a_trail() {
-    let repo = Repo::new();
-    let trail = out(&run(&repo, &["add", "--", "the trail"]))
-        .trim()
-        .to_string();
-    let part = out(&run(&repo, &["add", "--under", &trail[..8], "--", "part"]))
-        .trim()
-        .to_string();
-    let mut said = Vec::new();
-    for n in 1..=6 {
-        let text = format!("piece {n}");
-        let id = out(&run(&repo, &["add", "--under", &part[..8], "--", &text]))
-            .trim()
-            .to_string();
-        let o = run(&repo, &["done", &id[..8], "--as-planned", "--", "proof"]);
-        assert!(o.status.success(), "{}", err(&o));
-        said.push(err(&o));
-    }
-    let due = format!(
-        "celis: 5 steps of the trail {} are done; check its direction.\n",
-        &trail[..8]
-    );
-    assert_eq!(said[4].lines().next(), due.lines().next());
-    assert!(
-        said.iter().enumerate().all(|(i, e)| i == 4 || e.is_empty()),
-        "{said:?}"
-    );
-}
-
 /// `done --pitfall` writes the pitfall as a decision at the step's place, which `read --at` gives in a
 /// later trail; with no place, as a rule of the step's trail (`spec/trails/12-steps.md`, "The commands").
 #[test]
@@ -345,7 +309,7 @@ fn done_writes_a_pitfall_as_a_decision_at_the_steps_place() {
         "{rules}"
     );
     support::finish(&repo, &trail[..8]);
-    let later = out(&cli(&repo, &["read", "--at", "src/a.rs"]));
+    let later = out(&cli(&repo, &["past", "--at", "src/a.rs"]));
     assert!(
         later
             .lines()
@@ -354,113 +318,25 @@ fn done_writes_a_pitfall_as_a_decision_at_the_steps_place() {
     );
 }
 
-/// The direction check names the ask of the step just done and the open steps of that ask, and asks to
-/// drop or replace each that does not serve it (`spec/trails/12-steps.md`, "The commands").
+/// `add` says when the step under an ask it goes under already holds an open step that has not
+/// started, and still writes it; under an ask or a trail it says nothing (`spec/trails/12-steps.md`,
+/// "The commands").
 #[test]
-fn the_direction_check_names_the_ask_and_its_open_steps() {
+fn add_says_when_a_step_ahead_has_not_started() {
     let repo = Repo::new();
-    let id = |o: std::process::Output| out(&o).trim().to_string();
-    let trail = id(run(&repo, &["add", "--", "the trail"]));
-    let ask = id(run(
-        &repo,
-        &["add", "--under", &trail[..8], "--", "the ask"],
-    ));
-    let open = id(run(
-        &repo,
-        &["add", "--under", &ask[..8], "--", "still open"],
-    ));
-    let mut said = String::new();
-    for n in 1..=5 {
-        let text = format!("piece {n}");
-        let piece = id(run(&repo, &["add", "--under", &ask[..8], "--", &text]));
-        let o = run(&repo, &["done", &piece[..8], "--as-planned", "--", "proof"]);
-        assert!(o.status.success(), "{}", err(&o));
-        said = err(&o);
-    }
-    let expected = [
+    let trail = add(&repo, &["--", "the trail"]);
+    let ask = add(&repo, &["--under", &trail[..8], "--", "the ask"]);
+    let shape = add(&repo, &["--under", &ask[..8], "--", "a shape"]);
+    let o = run(&repo, &["add", "--under", &ask[..8], "--", "another shape"]);
+    assert_eq!(err(&o), "");
+    let first = add(&repo, &["--under", &shape[..8], "--", "first"]);
+    let o = run(&repo, &["add", "--under", &shape[..8], "--", "second"]);
+    assert!(o.status.success(), "{}", err(&o));
+    assert_eq!(
+        err(&o),
         format!(
-            "celis: 5 steps of the trail {} are done; check its direction.",
-            &trail[..8]
-        ),
-        format!("  ask  {} the ask", &ask[..8]),
-        format!("  open {} still open", &open[..8]),
-        "celis: drop or replace each open step that does not serve the ask.".to_string(),
-    ];
-    assert_eq!(said.lines().collect::<Vec<_>>(), expected);
-}
-
-/// The direction check runs the ask's check, when it has one, and says under the ask whether it passes,
-/// with the last line it printed when it fails (`spec/trails/12-steps.md`, "The commands").
-#[test]
-fn the_direction_check_runs_the_asks_check() {
-    let repo = Repo::new();
-    let id = |o: std::process::Output| out(&o).trim().to_string();
-    let trail = id(run(&repo, &["add", "--", "the trail"]));
-    let check = "echo running; echo 3 failing; exit 1";
-    let ask = id(run(
-        &repo,
-        &[
-            "add",
-            "--under",
-            &trail[..8],
-            "--check",
-            check,
-            "--",
-            "the ask",
-        ],
-    ));
-    let mut said = Vec::new();
-    for n in 1..=10 {
-        if n == 6 {
-            let o = run(&repo, &["edit", &ask[..8], "--check", "true"]);
-            assert!(o.status.success(), "{}", err(&o));
-        }
-        let text = format!("piece {n}");
-        let piece = id(run(&repo, &["add", "--under", &ask[..8], "--", &text]));
-        let o = run(&repo, &["done", &piece[..8], "--as-planned", "--", "proof"]);
-        assert!(o.status.success(), "{}", err(&o));
-        said.push(err(&o));
-    }
-    assert_eq!(
-        said[4].lines().nth(2),
-        Some("  check fails: 3 failing"),
-        "{}",
-        said[4]
-    );
-    assert_eq!(
-        said[9].lines().nth(2),
-        Some("  check passes"),
-        "{}",
-        said[9]
-    );
-}
-
-/// `add` says on stderr when the title, the first line of the text, has more than 8 words, and still
-/// writes the step (`spec/trails/12-steps.md`, "The commands").
-#[test]
-fn add_says_when_a_title_is_longer_than_eight_words() {
-    let repo = Repo::new();
-    let short = run(
-        &repo,
-        &[
-            "add",
-            "--",
-            "Round the senior price down\nThe test expects 7.99 for 9.99 here.",
-        ],
-    );
-    assert!(short.status.success(), "{}", err(&short));
-    assert_eq!(err(&short), "");
-    let long = run(
-        &repo,
-        &[
-            "add",
-            "--",
-            "Round the senior price down to the nearest cent always",
-        ],
-    );
-    assert!(long.status.success(), "{}", err(&long));
-    assert_eq!(
-        err(&long),
-        "celis: the title has 10 words; keep it to 8 or fewer with step edit, and put the detail on the lines after it.\n"
+            "celis: {} has not started; keep one step ahead: take it first, or drop it.\n",
+            &first[..8]
+        )
     );
 }

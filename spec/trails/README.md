@@ -15,7 +15,7 @@ The conventions in `spec/AGENTS.md` apply here unchanged.
 | 10 | Decisions | the store, projects, the account, decisions, their scope, how they are read | CIP-01 |
 | 11 | The command line | `celis`: commands, help, output and errors | CIP-10 |
 | 12 | Steps | the step, its project, closing, steering, grades, `celis step` | CIP-10, 11 |
-| 14 | Trails | the trail, its rules, its state, `celis tree`, the past, `celis watch` | CIP-10, 11, 12 |
+| 14 | Trails | the trail, its rules, its state, `celis tree`, the past, `celis tree --watch` | CIP-10, 11, 12 |
 
 ## Names
 
@@ -35,7 +35,7 @@ The conventions in `spec/AGENTS.md` apply here unchanged.
 | 1985 with `drop` in `celis.step` | kind: a drop (NIP-32) | 12 |
 | 1985 with `edit` in `celis.step` | kind: an edit (NIP-32) | 12 |
 | 1985 with `prompt` in `celis.step` | kind: a prompt while no step works (NIP-32) | 14 |
-| `under` · `fixes` · `at` · `check` | step tags; an old `file` reads as an `at` | 12 |
+| `under` · `replaces` · `at` · `check` | step tags; an old `file` reads as an `at` | 12 |
 | `figma:<key>` · `web:<host>` | project id of a step outside git | 12 |
 | `no-step` · `closed` · `open-steps` · `check-failed` | errors | 12 |
 
@@ -52,10 +52,9 @@ The conventions in `spec/AGENTS.md` apply here unchanged.
 | `rule` | a live decision whose scope is a trail |
 | `scope` | where a decision holds: a place, a trail, the project, or every project |
 | `step` | one part of the work toward a trail, at a place: open, working, done or dropped |
-| `steer` | what you asked for while a step was open, written by the agent |
+| `steer` | what you asked for while a step was open, written by the prompt hook |
 | `decision` | one sentence an agent writes, that holds in its scope until another replaces it |
 | `live` | a decision no other decision replaces |
-| `rework` | a step that fixes the work of a done step |
 | `place` | a file, a `file:line`, a folder or a URL that a step or a decision is at |
 
 ## A decision, end to end

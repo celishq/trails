@@ -46,7 +46,6 @@ fn past_lists_done_asks_and_reached_trails_of_every_project_newest_first() {
     let reached = Step {
         anchor: shop,
         under: None,
-        fixes: None,
         replaces: None,
         places: vec!["Export.swift".to_string()],
         check: None,
@@ -126,31 +125,4 @@ fn past_json_carries_each_past_works_tags() {
     ];
     assert_eq!(keys, want);
     assert_eq!(past[0]["project"], "repo");
-}
-
-/// `past` appends how many it listed, and `tree <id>` the step it opened, to
-/// `$CELIS_HOME/retrieval.log`, and neither writes a record (`spec/trails/14-trails.md`, "The past").
-#[test]
-fn past_lists_and_tree_opens_into_the_retrieval_log() {
-    let repo = Repo::new();
-    let vendors = trail(&repo, &repo.path(), "Build the Vendors page");
-    let records = std::fs::read_dir(repo.store().join("shared"))
-        .unwrap()
-        .count();
-    let o = cli(&repo, &["past"]);
-    assert!(o.status.success(), "{}", err(&o));
-    let o = cli(&repo, &["tree", &vendors[..8]]);
-    assert!(o.status.success(), "{}", err(&o));
-    let log = std::fs::read_to_string(repo.home().join("retrieval.log")).unwrap();
-    let lines: Vec<Value> = log
-        .lines()
-        .map(|l| serde_json::from_str(l).unwrap())
-        .collect();
-    assert_eq!(lines.len(), 2, "{log}");
-    assert_eq!(lines[0]["listed"], 2);
-    assert_eq!(lines[1]["opened"], vendors.as_str());
-    let after = std::fs::read_dir(repo.store().join("shared"))
-        .unwrap()
-        .count();
-    assert_eq!(after, records);
 }

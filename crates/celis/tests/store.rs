@@ -15,7 +15,7 @@ fn a_command_must_open_the_store_in_celis_home_whatever_the_working_folder() {
     let wrote = repo.run(&repo.path(), &["step", "add", "--", text], &[], "");
     assert!(wrote.status.success(), "{}", err(&wrote));
     let tree = repo.worktree("feat-a");
-    let listed = repo.run(&tree, &["read"], &[], "");
+    let listed = repo.run(&tree, &["past"], &[], "");
     assert!(out(&listed).contains(text), "{}", out(&listed));
     let outside = tempfile::tempdir().unwrap();
     let elsewhere = repo.run(outside.path(), &["step", "add", "--", "Run make."], &[], "");
@@ -182,7 +182,7 @@ fn past_with_no_store_must_answer_empty_and_create_nothing() {
 #[test]
 fn read_with_no_store_must_answer_empty_and_create_nothing() {
     let repo = Repo::new();
-    let o = repo.run(&repo.path(), &["read"], &[], "");
+    let o = repo.run(&repo.path(), &["past"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     assert!(out(&o).is_empty(), "{}", out(&o));
     assert!(!repo.store().exists());

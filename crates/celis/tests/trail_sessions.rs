@@ -219,34 +219,6 @@ fn a_sessions_open_trail_is_the_trail_of_its_newest_step() {
     assert_eq!(own.len(), 2, "{own:?}");
 }
 
-/// With `CELIS_TRAIL`, `step add` with no `--under` goes under that step, and the session's next steps
-/// follow it; with no session, the step goes there too (`spec/trails/14-trails.md`, "Sessions").
-#[test]
-fn celis_trail_names_where_new_steps_go() {
-    let repo = Repo::new();
-    let trail = ids(&repo, Some("s1"), "the trail")[1].clone();
-    let env = [("CELIS_TRAIL", &trail[..8])];
-    std::thread::sleep(std::time::Duration::from_millis(1100));
-    let first = run_add(&repo, Some("s2"), &env, &["--", "from s2"]);
-    std::thread::sleep(std::time::Duration::from_millis(1100));
-    let second = add(&repo, Some("s2"), "s2 again");
-    std::thread::sleep(std::time::Duration::from_millis(1100));
-    let third = run_add(&repo, None, &env, &["--", "no session"]);
-    let head = objects(&repo, &["tree", &trail[..8]]);
-    let under: Vec<&str> = head[2..]
-        .iter()
-        .map(|o| o["step"]["id"].as_str().unwrap_or(""))
-        .collect();
-    assert_eq!(under, [&first[0], &second, &third[0]], "{head:?}");
-    let o = repo.run(
-        &repo.path(),
-        &["step", "add", "--json", "--", "x"],
-        &[("CELIS_TRAIL", "deadbeef")],
-        "",
-    );
-    support::refusal(&o, 1, "no-step");
-}
-
 /// `prompt` names the working step of the session's trail on stderr, and asks for a step under it when
 /// the next work does not fit; with no working step, it names none (`spec/trails/14-trails.md`,
 /// "Sessions").
@@ -295,11 +267,11 @@ fn prompt_skips_a_harness_message() {
     assert!(marks(&repo, "prompt").is_empty());
 }
 
-/// With no open trail in the session, `prompt` writes nothing and prints one line on stderr naming the
-/// agent that finds past work; nothing while the store holds no past work
-/// (`spec/trails/14-trails.md`, "Sessions").
+/// With no open trail in the session, `prompt` writes nothing, and prints on stderr one line that asks for
+/// the agent that brings what `past` prints, once `past` prints anything (`spec/trails/14-trails.md`,
+/// "Sessions").
 #[test]
-fn a_prompt_with_no_open_trail_names_the_past_agent() {
+fn a_prompt_with_no_open_trail_asks_for_the_past_agent() {
     let repo = Repo::new();
     let hook = |prompt: &str| {
         let json = serde_json::json!({"session_id": "s9", "prompt": prompt}).to_string();
@@ -308,17 +280,19 @@ fn a_prompt_with_no_open_trail_names_the_past_agent() {
         assert_eq!(out(&o), "");
         err(&o)
     };
-    let open = add(&repo, None, "Fix the login form");
     assert_eq!(hook("Build a Vendors table"), "");
     let o = repo.run(
         &repo.path(),
-        &["step", "done", &open[..8], "--as-planned", "--", "p"],
+        &["decide", "--", "When you test: set SHELF_OFFLINE=1."],
         &[],
         "",
     );
     assert!(o.status.success(), "{}", err(&o));
     let said = hook("Build a Vendors table");
     assert_eq!(said.lines().count(), 1, "{said}");
-    assert!(said.contains("run the celis:past agent"), "{said}");
+    assert!(said.contains("celis:past agent"), "{said}");
+    assert!(said.contains("before any other tool"), "{said}");
+    assert!(said.contains("wait for its answer"), "{said}");
+    assert!(!said.contains("SHELF_OFFLINE"), "{said}");
     assert!(marks(&repo, "prompt").is_empty());
 }

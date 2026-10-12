@@ -6,8 +6,7 @@ mod clock;
 mod decision;
 mod past;
 mod prompt;
-mod read;
-mod retro;
+mod review;
 mod step;
 mod tree;
 mod watch;
@@ -62,12 +61,9 @@ impl Command {
     fn go(&self, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> Result<(), Failure> {
         match args.words.first().map(String::as_str).unwrap_or("") {
             "step" => self.step(args, out, err, &self.project()),
-            "read" => self.read(args, out, &self.project()),
             "decide" => self.decide(args, out, &self.project()),
             "tree" => self.tree(args, out, &self.project()),
-            "past" => self.past(args, out),
-            "watch" => self.watch(args, out),
-            "home" => self.store_path(args, out),
+            "past" => self.past(args, out, &self.project()),
             "prompt" => self.prompt(args, out, err, &self.project()),
             "auth" => self.auth(args, out, err),
             "" => Err(Failure::usage("expected: celis <command>")),
@@ -80,13 +76,7 @@ impl Command {
         Project::at(&self.folder)
     }
 
-    /// Prints the folder of the store. Writes nothing.
-    fn store_path(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
-        let path = Store::root(&self.home()?).display().to_string();
-        show(out, args.json, "path", json!(path), &path)
-    }
-
-    /// Whether `tree` and `watch` print in colour: on a terminal, or with `CLICOLOR_FORCE` set and not
+    /// Whether `tree` prints in colour: on a terminal, or with `CLICOLOR_FORCE` set and not
     /// `0`; never with `NO_COLOR` set.
     fn colour(&self) -> bool {
         let set = |name: &str| self.env.get(name).is_some_and(|v| !v.is_empty());

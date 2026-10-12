@@ -3,7 +3,6 @@
 pub mod anchor;
 pub mod phrase;
 pub mod project;
-pub mod retrieval_log;
 
 use crate::{Failure, Phrase};
 use anyhow::{Context, Result};

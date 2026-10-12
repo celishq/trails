@@ -182,6 +182,21 @@ impl<'a> Steps<'a> {
         (ask.id != trail.id).then_some(ask)
     }
 
+    /// The past work, newest first: each done ask, and each reached trail with no twin.
+    pub fn past(&self) -> Vec<&'a Note> {
+        let mut past: Vec<&'a Note> = self
+            .all()
+            .into_iter()
+            .filter(|note| match self.step(note).map(|s| s.under) {
+                Some(Some(_)) => self.done(&note.id).is_some() && self.is_ask(note),
+                Some(None) => self.state(note).reached() && self.twin(note).is_none(),
+                None => false,
+            })
+            .collect();
+        past.reverse();
+        past
+    }
+
     /// Whether the step `note` is an ask: a step right under its trail.
     pub fn is_ask(&self, note: &'a Note) -> bool {
         let under = self.entry(&note.id).and_then(|e| e.step.under.as_deref());
@@ -242,7 +257,6 @@ impl<'a> Steps<'a> {
         let from = entry.start.unwrap_or(entry.note).created_at;
         Some(Grade {
             took: done.created_at.saturating_sub(from),
-            rework: entry.rework,
             steered: entry.steers,
         })
     }
@@ -274,7 +288,6 @@ struct Entry<'a> {
     start: Option<&'a Note>,
     close: Option<(&'a Note, Status)>,
     steers: usize,
-    rework: usize,
     newest: u64,
 }
 
@@ -297,7 +310,6 @@ impl<'a> Index<'a> {
                         start: None,
                         close: None,
                         steers: 0,
-                        rework: 0,
                         newest: note.created_at,
                     },
                 );
@@ -305,12 +317,9 @@ impl<'a> Index<'a> {
         }
         for &note in &all {
             let step = &entries[note.id.as_str()].step;
-            let (under, fixes) = (step.under.clone(), step.fixes.clone());
+            let under = step.under.clone();
             if let Some(parent) = under.and_then(|id| entries.get_mut(id.as_str())) {
                 parent.children.push(note);
-            }
-            if let Some(fixed) = fixes.and_then(|id| entries.get_mut(id.as_str())) {
-                fixed.rework += 1;
             }
         }
         for &note in &sorted {
@@ -331,7 +340,7 @@ impl<'a> Entry<'a> {
     /// Takes in the mark `mark` that the record `note` holds, in the order the marks were written.
     fn mark(&mut self, note: &'a Note, mark: Mark) {
         match mark {
-            Mark::Start { .. } => {
+            Mark::Start => {
                 self.start.get_or_insert(note);
             }
             Mark::Done { proof, .. } if !proof.trim().is_empty() => {

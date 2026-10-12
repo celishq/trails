@@ -232,8 +232,6 @@ fn tree_draws_the_styled_tree_when_colour_is_forced() {
         &[
             "--under",
             &trail[..8],
-            "--fixes",
-            &done[..8],
             "--at",
             "shelf/a.py",
             "--",
@@ -266,26 +264,17 @@ fn tree_draws_the_styled_tree_when_colour_is_forced() {
     assert_eq!(lines.len(), 5, "{lines:?}");
     let column = |line: &str, text: &str| line.find(text).map(|n| line[..n].chars().count());
     assert_eq!(column(&lines[2], "prices.py:40"), column(&lines[4], "a.py"));
-    let fixes = format!("↳ fixes {}", &done[..8]);
-    assert_eq!(
-        column(&lines[4], &fixes),
-        column(&lines[4], "a.py").map(|n| n + "prices.py:40  ".len()),
-        "{lines:?}"
-    );
     for line in [&lines[0], &lines[3]] {
         assert_eq!(line.chars().count(), 80, "{lines:?}");
     }
-    assert_eq!(
-        column(&lines[0], "0s  "),
-        column(&lines[3], "0s  "),
-        "{lines:?}"
-    );
+    let took = |line: &str| line.rfind("s  ").map(|n| line[..n].chars().count());
+    assert_eq!(took(&lines[0]), took(&lines[3]), "{lines:?}");
     let clock = |line: &str| {
         let end: Vec<char> = line.chars().rev().take(6).collect();
         end.len() == 6 && end[2] == ':' && end[5] == ' '
     };
     assert!(clock(&lines[0]), "{lines:?}");
-    let narrow = [("CLICOLOR_FORCE", "1"), ("COLUMNS", "60")];
+    let narrow = [("CLICOLOR_FORCE", "1"), ("COLUMNS", "50")];
     let o = repo.run(&repo.path(), &["tree", &trail[..8]], &narrow, "");
     let lines: Vec<String> = plain(&out(&o)).lines().map(str::to_string).collect();
     assert!(lines[0].contains(" the trail "), "{lines:?}");

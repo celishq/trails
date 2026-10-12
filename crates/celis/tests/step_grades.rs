@@ -82,30 +82,15 @@ fn done_runs_the_check_at_the_top_folder_and_stops_a_slow_one() {
     assert!(started.elapsed().as_secs() < 10, "{:?}", started.elapsed());
 }
 
-/// `tree` prints a done step's grade under its proof: the time it took, the steps that fix it as
-/// rework, and its steers (`spec/trails/12-steps.md`, "Grades").
+/// `tree` prints a done step's grade under its proof: the time it took, and its steers
+/// (`spec/trails/12-steps.md`, "Grades").
 #[test]
 fn tree_prints_the_grade_of_each_done_step() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the trail"]);
     let badge = add(&repo, &["--under", &trail[..8], "--", "badge"]);
-    let o = run(
-        &repo,
-        &["step", "steer", &badge[..8], "--", "Use the shared Badge."],
-    );
-    assert!(o.status.success(), "{}", err(&o));
+    support::steer(&repo, &badge, "Use the shared Badge.");
     assert!(done(&repo, &badge[..8], &[]).status.success());
-    add(
-        &repo,
-        &[
-            "--under",
-            &trail[..8],
-            "--fixes",
-            &badge[..8],
-            "--",
-            "the badge repeats",
-        ],
-    );
     let o = run(&repo, &["tree", &trail[..8], "--full"]);
     assert!(o.status.success(), "{}", err(&o));
     let text = out(&o);
@@ -117,10 +102,7 @@ fn tree_prints_the_grade_of_each_done_step() {
     let under = |n: usize| lines[at + n].trim_start_matches([' ', '│']);
     assert_eq!(under(1), "done failed before, passes now", "{text}");
     assert!(under(2).starts_with("took "), "{text}");
-    assert!(
-        lines[at + 2].ends_with("s · rework 1 · steered 1"),
-        "{text}"
-    );
+    assert!(lines[at + 2].ends_with("s · steered 1"), "{text}");
 }
 
 /// `tree --json` gives a done step its grade (`spec/trails/12-steps.md`, "Grades").
@@ -139,7 +121,7 @@ fn tree_json_gives_a_done_step_its_grade() {
         .expect("a step");
     let grade = step["grade"].as_object().expect("a grade");
     let keys: Vec<&str> = grade.keys().map(String::as_str).collect();
-    assert_eq!(keys, ["rework", "steered", "took"]);
+    assert_eq!(keys, ["steered", "took"]);
 }
 
 /// `took` counts from the step's first `start`, and from the step when it has none

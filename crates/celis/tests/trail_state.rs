@@ -27,11 +27,7 @@ fn a_trails_state_comes_from_its_tree_and_its_steers() {
     let helped = add(&repo, &["--", "helped"]);
     let part = add(&repo, &["--under", &helped[..8], "--", "part two"]);
     let deeper = add(&repo, &["--under", &part[..8], "--", "deeper"]);
-    let o = cli(
-        &repo,
-        &["step", "steer", &deeper[..8], "--", "Use a token."],
-    );
-    assert!(o.status.success(), "{}", err(&o));
+    support::steer(&repo, &deeper, "Use a token.");
     finish(&repo, &deeper[..8]);
     finish(&repo, &part[..8]);
     finish(&repo, &helped[..8]);
@@ -47,8 +43,9 @@ fn a_trail_with_no_open_step_under_it_is_reached_at_once() {
     let part = add(&repo, &["--under", &trail[..8], "--", "part"]);
     finish(&repo, &part[..8]);
     assert_eq!(state(&repo, &trail), "reached alone");
-    let read = out(&cli(&repo, &["read"]));
-    assert!(!read.contains(&part[..8]), "{read}");
+    let read = out(&cli(&repo, &["past"]));
+    let active = format!("{} [repo] the trail", &trail[..8]);
+    assert!(!read.lines().any(|l| l == active), "{read}");
     add(&repo, &["--under", &trail[..8], "--", "more"]);
     assert_eq!(state(&repo, &trail), "active");
     let locked = add(&repo, &["--", "locked"]);
@@ -80,7 +77,7 @@ fn a_trail_ends_thirty_minutes_after_its_newest_record() {
         tree.lines().nth(1).unwrap_or("").starts_with("  └─ ! "),
         "{tree}"
     );
-    let read = out(&cli(&repo, &["read"]));
+    let read = out(&cli(&repo, &["past"]));
     let active = format!("{} [repo] left", &left.id[..8]);
     assert!(!read.lines().any(|l| l == active), "{read}");
     assert!(!read.contains(&open.id[..8]), "{read}");

@@ -30,11 +30,13 @@ fn run(repo: &Repo, args: &[&str]) -> std::process::Output {
     repo.run(&repo.path(), &all, &[], "")
 }
 
-/// What `read` prints in the repo: the open steps among the rest.
-fn ready(repo: &Repo) -> String {
-    let o = repo.run(&repo.path(), &["read"], &[], "");
+/// The mark `tree --all` prints before the step `id`: `●` while it is open.
+fn mark(repo: &Repo, id: &str) -> String {
+    let o = repo.run(&repo.path(), &["tree", "--all"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
-    out(&o)
+    let all = out(&o);
+    let line = all.lines().find(|l| l.contains(&id[..8])).unwrap_or("");
+    line.chars().take(1).collect()
 }
 
 fn done_records(repo: &Repo) -> Vec<Note> {
@@ -54,11 +56,11 @@ fn a_step_is_open_until_a_done_names_it_and_done_carries_its_proof() {
     let by = &account();
     let p = step(&repo, by, "work.", &[], now() - 4 * 60).id;
     let q = step(&repo, by, "other.", &[], now() - 4 * 60 + 1).id;
-    assert!(ready(&repo).contains(&p[..8]));
+    assert_eq!(mark(&repo, &p), "●");
     let o = run(&repo, &["done", &p, "--as-planned", "--", "proof"]);
     assert!(o.status.success(), "{}", err(&o));
-    let all = ready(&repo);
-    assert!(!all.contains(&p[..8]) && all.contains(&q[..8]), "{all}");
+    assert_eq!(mark(&repo, &p), "✓");
+    assert_eq!(mark(&repo, &q), "●");
     let done = done_records(&repo);
     let note = done
         .iter()
@@ -83,8 +85,7 @@ fn a_reader_ignores_a_done_record_with_no_content() {
         &repo,
         &Note::write(by, 1985u16, now() - 3 * 60, tags, "").unwrap(),
     );
-    let all = ready(&repo);
-    assert!(all.contains(&p.id[..8]), "{all}");
+    assert_eq!(mark(&repo, &p.id), "●");
 }
 
 /// `done` refuses an empty proof as a usage error (`spec/trails/12-steps.md`, "The commands").

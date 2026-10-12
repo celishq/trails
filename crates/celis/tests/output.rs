@@ -31,7 +31,7 @@ fn every_command_accepts_json_and_prints_the_id() {
     assert_eq!(objs.len(), 1);
     assert!(is_id(objs[0]["id"].as_str().unwrap()));
 
-    let o = repo.run(&dir, &["read", "--json"], &[], "");
+    let o = repo.run(&dir, &["past", "--json"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     objects(&out(&o));
 }
@@ -61,9 +61,9 @@ fn without_asking(repo: &Repo, args: &[&str]) -> Output {
     drop(held);
     let o = child.wait_with_output().unwrap();
     assert!(o.status.success(), "{args:?}: {}", err(&o));
-    assert_eq!(err(&o), "", "{args:?}");
-    let asked = out(&o).lines().any(|l| l.trim_end().ends_with('?'));
-    assert!(!asked, "{args:?}: {}", out(&o));
+    let said = format!("{}{}", out(&o), err(&o));
+    let asked = said.lines().any(|l| l.trim_end().ends_with('?'));
+    assert!(!asked, "{args:?}: {said}");
     o
 }
 
@@ -114,7 +114,7 @@ fn a_trail_or_step_command_with_stdin_left_open_asks_nothing() {
 fn read_with_stdin_left_open_asks_nothing() {
     let repo = Repo::new();
     trail_id(&repo, "senior tier");
-    without_asking(&repo, &["read"]);
+    without_asking(&repo, &["past"]);
 }
 
 /// `read --at` and `decide` run with their stdin left open finish, and print no question
@@ -130,7 +130,7 @@ fn read_at_and_decide_with_stdin_left_open_ask_nothing() {
             "--",
             "When you edit: test, because.",
         ],
-        vec!["read", "--at", "a.py"],
+        vec!["past", "--at", "a.py"],
     ] {
         without_asking(&repo, &args);
     }
@@ -181,7 +181,7 @@ fn decide_replaces_takes_the_first_8_characters_of_an_id() {
     let args = ["decide", "--replaces", &id[..8], "--", "new"];
     let o = repo.run(&repo.path(), &args, &[], "");
     assert!(o.status.success(), "{}", err(&o));
-    let read = out(&repo.run(&repo.path(), &["read"], &[], ""));
+    let read = out(&repo.run(&repo.path(), &["past"], &[], ""));
     assert!(read.contains("new") && !read.contains("old"), "{read}");
 }
 
@@ -216,7 +216,7 @@ fn read_prints_one_json_object_a_line_with_json() {
     step_id(&repo, "one");
     let o = repo.run(&repo.path(), &["decide", "--", "one"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
-    let o = repo.run(&repo.path(), &["read", "--json"], &[], "");
+    let o = repo.run(&repo.path(), &["past", "--json"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     assert_eq!(objects(&out(&o)).len(), 3, "{}", out(&o));
 }
@@ -228,7 +228,7 @@ fn decide_and_read_print_one_json_object_a_line_with_json() {
     let repo = Repo::plain();
     for args in [
         vec!["decide", "--json", "--", "one"],
-        vec!["read", "--json"],
+        vec!["past", "--json"],
     ] {
         let o = repo.run(&repo.path(), &args, &[], "");
         assert!(o.status.success(), "{args:?}: {}", err(&o));
@@ -292,7 +292,7 @@ fn a_usage_error_names_the_narrowest_help_page() {
     let repo = Repo::new();
     let dir = repo.path();
     for (args, page) in [
-        (&["read", "--nope"][..], "celis read --help"),
+        (&["past", "--nope"][..], "celis past --help"),
         (&["frobnicate"][..], "celis help"),
     ] {
         let usage = repo.run(&dir, args, &[], "");
@@ -460,31 +460,27 @@ fn a_command_refuses_an_8_character_start_two_trails_decisions_or_steps_share() 
     assert_eq!(out(&o), "");
 }
 
-/// `step done` and `step steer` print one JSON object a line with `--json`
-/// (`spec/trails/11-cli.md`, "Output and errors").
+/// `step done` prints one JSON object a line with `--json` (`spec/trails/11-cli.md`, "Output and
+/// errors").
 #[test]
-fn step_done_and_steer_print_json_objects_with_json() {
+fn step_done_prints_json_objects_with_json() {
     let repo = Repo::plain();
     let id = step_id(&repo, "one");
-    for args in [
-        vec!["step", "steer", "--json", &id, "--", "Use a token."],
-        vec![
-            "step",
-            "done",
-            "--json",
-            &id,
-            "--as-planned",
-            "--",
-            "it passes",
-        ],
-    ] {
-        let o = repo.run(&repo.path(), &args, &[], "");
-        assert!(o.status.success(), "{args:?}: {}", err(&o));
-        let lines = objects(&out(&o));
-        assert_eq!(lines.len(), 1, "{args:?}");
-        assert_eq!(lines[0].as_object().unwrap().len(), 1, "{}", lines[0]);
-        assert!(is_id(lines[0]["id"].as_str().unwrap()), "{args:?}");
-    }
+    let args = [
+        "step",
+        "done",
+        "--json",
+        &id,
+        "--as-planned",
+        "--",
+        "it passes",
+    ];
+    let o = repo.run(&repo.path(), &args, &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+    let lines = objects(&out(&o));
+    assert_eq!(lines.len(), 1);
+    assert_eq!(lines[0].as_object().unwrap().len(), 1, "{}", lines[0]);
+    assert!(is_id(lines[0]["id"].as_str().unwrap()));
 }
 
 /// An unknown command more than two edits from every known one names no "did you mean"
