@@ -1,0 +1,3 @@
+crates/target/
+.claude/worktrees/
+.DS_Store

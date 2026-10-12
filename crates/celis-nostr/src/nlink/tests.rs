@@ -21,7 +21,6 @@ fn key(secret: &str) -> Account {
 }
 
 /// Every end that writes or reads a guest link's URL matches `spec/fixtures/nlink.json`
-/// (`spec/network.md`, "A guest link").
 #[test]
 fn a_guest_link_encodes_as_the_fixture_states() {
     let case = case();
@@ -32,7 +31,6 @@ fn a_guest_link_encodes_as_the_fixture_states() {
     assert_eq!(link.text().unwrap(), case.nlink);
 }
 
-/// (`spec/network.md`, "A guest link")
 #[test]
 fn a_guest_link_reads_back_its_key_and_relay() {
     let case = case();

@@ -2,7 +2,7 @@
 cip: 10
 title: Decisions
 status: draft
-depends: [CIP-01]
+depends: []
 ---
 
 # CIP-10 — Decisions
@@ -57,7 +57,7 @@ three share one store; C reads only the decisions of `shop`.
 
 ```
 phrase    $CELIS_HOME/phrase: 12 BIP-39 words, minted on first use when it does not exist
-account   the key the phrase gives (CIP-01, "The account")
+account   the key the phrase gives (`celis-nostr`)
 
 celis auth   CIP-11, "Commands"
 ```

@@ -1,6 +1,6 @@
 {
   "about": [
-    "What a relay's `OK false` means (spec/network.md). The host writes these prefixes and the client reads",
+    "What a relay's `OK false` means. The host writes these prefixes and the client reads",
     "them, and the two must agree — so both read this file and both fail when one of them stops matching it.",
     "",
     "NIP-01 makes the prefix the machine-readable part and the rest of the reason a sentence for a person.",

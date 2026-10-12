@@ -47,8 +47,7 @@ const TICK: Duration = Duration::from_secs(1);
 const PING_EVERY: u32 = 30;
 
 /// What a client says on a quiet socket, and what a relay answers. Bare words rather than NIP-01 frames,
-/// which all start with `[` — so nothing can read one as the other (`spec/network.md`, "The held
-/// connection").
+/// which all start with `[` — so nothing can read one as the other.
 const PING: &str = "ping";
 const PONG: &str = "pong";
 
@@ -68,7 +67,7 @@ const WATCHING: &str = "celis-watch";
 const ECHOING: Duration = Duration::from_secs(60);
 
 /// How far ahead of this device's clock a note may be stamped and still be taken as having just landed —
-/// the same allowance a relay holds a publisher to (`spec/network.md`, "Two orders, and one rule").
+/// the same allowance a relay holds a publisher to.
 pub const SKEW: u64 = 300;
 
 /// How long what a relay said about itself stands before it is asked again.

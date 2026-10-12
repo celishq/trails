@@ -2,7 +2,7 @@
 //! are ours, minted to avoid every assignment we know of in their ranges.
 //!
 //! A number's storage class binds where a relay reads it: inside a gift wrap it is the fold's
-//! discriminator, and NIP-01's ranges never reach it (`spec/log.md`, "Kinds").
+//! discriminator, and NIP-01's ranges never reach it.
 
 use serde::de::Error as _;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -14,7 +14,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Kind {
     /// What an account says about itself (NIP-01) — the note every nostr client shows a person by, and the
-    /// note a name is claimed with (`spec/public-profile.md`, "The claim").
+    /// note a name is claimed with.
     Profile = 0,
     /// A take-back of the record at an address (NIP-09), with a `k` naming the kind that address is in.
     Deletion = 5,

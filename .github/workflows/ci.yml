@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Lints and tests the workspace, then installs the build the way a person does, on a clean shell that must
+  # find `celis` on PATH. The build is the runner's own, not the musl release, under the release's name.
+  cli:
+    name: CLI and Linux install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: crates
+      - name: Lint and test
+        run: make verify
+      - name: Build
+        working-directory: crates
+        run: cargo build -p celis
+      - name: Serve the build as a release
+        run: |
+          set -eu
+          case "$(uname -m)" in aarch64 | arm64) cpu=aarch64 ;; *) cpu=x86_64 ;; esac
+          name="celis-$cpu-unknown-linux-musl.tar.gz"
+          mkdir -p "$RUNNER_TEMP/release/latest" "$RUNNER_TEMP/home"
+          tar -czf "$RUNNER_TEMP/release/latest/$name" -C crates/target/debug celis
+          (cd "$RUNNER_TEMP/release/latest" && sha256sum "$name" > "$name.sha256")
+      # `env -i` so the runner's own PATH, which may hold ~/.local/bin, proves nothing. Twice, so a second
+      # install adds no second line.
+      - name: Install, and find celis in a new shell
+        run: |
+          set -eu
+          curl -fsSL https://celis.ai/install.sh -o "$RUNNER_TEMP/install.sh"
+          home="$RUNNER_TEMP/home"
+          for run in 1 2; do
+            env -i HOME="$home" PATH=/usr/bin:/bin SHELL=/bin/bash \
+              CELIS_BASE="file://$RUNNER_TEMP/release" sh "$RUNNER_TEMP/install.sh"
+          done
+          env -i HOME="$home" PATH=/usr/bin:/bin bash -ic 'celis --version'
+          env -i HOME="$home" PATH=/usr/bin:/bin sh -lc 'celis --version'
+          test "$(grep -c '.local/bin' "$home/.bashrc")" = 1

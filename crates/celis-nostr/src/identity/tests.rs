@@ -31,7 +31,7 @@ fn a_bad_phrase_is_rejected() {
     assert!(Identity::from_phrase("not a real mnemonic phrase at all").is_err());
 }
 
-/// A phrase gives the same account on every host and in the app (`spec/vault/01-vault.md`, "The account").
+/// A phrase gives the same account on every host and in the app.
 #[test]
 fn the_fixture_phrase_gives_the_fixture_npub() {
     let fixture: serde_json::Value = serde_json::from_str(include_str!(

@@ -1,0 +1,25 @@
+[workspace]
+resolver = "2"
+members = ["celis", "celis-trails", "celis-nostr"]
+
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
+
+# The signing and hashing the tests run through thousands of times.
+[profile.dev.package.k256]
+opt-level = 3
+[profile.dev.package.elliptic-curve]
+opt-level = 3
+[profile.dev.package.crypto-bigint]
+opt-level = 3
+[profile.dev.package.sha2]
+opt-level = 3
+[profile.dev.package.chacha20]
+opt-level = 3
+[profile.dev.package.serde_json]
+opt-level = 3
+[profile.dev.package.celis-nostr]
+opt-level = 3

@@ -56,7 +56,6 @@ fn every_record_we_keep_sits_in_the_regular_range() {
     );
 }
 
-/// (`spec/network.md`, "What travels where")
 #[test]
 fn a_mark_a_nip_named_keeps_the_nip_s_number_and_is_still_folded_by_d() {
     assert!(

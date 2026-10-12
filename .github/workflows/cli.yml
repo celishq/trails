@@ -2,7 +2,7 @@ name: CLI release
 
 # Builds the `celis` command line for macOS and Linux, signs and notarizes the macOS builds, and puts every
 # archive on R2 under `cli/<version>/` and `cli/latest/`. The site serves them at celis.ai/updates/cli/, and
-# `workers/celis-site/public/install.sh` downloads them. A last job installs the release on clean runners.
+# celis.ai/install.sh downloads them. A last job installs the release on clean runners.
 #
 # A `cli-v1.2.3` tag publishes version 1.2.3, which each build reads from `CELIS_VERSION`; the repo says
 # 0.0.0. A manual run builds and signs as 0.0.0, and publishes nothing.
@@ -16,7 +16,7 @@ concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: false
 
-# The compiler `release.yml` and CI use.
+# The compiler the release builds with.
 env:
   RUST_TOOLCHAIN: "1.96.0"
 
@@ -176,12 +176,11 @@ jobs:
         runner: [namespace-profile-linux, namespace-profile-mac]
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v7
       - name: Install the published release
         env:
           CELIS_VERSION: ${{ needs.version.outputs.version }}
           CELIS_INSTALL_DIR: ${{ runner.temp }}/bin
-        run: sh workers/celis-site/public/install.sh
+        run: curl -fsSL https://celis.ai/install.sh | sh
       - name: Start a trail and read it back
         env:
           VERSION: ${{ needs.version.outputs.version }}

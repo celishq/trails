@@ -3,16 +3,23 @@
 These specs hold the contract of the trail, the crates `celis-trails` and `celis`. A trail is one task the person gives,
 broken into steps that agents take and close, with the decisions made on the way, each at its place. The
 trails of every project on the machine share one store, so later work can follow the paths that worked.
-Records are nostr notes your account signs. They follow the vault's CIP rules
-(`spec/vault/README.md`, "How a CIP works"), and take numbers from 10 so the two registries never share one.
+Records are nostr notes your account signs.
 
-The conventions in `spec/AGENTS.md` apply here unchanged.
+## How a CIP works
+
+A CIP is one feature in one numbered file, `NN-name.md`, opening with frontmatter: `cip`, `title`,
+`status` (draft or final) and `depends`.
+
+- **A CIP adds. It never changes another CIP.** A new meaning for a name that exists is a new CIP.
+- **Each name has one owner,** listed below. A CIP that needs another's name cites it.
+- **A rule states what a program does, never how.** How belongs in the code.
+- **A final CIP is frozen.** Changed behaviour is a new number.
 
 ## The CIPs
 
 | CIP | Name | Holds | Depends |
 |---|---|---|---|
-| 10 | Decisions | the store, projects, the account, decisions, their scope, how they are read | CIP-01 |
+| 10 | Decisions | the store, projects, the account, decisions, their scope, how they are read | — |
 | 11 | The command line | `celis`: commands, help, output and errors | CIP-10 |
 | 12 | Steps | the step, its project, closing, steering, grades, `celis step` | CIP-10, 11 |
 | 14 | Trails | the trail, its rules, its state, `celis tree`, the past, `celis tree --watch` | CIP-10, 11, 12 |
@@ -45,7 +52,7 @@ The conventions in `spec/AGENTS.md` apply here unchanged.
 |---|---|
 | `store` | `$CELIS_HOME/trails/`: the records of every project on this machine |
 | `project` | the code an agent works on, named by its repo's first commit |
-| `account` | the key the phrase gives, that signs every record this machine writes (CIP-01) |
+| `account` | the key the phrase gives, that signs every record this machine writes (`celis-nostr`) |
 | `agent` | one session of one agent that works for you, and signs as your account |
 | `record` | one signed nostr note in the store |
 | `trail` | one task you give, in your words: a step with no `under`, and the steps under it |

@@ -18,7 +18,6 @@ fn a_status_says_what_is_left_to_do() {
     }
 }
 
-/// (`spec/network.md`, "What a refusal means")
 #[test]
 fn a_relays_word_says_what_is_left_to_do_only_when_it_is_the_whole_prefix() {
     for word in [
@@ -119,7 +118,6 @@ fn only_a_404_says_the_host_does_not_hold_it() {
     assert!(!Failure::new("/abc", Why::Unreachable).missing());
 }
 
-/// (`spec/network.md`, "The metered proxy")
 #[test]
 fn a_409_that_names_a_wait_is_a_call_still_being_answered_and_one_without_is_settled() {
     let refused = |after| {
