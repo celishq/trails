@@ -11,7 +11,7 @@ pub use why::Why;
 
 /// A hosted route that did not answer with what was asked for — which route, and what happened on it.
 ///
-/// Attached to the `anyhow` chain a [`Gateway`](crate::Gateway) call fails with, so a caller tells these
+/// Attached to the `anyhow` chain a hosted call fails with, so a caller tells these
 /// apart without reading a message. The cause alone: what a person reads about it is composed where every
 /// other sentence is, and the route is what says whether that sentence is about the model or the web.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
