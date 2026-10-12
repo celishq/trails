@@ -95,7 +95,7 @@ fn a_sessions_trail_with_no_end_ends_thirty_minutes_after_its_newest_record() {
     let trail = |text: &str, at: u64| {
         let mut tags = step_tags((&repo.project_id(), "repo"));
         tags.push(vec!["session".to_string(), "s1".to_string()]);
-        let note = celis_wire::Note::write(&account(), 1111u16, at, tags, text).unwrap();
+        let note = celis_nostr::Note::write(&account(), 1111u16, at, tags, text).unwrap();
         put(&repo, &note);
         note
     };

@@ -1,6 +1,6 @@
 use super::*;
 use crate::Anchor;
-use celis_wire::Account;
+use celis_nostr::Account;
 
 fn account() -> Account {
     Account::new(&[1u8; 32]).unwrap()

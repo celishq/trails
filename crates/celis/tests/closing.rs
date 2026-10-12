@@ -2,7 +2,7 @@
 
 mod support;
 
-use celis_wire::{Account, Note};
+use celis_nostr::{Account, Note};
 use support::{account, err, now, objects, out, put, Repo};
 
 fn step(repo: &Repo, by: &Account, text: &str, extra: &[(&str, &str)], at: u64) -> Note {

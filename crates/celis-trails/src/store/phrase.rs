@@ -1,7 +1,7 @@
 //! The account's recovery phrase, kept in one file.
 
 use anyhow::{Context, Result};
-use celis_wire::Identity;
+use celis_nostr::Identity;
 use std::io::{ErrorKind, Write};
 use std::os::unix::fs::OpenOptionsExt;
 use std::path::{Path, PathBuf};

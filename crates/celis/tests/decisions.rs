@@ -2,7 +2,7 @@
 
 mod support;
 
-use celis_wire::{Account, Note};
+use celis_nostr::{Account, Note};
 use support::{account, cairn, decision, now, put, rating, read_ids, Repo, DAY};
 
 fn short(id: &str) -> String {

@@ -1,8 +1,8 @@
 //! A git repo in a temp folder, a `$CELIS_HOME` with the fixture's account, and the binary run in them.
 #![allow(dead_code)]
 
+use celis_nostr::{Account, Note};
 use celis_trails::{Project, Store};
-use celis_wire::{Account, Note};
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::io::Write;
@@ -237,7 +237,7 @@ pub fn labelled(repo: &Repo, label: &str) -> Vec<Note> {
 
 /// The account [`PHRASE`] gives.
 pub fn account() -> Account {
-    celis_wire::Identity::from_phrase(PHRASE)
+    celis_nostr::Identity::from_phrase(PHRASE)
         .unwrap()
         .account()
         .clone()

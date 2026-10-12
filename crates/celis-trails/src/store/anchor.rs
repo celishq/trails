@@ -1,6 +1,6 @@
 //! What a decision, trail or step is on.
 
-use celis_wire::Note;
+use celis_nostr::Note;
 
 /// What a decision, trail or step is on: the project of this id, and the name it goes by.
 #[derive(Debug, Clone, PartialEq, Eq)]

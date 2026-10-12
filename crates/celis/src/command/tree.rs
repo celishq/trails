@@ -2,11 +2,11 @@
 
 use super::clock::{clock, day, midnight};
 use super::{Args, Command};
+use celis_nostr::Note;
 use celis_trails::id::short;
 use celis_trails::trail::grade::{stride, took};
 use celis_trails::trail::steps::LIFE;
 use celis_trails::{Decisions, Failure, Grade, Project, State, Status, Step, Steps, Trails};
-use celis_wire::Note;
 use serde_json::json;
 use std::cell::Cell;
 use std::io::Write;

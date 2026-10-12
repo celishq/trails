@@ -2,7 +2,7 @@
 
 mod support;
 
-use celis_wire::Note;
+use celis_nostr::Note;
 use support::Repo;
 
 fn run(repo: &Repo, args: &[&str]) -> std::process::Output {

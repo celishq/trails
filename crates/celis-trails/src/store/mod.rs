@@ -6,7 +6,7 @@ pub mod project;
 
 use crate::{Failure, Phrase};
 use anyhow::{Context, Result};
-use celis_wire::{Account, Note};
+use celis_nostr::{Account, Note};
 use std::cell::{OnceCell, RefCell};
 use std::path::{Path, PathBuf};
 

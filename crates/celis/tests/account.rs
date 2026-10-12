@@ -2,7 +2,7 @@
 
 mod support;
 
-use celis_wire::{Account, Identity};
+use celis_nostr::{Account, Identity};
 use support::{account, err, now, out, step_signed, Repo, PHRASE};
 
 /// With no `$CELIS_HOME/phrase`, two runs at once mint one phrase, readable by its owner alone
@@ -86,7 +86,7 @@ fn every_command_signs_as_the_account() {
         .collect();
     assert_eq!(files.len(), 5);
     for text in files {
-        let note: celis_wire::Note = serde_json::from_str(&text).unwrap();
+        let note: celis_nostr::Note = serde_json::from_str(&text).unwrap();
         assert_eq!(note.pubkey, account().pubkey(), "{text}");
         assert!(note.tag("via").is_none(), "{text}");
     }
@@ -109,7 +109,7 @@ fn auth_login_keeps_the_phrase_stdin_gives() {
         .map(|e| std::fs::read_to_string(e.unwrap().path()).unwrap())
         .find(|t| t.contains(id.trim()))
         .unwrap();
-    let note: celis_wire::Note = serde_json::from_str(&text).unwrap();
+    let note: celis_nostr::Note = serde_json::from_str(&text).unwrap();
     assert_eq!(note.pubkey, theirs.account().pubkey());
 }
 

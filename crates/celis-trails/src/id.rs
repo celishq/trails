@@ -1,6 +1,6 @@
 //! A record id, whole or by a start of it.
 
-use celis_wire::Note;
+use celis_nostr::Note;
 
 /// The first 8 characters of `id`.
 pub fn short(id: &str) -> String {

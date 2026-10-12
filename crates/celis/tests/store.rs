@@ -2,8 +2,8 @@
 
 mod support;
 
+use celis_nostr::Note;
 use celis_trails::Store;
-use celis_wire::Note;
 use support::{account, err, out, Repo, PHRASE};
 
 /// A command opens the store in `$CELIS_HOME`, so a trail written in one folder lists in another, inside

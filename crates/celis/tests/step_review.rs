@@ -2,7 +2,7 @@
 
 mod support;
 
-use celis_wire::Note;
+use celis_nostr::Note;
 use support::{account, add, cli, err, now, put, step_note, Repo};
 
 /// A mark `label` on `step`, saying `content`, signed at `at`, put in the store; with `changed`, a done

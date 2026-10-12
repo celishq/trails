@@ -1,7 +1,7 @@
 //! The steps of a store, as they stand at one moment.
 
 use crate::{Failure, Grade, Mark, State, Status, Step};
-use celis_wire::Note;
+use celis_nostr::Note;
 use std::collections::HashMap;
 
 /// The step records and marks of a store at the time `now`: which steps are open, how they nest, and how

@@ -1,7 +1,7 @@
 //! The live decisions of a store.
 
 use crate::{Decision, Failure, Scope};
-use celis_wire::Note;
+use celis_nostr::Note;
 use std::collections::HashSet;
 
 /// The decisions of a store that no other replaces, read once: by scope, narrowest first, then newest

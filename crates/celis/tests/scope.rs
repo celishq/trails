@@ -2,7 +2,7 @@
 
 mod support;
 
-use celis_wire::Note;
+use celis_nostr::Note;
 use support::{account, cli, decision_tags, err, now, objects, out, put, Repo};
 
 /// The ids of the decisions `read --json --at src/a.rs` prints in `folder`.

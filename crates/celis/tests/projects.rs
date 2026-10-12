@@ -2,8 +2,8 @@
 
 mod support;
 
+use celis_nostr::Note;
 use celis_trails::{Project, Store};
-use celis_wire::Note;
 use std::process::Command;
 use support::Repo;
 

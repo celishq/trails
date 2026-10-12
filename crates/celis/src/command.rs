@@ -13,8 +13,8 @@ mod watch;
 
 use crate::help::{self, VERBS};
 use args::Args;
+use celis_nostr::Note;
 use celis_trails::{Failure, Project, Store, Trails};
-use celis_wire::Note;
 use serde_json::json;
 use std::collections::HashMap;
 use std::io::{IsTerminal, Write};

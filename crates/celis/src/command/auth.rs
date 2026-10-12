@@ -1,8 +1,8 @@
 //! `celis auth`: the account's phrase.
 
 use super::{put, show, Args, Command};
+use celis_nostr::Identity;
 use celis_trails::{Failure, Phrase};
-use celis_wire::Identity;
 use serde_json::json;
 use std::io::{IsTerminal, Read, Write};
 

@@ -1,6 +1,6 @@
 use super::*;
+use celis_nostr::Account;
 use celis_trails::{Anchor, Mark};
-use celis_wire::Account;
 
 fn account() -> Account {
     Account::new(&[1u8; 32]).unwrap()

@@ -3,8 +3,8 @@
 
 use super::clock::date;
 use super::{Args, Command};
+use celis_nostr::Note;
 use celis_trails::{Decisions, Failure, Project, Scope, State, Steps, Trails};
-use celis_wire::Note;
 use serde_json::json;
 use std::io::Write;
 

@@ -2,7 +2,7 @@
 
 use crate::Anchor;
 use anyhow::Result;
-use celis_wire::{Account, Note};
+use celis_nostr::{Account, Note};
 
 /// One part of the work on its project: the step it is a part of, the step whose plan it replaces, the places the work goes, the check that proves it, the session that wrote it, and
 /// the words. A step under no other is a trail.

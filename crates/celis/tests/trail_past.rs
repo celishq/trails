@@ -2,8 +2,8 @@
 
 mod support;
 
+use celis_nostr::Note;
 use celis_trails::{Anchor, Step};
-use celis_wire::Note;
 use serde_json::Value;
 use std::path::Path;
 use std::time::Duration;

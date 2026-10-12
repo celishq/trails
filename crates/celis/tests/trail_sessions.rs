@@ -2,7 +2,7 @@
 
 mod support;
 
-use celis_wire::Note;
+use celis_nostr::Note;
 use support::{err, objects, out, Repo};
 
 /// The ids `step add -- <text>` prints in the session `session`, or in none.

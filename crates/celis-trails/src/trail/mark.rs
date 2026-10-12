@@ -2,7 +2,7 @@
 
 use crate::trail::step::NAMESPACE;
 use anyhow::Result;
-use celis_wire::{Account, Note};
+use celis_nostr::{Account, Note};
 
 /// What an agent does to a step: takes it up, closes it done with its proof and what changed from its
 /// plan, records what the person

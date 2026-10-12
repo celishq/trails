@@ -10,7 +10,7 @@ use crate::{
     Check, Decision, Decisions, Draft, Failure, Mark, Notice, Review, Scope, Status, Step, Steps,
     Store, Written,
 };
-use celis_wire::{Account, Note};
+use celis_nostr::{Account, Note};
 use std::path::Path;
 
 /// The records of a store at the time `now`, and the account's writes on them, each signed now. A

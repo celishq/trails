@@ -6,7 +6,7 @@ pub mod scope;
 use crate::id::short;
 use crate::{Anchor, Scope};
 use anyhow::Result;
-use celis_wire::{Account, Note};
+use celis_nostr::{Account, Note};
 
 /// One decision, written on a project, that holds in its scope.
 #[derive(Debug, Clone, PartialEq, Eq)]

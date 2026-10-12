@@ -2,7 +2,7 @@
 
 mod support;
 
-use celis_wire::Note;
+use celis_nostr::Note;
 use serde_json::Value;
 use std::process::Output;
 use support::{account, done_note, err, now, out, put, refusal, step_note, Repo};

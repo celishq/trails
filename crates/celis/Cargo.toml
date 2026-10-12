@@ -9,7 +9,7 @@ path = "src/main.rs"
 
 [dependencies]
 celis-trails = { path = "../celis-trails" }
-celis-wire = { path = "../celis-wire" }
+celis-nostr = { path = "../celis-nostr" }
 anyhow = "1"
 libc = "0.2"
 notify = "8.0.0"
@@ -17,7 +17,7 @@ serde_json = "1"
 
 [dev-dependencies]
 celis-trails = { path = "../celis-trails" }
-celis-wire = { path = "../celis-wire" }
+celis-nostr = { path = "../celis-nostr" }
 libc = "0.2"
 serde_json = "1"
 sha2 = "0.10"

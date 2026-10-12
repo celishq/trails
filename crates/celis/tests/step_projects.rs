@@ -2,7 +2,7 @@
 
 mod support;
 
-use celis_wire::Note;
+use celis_nostr::Note;
 use support::Repo;
 
 fn add_at(repo: &Repo, folder: &std::path::Path, url: &str) -> Note {
