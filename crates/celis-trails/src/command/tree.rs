@@ -4,7 +4,7 @@ use super::{Args, Command};
 use crate::grade::{stride, took};
 use crate::id::short;
 use crate::steps::LIFE;
-use crate::{Decisions, Failure, Grade, Project, State, Status, Step, Steps};
+use crate::{Decisions, Failure, Grade, Project, RetrievalLog, State, Status, Step, Steps};
 use celis_wire::Note;
 use serde_json::json;
 use std::cell::Cell;
@@ -12,7 +12,8 @@ use std::io::Write;
 
 impl Command {
     /// Prints the step `args` names with every step under it, or with no id each trail of `project` that
-    /// is active or has a record from today, newest first. Writes nothing.
+    /// is active or has a record from today, newest first. Writes no record; the retrieval log keeps the
+    /// named step.
     pub(super) fn tree(
         &self,
         args: &Args,
@@ -31,7 +32,11 @@ impl Command {
         let decisions = snapshot.decisions();
         let today = midnight(snapshot.now);
         let chosen: Vec<&Note> = match (id, args.all) {
-            (Some(id), _) => vec![steps.find(id)?],
+            (Some(id), _) => {
+                let note = steps.find(id)?;
+                let _ = RetrievalLog::at(&self.home()?).opened(&note.id, snapshot.now);
+                vec![note]
+            }
             (None, true) => steps.roots().into_iter().rev().collect(),
             (None, false) => steps
                 .trails(&project.id)

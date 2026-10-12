@@ -50,7 +50,10 @@ $CELIS_TRAIL    a step id, or a start of it: where `step add` with no `--under` 
 - Else, it MUST write a new trail. It MUST NOT join another session's trail without `--under`.
 - With `--new`, `step add` MUST write a new trail.
 - `prompt` MUST read a hook's `{"session_id", "prompt"}` on stdin. While that session has an open trail,
-  it MUST write the prompt on it, and print the record's id. Else it MUST write and print nothing.
+  it MUST write the prompt on it, and print the record's id. Else it MUST write nothing.
+- With no open trail, `prompt` MUST print the past work like the prompt on stderr ("The past").
+  Each MUST print as its one line, with no rules or decisions under it.
+- A line above them MUST say how to copy one. With no past work like the prompt, it MUST print nothing.
 - The prompt MUST be a steer on the oldest working step of the trail. With no working step, it MUST be a
   prompt mark on the trail. Its text MUST be the prompt's first line, cut to 200 characters.
 - A reader MUST NOT count a prompt mark as a steer.
@@ -216,22 +219,47 @@ The past shows how a task like a new one was done, so a new plan can follow the 
 
 **Rules**
 
-- `read --like` MUST print the past work of every project that shares a word with the text, 3 at most.
+- `read --like` MUST print the past work of every project like the text, 3 at most.
 - Past work MUST be a done ask, or a reached trail. An ask is a step right under a trail.
 - A trail with an ask of its own text MUST NOT count as past work, so the ask stands for it.
-- A word MUST be 4 or more letters or digits, in lower case.
-- A word MUST weigh `ln(1 + (n - m + 0.5) / (m + 0.5))`. Here `n` counts the past work, and `m` the
-  past work that holds the word.
-- The highest sum of the shared words' weights MUST come first. Then come the fewest steers and rework
-  in its tree, then the newest.
+- The text of past work MUST hold its tree's titles, details, places, proofs and changed lines.
+- It MUST also hold its trail's rules, the live decisions at its places, and its project's name.
+- A trail's text MUST NOT hold the trees of the past work under it.
+- A term MUST be a run of letters or of digits, 3 or more long, in lower case.
+- A term MUST also end where a lower-case letter meets an upper-case one, so `invoicesPage` holds two.
+- Two terms MUST match when they are equal, with a likeness of 1.
+- Two terms MUST also match when their first two letters are equal and their trigram Dice is 0.5 or more.
+  That Dice is their likeness. A term's trigrams mark both its ends.
+- Each term of the text MUST weigh `ln(1 + (n - m + 0.5) / (m + 0.5))`. Here `n` counts the past work,
+  and `m` the past work that holds a match.
+- Past work MUST score by BM25, with `k1` 1.2 and `b` 0.75, over its terms. A matched term counts its
+  best likeness in place of a count.
+- The working project's name and each `--at` place MUST add their terms to the score.
+- Past work whose text terms score under `ln 2` MUST NOT print.
+- The highest score MUST come first. Then come the fewest steers and rework in its tree, then the newest.
 - Each MUST print as one line: its id, project, title and place, then its grade, else its state.
   Under it come the rules of its trail, then the live decisions at its place.
 - With `--full`, each MUST print as `tree --full` prints it.
-- With `--json`, each object MUST be named `past`.
+- With `--json`, each object MUST be named `past`. It MUST carry its `score` and its matched `terms`.
+- A search MUST read its query as the `request` of `spec/fixtures/retrieve.json`. Its `past` MUST carry
+  the fixture's keys.
+- `read --like` MUST append a `shown` line to `$CELIS_HOME/retrieval.log`, with the ids it printed.
+- `tree <id>` MUST append an `opened` line with the whole id of the step it prints.
+- The log MUST NOT be a record. A failed append MUST NOT fail the command.
+
+```
+retrieval.log  {"at": <unix seconds>, "shown": {"from": "read" | "prompt", "text", "project",
+                "places": [], "ids": []}}
+               {"at": <unix seconds>, "opened": "<a step's id>"}
+```
 
 ```
 celis read --like "Add an Invoices page from the frame"
 ```
+
+> Why the first two letters: without them, `site` matches `offsite`. Why `ln 2`: a term that half the past
+> work holds is no evidence on its own. The project and places rank work, but never qualify it alone.
+> `spec/fixtures/past.json` holds the prompts each rule must answer.
 
 ## Watching
 

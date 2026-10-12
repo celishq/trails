@@ -87,8 +87,9 @@ fn a_decision_at_a_file_is_at_that_file_whatever_line_and_a_folder_holds_what_li
     );
     assert_eq!(
         read_ids(&repo, &folder, &["--at", "src/x"]),
-        [other, deep, bare, line99, line3, sibling]
+        [other, deep, bare, line99, line3]
     );
+    assert_eq!(read_ids(&repo, &folder, &["--at", "src/xy"]), [sibling]);
 }
 
 /// A reader orders decisions by scope, `at` first, then `project`, then `me`, and in one scope newest
@@ -113,7 +114,7 @@ fn a_reader_orders_decisions_by_scope_then_newest_first_then_by_id() {
     let mut want = vec![placed, newest];
     want.extend(tied);
     want.push(mine);
-    assert_eq!(read_ids(&repo, &repo.path(), &[]), want);
+    assert_eq!(read_ids(&repo, &repo.path(), &["--at", "src/a.rs"]), want);
 }
 
 /// A place resolves against the working folder and reads as a path from the project's top folder, so
@@ -136,7 +137,7 @@ fn a_place_reads_as_a_path_from_the_projects_top_folder() {
     assert_eq!(read_ids(&repo, &root, &["--at", &full]), [id.as_str()]);
     assert_eq!(read_ids(&repo, &src, &["--at", "a.rs"]), [id.as_str()]);
     assert_eq!(read_ids(&repo, &src, &["--at", "../src"]), [id.as_str()]);
-    let o = repo.run(&root, &["read", "--json"], &[], "");
+    let o = repo.run(&root, &["read", "--json", "--at", "src/a.rs"], &[], "");
     assert!(
         support::out(&o).contains("\"at:src/a.rs:3\""),
         "{}",

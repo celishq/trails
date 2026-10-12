@@ -290,3 +290,40 @@ fn prompt_skips_a_task_notification() {
     assert_eq!(out(&o), "");
     assert!(marks(&repo, "prompt").is_empty());
 }
+
+/// With no open trail in the session, `prompt` writes nothing and prints the past work like the prompt on
+/// stderr, under a line that says how to copy one; nothing when none is like it
+/// (`spec/trails/14-trails.md`, "Sessions").
+#[test]
+fn a_prompt_with_no_open_trail_prints_past_work_like_it() {
+    let repo = Repo::new();
+    let close = |id: &str| {
+        let o = repo.run(
+            &repo.path(),
+            &["step", "done", &id[..8], "--as-planned", "--", "p"],
+            &[],
+            "",
+        );
+        assert!(o.status.success(), "{}", err(&o));
+    };
+    let vendors = add(&repo, None, "Build the Vendors page");
+    close(&vendors);
+    std::thread::sleep(std::time::Duration::from_millis(1100));
+    close(&add(&repo, None, "Fix the login form"));
+    let hook = |prompt: &str| {
+        let json = serde_json::json!({"session_id": "s9", "prompt": prompt}).to_string();
+        let o = repo.run(&repo.path(), &["prompt"], &[], &json);
+        assert!(o.status.success(), "{}", err(&o));
+        assert_eq!(out(&o), "");
+        err(&o)
+    };
+    let like = hook("Build a Vendors table");
+    let lines: Vec<&str> = like.lines().collect();
+    assert!(
+        lines[0].starts_with("celis: past work like this ask"),
+        "{like}"
+    );
+    assert!(lines[1].starts_with(&vendors[..8]), "{like}");
+    assert_eq!(hook("Plan the team offsite"), "");
+    assert!(marks(&repo, "prompt").is_empty());
+}

@@ -33,8 +33,9 @@ $CELIS_TRAIL  the trail new steps go under (CIP-14)
 - Off macOS, `$CELIS_HOME` MUST default to `~/.local/share/celis`.
 - `read` MUST print the working folder's project's active trails, oldest first, each with its rules. Then
   come its ended trails with a record from today that are not done or dropped, each with its state and
-  rules. Then come its open steps that are no trail, oldest first. Then come its live decisions that are no rule
-  (CIP-10, "Reading"), 30 at most. The decisions at each `--at` place MUST come first.
+  rules. Then come its open steps that are no trail, oldest first. Then come the live decisions at each
+  `--at` place, then its live `project` and `me` decisions (CIP-10, "Reading"), 30 at most.
+- `read` MUST NOT print a decision at a place unless an `--at` place is at it. `step start` prints those.
 - When it leaves decisions out, `read` MUST then print `<n> more decisions`, or `{"more": <n>}` with
   `--json`.
 - `read` MUST NOT print a rule of a done or dropped trail, or write a record.

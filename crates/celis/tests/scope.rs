@@ -5,9 +5,9 @@ mod support;
 use celis_wire::Note;
 use support::{account, cli, decision_tags, err, now, objects, out, put, Repo};
 
-/// The ids of the decisions `read --json` prints in `folder`.
+/// The ids of the decisions `read --json --at src/a.rs` prints in `folder`.
 fn decisions(repo: &Repo, folder: &std::path::Path) -> Vec<String> {
-    let o = repo.run(folder, &["read", "--json"], &[], "");
+    let o = repo.run(folder, &["read", "--json", "--at", "src/a.rs"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     out(&o)
         .lines()

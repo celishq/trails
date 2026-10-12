@@ -140,9 +140,10 @@ fn read_prints_todays_trails_that_can_take_a_step() {
     assert_eq!(recent_json["recent"]["state"], "reached alone", "{json:?}");
 }
 
-/// `read` puts the decisions at each `--at` place first (`spec/trails/11-cli.md`, "Commands").
+/// `read` prints a decision at a place only for an `--at` place it is at (`spec/trails/11-cli.md`,
+/// "Commands").
 #[test]
-fn read_puts_the_decisions_at_each_at_place_first() {
+fn read_prints_a_decision_at_a_place_only_at_its_at_place() {
     let repo = Repo::new();
     let id = repo.project_id();
     let t = now() - 5 * 60;
@@ -168,8 +169,9 @@ fn read_puts_the_decisions_at_each_at_place_first() {
             .map(|l| l[..8].to_string())
             .collect()
     };
-    assert_eq!(ids(&["read"]), [short(&b.id), short(&a.id)]);
-    assert_eq!(ids(&["read", "--at", "a.py"]), [short(&a.id), short(&b.id)]);
+    assert_eq!(ids(&["read"]), Vec::<String>::new());
+    assert_eq!(ids(&["read", "--at", "a.py"]), [short(&a.id)]);
+    assert_eq!(ids(&["read", "--at", "b.py"]), [short(&b.id)]);
 }
 
 /// `read` prints 30 decisions at most, those at an `--at` place first, then how many it left out
@@ -222,7 +224,11 @@ fn read_with_like_prints_the_past_trails_after_the_decisions() {
     let past = step_note(&repo, &account(), None, "Build the Vendors page", t);
     done_note(&repo, &account(), &past, t + 1);
     let cents = decision(&repo, project(&id), &account(), (None, None), WORK, t + 2);
-    let lines = lines_of(&repo, &repo.path(), &["read", "--like", "Build a page"]);
+    let lines = lines_of(
+        &repo,
+        &repo.path(),
+        &["read", "--like", "Build the Vendors page"],
+    );
     assert_eq!(lines[0], format!("{} project {WORK}", short(&cents.id)));
     let head = format!("{} [repo] Build the Vendors page · took ", short(&past.id));
     assert!(lines[1].starts_with(&head), "{lines:?}");
@@ -274,7 +280,7 @@ fn a_decision_prints_its_id_scope_and_text() {
     let mine = decide(&["--scope", "me", "--", "two"]);
     let project = decide(&["--", "three"]);
     let rule = decide(&["--scope", &scope, "--", "four"]);
-    let lines = lines_of(&repo, &repo.path(), &["read"]);
+    let lines = lines_of(&repo, &repo.path(), &["read", "--at", "a.py"]);
     for line in [
         format!("{placed} at:a.py one"),
         format!("{project} project three"),
@@ -299,7 +305,7 @@ fn the_json_form_of_a_decision_has_the_listed_fields() {
         "one",
         now() - 60,
     );
-    let o = repo.run(&repo.path(), &["read", "--json"], &[], "");
+    let o = repo.run(&repo.path(), &["read", "--json", "--at", "a.py"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     let line: Value = serde_json::from_str(out(&o).trim()).unwrap();
     let decision = line["decision"].as_object().unwrap();

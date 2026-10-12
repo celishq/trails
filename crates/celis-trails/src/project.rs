@@ -105,8 +105,10 @@ impl Project {
             .folder
             .canonicalize()
             .unwrap_or_else(|_| self.folder.clone());
+        let joined = cwd.join(path);
+        let joined = joined.canonicalize().unwrap_or(joined);
         let mut full = PathBuf::new();
-        for part in cwd.join(path).components() {
+        for part in joined.components() {
             match part {
                 Component::CurDir => {}
                 Component::ParentDir => {
