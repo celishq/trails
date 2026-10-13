@@ -12,7 +12,7 @@ depends: [CIP-01]
 ```
 celis decide [--scope <scope>] [--replaces <id>] -- <text>
                                                        a decision, in its scope
-celis tree [<id>] [--full] [--all] [--watch]          a trail and its steps; again on each change (CIP-04)
+celis tree [<id>] [--full] [--all]                    a trail and its steps; again on each change (CIP-04)
 celis past [--at <place>]...                          this project's trails and decisions, past work (CIP-04)
 celis report <id>...                                  the trails as Markdown, for a pull request (CIP-05)
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team (CIP-05)
@@ -107,7 +107,7 @@ Examples
 - A help page MUST NOT name a spec file.
 - `celis --version` MUST print `celis <version>`, and the commit it was built from, when the build had one.
 - Each command line of the celis plugin's card MUST name the flags its command's usage names,
-  and no other. `--watch` is the exception: it runs until it is stopped, so an agent never runs it.
+  and no other.
 
 ## Output and errors
 

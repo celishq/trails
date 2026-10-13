@@ -13,14 +13,14 @@ use std::io::{IsTerminal, Write};
 
 impl Command {
     /// Prints the step `args` names with every step under it, or with no id each trail of every project
-    /// that is active or has a record from today, newest first, else `EMPTY`; with `--watch`, or on a
-    /// terminal with no `--json`, again on each change. Writes no record.
+    /// that is active or has a record from today, newest first, else `EMPTY`; on a terminal with no
+    /// `--json`, again on each change. Writes no record.
     pub(super) fn tree(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let id = args.words.get(1);
         if args.all && id.is_some() {
             return Err(Failure::usage("tree takes an id or --all, not both"));
         }
-        if args.watch || (std::io::stdout().is_terminal() && !args.json) {
+        if std::io::stdout().is_terminal() && !args.json {
             return self.watch(args, out);
         }
         let tree = match (self.held()?, id) {

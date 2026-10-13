@@ -2,60 +2,87 @@
 
 mod support;
 
-use std::io::{BufRead, BufReader};
+use std::io::Read;
+use std::os::fd::FromRawFd;
 use std::process::{Child, Command, Stdio};
 use std::sync::mpsc::{channel, Receiver};
 use std::time::{Duration, Instant};
 use support::{add, cli, err, finish, refusal, Repo};
 
-/// A running `celis tree --watch`, and the lines it printed so far.
+/// The screen that clears before each tree.
+const CLEAR: &str = "\x1b[H\x1b[2J\x1b[3J";
+
+/// A running `celis tree` on a terminal, and the text it printed so far.
 struct Watch {
     child: Child,
-    lines: Receiver<String>,
-    seen: Vec<String>,
+    lead: i32,
+    bytes: Receiver<Vec<u8>>,
+    seen: Vec<u8>,
 }
 
 impl Watch {
     fn start(repo: &Repo, args: &[&str]) -> Watch {
-        let mut child = Command::new(env!("CARGO_BIN_EXE_celis"))
-            .args(["tree", "--watch"])
+        let (mut lead, mut follow) = (0, 0);
+        let opened = unsafe {
+            libc::openpty(
+                &mut lead,
+                &mut follow,
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+            )
+        };
+        assert_eq!(opened, 0, "openpty");
+        let side = |fd| unsafe { Stdio::from_raw_fd(libc::dup(fd)) };
+        let child = Command::new(env!("CARGO_BIN_EXE_celis"))
+            .arg("tree")
             .args(args)
             .current_dir(repo.path())
             .env_clear()
             .env("PATH", std::env::var("PATH").unwrap_or_default())
             .env("CELIS_HOME", repo.home())
-            .stdin(Stdio::null())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::null())
+            .stdin(side(follow))
+            .stdout(side(follow))
+            .stderr(side(follow))
             .spawn()
             .unwrap();
-        let (send, lines) = channel();
-        let stdout = child.stdout.take().unwrap();
+        unsafe { libc::close(follow) };
+        let (send, bytes) = channel();
+        let mut terminal = unsafe { std::fs::File::from_raw_fd(libc::dup(lead)) };
         std::thread::spawn(move || {
-            for line in BufReader::new(stdout).lines().map_while(Result::ok) {
-                let _ = send.send(line);
+            let mut buffer = [0u8; 4096];
+            while let Ok(n) = terminal.read(&mut buffer) {
+                if n == 0 || send.send(buffer[..n].to_vec()).is_err() {
+                    break;
+                }
             }
         });
         Watch {
             child,
-            lines,
+            lead,
+            bytes,
             seen: Vec::new(),
         }
     }
 
-    /// The trees printed so far, one string each.
-    fn trees(&mut self, wait: Duration) -> Vec<String> {
+    /// All the text printed so far, after a wait of `wait` for more.
+    fn shown(&mut self, wait: Duration) -> String {
         let end = Instant::now() + wait;
-        while let Ok(line) = self
-            .lines
+        while let Ok(chunk) = self
+            .bytes
             .recv_timeout(end.saturating_duration_since(Instant::now()))
         {
-            self.seen.push(line);
+            self.seen.extend(chunk);
         }
-        self.seen
-            .split(String::is_empty)
-            .filter(|t| !t.is_empty())
-            .map(|t| t.join("\n"))
+        plain(&String::from_utf8_lossy(&self.seen))
+    }
+
+    /// The trees printed so far, one string each, after a wait of `wait` for more.
+    fn trees(&mut self, wait: Duration) -> Vec<String> {
+        self.shown(wait)
+            .split(CLEAR)
+            .skip(1)
+            .map(str::to_string)
             .collect()
     }
 
@@ -71,7 +98,23 @@ impl Watch {
                 return start.elapsed();
             }
         }
-        panic!("no tree holds {text:?}: {:?}", self.seen);
+        panic!("no {text:?} in {:?}", self.shown(Duration::ZERO));
+    }
+
+    /// Turns the terminal `columns` wide, and signals it.
+    fn resize(&self, columns: u16) {
+        let size = libc::winsize {
+            ws_row: 24,
+            ws_col: columns,
+            ws_xpixel: 0,
+            ws_ypixel: 0,
+        };
+        assert_eq!(
+            unsafe { libc::ioctl(self.lead, libc::TIOCSWINSZ, &size) },
+            0
+        );
+        let pid = libc::pid_t::try_from(self.child.id()).unwrap();
+        assert_eq!(unsafe { libc::kill(pid, libc::SIGWINCH) }, 0);
     }
 }
 
@@ -79,7 +122,26 @@ impl Drop for Watch {
     fn drop(&mut self) {
         let _ = self.child.kill();
         let _ = self.child.wait();
+        unsafe { libc::close(self.lead) };
     }
+}
+
+/// `text` with no colour codes.
+fn plain(text: &str) -> String {
+    let mut out = String::new();
+    let mut rest = text;
+    while let Some(at) = rest.find("\x1b[") {
+        out.push_str(&rest[..at]);
+        let code = &rest[at + 2..];
+        match code.find(|c: char| c.is_ascii_alphabetic()) {
+            Some(end) if code.as_bytes()[end] == b'm' => rest = &code[end + 1..],
+            _ => {
+                out.push_str("\x1b[");
+                rest = code;
+            }
+        }
+    }
+    out + rest
 }
 
 fn records(repo: &Repo) -> usize {
@@ -88,27 +150,33 @@ fn records(repo: &Repo) -> usize {
         .count()
 }
 
-/// `tree <id> --watch` prints the tree, then prints it again within a second after a record lands, only when
-/// the tree changed, with an empty line between two trees off a terminal, and writes no record. Its
-/// `--json` tree shows no time, so it changes only by a record (`spec/trails/04-trails.md`, "Watching").
+/// On a terminal, `tree <id>` prints the tree, then prints it again within a second after a record lands,
+/// and writes no record (`spec/trails/04-trails.md`, "Watching").
 #[test]
-fn watch_prints_the_tree_again_when_it_changes() {
+fn watch_prints_the_tree_again_when_a_record_lands() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the trail"]);
-    let mut watch = Watch::start(&repo, &[&trail[..8], "--json"]);
+    let mut watch = Watch::start(&repo, &[&trail[..8]]);
     watch.until("the trail");
     let quiet = records(&repo);
-    assert_eq!(watch.trees(Duration::from_millis(1200)).len(), 1);
+    watch.trees(Duration::from_millis(1200));
     assert_eq!(records(&repo), quiet);
 
     let step = add(&repo, &["--under", &trail[..8], "--", "the step"]);
-    let took = watch.until(&step);
+    let took = watch.until(&step[..8]);
     assert!(took < Duration::from_millis(1500), "{took:?}");
-    let o = cli(&repo, &["step", "start", &step[..8]]);
-    assert!(o.status.success(), "{}", err(&o));
-    watch.until("\"working\"");
-    let shown = watch.trees(Duration::from_millis(200)).len();
+}
 
+/// On a terminal, `tree <id>` of a trail whose times stand still prints it again only when a record
+/// changes the tree (`spec/trails/04-trails.md`, "Watching").
+#[test]
+fn watch_prints_the_tree_again_only_when_it_changes() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    finish(&repo, &trail[..8]);
+    let mut watch = Watch::start(&repo, &[&trail[..8]]);
+    watch.until(&format!("✓ {}", &trail[..8]));
+    let shown = watch.trees(Duration::from_millis(1200)).len();
     let o = cli(
         &repo,
         &["decide", "--", "When you add a page: copy the frame."],
@@ -117,18 +185,14 @@ fn watch_prints_the_tree_again_when_it_changes() {
     assert_eq!(watch.trees(Duration::from_millis(1500)).len(), shown);
 }
 
-/// `tree --watch` with no id says no trail is there and names `tree --all`, then prints what `tree`
+/// On a terminal, `tree` with no id says no trail is there and names `tree --all`, then prints what `tree`
 /// prints: the trails of every project (`spec/trails/04-trails.md`, "Watching").
 #[test]
-fn tree_watch_with_no_id_prints_what_tree_prints() {
+fn watch_with_no_id_prints_what_tree_prints() {
     let repo = Repo::new();
     let mut watch = Watch::start(&repo, &[]);
     watch.until("No active trails");
-    assert!(
-        watch.seen.join("\n").contains("celis tree --all"),
-        "{:?}",
-        watch.seen
-    );
+    watch.until("celis tree --all");
     let first = add(&repo, &["--", "the first trail"]);
     watch.until(&first[..8]);
     let shop = repo.other("shop");
@@ -139,8 +203,8 @@ fn tree_watch_with_no_id_prints_what_tree_prints() {
     watch.until(&format!("✓ {}", &first[..8]));
 }
 
-/// On a home with no store and no phrase, `tree --watch` shows the empty state, writes nothing, and shows the
-/// first trail once another command writes it (`spec/trails/01-decisions.md`, "The store").
+/// On a home with no store and no phrase, `tree` on a terminal shows the empty state, writes nothing, and
+/// shows the first trail once another command writes it (`spec/trails/01-decisions.md`, "The store").
 #[test]
 fn watch_on_an_empty_home_writes_nothing_and_waits_for_the_store() {
     let repo = Repo::new();
@@ -153,127 +217,48 @@ fn watch_on_an_empty_home_writes_nothing_and_waits_for_the_store() {
     watch.until(&trail[..8]);
 }
 
-/// `tree --watch` refuses an id no step has, with `no-step` (`spec/trails/04-trails.md`, "Watching").
+/// On a terminal, `tree` refuses an id no step has (`spec/trails/04-trails.md`, "Watching").
 #[test]
 fn watch_refuses_an_unknown_id() {
     let repo = Repo::new();
     add(&repo, &["--", "a trail"]);
-    refusal(
-        &cli(&repo, &["tree", "deadbeef", "--watch", "--json"]),
-        1,
-        "no-step",
+    let mut watch = Watch::start(&repo, &["deadbeef"]);
+    assert_eq!(watch.child.wait().unwrap().code(), Some(1));
+    assert!(
+        watch
+            .shown(Duration::from_millis(200))
+            .contains("no step has the id deadbeef"),
+        "{:?}",
+        watch.shown(Duration::ZERO)
     );
 }
 
-/// The text `celis tree <args>` writes to a terminal, read until it holds each of `texts` in turn; after
-/// the first, the terminal turns `resize` columns wide and signals it, when given.
-fn on_terminal(repo: &Repo, args: &[&str], texts: &[&str], resize: Option<u16>) -> String {
-    use std::io::Read;
-    use std::os::fd::FromRawFd;
-    let (mut lead, mut follow) = (0, 0);
-    let opened = unsafe {
-        libc::openpty(
-            &mut lead,
-            &mut follow,
-            std::ptr::null_mut(),
-            std::ptr::null_mut(),
-            std::ptr::null_mut(),
-        )
-    };
-    assert_eq!(opened, 0, "openpty");
-    let side = |fd| unsafe { Stdio::from_raw_fd(libc::dup(fd)) };
-    let mut child = Command::new(env!("CARGO_BIN_EXE_celis"))
-        .arg("tree")
-        .args(args)
-        .current_dir(repo.path())
-        .env_clear()
-        .env("PATH", std::env::var("PATH").unwrap_or_default())
-        .env("CELIS_HOME", repo.home())
-        .stdin(side(follow))
-        .stdout(side(follow))
-        .stderr(side(follow))
-        .spawn()
-        .unwrap();
-    unsafe { libc::close(follow) };
-    let (send, bytes) = channel();
-    let mut terminal = unsafe { std::fs::File::from_raw_fd(lead) };
-    std::thread::spawn(move || {
-        let mut buffer = [0u8; 4096];
-        while let Ok(n) = terminal.read(&mut buffer) {
-            if n == 0 || send.send(buffer[..n].to_vec()).is_err() {
-                break;
-            }
-        }
-    });
-    let mut seen = Vec::new();
-    let wait_for = |text: &str, seen: &mut Vec<u8>| {
-        let end = Instant::now() + Duration::from_secs(5);
-        while !String::from_utf8_lossy(seen).contains(text) {
-            let left = end.saturating_duration_since(Instant::now());
-            match bytes.recv_timeout(left) {
-                Ok(chunk) => seen.extend(chunk),
-                Err(_) => panic!("no {text:?} in {:?}", String::from_utf8_lossy(seen)),
-            }
-        }
-    };
-    for (n, text) in texts.iter().enumerate() {
-        wait_for(text, &mut seen);
-        if let (0, Some(columns)) = (n, resize) {
-            let size = libc::winsize {
-                ws_row: 24,
-                ws_col: columns,
-                ws_xpixel: 0,
-                ws_ypixel: 0,
-            };
-            assert_eq!(unsafe { libc::ioctl(lead, libc::TIOCSWINSZ, &size) }, 0);
-            let pid = libc::pid_t::try_from(child.id()).unwrap();
-            assert_eq!(unsafe { libc::kill(pid, libc::SIGWINCH) }, 0);
-        }
-    }
-    let _ = child.kill();
-    let _ = child.wait();
-    String::from_utf8_lossy(&seen).into_owned()
+/// `tree` takes no `--watch`: it is a usage error (`spec/trails/04-trails.md`, "Watching").
+#[test]
+fn tree_refuses_watch() {
+    let repo = Repo::new();
+    refusal(&cli(&repo, &["tree", "--watch", "--json"]), 2, "usage");
 }
 
-/// On a terminal, `tree --watch` clears the screen and its scrollback, and prints each tree from the top left,
-/// with no empty line between two trees; `tree` with no `--watch` does the same (`spec/trails/04-trails.md`,
-/// "Watching").
+/// On a terminal, `tree` clears the screen and its scrollback, and prints each tree from the top left, with
+/// no empty line between two trees (`spec/trails/04-trails.md`, "Watching").
 #[test]
 fn watch_on_a_terminal_clears_the_screen_before_each_tree() {
-    for watch in [&["--watch"][..], &[]] {
-        clears_the_screen_before_each_tree(watch);
-    }
-}
-
-fn clears_the_screen_before_each_tree(watch: &[&str]) {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the trail"]);
-    let adder = std::thread::spawn({
-        let (home, path, trail) = (repo.home(), repo.path(), trail.clone());
-        move || {
-            std::thread::sleep(Duration::from_millis(700));
-            let o = Command::new(env!("CARGO_BIN_EXE_celis"))
-                .args(["step", "add", "--under", &trail[..8], "--", "the step"])
-                .current_dir(path)
-                .env("CELIS_HOME", home)
-                .output()
-                .unwrap();
-            assert!(o.status.success());
-        }
-    });
-    let args = [&[&trail[..8]][..], watch].concat();
-    let shown = on_terminal(&repo, &args, &["the trail", "the step"], None);
-    adder.join().unwrap();
-    let clear = "\x1b[H\x1b[2J\x1b[3J";
-    let trees: Vec<&str> = shown.split(clear).skip(1).collect();
+    let mut watch = Watch::start(&repo, &[&trail[..8]]);
+    watch.until("the trail");
+    add(&repo, &["--under", &trail[..8], "--", "the step"]);
+    watch.until("the step");
+    let shown = watch.shown(Duration::ZERO);
+    let trees = watch.trees(Duration::ZERO);
     assert!(trees.len() >= 2, "{shown:?}");
-    assert!(shown.starts_with(clear), "{shown:?}");
+    assert!(shown.starts_with(CLEAR), "{shown:?}");
     assert!(!trees[0].contains("the step"), "{shown:?}");
-    assert!(trees[trees.len() - 1].contains("the step"), "{shown:?}");
     assert!(!shown.contains("\r\n\r\n"), "{shown:?}");
 }
 
-/// On a terminal, `tree --watch` prints a tree whose times stand still again, cut to the new width, when the
+/// On a terminal, `tree` prints a tree whose times stand still again, cut to the new width, when the
 /// terminal's width changes (`spec/trails/04-trails.md`, "Watching").
 #[test]
 fn watch_on_a_terminal_prints_the_tree_again_when_its_width_changes() {
@@ -285,28 +270,26 @@ fn watch_on_a_terminal_prints_the_tree_again_when_its_width_changes() {
         - 7_200;
     let text = "a trail whose words run well past thirty characters";
     let trail = support::step_note(&repo, &support::account(), None, text, hours).id;
-    let shown = on_terminal(
-        &repo,
-        &[&trail[..8], "--watch"],
-        &["thirty characters", "…"],
-        Some(30),
-    );
-    let clear = "\x1b[H\x1b[2J\x1b[3J";
-    let trees: Vec<&str> = shown.split(clear).skip(1).collect();
-    assert!(trees.len() >= 2, "{shown:?}");
+    let mut watch = Watch::start(&repo, &[&trail[..8]]);
+    watch.until("thirty characters");
+    watch.resize(30);
+    watch.until("…");
+    let trees = watch.trees(Duration::ZERO);
+    assert!(trees.len() >= 2, "{trees:?}");
     assert!(
         !trees[trees.len() - 1].contains("thirty characters"),
-        "{shown:?}"
+        "{trees:?}"
     );
 }
 
-/// On a terminal, `tree --watch` prints the tree again as the times it shows change, with no record landing
+/// On a terminal, `tree` prints the tree again as the times it shows change, with no record landing
 /// (`spec/trails/04-trails.md`, "Watching").
 #[test]
 fn watch_on_a_terminal_prints_the_tree_again_as_its_times_change() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the trail"]);
-    let shown = on_terminal(&repo, &[&trail[..8], "--watch"], &["the trail", "3s"], None);
-    let clear = "\x1b[H\x1b[2J\x1b[3J";
-    assert!(shown.split(clear).skip(1).count() >= 2, "{shown:?}");
+    let mut watch = Watch::start(&repo, &[&trail[..8]]);
+    watch.until("the trail");
+    watch.until("3s");
+    assert!(watch.trees(Duration::ZERO).len() >= 2);
 }

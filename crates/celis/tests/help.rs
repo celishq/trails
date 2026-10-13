@@ -215,14 +215,14 @@ fn celis_version_names_the_commit_the_build_came_from() {
     );
 }
 
-/// Each command line of the trail card names the flags its command's usage names, and no other, except
-/// `--watch` (`spec/trails/02-cli.md`, "Help").
+/// Each command line of the trail card names the flags its command's usage names, and no other
+/// (`spec/trails/02-cli.md`, "Help").
 #[test]
 fn the_card_names_each_commands_flags() {
     let flags = |usage: &str| -> Vec<String> {
         let mut found: Vec<String> = names(usage)
             .into_iter()
-            .filter(|n| n.starts_with("--") && n != "--watch")
+            .filter(|n| n.starts_with("--"))
             .collect();
         found.sort();
         found
