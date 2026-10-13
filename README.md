@@ -8,7 +8,8 @@ last one learned. Every record is a nostr note that your account signs.
 - `crates/celis-trails` — the trails and decisions, and the store they live in.
 - `crates/celis-nostr` — the nostr wire: the account from a recovery phrase, signed notes, NIP-44 and
   NIP-59 encryption, and the relay client.
-- `plugins/celis` — the Claude Code plugin that gives an agent the trail at the start of each session.
+- `plugins/celis` — the plugin that gives an agent the trail at the start of each session, for Claude Code,
+  Codex, Cursor, Kimi Code and Gemini CLI.
 - `spec/trails` — the contract of the trail, as numbered CIPs.
 
 ## Install
@@ -37,6 +38,17 @@ Or install it for every session:
 /plugin marketplace add celishq/trails
 /plugin install celis@celis
 ```
+
+## Use it in other agents
+
+Each agent reads its own manifest in this repo, and runs the same hooks. Each needs `celis` on your PATH.
+
+- Codex: `codex plugin marketplace add celishq/trails`, then `codex plugin add celis@celis`. Trust its
+  hooks with `/hooks`.
+- Cursor: add `https://github.com/celishq/trails` as a plugin marketplace, and install `celis`. Cursor
+  gives the agent no note on each prompt.
+- Kimi Code: clone this repo, then `/plugins install ~/path/to/celis-trails/plugins/celis`.
+- Gemini CLI: `gemini extensions install https://github.com/celishq/trails`.
 
 Give the agent a task. It keeps a trail when the task changes files. Run `celis tree --watch` in a second
 terminal to see the trail while the agent works.

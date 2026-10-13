@@ -1,0 +1,8 @@
+{
+  "name": "celis",
+  "version": "0.0.0",
+  "description": "The celis trail for agents: your tasks as trails of graded steps, and the decisions made at each place, loaded at the start of each session.",
+  "author": "Celis",
+  "systemPromptPath": "./card.md",
+  "hooks": [{ "event": "UserPromptSubmit", "command": "./hooks/ask.sh kimi", "timeout": 10 }]
+}

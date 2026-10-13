@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [{ "type": "command", "command": "\"${PLUGIN_ROOT}/hooks/start.sh\" codex" }] }
+    ],
+    "UserPromptSubmit": [
+      { "hooks": [{ "type": "command", "command": "\"${PLUGIN_ROOT}/hooks/ask.sh\" codex" }] }
+    ]
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "celis",
+  "interface": { "displayName": "Celis" },
+  "plugins": [
+    {
+      "name": "celis",
+      "source": { "source": "local", "path": "./plugins/celis" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Developer Tools"
+    }
+  ]
+}

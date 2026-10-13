@@ -4,8 +4,9 @@
 
 - `crates/` is one Cargo workspace. Run cargo from there.
 - `spec/trails/` holds the contract, as CIPs. `spec/fixtures/` holds what two ends must match.
-- `plugins/celis/` is the Claude Code plugin. Its card's command lines match the usage in
-  `crates/celis/src/help.rs`; `crates/celis/tests/help.rs` checks it.
+- `plugins/celis/` is the plugin: one manifest per agent, and the same hooks. Gemini CLI installs from the
+  repo root, so `gemini-extension.json` and `hooks/` are there. The card's command lines match the usage
+  in `crates/celis/src/help.rs`; `crates/celis/tests/help.rs` checks it.
 
 ## Writing
 
