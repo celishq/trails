@@ -1,4 +1,4 @@
-# celis trails
+# Celis Trails
 
 ```
                    /\                                 /\
