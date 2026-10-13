@@ -1,9 +1,9 @@
-//! CIP-11, "Help".
+//! CIP-02, "Help".
 
 use std::process::{Command, Output};
 
-const CLI: &str = include_str!("../../../spec/trails/11-cli.md");
-const STEPS: &str = include_str!("../../../spec/trails/12-steps.md");
+const CLI: &str = include_str!("../../../spec/trails/02-cli.md");
+const STEPS: &str = include_str!("../../../spec/trails/03-steps.md");
 const CARD: &str = include_str!("../../../plugins/celis/card.md");
 
 fn run(args: &[&str]) -> Output {
@@ -52,8 +52,8 @@ fn squeeze(text: &str) -> String {
     text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
-/// Each command of the spec with its usage: `decide`, `tree` and `past` of CIP-11, and the step
-/// commands of CIP-12.
+/// Each command of the spec with its usage: `decide`, `tree` and `past` of CIP-02, and the step
+/// commands of CIP-03.
 fn usages() -> Vec<(String, String)> {
     let mut found = Vec::new();
     let lines = blocks(CLI, "Commands")[0].clone() + "\n" + &blocks(STEPS, "The commands")[0];
@@ -89,7 +89,7 @@ fn names(usage: &str) -> Vec<String> {
 }
 
 /// `celis`, `celis help` and `celis --help` print the page as the spec shows it, and exit 0
-/// (`spec/trails/11-cli.md`, "Help").
+/// (`spec/trails/02-cli.md`, "Help").
 #[test]
 fn celis_and_celis_help_print_the_page() {
     for args in [&[][..], &["help"], &["--help"]] {
@@ -98,7 +98,7 @@ fn celis_and_celis_help_print_the_page() {
 }
 
 /// `--help` anywhere in a command prints the command page its words name, and else the page
-/// (`spec/trails/11-cli.md`, "Help").
+/// (`spec/trails/02-cli.md`, "Help").
 #[test]
 fn help_anywhere_prints_the_command_page_its_words_name() {
     let commands = usages();
@@ -117,7 +117,7 @@ fn help_anywhere_prints_the_command_page_its_words_name() {
 }
 
 /// `--help` after a group's name alone prints the group page: each of its commands with what it does
-/// (`spec/trails/11-cli.md`, "Help").
+/// (`spec/trails/02-cli.md`, "Help").
 #[test]
 fn help_after_a_group_prints_its_commands() {
     for (group, commands) in [
@@ -147,7 +147,7 @@ fn help_after_a_group_prints_its_commands() {
 }
 
 /// A command page gives one line to each argument and flag its usage names, and at least one example
-/// (`spec/trails/11-cli.md`, "Help").
+/// (`spec/trails/02-cli.md`, "Help").
 #[test]
 fn a_command_page_gives_a_line_to_each_argument_and_an_example() {
     for (command, usage) in usages() {
@@ -179,7 +179,7 @@ fn a_command_page_gives_a_line_to_each_argument_and_an_example() {
 }
 
 /// No line of a help page is longer than 80 characters, and no page names a spec file
-/// (`spec/trails/11-cli.md`, "Help").
+/// (`spec/trails/02-cli.md`, "Help").
 #[test]
 fn every_help_page_fits_80_columns_and_names_no_spec() {
     let mut pages = vec![page(&["help"])];
@@ -197,7 +197,7 @@ fn every_help_page_fits_80_columns_and_names_no_spec() {
 }
 
 /// `celis --version` prints `celis <version>` and the first 8 characters of the commit the build came
-/// from (`spec/trails/11-cli.md`, "Help").
+/// from (`spec/trails/02-cli.md`, "Help").
 #[test]
 fn celis_version_names_the_commit_the_build_came_from() {
     let head = Command::new("git")
@@ -216,7 +216,7 @@ fn celis_version_names_the_commit_the_build_came_from() {
 }
 
 /// Each command line of the trail card names the flags its command's usage names, and no other, except
-/// `--watch` (`spec/trails/11-cli.md`, "Help").
+/// `--watch` (`spec/trails/02-cli.md`, "Help").
 #[test]
 fn the_card_names_each_commands_flags() {
     let flags = |usage: &str| -> Vec<String> {

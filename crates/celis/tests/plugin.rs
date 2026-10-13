@@ -1,4 +1,4 @@
-//! The plugin's hooks, run as each agent's manifest declares them (CIP-14, "Sessions").
+//! The plugin's hooks, run as each agent's manifest declares them (CIP-04, "Sessions").
 
 mod support;
 
@@ -140,7 +140,7 @@ fn steers(repo: &Repo, step: &str) -> Vec<String> {
 }
 
 /// Each agent's session start gives the card; an agent other than Claude Code also gets its session, to
-/// pass with `--session` (`spec/trails/14-trails.md`, "Sessions").
+/// pass with `--session` (`spec/trails/04-trails.md`, "Sessions").
 #[test]
 fn each_agents_session_start_gives_the_card_and_its_session() {
     let repo = Repo::new();
@@ -158,7 +158,7 @@ fn each_agents_session_start_gives_the_card_and_its_session() {
 }
 
 /// Each agent's prompt hook writes the prompt as a steer on the working step of its session's trail, in
-/// the person's project (`spec/trails/14-trails.md`, "Sessions").
+/// the person's project (`spec/trails/04-trails.md`, "Sessions").
 #[test]
 fn each_agents_prompt_hook_writes_a_steer_on_its_sessions_step() {
     for agent in AGENTS {
@@ -188,7 +188,7 @@ fn each_agents_prompt_hook_writes_a_steer_on_its_sessions_step() {
 }
 
 /// Claude Code's prompt hook asks for the past agent once a session, and again after a compaction's
-/// session start (`spec/trails/14-trails.md`, "Sessions").
+/// session start (`spec/trails/04-trails.md`, "Sessions").
 #[test]
 fn claudes_hooks_ask_for_the_past_agent_again_after_a_compaction() {
     let repo = Repo::new();

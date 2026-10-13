@@ -44,7 +44,7 @@ fn next(records: &[Note], now: u64) -> Option<u64> {
 }
 
 /// The tree changes next when the first time it shows changes: a time in seconds the next second, a time
-/// in hours the next minute, and a tree with no time that runs, none (`spec/trails/14-trails.md`,
+/// in hours the next minute, and a tree with no time that runs, none (`spec/trails/04-trails.md`,
 /// "Watching").
 #[test]
 fn the_tree_changes_next_when_its_first_time_changes() {

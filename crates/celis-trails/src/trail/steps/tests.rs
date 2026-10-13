@@ -36,7 +36,7 @@ fn ids(notes: Vec<&Note>) -> Vec<String> {
 }
 
 /// The first done record with a proof closes its step, and one with no content does not
-/// (`spec/trails/12-steps.md`, "Closing").
+/// (`spec/trails/03-steps.md`, "Closing").
 #[test]
 fn the_first_done_with_a_proof_closes_its_step() {
     let a = step("a", 10);
@@ -51,7 +51,7 @@ fn the_first_done_with_a_proof_closes_its_step() {
 }
 
 /// A prefix of 8 characters that two steps' ids share finds neither, with `no-step`, while a full
-/// id still finds its step (`spec/trails/12-steps.md`, "The commands").
+/// id still finds its step (`spec/trails/03-steps.md`, "The commands").
 #[test]
 fn a_prefix_two_steps_share_finds_neither() {
     let mut a = step("a", 10);
@@ -66,7 +66,7 @@ fn a_prefix_two_steps_share_finds_neither() {
 }
 
 /// A step of an ended trail that is not done or dropped is expired, and a closed one keeps its status
-/// (`spec/trails/14-trails.md`, "The commands").
+/// (`spec/trails/04-trails.md`, "The commands").
 #[test]
 fn an_open_step_of_an_ended_trail_is_expired() {
     let trail = step("trail", 10);

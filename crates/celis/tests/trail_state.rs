@@ -1,4 +1,4 @@
-//! CIP-14, "State".
+//! CIP-04, "State".
 
 mod support;
 
@@ -13,7 +13,7 @@ fn state(repo: &Repo, id: &str) -> String {
 }
 
 /// A trail is active while open, reached alone when done with no steer in its tree, and reached with
-/// help when a steer names a step of its tree (`spec/trails/14-trails.md`, "State").
+/// help when a steer names a step of its tree (`spec/trails/04-trails.md`, "State").
 #[test]
 fn a_trails_state_comes_from_its_tree_and_its_steers() {
     let repo = Repo::new();
@@ -35,7 +35,7 @@ fn a_trails_state_comes_from_its_tree_and_its_steers() {
 }
 
 /// A trail with steps under it and none open is reached at once; a new step under it makes it active
-/// again, and a done trail refuses one (`spec/trails/14-trails.md`, "State").
+/// again, and a done trail refuses one (`spec/trails/04-trails.md`, "State").
 #[test]
 fn a_trail_with_no_open_step_under_it_is_reached_at_once() {
     let repo = Repo::new();
@@ -59,7 +59,7 @@ fn a_trail_with_no_open_step_under_it_is_reached_at_once() {
 
 /// A trail ends 30 minutes after the newest record of its tree: reached when nothing under it is open,
 /// expired when a step is, and active again when a new record lands; an ended trail's steps are not open
-/// (`spec/trails/14-trails.md`, "State").
+/// (`spec/trails/04-trails.md`, "State").
 #[test]
 fn a_trail_ends_thirty_minutes_after_its_newest_record() {
     use support::{account, done_note, now, step_note};
@@ -87,7 +87,7 @@ fn a_trail_ends_thirty_minutes_after_its_newest_record() {
 }
 
 /// A trail whose session wrote no end ends 30 minutes after the newest record of its tree
-/// (`spec/trails/14-trails.md`, "State").
+/// (`spec/trails/04-trails.md`, "State").
 #[test]
 fn a_sessions_trail_with_no_end_ends_thirty_minutes_after_its_newest_record() {
     use support::{account, now, put, step_tags};

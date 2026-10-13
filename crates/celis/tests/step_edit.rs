@@ -1,11 +1,11 @@
-//! CIP-12, "Editing".
+//! CIP-03, "Editing".
 
 mod support;
 
 use support::{add, cli, err, objects, out, refusal, Repo};
 
 /// `edit` gives a step new text, which `read`, `tree` and the JSON then show; it refuses an unknown id
-/// and empty text (`spec/trails/12-steps.md`, "Editing").
+/// and empty text (`spec/trails/03-steps.md`, "Editing").
 #[test]
 fn edit_gives_a_step_new_text() {
     let repo = Repo::new();
@@ -43,7 +43,7 @@ fn edit_gives_a_step_new_text() {
 }
 
 /// `edit --check` and `--at` give a step a new check and places, and keep its text; a one-line text
-/// changes only the title and keeps the detail (`spec/trails/12-steps.md`, "Editing").
+/// changes only the title and keeps the detail (`spec/trails/03-steps.md`, "Editing").
 #[test]
 fn edit_changes_the_check_and_places_and_a_title_keeps_the_detail() {
     let repo = Repo::new();
@@ -89,7 +89,7 @@ fn edit_changes_the_check_and_places_and_a_title_keeps_the_detail() {
     );
 }
 
-/// `step add` says on stderr when a session's step joins its trail (`spec/trails/12-steps.md`,
+/// `step add` says on stderr when a session's step joins its trail (`spec/trails/03-steps.md`,
 /// "Editing").
 #[test]
 fn add_says_when_a_step_joins_the_sessions_trail() {

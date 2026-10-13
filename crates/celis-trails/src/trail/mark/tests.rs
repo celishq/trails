@@ -1,7 +1,7 @@
 use super::*;
 
 /// A `done` carries its proof and what changed from the plan, and reads back the same
-/// (`spec/trails/12-steps.md`, "Closing").
+/// (`spec/trails/03-steps.md`, "Closing").
 #[test]
 fn a_done_carries_its_proof() {
     let account = Account::new(&[1u8; 32]).unwrap();
