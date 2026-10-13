@@ -61,7 +61,7 @@ Lessons for prices.py:
   • the cart doesn't know the age: change the price in prices.py
 ```
 
-Everything is saved as [nostr](https://nostr.com) notes, signed with your own key.
+Everything is saved as [nostr](https://nostr.org) notes, signed with your own key.
 
 ## Install
 
