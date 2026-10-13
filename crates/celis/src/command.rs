@@ -4,8 +4,10 @@ mod args;
 mod auth;
 mod clock;
 mod decision;
+mod issue;
 mod past;
 mod prompt;
+mod report;
 mod review;
 mod step;
 mod tree;
@@ -42,13 +44,16 @@ impl Command {
             return 0;
         }
         let json = Args::asks_json(&self.args);
-        let mut failure = match Args::parse(&self.args).and_then(|a| self.go(&a, out, err)) {
+        let args = Args::parse(&self.args);
+        let words = args.as_ref().map_or(vec![], |a| a.words.clone());
+        let mut failure = match args.and_then(|a| self.go(&a, out, err)) {
             Ok(()) => return 0,
             Err(failure) => failure,
         };
         if failure.code == 2 {
             failure = failure.see(&help::see(&self.args));
         }
+        self.log(&words, &failure);
         let line = if json {
             json!({"error": failure.name, "message": failure.message}).to_string()
         } else {
@@ -64,11 +69,41 @@ impl Command {
             "decide" => self.decide(args, out, &self.project()),
             "tree" => self.tree(args, out),
             "past" => self.past(args, out, &self.project()),
+            "report" => self.report(args, out),
+            "issue" => self.issue(args, out),
             "prompt" => self.prompt(args, out, err, &self.project()),
             "auth" => self.auth(args, out, err),
             "" => Err(Failure::usage("expected: celis <command>")),
             verb => Err(Failure::unknown(verb, verbs())),
         }
+    }
+
+    /// Adds the line of the failed run of `words` to `$CELIS_HOME/log`; a write that fails is let go.
+    fn log(&self, words: &[String], failure: &Failure) {
+        let Ok(home) = self.home() else {
+            return;
+        };
+        let at = now();
+        let line = format!(
+            "{} {} {} {} · {}\n",
+            clock::date(at),
+            clock::clock(at, at),
+            failure.code,
+            ["celis".to_string()]
+                .iter()
+                .chain(words)
+                .cloned()
+                .collect::<Vec<_>>()
+                .join(" "),
+            failure.message
+        );
+        let file = std::fs::create_dir_all(&home).and_then(|()| {
+            std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(home.join("log"))
+        });
+        let _ = file.and_then(|mut f| f.write_all(line.as_bytes()));
     }
 
     /// The project of the working folder.

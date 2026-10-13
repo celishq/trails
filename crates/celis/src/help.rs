@@ -9,6 +9,8 @@ Commands
   decide   a decision, in its scope
   tree     a trail and its steps, with their grades
   past     this project's active trails and decisions, every project's past work
+  report   trails as Markdown, for a pull request
+  issue    what went wrong, as Markdown for the celis team
   step     the steps of a trail: add, start, done, drop, edit
   auth     the account's phrase: login, status, phrase
 
@@ -159,6 +161,26 @@ pub const VERBS: &[Verb] = &[
         summary: "Print this project's active trails with their rules and its decisions, then the done asks and reached trails of every project, newest first, one line each with its project, place, grade and day.",
         args: &[("--at <place>", "a place whose decisions come first; zero or more")],
         examples: &["celis past", "celis past --at shelf/prices.py"],
+    },
+    Verb {
+        command: "report",
+        usage: &["celis report <id>..."],
+        summary: "Print the trail of each step the ids name as Markdown, for a pull request: its rules, and its steps with their places, checks, proofs and reasons. Writes no record.",
+        args: &[("<id>", "a step id, or a start of 4 or more characters; one or more")],
+        examples: &["celis report 3fa2c1d0", "celis report 3fa2c1d0 9e717e6f"],
+    },
+    Verb {
+        command: "issue",
+        usage: &["celis issue [<id>]... [-- <text>]"],
+        summary: "Print what went wrong as Markdown for the celis team: the text, the version, system, project and store, the last lines of the log, and the trail of each step the ids name. Writes no record.",
+        args: &[
+            ("<id>", "a step id whose trail it adds; zero or more"),
+            ("<text>", "what went wrong; optional"),
+        ],
+        examples: &[
+            "celis issue -- \"celis prompt fails in each Cursor session\"",
+            "celis issue 3fa2c1d0 -- \"The tree shows the step as open after done.\"",
+        ],
     },
     Verb {
         command: "decide",

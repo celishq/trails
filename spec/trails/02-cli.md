@@ -14,6 +14,8 @@ celis decide [--scope <scope>] [--replaces <id>] -- <text>
                                                        a decision, in its scope
 celis tree [<id>] [--full] [--all] [--watch]          a trail and its steps; again on each change (CIP-04)
 celis past [--at <place>]...                          this project's trails and decisions, past work (CIP-04)
+celis report <id>...                                  the trails as Markdown, for a pull request (CIP-05)
+celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team (CIP-05)
 celis step add | start | done | drop | edit           the steps of a trail (CIP-03)
 celis prompt                                          a person's prompt, from a hook (CIP-04)
 celis auth login                                      keep the phrase stdin gives (CIP-01)
@@ -70,6 +72,8 @@ Commands
   decide   a decision, in its scope
   tree     a trail and its steps, with their grades
   past     this project's active trails and decisions, every project's past work
+  report   trails as Markdown, for a pull request
+  issue    what went wrong, as Markdown for the celis team
   step     the steps of a trail: add, start, done, drop, edit
   auth     the account's phrase: login, status, phrase
 

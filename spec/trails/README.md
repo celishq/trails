@@ -23,6 +23,7 @@ A CIP is one feature in one numbered file, `NN-name.md`, opening with frontmatte
 | 02 | The command line | `celis`: commands, help, output and errors | CIP-01 |
 | 03 | Steps | the step, its project, closing, steering, grades, `celis step` | CIP-01, 02 |
 | 04 | Trails | the trail, its rules, its state, `celis tree`, the past, `celis tree --watch` | CIP-01, 02, 03 |
+| 05 | Reports | `celis report`: trails as Markdown for a pull request; the log; `celis issue` | CIP-01, 02, 03, 04 |
 
 ## Names
 
@@ -33,6 +34,7 @@ A CIP is one feature in one numbered file, `NN-name.md`, opening with frontmatte
 | `scope` · `replaces` | decision tags: where it holds, the decision it replaces | 01 |
 | `me` · `project` · `trail:<id>` · `at:<place>` | the scopes of a decision | 01 |
 | `$CELIS_HOME` | where celis keeps the phrase and the store | 02 |
+| `$CELIS_HOME/log` | the runs of `celis` that failed | 05 |
 | `$CELIS_HOME/phrase` · `celis auth` | the account's phrase, and the commands that keep it | 01 |
 | `no-decision` · `no-trail` | errors | 02 |
 | 1111 with `step` in `celis.step` | kind: a step (NIP-22) | 03 |
