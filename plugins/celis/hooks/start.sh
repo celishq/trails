@@ -1,8 +1,8 @@
 #!/bin/sh
 # At the start of a session, and after a compaction: says how to install the `celis` command when it is
 # missing. Else it prints the trail card and where the rare cases are, and after a compaction lets
-# `celis prompt` ask for the past agent again. $1 names the agent: claude (the default), codex, cursor or
-# gemini.
+# `celis prompt` ask for the past agent again. $1 names the agent: claude (the default), codex, cursor,
+# gemini or antigravity. Antigravity has no session start, and runs this before each call of the model.
 root="$(cd "$(dirname "$0")/.." && pwd)"
 . "$root/hooks/out.sh"
 agent=${1:-claude}
