@@ -1,17 +1,17 @@
 ---
-cip: 12
+cip: 3
 title: Steps
 status: draft
-depends: [CIP-10, CIP-11]
+depends: [CIP-01, CIP-02]
 ---
 
-# CIP-12 — Steps
+# CIP-03 — Steps
 
 ## Steps
 
 A step is one part of the work. An agent leaves it for itself or the next agent. It is a NIP-22 comment
-on its project, like a decision (CIP-10, "Decisions"). Its text states the work, so a stranger with only
-the step can do it. A step with no `under` is a trail (CIP-14). The first line of its text is its title,
+on its project, like a decision (CIP-01, "Decisions"). Its text states the work, so a stranger with only
+the step can do it. A step with no `under` is a trail (CIP-04). The first line of its text is its title,
 and the lines after it hold the detail.
 
 ```json
@@ -25,7 +25,7 @@ and the lines after it hold the detail.
     ["replaces", "<id of an open step whose plan it takes over>"],    optional
     ["at", "<a place the work goes: file:line, a URL, any text>"],   zero or more
     ["check", "<the command that proves the work>"],                  optional
-    ["session", "<the session of a trail>"],                          optional, a trail only (CIP-14)
+    ["session", "<the session of a trail>"],                          optional, a trail only (CIP-04)
     ["L", "celis.step"],
     ["l", "step", "celis.step"]
   ],
@@ -40,9 +40,9 @@ and the lines after it hold the detail.
 - A reader MUST count each `file` tag of a step as a place, after its `at` places.
 - A reader MUST count a kind 1111 record as a step only when it carries the label `step` in
   `celis.step`. It MUST ignore tags it does not know.
-- A reader of decisions MUST NOT count a step as a decision (CIP-10, "Decisions").
+- A reader of decisions MUST NOT count a step as a decision (CIP-01, "Decisions").
 - A step's text line MUST hold only its title. The full tree MUST print the other lines of its text under
-  it (CIP-14, "The commands").
+  it (CIP-04, "The commands").
 
 **Examples**
 
@@ -54,15 +54,15 @@ and the lines after it hold the detail.
 
 ## Projects
 
-A step names a project as CIP-10 "Projects" states. Outside git, the place of the work names it.
+A step names a project as CIP-01 "Projects" states. Outside git, the place of the work names it.
 
 ```
-project id   inside git: as CIP-10 "Projects" states
+project id   inside git: as CIP-01 "Projects" states
              outside git, with a first place that is a URL:
                figma:<file key>   a figma.com URL, /file/<key>/… or /design/<key>/…
                web:<host>         any other URL
-             else: as CIP-10 "Projects" states
-project name the file name in a Figma URL, else the host, else as CIP-10 "Projects" states
+             else: as CIP-01 "Projects" states
+project name the file name in a Figma URL, else the host, else as CIP-01 "Projects" states
 ```
 
 **Rules**
@@ -155,7 +155,7 @@ next move  ask      celis: write what a later plan should keep as rules with cel
 ## Steering
 
 A steer records what the person asked for while a step was open, so the trail shows which steps the
-person had to steer. The prompt hook writes it (CIP-14, "Sessions").
+person had to steer. The prompt hook writes it (CIP-04, "Sessions").
 
 ```json
 steer  kind 1985, signed by an agent (NIP-32)
@@ -237,23 +237,23 @@ celis step edit <id> [--at <place>]... [--check <command>] [-- <text>]
 
 **Rules**
 
-- Every command MUST take an id as CIP-11 "Output and errors" states.
+- Every command MUST take an id as CIP-02 "Output and errors" states.
 - A command MUST refuse a start that more than one step's id has, with `no-step`.
 - `add` MUST refuse empty text as a usage error.
 - `add` MUST refuse an `--under` that no step has, with `no-step`, and one that is closed, with `closed`.
 - `add` MUST print `ahead` on stderr when its `under` is below an ask and holds an open step that has
   not started. It MUST still write the step.
 - `add` MUST carry the whole id of `--under`, each `--at` and the `--check` as their tags.
-  It MUST write each `--at` as CIP-10 "Places" states.
+  It MUST write each `--at` as CIP-01 "Places" states.
 - `add` MUST NOT write a step when an open step of the same project and `under` has the same text. It
   MUST print the id of that step.
 - `start` MUST refuse an id no step has, with `no-step`, and a closed step, with `closed`. On a working
   step, it MUST write nothing and print the id of the step's first `start`.
-- `start` MUST then print the live decisions at the step's places (CIP-10, "Reading"),
+- `start` MUST then print the live decisions at the step's places (CIP-01, "Reading"),
   each once.
 - `done` MUST refuse an id no step has, with `no-step`, and a closed step, with `closed`.
 - `done` MUST refuse an empty proof, as a usage error.
-- `done` with `--pitfall` MUST also write it as a decision on the step's project (CIP-10, "Decisions").
+- `done` with `--pitfall` MUST also write it as a decision on the step's project (CIP-01, "Decisions").
 - The scope of that decision MUST be `at:<the step's at>`, else `trail:<id of the step's trail>`.
 - `done` MUST refuse a step with an open step under it, with `open-steps`, and write nothing.
 - `done` MUST run the step's `check` in the project's top folder, when it has one. When the check fails,
@@ -264,7 +264,7 @@ celis step edit <id> [--at <place>]... [--check <command>] [-- <text>]
   an empty reason as a usage error.
 - `drop` MUST write a drop for the step and for each open step under it, at any depth.
 - `edit` MUST refuse an id no step has, with `no-step`. It MUST refuse an edit with no text, `--at` or
-  `--check`, as a usage error. It MUST write each `--at` as CIP-10 "Places" states.
+  `--check`, as a usage error. It MUST write each `--at` as CIP-01 "Places" states.
 - The JSON of a step MUST carry its `under` and `replaces` as `links`, in that order. A step with
   neither MUST carry an empty `links`.
 - `add`, `start`, `done`, `drop` and `edit` MUST print the id of each record they wrote, the step's own

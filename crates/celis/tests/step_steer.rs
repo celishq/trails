@@ -1,4 +1,4 @@
-//! CIP-12, "Steering".
+//! CIP-03, "Steering".
 
 mod support;
 
@@ -20,7 +20,7 @@ fn add(repo: &Repo, args: &[&str]) -> String {
 }
 
 /// A steer does not close its step, and a reader ignores a steer with no content
-/// (`spec/trails/12-steps.md`, "Steering").
+/// (`spec/trails/03-steps.md`, "Steering").
 #[test]
 fn a_steer_does_not_close_its_step_and_one_with_no_content_is_ignored() {
     let repo = Repo::new();

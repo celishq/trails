@@ -1,4 +1,4 @@
-//! CIP-10, "Projects".
+//! CIP-01, "Projects".
 
 mod support;
 
@@ -8,7 +8,7 @@ use std::process::Command;
 use support::Repo;
 
 /// Every clone and every worktree of one repo has the id of its first commit, and the name of the main
-/// checkout's folder (`spec/trails/10-decisions.md`, "Projects").
+/// checkout's folder (`spec/trails/01-decisions.md`, "Projects").
 #[test]
 fn every_clone_and_every_worktree_of_one_repo_must_give_the_same_project_id() {
     let repo = Repo::new();
@@ -34,7 +34,7 @@ fn every_clone_and_every_worktree_of_one_repo_must_give_the_same_project_id() {
 }
 
 /// Outside git, the working folder's path is the project id, and its name is the project name
-/// (`spec/trails/10-decisions.md`, "Projects").
+/// (`spec/trails/01-decisions.md`, "Projects").
 #[test]
 fn outside_git_the_project_id_is_the_path_of_the_working_folder() {
     let outside = tempfile::tempdir().unwrap();
@@ -46,7 +46,7 @@ fn outside_git_the_project_id_is_the_path_of_the_working_folder() {
 }
 
 /// A clone in a folder of another name has that name, and the id stays the first commit
-/// (`spec/trails/10-decisions.md`, "Projects").
+/// (`spec/trails/01-decisions.md`, "Projects").
 #[test]
 fn the_name_must_not_change_the_project_id() {
     let repo = Repo::new();

@@ -1,4 +1,4 @@
-//! CIP-11, "Commands".
+//! CIP-02, "Commands".
 
 mod support;
 
@@ -34,7 +34,7 @@ fn project(id: &str) -> (&str, &str) {
 }
 
 /// `past` prints the active trails, oldest first, each with its rules, then the live decisions that are no
-/// rule, then the past work (`spec/trails/14-trails.md`, "The past").
+/// rule, then the past work (`spec/trails/04-trails.md`, "The past").
 #[test]
 fn past_prints_the_trails_with_their_rules_then_the_decisions_then_the_past_work() {
     let repo = Repo::new();
@@ -74,7 +74,7 @@ fn past_prints_the_trails_with_their_rules_then_the_decisions_then_the_past_work
 }
 
 /// `past` prints the trails and decisions of the working folder's project only, and a reached trail only
-/// as past work, with no rule of it (`spec/trails/14-trails.md`, "The past").
+/// as past work, with no rule of it (`spec/trails/04-trails.md`, "The past").
 #[test]
 fn past_prints_a_reached_trail_only_as_past_work() {
     let repo = Repo::new();
@@ -104,7 +104,7 @@ fn past_prints_a_reached_trail_only_as_past_work() {
     assert!(lines[0].starts_with(&format!("{} [repo] reached · ", short(&reached.id))));
 }
 
-/// `past` prints a decision at a place only for an `--at` place it is at (`spec/trails/14-trails.md`, "The past").
+/// `past` prints a decision at a place only for an `--at` place it is at (`spec/trails/04-trails.md`, "The past").
 #[test]
 fn past_prints_a_decision_at_a_place_only_at_its_at_place() {
     let repo = Repo::new();
@@ -137,7 +137,7 @@ fn past_prints_a_decision_at_a_place_only_at_its_at_place() {
     assert_eq!(ids(&["past", "--at", "b.py"]), [short(&b.id)]);
 }
 
-/// `past` prints every live decision, those at an `--at` place first, then the newest (`spec/trails/14-trails.md`, "The past").
+/// `past` prints every live decision, those at an `--at` place first, then the newest (`spec/trails/04-trails.md`, "The past").
 #[test]
 fn past_prints_every_decision_those_at_a_place_first() {
     let repo = Repo::new();
@@ -171,7 +171,7 @@ fn past_prints_every_decision_those_at_a_place_first() {
     assert_eq!(got[35], short(&others[0].id));
 }
 
-/// `past` writes no record (`spec/trails/14-trails.md`, "The past").
+/// `past` writes no record (`spec/trails/04-trails.md`, "The past").
 #[test]
 fn past_writes_no_record() {
     let repo = Repo::new();
@@ -198,7 +198,7 @@ fn past_writes_no_record() {
     assert_eq!(records(&repo), before);
 }
 
-/// A decision prints as `<id, first 8> <scope> <text>` (`spec/trails/11-cli.md`, "Commands").
+/// A decision prints as `<id, first 8> <scope> <text>` (`spec/trails/02-cli.md`, "Commands").
 #[test]
 fn a_decision_prints_its_id_scope_and_text() {
     let repo = Repo::new();
@@ -229,7 +229,7 @@ fn a_decision_prints_its_id_scope_and_text() {
 }
 
 /// The json form of a decision is one object with the fields the section lists
-/// (`spec/trails/11-cli.md`, "Commands").
+/// (`spec/trails/02-cli.md`, "Commands").
 #[test]
 fn the_json_form_of_a_decision_has_the_listed_fields() {
     let repo = Repo::new();
@@ -264,7 +264,7 @@ fn the_json_form_of_a_decision_has_the_listed_fields() {
 }
 
 /// `decide` writes a decision on the working folder's project with `--scope` and `--replaces` as its
-/// tags, the whole id of a trail, and no `scope` tag for the project (`spec/trails/11-cli.md`,
+/// tags, the whole id of a trail, and no `scope` tag for the project (`spec/trails/02-cli.md`,
 /// "Commands").
 #[test]
 fn decide_writes_its_scope_and_replaces_as_tags() {
@@ -309,7 +309,7 @@ fn decide_writes_its_scope_and_replaces_as_tags() {
 }
 
 /// `decide` refuses empty text, and a scope it does not know, as a usage error
-/// (`spec/trails/11-cli.md`, "Commands").
+/// (`spec/trails/02-cli.md`, "Commands").
 #[test]
 fn decide_refuses_empty_text_and_an_unknown_scope_as_a_usage_error() {
     let repo = Repo::new();
@@ -325,7 +325,7 @@ fn decide_refuses_empty_text_and_an_unknown_scope_as_a_usage_error() {
 }
 
 /// `decide` refuses `trail:<id>` when no trail of the project that is not done or dropped has the id,
-/// with `no-trail`; it takes a reached one (`spec/trails/11-cli.md`, "Commands").
+/// with `no-trail`; it takes a reached one (`spec/trails/02-cli.md`, "Commands").
 #[test]
 fn decide_refuses_a_trail_the_project_has_not_open() {
     let repo = Repo::new();
@@ -352,7 +352,7 @@ fn decide_refuses_a_trail_the_project_has_not_open() {
 }
 
 /// `decide` refuses a `--replaces` no live decision has, with `no-decision`
-/// (`spec/trails/11-cli.md`, "Commands").
+/// (`spec/trails/02-cli.md`, "Commands").
 #[test]
 fn decide_refuses_a_replaces_no_live_decision_has() {
     let repo = Repo::new();
@@ -381,7 +381,7 @@ fn decide_refuses_a_replaces_no_live_decision_has() {
     assert_eq!(labelled(&repo, "decision").len(), 2);
 }
 
-/// A flag no command takes is a usage error (`spec/trails/11-cli.md`, "Commands").
+/// A flag no command takes is a usage error (`spec/trails/02-cli.md`, "Commands").
 #[test]
 fn a_flag_no_command_takes_is_a_usage_error() {
     let repo = Repo::new();

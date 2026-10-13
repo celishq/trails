@@ -1,4 +1,4 @@
-//! CIP-12, "Steps".
+//! CIP-03, "Steps".
 
 mod support;
 
@@ -28,7 +28,7 @@ fn tag_values<'a>(note: &'a Note, name: &str) -> Vec<&'a str> {
 
 /// `step add` writes a kind 1111 record with content, the anchor `project:<id>`, the project name, and
 /// the label `step` in `celis.step`; with `--at` and `--under` it carries one `at` and one `under`
-/// (`spec/trails/12-steps.md`, "Steps").
+/// (`spec/trails/03-steps.md`, "Steps").
 #[test]
 fn step_add_writes_a_kind_1111_record_with_its_tags() {
     let repo = Repo::plain();
@@ -74,7 +74,7 @@ fn step_add_writes_a_kind_1111_record_with_its_tags() {
 }
 
 /// A reader counts a kind 1111 record as a step only with the label `step` in `celis.step`, and ignores
-/// unknown tags (`spec/trails/12-steps.md`, "Steps").
+/// unknown tags (`spec/trails/03-steps.md`, "Steps").
 #[test]
 fn a_reader_counts_a_record_as_a_step_only_with_the_label() {
     let repo = Repo::plain();
@@ -108,7 +108,7 @@ fn a_reader_counts_a_record_as_a_step_only_with_the_label() {
 }
 
 /// A step's text line holds only its title, its first line; the full tree prints the other lines under
-/// it (`spec/trails/12-steps.md`, "Steps").
+/// it (`spec/trails/03-steps.md`, "Steps").
 #[test]
 fn a_steps_line_holds_its_title_and_the_full_tree_its_detail() {
     let repo = Repo::new();

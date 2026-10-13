@@ -1,4 +1,4 @@
-//! CIP-14, "Watching".
+//! CIP-04, "Watching".
 
 mod support;
 
@@ -90,7 +90,7 @@ fn records(repo: &Repo) -> usize {
 
 /// `tree <id> --watch` prints the tree, then prints it again within a second after a record lands, only when
 /// the tree changed, with an empty line between two trees off a terminal, and writes no record. Its
-/// `--json` tree shows no time, so it changes only by a record (`spec/trails/14-trails.md`, "Watching").
+/// `--json` tree shows no time, so it changes only by a record (`spec/trails/04-trails.md`, "Watching").
 #[test]
 fn watch_prints_the_tree_again_when_it_changes() {
     let repo = Repo::new();
@@ -118,7 +118,7 @@ fn watch_prints_the_tree_again_when_it_changes() {
 }
 
 /// `tree --watch` with no id says no trail is there and how to start one, then prints what `tree` prints:
-/// the project's trails, not another project's (`spec/trails/14-trails.md`, "Watching").
+/// the project's trails, not another project's (`spec/trails/04-trails.md`, "Watching").
 #[test]
 fn tree_watch_with_no_id_prints_what_tree_prints() {
     let repo = Repo::new();
@@ -144,7 +144,7 @@ fn tree_watch_with_no_id_prints_what_tree_prints() {
 }
 
 /// On a home with no store and no phrase, `tree --watch` shows the empty state, writes nothing, and shows the
-/// first trail once another command writes it (`spec/trails/10-decisions.md`, "The store").
+/// first trail once another command writes it (`spec/trails/01-decisions.md`, "The store").
 #[test]
 fn watch_on_an_empty_home_writes_nothing_and_waits_for_the_store() {
     let repo = Repo::new();
@@ -157,7 +157,7 @@ fn watch_on_an_empty_home_writes_nothing_and_waits_for_the_store() {
     watch.until(&trail[..8]);
 }
 
-/// `tree --watch` refuses an id no step has, with `no-step` (`spec/trails/14-trails.md`, "Watching").
+/// `tree --watch` refuses an id no step has, with `no-step` (`spec/trails/04-trails.md`, "Watching").
 #[test]
 fn watch_refuses_an_unknown_id() {
     let repo = Repo::new();
@@ -240,7 +240,7 @@ fn on_terminal(repo: &Repo, args: &[&str], texts: &[&str], resize: Option<u16>) 
 }
 
 /// On a terminal, `tree --watch` clears the screen and its scrollback, and prints each tree from the top left,
-/// with no empty line between two trees (`spec/trails/14-trails.md`, "Watching").
+/// with no empty line between two trees (`spec/trails/04-trails.md`, "Watching").
 #[test]
 fn watch_on_a_terminal_clears_the_screen_before_each_tree() {
     let repo = Repo::new();
@@ -270,7 +270,7 @@ fn watch_on_a_terminal_clears_the_screen_before_each_tree() {
 }
 
 /// On a terminal, `tree --watch` prints a tree whose times stand still again, cut to the new width, when the
-/// terminal's width changes (`spec/trails/14-trails.md`, "Watching").
+/// terminal's width changes (`spec/trails/04-trails.md`, "Watching").
 #[test]
 fn watch_on_a_terminal_prints_the_tree_again_when_its_width_changes() {
     let repo = Repo::new();
@@ -292,7 +292,7 @@ fn watch_on_a_terminal_prints_the_tree_again_when_its_width_changes() {
 }
 
 /// On a terminal, `tree --watch` prints the tree again as the times it shows change, with no record landing
-/// (`spec/trails/14-trails.md`, "Watching").
+/// (`spec/trails/04-trails.md`, "Watching").
 #[test]
 fn watch_on_a_terminal_prints_the_tree_again_as_its_times_change() {
     let repo = Repo::new();

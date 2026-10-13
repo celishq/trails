@@ -1,15 +1,15 @@
 ---
-cip: 14
+cip: 4
 title: Trails
 status: draft
-depends: [CIP-10, CIP-11, CIP-12]
+depends: [CIP-01, CIP-02, CIP-03]
 ---
 
-# CIP-14 — Trails
+# CIP-04 — Trails
 
 ## Trails
 
-A trail is one task you give, in your words. It is a step with no `under` (CIP-12, "Steps"). The steps
+A trail is one task you give, in your words. It is a step with no `under` (CIP-03, "Steps"). The steps
 under it, and the steps under those, are its tree.
 
 **Rules**
@@ -79,13 +79,13 @@ echo '{"session_id": "95e9be99", "prompt": "Use the shared Badge."}' | celis pro
 
 ## Rules
 
-A trail's rules are the live decisions with the scope `trail:<id>` (CIP-10, "Scope"). Each is one
+A trail's rules are the live decisions with the scope `trail:<id>` (CIP-01, "Scope"). Each is one
 sentence a check can fail.
 
 **Rules**
 
 - A reader MUST count a decision as a rule of a trail only when its scope names that trail.
-- `done` on an ask MUST end its review by asking for rules (CIP-12, "Reviewing").
+- `done` on an ask MUST end its review by asking for rules (CIP-03, "Reviewing").
 
 **Examples**
 
@@ -126,7 +126,7 @@ celis tree --all [--full]         every trail in the store, by day
 
 **Rules**
 
-- `tree` MUST take a step id or a start of it, as CIP-11 "Output and errors" states. It MUST
+- `tree` MUST take a step id or a start of it, as CIP-02 "Output and errors" states. It MUST
   refuse an id no step has, with `no-step`.
 - `tree` with no id MUST print each trail of the working folder's project that is active or has a record
   from today, newest first. A day MUST start at midnight, local time.
@@ -138,9 +138,9 @@ celis tree --all [--full]         every trail in the store, by day
   hold `1 step` or `<n> steps` when steps are under it.
 - `tree` MUST print the step with its state and its rules; `--full` adds its proof
   and grade when done. An ask MUST print its trail's rules. Then come the steps under it, oldest first, each followed by its own steps.
-- `tree` MUST mark a done step `✓`, a dropped one `✗`, a working one `◐`, and an open one `○` (CIP-12,
-  "Starting"). A step of an ended trail that is not done or dropped MUST be marked `!`, as `expired`. With `--full`, under a step come the lines of its text after its title (CIP-12, "Steps").
-  Then come the proof and grade of a done step (CIP-12, "Grades"), or a dropped one's reason.
+- `tree` MUST mark a done step `✓`, a dropped one `✗`, a working one `◐`, and an open one `○` (CIP-03,
+  "Starting"). A step of an ended trail that is not done or dropped MUST be marked `!`, as `expired`. With `--full`, under a step come the lines of its text after its title (CIP-03, "Steps").
+  Then come the proof and grade of a done step (CIP-03, "Grades"), or a dropped one's reason.
 - `tree` MUST NOT write a record.
 - `tree` MUST print the short tree, with no line under a step. With `--full`, it MUST
   print the full tree, with the proof, grade and reason lines.
@@ -188,7 +188,7 @@ tree  text  <mark> <id, first 8> <title>   <place>  <state> · <n> steps  <ran> 
               └─ <mark> <id, first 8> <title>   ...
       json  {"trail": {"id", "created_at", "project", "content", "state", "links", "places", "proof", "grade",
             "reason"}}
-            · {"step": {<as CIP-12 "The commands" gives it>, "state": "done | dropped | working | open
+            · {"step": {<as CIP-03 "The commands" gives it>, "state": "done | dropped | working | open
             | expired", "proof", "grade", "reason"}}, one a line
 ```
 
@@ -222,7 +222,7 @@ The list starts with what a new ask of the project must keep: its active trails 
 
 - `past` MUST print the working folder's project's active trails, oldest first, each with its rules.
 - Then it MUST print the live decisions at each `--at` place, then the project's live `project` and `me`
-  decisions (CIP-10, "Reading"). It MUST NOT print a decision at a place unless an `--at` place is at it.
+  decisions (CIP-01, "Reading"). It MUST NOT print a decision at a place unless an `--at` place is at it.
 - Then it MUST print the past work of every project, newest first.
 - Past work MUST be a done ask, or a reached trail. An ask is a step right under a trail.
 - A trail with an ask of its own text MUST NOT count as past work, so the ask stands for it.
@@ -233,7 +233,7 @@ The list starts with what a new ask of the project must keep: its active trails 
 ```
 past           <id, first 8> [<project name>] <its title>[ · <place>]          each active trail
                  rule <id, first 8> <text>                                     each of its rules
-               <a decision, as CIP-11 "Commands" gives it>
+               <a decision, as CIP-02 "Commands" gives it>
                <id, first 8> [<project name>] <its title>[ · <place>] · <grade | state> · <yyyy-mm-dd>
                json  {"trail": {"id", "created_at", "project", "content", "session", "rules": []}}
                      · {"decision": {...}} · {"past": {"id", "created_at", "day", "project", "content",

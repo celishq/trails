@@ -1,11 +1,11 @@
 ---
-cip: 10
+cip: 1
 title: Decisions
 status: draft
 depends: []
 ---
 
-# CIP-10 — Decisions
+# CIP-01 — Decisions
 
 ## The store
 
@@ -16,7 +16,7 @@ machine shares it.
 $CELIS_HOME/trails/
   shared/<created_at>-<id>.json    one record: a step, a done, a steer, a decision
 
-$CELIS_HOME   CIP-11, "Commands"
+$CELIS_HOME   CIP-02, "Commands"
 ```
 
 **Rules**
@@ -59,7 +59,7 @@ three share one store; C reads only the decisions of `shop`.
 phrase    $CELIS_HOME/phrase: 12 BIP-39 words, minted on first use when it does not exist
 account   the key the phrase gives (`celis-nostr`)
 
-celis auth   CIP-11, "Commands"
+celis auth   CIP-02, "Commands"
 ```
 
 **Rules**
@@ -130,7 +130,7 @@ work can live in one store.
 
 ```
 at:<place>        at one place of its project: a file, a file:line, a folder or a URL
-trail:<step id>   in its project, while that trail is active (CIP-14)
+trail:<step id>   in its project, while that trail is active (CIP-04)
 project           in its project; a decision with no `scope` tag
 me                in every project
 ```

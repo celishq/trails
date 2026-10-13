@@ -1,24 +1,24 @@
 ---
-cip: 11
+cip: 2
 title: The command line
 status: draft
-depends: [CIP-10]
+depends: [CIP-01]
 ---
 
-# CIP-11 — The command line
+# CIP-02 — The command line
 
 ## Commands
 
 ```
 celis decide [--scope <scope>] [--replaces <id>] -- <text>
                                                        a decision, in its scope
-celis tree [<id>] [--full] [--all] [--watch]          a trail and its steps; again on each change (CIP-14)
-celis past [--at <place>]...                          this project's trails and decisions, past work (CIP-14)
-celis step add | start | done | drop | edit           the steps of a trail (CIP-12)
-celis prompt                                          a person's prompt, from a hook (CIP-14)
-celis auth login                                      keep the phrase stdin gives (CIP-10)
-celis auth status                                     the account's npub (CIP-10)
-celis auth phrase                                     print the phrase (CIP-10)
+celis tree [<id>] [--full] [--all] [--watch]          a trail and its steps; again on each change (CIP-04)
+celis past [--at <place>]...                          this project's trails and decisions, past work (CIP-04)
+celis step add | start | done | drop | edit           the steps of a trail (CIP-03)
+celis prompt                                          a person's prompt, from a hook (CIP-04)
+celis auth login                                      keep the phrase stdin gives (CIP-01)
+celis auth status                                     the account's npub (CIP-01)
+celis auth phrase                                     print the phrase (CIP-01)
 
 $CELIS_HOME   where celis keeps the phrase and the store
               default: ~/Library/Application Support/Celis
@@ -27,7 +27,7 @@ $CELIS_HOME   where celis keeps the phrase and the store
 **Rules**
 
 - Off macOS, `$CELIS_HOME` MUST default to `~/.local/share/celis`.
-- `decide` MUST write a decision on the working folder's project (CIP-10, "Decisions"), with
+- `decide` MUST write a decision on the working folder's project (CIP-01, "Decisions"), with
   `--scope` and `--replaces` as its tags. With `--scope project`, or no `--scope`, it MUST write no
   `scope` tag.
 - `decide` MUST write the whole id of the trail that `--scope trail:<id>` names.
@@ -124,7 +124,7 @@ Examples
   command that shows or fixes what went wrong.
 - With `--json`, an error MUST be one object on stderr: `{"error": "<name>", "message": "<text>"}`.
 - An error MUST be named `usage`, `no-decision`, `no-trail`, `no-step`, `closed`, `open-steps`,
-  `check-failed` (CIP-12), else `error`.
+  `check-failed` (CIP-03), else `error`.
 
 **Examples**
 

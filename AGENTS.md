@@ -19,7 +19,7 @@
 - On types and members only. No inline comments.
 - A docstring states what the item does, not how or why. Five lines on a type, three on a member, none
   where the name says it.
-- A test cites the spec section it proves: ``(`spec/trails/12-steps.md`, "Section")``.
+- A test cites the spec section it proves: ``(`spec/trails/03-steps.md`, "Section")``.
 
 ## Tests
 

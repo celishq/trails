@@ -1,4 +1,4 @@
-//! CIP-12, "The commands": `--under`, and a step with open steps under it.
+//! CIP-03, "The commands": `--under`, and a step with open steps under it.
 
 mod support;
 
@@ -9,7 +9,7 @@ fn records(repo: &Repo) -> usize {
 }
 
 /// `add` refuses an `--under` no step has with `no-step`, and a closed one with `closed`
-/// (`spec/trails/12-steps.md`, "The commands").
+/// (`spec/trails/03-steps.md`, "The commands").
 #[test]
 fn add_refuses_an_unknown_or_closed_under() {
     let repo = Repo::new();
@@ -28,7 +28,7 @@ fn add_refuses_an_unknown_or_closed_under() {
 }
 
 /// `add` carries the whole id of `--under`, and the JSON of a step gives its `under` and `replaces` as
-/// `links` (`spec/trails/12-steps.md`, "The commands").
+/// `links` (`spec/trails/03-steps.md`, "The commands").
 #[test]
 fn add_carries_the_whole_id_of_under_and_links_it() {
     let repo = Repo::new();
@@ -52,7 +52,7 @@ fn add_carries_the_whole_id_of_under_and_links_it() {
 }
 
 /// `done` refuses a step with an open step under it, with `open-steps`, and writes nothing
-/// (`spec/trails/12-steps.md`, "The commands").
+/// (`spec/trails/03-steps.md`, "The commands").
 #[test]
 fn done_refuses_a_step_with_an_open_step_under_it() {
     let repo = Repo::new();

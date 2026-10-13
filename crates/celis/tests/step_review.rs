@@ -1,4 +1,4 @@
-//! CIP-12, "Reviewing".
+//! CIP-03, "Reviewing".
 
 mod support;
 
@@ -31,7 +31,7 @@ fn done(repo: &Repo, id: &str, how: &[&str]) -> Vec<String> {
 }
 
 /// `done` as planned prints the step's expect line and the open steps beside it, then asks for the
-/// next step under its `under` (`spec/trails/12-steps.md`, "Reviewing").
+/// next step under its `under` (`spec/trails/03-steps.md`, "Reviewing").
 #[test]
 fn done_as_planned_reviews_the_step_and_names_the_next_move() {
     let repo = Repo::new();
@@ -55,7 +55,7 @@ fn done_as_planned_reviews_the_step_and_names_the_next_move() {
 }
 
 /// `done --changed` prints what changed, and asks to reshape the plan before the next step
-/// (`spec/trails/12-steps.md`, "Reviewing").
+/// (`spec/trails/03-steps.md`, "Reviewing").
 #[test]
 fn done_changed_asks_to_reshape_the_plan() {
     let repo = Repo::new();
@@ -73,7 +73,7 @@ fn done_changed_asks_to_reshape_the_plan() {
     );
 }
 
-/// A trail's review names no next move (`spec/trails/12-steps.md`, "Reviewing").
+/// A trail's review names no next move (`spec/trails/03-steps.md`, "Reviewing").
 #[test]
 fn a_trails_review_names_no_next_move() {
     let repo = Repo::new();
@@ -89,7 +89,7 @@ fn a_trails_review_names_no_next_move() {
 
 /// `done` on an ask reviews the steps under it: those planned before the work began, those added,
 /// dropped and changed, and the person's prompts since the ask; then it asks for rules
-/// (`spec/trails/12-steps.md`, "Reviewing").
+/// (`spec/trails/03-steps.md`, "Reviewing").
 #[test]
 fn done_on_an_ask_reviews_its_plan_and_asks_for_rules() {
     let repo = Repo::new();

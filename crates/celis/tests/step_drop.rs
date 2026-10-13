@@ -1,11 +1,11 @@
-//! CIP-12, "Dropping".
+//! CIP-03, "Dropping".
 
 mod support;
 
 use support::{add, cli, err, finish, objects, out, refusal, Repo};
 
 /// `drop` closes the step and every open step under it, and a reader leaves them out of `read`
-/// (`spec/trails/12-steps.md`, "Dropping").
+/// (`spec/trails/03-steps.md`, "Dropping").
 #[test]
 fn drop_closes_the_step_and_the_open_steps_under_it() {
     let repo = Repo::new();
@@ -34,7 +34,7 @@ fn drop_closes_the_step_and_the_open_steps_under_it() {
 }
 
 /// A dropped trail has the state `dropped`; `tree` marks a dropped step `✗` with its reason under it, and
-/// gives it no grade (`spec/trails/14-trails.md`, "The commands").
+/// gives it no grade (`spec/trails/04-trails.md`, "The commands").
 #[test]
 fn tree_marks_a_dropped_step_with_its_reason_and_no_grade() {
     let repo = Repo::new();
@@ -60,7 +60,7 @@ fn tree_marks_a_dropped_step_with_its_reason_and_no_grade() {
 }
 
 /// A drop with no reason is a usage error, and `drop` refuses an unknown step with `no-step` and a closed
-/// one with `closed` (`spec/trails/12-steps.md`, "The commands").
+/// one with `closed` (`spec/trails/03-steps.md`, "The commands").
 #[test]
 fn drop_refuses_an_empty_reason_and_unknown_and_closed_steps() {
     let repo = Repo::new();
@@ -91,7 +91,7 @@ fn drop_refuses_an_empty_reason_and_unknown_and_closed_steps() {
 }
 
 /// `add --replaces` writes a step in the old step's place that names it, and drops the old step and the
-/// open steps under it as replaced; a trail is not replaced (`spec/trails/12-steps.md`, "Dropping").
+/// open steps under it as replaced; a trail is not replaced (`spec/trails/03-steps.md`, "Dropping").
 #[test]
 fn a_step_that_replaces_another_drops_it() {
     let repo = Repo::new();
