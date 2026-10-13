@@ -1,72 +1,91 @@
 # celis trails
 
-Trails for coding agents. Every record is a [nostr](https://nostr.com) note that your account signs.
+```
+                   /\                                 /\
+          /\      /::\         /\        /\          /::\
+         /::\    /::::\       /::\      /::\    /\  /::::\        |>
+        /::::\  /::::::\     /::::\    /::::\  /::\/::::::\       |
+  _____/::::::\/::::::::\___/::::::\__/::::::\/:::/::::::::\   .--+--.
+                                                              /+++++++\
+         ______   ______   <-- this sign was left            /+++++++++\
+        /  x   | |  |>  \      by the agents before you     /+++++++++++\
+        \______| |______/             |>                 .-'+++++++++++++'-.
+               | |                   o|                 /+++++++++++++++++++\
+  .-.   .-.    | |                   ▮                 /+++++++++++++++++++++\
+ |RIP| |RIP| . |_| ................ / \.............../+++++++++++++++++++++++\
+ ,      ,      ,             ,             ,             ,             ,
+```
+
+Celis is an executable binary and a plugin for AI agents that gives them "experience". During the work agents write down
+what worked, what didn't and why, so the next agent takes the good roads and avoids the traps.
 
 ## How it works
 
-A big task fails when an agent holds all of it at once. celis splits it into a trail:
+Your agent doesn't plan the whole job up front. It finds its way one step at a time, like a map app that
+tries the most promising road first.
 
-- **A trail is one task, in your words.** The agent breaks it into steps by their logical parts, from the
-  big shapes of the work down to one small action at a time.
-- **A step closes with proof.** The agent marks it done with a result that a person can check, or drops it
-  with a reason.
-- **A decision keeps what the agent learned.** "The tests need `SHELF_OFFLINE=1`" goes on the file it is
-  about, so the next agent at that file reads it first.
-- **Later work starts from past work.** At each new task, the agent gets the trails like it from every
-  project on your machine. It uses again the steps and rules that worked, and does not learn them twice.
+```
+Task: seniors pay 20% less
+├─ ✓ Find where prices are set
+├─ ◐ Change the price rule                     ← least sure about this part: break it down
+│  ├─ ✗ Change the price in the cart              gave up: the cart doesn't know the age
+│  ├─ ✓ Write a test: a senior pays 80%           proof: it failed before, now it passes
+│  │                                              lesson: tests need SHELF_OFFLINE=1
+│  └─ ○ Use the rule in prices.py              ← the next step, and only the next one
+└─ ○ Show the senior price on the page         ← not broken down yet
 
-You see the trail as it grows with `celis tree`. The contract is in [`spec/trails`](spec/trails).
+✓ done   ◐ working on it   ○ to do   ✗ dropped
+```
+
+1. **Start with the big picture.** The agent splits the task into a few big parts. It picks the part it's
+   least sure about, or the one the others depend on, and breaks only that part into smaller pieces.
+2. **Take one step at a time.** The agent does one small step and checks that it worked as expected. Only
+   then does it pick the next one. If a road leads nowhere, it turns back and tries another.
+3. **Show proof.** A step counts as done only with proof you can check, like a test that now passes.
+4. **Write down the lessons.** When a road fails, the agent notes why. When something wastes time, it
+   notes the trap. The next agent that works on the same file reads these notes first.
+5. **Reuse what worked.** celis remembers how each task went: how long it took, and how often you had to
+   correct the agent. Before a new task, the agent looks at similar past tasks from all your projects and
+   follows the roads that went best.
+
+```
+New task: students pay 10% less
+
+Similar past tasks:
+  ✓ shop   seniors pay 20% less     40 min · corrected 0 times   ← follow this road
+  ✓ cafe   happy hour prices        3 h    · corrected 4 times
+
+Lessons for prices.py:
+  • tests need SHELF_OFFLINE=1
+  • the cart doesn't know the age: change the price in prices.py
+```
+
+Everything is saved as [nostr](https://nostr.com) notes, signed with your own key.
 
 ## Install
+
+**1. Install `celis`:**
 
 ```bash
 curl -fsSL https://celis.ai/install.sh | sh
 ```
 
-Or build it from this checkout:
+**2. Add the plugin to your agent:**
 
-```bash
-make install-cli   # put `celis` in ~/.local/bin
-```
+| Agent       | Install                                                                         | Then                                                                              |
+| ----------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Claude Code | `/plugin marketplace add celishq/trails`<br>`/plugin install celis@celis`       | —                                                                                 |
+| Codex       | `codex plugin marketplace add celishq/trails`<br>`codex plugin add celis@celis` | Trust its hooks with `/hooks`.                                                    |
+| Cursor      | `cursor-agent plugin marketplace add https://github.com/celishq/trails`         | Install `celis` from `/plugins`. Cursor doesn't remind the agent on each message. |
+| Gemini CLI  | `gemini extensions install https://github.com/celishq/trails`                   | —                                                                                 |
 
-## Use it in Claude Code
+**3. Give your agent a task.** When the task changes files, the agent keeps its steps in celis. Run
+`celis tree` in a second terminal to watch them as the agent works.
 
-The plugin needs `celis` on your PATH. Load it for one session:
+## Contributing
 
-```bash
-claude --plugin-dir ~/path/to/celis-trails/plugins/celis
-```
-
-Or install it for every session:
-
-```
-/plugin marketplace add celishq/trails
-/plugin install celis@celis
-```
-
-## Use it in other agents
-
-Each agent reads its own manifest in this repo, and runs the same hooks. Each needs `celis` on your PATH.
-
-- Codex: `codex plugin marketplace add celishq/trails`, then `codex plugin add celis@celis`. Trust its
-  hooks with `/hooks`.
-- Cursor: `cursor-agent plugin marketplace add https://github.com/celishq/trails`, then install `celis`
-  from `/plugins`. Or load it for one session with `cursor-agent --plugin-dir
-  ~/path/to/celis-trails/plugins/celis`. Cursor gives the agent no note on each prompt.
-- Gemini CLI: `gemini extensions install https://github.com/celishq/trails`.
-
-Give the agent a task. It keeps a trail when the task changes files. Run `celis tree --watch` in a second
-terminal to see the trail while the agent works.
-
-## Develop
-
-```bash
-make verify   # fmt, clippy and the tests — what CI runs
-make fmt      # write the formatting that verify checks
-```
-
-Read [CONTRIBUTING.md](CONTRIBUTING.md) before you open a pull request.
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-MIT
+[MIT](LICENSE)

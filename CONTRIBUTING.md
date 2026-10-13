@@ -37,9 +37,13 @@ The conventions are in [`AGENTS.md`](AGENTS.md). They apply to people and agents
 ## Verify
 
 ```bash
-make verify   # fmt, clippy -D warnings, and the tests — what CI runs
-make fmt      # write the formatting that verify checks
+make verify        # fmt, clippy -D warnings, and the tests — what CI runs
+make fmt           # write the formatting that verify checks
+make install-cli   # build `celis` from this checkout into ~/.local/bin
 ```
+
+To try the plugin from this checkout for one session, run `claude --plugin-dir plugins/celis` or
+`cursor-agent --plugin-dir plugins/celis`.
 
 ## Open a pull request
 
