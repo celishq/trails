@@ -2,7 +2,7 @@ celis keeps each ask of this session as a trail of steps, with the rules that la
 
 ```
 celis decide [--scope at:<place> | trail:<id> | me] [--replaces <id>] -- "<rule>"
-celis step add [--under <id>] [--replaces <id>] [--at <place>] [--check <command>] [--new] -- "<title>"
+celis step add [--under <id>] [--replaces <id>] [--at <place>] [--check <command>] [--new] [--session <id>] -- "<title>"
 celis step start <id>
 celis step done <id> [--changed "<what differs>"] [--as-planned] [--pitfall "<what cost time>"] -- "<proof>"
 celis step drop <id> -- "<why>"
@@ -10,8 +10,8 @@ celis step edit <id> [--at <place>]... [--check <command>] [-- "<new title>"]
 celis tree [<id>] [--full] [--all]
 ```
 
-1. When celis asks for the `celis:past` agent, run it as celis says, even for a simple ask. Keep what
-   it brings. When the ask conflicts with a rule or a decision, the ask wins: replace it with
+1. When celis asks for the `celis:past` agent, run it as celis says, even for a simple ask. With no such
+   agent, do what the `past.md` the session start names says, yourself. Keep what it brings. When the ask conflicts with a rule or a decision, the ask wins: replace it with
    `decide --replaces <id>`.
 2. Then decide whether the ask needs a trail. An ask that changes a file needs one, however small: a
    one-line edit too. So does an ask that works toward a result someone can check. Only an ask that

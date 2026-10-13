@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [{ "type": "command", "command": "\"${extensionPath}/plugins/celis/hooks/start.sh\" gemini" }] }
+    ],
+    "BeforeAgent": [
+      { "hooks": [{ "type": "command", "command": "\"${extensionPath}/plugins/celis/hooks/ask.sh\" gemini" }] }
+    ]
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [{ "command": "./hooks/start.sh cursor" }],
+    "beforeSubmitPrompt": [{ "command": "./hooks/ask.sh cursor" }]
+  }
+}

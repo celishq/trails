@@ -296,3 +296,57 @@ fn a_prompt_with_no_open_trail_asks_for_the_past_agent() {
     assert!(!said.contains("SHELF_OFFLINE"), "{said}");
     assert!(marks(&repo, "prompt").is_empty());
 }
+
+/// The steps `tree <trail>` shows.
+fn under(repo: &Repo, trail: &str) -> Vec<String> {
+    objects(repo, &["tree", &trail[..8]])
+        .iter()
+        .filter_map(|o| o["step"]["id"].as_str().map(str::to_string))
+        .collect()
+}
+
+/// `step add` takes its session from `--session`, else from the first set variable of
+/// `CLAUDE_CODE_SESSION_ID`, `CODEX_THREAD_ID` and `CELIS_SESSION_ID` (`spec/trails/14-trails.md`,
+/// "Sessions").
+#[test]
+fn a_session_comes_from_the_flag_else_the_first_set_variable() {
+    let repo = Repo::new();
+    let add = |env: &[(&str, &str)], args: &[&str]| {
+        let args = [&["step", "add"], args, &["--", "a step"]].concat();
+        let o = repo.run(&repo.path(), &args, env, "");
+        assert!(o.status.success(), "{}", err(&o));
+        out(&o).lines().next().unwrap().to_string()
+    };
+    let trail = ids(&repo, Some("c1"), "the trail").remove(1);
+    let steps = [
+        add(&[], &["--session", "c1"]),
+        add(&[("CODEX_THREAD_ID", "c1")], &[]),
+        add(&[("CELIS_SESSION_ID", "c1")], &[]),
+        add(&[("CELIS_SESSION_ID", "c9")], &["--session", "c1"]),
+        add(
+            &[("CLAUDE_CODE_SESSION_ID", "c1"), ("CODEX_THREAD_ID", "c9")],
+            &[],
+        ),
+    ];
+    let found = under(&repo, &trail);
+    for step in steps {
+        assert!(found.contains(&step), "{step} not in {found:?}");
+    }
+}
+
+/// `prompt` takes the session from `conversation_id` when the hook has one, else from `session_id`
+/// (`spec/trails/14-trails.md`, "Sessions").
+#[test]
+fn prompt_takes_the_conversation_id_first() {
+    let repo = Repo::new();
+    let trail = start(&repo, "c1", "the trail");
+    hook(
+        &repo,
+        "prompt",
+        serde_json::json!({"conversation_id": "c1", "session_id": "c9", "prompt": "make it blue"}),
+    );
+    assert_eq!(
+        marks(&repo, "prompt"),
+        [(trail, "make it blue".to_string())]
+    );
+}

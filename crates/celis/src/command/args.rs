@@ -21,6 +21,7 @@ pub(crate) struct Args {
     pub check: Option<String>,
     pub pitfall: Option<String>,
     pub changed: Option<String>,
+    pub session: Option<String>,
 }
 
 impl Args {
@@ -56,6 +57,7 @@ impl Args {
                 "--check" => parsed.check = Some(value(arg, rest.next())?),
                 "--pitfall" => parsed.pitfall = Some(value(arg, rest.next())?),
                 "--changed" => parsed.changed = Some(value(arg, rest.next())?),
+                "--session" => parsed.session = Some(value(arg, rest.next())?),
                 flag if flag.starts_with("--") => {
                     bad.get_or_insert(Failure::usage(format!("{flag} is not a flag")));
                 }
