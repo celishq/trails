@@ -255,31 +255,27 @@ celis past --at shelf/prices.py
 
 ## Watching
 
-`tree --watch` shows the trails while the agents work on them, so the person sees each step start and
-close.
-
-```
-celis tree [<step id>] [--all] [--full] --watch   the tree, printed again on each change to the store
-```
+On a terminal, `tree` shows the trails while the agents work on them, so the person sees each step start
+and close.
 
 **Rules**
 
-- On a terminal, `tree` with no `--json` MUST watch as `tree --watch` does. Else it MUST print once.
-- `tree --watch` MUST print what `tree` with the same words prints. It MUST refuse an id no step has,
-  with `no-step`, also with no store.
+- On a terminal, `tree` with no `--json` MUST watch. Else it MUST print once. `tree` MUST NOT take a
+  `--watch` flag.
+- A watch MUST print what `tree` with the same words prints off a terminal. It MUST refuse an id no step
+  has, with `no-step`, also with no store.
 - With no id and no trail to print, it MUST print what `tree` prints.
-- On a terminal, it MUST print the tree again as soon as the terminal's width changes. It MUST print
-  it again within one second after a time it shows changes.
+- It MUST print the tree again as soon as the terminal's width changes. It MUST print it again within
+  one second after a time it shows changes.
 - Between two trees, it MUST sleep until a record lands, a time it shows changes, or the width
   changes. With no time that runs, it MUST NOT wake on a timer.
 - It MUST print the tree again within one second after a record lands in the store, and only when
   the tree changed.
-- On a terminal, it MUST clear the screen and its scrollback, and print each tree from the top
-  left. Else it MUST print an empty line between two trees.
+- It MUST clear the screen and its scrollback, and print each tree from the top left.
 - It MUST run until it is stopped, and MUST NOT write a record.
 
 **Examples**
 
 ```
-celis tree 3fa2c1d0 --watch
+celis tree 3fa2c1d0
 ```

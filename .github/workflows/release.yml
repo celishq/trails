@@ -3,12 +3,12 @@ name: Release
 # Builds the `celis` command line for macOS and Linux, and puts every archive on the GitHub release of the
 # tag. celis.ai/install.sh downloads them. A last job installs the release on clean runners.
 #
-# A `v1.2.3` tag publishes version 1.2.3, which each build reads from `CELIS_VERSION`; the repo says
-# 0.0.0. A manual run builds as 0.0.0, and publishes nothing.
+# A GitHub release published on a `v1.2.3` tag gets the archives of version 1.2.3, which each build reads
+# from `CELIS_VERSION`; the repo says 0.0.0. A manual run builds as 0.0.0, and publishes nothing.
 
 on:
-  push:
-    tags: ["v*"]
+  release:
+    types: [published]
   workflow_dispatch:
 
 concurrency:
@@ -115,8 +115,7 @@ jobs:
         working-directory: dist
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ needs.version.outputs.version }}
-        run: gh release create "$GITHUB_REF_NAME" * --repo "$GITHUB_REPOSITORY" --title "celis $VERSION" --verify-tag
+        run: gh release upload "$GITHUB_REF_NAME" * --repo "$GITHUB_REPOSITORY" --clobber
 
   smoke:
     name: Install on ${{ matrix.runner }}

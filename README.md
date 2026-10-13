@@ -1,17 +1,18 @@
-# celis trails
+# Celis Trails
 
 ```
                    /\                                 /\
           /\      /::\         /\        /\          /::\
-         /::\    /::::\       /::\      /::\    /\  /::::\        |>
-        /::::\  /::::::\     /::::\    /::::\  /::\/::::::\       |
-  _____/::::::\/::::::::\___/::::::\__/::::::\/:::/::::::::\   .--+--.
-                                                              /+++++++\
-         ______   ______                                     /+++++++++\
-        /  x   | |  |>  \                                   /+++++++++++\
-        \______| |______/                                .-'+++++++++++++'-.
-      dead end | | next step                             /+++++++++++++++++\
-   x_x         |/|/                                             //
+         /::\    /::::\       /::\      /::\    /\  /::::\
+        /::::\  /::::::\     /::::\    /::::\  /::\/::::::\      |>
+  _____/::::::\/::::::::\___/::::::\__/::::::\/:::/::::::::\     |
+                                                              .--+--.
+         ______   ______                                     /+++++++\
+        /  x   | |  |>  \                                   /+++++++++\
+        \______| |______/                                  /+++++++++++\
+      dead end | | next step                            .-'+++++++++++++'-.
+               |/|/                                     /+++++++++++++++++\
+   x_x                                                          //
   |RIP|  x_x                       •_•|>                       //
  .......|RIP|.......................O.|.......................//...............
  ,      ,      ,      ,      ,      ,      ,      ,      ,      ,      ,      ,
@@ -36,7 +37,7 @@ Thus, the smallest logical unit is not the agentic turn, but a single step. This
 ### For example
 
 ```
-Task: seniors should be paid 20% less
+Task: seniors pay 20% less
 ├─ ✓ Find where prices are set
 ├─ ◐ Change the price rule                     ← least sure about this part: break it down
 │  ├─ ✗ Change the price in the cart              gave up: the cart doesn't know the age

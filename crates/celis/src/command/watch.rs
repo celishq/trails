@@ -1,11 +1,11 @@
-//! `celis tree --watch`: the tree, printed again each time the store changes.
+//! `celis tree` on a terminal: the tree, printed again each time the store changes.
 
 use super::tree::EMPTY;
 use super::{Args, Command};
 use celis_trails::Failure;
 use notify::{RecursiveMode, Watcher};
 use std::io::Read;
-use std::io::{IsTerminal, Write};
+use std::io::Write;
 use std::os::fd::FromRawFd;
 use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::mpsc::{channel, RecvTimeoutError, Sender};
@@ -16,15 +16,12 @@ impl Command {
     /// the terminal's width changes, and sleeps between. With no store, it writes nothing and waits for
     /// one. Runs until it is stopped.
     pub(super) fn watch(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
-        let terminal = std::io::stdout().is_terminal();
         let mut shown = String::new();
         if !self.held()? {
             if let Some(id) = args.words.get(1) {
                 return Err(Failure::no_step(id));
             }
-            if !args.json {
-                show(out, &format!("{EMPTY}\n"), &mut shown, terminal)?;
-            }
+            show(out, &format!("{EMPTY}\n"), &mut shown)?;
             while !self.held()? {
                 std::thread::sleep(Duration::from_millis(250));
             }
@@ -51,10 +48,10 @@ impl Command {
         loop {
             trails.now = super::now();
             let (mut tree, next) = self.frame(&trails, args, width)?;
-            if tree.is_empty() && args.words.len() < 2 && !args.json {
+            if tree.is_empty() && args.words.len() < 2 {
                 tree = format!("{EMPTY}\n");
             }
-            show(out, &tree, &mut shown, terminal)?;
+            show(out, &tree, &mut shown)?;
             let wake = match next {
                 Some(at) => events.recv_timeout(until(at)),
                 None => events.recv().map_err(|_| RecvTimeoutError::Disconnected),
@@ -76,23 +73,12 @@ impl Command {
     }
 }
 
-/// Prints `tree` when it is not empty and not what `shown` holds: on a terminal from the top left of a
-/// cleared screen, else after an empty line.
-fn show(
-    out: &mut dyn Write,
-    tree: &str,
-    shown: &mut String,
-    terminal: bool,
-) -> Result<(), Failure> {
+/// Prints `tree` from the top left of a cleared screen, when it is not empty and not what `shown` holds.
+fn show(out: &mut dyn Write, tree: &str, shown: &mut String) -> Result<(), Failure> {
     if tree.is_empty() || tree == shown {
         return Ok(());
     }
-    let gap = match (terminal, shown.is_empty()) {
-        (true, _) => "\x1b[H\x1b[2J\x1b[3J",
-        (false, true) => "",
-        (false, false) => "\n",
-    };
-    write!(out, "{gap}{tree}")
+    write!(out, "\x1b[H\x1b[2J\x1b[3J{tree}")
         .and_then(|_| out.flush())
         .map_err(anyhow::Error::from)?;
     *shown = tree.to_string();
@@ -106,7 +92,7 @@ fn until(at: u64) -> Duration {
         .unwrap_or_default()
 }
 
-/// What wakes `tree --watch` before its next tick.
+/// What wakes the watch before its next tick.
 enum Wake {
     Record,
     Resize,
