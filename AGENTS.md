@@ -32,5 +32,5 @@
 make verify   # fmt, clippy -D warnings, and the tests
 ```
 
-A release is a `v<version>` tag. The repo keeps `crates/celis` and `plugin.json` at `0.0.0`; the
+A release is a GitHub release on a `v<version>` tag. The repo keeps `crates/celis` and `plugin.json` at `0.0.0`; the
 release passes the version in through `CELIS_VERSION`.
