@@ -297,6 +297,41 @@ fn a_prompt_with_no_open_trail_asks_for_the_past_agent() {
     assert!(marks(&repo, "prompt").is_empty());
 }
 
+/// `prompt` asks for the past agent once in a session, and again after a compaction's `SessionStart`
+/// (`spec/trails/14-trails.md`, "Sessions").
+#[test]
+fn a_session_asks_for_the_past_agent_once_until_a_compaction() {
+    let repo = Repo::new();
+    let o = repo.run(
+        &repo.path(),
+        &["decide", "--", "When you test: set SHELF_OFFLINE=1."],
+        &[],
+        "",
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let hook = |json: serde_json::Value| {
+        let o = repo.run(&repo.path(), &["prompt"], &[], &json.to_string());
+        assert!(o.status.success(), "{}", err(&o));
+        assert_eq!(out(&o), "");
+        err(&o)
+    };
+    let ask = serde_json::json!({"session_id": "s9", "prompt": "Build a Vendors table"});
+    assert!(hook(ask.clone()).contains("celis:past agent"));
+    assert_eq!(hook(ask.clone()), "");
+    let other = serde_json::json!({"session_id": "s8", "prompt": "Build a Vendors table"});
+    assert!(hook(other).contains("celis:past agent"));
+    assert_eq!(
+        hook(serde_json::json!({"session_id": "s9", "source": "startup"})),
+        ""
+    );
+    assert_eq!(hook(ask.clone()), "");
+    assert_eq!(
+        hook(serde_json::json!({"session_id": "s9", "source": "compact"})),
+        ""
+    );
+    assert!(hook(ask).contains("celis:past agent"));
+}
+
 /// The steps `tree <trail>` shows.
 fn under(repo: &Repo, trail: &str) -> Vec<String> {
     objects(repo, &["tree", &trail[..8]])

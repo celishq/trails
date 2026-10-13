@@ -117,15 +117,15 @@ fn watch_prints_the_tree_again_when_it_changes() {
     assert_eq!(watch.trees(Duration::from_millis(1500)).len(), shown);
 }
 
-/// `tree --watch` with no id says no trail is there and how to start one, then prints what `tree` prints:
-/// the project's trails, not another project's (`spec/trails/14-trails.md`, "Watching").
+/// `tree --watch` with no id says no trail is there and names `tree --all`, then prints what `tree`
+/// prints: the trails of every project (`spec/trails/14-trails.md`, "Watching").
 #[test]
 fn tree_watch_with_no_id_prints_what_tree_prints() {
     let repo = Repo::new();
     let mut watch = Watch::start(&repo, &[]);
-    watch.until("No trail today");
+    watch.until("No active trails");
     assert!(
-        watch.seen.join("\n").contains("celis plugin"),
+        watch.seen.join("\n").contains("celis tree --all"),
         "{:?}",
         watch.seen
     );
@@ -134,13 +134,9 @@ fn tree_watch_with_no_id_prints_what_tree_prints() {
     let shop = repo.other("shop");
     let o = repo.run(&shop, &["step", "add", "--", "the shop trail"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
+    watch.until("the shop trail");
     finish(&repo, &first[..8]);
     watch.until(&format!("✓ {}", &first[..8]));
-    let last = watch
-        .trees(Duration::from_millis(200))
-        .pop()
-        .unwrap_or_default();
-    assert!(!watch.seen.join("\n").contains("the shop trail"), "{last}");
 }
 
 /// On a home with no store and no phrase, `tree --watch` shows the empty state, writes nothing, and shows the
@@ -150,7 +146,7 @@ fn watch_on_an_empty_home_writes_nothing_and_waits_for_the_store() {
     let repo = Repo::new();
     std::fs::remove_file(repo.home().join("phrase")).unwrap();
     let mut watch = Watch::start(&repo, &[]);
-    watch.until("No trail today");
+    watch.until("No active trails");
     assert!(!repo.home().join("phrase").exists());
     assert!(!repo.store().exists());
     let trail = add(&repo, &["--", "the first trail"]);
@@ -169,7 +165,7 @@ fn watch_refuses_an_unknown_id() {
     );
 }
 
-/// The text `celis tree --watch <args>` writes to a terminal, read until it holds each of `texts` in turn; after
+/// The text `celis tree <args>` writes to a terminal, read until it holds each of `texts` in turn; after
 /// the first, the terminal turns `resize` columns wide and signals it, when given.
 fn on_terminal(repo: &Repo, args: &[&str], texts: &[&str], resize: Option<u16>) -> String {
     use std::io::Read;
@@ -187,7 +183,7 @@ fn on_terminal(repo: &Repo, args: &[&str], texts: &[&str], resize: Option<u16>) 
     assert_eq!(opened, 0, "openpty");
     let side = |fd| unsafe { Stdio::from_raw_fd(libc::dup(fd)) };
     let mut child = Command::new(env!("CARGO_BIN_EXE_celis"))
-        .args(["tree", "--watch"])
+        .arg("tree")
         .args(args)
         .current_dir(repo.path())
         .env_clear()
@@ -240,9 +236,16 @@ fn on_terminal(repo: &Repo, args: &[&str], texts: &[&str], resize: Option<u16>) 
 }
 
 /// On a terminal, `tree --watch` clears the screen and its scrollback, and prints each tree from the top left,
-/// with no empty line between two trees (`spec/trails/14-trails.md`, "Watching").
+/// with no empty line between two trees; `tree` with no `--watch` does the same (`spec/trails/14-trails.md`,
+/// "Watching").
 #[test]
 fn watch_on_a_terminal_clears_the_screen_before_each_tree() {
+    for watch in [&["--watch"][..], &[]] {
+        clears_the_screen_before_each_tree(watch);
+    }
+}
+
+fn clears_the_screen_before_each_tree(watch: &[&str]) {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the trail"]);
     let adder = std::thread::spawn({
@@ -258,7 +261,8 @@ fn watch_on_a_terminal_clears_the_screen_before_each_tree() {
             assert!(o.status.success());
         }
     });
-    let shown = on_terminal(&repo, &[&trail[..8]], &["the trail", "the step"], None);
+    let args = [&[&trail[..8]][..], watch].concat();
+    let shown = on_terminal(&repo, &args, &["the trail", "the step"], None);
     adder.join().unwrap();
     let clear = "\x1b[H\x1b[2J\x1b[3J";
     let trees: Vec<&str> = shown.split(clear).skip(1).collect();
@@ -281,7 +285,12 @@ fn watch_on_a_terminal_prints_the_tree_again_when_its_width_changes() {
         - 7_200;
     let text = "a trail whose words run well past thirty characters";
     let trail = support::step_note(&repo, &support::account(), None, text, hours).id;
-    let shown = on_terminal(&repo, &[&trail[..8]], &["thirty characters", "…"], Some(30));
+    let shown = on_terminal(
+        &repo,
+        &[&trail[..8], "--watch"],
+        &["thirty characters", "…"],
+        Some(30),
+    );
     let clear = "\x1b[H\x1b[2J\x1b[3J";
     let trees: Vec<&str> = shown.split(clear).skip(1).collect();
     assert!(trees.len() >= 2, "{shown:?}");
@@ -297,7 +306,7 @@ fn watch_on_a_terminal_prints_the_tree_again_when_its_width_changes() {
 fn watch_on_a_terminal_prints_the_tree_again_as_its_times_change() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the trail"]);
-    let shown = on_terminal(&repo, &[&trail[..8]], &["the trail", "3s"], None);
+    let shown = on_terminal(&repo, &[&trail[..8], "--watch"], &["the trail", "3s"], None);
     let clear = "\x1b[H\x1b[2J\x1b[3J";
     assert!(shown.split(clear).skip(1).count() >= 2, "{shown:?}");
 }

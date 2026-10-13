@@ -6,33 +6,32 @@ use celis_nostr::Note;
 use celis_trails::id::short;
 use celis_trails::trail::grade::{stride, took};
 use celis_trails::trail::steps::LIFE;
-use celis_trails::{Decisions, Failure, Grade, Project, State, Status, Step, Steps, Trails};
+use celis_trails::{Decisions, Failure, Grade, State, Status, Step, Steps, Trails};
 use serde_json::json;
 use std::cell::Cell;
-use std::io::Write;
+use std::io::{IsTerminal, Write};
 
 impl Command {
-    /// Prints the step `args` names with every step under it, or with no id each trail of `project` that
-    /// is active or has a record from today, newest first; with `--watch`, again on each change. Writes
-    /// no record.
-    pub(super) fn tree(
-        &self,
-        args: &Args,
-        out: &mut dyn Write,
-        project: &Project,
-    ) -> Result<(), Failure> {
+    /// Prints the step `args` names with every step under it, or with no id each trail of every project
+    /// that is active or has a record from today, newest first, else `EMPTY`; with `--watch`, or on a
+    /// terminal with no `--json`, again on each change. Writes no record.
+    pub(super) fn tree(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let id = args.words.get(1);
         if args.all && id.is_some() {
             return Err(Failure::usage("tree takes an id or --all, not both"));
         }
-        if args.watch {
-            return self.watch(args, out, project);
+        if args.watch || (std::io::stdout().is_terminal() && !args.json) {
+            return self.watch(args, out);
         }
-        if !self.held()? {
-            return id.map_or(Ok(()), |id| Err(Failure::no_step(id)));
-        }
-        let trails = self.trails()?;
-        let (tree, _) = self.frame(&trails, args, project, self.columns())?;
+        let tree = match (self.held()?, id) {
+            (true, _) => self.frame(&self.trails()?, args, self.columns())?.0,
+            (false, Some(id)) => return Err(Failure::no_step(id)),
+            (false, None) => String::new(),
+        };
+        let tree = match tree.is_empty() && id.is_none() && !args.all && !args.json {
+            true => format!("{EMPTY}\n"),
+            false => tree,
+        };
         write!(out, "{tree}").map_err(anyhow::Error::from)?;
         Ok(())
     }
@@ -43,7 +42,6 @@ impl Command {
         &self,
         trails: &Trails,
         args: &Args,
-        project: &Project,
         width: Option<usize>,
     ) -> Result<(String, Option<u64>), Failure> {
         let id = args.words.get(1);
@@ -54,7 +52,7 @@ impl Command {
             (Some(id), _) => vec![steps.find(id)?],
             (None, true) => steps.roots().into_iter().rev().collect(),
             (None, false) => steps
-                .trails(&project.id)
+                .roots()
                 .into_iter()
                 .rev()
                 .filter(|n| steps.state(n) == State::Active || steps.newest(n) >= today)
@@ -67,22 +65,23 @@ impl Command {
             full: args.full,
             fold: id.is_none() && !args.full,
             all: args.all,
+            named: id.is_none(),
             width,
             next: Cell::default(),
         };
         let mut printed = Vec::new();
-        if id.is_none() && !args.all && !args.json && !chosen.is_empty() {
-            super::put(&mut printed, &tree.paint(BOLD, &project.name))?;
-        }
         tree.print(&chosen, "trail", args.json, &mut printed)?;
         let next = tree.next.get();
         Ok((String::from_utf8_lossy(&printed).into_owned(), next))
     }
 }
 
+/// What `tree` with no id prints while it has no trail to print.
+pub(super) const EMPTY: &str = "No active trails. Run `celis tree --all` to see every trail.";
+
 /// The steps and decisions a tree is printed from, and how: in colour; full, with the lines under each
-/// step; fold, with each trail that is not active as one line; all, by day with each trail's project; else
-/// each line cut to `width`. `next` holds the earliest time a time it printed changes.
+/// step; fold, with each trail that is not active as one line; all, by day; named, with each trail's
+/// project; else each line cut to `width`. `next` holds the earliest time a time it printed changes.
 pub(super) struct Tree<'a> {
     pub steps: &'a Steps<'a>,
     pub decisions: &'a Decisions<'a>,
@@ -90,6 +89,7 @@ pub(super) struct Tree<'a> {
     pub full: bool,
     pub fold: bool,
     pub all: bool,
+    pub named: bool,
     pub width: Option<usize>,
     pub next: Cell<Option<u64>>,
 }
@@ -157,7 +157,7 @@ impl Tree<'_> {
             (true, n) => Some(format!("{n} steps")),
         };
         let (mark, colour) = trail_look(state);
-        let project = match self.all {
+        let project = match self.named {
             true => format!("{} ", self.paint(DIM, &step.anchor.name)),
             false => String::new(),
         };

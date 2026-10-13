@@ -3,11 +3,13 @@
 use super::{Args, Command};
 use celis_trails::{Failure, Project, Trails};
 use std::io::{Read, Write};
+use std::path::Path;
 
 impl Command {
     /// Writes a hook's prompt as a steer on the oldest working step of the session's open trail, else on
     /// the trail, signed now; prints its id, and names that step on `err`. With no open trail, writes
-    /// nothing, and names the agent that brings past work on `err`. For a harness message, does neither.
+    /// nothing, and names the agent that brings past work on `err`, once a session. For a harness message,
+    /// does neither. A compaction's `SessionStart` lets the session name the agent again.
     pub(super) fn prompt(
         &self,
         args: &Args,
@@ -20,6 +22,14 @@ impl Command {
             .as_str()
             .or(hook["session_id"].as_str())
             .unwrap_or("");
+        let asked = self
+            .home()?
+            .join("asked")
+            .join(session.replace(['/', '.'], "_"));
+        if !session.is_empty() && hook["source"] == "compact" {
+            let _ = std::fs::remove_file(&asked);
+            return Ok(());
+        }
         let text: String = hook["prompt"]
             .as_str()
             .unwrap_or("")
@@ -39,7 +49,7 @@ impl Command {
         let trails = self.trails()?;
         let steps = trails.steps();
         let Some(trail) = steps.session(&project.id, session) else {
-            return self.recall(&trails, err, project);
+            return self.recall(&trails, err, project, &asked);
         };
         let (record, working) = trails.prompt(&steps, trail, text)?;
         self.id(out, args, &record)?;
@@ -55,13 +65,18 @@ impl Command {
         super::put(err, &line)
     }
 
-    /// Names the agent that brings what `past` prints, when it prints anything.
+    /// Names the agent that brings what `past` prints, when it prints anything and `asked` does not exist;
+    /// then writes `asked`.
     fn recall(
         &self,
         trails: &Trails,
         err: &mut dyn Write,
         project: &Project,
+        asked: &Path,
     ) -> Result<(), Failure> {
+        if asked.exists() {
+            return Ok(());
+        }
         let mut listed = Vec::new();
         self.list(trails, &Args::default(), &mut listed, project)?;
         if listed.is_empty() {
@@ -72,7 +87,12 @@ impl Command {
             "celis: a new ask in this session; before any other tool, run the celis:past agent in the \
              foreground with the ask and the places it may touch, and wait for its answer; it brings this \
              project's active trails and decisions, and the past work like the ask.",
-        )
+        )?;
+        if let Some(folder) = asked.parent() {
+            std::fs::create_dir_all(folder).map_err(anyhow::Error::from)?;
+        }
+        std::fs::write(asked, "").map_err(anyhow::Error::from)?;
+        Ok(())
     }
 }
 

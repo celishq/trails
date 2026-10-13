@@ -1,7 +1,8 @@
 //! `celis tree --watch`: the tree, printed again each time the store changes.
 
+use super::tree::EMPTY;
 use super::{Args, Command};
-use celis_trails::{Failure, Project};
+use celis_trails::Failure;
 use notify::{RecursiveMode, Watcher};
 use std::io::Read;
 use std::io::{IsTerminal, Write};
@@ -14,12 +15,7 @@ impl Command {
     /// Prints the tree `args` names, then prints it again when a record lands, a time it shows changes, or
     /// the terminal's width changes, and sleeps between. With no store, it writes nothing and waits for
     /// one. Runs until it is stopped.
-    pub(super) fn watch(
-        &self,
-        args: &Args,
-        out: &mut dyn Write,
-        project: &Project,
-    ) -> Result<(), Failure> {
+    pub(super) fn watch(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let terminal = std::io::stdout().is_terminal();
         let mut shown = String::new();
         if !self.held()? {
@@ -54,7 +50,7 @@ impl Command {
         let mut width = self.columns();
         loop {
             trails.now = super::now();
-            let (mut tree, next) = self.frame(&trails, args, project, width)?;
+            let (mut tree, next) = self.frame(&trails, args, width)?;
             if tree.is_empty() && args.words.len() < 2 && !args.json {
                 tree = format!("{EMPTY}\n");
             }
@@ -109,9 +105,6 @@ fn until(at: u64) -> Duration {
         .duration_since(std::time::SystemTime::now())
         .unwrap_or_default()
 }
-
-/// What `tree --watch` with no id prints while it has no trail to print.
-const EMPTY: &str = "No trail today. Give your agent a task with the celis plugin on,\nand it shows here as the agent works.";
 
 /// What wakes `tree --watch` before its next tick.
 enum Wake {

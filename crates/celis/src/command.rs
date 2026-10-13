@@ -62,7 +62,7 @@ impl Command {
         match args.words.first().map(String::as_str).unwrap_or("") {
             "step" => self.step(args, out, err, &self.project()),
             "decide" => self.decide(args, out, &self.project()),
-            "tree" => self.tree(args, out, &self.project()),
+            "tree" => self.tree(args, out),
             "past" => self.past(args, out, &self.project()),
             "prompt" => self.prompt(args, out, err, &self.project()),
             "auth" => self.auth(args, out, err),
