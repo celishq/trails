@@ -1,16 +1,21 @@
 # celis trails
 
-Trails for coding agents. A trail is one task broken into steps that agents take and close, with the
-decisions made on the way, each at its place. Later sessions load them, so an agent keeps the rules the
-last one learned. Every record is a nostr note that your account signs.
+Trails for coding agents. Every record is a [nostr](https://nostr.com) note that your account signs.
 
-- `crates/celis` — the `celis` command line.
-- `crates/celis-trails` — the trails and decisions, and the store they live in.
-- `crates/celis-nostr` — the nostr wire: the account from a recovery phrase, signed notes, NIP-44 and
-  NIP-59 encryption, and the relay client.
-- `plugins/celis` — the plugin that gives an agent the trail at the start of each session, for Claude Code,
-  Codex, Cursor and Gemini CLI.
-- `spec/trails` — the contract of the trail, as numbered CIPs.
+## How it works
+
+A big task fails when an agent holds all of it at once. celis splits it into a trail:
+
+- **A trail is one task, in your words.** The agent breaks it into steps by their logical parts, from the
+  big shapes of the work down to one small action at a time.
+- **A step closes with proof.** The agent marks it done with a result that a person can check, or drops it
+  with a reason.
+- **A decision keeps what the agent learned.** "The tests need `SHELF_OFFLINE=1`" goes on the file it is
+  about, so the next agent at that file reads it first.
+- **Later work starts from past work.** At each new task, the agent gets the trails like it from every
+  project on your machine. It uses again the steps and rules that worked, and does not learn them twice.
+
+You see the trail as it grows with `celis tree`. The contract is in [`spec/trails`](spec/trails).
 
 ## Install
 
@@ -59,6 +64,8 @@ terminal to see the trail while the agent works.
 make verify   # fmt, clippy and the tests — what CI runs
 make fmt      # write the formatting that verify checks
 ```
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before you open a pull request.
 
 ## License
 
