@@ -3,5 +3,6 @@
   "version": "0.0.0",
   "description": "The celis trail for agents: your tasks as trails of graded steps, and the decisions made at each place, loaded at the start of each session.",
   "author": { "name": "Celis" },
+  "skills": "./skills/",
   "hooks": "./hooks/hooks-codex.json"
 }

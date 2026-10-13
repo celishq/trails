@@ -102,7 +102,7 @@ fn celis_and_celis_help_print_the_page() {
 #[test]
 fn help_anywhere_prints_the_command_page_its_words_name() {
     let commands = usages();
-    assert_eq!(commands.len(), 12, "{commands:?}");
+    assert_eq!(commands.len(), 14, "{commands:?}");
     for (command, usage) in &commands {
         let mut args: Vec<&str> = command.split(' ').collect();
         args.extend(["4c1d22e0", "--help", "--json"]);

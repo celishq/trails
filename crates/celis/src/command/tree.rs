@@ -540,7 +540,7 @@ fn trail_look(state: State) -> (&'static str, &'static str) {
 }
 
 /// The mark and colour of a step in `status`.
-fn step_look(status: Status) -> (&'static str, &'static str) {
+pub(super) fn step_look(status: Status) -> (&'static str, &'static str) {
     match status {
         Status::Open => ("○", "39"),
         Status::Working => ("◐", "33"),
