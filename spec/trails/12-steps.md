@@ -225,7 +225,7 @@ The store is the only source of steps. A project that keeps `@todo` lines in its
 ## The commands
 
 ```
-celis step add [--under <id>] [--replaces <id>] [--at <place>]... [--check <command>] [--new] -- <text>
+celis step add [--under <id>] [--replaces <id>] [--at <place>]... [--check <command>] [--new] [--session <id>] -- <text>
                                                                leave a step
 celis step start <id>                                         take up a step, and see its decisions
 celis step done <id> [--changed <text>] [--as-planned] [--pitfall <text>] -- <proof>

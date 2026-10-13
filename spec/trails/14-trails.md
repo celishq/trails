@@ -26,11 +26,13 @@ under it, and the steps under those, are its tree.
 
 ## Sessions
 
-A session is one run of an agent. Claude Code names it in `CLAUDE_CODE_SESSION_ID`, and a subagent shares
-it. Many sessions can work on one trail. The hook writes the person's prompts on the session's trail.
+A session is one run of an agent, and a subagent shares it. Claude Code names it in
+`CLAUDE_CODE_SESSION_ID`, and Codex in `CODEX_THREAD_ID`. Other agents give it to their hooks only, so the
+hook names it to the agent, and the agent passes it with `--session`. Many sessions can work on one trail.
+The hook writes the person's prompts on the session's trail.
 
 ```
-["session", "<$CLAUDE_CODE_SESSION_ID>"]     a step's tag, optional: the session that wrote it
+["session", "<session id>"]                  a step's tag, optional: the session that wrote it
 
 prompt kind 1985, a prompt while no step works
 { "kind": 1985, "content": "<the prompt's first line, 200 characters at most>",
@@ -39,7 +41,8 @@ prompt kind 1985, a prompt while no step works
 
 **Rules**
 
-- `step add` MUST write a `session` tag with `$CLAUDE_CODE_SESSION_ID` on each step, when it is set.
+- `step add` MUST write a `session` tag on each step, when it has a session: `--session`, else the first
+  set variable of `CLAUDE_CODE_SESSION_ID`, `CODEX_THREAD_ID` and `CELIS_SESSION_ID`.
 - A trail with a session MUST hold each ask as a step under it, the first ask too. So `step add` MUST write
   the trail, then the ask under it with the same text, and print the ask's id first.
 - A session's open trail MUST be the trail of its newest step, while that trail is not done or dropped.
@@ -47,8 +50,9 @@ prompt kind 1985, a prompt while no step works
   under it.
 - Else, it MUST write a new trail. It MUST NOT join another session's trail without `--under`.
 - With `--new`, `step add` MUST write a new trail.
-- `prompt` MUST read a hook's `{"session_id", "prompt"}` on stdin. While that session has an open trail,
-  it MUST write the prompt on it, and print the record's id. Else it MUST write nothing.
+- `prompt` MUST read a hook's `{"session_id", "prompt"}` on stdin. A `conversation_id` (Cursor) MUST name
+  the session in place of `session_id`. While that session has an open trail, it MUST write the prompt on
+  it, and print the record's id. Else it MUST write nothing.
 - With no open trail, `prompt` MUST print one line on stderr, when `past` prints anything ("The past").
   The line MUST ask to run the `celis:past` agent with the ask before any other tool, and to wait for it.
 - With no open trail and nothing `past` prints, it MUST print nothing.
@@ -69,6 +73,7 @@ CLAUDE_CODE_SESSION_ID=95e9be99 celis step add -- "Now the buttons too."       a
 CLAUDE_CODE_SESSION_ID=95e9be99 celis step add --new -- "Fix the login page."  a second trail
 CLAUDE_CODE_SESSION_ID=4c1d22e0 celis step add -- "Check the colours."        a trail of its own
 CLAUDE_CODE_SESSION_ID=4c1d22e0 celis step add --under 3fa2c1d0 -- "Check the colours."  goes there
+celis step add --session 95e9be99 -- "Now the links."                        a step under its trail
 echo '{"session_id": "95e9be99", "prompt": "Use the shared Badge."}' | celis prompt
 ```
 

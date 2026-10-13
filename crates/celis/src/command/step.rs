@@ -49,7 +49,7 @@ impl Command {
             check: args.check.clone(),
             under: args.under.clone(),
             replaces: args.replaces.clone(),
-            session: self.session(),
+            session: args.session.clone().or_else(|| self.session()),
             new: args.new,
         };
         let written = self.trails()?.add(draft)?;

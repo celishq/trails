@@ -105,12 +105,18 @@ impl Command {
         self.env.get("COLUMNS").and_then(|c| c.parse().ok())
     }
 
-    /// The agent session this run belongs to, from `$CLAUDE_CODE_SESSION_ID`.
+    /// The agent session this run belongs to, from the first set variable of `$CLAUDE_CODE_SESSION_ID`,
+    /// `$CODEX_THREAD_ID` and `$CELIS_SESSION_ID`.
     fn session(&self) -> Option<String> {
-        self.env
-            .get("CLAUDE_CODE_SESSION_ID")
-            .filter(|s| !s.is_empty())
-            .cloned()
+        [
+            "CLAUDE_CODE_SESSION_ID",
+            "CODEX_THREAD_ID",
+            "CELIS_SESSION_ID",
+        ]
+        .iter()
+        .filter_map(|name| self.env.get(*name))
+        .find(|s| !s.is_empty())
+        .cloned()
     }
 
     /// Whether the store exists.

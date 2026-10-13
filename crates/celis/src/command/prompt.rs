@@ -16,7 +16,10 @@ impl Command {
         project: &Project,
     ) -> Result<(), Failure> {
         let hook = hook()?;
-        let session = hook["session_id"].as_str().unwrap_or("");
+        let session = hook["conversation_id"]
+            .as_str()
+            .or(hook["session_id"].as_str())
+            .unwrap_or("");
         let text: String = hook["prompt"]
             .as_str()
             .unwrap_or("")

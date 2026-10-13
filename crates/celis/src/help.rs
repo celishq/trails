@@ -216,7 +216,7 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "step add",
-        usage: &["celis step add [--under <id>] [--replaces <id>] [--at <place>]... [--check <command>] [--new] -- <text>"],
+        usage: &["celis step add [--under <id>] [--replaces <id>] [--at <place>]... [--check <command>] [--new] [--session <id>] -- <text>"],
         summary: "Leave a step. With no --under, it goes under the session's trail, else it starts a trail.",
         args: &[
             ("--under <id>", "the open step it is a part of; optional"),
@@ -224,6 +224,7 @@ pub const VERBS: &[Verb] = &[
             ("--at <place>", "file:line, a URL or any text; zero or more"),
             ("--check <command>", "the command that proves the work; optional"),
             ("--new", "a new trail, not a step of the session's trail; optional"),
+            ("--session <id>", "the session, when the hook names it; optional"),
             ("<text>", "a short title, then the work a stranger can do"),
         ],
         examples: &[

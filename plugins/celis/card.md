@@ -2,7 +2,7 @@ celis keeps each ask of this session as a trail of steps, with the rules that la
 
 ```
 celis decide [--scope at:<place> | trail:<id> | me] [--replaces <id>] -- "<rule>"
-celis step add [--under <id>] [--replaces <id>] [--at <place>] [--check <command>] [--new] -- "<title>"
+celis step add [--under <id>] [--replaces <id>] [--at <place>] [--check <command>] [--new] [--session <id>] -- "<title>"
 celis step start <id>
 celis step done <id> [--changed "<what differs>"] [--as-planned] [--pitfall "<what cost time>"] -- "<proof>"
 celis step drop <id> -- "<why>"
