@@ -15,10 +15,22 @@ json() {
   printf '%s' "$1" | awk 'BEGIN { ORS = "" } { gsub(/\\/, "\\\\"); gsub(/"/, "\\\""); gsub(/\t/, "\\t"); if (NR > 1) print "\\n"; print }'
 }
 
+# The string field $2 of the hook's JSON $1; with `[`, the first string of the list field $2.
+field() {
+  printf '%s' "$1" | sed -n "s/.*\"$2\" *: *$3\"\([^\"]*\)\".*/\1/p" | head -n 1
+}
+
+# The person's project of the hook's JSON $1: its `cwd`, else Cursor's first workspace root.
+project() {
+  dir=$(field "$1" cwd)
+  [ -n "$dir" ] || dir=$(field "$1" workspace_roots '\[ *')
+  printf '%s' "$dir"
+}
+
 # The session of the hook's JSON $1, and where steps.md and past.md are under the plugin root $2.
 names() {
-  id=$(printf '%s' "$1" | sed -n 's/.*"conversation_id" *: *"\([^"]*\)".*/\1/p' | head -n 1)
-  [ -n "$id" ] || id=$(printf '%s' "$1" | sed -n 's/.*"session_id" *: *"\([^"]*\)".*/\1/p' | head -n 1)
+  id=$(field "$1" conversation_id)
+  [ -n "$id" ] || id=$(field "$1" session_id)
   echo "celis session: $id. Pass --session $id to each celis step add."
   echo "steps.md: $2/steps.md"
   echo "past.md: $2/agents/past.md"

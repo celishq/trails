@@ -1,8 +1,6 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
 
 concurrency:
@@ -50,3 +48,32 @@ jobs:
           env -i HOME="$home" PATH=/usr/bin:/bin bash -ic 'celis --version'
           env -i HOME="$home" PATH=/usr/bin:/bin sh -lc 'celis --version'
           test "$(grep -c '.local/bin' "$home/.bashrc")" = 1
+
+  # Installs the plugin the way a person does, with each agent's own CLI, on fresh homes. Cursor installs only
+  # from a signed-in session; `make verify` runs its hooks as its manifest declares.
+  plugins:
+    name: Agent plugin install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install the agent CLIs
+        run: npm install -g @openai/codex@0.162.1 @google/gemini-cli@0.63.0
+      - name: Codex
+        env:
+          CODEX_HOME: ${{ runner.temp }}/codex
+        run: |
+          set -eu
+          mkdir -p "$CODEX_HOME"
+          codex plugin marketplace add "$GITHUB_WORKSPACE"
+          codex plugin add celis@celis
+          codex plugin list | grep -E 'celis@celis +installed, enabled'
+      - name: Gemini CLI
+        env:
+          HOME: ${{ runner.temp }}/gemini
+          GEMINI_CLI_TRUST_WORKSPACE: "true"
+        run: |
+          set -eu
+          mkdir -p "$HOME"
+          gemini extensions validate "$GITHUB_WORKSPACE"
+          gemini extensions install "$GITHUB_WORKSPACE" --consent < /dev/null
+          gemini extensions list 2>&1 | grep -F 'celis (0.0.0)'
