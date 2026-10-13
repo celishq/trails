@@ -220,8 +220,8 @@ fn a_sessions_open_trail_is_the_trail_of_its_newest_step() {
 }
 
 /// `prompt` names the working step of the session's trail on stderr, and asks for a step under it when
-/// the next work does not fit; with no working step, it names none (`spec/trails/14-trails.md`,
-/// "Sessions").
+/// the next work does not fit; with no working step, it names none; either way it ends with the hint to
+/// join a trail (`spec/trails/14-trails.md`, "Sessions").
 #[test]
 fn the_prompt_hook_names_the_working_step() {
     let repo = Repo::new();
@@ -229,23 +229,69 @@ fn the_prompt_hook_names_the_working_step() {
         let json = serde_json::json!({"session_id": "s1", "prompt": prompt}).to_string();
         repo.run(&repo.path(), &["prompt"], &[], &json)
     };
-    start(&repo, "s1", "the trail");
+    let trail = start(&repo, "s1", "the trail");
     let o = hook("first");
     assert!(o.status.success(), "{}", err(&o));
-    assert_eq!(err(&o), "");
+    assert_eq!(err(&o), format!("{}\n", joins(Some(&trail))));
     let step = add(&repo, Some("s1"), "Cache the price list");
     let o = repo.run(&repo.path(), &["step", "start", &step[..8]], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     let o = hook("now make it blue");
     assert!(o.status.success(), "{}", err(&o));
     assert_eq!(
-        err(&o).trim(),
-        format!(
-            "celis: you work on {} \"Cache the price list\"; when the next work does not fit it, \
-             add a step under it first, or replace it with step add --replaces.",
-            &step[..8]
-        )
+        err(&o).lines().collect::<Vec<_>>(),
+        [
+            format!(
+                "celis: you work on {} \"Cache the price list\"; when the next work does not fit it, \
+                 add a step under it first, or replace it with step add --replaces.",
+                &step[..8]
+            ),
+            joins(Some(&trail)),
+        ]
     );
+}
+
+/// The hint `prompt` gives for a new ask: join the session's open trail `open` when it fits, else a
+/// related trail of today, else a new one.
+fn joins(open: Option<&str>) -> String {
+    match open {
+        Some(id) => format!(
+            "celis: when this prompt is a new ask, add it under the session's trail {}, when it fits; \
+             else run celis tree and add it --under a related trail of today; else add it --new.",
+            &id[..8]
+        ),
+        None => "celis: when this prompt is a new ask, run celis tree and add it --under a related \
+                 trail of today; else start a new trail."
+            .to_string(),
+    }
+}
+
+/// After the past agent was asked for, a later prompt with no open trail gives the hint to join a trail
+/// of today, of any project; with no trail of today, it gives none (`spec/trails/14-trails.md`,
+/// "Sessions").
+#[test]
+fn a_later_prompt_with_no_open_trail_hints_at_todays_trails() {
+    let repo = Repo::new();
+    let hook = |session: &str| {
+        let json = serde_json::json!({"session_id": session, "prompt": "Add a filter"});
+        let o = repo.run(&repo.path(), &["prompt"], &[], &json.to_string());
+        assert!(o.status.success(), "{}", err(&o));
+        err(&o)
+    };
+    assert_eq!(hook("s9"), "");
+    let shop = repo.other("shop");
+    let o = repo.run(&shop, &["step", "add", "--", "a shop trail"], &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+    assert_eq!(hook("s9"), format!("{}\n", joins(None)));
+    let o = repo.run(
+        &repo.path(),
+        &["decide", "--", "When you test: set A=1."],
+        &[],
+        "",
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    assert!(hook("s8").contains("celis:past agent"));
+    assert_eq!(hook("s8"), format!("{}\n", joins(None)));
 }
 
 /// `prompt` writes and prints nothing for a prompt that is a task notification or an agent's message of
@@ -295,6 +341,41 @@ fn a_prompt_with_no_open_trail_asks_for_the_past_agent() {
     assert!(said.contains("wait for its answer"), "{said}");
     assert!(!said.contains("SHELF_OFFLINE"), "{said}");
     assert!(marks(&repo, "prompt").is_empty());
+}
+
+/// `prompt` asks for the past agent once in a session, and again after a compaction's `SessionStart`
+/// (`spec/trails/14-trails.md`, "Sessions").
+#[test]
+fn a_session_asks_for_the_past_agent_once_until_a_compaction() {
+    let repo = Repo::new();
+    let o = repo.run(
+        &repo.path(),
+        &["decide", "--", "When you test: set SHELF_OFFLINE=1."],
+        &[],
+        "",
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let hook = |json: serde_json::Value| {
+        let o = repo.run(&repo.path(), &["prompt"], &[], &json.to_string());
+        assert!(o.status.success(), "{}", err(&o));
+        assert_eq!(out(&o), "");
+        err(&o)
+    };
+    let ask = serde_json::json!({"session_id": "s9", "prompt": "Build a Vendors table"});
+    assert!(hook(ask.clone()).contains("celis:past agent"));
+    assert_eq!(hook(ask.clone()), "");
+    let other = serde_json::json!({"session_id": "s8", "prompt": "Build a Vendors table"});
+    assert!(hook(other).contains("celis:past agent"));
+    assert_eq!(
+        hook(serde_json::json!({"session_id": "s9", "source": "startup"})),
+        ""
+    );
+    assert_eq!(hook(ask.clone()), "");
+    assert_eq!(
+        hook(serde_json::json!({"session_id": "s9", "source": "compact"})),
+        ""
+    );
+    assert!(hook(ask).contains("celis:past agent"));
 }
 
 /// The steps `tree <trail>` shows.
