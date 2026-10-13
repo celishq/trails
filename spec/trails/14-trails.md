@@ -58,7 +58,8 @@ prompt kind 1985, a prompt while no step works
 - `prompt` MUST print that line once in a session. A hook's `{"session_id", "source": "compact"}` on
   stdin MUST let the session print it again, and MUST write and print nothing. The session start hook
   MUST give its JSON to `prompt`.
-- With no open trail and nothing `past` prints, it MUST print nothing.
+- With no open trail and no line for the past agent, it MUST print the join line when a trail of any
+  project is one `tree` with no id prints. Else it MUST print nothing.
 - The prompt MUST be a steer on the oldest working step of the trail. With no working step, it MUST be a
   prompt mark on the trail. Its text MUST be the prompt's first line, cut to 200 characters.
 - A reader MUST NOT count a prompt mark as a steer.
@@ -66,7 +67,10 @@ prompt kind 1985, a prompt while no step works
   The harness wrote it, not the person.
 - With a working step, `prompt` MUST then name it on stderr. The line asks for a step under it, or a
   replacement, when the next work does not fit it.
-- The hook MUST give that line to the agent.
+- With an open trail, `prompt` MUST then print the join line on stderr, with the trail's id.
+- The join line asks to add a new ask under the session's open trail when it fits, else under a related
+  trail that `tree` with no id prints, else as a new trail.
+- The hook MUST give these lines to the agent.
 
 **Examples**
 

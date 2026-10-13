@@ -47,16 +47,10 @@ impl Command {
         let id = args.words.get(1);
         let steps = trails.steps();
         let decisions = trails.decisions();
-        let today = midnight(trails.now);
         let chosen: Vec<&Note> = match (id, args.all) {
             (Some(id), _) => vec![steps.find(id)?],
             (None, true) => steps.roots().into_iter().rev().collect(),
-            (None, false) => steps
-                .roots()
-                .into_iter()
-                .rev()
-                .filter(|n| steps.state(n) == State::Active || steps.newest(n) >= today)
-                .collect(),
+            (None, false) => today(&steps, trails.now),
         };
         let tree = Tree {
             steps: &steps,
@@ -74,6 +68,17 @@ impl Command {
         let next = tree.next.get();
         Ok((String::from_utf8_lossy(&printed).into_owned(), next))
     }
+}
+
+/// Each trail of every project that is active or has a record from the day of `now`, newest first.
+pub(super) fn today<'a>(steps: &Steps<'a>, now: u64) -> Vec<&'a Note> {
+    let midnight = midnight(now);
+    steps
+        .roots()
+        .into_iter()
+        .rev()
+        .filter(|n| steps.state(n) == State::Active || steps.newest(n) >= midnight)
+        .collect()
 }
 
 /// What `tree` with no id prints while it has no trail to print.
