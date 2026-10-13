@@ -18,8 +18,8 @@ celis tree [<id>] [--full] [--all]
    changes no file needs none: a question, an explanation, a review or an investigation. Answer it,
    and run no command below.
 3. Add the ask with `step add`. It goes under the session's trail, else it starts a trail. You decide
-   whether the ask goes on with an active trail the agent brought: if it does, add it
-   `--under <the trail's id>`. A trail ends when nothing in it is open. An
+   whether the ask goes on with an active trail the agent brought, or with a related trail of today that
+   `celis tree` prints: if it does, add it `--under <the trail's id>`. A trail ends when nothing in it is open. An
    ask that leaves the session's trail takes `--new`. It prints the ask's id
    first, and the trail's id second when it starts one. Write each rule the ask states with
    `decide --scope trail:<the trail's id>`. Give the ask the project's own check.

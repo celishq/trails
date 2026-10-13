@@ -187,6 +187,33 @@ fn each_agents_prompt_hook_writes_a_steer_on_its_sessions_step() {
     }
 }
 
+/// Claude Code's prompt hook asks for the past agent once a session, and again after a compaction's
+/// session start (`spec/trails/04-trails.md`, "Sessions").
+#[test]
+fn claudes_hooks_ask_for_the_past_agent_again_after_a_compaction() {
+    let repo = Repo::new();
+    let o = repo.run(
+        &repo.path(),
+        &["decide", "--", "When you test: set A=1."],
+        &[],
+        "",
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let claude = &AGENTS[0];
+    let ask = claude.payload("s1", &repo.path(), "make it blue");
+    assert!(claude
+        .run(&repo, claude.ask, &ask)
+        .contains("celis:past agent"));
+    assert!(!claude
+        .run(&repo, claude.ask, &ask)
+        .contains("celis:past agent"));
+    let compact = serde_json::json!({"session_id": "s1", "cwd": repo.path(), "source": "compact"});
+    claude.run(&repo, claude.start, &compact.to_string());
+    assert!(claude
+        .run(&repo, claude.ask, &ask)
+        .contains("celis:past agent"));
+}
+
 /// Each manifest names the hooks file the agent runs, and each marketplace names the plugin's folder.
 #[test]
 fn each_manifest_names_its_hooks_and_each_marketplace_the_plugin() {

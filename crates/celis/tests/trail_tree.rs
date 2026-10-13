@@ -195,7 +195,7 @@ fn plain(text: &str) -> String {
 }
 
 /// With `CLICOLOR_FORCE=1`, `tree` draws branch lines, marks, underlined ids and dim columns at the right
-/// edge, with no start time when a title gets short; with no id, the project comes first; `NO_COLOR` turns
+/// edge, with no start time when a title gets short; with no id, each trail names its project; `NO_COLOR` turns
 /// it off (`spec/trails/04-trails.md`, "The commands").
 #[test]
 fn tree_draws_the_styled_tree_when_colour_is_forced() {
@@ -280,7 +280,11 @@ fn tree_draws_the_styled_tree_when_colour_is_forced() {
     assert!(lines[0].contains(" the trail "), "{lines:?}");
     assert!(!lines.iter().any(|l| clock(l)), "{lines:?}");
     let o = repo.run(&repo.path(), &["tree"], &forced, "");
-    assert_eq!(plain(&out(&o)).lines().next(), Some("repo"), "{}", out(&o));
+    let first = plain(&out(&o)).lines().next().unwrap_or("").to_string();
+    assert!(
+        first.starts_with(&format!("● {} repo the trail", &trail[..8])),
+        "{first}"
+    );
     let off = [("CLICOLOR_FORCE", "1"), ("NO_COLOR", "1")];
     let o = repo.run(&repo.path(), &["tree", &trail[..8]], &off, "");
     assert!(!out(&o).contains('\x1b'), "{}", out(&o));
@@ -443,6 +447,32 @@ fn tree_prints_the_short_tree_and_the_full_tree_with_full() {
     assert_eq!(first.chars().count(), 30, "{cut}");
     assert!(first.contains('…') && first.ends_with('s'), "{cut}");
     assert!(cut.lines().all(|l| l.chars().count() <= 30), "{cut}");
+}
+
+/// `tree` with no id prints today's trails of every project, in any folder, each with its project name
+/// and no project line; with none, it names `tree --all` (`spec/trails/04-trails.md`, "The commands").
+#[test]
+fn tree_with_no_id_prints_every_projects_trails_and_names_all_when_empty() {
+    let repo = Repo::new();
+    let o = cli(&repo, &["tree"]);
+    assert_eq!(
+        out(&o),
+        "No active trails. Run `celis tree --all` to see every trail.\n"
+    );
+    let o = cli(&repo, &["tree", "--json"]);
+    assert_eq!(out(&o), "");
+    add(&repo, &["--", "a repo trail"]);
+    std::thread::sleep(std::time::Duration::from_millis(1100));
+    let shop = repo.other("shop");
+    let o = repo.run(&shop, &["step", "add", "--", "a shop trail"], &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+    let elsewhere = repo.other("elsewhere");
+    let o = repo.run(&elsewhere, &["tree"], &[], "");
+    let text = out(&o);
+    let lines: Vec<&str> = text.lines().collect();
+    assert_eq!(lines.len(), 2, "{text}");
+    assert!(lines[0].contains(" shop a shop trail"), "{text}");
+    assert!(lines[1].contains(" repo a repo trail"), "{text}");
 }
 
 /// `tree --all` prints every trail in the store, of every project, newest first, each day's trails

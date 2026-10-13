@@ -34,6 +34,7 @@ fn next(records: &[Note], now: u64) -> Option<u64> {
         full: false,
         fold: false,
         all: false,
+        named: false,
         width: None,
         next: Cell::default(),
     };
