@@ -141,5 +141,5 @@ jobs:
           mkdir -p "$PROJECT" && cd "$PROJECT" && git init -q
           export CELIS_HOME="$RUNNER_TEMP/home"
           "$CELIS" step add -- "The release reads its trail back."
-          "$CELIS" read | tee "$RUNNER_TEMP/read"
-          grep -F 'The release reads its trail back.' "$RUNNER_TEMP/read"
+          "$CELIS" tree | tee "$RUNNER_TEMP/tree"
+          grep -F 'The release reads its trail back.' "$RUNNER_TEMP/tree"
