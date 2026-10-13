@@ -7,25 +7,36 @@
         /::::\  /::::::\     /::::\    /::::\  /::\/::::::\       |
   _____/::::::\/::::::::\___/::::::\__/::::::\/:::/::::::::\   .--+--.
                                                               /+++++++\
-         ______   ______   <-- this sign was left            /+++++++++\
-        /  x   | |  |>  \      by the agents before you     /+++++++++++\
-        \______| |______/             |>                 .-'+++++++++++++'-.
-               | |                   o|                 /+++++++++++++++++++\
-  .-.   .-.    | |                   ▮                 /+++++++++++++++++++++\
- |RIP| |RIP| . |_| ................ / \.............../+++++++++++++++++++++++\
- ,      ,      ,             ,             ,             ,             ,
+         ______   ______                                     /+++++++++\
+        /  x   | |  |>  \                                   /+++++++++++\
+        \______| |______/                                .-'+++++++++++++'-.
+      dead end | | next step                             /+++++++++++++++++\
+   x_x         |/|/                                             //
+  |RIP|  x_x                       •_•|>                       //
+ .......|RIP|.......................O.|.......................//...............
+ ,      ,      ,      ,      ,      ,      ,      ,      ,      ,      ,      ,
 ```
 
-Celis is an executable binary and a plugin for AI agents that gives them "experience". During the work agents write down
-what worked, what didn't and why, so the next agent takes the good roads and avoids the traps.
+Celis is an executable binary and a plugin for AI agents. It modifies the agents’ behavior so they begin to track what worked, what didn’t, and why. This allows the next agent to avoid repeating mistakes, complete tasks faster at a lower cost.
 
 ## How it works
 
-Your agent doesn't plan the whole job up front. It finds its way one step at a time, like a map app that
-tries the most promising road first.
+Once Celis is installed, the agent stops planning the entire task in advance. It finds the nearest “small step” and checks whether that step brings it closer to its goal or not. Then it plans the next step. This allow to complete the task without the human help.
+<br />
+Thus, the smallest logical unit is not the agentic turn, but a single step. This is more similar to how a human thinks.
+
+### Algorithm
+
+1. **Start with the big picture**. The agent works from the top down. For example, it designs the code architecture first and improves it until the design is good. Then it plans the next, more detailed steps.
+2. **Take small steps, one at a time**. Small steps allow the agent check if he moves toward the goal.
+3. **Show proof**. Each step gives evidence that you can check later, such as a test run, a screenshot for pixel comparison or a source citation.
+4. **Write down the lessons**. Agent record each step that was wrong, was replaced or took too much time.
+5. **Reuse what worked**. At the start of the next task, the agent reads its earlier trails and uses the lessons from them.
+
+### For example
 
 ```
-Task: seniors pay 20% less
+Task: seniors should be paid 20% less
 ├─ ✓ Find where prices are set
 ├─ ◐ Change the price rule                     ← least sure about this part: break it down
 │  ├─ ✗ Change the price in the cart              gave up: the cart doesn't know the age
@@ -36,17 +47,6 @@ Task: seniors pay 20% less
 
 ✓ done   ◐ working on it   ○ to do   ✗ dropped
 ```
-
-1. **Start with the big picture.** The agent splits the task into a few big parts. It picks the part it's
-   least sure about, or the one the others depend on, and breaks only that part into smaller pieces.
-2. **Take one step at a time.** The agent does one small step and checks that it worked as expected. Only
-   then does it pick the next one. If a road leads nowhere, it turns back and tries another.
-3. **Show proof.** A step counts as done only with proof you can check, like a test that now passes.
-4. **Write down the lessons.** When a road fails, the agent notes why. When something wastes time, it
-   notes the trap. The next agent that works on the same file reads these notes first.
-5. **Reuse what worked.** celis remembers how each task went: how long it took, and how often you had to
-   correct the agent. Before a new task, the agent looks at similar past tasks from all your projects and
-   follows the roads that went best.
 
 ```
 New task: students pay 10% less
