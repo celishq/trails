@@ -51,6 +51,7 @@ fn tree_prints_the_trail_its_rules_and_the_steps_under_it() {
         ],
     );
     assert!(o.status.success(), "{}", err(&o));
+    let rule = out(&o).trim().to_string();
     let colours = add(&repo, &["--under", short(&trail), "--", "colours"]);
     std::thread::sleep(std::time::Duration::from_millis(1100));
     let page = add(&repo, &["--under", short(&trail), "--", "customers page"]);
@@ -73,7 +74,7 @@ fn tree_prints_the_trail_its_rules_and_the_steps_under_it() {
         printed(&repo, &[short(&trail)]),
         [
             format!("● {} build the CRM", short(&trail)),
-            "  │   rule colours are tokens".to_string(),
+            format!("  ├─ § {} colours are tokens", short(&rule)),
             format!("  ├─ ✓ {} colours", short(&colours)),
             "  │        done lint failed, passes".to_string(),
             "  │        grade".to_string(),
@@ -95,13 +96,14 @@ fn tree_of_an_ask_prints_its_trails_rules() {
         &["decide", "--scope", &scope, "--", "colours are tokens"],
     );
     assert!(o.status.success(), "{}", err(&o));
+    let rule = out(&o).trim().to_string();
     let ask = add(&repo, &["--under", short(&trail), "--", "customers page"]);
     let badge = add(&repo, &["--under", short(&ask), "--", "badge"]);
     assert_eq!(
         printed(&repo, &[short(&ask)]),
         [
             format!("● {} customers page", short(&ask)),
-            "  │   rule colours are tokens".to_string(),
+            format!("  ├─ § {} colours are tokens", short(&rule)),
             format!("  └─ ○ {} badge", short(&badge)),
         ]
     );
@@ -184,8 +186,8 @@ fn plain(text: &str) -> String {
 }
 
 /// With `CLICOLOR_FORCE=1`, `tree` draws branch lines, marks, underlined ids and dim columns at the right
-/// edge, with no start time when a title gets short, and a rule at its trail's title with its id in the
-/// first column; with no id, each trail names its project; `NO_COLOR` turns it off
+/// edge, with no start time when a title gets short, and a rule as a branch before the steps; with no id,
+/// each trail names its project; `NO_COLOR` turns it off
 /// (`spec/trails/04-trails.md`, "The commands").
 #[test]
 fn tree_draws_the_styled_tree_when_colour_is_forced() {
@@ -239,7 +241,7 @@ fn tree_draws_the_styled_tree_when_colour_is_forced() {
         lines[0].starts_with(&format!("● {} the trail ", &trail[..8])),
         "{lines:?}"
     );
-    assert!(lines[1].starts_with("  │   rule a rule "), "{lines:?}");
+    assert_eq!(lines[1], format!("  ├─ § {rule} a rule"), "{lines:?}");
     assert!(
         lines[2].starts_with(&format!("  ├─ ○ {} done part ", &done[..8])),
         "{lines:?}"
@@ -255,8 +257,6 @@ fn tree_draws_the_styled_tree_when_colour_is_forced() {
     assert_eq!(lines.len(), 5, "{lines:?}");
     let column = |line: &str, text: &str| line.find(text).map(|n| line[..n].chars().count());
     assert_eq!(column(&lines[2], "prices.py:40"), column(&lines[4], "a.py"));
-    assert_eq!(column(&lines[1], "a rule"), column(&lines[0], "the trail"));
-    assert_eq!(column(&lines[1], &rule), column(&lines[4], "a.py"));
     for line in [&lines[0], &lines[3]] {
         assert_eq!(line.chars().count(), 80, "{lines:?}");
     }
@@ -289,7 +289,7 @@ fn tree_draws_the_styled_tree_when_colour_is_forced() {
 }
 
 /// The styled full tree starts each line under a step at the column of its title, ends a label one
-/// space before it, and wraps a long line at the width, keeping the branch line
+/// space before it, and wraps a long line and a rule at the width, keeping the branch line
 /// (`spec/trails/04-trails.md`, "The commands").
 #[test]
 fn the_styled_full_tree_aligns_and_wraps_the_lines_under_a_step() {
@@ -300,6 +300,7 @@ fn the_styled_full_tree_aligns_and_wraps_the_lines_under_a_step() {
     let rule = format!("trail:{}", &trail[..8]);
     let o = cli(&repo, &["decide", "--scope", &rule, "--", long]);
     assert!(o.status.success(), "{}", err(&o));
+    let rule = out(&o).trim()[..8].to_string();
     let first = add(
         &repo,
         &["--under", &trail[..8], "--", &format!("first\n{long}")],
@@ -338,10 +339,9 @@ fn the_styled_full_tree_aligns_and_wraps_the_lines_under_a_step() {
         block(&format!("{under_trail}one"), &under_trail, &under_trail),
         long
     );
-    let label = "  │   rule ";
-    let ruled = block(label, label, &format!("  │{}", &under_trail[3..]));
-    assert!(ruled.ends_with(long), "{ruled}");
     let rail = format!("  │  {}", " ".repeat("✓ 12345678 ".chars().count()));
+    let label = format!("  ├─ § {rule} ");
+    assert_eq!(block(&label, &label, &rail), long);
     assert_eq!(block(&format!("{rail}one"), &rail, &rail), long);
     let done = format!(
         "  │{}done ",
@@ -350,7 +350,7 @@ fn the_styled_full_tree_aligns_and_wraps_the_lines_under_a_step() {
     assert_eq!(block(&done, &done, &rail), long);
 }
 
-/// The short styled tree prints a rule without its reason, and the full tree prints it whole
+/// The short styled tree prints a rule as a branch without its reason, and the full tree prints it whole
 /// (`spec/trails/04-trails.md`, "The commands").
 #[test]
 fn the_short_styled_tree_leaves_out_a_rules_reason() {
@@ -368,7 +368,7 @@ fn the_short_styled_tree_leaves_out_a_rules_reason() {
         "",
     )));
     assert!(
-        short.contains("      rule When you price: use cents  "),
+        short.contains("  └─ § ") && short.contains(" When you price: use cents\n"),
         "{short}"
     );
     assert!(!short.contains("because"), "{short}");
