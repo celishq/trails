@@ -69,33 +69,6 @@ impl StepRecord {
         })
     }
 
-    /// The `--json` value for this step, as `note` holds it.
-    pub fn value(&self, note: &Note) -> serde_json::Value {
-        serde_json::json!({
-            "id": note.id,
-            "created_at": note.created_at,
-            "project": self.anchor.project,
-            "links": self.links(),
-            "places": self.places,
-            "check": self.check,
-            "content": self.content,
-        })
-    }
-
-    /// The `--json` links of this step: its `under`, `replaces` and each `uses`, in that order.
-    pub fn links(&self) -> serde_json::Value {
-        let links = [("under", &self.under), ("replaces", &self.replaces)];
-        let links = links
-            .into_iter()
-            .filter_map(|(kind, to)| Some((kind, to.as_ref()?)));
-        let uses = self.uses.iter().map(|to| ("uses", to));
-        let links: Vec<serde_json::Value> = links
-            .chain(uses)
-            .map(|(kind, to)| serde_json::json!({"to": to, "kind": kind}))
-            .collect();
-        serde_json::Value::Array(links)
-    }
-
     /// The first line of the text.
     pub fn title(&self) -> &str {
         self.content.lines().next().unwrap_or("")
@@ -104,16 +77,6 @@ impl StepRecord {
     /// The lines of the text after its title.
     pub fn detail(&self) -> impl Iterator<Item = &str> {
         self.content.lines().skip(1)
-    }
-
-    /// The text line for this step, as `note` holds it.
-    pub fn line(&self, note: &Note) -> String {
-        let id: String = crate::id::short(&note.id);
-        let mut line = format!("{} [{}] {}", id, self.anchor.name, self.title());
-        if let Some(at) = self.at() {
-            line.push_str(&format!(" · {at}"));
-        }
-        line
     }
 
     /// The first place of this step, which its line shows.

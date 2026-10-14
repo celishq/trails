@@ -141,8 +141,14 @@ impl Command {
             self.id(out, args, record)?;
         }
         for (said, decision) in &written.decisions {
-            let line = decision.line(said);
-            super::show(out, args.json, "decision", decision.json(said), &line)?;
+            let line = super::line::decision(said, decision);
+            super::show(
+                out,
+                args.json,
+                "decision",
+                super::json::decision(said, decision),
+                &line,
+            )?;
         }
         for notice in &written.notices {
             self.notice(notice, err)?;

@@ -14,30 +14,6 @@ impl Failure {
         Self::new("usage", 2, message.into())
     }
 
-    /// Ends the message by naming the help `page`.
-    pub fn see(mut self, page: &str) -> Self {
-        let stop = if self.message.ends_with('?') { "" } else { "." };
-        self.message = format!("{}{stop} See `{page}`.", self.message);
-        self
-    }
-
-    /// The words name no command; the message names the nearest of `known`, if one is within two edits.
-    pub fn unknown<'a>(word: &str, known: impl IntoIterator<Item = &'a str>) -> Self {
-        let hint = Self::nearest(word, known)
-            .map_or(String::new(), |n| format!("; did you mean \"{n}\"?"));
-        Self::usage(format!("no command \"{word}\"{hint}"))
-    }
-
-    /// The word of `known` nearest `word`, when two edits or fewer turn one into the other.
-    pub fn nearest<'a>(word: &str, known: impl IntoIterator<Item = &'a str>) -> Option<&'a str> {
-        known
-            .into_iter()
-            .map(|k| (edits(word, k), k))
-            .filter(|(distance, _)| *distance <= 2)
-            .min_by_key(|(distance, _)| *distance)
-            .map(|(_, k)| k)
-    }
-
     /// No step in the store has this id.
     pub fn no_step(id: &str) -> Self {
         Self::new(
@@ -108,24 +84,6 @@ impl From<anyhow::Error> for Failure {
     fn from(error: anyhow::Error) -> Self {
         Self::new("error", 1, format!("{error:#}"))
     }
-}
-
-/// The Levenshtein distance between two words.
-fn edits(a: &str, b: &str) -> usize {
-    let b: Vec<char> = b.chars().collect();
-    let mut row: Vec<usize> = (0..=b.len()).collect();
-    for (i, x) in a.chars().enumerate() {
-        let mut diagonal = row[0];
-        row[0] = i + 1;
-        for (j, y) in b.iter().enumerate() {
-            let above = row[j + 1];
-            row[j + 1] = (diagonal + usize::from(x != *y))
-                .min(above + 1)
-                .min(row[j] + 1);
-            diagonal = above;
-        }
-    }
-    row[b.len()]
 }
 
 #[cfg(test)]

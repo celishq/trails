@@ -48,3 +48,31 @@ pub(super) fn date(at: u64) -> String {
         tm.tm_mday
     )
 }
+
+/// `seconds` in its two largest units.
+pub(super) fn took(seconds: u64) -> String {
+    match seconds {
+        s if s < 60 => format!("{s}s"),
+        s if s < 3_600 => format!("{}m {}s", s / 60, s % 60),
+        s if s < 86_400 => format!("{}h {}m", s / 3_600, s % 3_600 / 60),
+        s => format!("{}d {}h", s / 86_400, s % 86_400 / 3_600),
+    }
+}
+
+/// `seconds` as `took` gives it, with a `-` when below zero.
+pub(super) fn saved(seconds: i64) -> String {
+    let sign = if seconds < 0 { "-" } else { "" };
+    format!("{sign}{}", took(seconds.unsigned_abs()))
+}
+
+/// The seconds until `took` shows another value for `seconds`.
+pub(super) fn stride(seconds: u64) -> u64 {
+    match seconds {
+        s if s < 3_600 => 1,
+        s if s < 86_400 => 60 - s % 60,
+        s => 3_600 - s % 3_600,
+    }
+}
+
+#[cfg(test)]
+mod tests;

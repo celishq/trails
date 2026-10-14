@@ -1,10 +1,9 @@
 //! `celis tree`: a trail with its state, its rules and the steps under it.
 
 use super::clock::{clock, day, midnight};
+use super::clock::{saved, stride, took};
 use super::{Args, Command};
 use celis_trails::id::short;
-use celis_trails::trail::grade::saved;
-use celis_trails::trail::grade::{stride, took};
 use celis_trails::trail::steps::LIFE;
 use celis_trails::{
     Decisions, Failure, Grade, Reuse, State, Step, StepRecord, Steps, Trail, Trails,
@@ -153,10 +152,10 @@ impl Tree<'_> {
         if json {
             let head = json!({"id": note.id(), "created_at": note.note().created_at,
                 "project": step.anchor.project, "content": step.content, "state": state.text(),
-                "links": step.links(), "places": step.places, "session": step.session,
+                "links": super::json::links(step), "places": step.places, "session": step.session,
                 "proof": done.map(|d| d.content.clone()),
                 "changed": done.and_then(|d| d.tag("changed")),
-                "grade": grade.as_ref().map(|g| g.value()),
+                "grade": grade,
                 "reused": self.reuse.down(note).len(), "reason": reason});
             lines.push(Line::Text(json!({ key: head }).to_string()));
             return self.under(note.children(), "", json, lines);
@@ -312,11 +311,11 @@ impl Tree<'_> {
             let reason = note.dropped().map(|d| d.content.clone());
             let state = note.state();
             if json {
-                let mut value = step.value(note.note());
+                let mut value = super::json::step(note.note(), step);
                 value["state"] = json!(state.text());
                 value["proof"] = json!(done.map(|d| d.content.clone()));
                 value["changed"] = json!(done.and_then(|d| d.tag("changed")));
-                value["grade"] = json!(grade.as_ref().map(|g| g.value()));
+                value["grade"] = json!(grade);
                 value["reused"] = json!(self.reuse.down(note).len());
                 value["reason"] = json!(reason);
                 lines.push(Line::Text(json!({ "step": value }).to_string()));
@@ -380,7 +379,7 @@ impl Tree<'_> {
             if let Some(changed) = done.tag("changed") {
                 self.labelled(out, at, "changed", changed);
             }
-            let line = grade.line();
+            let line = super::line::grade(grade);
             self.labelled(out, at, "took", line.trim_start_matches("took "));
         }
         if let Some(reason) = reason {

@@ -3,7 +3,6 @@
 pub mod decisions;
 pub mod scope;
 
-use crate::id::short;
 use crate::{Anchor, Scope};
 use anyhow::Result;
 use celis_nostr::{Account, Note};
@@ -39,38 +38,11 @@ impl Decision {
         Note::write(signer, 1111u16, at, tags, self.content.clone())
     }
 
-    /// The text line for this decision, as `note` holds it: its id, scope and words.
-    pub fn line(&self, note: &Note) -> String {
-        format!(
-            "{} {} {}",
-            short(&note.id),
-            self.scope.short(),
-            self.content
-        )
-    }
-
-    /// The text line for this decision as a rule of a trail, as `note` holds it.
-    pub fn rule(&self, note: &Note) -> String {
-        format!("  rule {} {}", short(&note.id), self.content)
-    }
-
     /// The text up to `, because`: when it applies and what to do, without the reason.
     pub fn brief(&self) -> &str {
         self.content
             .split_once(", because ")
             .map_or(self.content.as_str(), |(rule, _)| rule)
-    }
-
-    /// The `--json` object for this decision, as `note` holds it.
-    pub fn json(&self, note: &Note) -> serde_json::Value {
-        serde_json::json!({
-            "id": note.id,
-            "created_at": note.created_at,
-            "project": self.anchor.project,
-            "scope": self.scope.text(),
-            "replaces": self.replaces,
-            "content": self.content,
-        })
     }
 
     /// The decision `note` holds; `None` when it is not a decision, or names a scope no reader knows.

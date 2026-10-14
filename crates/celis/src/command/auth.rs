@@ -32,7 +32,7 @@ impl Command {
             "" => Err(Failure::usage(
                 "expected: celis auth login | status | phrase",
             )),
-            verb => Err(Failure::unknown(verb, ["login", "status", "phrase"])),
+            verb => Err(crate::help::unknown(verb, ["login", "status", "phrase"])),
         }
     }
 }

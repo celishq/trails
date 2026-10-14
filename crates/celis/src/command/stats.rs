@@ -1,8 +1,8 @@
 //! `celis stats`: what later work reused, and what it saved.
 
+use super::clock::saved;
 use super::{Args, Command};
 use celis_trails::id::short;
-use celis_trails::trail::grade::saved;
 use celis_trails::{Failure, Reuse, Step, Trail};
 use serde_json::json;
 use std::io::Write;
@@ -79,7 +79,7 @@ impl Command {
 /// depth, two spaces further in a level.
 fn chain(reuse: &Reuse, step: Step, json: bool, out: &mut dyn Write) -> Result<(), Failure> {
     let value = json!({"id": step.id(), "project": step.record().anchor.name,
-        "content": step.title(), "grade": step.grade().map(|g| g.value()), "depth": 0});
+        "content": step.title(), "grade": step.grade(), "depth": 0});
     let line = format!("{}{}", head(step), took(step));
     super::show(out, json, "step", value, &line)?;
     let sources = reuse
@@ -92,7 +92,7 @@ fn chain(reuse: &Reuse, step: Step, json: bool, out: &mut dyn Write) -> Result<(
         .map(|l| ("followed", l.step, l, reuse.saving(&l)));
     for (kind, at, link, save) in sources.chain(followers) {
         let value = json!({"id": at.id(), "project": at.record().anchor.name, "content": at.title(),
-            "grade": at.grade().map(|g| g.value()), "saved": save, "depth": link.depth});
+            "grade": at.grade(), "saved": save, "depth": link.depth});
         let indent = "  ".repeat(link.depth);
         let line = format!("{indent}{kind} {}{}{}", head(at), took(at), saving(save));
         super::show(out, json, kind, value, &line)?;
@@ -109,7 +109,7 @@ fn head(step: Step) -> String {
 /// ` · <grade>` of a done `step`, else nothing.
 fn took(step: Step) -> String {
     step.grade()
-        .map_or(String::new(), |g| format!(" · {}", g.line()))
+        .map_or(String::new(), |g| format!(" · {}", super::line::grade(&g)))
 }
 
 /// ` · saved <time>`, or nothing with no saving.

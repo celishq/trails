@@ -5,6 +5,8 @@ mod auth;
 mod clock;
 mod decision;
 mod issue;
+mod json;
+mod line;
 mod past;
 mod prompt;
 mod report;
@@ -53,7 +55,13 @@ impl Command {
             Err(failure) => failure,
         };
         if failure.code == 2 {
-            failure = failure.see(&help::see(&self.args));
+            let stop = if failure.message.ends_with('?') {
+                ""
+            } else {
+                "."
+            };
+            let page = help::see(&self.args);
+            failure.message = format!("{}{stop} See `{page}`.", failure.message);
         }
         self.log(&words, &failure);
         let line = if json {
@@ -78,7 +86,7 @@ impl Command {
             "auth" => self.auth(args, out, err),
             "update" => self.update(args, out),
             "" => Err(Failure::usage("expected: celis <command>")),
-            verb => Err(Failure::unknown(verb, verbs())),
+            verb => Err(help::unknown(verb, verbs())),
         }
     }
 

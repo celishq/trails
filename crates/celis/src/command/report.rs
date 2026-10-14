@@ -1,9 +1,9 @@
 //! `celis report`: the trails that ids name, as Markdown for a pull request.
 
+use super::clock::took;
 use super::tree::look;
 use super::{Args, Command};
 use celis_trails::id::short;
-use celis_trails::trail::grade::took;
 use celis_trails::{Failure, Step, Trail, Trails};
 use serde_json::json;
 use std::io::Write;

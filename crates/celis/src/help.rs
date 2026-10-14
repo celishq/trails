@@ -1,5 +1,7 @@
 //! The help of `celis`: the page, and the page of each command.
 
+use celis_trails::Failure;
+
 /// The page: the reference for a person.
 pub const PAGE: &str = r#"celis keeps how you do your tasks. A trail is one task you give, the steps
 agents take toward it, and the decisions made on the way. Your agents use it
@@ -47,6 +49,37 @@ pub fn see(args: &[String]) -> String {
         Some(verb) => format!("celis {} --help", verb.command),
         None => "celis help".to_string(),
     }
+}
+
+/// The failure a `word` gives that names no command of `known`; it names the nearest, if one is within
+/// two edits.
+pub fn unknown<'a>(word: &str, known: impl IntoIterator<Item = &'a str>) -> Failure {
+    let nearest = known
+        .into_iter()
+        .map(|k| (edits(word, k), k))
+        .filter(|(distance, _)| *distance <= 2)
+        .min_by_key(|(distance, _)| *distance)
+        .map(|(_, k)| k);
+    let hint = nearest.map_or(String::new(), |n| format!("; did you mean \"{n}\"?"));
+    Failure::usage(format!("no command \"{word}\"{hint}"))
+}
+
+/// The Levenshtein distance between two words.
+fn edits(a: &str, b: &str) -> usize {
+    let b: Vec<char> = b.chars().collect();
+    let mut row: Vec<usize> = (0..=b.len()).collect();
+    for (i, x) in a.chars().enumerate() {
+        let mut diagonal = row[0];
+        row[0] = i + 1;
+        for (j, y) in b.iter().enumerate() {
+            let above = row[j + 1];
+            row[j + 1] = (diagonal + usize::from(x != *y))
+                .min(above + 1)
+                .min(row[j] + 1);
+            diagonal = above;
+        }
+    }
+    row[b.len()]
 }
 
 /// The words of a command line before any `--`, without its flags.
