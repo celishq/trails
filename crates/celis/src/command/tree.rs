@@ -121,21 +121,27 @@ impl Tree<'_> {
     ) -> Result<(), Failure> {
         let mut lines = vec![];
         let mut last = None;
+        let name = notes
+            .iter()
+            .filter_map(|n| self.steps.step(n))
+            .map(|s| s.anchor.name.chars().count())
+            .max()
+            .unwrap_or(0);
         for note in notes {
             let day = day(note.created_at);
             if self.all && !json && last.as_ref() != Some(&day) {
                 lines.push(Line::Text(self.paint(BOLD, &day)));
                 last = Some(day);
             }
-            self.trail(note, key, json, &mut lines);
+            self.trail(note, key, json, name, &mut lines);
         }
         self.show(lines, out)
     }
 
-    /// Adds the step `note` with its state, its proof and grade when done, and its rules or an ask's
-    /// trail's rules, then the steps under it; a first ask with its text stands on its line. With `json`,
-    /// its object is `key`.
-    fn trail(&self, note: &Note, key: &str, json: bool, lines: &mut Vec<Line>) {
+    /// Adds the step `note` with its state, its proof and grade when done, then its rules or an ask's
+    /// trail's rules and the steps under it as branches; a first ask with its text stands on its line, its
+    /// project `name` wide. With `json`, its object is `key`.
+    fn trail(&self, note: &Note, key: &str, json: bool, name: usize, lines: &mut Vec<Line>) {
         let Some(step) = self.steps.step(note) else {
             return;
         };
@@ -163,7 +169,10 @@ impl Tree<'_> {
         };
         let (mark, colour) = trail_look(state);
         let project = match self.named {
-            true => format!("{} ", self.paint(DIM, &step.anchor.name)),
+            true => format!(
+                "{} ",
+                self.paint(DIM, &format!("{:<name$}", step.anchor.name))
+            ),
             false => String::new(),
         };
         let lead = format!("{} {} {project}", self.paint(colour, mark), self.id(note));
@@ -174,21 +183,13 @@ impl Tree<'_> {
             }
             _ => took(self.steps.newest(note).saturating_sub(note.created_at)),
         };
-        let note_cell: Vec<String> = [
-            (state != State::Active && state != State::ReachedAlone)
-                .then(|| state.text().to_string()),
-            steps,
-        ]
-        .into_iter()
-        .flatten()
-        .collect();
         let column = visible(&lead);
         lines.push(Line::Row {
             lead,
             title: self.paint(BOLD, step.title()),
             cells: [
                 step.at().map(last),
-                (!note_cell.is_empty()).then(|| note_cell.join(" · ")),
+                steps,
                 Some(ran),
                 Some(self.clock(note.created_at)),
             ],
@@ -202,18 +203,25 @@ impl Tree<'_> {
             true => &trail.id,
             false => &note.id,
         };
-        for (rule, decision) in self.decisions.rules(&step.anchor.project, owner) {
-            let content = match self.full {
-                true => decision.content.as_str(),
-                false => decision.brief(),
-            };
-            let text = format!("{} {content}", short(&rule.id));
-            self.labelled(lines, ("", column), "rule", &text);
-        }
         let mut notes = self.steps.under(&note.id);
         if let Some(ask) = self.steps.twin(note) {
             notes.remove(0);
             notes.splice(0..0, self.steps.under(&ask.id));
+        }
+        let rules = self.decisions.rules(&step.anchor.project, owner);
+        let count = rules.len();
+        for (n, (rule, decision)) in rules.into_iter().enumerate() {
+            let content = match self.full {
+                true => decision.content.as_str(),
+                false => decision.brief(),
+            };
+            let (fork, below) = match n + 1 == count && notes.is_empty() {
+                true => ("└─ ", "   "),
+                false => ("├─ ", "│  "),
+            };
+            let first = format!("  {fork}§ {} ", short(&rule.id));
+            let rest = format!("  {below}{}", " ".repeat("§ 12345678 ".chars().count()));
+            self.text(lines, (first, rest), content);
         }
         self.under(notes, "", json, lines)
     }
@@ -403,8 +411,7 @@ impl Tree<'_> {
     }
 
     /// Adds `text` dim after the branch lines of `at.0`, starting at the column `at.1`, with `label` ending
-    /// one space before it. The full tree wraps the text at the width, each line at that column; the short
-    /// tree cuts it.
+    /// one space before it.
     fn labelled(&self, lines: &mut Vec<Line>, at: (&str, usize), label: &str, text: &str) {
         let (rail, column) = at;
         let room = column.saturating_sub(visible(rail));
@@ -417,6 +424,14 @@ impl Tree<'_> {
             _ => format!("{rail}{}{label} ", " ".repeat(gap)),
         };
         let rest = format!("{rail}{}", " ".repeat(room));
+        self.text(lines, (first, rest), text);
+    }
+
+    /// Adds `text` dim after `leads.0`, its next lines after `leads.1`. The full tree wraps it at the
+    /// width, each line at the same column; the short tree cuts it.
+    fn text(&self, lines: &mut Vec<Line>, leads: (String, String), text: &str) {
+        let (first, rest) = leads;
+        let column = visible(&first);
         let measure = self.width.map(|w| w.saturating_sub(column).max(20));
         let parts = match (self.full, measure) {
             (true, Some(measure)) => wrap(text, measure),

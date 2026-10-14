@@ -167,29 +167,31 @@ celis tree --all [--full]         every trail in the store, by day
   A `│` MUST run from a step down to its next sibling.
 - A step line MUST end with dim details: the last part of its place.
   Then come how long it has worked or took, and when it started.
-- A trail line MUST end with dim details: the last part of its place, its state, and its steps.
-  It MUST leave out the state when active or reached alone, and the steps unless folded. Then come how
-  long its tree ran, and when it started.
+- A trail line MUST end with dim details: the last part of its place, and its steps when folded. Then
+  come how long its tree ran, and when it started. Its mark MUST be its only sign of its state.
 - The tree MUST print the details in four columns, in that order, two spaces apart, and the same
-  for every line. A place and a state MUST align left, a time right. A column no line fills MUST be left out.
+  for every line. A place and the steps MUST align left, a time right. A column no line fills MUST be left out.
 - With a width, the short tree MUST end the details at the right edge. It MUST leave out the start time
   when a title would be cut below 20 characters. Else they MUST start two spaces
   after the widest title. A time MUST print as `14:02` on the day it is, else as `Oct 9`.
-- The short tree MUST print a rule without its reason: the text from `, because` on.
+- The tree MUST draw each rule of a trail as a branch before its steps: `§`, its id and its text, with
+  no details. The short tree MUST print a rule without its reason: the text from `, because` on.
+- With no id, the tree MUST pad each project name to the widest, so each trail's title starts in the
+  same column.
 - In the tree, each line under a step MUST start at the column of the step's title. A label
-  (`rule`, `done`, `took`, `dropped`) MUST end one space before that column.
-- With a width, the full tree MUST wrap a line under a step between words. Each wrapped line MUST
+  (`done`, `took`, `dropped`) MUST end one space before that column.
+- With a width, the full tree MUST wrap a rule and a line under a step between words. Each wrapped line MUST
   start at the same column, after the step's branch lines.
 - In colour, the tree MUST underline the shortest start of each id, 4 characters or more, that no other
   step's id has. It MUST colour each mark.
 
 ```
-tree  text  <mark> <id, first 8> <title>   <place>  <state> · <n> steps  <ran>  <started>
+tree  text  <mark> <id, first 8> <title>   <place>  <n> steps  <ran>  <started>
                        <the next line of its text>
                   done <proof>
                   took <its grade, without "took">
                dropped <reason>
-                  rule <id, first 8> <text>
+              ├─ § <id, first 8> <text>
               ├─ <mark> <id, first 8> <title>   <place>  <took>  <started>
               │           <the lines under it, as under the trail>
               └─ <mark> <id, first 8> <title>   ...
@@ -205,7 +207,7 @@ tree  text  <mark> <id, first 8> <title>   <place>  <state> · <n> steps  <ran> 
 celis tree 3fa2c1d0
 
 ● 3fa2c1d0 Add a senior tier to the price list                                12m  14:02
-  rule 4c1d22e0 A senior pays 80% of the price, rounded down to the cent.
+  ├─ § 4c1d22e0 A senior pays 80% of the price, rounded down to the cent.
   ├─ ✓ 9b0e11aa A senior pays 80%      prices.py:40                   1m 30s  14:03
   ├─ ◐ 5d7f3c21 The frame shows the tier                              7m 12s  14:05
   │  └─ ○ 0a4e9d10 Add the badge to the frame
@@ -215,7 +217,7 @@ celis tree
 
 ● 3fa2c1d0 shop Add a senior tier to the price list                12m  14:02
   …
-✓ 1c9e44b2 crm Fix the cart total                    3 steps      8m  11:20
+✓ 1c9e44b2 crm  Fix the cart total                    3 steps      8m  11:20
 ```
 
 ## The past

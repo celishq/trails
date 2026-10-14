@@ -33,8 +33,8 @@ fn drop_closes_the_step_and_the_open_steps_under_it() {
     assert_eq!(states, ["done", "dropped", "dropped", "dropped"]);
 }
 
-/// A dropped trail has the state `dropped`; `tree` marks a dropped step `✗` with its reason under it, and
-/// gives it no grade (`spec/trails/04-trails.md`, "The commands").
+/// A dropped trail has the state `dropped`; `tree` marks a dropped trail and step `✗`, with no state word,
+/// with its reason under it, and gives it no grade (`spec/trails/04-trails.md`, "The commands").
 #[test]
 fn tree_marks_a_dropped_step_with_its_reason_and_no_grade() {
     let repo = Repo::new();
@@ -47,9 +47,10 @@ fn tree_marks_a_dropped_step_with_its_reason_and_no_grade() {
     let text = out(&cli(&repo, &["tree", &trail[..8], "--full"]));
     let lines: Vec<&str> = text.lines().collect();
     assert!(
-        lines[0].starts_with(&format!("✗ {} the trail  dropped  ", &trail[..8])),
+        lines[0].starts_with(&format!("✗ {} the trail  ", &trail[..8])),
         "{text}"
     );
+    assert!(!lines[0].contains("dropped"), "{text}");
     assert_eq!(lines[1], "   dropped left behind", "{text}");
     assert!(
         lines[2].starts_with(&format!("  └─ ✗ {}", &part[..8])),
