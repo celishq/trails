@@ -1,6 +1,13 @@
-//! One step of a store, as it stands.
+//! A step: what it says, the marks agents leave on it, and how it stands.
 
-use crate::trail::steps::{Close, Entry, LIFE};
+pub mod check;
+pub mod grade;
+pub mod mark;
+pub mod state;
+pub mod step_record;
+pub mod steps;
+
+use crate::step::steps::{Close, Entry, LIFE};
 use crate::{Grade, State, StepRecord, Steps};
 use celis_nostr::Note;
 

@@ -4,7 +4,7 @@ use super::clock::{clock, day, midnight};
 use super::clock::{saved, stride, took};
 use super::{Args, Command};
 use celis_trails::id::short;
-use celis_trails::trail::steps::LIFE;
+use celis_trails::step::steps::LIFE;
 use celis_trails::{
     Decisions, Failure, Grade, Reuse, State, Step, StepRecord, Steps, Trail, Trails,
 };
