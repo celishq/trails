@@ -192,28 +192,6 @@ pub fn cairn(repo: &Repo, by: &Account, label: &str, extra: &[(&str, &str)], at:
     note
 }
 
-/// A finding saying `content`, written by `by` at `at`.
-pub fn cairn_saying(repo: &Repo, by: &Account, content: &str, at: u64) -> Note {
-    let anchor = format!("project:{}", repo.project_id());
-    let tags: Vec<Vec<String>> = vec![
-        vec!["I".into(), anchor.clone()],
-        vec!["K".into(), "project".into()],
-        vec!["i".into(), anchor],
-        vec!["k".into(), "project".into()],
-        vec!["project".into(), "repo".into()],
-        vec!["L".into(), "celis.cairn".into()],
-        vec!["l".into(), "finding".into(), "celis.cairn".into()],
-    ];
-    let note = Note::write(by, 1111u16, at, tags, content).unwrap();
-    put(repo, &note);
-    note
-}
-
-/// A finding written by `by` at `at`.
-pub fn finding(repo: &Repo, by: &Account, at: u64) -> Note {
-    cairn(repo, by, "finding", &[], at)
-}
-
 /// `by`'s rating of `cairn`, written at `at`.
 pub fn rating(repo: &Repo, by: &Account, cairn: &Note, helped: bool, at: u64) {
     let tags = vec![
@@ -342,23 +320,6 @@ pub fn decision(
     note
 }
 
-/// An open step of this repo that `by` signed at `at`, put in the store.
-pub fn open_step(repo: &Repo, by: &Account, at: u64) -> Note {
-    let anchor = format!("project:{}", repo.project_id());
-    let tags: Vec<Vec<String>> = vec![
-        vec!["I".into(), anchor.clone()],
-        vec!["K".into(), "project".into()],
-        vec!["i".into(), anchor],
-        vec!["k".into(), "project".into()],
-        vec!["project".into(), "repo".into()],
-        vec!["L".into(), "celis.step".into()],
-        vec!["l".into(), "step".into(), "celis.step".into()],
-    ];
-    let note = Note::write(by, 1111u16, at, tags, "work").unwrap();
-    put(repo, &note);
-    note
-}
-
 /// A step of this repo under `under`, when given, that `by` signed at `at`, saying `content`, put in the
 /// store.
 pub fn step_note(repo: &Repo, by: &Account, under: Option<&Note>, content: &str, at: u64) -> Note {
@@ -435,17 +396,6 @@ pub fn decision_tags(project: (&str, &str)) -> Vec<Vec<String>> {
         vec!["L".into(), "celis.decision".into()],
         vec!["l".into(), "decision".into(), "celis.decision".into()],
     ]
-}
-
-/// The trail objects that `celis past --json` prints in `folder`, in order.
-pub fn read_trails(repo: &Repo, folder: &Path) -> Vec<serde_json::Value> {
-    let o = repo.run(folder, &["past", "--json"], &[], "");
-    assert!(o.status.success(), "{}", err(&o));
-    out(&o)
-        .lines()
-        .map(|l| serde_json::from_str::<serde_json::Value>(l).unwrap())
-        .filter_map(|v| v.get("trail").cloned())
-        .collect()
 }
 
 /// `celis <args>` run in the main checkout.

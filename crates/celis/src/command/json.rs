@@ -22,8 +22,8 @@ pub(super) fn links(record: &StepRecord) -> Value {
     let one = [("under", &record.under), ("replaces", &record.replaces)];
     let one = one
         .into_iter()
-        .filter_map(|(kind, to)| Some((kind, to.as_ref()?)));
-    let uses = record.uses.iter().map(|to| ("uses", to));
+        .filter_map(|(kind, to)| Some((kind, &**to.as_ref()?)));
+    let uses = record.uses.iter().map(|to| ("uses", to.as_str()));
     let links = one
         .chain(uses)
         .map(|(kind, to)| json!({"to": to, "kind": kind}));

@@ -8,7 +8,7 @@ pub mod step_record;
 pub mod steps;
 
 use crate::step::steps::{Close, Entry, LIFE};
-use crate::{Grade, State, StepRecord, Steps};
+use crate::{Grade, State, StepId, StepRecord, Steps};
 use celis_nostr::Note;
 
 /// One step of a store as it stands: its record with its edits, where it sits in its trail, how its
@@ -30,6 +30,11 @@ impl<'a> Step<'a> {
 
     pub fn id(self) -> &'a str {
         &self.entry.note.id
+    }
+
+    /// Its id, as a link to it holds it.
+    pub fn step_id(self) -> StepId {
+        StepId::new(self.id())
     }
 
     /// What the step says, with each of its edits.
@@ -147,7 +152,7 @@ impl<'a> Step<'a> {
         let from = self.start().unwrap_or(self.note()).created_at;
         Some(Grade {
             took: done.created_at.saturating_sub(from),
-            revised: self.revised().iter().map(|s| s.id().to_string()).collect(),
+            revised: self.revised().iter().map(|s| s.step_id()).collect(),
         })
     }
 

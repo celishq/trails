@@ -12,7 +12,7 @@ fn step(under: Option<&Note>, at: u64) -> Note {
             project: "p".into(),
             name: "repo".into(),
         },
-        under: under.map(|n| n.id.clone()),
+        under: under.map(|n| celis_trails::StepId::new(&n.id)),
         replaces: None,
         uses: Vec::new(),
         places: Vec::new(),

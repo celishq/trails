@@ -3,7 +3,7 @@
 pub mod decisions;
 pub mod scope;
 
-use crate::{Anchor, Scope};
+use crate::{Anchor, DecisionId, Scope};
 use anyhow::Result;
 use celis_nostr::{Account, Note};
 
@@ -12,7 +12,7 @@ use celis_nostr::{Account, Note};
 pub struct Decision {
     pub anchor: Anchor,
     pub scope: Scope,
-    pub replaces: Option<String>,
+    pub replaces: Option<DecisionId>,
     pub content: String,
 }
 
@@ -21,7 +21,8 @@ impl Decision {
     pub fn record(&self, signer: &Account, at: u64) -> Result<Note> {
         let mut tags = self.anchor.tags();
         let scope = (self.scope != Scope::Project).then(|| self.scope.text());
-        let optional = [("scope", &scope), ("replaces", &self.replaces)];
+        let replaces = self.replaces.as_ref().map(|r| r.to_string());
+        let optional = [("scope", &scope), ("replaces", &replaces)];
         tags.extend(
             optional
                 .into_iter()
@@ -62,7 +63,7 @@ impl Decision {
         Some(Decision {
             anchor: Anchor::read(note)?,
             scope,
-            replaces: owned("replaces"),
+            replaces: owned("replaces").map(DecisionId::new),
             content: note.content.clone(),
         })
     }

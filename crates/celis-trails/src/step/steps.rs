@@ -151,10 +151,10 @@ impl<'a> Index<'a> {
         for &note in &all {
             let step = &entries[note.id.as_str()].step;
             let (under, replaces) = (step.under.clone(), step.replaces.clone());
-            if let Some(parent) = under.and_then(|id| entries.get_mut(id.as_str())) {
+            if let Some(parent) = under.and_then(|id| entries.get_mut(&*id)) {
                 parent.children.push(note);
             }
-            if let Some(old) = replaces.and_then(|id| entries.get_mut(id.as_str())) {
+            if let Some(old) = replaces.and_then(|id| entries.get_mut(&*id)) {
                 old.replaced.push(note);
             }
         }
@@ -162,7 +162,7 @@ impl<'a> Index<'a> {
             let Some((id, mark)) = Mark::read(note) else {
                 continue;
             };
-            let Some(entry) = entries.get_mut(id.as_str()) else {
+            let Some(entry) = entries.get_mut(&*id) else {
                 continue;
             };
             entry.newest = entry.newest.max(note.created_at);

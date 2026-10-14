@@ -225,10 +225,10 @@ fn add_carries_each_place_and_the_check_as_their_tags() {
     assert_eq!(values("check"), ["make t"]);
 }
 
-/// A reader counts a step's old `file` tags as places after its `at` tags (`spec/trails/03-steps.md`,
-/// "Steps").
+/// A reader counts only a step's `at` tags as places, not its old `file` tags
+/// (`spec/trails/03-steps.md`, "Steps").
 #[test]
-fn a_steps_file_tags_read_as_places() {
+fn a_reader_ignores_a_steps_old_file_tags() {
     let repo = Repo::new();
     let project = (repo.project_id(), "repo".to_string());
     let extra = [("at", "a.rs"), ("file", "b.rs")];
@@ -241,10 +241,7 @@ fn a_steps_file_tags_read_as_places() {
     );
     put(&repo, &old);
     let tree = support::objects(&repo, &["tree", &old.id[..8]]);
-    assert_eq!(
-        tree[0]["trail"]["places"],
-        serde_json::json!(["a.rs", "b.rs"])
-    );
+    assert_eq!(tree[0]["trail"]["places"], serde_json::json!(["a.rs"]));
 }
 
 /// `add` writes each `--at` as a path from the project's top folder

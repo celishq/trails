@@ -52,7 +52,7 @@ reader works out.
 | 1985 with `prompt` in `celis.step` | kind: a person's prompt, on the trail (NIP-32) | 04 |
 | 1985 with `steer` in `celis.step` | kind: written by older versions; a reader ignores it | 04 |
 | `session` | step tag: the session that wrote it | 04 |
-| `under` · `replaces` · `at` · `check` | step tags; an old `file` reads as an `at` | 03 |
+| `under` · `replaces` · `at` · `check` | step tags; a reader ignores an old `file` | 03 |
 | `changed` | done tag: how the work differs from the plan | 03 |
 | `figma:<key>` · `web:<host>` | project id of a step outside git | 03 |
 | `uses` | step tag | 06 |

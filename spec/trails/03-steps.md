@@ -47,7 +47,7 @@ check      the command that proves the work
 
 - A step MUST carry content, the anchor `project:<project id>` and the project name.
 - A step MAY carry one `under`, one `replaces`, one `check`, and any number of `at`.
-- A reader MUST count each `file` tag of a step as a place, after its `at` places.
+- A reader MUST ignore a `file` tag of a step. Older versions wrote it.
 - A reader MUST count a kind 1111 record as a step only when it carries the label `step` in
   `celis.step`. It MUST ignore tags it does not know.
 - A reader of decisions MUST NOT count a step as a decision (CIP-01, "Decisions").

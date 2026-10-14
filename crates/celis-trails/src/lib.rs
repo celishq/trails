@@ -17,6 +17,8 @@ pub use decision::decisions::Decisions;
 pub use decision::scope::Scope;
 pub use decision::Decision;
 pub use failure::Failure;
+pub use id::decision_id::DecisionId;
+pub use id::step_id::StepId;
 pub use reuse::Reuse;
 pub use step::check::Check;
 pub use step::grade::Grade;

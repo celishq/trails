@@ -1,5 +1,5 @@
 use super::*;
-use crate::{Anchor, State};
+use crate::{Anchor, State, StepId};
 use celis_nostr::Account;
 
 fn account() -> Account {
@@ -76,7 +76,7 @@ fn an_open_step_of_an_ended_trail_is_expired() {
     let mut closed = step("closed", 12);
     for child in [&mut open, &mut closed] {
         *child = StepRecord {
-            under: Some(trail.id.clone()),
+            under: Some(StepId::new(&trail.id)),
             ..StepRecord::read(child).unwrap()
         }
         .record(&account(), child.created_at)

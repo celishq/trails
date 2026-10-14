@@ -7,8 +7,8 @@ pub mod written;
 
 use crate::id::short;
 use crate::{
-    Check, Decision, Decisions, Draft, Failure, Mark, Notice, Review, Scope, State, Step,
-    StepRecord, Steps, Store, Written,
+    Check, Decision, DecisionId, Decisions, Draft, Failure, Mark, Notice, Review, Scope, State,
+    Step, StepId, StepRecord, Steps, Store, Written,
 };
 use celis_nostr::{Account, Note};
 use std::path::Path;
@@ -62,13 +62,13 @@ impl Trails {
             return Ok(written);
         }
         let joined = match (&draft.under, under, moved) {
-            (None, Some(trail), None) => Some(trail.id().to_string()),
+            (None, Some(trail), None) => Some(trail.step_id()),
             _ => None,
         };
         let record = StepRecord {
             anchor: draft.anchor,
-            under: under.map(|u| u.id().to_string()),
-            replaces: replaced.map(|s| s.id().to_string()),
+            under: under.map(|u| u.step_id()),
+            replaces: replaced.map(|s| s.step_id()),
             uses,
             places: draft.places,
             check: draft.check,
@@ -99,7 +99,7 @@ impl Trails {
         };
         let trail = self.sign(|account, now| head.record(account, now))?;
         let ask = StepRecord {
-            under: Some(trail.id.clone()),
+            under: Some(StepId::new(&trail.id)),
             ..ask
         };
         let ask = self.sign(|account, now| ask.record(account, now))?;
@@ -215,9 +215,12 @@ impl Trails {
     }
 
     /// Writes `decision`, its trail scope taken whole from a trail of its project that is not done or
-    /// dropped, and its
-    /// `replaces` from a live decision there.
-    pub fn decide(&self, mut decision: Decision) -> Result<Written, Failure> {
+    /// dropped, replacing the live decision there that `replaces` names.
+    pub fn decide(
+        &self,
+        mut decision: Decision,
+        replaces: Option<&str>,
+    ) -> Result<Written, Failure> {
         let project = decision.anchor.project.clone();
         if let Scope::Trail(id) = &decision.scope {
             let steps = self.steps();
@@ -230,8 +233,8 @@ impl Trails {
             }
             decision.scope = Scope::Trail(trail.id().to_string());
         }
-        if let Some(id) = &decision.replaces {
-            decision.replaces = Some(self.decisions().find(&project, id)?.id.clone());
+        if let Some(id) = replaces {
+            decision.replaces = Some(DecisionId::new(&self.decisions().find(&project, id)?.id));
         }
         let written = self.sign(|account, now| decision.record(account, now))?;
         Ok(Written {
@@ -293,12 +296,12 @@ impl Trails {
             .map(|s| s.created_at)
             .min()
             .unwrap_or(u64::MAX);
-        let line = |s: &Step| (s.id().to_string(), s.title().to_string());
+        let line = |s: &Step| (s.step_id(), s.title().to_string());
         let done = parts.iter().filter_map(|s| {
             let changed = s.done()?.tag("changed")?;
-            Some((s.id().to_string(), changed.to_string()))
+            Some((s.step_id(), changed.to_string()))
         });
-        let own = changed.map(|c| (step.id().to_string(), c.to_string()));
+        let own = changed.map(|c| (step.step_id(), c.to_string()));
         let trail = step.trail();
         let since = step.note().created_at;
         let asked = self.records.iter().filter_map(|record| {
@@ -315,7 +318,7 @@ impl Trails {
         let under = step.under();
         let beside = under.map_or(Vec::new(), |u| u.children());
         Review {
-            step: step.id().to_string(),
+            step: step.step_id(),
             ask: step.is_ask(),
             expect,
             as_planned: changed.is_none(),
@@ -332,11 +335,7 @@ impl Trails {
                 .iter()
                 .filter_map(|s| {
                     let drop = s.dropped()?;
-                    Some((
-                        s.id().to_string(),
-                        s.title().to_string(),
-                        drop.content.clone(),
-                    ))
+                    Some((s.step_id(), s.title().to_string(), drop.content.clone()))
                 })
                 .collect(),
             changed: done.chain(own).collect(),
@@ -346,7 +345,7 @@ impl Trails {
                 .filter(|s| s.id() != step.id() && s.closed().is_none())
                 .map(line)
                 .collect(),
-            under: under.map(|u| u.id().to_string()),
+            under: under.map(|u| u.step_id()),
         }
     }
 
@@ -390,7 +389,7 @@ fn place<'a>(
     let named = draft
         .under
         .clone()
-        .or(moved.and_then(|m| m.record().under.clone()));
+        .or(moved.and_then(|m| m.record().under.as_ref().map(|u| u.to_string())));
     if let Some(id) = named {
         return steps.find_open(&id).map(Some);
     }
@@ -412,9 +411,9 @@ fn same_open<'a>(steps: &'a Steps<'a>, draft: &Draft, under: Option<Step<'a>>) -
 }
 
 /// The first open step under `under` that has not started, when `under` is below an ask.
-fn ahead(under: Option<Step>) -> Option<String> {
+fn ahead(under: Option<Step>) -> Option<StepId> {
     let parent = under.filter(|p| p.ask().is_some_and(|a| a.id() != p.id()))?;
     let children = parent.children().into_iter();
     let open = children.into_iter().find(|s| s.state() == State::Open)?;
-    Some(open.id().to_string())
+    Some(open.step_id())
 }

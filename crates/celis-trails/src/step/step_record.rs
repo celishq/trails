@@ -1,6 +1,6 @@
 //! A step, as an agent writes it.
 
-use crate::Anchor;
+use crate::{Anchor, StepId};
 use anyhow::Result;
 use celis_nostr::{Account, Note};
 
@@ -10,8 +10,8 @@ use celis_nostr::{Account, Note};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StepRecord {
     pub anchor: Anchor,
-    pub under: Option<String>,
-    pub replaces: Option<String>,
+    pub under: Option<StepId>,
+    pub replaces: Option<StepId>,
     pub uses: Vec<String>,
     pub places: Vec<String>,
     pub check: Option<String>,
@@ -59,10 +59,10 @@ impl StepRecord {
         };
         Some(StepRecord {
             anchor: Anchor::read(note)?,
-            under: owned("under"),
-            replaces: owned("replaces"),
+            under: owned("under").map(StepId::new),
+            replaces: owned("replaces").map(StepId::new),
             uses: tagged("uses"),
-            places: [tagged("at"), tagged("file")].concat(),
+            places: tagged("at"),
             check: owned("check"),
             session: owned("session"),
             content: note.content.clone(),
