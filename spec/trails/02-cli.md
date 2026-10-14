@@ -342,6 +342,8 @@ celis tree --all [--full]         every trail in the store, by day
 - `tree` MUST print the step with its state and its rules; `--full` adds its proof and grade when done.
   An ask MUST print its trail's rules. Then come the steps under it, oldest first, each followed by its
   own steps.
+- A trail whose first ask holds its text MUST print as one step with that ask: the ask's proof, grade
+  and reuse on the trail's line, and the ask's steps first under it (CIP-04, "Sessions").
 - `tree` MUST mark a done step `✓`, a dropped one `✗`, a working one `◐`, an open one `○`, and an
   expired one `!` (CIP-03, "Starting"; CIP-04, "State"). With `--full`, under a step come the lines of its
   text after its title. Then come the proof, what changed and the grade of a done step (CIP-03,

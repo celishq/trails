@@ -4,7 +4,7 @@ use super::tree::look;
 use super::{Args, Command};
 use celis_trails::id::short;
 use celis_trails::trail::grade::took;
-use celis_trails::{Failure, Step, Trails};
+use celis_trails::{Failure, Step, Trail, Trails};
 use serde_json::json;
 use std::io::Write;
 
@@ -62,11 +62,7 @@ pub(super) fn markdown(trails: &Trails, ids: &[String]) -> Result<String, Failur
             lines.extend(["".into(), "**Rules**".into(), "".into()]);
             lines.extend(rules.iter().map(|(_, d)| format!("- {}", d.content)));
         }
-        let mut parts_of = trail.children();
-        if let Some(ask) = trail.twin() {
-            parts_of.remove(0);
-            parts_of.splice(0..0, ask.children());
-        }
+        let parts_of = Trail::new(trail).parts();
         if !parts_of.is_empty() {
             lines.extend(["".into(), "**Steps**".into(), "".into()]);
             items(parts_of, "", &mut lines);

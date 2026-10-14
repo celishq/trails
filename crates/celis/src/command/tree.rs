@@ -6,7 +6,9 @@ use celis_trails::id::short;
 use celis_trails::trail::grade::saved;
 use celis_trails::trail::grade::{stride, took};
 use celis_trails::trail::steps::LIFE;
-use celis_trails::{Decisions, Failure, Grade, Reuse, State, Step, StepRecord, Steps, Trails};
+use celis_trails::{
+    Decisions, Failure, Grade, Reuse, State, Step, StepRecord, Steps, Trail, Trails,
+};
 use serde_json::json;
 use std::cell::Cell;
 use std::io::{IsTerminal, Write};
@@ -144,9 +146,10 @@ impl Tree<'_> {
     fn trail(&self, note: Step, key: &str, json: bool, name: usize, lines: &mut Vec<Line>) {
         let step = note.record();
         let state = note.state();
-        let done = note.done();
-        let grade = note.grade();
-        let reason = note.dropped().map(|d| d.content.clone());
+        let work = Trail::new(note).work();
+        let done = work.done();
+        let grade = work.grade();
+        let reason = work.dropped().map(|d| d.content.clone());
         if json {
             let head = json!({"id": note.id(), "created_at": note.note().created_at,
                 "project": step.anchor.project, "content": step.content, "state": state.text(),
@@ -193,7 +196,7 @@ impl Tree<'_> {
             ],
         });
         self.closing(step, done, &grade, &reason, ("", column), lines);
-        self.reused(note, ("", column), lines);
+        self.reused(work, ("", column), lines);
         if folded {
             return;
         }
@@ -201,11 +204,7 @@ impl Tree<'_> {
             true => note.trail(),
             false => note,
         };
-        let mut notes = note.children();
-        if let Some(ask) = note.twin() {
-            notes.remove(0);
-            notes.splice(0..0, ask.children());
-        }
+        let notes = Trail::new(note).parts();
         let rules = self.decisions.rules(&step.anchor.project, owner.id());
         let count = rules.len();
         for (n, (rule, decision)) in rules.into_iter().enumerate() {

@@ -26,6 +26,7 @@ pub use trail::state::State;
 pub use trail::step::Step;
 pub use trail::step_record::StepRecord;
 pub use trail::steps::Steps;
+pub use trail::Trail;
 pub use trails::draft::Draft;
 pub use trails::notice::Notice;
 pub use trails::review::Review;

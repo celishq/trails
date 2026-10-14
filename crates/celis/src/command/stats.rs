@@ -3,7 +3,7 @@
 use super::{Args, Command};
 use celis_trails::id::short;
 use celis_trails::trail::grade::saved;
-use celis_trails::{Failure, Reuse, Step};
+use celis_trails::{Failure, Reuse, Step, Trail};
 use serde_json::json;
 use std::io::Write;
 
@@ -26,10 +26,7 @@ impl Command {
         let steps = trails.steps();
         let reuse = Reuse::new(&steps);
         match id {
-            Some(id) => {
-                let step = steps.find(id)?;
-                chain(&reuse, step.twin().unwrap_or(step), args.json, out)
-            }
+            Some(id) => chain(&reuse, Trail::new(steps.find(id)?).work(), args.json, out),
             None => {
                 let decisions = trails.decisions();
                 let used = reuse.used(&decisions);

@@ -163,12 +163,6 @@ impl<'a> Step<'a> {
         idle || self.steps.now.saturating_sub(self.newest()) >= LIFE
     }
 
-    /// Its first child, as a trail, when it has the trail's text.
-    pub fn twin(self) -> Option<Step<'a>> {
-        let first = *self.children().first().filter(|_| self.is_trail())?;
-        (first.record().content == self.record().content).then_some(first)
-    }
-
     /// Where it stands as a trail: working while open and a step of it works, else open; expired when
     /// it ended with a step open; dropped; else revised when a done step of it was revised, else done.
     fn trail_state(self) -> State {

@@ -1,6 +1,6 @@
 //! The steps of a store, as they stand at one moment.
 
-use crate::{Failure, Mark, Step, StepRecord};
+use crate::{Failure, Mark, Step, StepRecord, Trail};
 use celis_nostr::Note;
 use std::collections::HashMap;
 
@@ -88,7 +88,7 @@ impl<'a> Steps<'a> {
             .into_iter()
             .filter(|s| match s.is_trail() {
                 false => s.done().is_some() && s.is_ask(),
-                true => s.state().reached() && s.twin().is_none(),
+                true => s.state().reached() && Trail::new(*s).first().is_none(),
             })
             .collect();
         past.reverse();
