@@ -5,10 +5,13 @@ mod auth;
 mod clock;
 mod decision;
 mod issue;
+mod json;
+mod line;
 mod past;
 mod prompt;
 mod report;
 mod review;
+mod stats;
 mod step;
 mod tree;
 mod update;
@@ -52,7 +55,13 @@ impl Command {
             Err(failure) => failure,
         };
         if failure.code == 2 {
-            failure = failure.see(&help::see(&self.args));
+            let stop = if failure.message.ends_with('?') {
+                ""
+            } else {
+                "."
+            };
+            let page = help::see(&self.args);
+            failure.message = format!("{}{stop} See `{page}`.", failure.message);
         }
         self.log(&words, &failure);
         let line = if json {
@@ -70,13 +79,14 @@ impl Command {
             "decide" => self.decide(args, out, &self.project()),
             "tree" => self.tree(args, out),
             "past" => self.past(args, out, &self.project()),
+            "stats" => self.stats(args, out),
             "report" => self.report(args, out),
             "issue" => self.issue(args, out),
             "prompt" => self.prompt(args, out, err, &self.project()),
             "auth" => self.auth(args, out, err),
             "update" => self.update(args, out),
             "" => Err(Failure::usage("expected: celis <command>")),
-            verb => Err(Failure::unknown(verb, verbs())),
+            verb => Err(help::unknown(verb, verbs())),
         }
     }
 

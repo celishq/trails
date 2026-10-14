@@ -3,7 +3,7 @@
 mod support;
 
 use celis_nostr::Note;
-use celis_trails::{Anchor, Step};
+use celis_trails::{Anchor, StepRecord};
 use serde_json::Value;
 use std::path::Path;
 use std::time::Duration;
@@ -33,7 +33,7 @@ fn listed(repo: &Repo) -> Vec<String> {
 }
 
 /// `past` lists the done asks and reached trails of every project, newest first. It leaves out open work
-/// and a trail that ended with no `done` (`spec/trails/04-trails.md`, "The past").
+/// and a trail that ended with no `done` (`spec/04-trails.md`, "The past").
 #[test]
 fn past_lists_done_asks_and_reached_trails_of_every_project_newest_first() {
     let repo = Repo::new();
@@ -43,10 +43,11 @@ fn past_lists_done_asks_and_reached_trails_of_every_project_newest_first() {
         project: celis_trails::Project::at(&repo.other("shop")).id,
         name: "shop".to_string(),
     };
-    let reached = Step {
+    let reached = StepRecord {
         anchor: shop,
         under: None,
         replaces: None,
+        uses: Vec::new(),
         places: vec!["Export.swift".to_string()],
         check: None,
         session: None,
@@ -65,7 +66,7 @@ fn past_lists_done_asks_and_reached_trails_of_every_project_newest_first() {
 }
 
 /// `past` leaves out a trail with an ask of its own text, so the ask stands for it
-/// (`spec/trails/04-trails.md`, "The past").
+/// (`spec/04-trails.md`, "The past").
 #[test]
 fn past_lists_the_ask_in_place_of_a_trail_of_its_text() {
     let repo = Repo::new();
@@ -79,7 +80,7 @@ fn past_lists_the_ask_in_place_of_a_trail_of_its_text() {
 }
 
 /// `past` prints each past work on one line: its id, project, title and place, its grade, and its day
-/// (`spec/trails/04-trails.md`, "The past").
+/// (`spec/02-cli.md`, "Past").
 #[test]
 fn past_prints_one_tagged_line_for_each_past_work() {
     let repo = Repo::new();
@@ -101,7 +102,7 @@ fn past_prints_one_tagged_line_for_each_past_work() {
 }
 
 /// `past --json` prints each past work as a `past` object with its tags
-/// (`spec/trails/04-trails.md`, "The past").
+/// (`spec/02-cli.md`, "Past").
 #[test]
 fn past_json_carries_each_past_works_tags() {
     let repo = Repo::new();

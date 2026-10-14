@@ -7,7 +7,7 @@ use celis_trails::Store;
 use support::{account, err, out, Repo, PHRASE};
 
 /// A command opens the store in `$CELIS_HOME`, so a trail written in one folder lists in another, inside
-/// git or not (`spec/trails/01-decisions.md`, "The store").
+/// git or not (`spec/01-decisions.md`, "The store").
 #[test]
 fn a_command_must_open_the_store_in_celis_home_whatever_the_working_folder() {
     let repo = Repo::new();
@@ -37,7 +37,7 @@ fn a_command_must_open_the_store_in_celis_home_whatever_the_working_folder() {
     assert!(!repo.path().join(".celis").exists());
 }
 
-/// With no store, `decide` and `step add` create it (`spec/trails/01-decisions.md`, "The store").
+/// With no store, `decide` and `step add` create it (`spec/01-decisions.md`, "The store").
 #[test]
 fn with_no_store_decide_and_step_add_create_it() {
     for args in [
@@ -52,7 +52,7 @@ fn with_no_store_decide_and_step_add_create_it() {
 }
 
 /// A record is written to `<created_at>-<id>.json` holding the record as NIP-01 JSON
-/// (`spec/trails/01-decisions.md`, "The store").
+/// (`spec/01-decisions.md`, "The store").
 #[test]
 fn a_record_must_be_written_to_a_file_named_by_its_time_and_id() {
     let repo = Repo::new();
@@ -68,7 +68,7 @@ fn a_record_must_be_written_to_a_file_named_by_its_time_and_id() {
 }
 
 /// A record file does not change once written, and a file still being written is not seen
-/// (`spec/trails/01-decisions.md`, "The store").
+/// (`spec/01-decisions.md`, "The store").
 #[test]
 fn a_record_file_must_not_change_once_written() {
     let repo = Repo::new();
@@ -90,7 +90,7 @@ fn a_record_file_must_not_change_once_written() {
 }
 
 /// A reader never sees a record file half written, however large the record
-/// (`spec/trails/01-decisions.md`, "The store").
+/// (`spec/01-decisions.md`, "The store").
 #[test]
 fn a_record_file_must_never_be_seen_half_written() {
     use std::sync::atomic::{AtomicBool, Ordering};
@@ -122,7 +122,7 @@ fn a_record_file_must_never_be_seen_half_written() {
 }
 
 /// A reader skips a file that does not parse or whose record does not verify
-/// (`spec/trails/01-decisions.md`, "The store").
+/// (`spec/01-decisions.md`, "The store").
 #[test]
 fn a_reader_must_skip_a_file_that_does_not_parse_or_verify() {
     let repo = Repo::new();
@@ -144,7 +144,7 @@ fn a_reader_must_skip_a_file_that_does_not_parse_or_verify() {
 }
 
 /// No record file carries the phrase or the account's secret
-/// (`spec/trails/01-decisions.md`, "The store").
+/// (`spec/01-decisions.md`, "The store").
 #[test]
 fn no_record_file_must_carry_the_accounts_secret() {
     let repo = Repo::plain();
@@ -167,7 +167,7 @@ fn no_record_file_must_carry_the_accounts_secret() {
 }
 
 /// With no store, `past` answers as an empty store and creates nothing
-/// (`spec/trails/01-decisions.md`, "The store").
+/// (`spec/01-decisions.md`, "The store").
 #[test]
 fn past_with_no_store_must_answer_empty_and_create_nothing() {
     let repo = Repo::plain();
@@ -177,7 +177,7 @@ fn past_with_no_store_must_answer_empty_and_create_nothing() {
     assert!(!repo.store().exists());
 }
 
-/// With no store, `read` answers as an empty store and creates nothing (`spec/trails/01-decisions.md`, "The
+/// With no store, `read` answers as an empty store and creates nothing (`spec/01-decisions.md`, "The
 /// store").
 #[test]
 fn read_with_no_store_must_answer_empty_and_create_nothing() {
@@ -188,7 +188,7 @@ fn read_with_no_store_must_answer_empty_and_create_nothing() {
     assert!(!repo.store().exists());
 }
 
-/// With no store, `tree` answers as an empty store and creates nothing (`spec/trails/01-decisions.md`, "The
+/// With no store, `tree` answers as an empty store and creates nothing (`spec/01-decisions.md`, "The
 /// store").
 #[test]
 fn tree_with_no_store_must_answer_empty_and_create_nothing() {
@@ -199,7 +199,7 @@ fn tree_with_no_store_must_answer_empty_and_create_nothing() {
     assert!(!repo.store().exists());
 }
 
-/// With no store, a command that writes creates it (`spec/trails/01-decisions.md`, "The store").
+/// With no store, a command that writes creates it (`spec/01-decisions.md`, "The store").
 #[test]
 fn with_no_store_every_other_command_must_create_it() {
     let repo = Repo::new();

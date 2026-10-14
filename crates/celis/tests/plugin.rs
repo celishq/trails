@@ -148,20 +148,20 @@ impl Agent {
     }
 }
 
-/// The steers on `step` in the store.
-fn steers(repo: &Repo, step: &str) -> Vec<String> {
+/// The prompt marks on `step` in the store.
+fn prompts(repo: &Repo, step: &str) -> Vec<String> {
     std::fs::read_dir(repo.store().join("shared"))
         .unwrap()
         .filter_map(|e| std::fs::read_to_string(e.unwrap().path()).ok())
         .filter_map(|t| serde_json::from_str::<Note>(&t).ok())
-        .filter(|n| n.kind == 1985 && n.tag("l") == Some("steer") && n.tag("e") == Some(step))
+        .filter(|n| n.kind == 1985 && n.tag("l") == Some("prompt") && n.tag("e") == Some(step))
         .map(|n| n.content)
         .collect()
 }
 
 /// Each agent's session start gives the card; an agent other than Claude Code also gets its session, to
 /// pass with `--session`. Antigravity has no session start, and gets both before each call of the model
-/// (`spec/trails/04-trails.md`, "Sessions").
+/// (`spec/04-trails.md`, "Sessions").
 #[test]
 fn each_agents_session_start_gives_the_card_and_its_session() {
     let repo = Repo::new();
@@ -178,10 +178,10 @@ fn each_agents_session_start_gives_the_card_and_its_session() {
     }
 }
 
-/// Each agent's prompt hook writes the prompt as a steer on the working step of its session's trail, in
-/// the person's project (`spec/trails/04-trails.md`, "Sessions").
+/// Each agent's prompt hook writes the prompt on its session's trail while a step works, in the person's
+/// project (`spec/04-trails.md`, "Sessions").
 #[test]
-fn each_agents_prompt_hook_writes_a_steer_on_its_sessions_step() {
+fn each_agents_prompt_hook_writes_a_prompt_on_its_sessions_trail() {
     for agent in AGENTS.into_iter().filter(|a| !a.ask.is_empty()) {
         let repo = Repo::new();
         let add = repo.run(
@@ -191,7 +191,8 @@ fn each_agents_prompt_hook_writes_a_steer_on_its_sessions_step() {
             "",
         );
         assert!(add.status.success(), "{}", err(&add));
-        let step = out(&add).lines().next().unwrap().to_string();
+        let lines: Vec<String> = out(&add).lines().map(str::to_string).collect();
+        let (step, trail) = (&lines[0], &lines[1]);
         let start = repo.run(&repo.path(), &["step", "start", &step[..8]], &[], "");
         assert!(start.status.success(), "{}", err(&start));
         let stdout = agent.run(
@@ -200,7 +201,7 @@ fn each_agents_prompt_hook_writes_a_steer_on_its_sessions_step() {
             &agent.payload("s1", &repo.path(), "make it blue"),
         );
         assert_eq!(
-            steers(&repo, &step),
+            prompts(&repo, trail),
             ["make it blue"],
             "{}: {stdout}",
             agent.name
@@ -209,7 +210,7 @@ fn each_agents_prompt_hook_writes_a_steer_on_its_sessions_step() {
 }
 
 /// Claude Code's prompt hook asks for the past agent once a session, and again after a compaction's
-/// session start (`spec/trails/04-trails.md`, "Sessions").
+/// session start (`spec/02-cli.md`, "Prompt").
 #[test]
 fn claudes_hooks_ask_for_the_past_agent_again_after_a_compaction() {
     let repo = Repo::new();

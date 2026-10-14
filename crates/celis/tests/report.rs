@@ -40,7 +40,7 @@ fn lines(text: &str) -> Vec<String> {
 
 /// `report` prints the trail's title as a heading, its id, project, state and steps, its rules, and the
 /// steps under it as a nested list with their marks, places, checks, proofs, changes and reasons
-/// (`spec/trails/05-reports.md`, "The report").
+/// (`spec/02-cli.md`, "Report").
 #[test]
 fn report_prints_the_trail_its_rules_and_its_steps_as_markdown() {
     let repo = Repo::new();
@@ -104,7 +104,7 @@ fn report_prints_the_trail_its_rules_and_its_steps_as_markdown() {
     let shown = lines(&report(&repo, &[t]));
     let want = [
         "## Build the CRM".to_string(),
-        format!("`{t}` · repo · active · 4 steps"),
+        format!("`{t}` · repo · open · 4 steps"),
         String::new(),
         "with a contacts list".to_string(),
         String::new(),
@@ -131,7 +131,7 @@ fn report_prints_the_trail_its_rules_and_its_steps_as_markdown() {
 }
 
 /// `report` prints the trail of each id once, in the order of the ids, with a blank line between two
-/// trails (`spec/trails/05-reports.md`, "The report").
+/// trails (`spec/02-cli.md`, "Report").
 #[test]
 fn report_prints_each_trail_once_in_the_order_of_the_ids() {
     let repo = Repo::new();
@@ -145,7 +145,7 @@ fn report_prints_each_trail_once_in_the_order_of_the_ids() {
 }
 
 /// When a trail's first ask has its text, `report` leaves the ask out and prints its steps first
-/// (`spec/trails/05-reports.md`, "The report").
+/// (`spec/05-reports.md`, "The report").
 #[test]
 fn report_leaves_out_the_ask_with_the_trails_text() {
     let repo = Repo::new();
@@ -168,7 +168,7 @@ fn report_leaves_out_the_ask_with_the_trails_text() {
 }
 
 /// `report` refuses an id no step has with `no-step`, and no id as a usage error
-/// (`spec/trails/05-reports.md`, "The report").
+/// (`spec/02-cli.md`, "Report").
 #[test]
 fn report_refuses_an_unknown_id_and_no_id() {
     let repo = Repo::new();
@@ -178,7 +178,7 @@ fn report_refuses_an_unknown_id_and_no_id() {
 }
 
 /// With `--json`, `report` prints its text as one object, and it writes no record
-/// (`spec/trails/05-reports.md`, "The report").
+/// (`spec/02-cli.md`, "Report").
 #[test]
 fn report_with_json_prints_the_text_and_writes_no_record() {
     let repo = Repo::new();

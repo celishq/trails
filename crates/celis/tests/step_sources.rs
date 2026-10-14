@@ -57,7 +57,7 @@ fn steps(repo: &Repo) -> usize {
 }
 
 /// A reader reads steps from the store only, so a project in git ignores its `@todo` lines
-/// (`spec/trails/03-steps.md`, "Sources").
+/// (`spec/03-steps.md`, "Sources").
 #[test]
 fn a_reader_reads_steps_from_the_store_only() {
     let repo = Repo::new();
@@ -69,7 +69,7 @@ fn a_reader_reads_steps_from_the_store_only() {
 }
 
 /// A reader ignores a `done` that names its step with a `step` tag
-/// (`spec/trails/03-steps.md`, "Sources").
+/// (`spec/03-steps.md`, "Sources").
 #[test]
 fn a_reader_ignores_a_done_that_names_its_step_with_a_step_tag() {
     let repo = Repo::new();
@@ -87,7 +87,7 @@ fn a_reader_ignores_a_done_that_names_its_step_with_a_step_tag() {
     assert_eq!(ids(&listed(&repo)), vec![kept.id]);
 }
 
-/// `add` writes a step in a project in git as outside it (`spec/trails/03-steps.md`, "Sources").
+/// `add` writes a step in a project in git as outside it (`spec/03-steps.md`, "Sources").
 #[test]
 fn add_writes_a_step_in_a_project_in_git() {
     let repo = Repo::new();
@@ -97,7 +97,7 @@ fn add_writes_a_step_in_a_project_in_git() {
 }
 
 /// `add` writes no step when an open step of the same project and `under` has the same text, and prints
-/// that step's id (`spec/trails/03-steps.md`, "The commands").
+/// that step's id (`spec/02-cli.md`, "Step").
 #[test]
 fn add_must_not_write_a_step_an_open_one_of_the_project_already_states() {
     let repo = Repo::new();

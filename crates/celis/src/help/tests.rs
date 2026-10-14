@@ -23,3 +23,14 @@ fn the_longest_command_the_words_begin_with_names_the_verb() {
     assert_eq!(Verb::of(&["past"]).map(|v| v.command), Some("past"));
     assert!(Verb::of(&["step"]).is_none());
 }
+
+/// An unknown word names the nearest known one within two edits (`spec/02-cli.md`, "Output and
+/// errors").
+#[test]
+fn an_unknown_word_names_the_nearest_known_one_within_two_edits() {
+    let failure = unknown("lsit", ["list", "add"]);
+    assert_eq!(failure.code, 2);
+    assert!(failure.message.contains("did you mean \"list\"?"));
+    let far = unknown("frobnicate", ["list", "add"]);
+    assert_eq!(far.message, "no command \"frobnicate\"");
+}

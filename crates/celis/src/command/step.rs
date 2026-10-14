@@ -49,6 +49,7 @@ impl Command {
             check: args.check.clone(),
             under: args.under.clone(),
             replaces: args.replaces.clone(),
+            uses: args.uses.clone(),
             session: args.session.clone().or_else(|| self.session()),
             new: args.new,
         };
@@ -140,8 +141,14 @@ impl Command {
             self.id(out, args, record)?;
         }
         for (said, decision) in &written.decisions {
-            let line = decision.line(said);
-            super::show(out, args.json, "decision", decision.json(said), &line)?;
+            let line = super::line::decision(said, decision);
+            super::show(
+                out,
+                args.json,
+                "decision",
+                super::json::decision(said, decision),
+                &line,
+            )?;
         }
         for notice in &written.notices {
             self.notice(notice, err)?;

@@ -15,7 +15,9 @@ When you move a file: write each decision at its old place again at the new plac
 
 When the `celis:past` agent returns past work that went as planned, take the steps right under its ask
 as your shapes, with the `changed` lines in mind. Copy the steps under a shape only when you take that
-shape. Else outline the shapes yourself. A part that several shapes use is its own shape, first.
+shape. Else outline the shapes yourself. A part that several shapes use is its own shape, first. Add
+each step you take from past work with `--uses <its id>`, so later work can see which paths were
+followed.
 
 ## Subagents and other sessions
 

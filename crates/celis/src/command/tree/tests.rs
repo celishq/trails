@@ -1,5 +1,5 @@
 use super::*;
-use celis_nostr::Account;
+use celis_nostr::{Account, Note};
 use celis_trails::{Anchor, Mark};
 
 fn account() -> Account {
@@ -7,13 +7,14 @@ fn account() -> Account {
 }
 
 fn step(under: Option<&Note>, at: u64) -> Note {
-    Step {
+    StepRecord {
         anchor: Anchor {
             project: "p".into(),
             name: "repo".into(),
         },
-        under: under.map(|n| n.id.clone()),
+        under: under.map(|n| celis_trails::StepId::new(&n.id)),
         replaces: None,
+        uses: Vec::new(),
         places: Vec::new(),
         check: None,
         session: None,
@@ -27,9 +28,11 @@ fn step(under: Option<&Note>, at: u64) -> Note {
 fn next(records: &[Note], now: u64) -> Option<u64> {
     let steps = Steps::new(records, now);
     let decisions = Decisions::new(records);
+    let reuse = Reuse::new(&steps);
     let tree = Tree {
         steps: &steps,
         decisions: &decisions,
+        reuse: &reuse,
         colour: false,
         full: false,
         fold: false,
@@ -38,13 +41,18 @@ fn next(records: &[Note], now: u64) -> Option<u64> {
         width: None,
         next: Cell::default(),
     };
-    tree.print(&[&records[0]], "trail", false, &mut Vec::new())
-        .unwrap();
+    tree.print(
+        &[steps.get(&records[0].id).unwrap()],
+        "trail",
+        false,
+        &mut Vec::new(),
+    )
+    .unwrap();
     tree.next.get()
 }
 
 /// The tree changes next when the first time it shows changes: a time in seconds the next second, a time
-/// in hours the next minute, and a tree with no time that runs, none (`spec/trails/04-trails.md`,
+/// in hours the next minute, and a tree with no time that runs, none (`spec/02-cli.md`,
 /// "Watching").
 #[test]
 fn the_tree_changes_next_when_its_first_time_changes() {

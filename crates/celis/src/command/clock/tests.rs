@@ -1,7 +1,7 @@
 use super::*;
 
 /// A time `took` shows changes with its smallest unit: each second up to an hour, then each minute, then
-/// each hour (`spec/trails/04-trails.md`, "Watching").
+/// each hour (`spec/02-cli.md`, "Watching").
 #[test]
 fn a_time_changes_with_its_smallest_unit() {
     assert_eq!(stride(0), 1);

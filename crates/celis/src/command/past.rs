@@ -3,8 +3,7 @@
 
 use super::clock::date;
 use super::{Args, Command};
-use celis_nostr::Note;
-use celis_trails::{Decisions, Failure, Project, Scope, State, Steps, Trails};
+use celis_trails::{Decisions, Failure, Project, Scope, Step, Trails};
 use serde_json::json;
 use std::io::Write;
 
@@ -34,9 +33,9 @@ impl Command {
     ) -> Result<(), Failure> {
         let steps = trails.steps();
         let decisions = trails.decisions();
-        for note in steps.trails(&project.id) {
-            if steps.state(note) == State::Active {
-                trail(note, &steps, &decisions, args.json, out)?;
+        for step in steps.trails(&project.id) {
+            if step.state().active() {
+                trail(step, &decisions, args.json, out)?;
             }
         }
         let placed = args
@@ -53,57 +52,60 @@ impl Command {
                 continue;
             }
             shown.push(note.id.clone());
-            let line = decision.line(note);
-            super::show(out, args.json, "decision", decision.json(note), &line)?;
+            let line = super::line::decision(note, &decision);
+            super::show(
+                out,
+                args.json,
+                "decision",
+                super::json::decision(note, &decision),
+                &line,
+            )?;
         }
-        for note in &steps.past() {
-            let Some(step) = steps.step(note) else {
-                continue;
-            };
+        for step in steps.past() {
+            let (note, record) = (step.note(), step.record());
             let day = date(note.created_at);
             let past = json!({"id": note.id, "created_at": note.created_at, "day": day,
-                "project": step.anchor.name, "content": step.content, "places": step.places,
-                "state": steps.state(steps.trail(note)).text(),
-                "grade": steps.grade(note).as_ref().map(|g| g.value())});
-            let line = format!("{} · {day}", head(note, &steps));
+                "project": record.anchor.name, "content": record.content, "places": record.places,
+                "state": step.trail().state().text(),
+                "grade": step.grade()});
+            let line = format!("{} · {day}", head(step));
             super::show(out, args.json, "past", past, &line)?;
         }
         Ok(())
     }
 }
 
-/// Prints the trail `note` with its rules.
+/// Prints the trail `trail` with its rules.
 fn trail(
-    note: &Note,
-    steps: &Steps,
+    trail: Step,
     decisions: &Decisions,
     json: bool,
     out: &mut dyn Write,
 ) -> Result<(), Failure> {
-    let Some(step) = steps.step(note) else {
-        return Ok(());
-    };
+    let (note, step) = (trail.note(), trail.record());
     let rules = decisions.rules(&step.anchor.project, &note.id);
     if json {
-        let rules: Vec<_> = rules.iter().map(|(r, d)| d.json(r)).collect();
+        let rules: Vec<_> = rules
+            .iter()
+            .map(|(r, d)| super::json::decision(r, d))
+            .collect();
         let trail = json!({"id": note.id, "created_at": note.created_at,
             "project": step.anchor.project, "content": step.content, "session": step.session,
             "rules": rules});
         return super::put(out, &json!({ "trail": trail }).to_string());
     }
-    super::put(out, &step.line(note))?;
+    super::put(out, &super::line::step(note, step))?;
     for (rule, decision) in rules {
-        super::put(out, &decision.rule(rule))?;
+        super::put(out, &super::line::rule(rule, &decision))?;
     }
     Ok(())
 }
 
-/// The line of the past work `note`: its id, project, title and place, then its grade, else its state.
-fn head(note: &Note, steps: &Steps) -> String {
-    let Some(step) = steps.step(note) else {
-        return String::new();
-    };
-    let grade = steps.grade(note);
-    let how = grade.map_or_else(|| steps.state(note).text().to_string(), |g| g.line());
-    format!("{} · {how}", step.line(note))
+/// The line of the past work `step`: its id, project, title and place, then its grade, else its state.
+fn head(step: Step) -> String {
+    let how = step.grade().map_or_else(
+        || step.state().text().to_string(),
+        |g| super::line::grade(&g),
+    );
+    format!("{} · {how}", super::line::step(step.note(), step.record()))
 }

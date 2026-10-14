@@ -32,7 +32,7 @@ fn records(repo: &Repo) -> usize {
 }
 
 /// `done` runs the step's check, and refuses with `check-failed` and writes nothing when it fails
-/// (`spec/trails/03-steps.md`, "The commands").
+/// (`spec/02-cli.md`, "Step").
 #[test]
 fn done_runs_the_check_and_refuses_when_it_fails() {
     let repo = Repo::new();
@@ -48,7 +48,7 @@ fn done_runs_the_check_and_refuses_when_it_fails() {
 }
 
 /// `done` runs the check in the project's top folder, from any folder under it, and stops a check that
-/// runs past `CELIS_CHECK_SECONDS` as failed (`spec/trails/03-steps.md`, "The commands").
+/// runs past `CELIS_CHECK_SECONDS` as failed (`spec/02-cli.md`, "Step").
 #[test]
 fn done_runs_the_check_at_the_top_folder_and_stops_a_slow_one() {
     let repo = Repo::new();
@@ -82,14 +82,13 @@ fn done_runs_the_check_at_the_top_folder_and_stops_a_slow_one() {
     assert!(started.elapsed().as_secs() < 10, "{:?}", started.elapsed());
 }
 
-/// `tree` prints a done step's grade under its proof: the time it took, and its steers
-/// (`spec/trails/03-steps.md`, "Grades").
+/// `tree` prints a done step's grade under its proof: the time it took
+/// (`spec/02-cli.md`, "Tree").
 #[test]
 fn tree_prints_the_grade_of_each_done_step() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the trail"]);
     let badge = add(&repo, &["--under", &trail[..8], "--", "badge"]);
-    support::steer(&repo, &badge, "Use the shared Badge.");
     assert!(done(&repo, &badge[..8], &[]).status.success());
     let o = run(&repo, &["tree", &trail[..8], "--full"]);
     assert!(o.status.success(), "{}", err(&o));
@@ -102,10 +101,10 @@ fn tree_prints_the_grade_of_each_done_step() {
     let under = |n: usize| lines[at + n].trim_start_matches([' ', '│']);
     assert_eq!(under(1), "done failed before, passes now", "{text}");
     assert!(under(2).starts_with("took "), "{text}");
-    assert!(lines[at + 2].ends_with("s · steered 1"), "{text}");
+    assert!(under(2).ends_with('s'), "{text}");
 }
 
-/// `tree --json` gives a done step its grade (`spec/trails/03-steps.md`, "Grades").
+/// `tree --json` gives a done step its grade (`spec/02-cli.md`, "Tree").
 #[test]
 fn tree_json_gives_a_done_step_its_grade() {
     let repo = Repo::new();
@@ -121,11 +120,11 @@ fn tree_json_gives_a_done_step_its_grade() {
         .expect("a step");
     let grade = step["grade"].as_object().expect("a grade");
     let keys: Vec<&str> = grade.keys().map(String::as_str).collect();
-    assert_eq!(keys, ["steered", "took"]);
+    assert_eq!(keys, ["revised", "took"]);
 }
 
 /// `took` counts from the step's first `start`, and from the step when it has none
-/// (`spec/trails/03-steps.md`, "Grades").
+/// (`spec/03-steps.md`, "Grades").
 #[test]
 fn took_counts_from_the_first_start_else_from_the_step() {
     let repo = Repo::new();
@@ -152,9 +151,6 @@ fn took_counts_from_the_first_start_else_from_the_step() {
         let at = lines.iter().position(|l| l.contains(id)).expect("the step");
         lines[at + 2].trim_start_matches([' ', '│']).to_string()
     };
-    assert!(took(&started.id[..8]).starts_with("took 1m 30s "), "{text}");
-    assert!(
-        took(&unstarted.id[..8]).starts_with("took 1m 30s "),
-        "{text}"
-    );
+    assert_eq!(took(&started.id[..8]), "took 1m 30s", "{text}");
+    assert_eq!(took(&unstarted.id[..8]), "took 1m 30s", "{text}");
 }

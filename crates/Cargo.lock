@@ -148,6 +148,7 @@ dependencies = [
  "anyhow",
  "celis-nostr",
  "libc",
+ "serde",
  "serde_json",
  "tempfile",
 ]

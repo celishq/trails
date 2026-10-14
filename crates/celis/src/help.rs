@@ -1,5 +1,7 @@
 //! The help of `celis`: the page, and the page of each command.
 
+use celis_trails::Failure;
+
 /// The page: the reference for a person.
 pub const PAGE: &str = r#"celis keeps how you do your tasks. A trail is one task you give, the steps
 agents take toward it, and the decisions made on the way. Your agents use it
@@ -9,6 +11,7 @@ Commands
   decide   a decision, in its scope
   tree     a trail and its steps, with their grades
   past     this project's active trails and decisions, every project's past work
+  stats    what later work reused, and what it saved
   report   trails as Markdown, for a pull request
   issue    what went wrong, as Markdown for the celis team
   step     the steps of a trail: add, start, done, drop, edit
@@ -46,6 +49,37 @@ pub fn see(args: &[String]) -> String {
         Some(verb) => format!("celis {} --help", verb.command),
         None => "celis help".to_string(),
     }
+}
+
+/// The failure a `word` gives that names no command of `known`; it names the nearest, if one is within
+/// two edits.
+pub fn unknown<'a>(word: &str, known: impl IntoIterator<Item = &'a str>) -> Failure {
+    let nearest = known
+        .into_iter()
+        .map(|k| (edits(word, k), k))
+        .filter(|(distance, _)| *distance <= 2)
+        .min_by_key(|(distance, _)| *distance)
+        .map(|(_, k)| k);
+    let hint = nearest.map_or(String::new(), |n| format!("; did you mean \"{n}\"?"));
+    Failure::usage(format!("no command \"{word}\"{hint}"))
+}
+
+/// The Levenshtein distance between two words.
+fn edits(a: &str, b: &str) -> usize {
+    let b: Vec<char> = b.chars().collect();
+    let mut row: Vec<usize> = (0..=b.len()).collect();
+    for (i, x) in a.chars().enumerate() {
+        let mut diagonal = row[0];
+        row[0] = i + 1;
+        for (j, y) in b.iter().enumerate() {
+            let above = row[j + 1];
+            row[j + 1] = (diagonal + usize::from(x != *y))
+                .min(above + 1)
+                .min(row[j] + 1);
+            diagonal = above;
+        }
+    }
+    row[b.len()]
 }
 
 /// The words of a command line before any `--`, without its flags.
@@ -159,9 +193,16 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "past",
         usage: &["celis past [--at <place>]..."],
-        summary: "Print this project's active trails with their rules and its decisions, then the done asks and reached trails of every project, newest first, one line each with its project, place, grade and day.",
+        summary: "Print this project's active trails with their rules and its decisions, then the done asks and done trails of every project, newest first, one line each with its project, place, grade and day.",
         args: &[("--at <place>", "a place whose decisions come first; zero or more")],
         examples: &["celis past", "celis past --at shelf/prices.py"],
+    },
+    Verb {
+        command: "stats",
+        usage: &["celis stats [<id>]"],
+        summary: "Print each step that later steps follow, with what they saved, then each decision steps used, then the total; with an id, the steps it follows and the steps that follow it. Writes no record.",
+        args: &[("<id>", "the step id, or a start of 4 or more characters; optional")],
+        examples: &["celis stats", "celis stats 9b0e11aa"],
     },
     Verb {
         command: "report",
@@ -211,7 +252,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "prompt",
         usage: &["celis prompt"],
-        summary: "Read a hook's JSON on stdin, and record the person's prompt on the open trail of its session: a steer on the working step, else a prompt mark. A hook runs it on each prompt.",
+        summary: "Read a hook's JSON on stdin, and record the person's prompt on the open trail of its session. A hook runs it on each prompt.",
         args: &[],
         examples: &["celis prompt < hook.json"],
     },
@@ -248,11 +289,12 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "step add",
-        usage: &["celis step add [--under <id>] [--replaces <id>] [--at <place>]... [--check <command>] [--new] [--session <id>] -- <text>"],
+        usage: &["celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>]... [--check <command>] [--new] [--session <id>] -- <text>"],
         summary: "Leave a step. With no --under, it goes under the session's trail, else it starts a trail.",
         args: &[
             ("--under <id>", "the open step it is a part of; optional"),
-            ("--replaces <id>", "an open step whose plan it takes over; optional"),
+            ("--replaces <id>", "a step it takes over, or a done step it fixes; optional"),
+            ("--uses <id>", "a decision it keeps, or a past step it follows; any"),
             ("--at <place>", "file:line, a URL or any text; zero or more"),
             ("--check <command>", "the command that proves the work; optional"),
             ("--new", "a new trail, not a step of the session's trail; optional"),

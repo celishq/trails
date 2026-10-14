@@ -14,7 +14,7 @@ fn logged(repo: &Repo) -> Vec<String> {
 }
 
 /// A run that fails adds a line with its time, exit code, words and message, and leaves out the flags,
-/// their values and the text after `--`; a run that succeeds adds none (`spec/trails/05-reports.md`,
+/// their values and the text after `--`; a run that succeeds adds none (`spec/05-reports.md`,
 /// "The log").
 #[test]
 fn a_failed_run_adds_its_words_and_message_to_the_log() {

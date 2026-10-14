@@ -27,7 +27,7 @@ fn start(repo: &Repo, session: &str, text: &str) -> String {
 }
 
 /// A session's first `step add` writes the trail and the ask under it with the same text, and prints
-/// the ask's id first; with no session, it writes the trail alone (`spec/trails/04-trails.md`,
+/// the ask's id first; with no session, it writes the trail alone (`spec/04-trails.md`,
 /// "Sessions").
 #[test]
 fn a_sessions_first_ask_is_a_step_under_its_trail() {
@@ -60,7 +60,7 @@ fn a_sessions_first_ask_is_a_step_under_its_trail() {
 
 /// A trail carries its session, and a session's next step with no `--under` goes under its trail; a
 /// session with no trail, or no session, starts a trail, and `--under` joins another session's trail
-/// (`spec/trails/04-trails.md`, "Sessions").
+/// (`spec/04-trails.md`, "Sessions").
 #[test]
 fn a_sessions_steps_go_under_its_trail_and_a_session_with_no_trail_starts_one() {
     let repo = Repo::new();
@@ -114,11 +114,11 @@ fn hook(repo: &Repo, hook: &str, json: serde_json::Value) -> std::process::Outpu
     o
 }
 
-/// `prompt` writes a hook's prompt as a steer on the oldest working step of the session's open trail,
-/// else as a prompt mark on the trail, its first line cut to 200 characters; with no such trail, it writes
-/// nothing (`spec/trails/04-trails.md`, "Sessions").
+/// `prompt` writes a hook's prompt as a prompt mark on the session's open trail, also while a step
+/// works, its first line cut to 200 characters; with no such trail, it writes nothing
+/// (`spec/04-trails.md`, "Sessions").
 #[test]
-fn prompt_writes_the_prompt_as_a_steer_or_a_prompt_mark_on_the_sessions_trail() {
+fn prompt_writes_the_prompt_as_a_prompt_mark_on_the_sessions_trail() {
     let repo = Repo::new();
     let hook = |session: &str, prompt: &str| {
         let json = serde_json::json!({"session_id": session, "prompt": prompt}).to_string();
@@ -137,17 +137,21 @@ fn prompt_writes_the_prompt_as_a_steer_or_a_prompt_mark_on_the_sessions_trail() 
     let long = "x".repeat(300);
     assert!(hook("s1", &long).status.success());
     assert_eq!(out(&hook("s2", "another session")), "");
-    assert_eq!(marks(&repo, "steer"), [(step.clone(), "x".repeat(200))]);
+    assert_eq!(marks(&repo, "steer"), []);
+    let mut prompts = marks(&repo, "prompt");
+    prompts.sort();
     assert_eq!(
-        marks(&repo, "prompt"),
-        [(trail.clone(), "make it blue".to_string())]
+        prompts,
+        [
+            (trail.clone(), "make it blue".to_string()),
+            (trail.clone(), "x".repeat(200))
+        ]
     );
 }
 
-/// A prompt mark is no steer: a trail asked twice is still reached alone (`spec/trails/04-trails.md`,
-/// "Sessions").
+/// A trail asked twice is reached (`spec/04-trails.md`, "Sessions").
 #[test]
-fn a_prompt_mark_is_no_steer() {
+fn a_trail_asked_twice_is_reached() {
     let repo = Repo::new();
     let written = ids(&repo, Some("s1"), "the trail");
     let trail = &written[1];
@@ -159,11 +163,11 @@ fn a_prompt_mark_is_no_steer() {
     support::finish(&repo, &written[0][..8]);
     support::finish(&repo, &trail[..8]);
     let head = objects(&repo, &["tree", &trail[..8]]);
-    assert_eq!(head[0]["trail"]["state"], "reached alone", "{head:?}");
+    assert_eq!(head[0]["trail"]["state"], "done", "{head:?}");
 }
 
 /// `step add --new` starts a second trail, which takes the session's next steps
-/// (`spec/trails/04-trails.md`, "Sessions").
+/// (`spec/04-trails.md`, "Sessions").
 #[test]
 fn new_starts_a_trail_that_takes_the_sessions_next_steps() {
     let repo = Repo::new();
@@ -197,7 +201,7 @@ fn run_add(repo: &Repo, session: Option<&str>, env: &[(&str, &str)], args: &[&st
 }
 
 /// A session's open trail is the trail of its newest step: after a step `--under` another session's
-/// trail, its next steps go there (`spec/trails/04-trails.md`, "Sessions").
+/// trail, its next steps go there (`spec/04-trails.md`, "Sessions").
 #[test]
 fn a_sessions_open_trail_is_the_trail_of_its_newest_step() {
     let repo = Repo::new();
@@ -221,7 +225,7 @@ fn a_sessions_open_trail_is_the_trail_of_its_newest_step() {
 
 /// `prompt` names the working step of the session's trail on stderr, and asks for a step under it when
 /// the next work does not fit; with no working step, it names none; either way it ends with the hint to
-/// join a trail (`spec/trails/04-trails.md`, "Sessions").
+/// join a trail (`spec/02-cli.md`, "Prompt").
 #[test]
 fn the_prompt_hook_names_the_working_step() {
     let repo = Repo::new();
@@ -267,8 +271,8 @@ fn joins(open: Option<&str>) -> String {
 }
 
 /// After the past agent was asked for, a later prompt with no open trail gives the hint to join a trail
-/// of today, of any project; with no trail of today, it gives none (`spec/trails/04-trails.md`,
-/// "Sessions").
+/// of today, of any project; with no trail of today, it gives none (`spec/02-cli.md`,
+/// "Prompt").
 #[test]
 fn a_later_prompt_with_no_open_trail_hints_at_todays_trails() {
     let repo = Repo::new();
@@ -295,7 +299,7 @@ fn a_later_prompt_with_no_open_trail_hints_at_todays_trails() {
 }
 
 /// `prompt` writes and prints nothing for a prompt that is a task notification or an agent's message of
-/// the harness, not the person's words (`spec/trails/04-trails.md`, "Sessions").
+/// the harness, not the person's words (`spec/04-trails.md`, "Sessions").
 #[test]
 fn prompt_skips_a_harness_message() {
     let repo = Repo::new();
@@ -314,8 +318,8 @@ fn prompt_skips_a_harness_message() {
 }
 
 /// With no open trail in the session, `prompt` writes nothing, and prints on stderr one line that asks for
-/// the agent that brings what `past` prints, once `past` prints anything (`spec/trails/04-trails.md`,
-/// "Sessions").
+/// the agent that brings what `past` prints, once `past` prints anything (`spec/02-cli.md`,
+/// "Prompt").
 #[test]
 fn a_prompt_with_no_open_trail_asks_for_the_past_agent() {
     let repo = Repo::new();
@@ -344,7 +348,7 @@ fn a_prompt_with_no_open_trail_asks_for_the_past_agent() {
 }
 
 /// `prompt` asks for the past agent once in a session, and again after a compaction's `SessionStart`
-/// (`spec/trails/04-trails.md`, "Sessions").
+/// (`spec/02-cli.md`, "Prompt").
 #[test]
 fn a_session_asks_for_the_past_agent_once_until_a_compaction() {
     let repo = Repo::new();
@@ -387,7 +391,7 @@ fn under(repo: &Repo, trail: &str) -> Vec<String> {
 }
 
 /// `step add` takes its session from `--session`, else from the first set variable of
-/// `CLAUDE_CODE_SESSION_ID`, `CODEX_THREAD_ID` and `CELIS_SESSION_ID` (`spec/trails/04-trails.md`,
+/// `CLAUDE_CODE_SESSION_ID`, `CODEX_THREAD_ID` and `CELIS_SESSION_ID` (`spec/04-trails.md`,
 /// "Sessions").
 #[test]
 fn a_session_comes_from_the_flag_else_the_first_set_variable() {
@@ -416,7 +420,7 @@ fn a_session_comes_from_the_flag_else_the_first_set_variable() {
 }
 
 /// `prompt` takes the session from `conversation_id` when the hook has one, else from `session_id`
-/// (`spec/trails/04-trails.md`, "Sessions").
+/// (`spec/02-cli.md`, "Prompt").
 #[test]
 fn prompt_takes_the_conversation_id_first() {
     let repo = Repo::new();

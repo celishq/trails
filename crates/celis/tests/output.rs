@@ -16,7 +16,7 @@ fn objects(text: &str) -> Vec<Value> {
         .collect()
 }
 
-/// Every command accepts `--json`; `decide` prints the id, or `{"id"}` (`spec/trails/02-cli.md`,
+/// Every command accepts `--json`; `decide` prints the id, or `{"id"}` (`spec/02-cli.md`,
 /// "Output and errors").
 #[test]
 fn every_command_accepts_json_and_prints_the_id() {
@@ -89,7 +89,7 @@ fn is_id(s: &str) -> bool {
 }
 
 /// A trail or step command run with its stdin left open finishes, and prints no question
-/// (`spec/trails/02-cli.md`, "Output and errors").
+/// (`spec/02-cli.md`, "Output and errors").
 #[test]
 fn a_trail_or_step_command_with_stdin_left_open_asks_nothing() {
     let repo = Repo::plain();
@@ -108,7 +108,7 @@ fn a_trail_or_step_command_with_stdin_left_open_asks_nothing() {
     }
 }
 
-/// `read` run with its stdin left open finishes, and prints no question (`spec/trails/02-cli.md`, "Output
+/// `read` run with its stdin left open finishes, and prints no question (`spec/02-cli.md`, "Output
 /// and errors").
 #[test]
 fn read_with_stdin_left_open_asks_nothing() {
@@ -118,7 +118,7 @@ fn read_with_stdin_left_open_asks_nothing() {
 }
 
 /// `read --at` and `decide` run with their stdin left open finish, and print no question
-/// (`spec/trails/02-cli.md`, "Output and errors").
+/// (`spec/02-cli.md`, "Output and errors").
 #[test]
 fn read_at_and_decide_with_stdin_left_open_ask_nothing() {
     let repo = Repo::new();
@@ -137,7 +137,7 @@ fn read_at_and_decide_with_stdin_left_open_ask_nothing() {
 }
 
 /// A command takes an id whole, or as its first 4 or more characters when only one record's id starts
-/// with them; 3 characters name no record (`spec/trails/02-cli.md`, "Output and errors").
+/// with them; 3 characters name no record (`spec/02-cli.md`, "Output and errors").
 #[test]
 fn a_command_takes_an_id_whole_or_as_a_start_of_4_or_more_characters() {
     let repo = Repo::plain();
@@ -171,7 +171,7 @@ fn a_command_takes_an_id_whole_or_as_a_start_of_4_or_more_characters() {
 }
 
 /// `decide --replaces` takes the first 8 characters of a decision's id
-/// (`spec/trails/02-cli.md`, "Output and errors").
+/// (`spec/02-cli.md`, "Output and errors").
 #[test]
 fn decide_replaces_takes_the_first_8_characters_of_an_id() {
     let repo = Repo::plain();
@@ -186,7 +186,7 @@ fn decide_replaces_takes_the_first_8_characters_of_an_id() {
 }
 
 /// A trail or step command accepts `--json` and prints one JSON object a line, and nothing else
-/// (`spec/trails/02-cli.md`, "Output and errors").
+/// (`spec/02-cli.md`, "Output and errors").
 #[test]
 fn a_trail_or_step_command_prints_one_json_object_a_line_with_json() {
     let repo = Repo::plain();
@@ -207,7 +207,7 @@ fn a_trail_or_step_command_prints_one_json_object_a_line_with_json() {
     }
 }
 
-/// `read` accepts `--json` and prints one JSON object a line, and nothing else (`spec/trails/02-cli.md`,
+/// `read` accepts `--json` and prints one JSON object a line, and nothing else (`spec/02-cli.md`,
 /// "Output and errors").
 #[test]
 fn read_prints_one_json_object_a_line_with_json() {
@@ -221,7 +221,7 @@ fn read_prints_one_json_object_a_line_with_json() {
     assert_eq!(objects(&out(&o)).len(), 3, "{}", out(&o));
 }
 
-/// `decide` and `read` accept `--json` and print one JSON object a line (`spec/trails/02-cli.md`,
+/// `decide` and `read` accept `--json` and print one JSON object a line (`spec/02-cli.md`,
 /// "Output and errors").
 #[test]
 fn decide_and_read_print_one_json_object_a_line_with_json() {
@@ -237,7 +237,7 @@ fn decide_and_read_print_one_json_object_a_line_with_json() {
 }
 
 /// A trail or step command that writes a record prints its id, and `{"id"}` with `--json`
-/// (`spec/trails/02-cli.md`, "Output and errors").
+/// (`spec/02-cli.md`, "Output and errors").
 #[test]
 fn a_command_that_writes_a_record_prints_its_id() {
     let repo = Repo::plain();
@@ -259,7 +259,7 @@ fn a_command_that_writes_a_record_prints_its_id() {
     }
 }
 
-/// `decide` prints the id of its record, and `{"id"}` with `--json` (`spec/trails/02-cli.md`,
+/// `decide` prints the id of its record, and `{"id"}` with `--json` (`spec/02-cli.md`,
 /// "Output and errors").
 #[test]
 fn decide_prints_its_id() {
@@ -274,7 +274,7 @@ fn decide_prints_its_id() {
 }
 
 /// With `--json`, a `--replaces` no live decision has is named `no-decision`
-/// (`spec/trails/02-cli.md`, "Output and errors").
+/// (`spec/02-cli.md`, "Output and errors").
 #[test]
 fn a_replaces_no_live_decision_has_is_named_no_decision_under_json() {
     let repo = Repo::new();
@@ -286,7 +286,7 @@ fn a_replaces_no_live_decision_has_is_named_no_decision_under_json() {
     assert_eq!(object["error"], "no-decision");
 }
 
-/// A usage error names the narrowest help page that covers it (`spec/trails/02-cli.md`, "Output and errors").
+/// A usage error names the narrowest help page that covers it (`spec/02-cli.md`, "Output and errors").
 #[test]
 fn a_usage_error_names_the_narrowest_help_page() {
     let repo = Repo::new();
@@ -303,7 +303,7 @@ fn a_usage_error_names_the_narrowest_help_page() {
 }
 
 /// An unknown command names the known one nearest it, when two edits or fewer turn one into the other
-/// (`spec/trails/02-cli.md`, "Output and errors").
+/// (`spec/02-cli.md`, "Output and errors").
 #[test]
 fn an_unknown_command_names_the_known_one_nearest_it() {
     let repo = Repo::new();
@@ -313,7 +313,7 @@ fn an_unknown_command_names_the_known_one_nearest_it() {
 }
 
 /// Without `--json`, an error is one line on stderr: `celis: <message>`; with `--json` it is one object
-/// (`spec/trails/02-cli.md`, "Output and errors").
+/// (`spec/02-cli.md`, "Output and errors").
 #[test]
 fn without_json_an_error_is_one_line() {
     let repo = Repo::new();
@@ -331,7 +331,7 @@ fn without_json_an_error_is_one_line() {
 }
 
 /// A code-1 error without `--json` is one line on stderr, `celis: <message>`
-/// (`spec/trails/02-cli.md`, "Output and errors").
+/// (`spec/02-cli.md`, "Output and errors").
 #[test]
 fn a_code_1_error_without_json_is_one_celis_line() {
     let repo = Repo::plain();
@@ -351,7 +351,7 @@ fn a_code_1_error_without_json_is_one_celis_line() {
     assert_eq!(out(&o), "");
 }
 
-/// Any other error exits 1, and with `--json` it is one object on stderr (`spec/trails/02-cli.md`,
+/// Any other error exits 1, and with `--json` it is one object on stderr (`spec/02-cli.md`,
 /// "Output and errors").
 #[test]
 fn any_other_error_exits_1() {
@@ -377,7 +377,7 @@ fn any_other_error_exits_1() {
 }
 
 /// A command refuses an 8-character start two steps share, and takes a full id of either
-/// (`spec/trails/02-cli.md`, "Output and errors").
+/// (`spec/02-cli.md`, "Output and errors").
 #[test]
 fn a_command_refuses_an_8_character_start_two_steps_share() {
     let repo = Repo::plain();
@@ -403,7 +403,7 @@ fn a_command_refuses_an_8_character_start_two_steps_share() {
 }
 
 /// A command refuses an 8-character start two steps share with `no-step`, or `no-trail` as a scope, and
-/// two decisions share with `no-decision`, under `--json` (`spec/trails/02-cli.md`, "Output and errors").
+/// two decisions share with `no-decision`, under `--json` (`spec/02-cli.md`, "Output and errors").
 #[test]
 fn a_command_refuses_an_8_character_start_two_trails_decisions_or_steps_share() {
     let repo = Repo::plain();
@@ -460,7 +460,7 @@ fn a_command_refuses_an_8_character_start_two_trails_decisions_or_steps_share() 
     assert_eq!(out(&o), "");
 }
 
-/// `step done` prints one JSON object a line with `--json` (`spec/trails/02-cli.md`, "Output and
+/// `step done` prints one JSON object a line with `--json` (`spec/02-cli.md`, "Output and
 /// errors").
 #[test]
 fn step_done_prints_json_objects_with_json() {
@@ -484,7 +484,7 @@ fn step_done_prints_json_objects_with_json() {
 }
 
 /// An unknown command more than two edits from every known one names no "did you mean"
-/// (`spec/trails/02-cli.md`, "Output and errors").
+/// (`spec/02-cli.md`, "Output and errors").
 #[test]
 fn an_unknown_command_far_from_every_known_one_names_no_suggestion() {
     let repo = Repo::plain();
@@ -495,7 +495,7 @@ fn an_unknown_command_far_from_every_known_one_names_no_suggestion() {
 }
 
 /// With `--json`, each refusal names itself: `usage`, `no-decision`, `no-step` and `closed`, and
-/// any other failure `error` (`spec/trails/02-cli.md`, "Output and errors").
+/// any other failure `error` (`spec/02-cli.md`, "Output and errors").
 #[test]
 fn each_refusal_names_itself_under_json() {
     let repo = Repo::plain();
@@ -544,7 +544,7 @@ fn each_refusal_names_itself_under_json() {
     assert_eq!(object["error"], "error");
 }
 
-/// A command whose reader closes stdout stops with no message (`spec/trails/02-cli.md`, "Output and
+/// A command whose reader closes stdout stops with no message (`spec/02-cli.md`, "Output and
 /// errors").
 #[test]
 fn a_closed_reader_stops_a_command_with_no_message() {

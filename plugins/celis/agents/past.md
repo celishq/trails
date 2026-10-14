@@ -14,8 +14,8 @@ in your prompt. Run only `celis` commands, and change no file.
    - the past work of every project, one line each: its id, `[project]`, title, place, grade or state,
      and day.
 2. Choose up to 3 past work lines whose work is the same kind of task as the ask. Prefer the same
-   project, the same places, few steers, and newer days. Choose none when no line fits. The ask can be
-   in another language than the lines.
+   project, the same places, work that was not revised, and newer days. Choose none when no line fits.
+   The ask can be in another language than the lines.
 3. Run `celis tree <id> --full` for each line you chose.
 
 Answer in this shape. Copy every active trail, rule and decision, not only those that seem to fit,
@@ -27,9 +27,11 @@ active <id> <title>              each active trail of this project
 decision <id> <scope> <text>     each decision
 past <id> <title>                each past work you chose
   rule <id> <text>               each rule of its trail
-  plan <step title>              each step under it
+  plan <id> <step title>         each step under it
     changed <text>               its changed line, when it has one
 ```
+
+Keep the id on each `past` and `plan` line: the agent passes it to `step add --uses`.
 
 Write "no active trail", "no decision" or "no past work" in place of a part that has none. Add nothing
 else: no advice and no summary.

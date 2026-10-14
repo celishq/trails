@@ -1,0 +1,214 @@
+//! The steps of a store, as they stand at one moment.
+
+use crate::{Failure, Mark, Step, StepRecord, Trail};
+use celis_nostr::Note;
+use std::collections::HashMap;
+
+/// The step records and marks of a store at the time `now`: which steps are open, how they nest, and how
+/// each went.
+pub struct Steps<'a> {
+    pub now: u64,
+    index: Index<'a>,
+}
+
+impl<'a> Steps<'a> {
+    pub fn new(records: &'a [Note], now: u64) -> Steps<'a> {
+        Steps {
+            now,
+            index: Index::of(records),
+        }
+    }
+
+    /// Every step, oldest first.
+    pub fn all(&'a self) -> Vec<Step<'a>> {
+        let all = self.index.all.iter();
+        all.filter_map(|n| self.get(&n.id)).collect()
+    }
+
+    /// The step whose id is `id`.
+    pub fn get(&'a self, id: &str) -> Option<Step<'a>> {
+        Some(Step::new(self, self.index.entries.get(id)?))
+    }
+
+    /// The step whose id is `id`, or the only step whose id starts with `id` when `id` is 4 or more
+    /// characters.
+    pub fn find(&'a self, id: &str) -> Result<Step<'a>, Failure> {
+        let note = match self.index.entries.get(id) {
+            Some(entry) => Some(entry.note),
+            None => crate::id::find(self.index.all.iter().copied(), id),
+        };
+        note.and_then(|n| self.get(&n.id))
+            .ok_or_else(|| Failure::no_step(id))
+    }
+
+    /// The step `find` gives for `id`; `closed` when a done or a drop names it.
+    pub fn find_open(&'a self, id: &str) -> Result<Step<'a>, Failure> {
+        let step = self.find(id)?;
+        match step.closed() {
+            Some(_) => Err(Failure::closed(step.id())),
+            None => Ok(step),
+        }
+    }
+
+    /// Every open step whose trail has not ended, oldest first.
+    pub fn open(&'a self) -> Vec<Step<'a>> {
+        let all = self.all().into_iter();
+        all.filter(|s| s.closed().is_none() && !s.trail().ended())
+            .collect()
+    }
+
+    /// Every trail of the project `project`, oldest first.
+    pub fn trails(&'a self, project: &str) -> Vec<Step<'a>> {
+        let roots = self.roots().into_iter();
+        roots
+            .filter(|s| s.record().anchor.project == project)
+            .collect()
+    }
+
+    /// Every trail of every project, oldest first.
+    pub fn roots(&'a self) -> Vec<Step<'a>> {
+        self.all().into_iter().filter(|s| s.is_trail()).collect()
+    }
+
+    /// The open trail of the session `session` in the project `project`: the trail of its newest step,
+    /// when it is not done or dropped.
+    pub fn session(&'a self, project: &str, session: &str) -> Option<Step<'a>> {
+        let newest = self.all().into_iter().rev().find(|s| {
+            let record = s.record();
+            record.anchor.project == project && record.session.as_deref() == Some(session)
+        })?;
+        let trail = newest.trail();
+        trail.closed().is_none().then_some(trail)
+    }
+
+    /// The past work, newest first: each done ask, and each reached trail with no twin.
+    pub fn past(&'a self) -> Vec<Step<'a>> {
+        let mut past: Vec<Step<'a>> = self
+            .all()
+            .into_iter()
+            .filter(|s| match s.is_trail() {
+                false => s.done().is_some() && s.is_ask(),
+                true => s.state().reached() && Trail::new(*s).first().is_none(),
+            })
+            .collect();
+        past.reverse();
+        past
+    }
+}
+
+/// The seconds a trail stays active after the newest record of its tree.
+pub const LIFE: u64 = 30 * 60;
+
+/// The step records, oldest first, and what the marks say of each step.
+pub(crate) struct Index<'a> {
+    all: Vec<&'a Note>,
+    entries: HashMap<&'a str, Entry<'a>>,
+}
+
+/// One step: its record, its text with its edits, its links, the steps that replace it, and how its marks
+/// left it.
+pub(crate) struct Entry<'a> {
+    pub(crate) note: &'a Note,
+    pub(crate) step: StepRecord,
+    pub(crate) children: Vec<&'a Note>,
+    pub(crate) replaced: Vec<&'a Note>,
+    pub(crate) start: Option<&'a Note>,
+    pub(crate) close: Option<(&'a Note, Close)>,
+    pub(crate) newest: u64,
+}
+
+/// How a step was closed.
+#[derive(Clone, Copy)]
+pub(crate) enum Close {
+    Done,
+    Dropped,
+}
+
+impl<'a> Index<'a> {
+    /// The index of `records`, read in the order they were written.
+    fn of(records: &'a [Note]) -> Index<'a> {
+        let mut sorted: Vec<&'a Note> = records.iter().collect();
+        sorted.sort_by(|a, b| (a.created_at, &a.id).cmp(&(b.created_at, &b.id)));
+        let mut all = Vec::new();
+        let mut entries: HashMap<&'a str, Entry<'a>> = HashMap::new();
+        for &note in &sorted {
+            if let Some(step) = StepRecord::read(note) {
+                all.push(note);
+                entries.insert(
+                    &note.id,
+                    Entry {
+                        note,
+                        step,
+                        children: Vec::new(),
+                        replaced: Vec::new(),
+                        start: None,
+                        close: None,
+                        newest: note.created_at,
+                    },
+                );
+            }
+        }
+        for &note in &all {
+            let step = &entries[note.id.as_str()].step;
+            let (under, replaces) = (step.under.clone(), step.replaces.clone());
+            if let Some(parent) = under.and_then(|id| entries.get_mut(&*id)) {
+                parent.children.push(note);
+            }
+            if let Some(old) = replaces.and_then(|id| entries.get_mut(&*id)) {
+                old.replaced.push(note);
+            }
+        }
+        for &note in &sorted {
+            let Some((id, mark)) = Mark::read(note) else {
+                continue;
+            };
+            let Some(entry) = entries.get_mut(&*id) else {
+                continue;
+            };
+            entry.newest = entry.newest.max(note.created_at);
+            entry.mark(note, mark);
+        }
+        Index { all, entries }
+    }
+}
+
+impl<'a> Entry<'a> {
+    /// Takes in the mark `mark` that the record `note` holds, in the order the marks were written.
+    fn mark(&mut self, note: &'a Note, mark: Mark) {
+        match mark {
+            Mark::Start => {
+                self.start.get_or_insert(note);
+            }
+            Mark::Done { proof, .. } if !proof.trim().is_empty() => {
+                self.close.get_or_insert((note, Close::Done));
+            }
+            Mark::Drop { reason } if !reason.trim().is_empty() => {
+                self.close.get_or_insert((note, Close::Dropped));
+            }
+            Mark::Edit {
+                text,
+                places,
+                check,
+            } => {
+                let step = &mut self.step;
+                step.content = match (
+                    text.trim().is_empty(),
+                    text.lines().count(),
+                    step.content.split_once('\n'),
+                ) {
+                    (true, _, _) => std::mem::take(&mut step.content),
+                    (false, 1, Some((_, detail))) => format!("{}\n{detail}", text.trim_end()),
+                    (false, _, _) => text,
+                };
+                if !places.is_empty() {
+                    step.places = places;
+                }
+                step.check = check.or(step.check.take());
+            }
+            _ => {}
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests;

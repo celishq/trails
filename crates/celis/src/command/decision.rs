@@ -29,10 +29,10 @@ impl Command {
         let decision = Decision {
             anchor: project.anchor(),
             scope,
-            replaces: args.replaces.clone(),
+            replaces: None,
             content,
         };
-        let written = self.trails()?.decide(decision)?;
+        let written = self.trails()?.decide(decision, args.replaces.as_deref())?;
         self.print(written, args, out, &mut std::io::sink())
     }
 }

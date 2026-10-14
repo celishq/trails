@@ -1,6 +1,6 @@
 //! The live decisions of a store.
 
-use crate::{Decision, Failure, Scope};
+use crate::{Decision, DecisionId, Failure, Scope};
 use celis_nostr::Note;
 use std::collections::HashSet;
 
@@ -16,13 +16,13 @@ impl<'a> Decisions<'a> {
             .iter()
             .filter_map(|n| Some((n, Decision::read(n)?)))
             .collect();
-        let replaced: HashSet<String> = counted
+        let replaced: HashSet<DecisionId> = counted
             .iter()
             .filter_map(|(_, d)| d.replaces.clone())
             .collect();
         let mut live: Vec<(&'a Note, Decision)> = counted
             .into_iter()
-            .filter(|(n, _)| !replaced.contains(&n.id))
+            .filter(|(n, _)| !replaced.contains(&DecisionId::new(&n.id)))
             .collect();
         live.sort_by(|(a, x), (b, y)| {
             (x.scope.rank(), b.created_at, &a.id).cmp(&(y.scope.rank(), a.created_at, &b.id))
@@ -37,6 +37,11 @@ impl<'a> Decisions<'a> {
             .filter(|(_, d)| d.scope == Scope::Me || d.anchor.project == project)
             .cloned()
             .collect()
+    }
+
+    /// The live decision of any project whose id is `id`.
+    pub fn get(&self, id: &str) -> Option<(&'a Note, Decision)> {
+        self.live.iter().find(|(n, _)| n.id == id).cloned()
     }
 
     /// The live decision in scope in `project` whose id is `id`, or the only one whose id starts with `id`
