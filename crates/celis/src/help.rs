@@ -13,6 +13,7 @@ Commands
   issue    what went wrong, as Markdown for the celis team
   step     the steps of a trail: add, start, done, drop, edit
   auth     the account's phrase: login, status, phrase
+  update   this binary, to the latest release or a version
 
 $CELIS_HOME holds the phrase and the store.
 
@@ -234,6 +235,16 @@ pub const VERBS: &[Verb] = &[
         summary: "Print the kept recovery phrase, to give it to the Celis app or to another machine.",
         args: &[],
         examples: &["celis auth phrase"],
+    },
+    Verb {
+        command: "update",
+        usage: &["celis update [<version>] [--dry-run]"],
+        summary: "Replace this celis with the build of a release from GitHub, checked against its SHA-256. With no version, it takes the latest, and does nothing when that is installed.",
+        args: &[
+            ("<version>", "the version to install, as 1.2.0 or v1.2.0; optional"),
+            ("--dry-run", "print the installed and the new version, and change nothing"),
+        ],
+        examples: &["celis update", "celis update 1.2.0", "celis update --dry-run"],
     },
     Verb {
         command: "step add",

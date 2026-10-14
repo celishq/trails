@@ -71,6 +71,8 @@ Everything is saved as [nostr](https://nostr.org) notes, signed with your own ke
 curl -fsSL https://celis.ai/install.sh | sh
 ```
 
+To update it later, run `celis update`.
+
 **2. Add the plugin to your agent:**
 
 | Agent       | Install                                                                         | Then                                                                              |

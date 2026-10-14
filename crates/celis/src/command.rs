@@ -11,6 +11,7 @@ mod report;
 mod review;
 mod step;
 mod tree;
+mod update;
 mod watch;
 
 use crate::help::{self, VERBS};
@@ -73,6 +74,7 @@ impl Command {
             "issue" => self.issue(args, out),
             "prompt" => self.prompt(args, out, err, &self.project()),
             "auth" => self.auth(args, out, err),
+            "update" => self.update(args, out),
             "" => Err(Failure::usage("expected: celis <command>")),
             verb => Err(Failure::unknown(verb, verbs())),
         }
