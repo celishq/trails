@@ -4,9 +4,10 @@ use super::clock::{clock, day, midnight};
 use super::{Args, Command};
 use celis_nostr::Note;
 use celis_trails::id::short;
+use celis_trails::trail::grade::saved;
 use celis_trails::trail::grade::{stride, took};
 use celis_trails::trail::steps::LIFE;
-use celis_trails::{Decisions, Failure, Grade, State, Status, Step, Steps, Trails};
+use celis_trails::{Decisions, Failure, Grade, Reuse, State, Status, Step, Steps, Trails};
 use serde_json::json;
 use std::cell::Cell;
 use std::io::{IsTerminal, Write};
@@ -47,6 +48,7 @@ impl Command {
         let id = args.words.get(1);
         let steps = trails.steps();
         let decisions = trails.decisions();
+        let reuse = Reuse::new(&steps);
         let chosen: Vec<&Note> = match (id, args.all) {
             (Some(id), _) => vec![steps.find(id)?],
             (None, true) => steps.roots().into_iter().rev().collect(),
@@ -55,6 +57,7 @@ impl Command {
         let tree = Tree {
             steps: &steps,
             decisions: &decisions,
+            reuse: &reuse,
             colour: self.colour(),
             full: args.full,
             fold: id.is_none() && !args.full,
@@ -90,6 +93,7 @@ pub(super) const EMPTY: &str = "No active trails. Run `celis tree --all` to see 
 pub(super) struct Tree<'a> {
     pub steps: &'a Steps<'a>,
     pub decisions: &'a Decisions<'a>,
+    pub reuse: &'a Reuse<'a>,
     pub colour: bool,
     pub full: bool,
     pub fold: bool,
@@ -156,7 +160,7 @@ impl Tree<'_> {
                 "proof": done.map(|d| d.content.clone()),
                 "changed": done.and_then(|d| d.tag("changed")),
                 "grade": grade.as_ref().map(|g| g.value()),
-                "reason": reason});
+                "reused": self.reuse.down(note).len(), "reason": reason});
             lines.push(Line::Text(json!({ key: head }).to_string()));
             return self.under(self.steps.under(&note.id), "", json, lines);
         }
@@ -195,6 +199,7 @@ impl Tree<'_> {
             ],
         });
         self.closing(&step, done, &grade, &reason, ("", column), lines);
+        self.reused(note, ("", column), lines);
         if folded {
             return;
         }
@@ -322,6 +327,7 @@ impl Tree<'_> {
                 value["proof"] = json!(done.map(|d| d.content.clone()));
                 value["changed"] = json!(done.and_then(|d| d.tag("changed")));
                 value["grade"] = json!(grade.as_ref().map(|g| g.value()));
+                value["reused"] = json!(self.reuse.down(note).len());
                 value["reason"] = json!(reason);
                 lines.push(Line::Text(json!({ "step": value }).to_string()));
             } else {
@@ -356,6 +362,7 @@ impl Tree<'_> {
                 });
                 let rail = format!("  {next}");
                 self.closing(&step, done, &grade, &reason, (&rail, column), lines);
+                self.reused(note, (&rail, column), lines);
             }
             self.under(self.steps.under(&note.id), &next, json, lines);
         }
@@ -388,6 +395,26 @@ impl Tree<'_> {
         }
         if let Some(reason) = reason {
             self.labelled(out, at, "dropped", reason);
+        }
+    }
+
+    /// Adds under `note` in the full tree a `follows` line for each step it follows, then a `reused` line
+    /// when steps follow it, after the branch lines `at.0`, at the column `at.1`.
+    fn reused(&self, note: &Note, at: (&str, usize), out: &mut Vec<Line>) {
+        if !self.full {
+            return;
+        }
+        for source in self.reuse.sources(note) {
+            let line = format!("{} {}", short(&source.id), self.steps.title(source));
+            self.labelled(out, at, "follows", &line);
+        }
+        let count = self.reuse.down(note).len();
+        if count > 0 {
+            let save = self.reuse.saved(note);
+            let line = save.map_or(count.to_string(), |s| {
+                format!("{count} · saved {}", saved(s))
+            });
+            self.labelled(out, at, "reused", &line);
         }
     }
 

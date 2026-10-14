@@ -28,9 +28,11 @@ fn step(under: Option<&Note>, at: u64) -> Note {
 fn next(records: &[Note], now: u64) -> Option<u64> {
     let steps = Steps::new(records, now);
     let decisions = Decisions::new(records);
+    let reuse = Reuse::new(&steps);
     let tree = Tree {
         steps: &steps,
         decisions: &decisions,
+        reuse: &reuse,
         colour: false,
         full: false,
         fold: false,

@@ -39,6 +39,11 @@ impl<'a> Decisions<'a> {
             .collect()
     }
 
+    /// The live decision of any project whose id is `id`.
+    pub fn get(&self, id: &str) -> Option<(&'a Note, Decision)> {
+        self.live.iter().find(|(n, _)| n.id == id).cloned()
+    }
+
     /// The live decision in scope in `project` whose id is `id`, or the only one whose id starts with `id`
     /// when `id` is 4 or more characters.
     pub fn find(&self, project: &str, id: &str) -> Result<&'a Note, Failure> {

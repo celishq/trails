@@ -35,6 +35,12 @@ pub fn took(seconds: u64) -> String {
     }
 }
 
+/// `seconds` as `took` gives it, with a `-` when below zero.
+pub fn saved(seconds: i64) -> String {
+    let sign = if seconds < 0 { "-" } else { "" };
+    format!("{sign}{}", took(seconds.unsigned_abs()))
+}
+
 /// The seconds until `took` shows another value for `seconds`.
 pub fn stride(seconds: u64) -> u64 {
     match seconds {

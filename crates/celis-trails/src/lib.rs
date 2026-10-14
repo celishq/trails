@@ -21,6 +21,7 @@ pub use store::Store;
 pub use trail::check::Check;
 pub use trail::grade::Grade;
 pub use trail::mark::Mark;
+pub use trail::reuse::Reuse;
 pub use trail::state::State;
 pub use trail::status::Status;
 pub use trail::step::Step;

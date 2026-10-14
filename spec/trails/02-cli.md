@@ -14,6 +14,7 @@ celis decide [--scope <scope>] [--replaces <id>] -- <text>
                                                        a decision, in its scope
 celis tree [<id>] [--full] [--all]                    a trail and its steps; again on each change (CIP-04)
 celis past [--at <place>]...                          this project's trails and decisions, past work (CIP-04)
+celis stats [<id>]                                    what later work reused, and what it saved (CIP-06)
 celis report <id>...                                  the trails as Markdown, for a pull request (CIP-05)
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team (CIP-05)
 celis step add | start | done | drop | edit           the steps of a trail (CIP-03)
@@ -73,6 +74,7 @@ Commands
   decide   a decision, in its scope
   tree     a trail and its steps, with their grades
   past     this project's active trails and decisions, every project's past work
+  stats    what later work reused, and what it saved
   report   trails as Markdown, for a pull request
   issue    what went wrong, as Markdown for the celis team
   step     the steps of a trail: add, start, done, drop, edit

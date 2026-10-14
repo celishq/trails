@@ -9,6 +9,7 @@ mod past;
 mod prompt;
 mod report;
 mod review;
+mod stats;
 mod step;
 mod tree;
 mod update;
@@ -70,6 +71,7 @@ impl Command {
             "decide" => self.decide(args, out, &self.project()),
             "tree" => self.tree(args, out),
             "past" => self.past(args, out, &self.project()),
+            "stats" => self.stats(args, out),
             "report" => self.report(args, out),
             "issue" => self.issue(args, out),
             "prompt" => self.prompt(args, out, err, &self.project()),

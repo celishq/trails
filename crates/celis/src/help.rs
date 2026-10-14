@@ -9,6 +9,7 @@ Commands
   decide   a decision, in its scope
   tree     a trail and its steps, with their grades
   past     this project's active trails and decisions, every project's past work
+  stats    what later work reused, and what it saved
   report   trails as Markdown, for a pull request
   issue    what went wrong, as Markdown for the celis team
   step     the steps of a trail: add, start, done, drop, edit
@@ -162,6 +163,13 @@ pub const VERBS: &[Verb] = &[
         summary: "Print this project's active trails with their rules and its decisions, then the done asks and reached trails of every project, newest first, one line each with its project, place, grade and day.",
         args: &[("--at <place>", "a place whose decisions come first; zero or more")],
         examples: &["celis past", "celis past --at shelf/prices.py"],
+    },
+    Verb {
+        command: "stats",
+        usage: &["celis stats [<id>]"],
+        summary: "Print each step that later steps follow, with what they saved, then each decision steps used, then the total; with an id, the steps it follows and the steps that follow it. Writes no record.",
+        args: &[("<id>", "the step id, or a start of 4 or more characters; optional")],
+        examples: &["celis stats", "celis stats 9b0e11aa"],
     },
     Verb {
         command: "report",

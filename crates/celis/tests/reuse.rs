@@ -182,3 +182,127 @@ fn replaces_refuses_a_dropped_step() {
     );
     refusal(&o, 1, "closed");
 }
+
+/// A chain of follows: the ask `a` of one trail, `b` of a second that uses `a` and the decision, and
+/// `c` of a third that uses `b` and the decision; each done. Gives `(a, b, c, decision)`.
+fn chain(repo: &Repo) -> (String, String, String, String) {
+    let rule = decide(repo, "When a price rounds: round down to the cent.");
+    let a = ids(repo, "s1", &["--", "a senior pays 80%"]).remove(0);
+    finish(repo, &a[..8]);
+    let follow = |source: &str, text: &str| {
+        let trail = add(repo, &["--new", "--", text]);
+        let step = add(
+            repo,
+            &[
+                "--under",
+                &trail[..8],
+                "--uses",
+                &source[..8],
+                "--uses",
+                &rule[..8],
+                "--",
+                text,
+            ],
+        );
+        finish(repo, &step[..8]);
+        step
+    };
+    let b = follow(&a, "a student pays 70%");
+    let c = follow(&b, "a member pays 90%");
+    (a, b, c, rule)
+}
+
+/// The line of `text` that holds `id`.
+fn line<'a>(text: &'a str, id: &str) -> &'a str {
+    text.lines().find(|l| l.contains(&id[..8])).unwrap_or("")
+}
+
+/// `stats` with nothing reused says so, and prints nothing with `--json`; it refuses an unknown id
+/// with `no-step` (`spec/trails/06-reuse.md`, "Derived").
+#[test]
+fn stats_says_when_nothing_was_reused() {
+    let repo = Repo::new();
+    add(&repo, &["--", "the trail"]);
+    assert_eq!(
+        out(&cli(&repo, &["stats"])).trim(),
+        "Nothing was reused yet."
+    );
+    assert_eq!(out(&cli(&repo, &["stats", "--json"])), "");
+    refusal(&cli(&repo, &["stats", "--json", "ffffffff"]), 1, "no-step");
+}
+
+/// `stats` prints each followed step, most followed at any depth first, then each used decision, then
+/// the total (`spec/trails/06-reuse.md`, "Derived").
+#[test]
+fn stats_prints_the_followed_steps_the_used_decisions_and_the_total() {
+    let repo = Repo::new();
+    let (a, b, _, rule) = chain(&repo);
+    let text = out(&cli(&repo, &["stats"]));
+    let lines: Vec<&str> = text.lines().collect();
+    assert!(lines[0].starts_with(&a[..8]), "{text}");
+    assert!(lines[0].contains(" · followed 2 · saved "), "{text}");
+    assert!(lines[1].starts_with(&b[..8]), "{text}");
+    assert!(lines[1].contains(" · followed 1 · saved "), "{text}");
+    assert!(
+        lines[2].starts_with(&format!("decision {}", &rule[..8])),
+        "{text}"
+    );
+    assert!(lines[2].ends_with(" · used 2"), "{text}");
+    assert!(lines[3].starts_with("total 2 follows · saved "), "{text}");
+    assert!(lines[3].ends_with(" · 2 uses"), "{text}");
+    let json = objects(&repo, &["stats"]);
+    assert_eq!(json[0]["followed"]["id"], a, "{json:?}");
+    assert_eq!(json[0]["followed"]["followed"], 2, "{json:?}");
+    assert_eq!(json[2]["used"]["used"], 2, "{json:?}");
+    assert_eq!(json[3]["total"]["follows"], 2, "{json:?}");
+}
+
+/// `stats <id>` prints the step, then each step it follows, then each step that follows it, two spaces
+/// further in a level (`spec/trails/06-reuse.md`, "Derived").
+#[test]
+fn stats_of_a_step_prints_its_sources_then_its_followers() {
+    let repo = Repo::new();
+    let (a, b, c, _) = chain(&repo);
+    let text = out(&cli(&repo, &["stats", &c[..8]]));
+    let lines: Vec<&str> = text.lines().collect();
+    assert!(lines[0].starts_with(&c[..8]), "{text}");
+    assert!(
+        lines[1].starts_with(&format!("  follows {}", &b[..8])),
+        "{text}"
+    );
+    assert!(
+        lines[2].starts_with(&format!("    follows {}", &a[..8])),
+        "{text}"
+    );
+    let text = out(&cli(&repo, &["stats", &a[..8]]));
+    assert!(line(&text, &b).starts_with("  followed "), "{text}");
+    assert!(line(&text, &b).contains(" · saved "), "{text}");
+    assert!(line(&text, &c).starts_with("    followed "), "{text}");
+}
+
+/// `tree --full` prints a `follows` line under a step for each step it follows, and a `reused` line
+/// when steps follow it; `tree --json` gives the count (`spec/trails/06-reuse.md`, "Derived").
+#[test]
+fn tree_prints_follows_and_reused_lines() {
+    let repo = Repo::new();
+    let (a, b, _, _) = chain(&repo);
+    let tree = out(&cli(&repo, &["tree", &b[..8], "--full"]));
+    let follows = format!("follows {} a senior pays 80%", &a[..8]);
+    assert!(
+        tree.lines()
+            .any(|l| l.trim_start_matches([' ', '│']) == follows),
+        "{tree}"
+    );
+    assert!(
+        tree.lines().any(|l| l
+            .trim_start_matches([' ', '│'])
+            .starts_with("reused 1 · saved ")),
+        "{tree}"
+    );
+    let json = objects(&repo, &["tree", &b[..8]]);
+    let at = json
+        .iter()
+        .find_map(|v| v.get("step").or(v.get("trail")))
+        .unwrap();
+    assert_eq!(at["reused"], 1, "{json:?}");
+}
