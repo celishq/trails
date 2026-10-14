@@ -14,7 +14,8 @@ Commands
   stats    what later work reused, and what it saved
   report   trails as Markdown, for a pull request
   issue    what went wrong, as Markdown for the celis team
-  mirror   keep this project's trails in its folder, to commit them
+  link     keep this project's trails in a folder: the repo, or a synced drive
+  unlink   stop keeping this project's trails in a folder
   step     the steps of a trail: add, start, done, drop, edit
   auth     the account's phrase: login, status, phrase
   update   this binary, to the latest release or a version
@@ -226,11 +227,18 @@ pub const VERBS: &[Verb] = &[
         ],
     },
     Verb {
-        command: "mirror",
-        usage: &["celis mirror [--off]"],
-        summary: "Keep this project's trails in .celis/trails/ of its top folder, to commit them, and sync it with the store both ways. From now on, each command reads it and writes the project's records to it. Decisions with the me scope stay out.",
-        args: &[("--off", "stop the sync on this machine, and keep the folder; optional")],
-        examples: &["celis mirror", "celis mirror --off"],
+        command: "link",
+        usage: &["celis link [<folder>]"],
+        summary: "Keep this project's trails in a folder, and sync it with the store both ways: .celis/trails/ in the repo, to commit them, or any folder, such as a synced drive. From now on, each command reads it and writes the project's records to it. Decisions with the me scope stay out.",
+        args: &[("<folder>", "the folder; default: .celis/trails in the top folder")],
+        examples: &["celis link", "celis link ~/Drive/celis/shop"],
+    },
+    Verb {
+        command: "unlink",
+        usage: &["celis unlink [<folder>]"],
+        summary: "Stop keeping this project's trails in a folder on this machine. The folder and its records stay.",
+        args: &[("<folder>", "the folder; default: .celis/trails in the top folder")],
+        examples: &["celis unlink", "celis unlink ~/Drive/celis/shop"],
     },
     Verb {
         command: "decide",

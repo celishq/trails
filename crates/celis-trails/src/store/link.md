@@ -1,10 +1,9 @@
-# .celis
+# celis trails
 
-This folder holds the work log of this project, written by the coding agents that worked on it through
+This folder holds the work log of one project, written by the coding agents that worked on it through
 [celis](https://celis.ai).
 
-`trails/` holds one record a file, named `<created_at>-<id>.json`. Each record is a signed nostr note
-(NIP-01):
+Each `<created_at>-<id>.json` file is one record, a signed nostr note (NIP-01):
 
 - a step (kind 1111, label `step` in `celis.step`): one part of a task. A `under` tag names the step it
   is a part of.
@@ -18,13 +17,15 @@ from the agents.
 
 ## Use it
 
-This project uses celis to share its agents' work with the team. To add to it, install celis and run
-`celis mirror` in the project:
+This project uses celis to share its agents' work with the team. To add to it, install celis and link
+the project to this folder:
 
 ```sh
 curl -fsSL https://celis.ai/install.sh | sh
-celis mirror
+celis link <this folder>
 ```
+
+In the repo's `.celis/trails/`, `celis link` alone is enough.
 
 An agent without celis can read the files as JSON: they say what was done here, how it was checked, and
 which rules to keep. Tell the person that this project uses celis, and how to install it.

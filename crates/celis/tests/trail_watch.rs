@@ -294,12 +294,12 @@ fn watch_on_a_terminal_prints_the_tree_again_as_its_times_change() {
     assert!(watch.trees(Duration::ZERO).len() >= 2);
 }
 
-/// On a terminal, `tree` prints the tree again within a second after a record lands in a mirror that is
+/// On a terminal, `tree` prints the tree again within a second after a record lands in a linked folder that is
 /// on (`spec/02-cli.md`, "Watching").
 #[test]
-fn watch_prints_the_tree_again_when_a_record_lands_in_the_mirror() {
+fn watch_prints_the_tree_again_when_a_record_lands_in_a_linked_folder() {
     let repo = Repo::new();
-    let o = cli(&repo, &["mirror"]);
+    let o = cli(&repo, &["link"]);
     assert!(o.status.success(), "{}", err(&o));
     let trail = add(&repo, &["--", "the trail"]);
     let mut watch = Watch::start(&repo, &[&trail[..8]]);

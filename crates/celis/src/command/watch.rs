@@ -1,8 +1,8 @@
-//! `celis tree` on a terminal: the tree, printed again each time the store or the mirror changes.
+//! `celis tree` on a terminal: the tree, printed again each time the store or a linked folder changes.
 
 use super::tree::EMPTY;
 use super::{Args, Command};
-use celis_trails::{Failure, Mirror};
+use celis_trails::{Failure, Link};
 use notify::{RecursiveMode, Watcher};
 use std::io::Read;
 use std::io::Write;
@@ -12,8 +12,8 @@ use std::sync::mpsc::{channel, RecvTimeoutError, Sender};
 use std::time::Duration;
 
 impl Command {
-    /// Prints the tree `args` names, then prints it again when a record lands in the store or the mirror, a time it shows changes, or
-    /// the terminal's width changes, and sleeps between. With no store, it writes nothing and waits for
+    /// Prints the tree `args` names, then prints it again when a record lands in the store or a linked folder,
+    /// a time it shows changes, or the terminal's width changes, and sleeps between. With no store, it writes nothing and waits for
     /// one. Runs until it is stopped.
     pub(super) fn watch(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let mut shown = String::new();
@@ -39,11 +39,8 @@ impl Command {
         };
         let mut watcher = notify::recommended_watcher(landed).map_err(anyhow::Error::from)?;
         let home = self.home()?;
-        let mirror = Mirror::on(&home, &self.folder).map(|m| m.folder);
-        for folder in [Some(home.join("trails/shared")), mirror]
-            .into_iter()
-            .flatten()
-        {
+        let links = Link::all(&home, &self.folder).into_iter().map(|l| l.folder);
+        for folder in std::iter::once(home.join("trails/shared")).chain(links) {
             watcher
                 .watch(&folder, RecursiveMode::NonRecursive)
                 .map_err(anyhow::Error::from)?;

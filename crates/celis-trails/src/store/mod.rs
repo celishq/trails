@@ -1,25 +1,25 @@
 //! The records of every project on this machine.
 
 pub mod anchor;
-pub mod mirror;
+pub mod link;
 pub mod phrase;
 pub mod project;
 
 use crate::{Failure, Phrase};
 use anyhow::{Context, Result};
 use celis_nostr::{Account, Note};
-use mirror::Mirror;
+use link::Link;
 use std::cell::{OnceCell, RefCell};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 /// The records in `$CELIS_HOME/trails/`, and the account of `$CELIS_HOME/phrase` that signs new ones. It
-/// reads the records from disk once, and keeps those it writes after. With a mirror, it reads and
-/// writes the mirror too.
+/// reads the records from disk once, and keeps those it writes after. It reads and writes its
+/// linked folders too.
 pub struct Store {
     root: PathBuf,
     phrase: Phrase,
-    mirror: Option<Mirror>,
+    links: Vec<Link>,
     account: OnceCell<Account>,
     read: RefCell<Option<Vec<Note>>>,
 }
@@ -37,18 +37,16 @@ impl Store {
         Ok(Store {
             root,
             phrase: Phrase::at(home),
-            mirror: None,
+            links: vec![],
             account: OnceCell::new(),
             read: RefCell::new(None),
         })
     }
 
-    /// The store that also reads and writes `mirror`.
-    pub fn with(self, mirror: Mirror) -> Store {
-        Store {
-            mirror: Some(mirror),
-            ..self
-        }
+    /// The store that also reads and writes the folder of `link`.
+    pub fn with(mut self, link: Link) -> Store {
+        self.links.push(link);
+        self
     }
 
     /// The folder of the store in `home`.
@@ -65,7 +63,7 @@ impl Store {
         Ok(self.account.get_or_init(|| account))
     }
 
-    /// Writes `record` once to `shared/`, and to the mirror when it holds the record.
+    /// Writes `record` once to `shared/`, and to each linked folder that holds it.
     pub fn write(&self, record: &Note) -> Result<PathBuf> {
         let (path, new) = put(&self.root.join("shared"), record)?;
         if new {
@@ -73,45 +71,30 @@ impl Store {
                 read.push(record.clone());
             }
         }
-        if let Some(mirror) = &self.mirror {
+        if !self.links.is_empty() {
             let records = self.records();
             let all = records.iter().map(|r| (r.id.as_str(), r)).collect();
-            if mirror.holds(record, &all) {
-                put(&mirror.folder, record)?;
+            for link in self.links.iter().filter(|l| l.holds(record, &all)) {
+                put(&link.folder, record)?;
             }
         }
         Ok(path)
     }
 
-    /// Copies each record the mirror holds that it lacks into it, and each record of the mirror the
-    /// store lacks into `shared/`. Returns the counts copied out and in.
+    /// Copies each record a linked folder holds and lacks into it, and each record of a linked folder
+    /// the store lacks into `shared/`. Returns the counts copied out and in.
     pub fn sync(&self) -> Result<(usize, usize)> {
-        let Some(mirror) = &self.mirror else {
-            return Ok((0, 0));
-        };
-        let shared = self.root.join("shared");
-        let mut kept = read(&shared);
-        let held = read(&mirror.folder);
-        let known: HashSet<String> = kept.iter().map(|r| r.id.clone()).collect();
-        let mirrored: HashSet<String> = held.iter().map(|r| r.id.clone()).collect();
-        let came: Vec<Note> = held
-            .into_iter()
-            .filter(|r| !known.contains(&r.id))
-            .collect();
-        for record in &came {
-            put(&shared, record)?;
-        }
-        kept.extend(came.iter().cloned());
+        let mut kept = read(&self.root.join("shared"));
+        let came = self.take_in(&mut kept)?;
         let all: HashMap<&str, &Note> = kept.iter().map(|r| (r.id.as_str(), r)).collect();
         let mut went = 0;
-        for record in kept.iter().filter(|r| !mirrored.contains(&r.id)) {
-            if mirror.holds(record, &all) {
-                put(&mirror.folder, record)?;
-                went += 1;
+        for link in &self.links {
+            for record in kept.iter().filter(|r| link.holds(r, &all)) {
+                went += usize::from(put(&link.folder, record)?.1);
             }
         }
         *self.read.borrow_mut() = None;
-        Ok((went, came.len()))
+        Ok((went, came))
     }
 
     /// Every record that parses and verifies, whatever account signed it.
@@ -125,21 +108,24 @@ impl Store {
         all
     }
 
-    /// Every record in `shared/` and in the mirror that parses and verifies; it copies those of the
-    /// mirror into `shared/`.
+    /// Every record in `shared/` and in the linked folders that parses and verifies.
     fn files(&self) -> Vec<Note> {
-        let shared = self.root.join("shared");
-        let mut all = read(&shared);
-        if let Some(mirror) = &self.mirror {
-            let known: HashSet<String> = all.iter().map(|r| r.id.clone()).collect();
-            for record in read(&mirror.folder) {
-                if !known.contains(&record.id) {
-                    let _ = put(&shared, &record);
-                    all.push(record);
-                }
+        let mut all = read(&self.root.join("shared"));
+        let _ = self.take_in(&mut all);
+        all
+    }
+
+    /// Copies each record of the linked folders that `shared/` lacks into it, and adds it to `all`; the
+    /// count.
+    fn take_in(&self, all: &mut Vec<Note>) -> Result<usize> {
+        let mut came = 0;
+        for record in self.links.iter().flat_map(|l| read(&l.folder)) {
+            if put(&self.root.join("shared"), &record)?.1 {
+                all.push(record);
+                came += 1;
             }
         }
-        all
+        Ok(came)
     }
 }
 

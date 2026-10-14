@@ -25,12 +25,13 @@ When a subagent takes a step, give it the step's id. It runs `start` and `done` 
 its own steps `--under` it. To go on with another session's trail, add your first step `--under <its
 id>`.
 
-## Mirror
+## Links
 
-A project can keep its trails in `.celis/trails/`, so that git carries them to the team. When celis says
-the project has a mirror this machine does not sync, ask the person whether to sync this project to
-celis. When the person wants to keep the trails in the repo, tell them to run `celis mirror` in the
-project themselves. Never run `celis mirror` yourself, and never write in `.celis/`.
+A project can keep its trails in `.celis/trails/`, so that git carries them to the team, or in any
+folder, such as a synced drive. When celis says the project has trails this machine does not link, ask
+the person whether to link this project to celis. When the person wants to keep the trails in the repo
+or in a folder, tell them to run `celis link [<folder>]` in the project themselves. Never run
+`celis link` or `celis unlink` yourself, and never write in a linked folder.
 
 ## Stop
 
