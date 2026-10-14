@@ -20,6 +20,8 @@ celis past [--at <place>]...                          this project's trails and 
 celis stats [<id>]                                    what later work reused, and what it saved
 celis report <id>...                                  the trails as Markdown, for a pull request
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
+celis link [<folder>]                                 keep this project's trails in a folder
+celis unlink [<folder>]                               stop keeping them in a folder
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>]... [--check <command>] [--new] [--session <id>] -- <text>
                                                        leave a step
 celis step start <id>                                 take up a step, and see its decisions
@@ -87,6 +89,8 @@ Commands
   stats    what later work reused, and what it saved
   report   trails as Markdown, for a pull request
   issue    what went wrong, as Markdown for the celis team
+  link     keep this project's trails in a folder: the repo, or a synced drive
+  unlink   stop keeping this project's trails in a folder
   step     the steps of a trail: add, start, done, drop, edit
   auth     the account's phrase: login, status, phrase
   update   this binary, to the latest release or a version
@@ -289,6 +293,40 @@ celis step done 4c1d22e0 --as-planned -- "python3 -m unittest: test_senior faile
 celis step drop 3fa2c1d0 -- "The person chose the shared price table instead."
 ```
 
+## Link
+
+`link` links the working folder's project to a folder (CIP-01, "Links"), and syncs it with the store.
+`unlink` takes the link out.
+
+**Rules**
+
+- `link` and `unlink` MUST take `<folder>` from the working folder, and `.celis/trails` in the top
+  folder when none is given.
+- `link` MUST create the folder, and its `README.md` when it is missing.
+- It MUST add the link to `$CELIS_HOME/links` when it is not there.
+- It MUST copy each record of the store that the folder holds and does not have into the folder. It MUST
+  copy each record of the folder that the store does not have into the store.
+- It MUST print the folder as `$CELIS_HOME/links` names it, the count of records it copied out and the
+  count it copied in.
+- A second `link` MUST copy nothing.
+- `unlink` MUST take the link out of `$CELIS_HOME/links`, keep the folder, and copy nothing.
+- `link` and `unlink` MUST NOT write a record.
+
+```
+link    text  <folder> · <out> out · <in> in
+        json  {"folder", "out", "in"}
+unlink  text  <folder> · unlinked
+        json  {"folder", "unlinked": true}
+```
+
+**Examples**
+
+```
+celis link
+celis link ~/Drive/celis/shop
+celis unlink ~/Drive/celis/shop
+```
+
 ## Prompt
 
 The prompt hook of each agent gives the person's prompt to `prompt`, and gives its lines to the agent.
@@ -308,6 +346,10 @@ The prompt hook of each agent gives the person's prompt to `prompt`, and gives i
 - With a working step, `prompt` MUST name it on stderr. The line asks for a step under it, or a
   replacement, when the next work does not fit it.
 - With an open trail, `prompt` MUST then print the join line on stderr, with the trail's id.
+- When the working folder's top folder has `.celis/trails/` and its link is not on (CIP-01, "Links"),
+  `prompt` MUST print a line on stderr, once in a session, also with no store. It MUST NOT print it on a
+  prompt that prints the line for the past agent. The line MUST ask the agent to ask the person whether
+  to link the project, and say that the person runs `celis link`.
 - The join line asks to add a new ask under the session's open trail when it fits, else under a related
   trail that `tree` with no id prints, else as a new trail.
 
@@ -441,8 +483,8 @@ and close.
   one second after a time it shows changes.
 - Between two trees, it MUST sleep until a record lands, a time it shows changes, or the width
   changes. With no time that runs, it MUST NOT wake on a timer.
-- It MUST print the tree again within one second after a record lands in the store, and only when
-  the tree changed.
+- It MUST print the tree again within one second after a record lands in the store, or in a linked
+  folder that is on (CIP-01, "Links"), and only when the tree changed.
 - It MUST clear the screen and its scrollback, and print each tree from the top left.
 - It MUST run until it is stopped, and MUST NOT write a record.
 

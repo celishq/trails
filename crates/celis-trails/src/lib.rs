@@ -28,6 +28,7 @@ pub use step::step_record::StepRecord;
 pub use step::steps::Steps;
 pub use step::Step;
 pub use store::anchor::Anchor;
+pub use store::link::Link;
 pub use store::phrase::Phrase;
 pub use store::project::Project;
 pub use store::Store;

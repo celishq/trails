@@ -2,7 +2,7 @@
 
 use super::tree::today;
 use super::{Args, Command};
-use celis_trails::{Failure, Project, State, Trails};
+use celis_trails::{Failure, Link, Project, State, Trails};
 use std::io::{Read, Write};
 use std::path::Path;
 
@@ -44,13 +44,19 @@ impl Command {
         let notified = ["<task-notification>", "<agent-message"]
             .iter()
             .any(|t| text.starts_with(t));
-        if session.is_empty() || text.is_empty() || notified || !self.held()? {
+        if session.is_empty() || text.is_empty() || notified {
             return Ok(());
+        }
+        if !self.held()? {
+            return self.offer(err, project, &asked);
         }
         let trails = self.trails()?;
         let steps = trails.steps();
         let Some(trail) = steps.session(&project.id, session) else {
-            return self.recall(&trails, err, project, &asked);
+            if !self.recall(&trails, err, project, &asked)? {
+                self.offer(err, project, &asked)?;
+            }
+            return Ok(());
         };
         let record = trails.prompt(trail, text)?;
         self.id(out, args, &record)?;
@@ -64,27 +70,29 @@ impl Command {
             );
             super::put(err, &line)?;
         }
+        self.offer(err, project, &asked)?;
         super::put(err, &joins(Some(trail.id())))
     }
 
     /// Names the agent that brings what `past` prints, when it prints anything and `asked` does not exist;
-    /// then writes `asked`. Else, with a trail of today, says how a new ask joins it.
+    /// then writes `asked`. Else, with a trail of today, says how a new ask joins it. Returns whether it
+    /// named the agent.
     fn recall(
         &self,
         trails: &Trails,
         err: &mut dyn Write,
         project: &Project,
         asked: &Path,
-    ) -> Result<(), Failure> {
+    ) -> Result<bool, Failure> {
         let mut listed = Vec::new();
         if !asked.exists() {
             self.list(trails, &Args::default(), &mut listed, project)?;
         }
         if listed.is_empty() {
-            return match today(&trails.steps(), trails.now).is_empty() {
-                true => Ok(()),
-                false => super::put(err, &joins(None)),
-            };
+            if !today(&trails.steps(), trails.now).is_empty() {
+                super::put(err, &joins(None))?;
+            }
+            return Ok(false);
         }
         super::put(
             err,
@@ -92,12 +100,35 @@ impl Command {
              foreground with the ask and the places it may touch, and wait for its answer; it brings this \
              project's active trails and decisions, and the past work like the ask.",
         )?;
-        if let Some(folder) = asked.parent() {
-            std::fs::create_dir_all(folder).map_err(anyhow::Error::from)?;
-        }
-        std::fs::write(asked, "").map_err(anyhow::Error::from)?;
-        Ok(())
+        mark(asked)?;
+        Ok(true)
     }
+
+    /// Asks, once in the session `asked` names, to link `project` to its `.celis/trails` when that folder
+    /// exists and is not linked.
+    fn offer(&self, err: &mut dyn Write, project: &Project, asked: &Path) -> Result<(), Failure> {
+        let link = Link::new(project, Link::FOLDER);
+        let offered = asked.with_extension("link");
+        if offered.exists() || !link.folder.is_dir() || link.is_on(&self.home()?) {
+            return Ok(());
+        }
+        super::put(
+            err,
+            "celis: this project keeps its trails in .celis/trails/, and this machine does not link \
+             them; ask the person whether to link this project to celis, and if so, to run celis \
+             link in it themselves.",
+        )?;
+        mark(&offered)
+    }
+}
+
+/// Writes the empty file `path`, and its folder.
+fn mark(path: &Path) -> Result<(), Failure> {
+    if let Some(folder) = path.parent() {
+        std::fs::create_dir_all(folder).map_err(anyhow::Error::from)?;
+    }
+    std::fs::write(path, "").map_err(anyhow::Error::from)?;
+    Ok(())
 }
 
 /// How a new ask joins the session's open trail `open`, else a related trail of today, else a new one.
