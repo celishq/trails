@@ -71,6 +71,11 @@ impl Failure {
         )
     }
 
+    /// A command that printed its own error: it ends with `code` and prints nothing more.
+    pub fn quiet(code: i32) -> Self {
+        Self::new("error", code, String::new())
+    }
+
     fn new(name: &str, code: i32, message: String) -> Self {
         Self {
             name: name.into(),
