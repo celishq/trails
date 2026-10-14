@@ -246,7 +246,8 @@ app's account. The steps the old phrase signed still count.
   tags. It MUST write each `--at` as CIP-01 "Places" states.
 - `add` MUST NOT write a step when an open step of the same project and `under` has the same text. It
   MUST print the id of that step.
-- `add --replaces` MUST refuse a trail as a usage error, and a dropped step with `closed`.
+- `add --replaces` MUST read a trail with a first ask (CIP-04, "Sessions") as that ask. It MUST refuse a
+  trail with no first ask as a usage error, and a dropped step with `closed`.
 - `add --uses` MUST write the whole id of each, as CIP-06 "Uses" states. It MUST refuse an id no live
   decision and no step has, with `no-step`, a step of the new step's trail, and a start that both a
   decision's and a step's id have, as a usage error.
@@ -369,6 +370,9 @@ The prompt hook of each agent gives the person's prompt to `prompt`, and gives i
   project is one `tree` with no id prints. Else it MUST print nothing.
 - With a working step, `prompt` MUST name it on stderr. The line asks for a step under it, or a
   replacement, when the next work does not fit it.
+- With an open trail that holds done steps, `prompt` MUST then print a line on stderr that asks to add a
+  change to done work with `step add --replaces`, and then one line for each done step of the trail, with
+  its id and title, oldest first.
 - With an open trail, `prompt` MUST then print the join line on stderr, with the trail's id.
 - When the working folder's top folder has `.celis/trails/` and its link is not on (CIP-01, "Links"),
   `prompt` MUST print a line on stderr, once in a session, also with no store. It MUST NOT print it on a

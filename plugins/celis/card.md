@@ -17,7 +17,9 @@ celis tree [<id>] [--full] [--all] [--demo]
    one-line edit too. So does an ask that works toward a result someone can check. Only an ask that
    changes no file needs none: a question, an explanation, a review or an investigation. Answer it,
    and run no command below.
-3. Add the ask with `step add`. It goes under the session's trail, else it starts a trail. You decide
+3. Add the ask with `step add`. When the ask changes or corrects done work, add it with
+   `--replaces <that step's id>`, not as a new ask; the prompt hook lists the done steps of the
+   session's trail. It goes under the session's trail, else it starts a trail. You decide
    whether the ask goes on with an active trail the agent brought, or with a related trail of today that
    `celis tree` prints: if it does, add it `--under <the trail's id>`. A trail ends when nothing in it is open. An
    ask that leaves the session's trail takes `--new`. It prints the ask's id

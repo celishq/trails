@@ -393,10 +393,10 @@ impl Trails {
     }
 }
 
-/// The step `id` names for `--replaces`: open, or done; refuses a trail as a usage error and a dropped step
-/// with `closed`.
+/// The step `id` names for `--replaces`, a trail as its first ask: open, or done; refuses a trail with no
+/// first ask as a usage error and a dropped step with `closed`.
 fn replaced<'a>(steps: &'a Steps<'a>, id: &str) -> Result<Step<'a>, Failure> {
-    let step = steps.find(id)?;
+    let step = Trail::new(steps.find(id)?).work();
     if step.is_trail() {
         return Err(Failure::usage(
             "step add --replaces takes a step under a trail; edit a trail's title instead",

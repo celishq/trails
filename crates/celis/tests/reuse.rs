@@ -159,6 +159,26 @@ fn replaces_takes_a_done_step_and_reads_it_as_revised() {
     assert!(tree.contains(&line), "{tree}");
 }
 
+/// `step add --replaces` takes a session's trail as its first ask, which reads as revised; a trail with no
+/// first ask stays refused (`spec/02-cli.md`, "Step").
+#[test]
+fn replaces_takes_a_trail_as_its_first_ask() {
+    let repo = Repo::new();
+    let old = ids(&repo, "s1", &["--", "the badge"]);
+    let (old_ask, old_trail) = (&old[0], &old[1]);
+    finish(&repo, &old_ask[..8]);
+    let fix = ids(
+        &repo,
+        "s1",
+        &["--replaces", &old_trail[..8], "--", "the badge is green"],
+    );
+    let json = step(&repo, old_trail, &fix[0]);
+    assert_eq!(links(&json, "replaces"), [old_ask.as_str()], "{json}");
+    let lone = add(&repo, &["--", "a lone trail"]);
+    let o = cli(&repo, &["step", "add", "--replaces", &lone[..8], "--", "x"]);
+    assert_eq!(o.status.code(), Some(2), "{}", err(&o));
+}
+
 /// `step add --replaces` still refuses a dropped step with `closed` (`spec/03-steps.md`,
 /// "Dropping").
 #[test]

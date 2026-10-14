@@ -8,7 +8,7 @@ use std::path::Path;
 
 impl Command {
     /// Writes a hook's prompt on the session's open trail, signed now; prints its id, names the oldest
-    /// working step on `err`, then how a new ask joins a trail. With no open trail, writes nothing, and names the agent that brings past work on `err`, once
+    /// working step and every done step on `err`, then how a new ask joins a trail. With no open trail, writes nothing, and names the agent that brings past work on `err`, once
     /// a session. For a harness message, does neither. A compaction's `SessionStart` lets the session name
     /// the agent again.
     pub(super) fn prompt(
@@ -71,6 +71,27 @@ impl Command {
             super::put(err, &line)?;
         }
         self.offer(err, project, &asked)?;
+        let done: Vec<_> = trail
+            .tree()
+            .into_iter()
+            .skip(1)
+            .filter(|s| s.state() == State::Done)
+            .collect();
+        if !done.is_empty() {
+            super::put(
+                err,
+                "celis: when this prompt changes done work, add it with step add --replaces <its id>, \
+                 not as a new ask; the done steps:",
+            )?;
+            for step in done {
+                let line = format!(
+                    "  {} \"{}\"",
+                    celis_trails::id::short(step.id()),
+                    step.title()
+                );
+                super::put(err, &line)?;
+            }
+        }
         super::put(err, &joins(Some(trail.id())))
     }
 
