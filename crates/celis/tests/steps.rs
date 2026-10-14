@@ -127,6 +127,6 @@ fn a_steps_line_holds_its_title_and_the_full_tree_its_detail() {
     assert!(!short.contains("7.99"), "{short}");
     let full = support::out(&run(&repo, &["tree", &trail[..8], "--full"]));
     let lines: Vec<&str> = full.lines().collect();
-    assert!(lines[1].ends_with(" Round down"), "{full}");
-    assert_eq!(lines[2], "                The test expects 7.99.", "{full}");
+    assert!(lines[2].ends_with(" Round down"), "{full}");
+    assert_eq!(lines[3], "    The test expects 7.99.", "{full}");
 }

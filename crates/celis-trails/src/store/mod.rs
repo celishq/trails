@@ -10,18 +10,19 @@ use anyhow::{Context, Result};
 use celis_nostr::{Account, Note};
 use link::Link;
 use std::cell::{OnceCell, RefCell};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 /// The records in `$CELIS_HOME/trails/`, and the account of `$CELIS_HOME/phrase` that signs new ones. It
-/// reads the records from disk once, and keeps those it writes after. It reads and writes its
-/// linked folders too.
+/// reads the records from disk once, keeps those it writes after, and the names of the files of
+/// `shared/` it holds. It reads and writes its linked folders too.
 pub struct Store {
     root: PathBuf,
     phrase: Phrase,
     links: Vec<Link>,
     account: OnceCell<Account>,
     read: RefCell<Option<Vec<Note>>>,
+    seen: RefCell<HashSet<String>>,
 }
 
 impl Store {
@@ -40,6 +41,7 @@ impl Store {
             links: vec![],
             account: OnceCell::new(),
             read: RefCell::new(None),
+            seen: RefCell::default(),
         })
     }
 
@@ -69,6 +71,7 @@ impl Store {
         if new {
             if let Some(read) = self.read.borrow_mut().as_mut() {
                 read.push(record.clone());
+                self.seen.borrow_mut().insert(name(record));
             }
         }
         if !self.links.is_empty() {
@@ -84,7 +87,7 @@ impl Store {
     /// Copies each record a linked folder holds and lacks into it, and each record of a linked folder
     /// the store lacks into `shared/`. Returns the counts copied out and in.
     pub fn sync(&self) -> Result<(usize, usize)> {
-        let mut kept = read(&self.root.join("shared"));
+        let mut kept = read(&self.root.join("shared"), |_| true);
         let came = self.take_in(&mut kept)?;
         let all: HashMap<&str, &Note> = kept.iter().map(|r| (r.id.as_str(), r)).collect();
         let mut went = 0;
@@ -94,6 +97,7 @@ impl Store {
             }
         }
         *self.read.borrow_mut() = None;
+        self.seen.borrow_mut().clear();
         Ok((went, came))
     }
 
@@ -108,19 +112,40 @@ impl Store {
         all
     }
 
+    /// The records in `shared/` written since the last read, that parse and verify; they join the
+    /// records. None before the first read.
+    pub fn fresh(&self) -> Vec<Note> {
+        let mut read = self.read.borrow_mut();
+        let Some(read) = read.as_mut() else {
+            return Vec::new();
+        };
+        let fresh = self.unseen();
+        read.extend(fresh.iter().cloned());
+        fresh
+    }
+
     /// Every record in `shared/` and in the linked folders that parses and verifies.
     fn files(&self) -> Vec<Note> {
-        let mut all = read(&self.root.join("shared"));
+        let mut all = self.unseen();
         let _ = self.take_in(&mut all);
         all
+    }
+
+    /// Every record in `shared/` of a file not read before, that parses and verifies.
+    fn unseen(&self) -> Vec<Note> {
+        let mut seen = self.seen.borrow_mut();
+        let fresh = read(&self.root.join("shared"), |file| !seen.contains(file));
+        seen.extend(fresh.iter().map(name));
+        fresh
     }
 
     /// Copies each record of the linked folders that `shared/` lacks into it, and adds it to `all`; the
     /// count.
     fn take_in(&self, all: &mut Vec<Note>) -> Result<usize> {
         let mut came = 0;
-        for record in self.links.iter().flat_map(|l| read(&l.folder)) {
+        for record in self.links.iter().flat_map(|l| read(&l.folder, |_| true)) {
             if put(&self.root.join("shared"), &record)?.1 {
+                self.seen.borrow_mut().insert(name(&record));
                 all.push(record);
                 came += 1;
             }
@@ -132,7 +157,7 @@ impl Store {
 /// Writes `record` to `folder` as `<created_at>-<id>.json`, unless it is there; the path, and whether it
 /// wrote it.
 fn put(folder: &Path, record: &Note) -> Result<(PathBuf, bool)> {
-    let name = format!("{}-{}.json", record.created_at, record.id);
+    let name = name(record);
     let path = folder.join(&name);
     if path.exists() {
         return Ok((path, false));
@@ -143,17 +168,29 @@ fn put(folder: &Path, record: &Note) -> Result<(PathBuf, bool)> {
     Ok((path, true))
 }
 
-/// Every record in `folder` that parses and verifies.
-fn read(folder: &Path) -> Vec<Note> {
+/// The name of the file of `record`: `<created_at>-<id>.json`.
+fn name(record: &Note) -> String {
+    format!("{}-{}.json", record.created_at, record.id)
+}
+
+/// Every record in `folder` of a file `wanted` names, that parses and verifies.
+fn read(folder: &Path, wanted: impl Fn(&str) -> bool) -> Vec<Note> {
     std::fs::read_dir(folder)
         .into_iter()
         .flatten()
         .filter_map(|entry| {
             let path = entry.ok()?.path();
             let named = path.extension().is_some_and(|x| x == "json");
-            let text = std::fs::read_to_string(path).ok().filter(|_| named)?;
+            let file = path.file_name()?.to_str()?;
+            if !named || !wanted(file) {
+                return None;
+            }
+            let text = std::fs::read_to_string(&path).ok()?;
             serde_json::from_str::<Note>(&text).ok()
         })
         .filter(Note::verifies)
         .collect()
 }
+
+#[cfg(test)]
+mod tests;

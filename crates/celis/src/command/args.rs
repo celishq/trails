@@ -3,12 +3,13 @@
 use celis_trails::Failure;
 
 /// The words of one command line, split into the verb and its words, the flags and the text after `--`.
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub(crate) struct Args {
     pub json: bool,
     pub help: bool,
     pub full: bool,
     pub all: bool,
+    pub demo: bool,
     pub new: bool,
     pub planned: bool,
     pub words: Vec<String>,
@@ -47,6 +48,7 @@ impl Args {
                 "--help" => parsed.help = true,
                 "--full" => parsed.full = true,
                 "--all" => parsed.all = true,
+                "--demo" => parsed.demo = true,
                 "--new" => parsed.new = true,
                 "--as-planned" => parsed.planned = true,
                 "--at" => parsed.places.push(value(arg, rest.next())?),

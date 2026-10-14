@@ -300,9 +300,9 @@ fn done_writes_a_pitfall_as_a_decision_at_the_steps_place() {
         assert!(o.status.success(), "{}", err(&o));
         assert_eq!(out(&o).lines().count(), 2, "{}", out(&o));
     }
-    let rules = out(&cli(&repo, &["tree", &trail[..8]]));
+    let rules = out(&cli(&repo, &["tree", &trail[..8], "--full"]));
     assert!(
-        rules.contains("─ § ") && rules.contains("wait a second"),
+        rules.contains("\n  § ") && rules.contains("wait a second"),
         "{rules}"
     );
     support::finish(&repo, &trail[..8]);
