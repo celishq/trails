@@ -255,6 +255,40 @@ fn the_prompt_hook_names_the_working_step() {
     );
 }
 
+/// `prompt` names every done step of the session's trail, its first ask too, and says a change to done
+/// work replaces it (`spec/02-cli.md`, "Prompt").
+#[test]
+fn the_prompt_hook_names_the_done_steps() {
+    let repo = Repo::new();
+    let first = ids(&repo, Some("s1"), "make the badges orange");
+    let (ask, trail) = (&first[0], &first[1]);
+    std::thread::sleep(std::time::Duration::from_millis(1100));
+    let part = add(&repo, Some("s1"), "now the buttons too");
+    for id in [ask, &part] {
+        let o = repo.run(
+            &repo.path(),
+            &["step", "done", &id[..8], "--as-planned", "--", "p"],
+            &[],
+            "",
+        );
+        assert!(o.status.success(), "{}", err(&o));
+    }
+    let json = serde_json::json!({"session_id": "s1", "prompt": "make them red"}).to_string();
+    let o = repo.run(&repo.path(), &["prompt"], &[], &json);
+    assert!(o.status.success(), "{}", err(&o));
+    assert_eq!(
+        err(&o).lines().collect::<Vec<_>>(),
+        [
+            "celis: when this prompt changes done work, add it with step add --replaces <its id>, \
+             not as a new ask; the done steps:"
+                .to_string(),
+            format!("  {} \"make the badges orange\"", &ask[..8]),
+            format!("  {} \"now the buttons too\"", &part[..8]),
+            joins(Some(trail)),
+        ]
+    );
+}
+
 /// The hint `prompt` gives for a new ask: join the session's open trail `open` when it fits, else a
 /// related trail of today, else a new one.
 fn joins(open: Option<&str>) -> String {
