@@ -32,7 +32,7 @@ celis prompt                                          a person's prompt, from a 
 celis auth login                                      keep the phrase stdin gives
 celis auth status                                     the account's npub
 celis auth phrase                                     print the phrase
-celis update [<version>] [--dry-run]                  this binary, to the latest release or a version
+celis update [<version>]                              this binary, to the latest release or a version
 
 $CELIS_HOME   where celis keeps the phrase and the store
               default: ~/Library/Application Support/Celis
@@ -153,8 +153,8 @@ celis: no command "pats"; did you mean "past"? See `celis help`.
 
 ## Update
 
-`update` replaces the running `celis` with the build of a release for this system and processor:
-`celis-<cpu>-<system>.tar.gz`, as `install.sh` downloads it.
+`update` replaces the running `celis` with the build of a release: it runs the `install.sh` of the latest
+release, `$CELIS_BASE/latest/download/install.sh`, with `sh`.
 
 ```
 $CELIS_BASE   where the releases are
@@ -163,21 +163,18 @@ $CELIS_BASE   where the releases are
 
 **Rules**
 
-- With no `<version>`, `update` MUST take the version of the release that `$CELIS_BASE/latest` redirects
-  to, `…/tag/v<version>`. When that version is installed, it MUST download nothing and say so.
+- `update` MUST run `install.sh` with `CELIS_UPDATE=1`, `CELIS_BASE`, `CELIS_VERSION` set to `<version>`
+  or `latest`, and `CELIS_INSTALL_DIR` set to the folder of the file the running `celis` resolves to.
+- With no `<version>`, `install.sh` MUST take the version of the release that `$CELIS_BASE/latest`
+  redirects to, `…/tag/v<version>`. When that version is installed, it MUST download nothing and say so.
 - With `<version>`, `update` MUST install `v<version>`, also when it is installed. A leading `v` of
   `<version>` MUST NOT count.
-- `update` MUST download `$CELIS_BASE/download/v<version>/<archive>` and `<archive>.sha256`. When the
-  archive does not match its checksum, or the new `celis --version` fails, it MUST fail and leave the
-  installed file as it was.
-- `update` MUST replace the file the running `celis` resolves to with one rename in its folder.
-- With `--dry-run`, `update` MUST print the installed and the new version, and change nothing.
+- When the archive does not match its checksum, `update` MUST fail and leave the installed file as it was.
+- With `CELIS_UPDATE` set, `install.sh` MUST NOT change PATH or print the next steps of a first install.
 
 ```
-update  text  Updated celis <from> to <to> at <path>.
+update  text  the output of install.sh
               celis <version> is the latest.
-              celis <from> is installed; celis update installs <to>.      (--dry-run)
-        json  {"from", "to", "path", "updated"}
 ```
 
 **Examples**
@@ -185,7 +182,6 @@ update  text  Updated celis <from> to <to> at <path>.
 ```
 celis update
 celis update 0.4.0
-celis update --dry-run
 ```
 
 ## Auth

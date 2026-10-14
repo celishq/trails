@@ -6,6 +6,7 @@
 # CELIS_VERSION picks a version, `latest` by default. CELIS_INSTALL_DIR picks the folder, ~/.local/bin by
 # default. CELIS_BASE picks where the archives are, for a test against another server. When the folder is
 # not on PATH, it adds a line to ~/.profile and to the rc file of your shell, so a new terminal finds celis.
+# CELIS_UPDATE=1 is for `celis update`: it installs nothing when the latest is installed, and touches no PATH.
 set -eu
 
 base="${CELIS_BASE:-https://github.com/celishq/trails/releases}"
@@ -27,6 +28,18 @@ arm64 | aarch64) cpu=aarch64 ;;
 x86_64 | amd64) cpu=x86_64 ;;
 *) fail "there is no build for the $(uname -m) processor yet." ;;
 esac
+
+if [ -n "${CELIS_UPDATE:-}" ] && [ "$version" = latest ]; then
+	tag="$(curl -fsS -o /dev/null -w '%{redirect_url}' "$base/latest")" || fail "could not reach $base/latest"
+	version="${tag##*/tag/v}"
+	[ -n "$version" ] && [ "$version" != "$tag" ] || fail "$base/latest names no release"
+	case "$("$dir/celis" --version 2>/dev/null)" in
+	"celis $version" | "celis $version "*)
+		echo "celis $version is the latest."
+		exit 0
+		;;
+	esac
+fi
 
 name="celis-$cpu-$system.tar.gz"
 case "$version" in
@@ -54,6 +67,7 @@ mv "$tmp/celis" "$dir/celis"
 chmod 755 "$dir/celis"
 
 echo "Installed $("$dir/celis" --version) to $dir/celis."
+[ -z "${CELIS_UPDATE:-}" ] || exit 0
 
 line="export PATH=\"$dir:\$PATH\""
 case ":$PATH:" in

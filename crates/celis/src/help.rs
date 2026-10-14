@@ -279,13 +279,12 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "update",
-        usage: &["celis update [<version>] [--dry-run]"],
-        summary: "Replace this celis with the build of a release from GitHub, checked against its SHA-256. With no version, it takes the latest, and does nothing when that is installed.",
+        usage: &["celis update [<version>]"],
+        summary: "Replace this celis with the build of a release from GitHub, by the install.sh of the latest release. With no version, it takes the latest, and does nothing when that is installed.",
         args: &[
             ("<version>", "the version to install, as 1.2.0 or v1.2.0; optional"),
-            ("--dry-run", "print the installed and the new version, and change nothing"),
         ],
-        examples: &["celis update", "celis update 1.2.0", "celis update --dry-run"],
+        examples: &["celis update", "celis update 1.2.0"],
     },
     Verb {
         command: "step add",

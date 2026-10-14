@@ -11,17 +11,14 @@ path = "src/main.rs"
 celis-trails = { path = "../celis-trails" }
 celis-nostr = { path = "../celis-nostr" }
 anyhow = "1"
-flate2 = "1"
 libc = "0.2"
 notify = "8.0.0"
 serde_json = "1"
-sha2 = "0.10"
-tar = "0.4"
-ureq = "2"
 
 [dev-dependencies]
 celis-trails = { path = "../celis-trails" }
 celis-nostr = { path = "../celis-nostr" }
 libc = "0.2"
 serde_json = "1"
+sha2 = "0.10"
 tempfile = "3"
