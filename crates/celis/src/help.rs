@@ -7,18 +7,22 @@ pub const PAGE: &str = r#"celis keeps how you do your tasks. A trail is one task
 agents take toward it, and the decisions made on the way. Your agents use it
 through the celis plugin.
 
-Commands
+Record work (your agents run these)
+  step     the steps of a trail: add, start, done, drop, edit
   decide   a decision, in its scope
+
+Read
   tree     a trail and its steps, with their grades
   past     this project's active trails and decisions, every project's past work
   stats    what later work reused, and what it saved
   report   trails as Markdown, for a pull request
-  issue    what went wrong, as Markdown for the celis team
-  link     keep this project's trails in a folder: the repo, or a synced drive
-  unlink   stop keeping this project's trails in a folder
-  step     the steps of a trail: add, start, done, drop, edit
+
+Set up
+  link     this project's trails kept in a folder: the repo, or a synced drive
+  unlink   this project's trails no longer kept in a folder
   auth     the account's phrase: login, status, phrase
   update   this binary, to the latest release or a version
+  issue    what went wrong, as Markdown for the celis team
 
 $CELIS_HOME holds the phrase and the store.
 
@@ -27,29 +31,36 @@ See `celis <command> --help`."#;
 /// The page the words of a command line name, before any `--`; none when they run a command.
 pub fn named(args: &[String]) -> Option<String> {
     let words = words(args);
-    if words.is_empty() || words[0] == "help" {
-        return Some(PAGE.to_string());
+    if words.first() == Some(&"help") {
+        return Some(page_of(&words[1..]));
     }
-    if !args
+    let asked = args
         .iter()
         .take_while(|a| *a != "--")
-        .any(|a| a == "--help")
-    {
-        return None;
-    }
-    let group = GROUPS.iter().find(|(name, _)| words == [*name]);
-    Some(match (Verb::of(&words), group) {
-        (Some(verb), _) => verb.page(),
-        (None, Some((name, summary))) => group_page(name, summary),
-        (None, None) => PAGE.to_string(),
-    })
+        .any(|a| a == "--help" || a == "-h");
+    let group = words.len() == 1 && GROUPS.iter().any(|(name, ..)| words[0] == *name);
+    (words.is_empty() || asked || group).then(|| page_of(&words))
 }
 
-/// The help command for the words of a command line: `celis <command> --help`, else `celis help`.
+/// The page of `words`: the command page they name, else the group page, else the page.
+fn page_of(words: &[&str]) -> String {
+    let group = GROUPS.iter().find(|(name, ..)| words == [*name]);
+    match (Verb::of(words), group) {
+        (Some(verb), _) => verb.page(),
+        (None, Some(group)) => group_page(group),
+        (None, None) => PAGE.to_string(),
+    }
+}
+
+/// The help command for the words of a command line: `celis <command> --help`, else
+/// `celis <group> --help`, else `celis help`.
 pub fn see(args: &[String]) -> String {
-    match Verb::of(&words(args)) {
-        Some(verb) => format!("celis {} --help", verb.command),
-        None => "celis help".to_string(),
+    let words = words(args);
+    let group = GROUPS.iter().find(|(name, ..)| words.first() == Some(name));
+    match (Verb::of(&words), group) {
+        (Some(verb), _) => format!("celis {} --help", verb.command),
+        (None, Some((name, ..))) => format!("celis {name} --help"),
+        (None, None) => "celis help".to_string(),
     }
 }
 
@@ -84,66 +95,61 @@ fn edits(a: &str, b: &str) -> usize {
     row[b.len()]
 }
 
-/// The words of a command line before any `--`, without its flags.
+/// The words of a command line before any `--`, without its flags and `-h`.
 fn words(args: &[String]) -> Vec<&str> {
     args.iter()
         .map(String::as_str)
         .take_while(|a| *a != "--")
-        .filter(|a| !a.starts_with("--"))
+        .filter(|a| !a.starts_with("--") && *a != "-h")
         .collect()
 }
 
-/// The commands whose name has two words, by their first word, with what the group holds.
-pub const GROUPS: &[(&str, &str)] = &[
+/// A group: its first word, what it holds, and each of its commands with what it is.
+pub type Group = (
+    &'static str,
+    &'static str,
+    &'static [(&'static str, &'static str)],
+);
+
+/// The commands whose name has two words, by their first word: what the group holds, and each of its
+/// commands with what it is.
+pub const GROUPS: &[Group] = &[
     (
         "step",
         "The steps of a trail: add one, then start, close, drop or edit it.",
+        &[
+            ("add", "a step, under a trail or as a new trail"),
+            ("start", "a step taken up, with the decisions at its places"),
+            ("done", "a step closed with its proof"),
+            (
+                "drop",
+                "a step no longer wanted, and the open steps under it",
+            ),
+            ("edit", "a step's new title, places or check"),
+        ],
     ),
     (
         "auth",
         "The recovery phrase of your account, kept in $CELIS_HOME/phrase.",
+        &[
+            (
+                "login",
+                "a recovery phrase to keep, and the npub of its account",
+            ),
+            ("status", "the account's npub, and the path of its phrase"),
+            ("phrase", "the kept recovery phrase"),
+        ],
     ),
 ];
 
-/// The page of the group `name`: its usage, `summary`, and each of its commands with the first sentence
-/// of what it does, wrapped under its column.
-fn group_page(name: &str, summary: &str) -> String {
-    let verbs: Vec<&Verb> = VERBS
-        .iter()
-        .filter(|v| v.command.split(' ').next() == Some(name) && v.command.contains(' '))
-        .collect();
-    let width = verbs
-        .iter()
-        .map(|v| v.command.len() - name.len() - 1)
-        .max()
-        .unwrap_or(0);
+/// The page of a group: its usage, what it holds, and each of its commands with what it is.
+fn group_page((name, summary, commands): &Group) -> String {
     let mut lines = vec![format!("celis {name} <command>"), String::new()];
     lines.extend(fill(summary));
     lines.push(String::new());
     lines.push("Commands".to_string());
-    for verb in verbs {
-        let command = &verb.command[name.len() + 1..];
-        let first = verb
-            .summary
-            .split(". ")
-            .next()
-            .unwrap_or("")
-            .trim_end_matches('.');
-        let indent = 2 + width + 4;
-        let mut wrapped: Vec<String> = vec![];
-        for word in first.split(' ') {
-            match wrapped.last_mut() {
-                Some(line) if indent + line.len() + 1 + word.len() <= 80 => {
-                    line.push(' ');
-                    line.push_str(word);
-                }
-                _ => wrapped.push(word.to_string()),
-            }
-        }
-        for (n, part) in wrapped.iter().enumerate() {
-            let head = if n == 0 { command } else { "" };
-            lines.push(format!("  {head:width$}    {part}"));
-        }
+    for (command, phrase) in *commands {
+        lines.push(format!("  {command:6}   {phrase}"));
     }
     lines.push(String::new());
     lines.push(format!("See `celis {name} <command> --help`."));

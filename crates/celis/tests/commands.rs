@@ -132,7 +132,10 @@ fn past_prints_a_decision_at_a_place_only_at_its_at_place() {
             .map(|l| l[..8].to_string())
             .collect()
     };
-    assert_eq!(ids(&["past"]), Vec::<String>::new());
+    assert_eq!(
+        lines_of(&repo, &repo.path(), &["past"]),
+        ["No active trails, decisions or past work yet."]
+    );
     assert_eq!(ids(&["past", "--at", "a.py"]), [short(&a.id)]);
     assert_eq!(ids(&["past", "--at", "b.py"]), [short(&b.id)]);
 }

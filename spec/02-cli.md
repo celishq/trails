@@ -71,7 +71,8 @@ The page is the reference for a person.
 ```
 celis  ·  celis help  ·  celis --help     the page
 celis <command> --help                    the command page
-celis step --help · celis auth --help     the group page
+celis step  ·  celis auth                 the group page
+celis help <command>                      what celis <command> --help prints
 celis --version                           celis <version> (<commit, first 8>)
 ```
 
@@ -82,22 +83,43 @@ celis keeps how you do your tasks. A trail is one task you give, the steps
 agents take toward it, and the decisions made on the way. Your agents use it
 through the celis plugin.
 
-Commands
+Record work (your agents run these)
+  step     the steps of a trail: add, start, done, drop, edit
   decide   a decision, in its scope
+
+Read
   tree     a trail and its steps, with their grades
   past     this project's active trails and decisions, every project's past work
   stats    what later work reused, and what it saved
   report   trails as Markdown, for a pull request
-  issue    what went wrong, as Markdown for the celis team
-  link     keep this project's trails in a folder: the repo, or a synced drive
-  unlink   stop keeping this project's trails in a folder
-  step     the steps of a trail: add, start, done, drop, edit
+
+Set up
+  link     this project's trails kept in a folder: the repo, or a synced drive
+  unlink   this project's trails no longer kept in a folder
   auth     the account's phrase: login, status, phrase
   update   this binary, to the latest release or a version
+  issue    what went wrong, as Markdown for the celis team
 
 $CELIS_HOME holds the phrase and the store.
 
 See `celis <command> --help`.
+```
+
+The group page of `step`:
+
+```
+celis step <command>
+
+The steps of a trail: add one, then start, close, drop or edit it.
+
+Commands
+  add      a step, under a trail or as a new trail
+  start    a step taken up, with the decisions at its places
+  done     a step closed with its proof
+  drop     a step no longer wanted, and the open steps under it
+  edit     a step's new title, places or check
+
+See `celis step <command> --help`.
 ```
 
 A command page:
@@ -115,10 +137,12 @@ Examples
 
 **Rules**
 
-- `celis`, `celis help` and `celis --help` MUST print the page and exit 0.
-- `--help` anywhere in a command MUST print the command page its words name, and else the page.
-- `--help` after only a group's name, `step` or `auth`, MUST print the group page. It MUST list each
-  command of the group with the first sentence of its summary, wrapped under its column.
+- `celis`, `celis help`, `celis --help` and `celis -h` MUST print the page and exit 0.
+- `--help` or `-h` anywhere in a command MUST print the command page its words name, and else the page.
+- A group's name alone, `step` or `auth`, with or without `--help`, MUST print the group page. It MUST
+  list each command of the group with what it is, as a noun phrase.
+- `celis help <words>` MUST print what `celis <words> --help` prints.
+- The page and a group page MUST name each command with what it is, as a noun phrase.
 - A command page MUST give a line to each argument and flag its usage names, and at least one example.
 - Every help page MUST exit 0, and print to stdout.
 - A line of a help page MUST NOT be longer than 80 characters.
@@ -136,8 +160,8 @@ Examples
 - Every command MUST accept `--json`, and then print one JSON object a line, and nothing else, to stdout.
 - A command that writes a record MUST print its id. With `--json`, it prints `{"id"}`.
 - A command MUST NOT ask a question. On a terminal, `auth login` asks for the phrase.
-- A usage error MUST name the narrowest help page that covers it: `celis <command> --help`, or else
-  `celis help`.
+- A usage error MUST name the narrowest help page that covers it: `celis <command> --help`, else
+  `celis <group> --help`, or else `celis help`.
 - An unknown command MUST name the known one nearest it, when two edits or fewer turn one into the other.
 - A command MUST exit 0 when done, 2 on a usage error, and 1 on any other error.
 - Without `--json`, an error MUST be one line on stderr: `celis: <message>`.
@@ -599,6 +623,7 @@ celis tree
   and its day.
 - With `--json`, each object MUST be named `past`, with its id, project, title, places, state, grade and
   day.
+- Without `--json`, when it prints nothing else, `past` MUST print one line that says so.
 - `past` MUST NOT write a record.
 
 ```
