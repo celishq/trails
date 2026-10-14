@@ -125,7 +125,8 @@ $CELIS_BASE   where the releases are
 
 - With no `<version>`, `update` MUST take the version of the release that `$CELIS_BASE/latest` redirects
   to, `…/tag/v<version>`. When that version is installed, it MUST download nothing and say so.
-- With `<version>`, `update` MUST install `v<version>`, also when it is installed.
+- With `<version>`, `update` MUST install `v<version>`, also when it is installed. A leading `v` of
+  `<version>` MUST NOT count.
 - `update` MUST download `$CELIS_BASE/download/v<version>/<archive>` and `<archive>.sha256`. When the
   archive does not match its checksum, or the new `celis --version` fails, it MUST fail and leave the
   installed file as it was.

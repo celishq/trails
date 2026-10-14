@@ -50,7 +50,7 @@ impl Command {
 }
 
 /// The version of the release `<base>/latest` redirects to.
-fn latest(base: &str) -> Result<String, Failure> {
+fn latest(base: &str) -> anyhow::Result<String> {
     let url = format!("{base}/latest");
     let response = ureq::AgentBuilder::new()
         .redirects(0)
@@ -58,48 +58,52 @@ fn latest(base: &str) -> Result<String, Failure> {
         .get(&url)
         .call()
         .map_err(|e| anyhow!("could not reach {url}: {e}"))?;
-    let version = response
+    response
         .header("location")
         .and_then(|l| l.rsplit_once("/tag/v"))
-        .map(|(_, v)| v.to_string());
-    Ok(version.ok_or_else(|| anyhow!("{url} names no release"))?)
+        .map(|(_, v)| v.to_string())
+        .ok_or_else(|| anyhow!("{url} names no release"))
 }
 
 /// Downloads the archive of `version` for this system, checks it, and puts its `celis` at `path`
 /// with one rename; on a failure `path` is left as it was.
-fn install(base: &str, version: &str, path: &Path) -> Result<(), Failure> {
+fn install(base: &str, version: &str, path: &Path) -> anyhow::Result<()> {
     let url = format!("{base}/download/v{version}/{}", archive()?);
     let body = download(&url)?;
     let sum = download(&format!("{url}.sha256"))?;
     let want = String::from_utf8_lossy(&sum);
     if want.split_whitespace().next() != Some(&format!("{:x}", Sha256::digest(&body))) {
-        return Err(anyhow!("the download does not match its checksum; nothing changed").into());
+        return Err(anyhow!(
+            "the download does not match its checksum; nothing changed"
+        ));
     }
     let new = path.with_file_name(format!(".celis-{}", std::process::id()));
-    let placed = unpack(&body, &new).and_then(|()| runs(&new));
-    let placed = placed.and_then(|()| Ok(std::fs::rename(&new, path)?));
+    let _ = std::fs::remove_file(&new);
+    let placed = unpack(&body, &new)
+        .and_then(|()| runs(&new))
+        .and_then(|()| Ok(std::fs::rename(&new, path)?));
     if placed.is_err() {
         let _ = std::fs::remove_file(&new);
     }
-    Ok(placed?)
+    placed
 }
 
 /// The archive name of this system and processor: `celis-<cpu>-<system>.tar.gz`.
-fn archive() -> Result<String, Failure> {
+fn archive() -> anyhow::Result<String> {
     let system = match std::env::consts::OS {
         "macos" => "apple-darwin",
         "linux" => "unknown-linux-musl",
-        os => return Err(anyhow!("there is no build for {os}").into()),
+        os => return Err(anyhow!("there is no build for {os}")),
     };
     let cpu = match std::env::consts::ARCH {
         cpu @ ("aarch64" | "x86_64") => cpu,
-        cpu => return Err(anyhow!("there is no build for the {cpu} processor").into()),
+        cpu => return Err(anyhow!("there is no build for the {cpu} processor")),
     };
     Ok(format!("celis-{cpu}-{system}.tar.gz"))
 }
 
 /// The body at `url`, after its redirects.
-fn download(url: &str) -> Result<Vec<u8>, Failure> {
+fn download(url: &str) -> anyhow::Result<Vec<u8>> {
     let response = ureq::get(url)
         .call()
         .map_err(|e| anyhow!("could not download {url}: {e}"))?;

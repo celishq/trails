@@ -176,13 +176,14 @@ fn update_downloads_nothing_when_the_latest_is_installed() {
     assert!(!server.downloaded());
 }
 
-/// With a version, `update` installs that version, though it is not the latest
+/// With a version, `update` installs that version, though it is not the latest; a leading `v` does
+/// not count
 /// (`spec/trails/02-cli.md`, "Update").
 #[test]
 fn update_installs_a_named_version() {
     let install = Install::new();
     let server = Server::new("9.9.9", &["9.9.9", "1.2.0"], None);
-    let o = install.run(&install.file(), &server, &["update", "1.2.0", "--json"]);
+    let o = install.run(&install.file(), &server, &["update", "v1.2.0", "--json"]);
     let shown: serde_json::Value = serde_json::from_str(&out(&o)).unwrap();
     let path = install.file().canonicalize().unwrap();
     assert_eq!(
