@@ -1,8 +1,8 @@
-//! `celis tree` on a terminal: the tree, drawn again each time the store changes.
+//! `celis tree` on a terminal: the tree, drawn again each time the store or a linked folder changes.
 
 use super::tree::{cut, Item, View, EMPTY, MORE};
 use super::{Args, Command};
-use celis_trails::Failure;
+use celis_trails::{Failure, Link};
 use notify::{RecursiveMode, Watcher};
 use std::io::Read;
 use std::io::Write;
@@ -13,10 +13,10 @@ use std::sync::mpsc::{channel, Receiver, RecvTimeoutError, Sender};
 use std::time::Duration;
 
 impl Command {
-    /// Draws the tree `args` names on the alternate screen, then again when a record lands, a time it
-    /// shows changes, the spinner turns, a key is read, or the terminal's size changes, and sleeps
-    /// between. With no store, it writes nothing and waits for one. On an interrupt or `q`, leaves the
-    /// alternate screen with nothing printed, and ends.
+    /// Draws the tree `args` names on the alternate screen, then again when a record lands in the store
+    /// or a linked folder, a time it shows changes, the spinner turns, a key is read, or the terminal's
+    /// size changes, and sleeps between. With no store, it writes nothing and waits for one. On an
+    /// interrupt or `q`, leaves the alternate screen with nothing printed, and ends.
     pub(super) fn watch(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         if let (false, Some(id)) = (self.held()?, args.words.get(1)) {
             return Err(Failure::no_step(id));
@@ -56,18 +56,29 @@ impl Command {
         if let Some(id) = args.words.get(1) {
             trails.steps().find(id)?;
         }
+        let home = self.home()?;
+        let shared = home.join("trails/shared");
+        let links = Link::all(&home, &self.folder).into_iter().map(|l| l.folder);
+        let ours = [
+            shared.clone(),
+            std::fs::canonicalize(&shared).unwrap_or_default(),
+        ];
         let landed = move |event: notify::Result<notify::Event>| {
-            if event.is_ok_and(|e| !e.kind.is_access()) {
-                let _ = send.send(Wake::Record);
+            let Ok(event) = event else { return };
+            if !event.kind.is_access() {
+                let linked = event
+                    .paths
+                    .iter()
+                    .any(|p| !ours.iter().any(|o| p.starts_with(o)));
+                let _ = send.send(Wake::Record(linked));
             }
         };
         let mut watcher = notify::recommended_watcher(landed).map_err(anyhow::Error::from)?;
-        watcher
-            .watch(
-                &self.home()?.join("trails/shared"),
-                RecursiveMode::NonRecursive,
-            )
-            .map_err(anyhow::Error::from)?;
+        for folder in std::iter::once(shared).chain(links) {
+            watcher
+                .watch(&folder, RecursiveMode::NonRecursive)
+                .map_err(anyhow::Error::from)?;
+        }
         let named = args.words.len() > 1;
         let mut view = View {
             watch: true,
@@ -103,10 +114,10 @@ impl Command {
                 false => wait.unwrap_or(Duration::MAX),
             };
             let mut wake = events.recv_timeout(wait);
-            let mut landed = false;
+            let (mut landed, mut linked) = (false, false);
             loop {
                 match wake {
-                    Ok(Wake::Record) => landed = true,
+                    Ok(Wake::Record(from)) => (landed, linked) = (true, linked || from),
                     Ok(Wake::Resize) => screen.shown.clear(),
                     Ok(Wake::Key(key)) => {
                         screen.said = match (&key, &copy, &chosen) {
@@ -132,8 +143,10 @@ impl Command {
                 }
                 wake = events.recv_timeout(Duration::from_millis(50));
             }
-            if landed {
-                trails.fresh();
+            match (landed, linked) {
+                (_, true) => trails = self.trails()?,
+                (true, false) => _ = trails.fresh(),
+                _ => {}
             }
             known = frame.order;
         }
@@ -430,9 +443,9 @@ fn until(at: u64) -> Duration {
         .unwrap_or_default()
 }
 
-/// What wakes the watch before its next tick.
+/// What wakes the watch before its next tick: a record, in a linked folder or not.
 enum Wake {
-    Record,
+    Record(bool),
     Resize,
     Key(Key),
     Quit,

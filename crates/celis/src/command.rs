@@ -8,6 +8,7 @@ mod demo;
 mod issue;
 mod json;
 mod line;
+mod link;
 mod past;
 mod prompt;
 mod report;
@@ -21,7 +22,7 @@ mod watch;
 use crate::help::{self, VERBS};
 use args::Args;
 use celis_nostr::Note;
-use celis_trails::{Failure, Project, Store, Trails};
+use celis_trails::{Failure, Link, Project, Store, Trails};
 use serde_json::json;
 use std::collections::HashMap;
 use std::io::{IsTerminal, Write};
@@ -70,7 +71,9 @@ impl Command {
         } else {
             format!("celis: {}", failure.message)
         };
-        let _ = writeln!(err, "{line}");
+        if !failure.message.is_empty() {
+            let _ = writeln!(err, "{line}");
+        }
         failure.code
     }
 
@@ -83,9 +86,11 @@ impl Command {
             "stats" => self.stats(args, out),
             "report" => self.report(args, out),
             "issue" => self.issue(args, out),
+            "link" => self.link(args, out, &self.project()),
+            "unlink" => self.unlink(args, out, &self.project()),
             "prompt" => self.prompt(args, out, err, &self.project()),
             "auth" => self.auth(args, out, err),
-            "update" => self.update(args, out),
+            "update" => self.update(args),
             "" => Err(Failure::usage("expected: celis <command>")),
             verb => Err(help::unknown(verb, verbs())),
         }
@@ -166,14 +171,18 @@ impl Command {
         home.ok_or_else(|| Failure::from(anyhow::anyhow!("neither CELIS_HOME nor HOME is set")))
     }
 
-    /// The trails of the store, opened now; a check runs for `CELIS_CHECK_SECONDS`, 600 when not set.
+    /// The trails of the store, with the working folder's linked folders that are on, opened now; a check
+    /// runs for `CELIS_CHECK_SECONDS`, 600 when not set.
     fn trails(&self) -> Result<Trails, Failure> {
         let limit = self
             .env
             .get("CELIS_CHECK_SECONDS")
             .and_then(|s| s.parse().ok())
             .unwrap_or(600);
-        Ok(Trails::open(Store::open(&self.home()?)?, now(), limit))
+        let home = self.home()?;
+        let links = Link::all(&home, &self.folder);
+        let store = links.into_iter().fold(Store::open(&home)?, Store::with);
+        Ok(Trails::open(store, now(), limit))
     }
 
     fn id(&self, out: &mut dyn Write, args: &Args, note: &Note) -> Result<(), Failure> {

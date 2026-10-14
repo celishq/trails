@@ -8,6 +8,9 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 use std::sync::{Arc, Mutex};
 
+/// The `install.sh` of this repo, as a release serves it.
+const INSTALL: &str = include_str!("../../../install.sh");
+
 /// A release server on localhost: the path of each answer, and the paths asked so far.
 struct Server {
     base: String,
@@ -15,8 +18,8 @@ struct Server {
 }
 
 impl Server {
-    /// Serves `latest` as the newest release, and each of `releases` as an archive of a `celis` that
-    /// prints `celis <version>`; the checksum of `wrong` does not match.
+    /// Serves `latest` as the newest release with this repo's `install.sh`, and each of `releases` as an
+    /// archive of a `celis` that prints `celis <version>`; the checksum of `wrong` does not match.
     fn new(latest: &str, releases: &[&str], wrong: Option<&str>) -> Server {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let base = format!("http://{}/releases", listener.local_addr().unwrap());
@@ -27,6 +30,10 @@ impl Server {
                 format!("302 Found\r\nLocation: {base}/tag/v{latest}"),
                 vec![],
             ),
+        );
+        answers.insert(
+            "/releases/latest/download/install.sh".to_string(),
+            ("200 OK".to_string(), INSTALL.into()),
         );
         for version in releases {
             let archive = archive(version);
@@ -73,7 +80,7 @@ impl Server {
             .lock()
             .unwrap()
             .iter()
-            .any(|p| p.contains("/download/"))
+            .any(|p| p.contains(&name()))
     }
 }
 
@@ -88,17 +95,18 @@ fn name() -> String {
 
 /// A `.tar.gz` that holds one `celis`, a script that prints `celis <version>`.
 fn archive(version: &str) -> Vec<u8> {
-    let script = format!("#!/bin/sh\necho \"celis {version}\"\n");
-    let mut header = tar::Header::new_gnu();
-    header.set_size(script.len() as u64);
-    header.set_mode(0o755);
-    header.set_cksum();
-    let gz = flate2::write::GzEncoder::new(vec![], flate2::Compression::default());
-    let mut builder = tar::Builder::new(gz);
-    builder
-        .append_data(&mut header, "celis", script.as_bytes())
+    let folder = tempfile::tempdir().unwrap();
+    let script = folder.path().join("celis");
+    std::fs::write(&script, format!("#!/bin/sh\necho \"celis {version}\"\n")).unwrap();
+    std::fs::set_permissions(&script, std::os::unix::fs::PermissionsExt::from_mode(0o755)).unwrap();
+    let o = Command::new("tar")
+        .args(["-czf", "-", "-C"])
+        .arg(folder.path())
+        .arg("celis")
+        .output()
         .unwrap();
-    builder.into_inner().unwrap().finish().unwrap()
+    assert!(o.status.success());
+    o.stdout
 }
 
 /// A copy of the built `celis` in a folder of its own, as an install puts it.
@@ -147,8 +155,8 @@ fn out(o: &Output) -> String {
     String::from_utf8_lossy(&o.stdout).trim().to_string()
 }
 
-/// `update` installs the release `latest` redirects to over the file the running `celis` resolves
-/// to (`spec/02-cli.md`, "Update").
+/// `update` installs the release `latest` redirects to into the folder of the file the running
+/// `celis` resolves to, quietly (`spec/02-cli.md`, "Update").
 #[test]
 fn update_installs_the_latest_release_over_the_resolved_file() {
     let install = Install::new();
@@ -157,9 +165,11 @@ fn update_installs_the_latest_release_over_the_resolved_file() {
     std::os::unix::fs::symlink(install.file(), &link).unwrap();
     let shown = out(&install.run(&link, &server, &["update"]));
     let path = install.file().canonicalize().unwrap();
-    assert_eq!(
-        shown,
-        format!("Updated celis 0.0.0 to 9.9.9 at {}.", path.display())
+    let installed = format!("Installed celis 9.9.9 to {}.", path.display());
+    assert!(shown.ends_with(&installed), "{shown}");
+    assert!(
+        !shown.contains("PATH") && !shown.contains("auth login"),
+        "{shown}"
     );
     assert_eq!(install.version(), "celis 9.9.9");
     assert!(link.is_symlink());
@@ -183,44 +193,24 @@ fn update_downloads_nothing_when_the_latest_is_installed() {
 fn update_installs_a_named_version() {
     let install = Install::new();
     let server = Server::new("9.9.9", &["9.9.9", "1.2.0"], None);
-    let o = install.run(&install.file(), &server, &["update", "v1.2.0", "--json"]);
-    let shown: serde_json::Value = serde_json::from_str(&out(&o)).unwrap();
+    let shown = out(&install.run(&install.file(), &server, &["update", "v1.2.0"]));
     let path = install.file().canonicalize().unwrap();
-    assert_eq!(
-        shown,
-        serde_json::json!({"from": "0.0.0", "to": "1.2.0", "path": path, "updated": true})
-    );
+    let installed = format!("Installed celis 1.2.0 to {}.", path.display());
+    assert!(shown.ends_with(&installed), "{shown}");
     assert_eq!(install.version(), "celis 1.2.0");
 }
 
-/// With `--dry-run`, `update` prints the installed and the new version, and changes nothing
-/// (`spec/02-cli.md`, "Update").
-#[test]
-fn update_dry_run_changes_nothing() {
-    let install = Install::new();
-    let server = Server::new("9.9.9", &["9.9.9"], None);
-    let shown = out(&install.run(&install.file(), &server, &["update", "--dry-run"]));
-    assert_eq!(
-        shown,
-        "celis 0.0.0 is installed; celis update installs 9.9.9."
-    );
-    assert!(!server.downloaded());
-    assert_eq!(install.version(), "celis 0.0.0");
-}
-
-/// When the archive does not match its checksum, `update` fails and leaves the installed file as it
-/// was (`spec/02-cli.md`, "Update").
+/// When the archive does not match its checksum, `update` fails with the error of `install.sh` alone
+/// and leaves the installed file as it was (`spec/02-cli.md`, "Update").
 #[test]
 fn update_fails_on_a_wrong_checksum_and_keeps_the_file() {
     let install = Install::new();
     let server = Server::new("9.9.9", &["9.9.9"], Some("9.9.9"));
     let o = install.run(&install.file(), &server, &["update"]);
     assert_eq!(o.status.code(), Some(1));
-    assert!(
-        String::from_utf8_lossy(&o.stderr).contains("checksum"),
-        "{}",
-        String::from_utf8_lossy(&o.stderr)
-    );
+    let err = String::from_utf8_lossy(&o.stderr);
+    assert!(err.contains("checksum"), "{err}");
+    assert_eq!(err.matches("celis:").count(), 1, "{err}");
     assert_eq!(install.version(), "celis 0.0.0");
     let left: Vec<_> = std::fs::read_dir(install.folder.path().join("bin"))
         .unwrap()

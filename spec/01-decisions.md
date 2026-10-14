@@ -30,6 +30,49 @@ $CELIS_HOME/trails/
 - A reader MUST skip a file that does not parse or whose record does not verify.
 - A reader MUST read no store as an empty store, and MUST create nothing.
 
+## Links
+
+A project can keep a copy of its records in a folder: `.celis/trails/` in the repo, so that git carries
+them to other clones, or any folder, such as a synced drive. The person links each folder by hand.
+
+```
+<folder>/
+  README.md                         what the folder holds, and how to install celis
+  <created_at>-<id>.json            one record of the project, as in the store
+$CELIS_HOME/links                   one link a line: `<project id>\t<folder>`
+```
+
+```
+folder  a path from the project's top folder when the folder lies in it; else a full path.
+        Default: `.celis/trails`
+holds   a record that names the project (`project:<project id>`) and has no `me` scope; or a record that
+        names no project and names, by an `e` tag, a record the folder holds
+on      `$CELIS_HOME/links` names the project and the folder, and the folder exists. A folder from the
+        top folder is the one in the working folder's checkout
+```
+
+**Meaning**
+
+- Only `celis link` and `celis unlink` (CIP-02) MAY write `$CELIS_HOME/links`, and only `celis link` MAY
+  create a linked folder or its README. The folder stays when it is unlinked.
+- A project MAY have more than one link.
+- When a link is on, a writer MUST write each record its folder holds to the folder as well, as the store
+  states.
+- When a link is on, a reader MUST read its folder with the store, and MUST copy into the store each
+  record there that the store does not have.
+- When a link is not on, a reader MUST NOT read its folder.
+- A linked folder MUST NOT hold a `me` decision.
+
+**Examples**
+
+Ann runs `celis link` in `~/code/app`, and commits `.celis/`. Ben pulls, sees `.celis/trails/`, and runs
+`celis link` too. Now each one's agents read the other's trails of `app`. Ann's `me` decisions stay in
+her store. Ann also runs `celis link ~/Drive/celis/app`, so the trails of branches she has not pushed
+reach her other machine.
+
+> **Why by hand.** A decision in a linked folder is a rule that agents keep. A repo that linked itself
+> could give every clone's agents its rules.
+
 ## Projects
 
 A project is the code an agent works on. Every step and decision names its project.

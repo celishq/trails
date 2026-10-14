@@ -14,6 +14,8 @@ Commands
   stats    what later work reused, and what it saved
   report   trails as Markdown, for a pull request
   issue    what went wrong, as Markdown for the celis team
+  link     keep this project's trails in a folder: the repo, or a synced drive
+  unlink   stop keeping this project's trails in a folder
   step     the steps of a trail: add, start, done, drop, edit
   auth     the account's phrase: login, status, phrase
   update   this binary, to the latest release or a version
@@ -225,6 +227,20 @@ pub const VERBS: &[Verb] = &[
         ],
     },
     Verb {
+        command: "link",
+        usage: &["celis link [<folder>]"],
+        summary: "Keep this project's trails in a folder, and sync it with the store both ways: .celis/trails/ in the repo, to commit them, or any folder, such as a synced drive. From now on, each command reads it and writes the project's records to it. Decisions with the me scope stay out.",
+        args: &[("<folder>", "the folder; default: .celis/trails in the top folder")],
+        examples: &["celis link", "celis link ~/Drive/celis/shop"],
+    },
+    Verb {
+        command: "unlink",
+        usage: &["celis unlink [<folder>]"],
+        summary: "Stop keeping this project's trails in a folder on this machine. The folder and its records stay.",
+        args: &[("<folder>", "the folder; default: .celis/trails in the top folder")],
+        examples: &["celis unlink", "celis unlink ~/Drive/celis/shop"],
+    },
+    Verb {
         command: "decide",
         usage: &["celis decide [--scope <scope>] [--replaces <id>] -- <text>"],
         summary: "Leave a decision, in its scope.",
@@ -280,13 +296,12 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "update",
-        usage: &["celis update [<version>] [--dry-run]"],
-        summary: "Replace this celis with the build of a release from GitHub, checked against its SHA-256. With no version, it takes the latest, and does nothing when that is installed.",
+        usage: &["celis update [<version>]"],
+        summary: "Replace this celis with the build of a release from GitHub, by the install.sh of the latest release. With no version, it takes the latest, and does nothing when that is installed.",
         args: &[
             ("<version>", "the version to install, as 1.2.0 or v1.2.0; optional"),
-            ("--dry-run", "print the installed and the new version, and change nothing"),
         ],
-        examples: &["celis update", "celis update 1.2.0", "celis update --dry-run"],
+        examples: &["celis update", "celis update 1.2.0"],
     },
     Verb {
         command: "step add",

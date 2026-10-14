@@ -20,6 +20,8 @@ celis past [--at <place>]...                          this project's trails and 
 celis stats [<id>]                                    what later work reused, and what it saved
 celis report <id>...                                  the trails as Markdown, for a pull request
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
+celis link [<folder>]                                 keep this project's trails in a folder
+celis unlink [<folder>]                               stop keeping them in a folder
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>]... [--check <command>] [--new] [--session <id>] -- <text>
                                                        leave a step
 celis step start <id>                                 take up a step, and see its decisions
@@ -32,7 +34,7 @@ celis prompt                                          a person's prompt, from a 
 celis auth login                                      keep the phrase stdin gives
 celis auth status                                     the account's npub
 celis auth phrase                                     print the phrase
-celis update [<version>] [--dry-run]                  this binary, to the latest release or a version
+celis update [<version>]                              this binary, to the latest release or a version
 
 $CELIS_HOME   where celis keeps the phrase and the store
               default: ~/Library/Application Support/Celis
@@ -87,6 +89,8 @@ Commands
   stats    what later work reused, and what it saved
   report   trails as Markdown, for a pull request
   issue    what went wrong, as Markdown for the celis team
+  link     keep this project's trails in a folder: the repo, or a synced drive
+  unlink   stop keeping this project's trails in a folder
   step     the steps of a trail: add, start, done, drop, edit
   auth     the account's phrase: login, status, phrase
   update   this binary, to the latest release or a version
@@ -153,8 +157,8 @@ celis: no command "pats"; did you mean "past"? See `celis help`.
 
 ## Update
 
-`update` replaces the running `celis` with the build of a release for this system and processor:
-`celis-<cpu>-<system>.tar.gz`, as `install.sh` downloads it.
+`update` replaces the running `celis` with the build of a release: it runs the `install.sh` of the latest
+release, `$CELIS_BASE/latest/download/install.sh`, with `sh`.
 
 ```
 $CELIS_BASE   where the releases are
@@ -163,21 +167,18 @@ $CELIS_BASE   where the releases are
 
 **Rules**
 
-- With no `<version>`, `update` MUST take the version of the release that `$CELIS_BASE/latest` redirects
-  to, `…/tag/v<version>`. When that version is installed, it MUST download nothing and say so.
+- `update` MUST run `install.sh` with `CELIS_UPDATE=1`, `CELIS_BASE`, `CELIS_VERSION` set to `<version>`
+  or `latest`, and `CELIS_INSTALL_DIR` set to the folder of the file the running `celis` resolves to.
+- With no `<version>`, `install.sh` MUST take the version of the release that `$CELIS_BASE/latest`
+  redirects to, `…/tag/v<version>`. When that version is installed, it MUST download nothing and say so.
 - With `<version>`, `update` MUST install `v<version>`, also when it is installed. A leading `v` of
   `<version>` MUST NOT count.
-- `update` MUST download `$CELIS_BASE/download/v<version>/<archive>` and `<archive>.sha256`. When the
-  archive does not match its checksum, or the new `celis --version` fails, it MUST fail and leave the
-  installed file as it was.
-- `update` MUST replace the file the running `celis` resolves to with one rename in its folder.
-- With `--dry-run`, `update` MUST print the installed and the new version, and change nothing.
+- When the archive does not match its checksum, `update` MUST fail and leave the installed file as it was.
+- When `install.sh` fails, `update` MUST exit with its code and print no error of its own.
+- With `CELIS_UPDATE` set, `install.sh` MUST NOT change PATH or print the next steps of a first install.
 
 ```
-update  text  Updated celis <from> to <to> at <path>.
-              celis <version> is the latest.
-              celis <from> is installed; celis update installs <to>.      (--dry-run)
-        json  {"from", "to", "path", "updated"}
+update  text  the output of install.sh
 ```
 
 **Examples**
@@ -185,7 +186,6 @@ update  text  Updated celis <from> to <to> at <path>.
 ```
 celis update
 celis update 0.4.0
-celis update --dry-run
 ```
 
 ## Auth
@@ -293,6 +293,40 @@ celis step done 4c1d22e0 --as-planned -- "python3 -m unittest: test_senior faile
 celis step drop 3fa2c1d0 -- "The person chose the shared price table instead."
 ```
 
+## Link
+
+`link` links the working folder's project to a folder (CIP-01, "Links"), and syncs it with the store.
+`unlink` takes the link out.
+
+**Rules**
+
+- `link` and `unlink` MUST take `<folder>` from the working folder, and `.celis/trails` in the top
+  folder when none is given.
+- `link` MUST create the folder, and its `README.md` when it is missing.
+- It MUST add the link to `$CELIS_HOME/links` when it is not there.
+- It MUST copy each record of the store that the folder holds and does not have into the folder. It MUST
+  copy each record of the folder that the store does not have into the store.
+- It MUST print the folder as `$CELIS_HOME/links` names it, the count of records it copied out and the
+  count it copied in.
+- A second `link` MUST copy nothing.
+- `unlink` MUST take the link out of `$CELIS_HOME/links`, keep the folder, and copy nothing.
+- `link` and `unlink` MUST NOT write a record.
+
+```
+link    text  <folder> · <out> out · <in> in
+        json  {"folder", "out", "in"}
+unlink  text  <folder> · unlinked
+        json  {"folder", "unlinked": true}
+```
+
+**Examples**
+
+```
+celis link
+celis link ~/Drive/celis/shop
+celis unlink ~/Drive/celis/shop
+```
+
 ## Prompt
 
 The prompt hook of each agent gives the person's prompt to `prompt`, and gives its lines to the agent.
@@ -312,6 +346,10 @@ The prompt hook of each agent gives the person's prompt to `prompt`, and gives i
 - With a working step, `prompt` MUST name it on stderr. The line asks for a step under it, or a
   replacement, when the next work does not fit it.
 - With an open trail, `prompt` MUST then print the join line on stderr, with the trail's id.
+- When the working folder's top folder has `.celis/trails/` and its link is not on (CIP-01, "Links"),
+  `prompt` MUST print a line on stderr, once in a session, also with no store. It MUST NOT print it on a
+  prompt that prints the line for the past agent. The line MUST ask the agent to ask the person whether
+  to link the project, and say that the person runs `celis link`.
 - The join line asks to add a new ask under the session's open trail when it fits, else under a related
   trail that `tree` with no id prints, else as a new trail.
 
@@ -487,8 +525,9 @@ and close, and opens what they want to read.
   one second after a time it shows changes.
 - Between two trees, it MUST sleep until a record lands, a time it shows changes, the width changes, or
   the spinner's next frame. With no time that runs, it MUST NOT wake on a timer.
-- It MUST print the tree again within one second after a record lands in the store, and only when
-  the tree changed. It MUST read only the records it has not read.
+- It MUST print the tree again within one second after a record lands in the store, or in a linked
+  folder that is on (CIP-01, "Links"), and only when the tree changed. For a record in the store, it
+  MUST read only the records it has not read.
 - It MUST draw on the terminal's alternate screen. It MUST draw each tree from the top left over the last
   one, each line cut to the width and cleared to its end, and clear the rest of the screen, with no clear
   first. No line MUST reach the last column, so clearing to its end never erases its last character.

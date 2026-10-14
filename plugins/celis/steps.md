@@ -25,6 +25,14 @@ When a subagent takes a step, give it the step's id. It runs `start` and `done` 
 its own steps `--under` it. To go on with another session's trail, add your first step `--under <its
 id>`.
 
+## Links
+
+A project can keep its trails in `.celis/trails/`, so that git carries them to the team, or in any
+folder, such as a synced drive. When celis says the project has trails this machine does not link, ask
+the person whether to link this project to celis. When the person wants to keep the trails in the repo
+or in a folder, tell them to run `celis link [<folder>]` in the project themselves. Never run
+`celis link` or `celis unlink` yourself, and never write in a linked folder.
+
 ## Stop
 
 Never write a proof for work you did not do. Stop and tell the person what is open when two reviews in
