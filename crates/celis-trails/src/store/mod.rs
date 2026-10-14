@@ -8,15 +8,18 @@ use crate::{Failure, Phrase};
 use anyhow::{Context, Result};
 use celis_nostr::{Account, Note};
 use std::cell::{OnceCell, RefCell};
+use std::collections::HashSet;
+use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
 /// The records in `$CELIS_HOME/trails/`, and the account of `$CELIS_HOME/phrase` that signs new ones. It
-/// reads the records from disk once, and keeps those it writes after.
+/// reads the records from disk once, keeps those it writes after, and the names of the files it read.
 pub struct Store {
     root: PathBuf,
     phrase: Phrase,
     account: OnceCell<Account>,
     read: RefCell<Option<Vec<Note>>>,
+    seen: RefCell<HashSet<OsString>>,
 }
 
 impl Store {
@@ -34,6 +37,7 @@ impl Store {
             phrase: Phrase::at(home),
             account: OnceCell::new(),
             read: RefCell::new(None),
+            seen: RefCell::default(),
         })
     }
 
@@ -62,6 +66,7 @@ impl Store {
             std::fs::rename(&temp, &path)?;
             if let Some(read) = self.read.borrow_mut().as_mut() {
                 read.push(record.clone());
+                self.seen.borrow_mut().insert(name.into());
             }
         }
         Ok(path)
@@ -78,18 +83,38 @@ impl Store {
         all
     }
 
-    /// Every record in `shared/` that parses and verifies.
+    /// The records in `shared/` written since the last read, that parse and verify; they join the
+    /// records. None before the first read.
+    pub fn fresh(&self) -> Vec<Note> {
+        let mut read = self.read.borrow_mut();
+        let Some(read) = read.as_mut() else {
+            return Vec::new();
+        };
+        let fresh = self.files();
+        read.extend(fresh.iter().cloned());
+        fresh
+    }
+
+    /// Every record in `shared/` of a file not read before, that parses and verifies.
     fn files(&self) -> Vec<Note> {
+        let mut seen = self.seen.borrow_mut();
         std::fs::read_dir(self.root.join("shared"))
             .into_iter()
             .flatten()
             .filter_map(|entry| {
                 let path = entry.ok()?.path();
                 let named = path.extension().is_some_and(|x| x == "json");
-                let text = std::fs::read_to_string(path).ok().filter(|_| named)?;
+                let name = path.file_name().filter(|_| named)?.to_owned();
+                if !seen.insert(name) {
+                    return None;
+                }
+                let text = std::fs::read_to_string(path).ok()?;
                 serde_json::from_str::<Note>(&text).ok()
             })
             .filter(Note::verifies)
             .collect()
     }
 }
+
+#[cfg(test)]
+mod tests;

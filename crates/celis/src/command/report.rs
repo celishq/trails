@@ -72,6 +72,22 @@ pub(super) fn markdown(trails: &Trails, ids: &[String]) -> Result<String, Failur
     Ok(parts.join("\n\n") + "\n")
 }
 
+/// The trail, step or rule `id` as Markdown: a trail as `markdown` gives it, a step as its list item with
+/// what is under it, a rule as `- <text>`.
+pub(super) fn part(trails: &Trails, id: &str) -> Result<String, Failure> {
+    if let Some((_, decision)) = trails.decisions().get(id) {
+        return Ok(format!("- {}\n", decision.content));
+    }
+    let steps = trails.steps();
+    let step = steps.find(id)?;
+    if step.is_trail() {
+        return markdown(trails, &[id.to_string()]);
+    }
+    let mut lines = vec![];
+    items(vec![step], "", &mut lines);
+    Ok(lines.join("\n") + "\n")
+}
+
 /// Adds each step of `steps` as a list item after `indent`, with its lines and the steps under it.
 fn items(steps: Vec<Step>, indent: &str, lines: &mut Vec<String>) {
     for at in steps {

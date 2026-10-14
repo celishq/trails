@@ -28,7 +28,7 @@ fn a_started_step_is_working_until_it_closes() {
     let tree = out(&cli(&repo, &["tree", &trail[..8]]));
     assert!(
         tree.lines()
-            .any(|l| l.starts_with("│ ◐ the step  ") && l.ends_with(&step[..8])),
+            .any(|l| l.starts_with(&format!("  ◐ {} the step", &step[..8]))),
         "{tree}"
     );
     finish(&repo, &step[..8]);

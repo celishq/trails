@@ -17,6 +17,13 @@ pub(super) fn clock(at: u64, now: u64) -> String {
     }
 }
 
+/// The local day of `at` with its weekday, as `Tue, Oct 14`.
+pub(super) fn weekday(at: u64) -> String {
+    const DAYS: [&str; 7] = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    let tm = local(at);
+    format!("{}, {}", DAYS[tm.tm_wday.clamp(0, 6) as usize], day(at))
+}
+
 /// The local day of `at`, as `Oct 9`.
 pub(super) fn day(at: u64) -> String {
     let tm = local(at);

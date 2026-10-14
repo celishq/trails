@@ -240,12 +240,13 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "tree",
-        usage: &["celis tree [<id>] [--full] [--all]"],
+        usage: &["celis tree [<id>] [--full] [--all] [--demo]"],
         summary: "Print a trail with its state, its rules and its steps with their grades; with no id, the active trails and those from today, of every project.",
         args: &[
             ("<id>", "the step id, or a start of 4 or more characters; optional"),
             ("--full", "add the proof, grade and reason under each step; optional"),
             ("--all", "every trail of every project, by day, in place of an id; optional"),
+            ("--demo", "made-up trails in every state, in place of the store; optional"),
         ],
         examples: &["celis tree 3fa2c1d0 --full", "celis tree --all"],
     },

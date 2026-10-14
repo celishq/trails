@@ -302,7 +302,7 @@ fn done_writes_a_pitfall_as_a_decision_at_the_steps_place() {
     }
     let rules = out(&cli(&repo, &["tree", &trail[..8], "--full"]));
     assert!(
-        rules.contains("│ § ") && rules.contains("wait a second"),
+        rules.contains("\n  § ") && rules.contains("wait a second"),
         "{rules}"
     );
     support::finish(&repo, &trail[..8]);

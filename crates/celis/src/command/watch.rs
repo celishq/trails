@@ -1,8 +1,7 @@
 //! `celis tree` on a terminal: the tree, drawn again each time the store changes.
 
-use super::tree::{cut, Item, View, EMPTY};
+use super::tree::{cut, Item, View, EMPTY, MORE};
 use super::{Args, Command};
-use celis_trails::id::short;
 use celis_trails::Failure;
 use notify::{RecursiveMode, Watcher};
 use std::io::Read;
@@ -46,7 +45,7 @@ impl Command {
         let mut screen = Screen::default();
         let empty = format!("{EMPTY}\n");
         if !self.held()? {
-            screen.draw(out, &empty, None)?;
+            screen.draw(out, &empty, None, &legend(None))?;
             while !self.held()? {
                 if let Ok(Wake::Quit) = events.recv_timeout(Duration::from_millis(250)) {
                     return Ok(());
@@ -74,15 +73,30 @@ impl Command {
             watch: true,
             ..View::of(args)
         };
+        let mut known: Vec<Item> = vec![];
         loop {
             trails.now = super::now();
             view.spin = Some(spin());
-            let frame = self.frame(&trails, args, self.columns(), &view)?;
+            let width = self.columns().map(|c| c.saturating_sub(1));
+            let frame = self.frame(&trails, args, width, &view)?;
+            if let Some(id) = view.selected.clone() {
+                if !frame.order.iter().any(|i| i.id == id) {
+                    view.selected = kept(&known, &frame.order, &id);
+                    screen.follow = true;
+                    continue;
+                }
+            }
             let tree = match frame.text.is_empty() && !named {
                 true => empty.clone(),
                 false => frame.text,
             };
-            screen.draw(out, &tree, frame.picked)?;
+            let selected = frame
+                .order
+                .iter()
+                .find(|i| view.selected.as_ref() == Some(&i.id));
+            let copy = selected.and_then(Item::copy);
+            let chosen = selected.filter(|_| copy.is_some()).map(|i| i.id.clone());
+            screen.draw(out, &tree, frame.picked, &legend(copy.as_deref()))?;
             let wait = frame.next.map(until);
             let wait = match frame.spun {
                 true => wait.map_or(TURN, |w| w.min(TURN)),
@@ -95,8 +109,14 @@ impl Command {
                     Ok(Wake::Record) => landed = true,
                     Ok(Wake::Resize) => screen.shown.clear(),
                     Ok(Wake::Key(key)) => {
-                        screen.said = match (&key, &view.selected) {
-                            (Key::Copy, Some(id)) => Some(copy(&short(id))),
+                        screen.said = match (&key, &copy, &chosen) {
+                            (Key::Copy, Some(id), _) => {
+                                Some(clipboard(id, &format!("copied {id}")))
+                            }
+                            (Key::Markdown, _, Some(id)) => {
+                                let markdown = super::report::part(&trails, id)?;
+                                Some(clipboard(&markdown, "copied markdown"))
+                            }
                             _ => None,
                         };
                         let selected = view.selected.clone();
@@ -113,15 +133,20 @@ impl Command {
                 wake = events.recv_timeout(Duration::from_millis(50));
             }
             if landed {
-                trails = self.trails()?;
+                trails.fresh();
             }
+            known = frame.order;
         }
     }
 }
 
-/// The line on the last row of a watch with the keys it reads.
-const KEYS: &str =
-    "↑↓ select · ←→ close open · * open all under · c copy id · PgUp PgDn scroll · f full · a all · q quit";
+/// The line on the last row of a watch with the keys it reads, `c` with the id `copy` it copies.
+fn legend(copy: Option<&str>) -> String {
+    let copy = copy.map_or(String::new(), |id| {
+        format!(" · c copy {id} · m copy markdown")
+    });
+    format!("↑↓ select · ←→ close open · * open all under{copy} · PgUp PgDn scroll · f full · a all · q quit")
+}
 
 /// What a watch shows of its tree: the first line in view, whether the view moves to the selected
 /// line on the next draw, the lines a page holds, the text on the screen, and what the last key did
@@ -136,17 +161,19 @@ struct Screen {
 }
 
 impl Screen {
-    /// Draws `tree` over the screen from the top left, when it changed: each line cut to the width and
-    /// cleared to its end, the rows above the last scrolled to show its `picked` line when the selection
-    /// moved, the keys or what the last key did on the last row, dim, and the rest of the screen cleared.
+    /// Draws `tree` over the screen from the top left, when it changed: each line cut short of the last
+    /// column and cleared to its end, the rows above the last scrolled to show its `picked` line when the
+    /// selection moved, `keys` or what the last key did on the last row, dim, and the rest cleared.
     fn draw(
         &mut self,
         out: &mut dyn Write,
         tree: &str,
         picked: Option<usize>,
+        keys: &str,
     ) -> Result<(), Failure> {
         let size = super::size();
-        let width = size.map(|s| usize::from(s.ws_col)).filter(|&w| w > 0);
+        let width = size.map(|s| usize::from(s.ws_col)).filter(|&w| w > 1);
+        let width = width.map(|w| w - 1);
         let rows = size.map(|s| usize::from(s.ws_row)).filter(|&r| r > 0);
         let lines: Vec<String> = tree
             .lines()
@@ -162,7 +189,8 @@ impl Screen {
                 lines
             }
         };
-        let said = self.said.as_deref().unwrap_or(KEYS);
+        let said = self.said.as_deref().unwrap_or(keys);
+        let said = width.map_or(said.to_string(), |w| cut(said, w));
         let said = format!("\x1b[2m{said}\x1b[0m");
         let keys = match rows {
             Some(rows) => format!("\x1b[J\x1b[{rows};1H{said}"),
@@ -243,6 +271,7 @@ enum Key {
     Full,
     All,
     Copy,
+    Markdown,
 }
 
 /// Changes `view` as `key` asks: moves the selection along `order`, opens or closes the selected trail,
@@ -276,14 +305,35 @@ fn press(key: Key, view: &mut View, order: &[Item], named: bool) {
             }
         }
         (Key::Up | Key::Enter | Key::Right | Key::Left | Key::Star, None) => {}
-        (Key::PageUp | Key::PageDown | Key::Top | Key::End | Key::Copy, _) => {}
+        (Key::PageUp | Key::PageDown | Key::Top | Key::End | Key::Copy | Key::Markdown, _) => {}
         (Key::Full, _) => view.full = !view.full,
         (Key::All, _) => view.all = !view.all && !named,
     }
 }
 
-/// Opens the line `id` in `view` when `open`, else closes it; it is open when `now`.
+/// The line to select once the selected `id` left `order`: the nearest line it was under in `known`
+/// that is still in `order`, else the first.
+fn kept(known: &[Item], order: &[Item], id: &str) -> Option<String> {
+    let mut at = Some(id.to_string());
+    while let Some(id) = at {
+        if order.iter().any(|i| i.id == id) {
+            return Some(id);
+        }
+        at = known
+            .iter()
+            .find(|i| i.id == id)
+            .and_then(|i| i.parent.clone());
+    }
+    order.first().map(|i| i.id.clone())
+}
+
+/// Opens the line `id` in `view` when `open`, else closes it; it is open when `now`. `Show more` opens
+/// as every trail by day.
 fn turn(view: &mut View, id: &str, now: bool, open: bool) {
+    if id == MORE {
+        view.all = open;
+        return;
+    }
     if now != open && !view.flipped.remove(id) {
         view.flipped.insert(id.to_string());
     }
@@ -321,6 +371,7 @@ fn keys(send: Sender<Wake>) -> Option<libc::termios> {
                 [b'f'] => Wake::Key(Key::Full),
                 [b'a'] => Wake::Key(Key::All),
                 [b'c'] => Wake::Key(Key::Copy),
+                [b'm'] => Wake::Key(Key::Markdown),
                 [b'q'] => Wake::Quit,
                 _ => {
                     typed.clear();
@@ -336,9 +387,9 @@ fn keys(send: Sender<Wake>) -> Option<libc::termios> {
     Some(before)
 }
 
-/// Copies `id` with the first of `pbcopy`, `wl-copy` and `xclip` that runs; what the key line says of
-/// it.
-fn copy(id: &str) -> String {
+/// Copies `text` with the first of `pbcopy`, `wl-copy` and `xclip` that runs; `said` when one did, else
+/// that none could.
+fn clipboard(text: &str, said: &str) -> String {
     let commands: [(&str, &[&str]); 3] = [
         ("pbcopy", &[]),
         ("wl-copy", &[]),
@@ -355,9 +406,9 @@ fn copy(id: &str) -> String {
         let written = child
             .stdin
             .take()
-            .is_some_and(|mut stdin| stdin.write_all(id.as_bytes()).is_ok());
+            .is_some_and(|mut stdin| stdin.write_all(text.as_bytes()).is_ok());
         if child.wait().is_ok_and(|s| s.success()) && written {
-            return format!("copied {id}");
+            return said.to_string();
         }
     }
     "no pbcopy, wl-copy or xclip to copy with".to_string()

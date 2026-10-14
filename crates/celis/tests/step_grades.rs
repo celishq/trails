@@ -96,7 +96,7 @@ fn tree_prints_the_grade_of_each_done_step() {
     let lines: Vec<&str> = text.lines().collect();
     let at = lines
         .iter()
-        .position(|l| l.starts_with("│ ✓ badge") && l.ends_with(&badge[..8]))
+        .position(|l| l.starts_with(&format!("  ✓ {} badge", &badge[..8])))
         .expect("the badge");
     let under = |n: usize| lines[at + n].trim_start_matches([' ', '│']);
     assert_eq!(under(1), "done    failed before, passes now", "{text}");

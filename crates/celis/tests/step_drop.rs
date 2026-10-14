@@ -46,16 +46,12 @@ fn tree_marks_a_dropped_step_with_its_reason_and_no_grade() {
     assert!(o.status.success(), "{}", err(&o));
     let text = out(&cli(&repo, &["tree", &trail[..8], "--full"]));
     let lines: Vec<&str> = text.lines().collect();
-    assert_eq!(lines[0], "✗ the trail", "{text}");
-    assert!(lines[1].ends_with(&trail[..8]), "{text}");
-    assert_eq!(lines[2], "│ dropped left behind", "{text}");
-    assert_eq!(lines[3], "│", "{text}");
-    assert!(
-        lines[4].starts_with("│ ✗ part  ") && lines[4].ends_with(&part[..8]),
-        "{text}"
-    );
-    assert_eq!(lines[5], "│   dropped wrong step", "{text}");
-    assert_eq!(lines.len(), 6, "{text}");
+    assert_eq!(lines[0], format!("✗ {} the trail", &trail[..8]), "{text}");
+    assert_eq!(lines[1], "  0/1 step", "{text}");
+    assert_eq!(lines[2], "  dropped left behind", "{text}");
+    assert_eq!(lines[3], format!("  ✗ {} part", &part[..8]), "{text}");
+    assert_eq!(lines[4], "    dropped wrong step", "{text}");
+    assert_eq!(lines.len(), 5, "{text}");
 }
 
 /// A drop with no reason is a usage error, and `drop` refuses an unknown step with `no-step` and a closed

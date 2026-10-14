@@ -4,6 +4,7 @@ mod args;
 mod auth;
 mod clock;
 mod decision;
+mod demo;
 mod issue;
 mod json;
 mod line;
@@ -123,16 +124,9 @@ impl Command {
         Project::at(&self.folder)
     }
 
-    /// Whether `tree` prints in colour: on a terminal, or with `CLICOLOR_FORCE` set and not
-    /// `0`; never with `NO_COLOR` set.
+    /// Whether a watch prints in colour: unless `NO_COLOR` is set.
     fn colour(&self) -> bool {
-        let set = |name: &str| self.env.get(name).is_some_and(|v| !v.is_empty());
-        if set("NO_COLOR") {
-            return false;
-        }
-        let forced =
-            set("CLICOLOR_FORCE") && self.env.get("CLICOLOR_FORCE").is_some_and(|v| v != "0");
-        forced || std::io::stdout().is_terminal()
+        self.env.get("NO_COLOR").is_none_or(|v| v.is_empty())
     }
 
     /// The width of the terminal stdout is, else `COLUMNS`; none when neither is known.

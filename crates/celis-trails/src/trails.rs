@@ -33,6 +33,15 @@ impl Trails {
         }
     }
 
+    /// Adds the records written to the store since the last read; whether there were any.
+    pub fn fresh(&mut self) -> bool {
+        let fresh = self.store.fresh();
+        self.records.extend(fresh.iter().cloned());
+        self.records
+            .sort_by(|a, b| (a.created_at, &a.id).cmp(&(b.created_at, &b.id)));
+        !fresh.is_empty()
+    }
+
     pub fn steps(&self) -> Steps<'_> {
         Steps::new(&self.records, self.now)
     }

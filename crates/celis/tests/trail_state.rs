@@ -77,9 +77,9 @@ fn a_trail_ends_thirty_minutes_after_its_newest_record() {
     let tree = out(&cli(&repo, &["tree", &left.id[..8]]));
     assert!(
         tree.lines()
-            .nth(3)
+            .nth(2)
             .unwrap_or("")
-            .starts_with("│ ! open part"),
+            .starts_with(&format!("  ! {} open part", &open.id[..8])),
         "{tree}"
     );
     let read = out(&cli(&repo, &["past"]));
