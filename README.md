@@ -79,6 +79,7 @@ curl -fsSL https://celis.ai/install.sh | sh
 | Codex       | `codex plugin marketplace add celishq/trails`<br>`codex plugin add celis@celis` | Trust its hooks with `/hooks`.                                                    |
 | Cursor      | `cursor-agent plugin marketplace add https://github.com/celishq/trails`         | Install `celis` from `/plugins`. Cursor doesn't remind the agent on each message. |
 | Gemini CLI  | `gemini extensions install https://github.com/celishq/trails`                   | —                                                                                 |
+| Antigravity | `agy plugin install https://github.com/celishq/trails`                          | Antigravity has no prompt hook, so celis doesn't write your prompts on the trail. |
 
 **3. Give your agent a task.** When the task changes files, the agent keeps its steps in celis. Run
 `celis tree` in a second terminal to watch them as the agent works.

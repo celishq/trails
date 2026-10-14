@@ -13,7 +13,8 @@ Thank you for your help. This guide tells you how to make a change that we can m
   and their store) and `celis-nostr` (the account, signed notes, encryption and the relay client).
 - `spec/trails/` holds the contract, as numbered CIPs. `spec/fixtures/` holds what two ends must match.
 - `plugins/celis/` is the plugin: one manifest per agent, and the same hooks. Gemini CLI installs from the
-  repo root, so `gemini-extension.json` and `hooks/` are there.
+  repo root, so `gemini-extension.json` and `hooks/` are there. Antigravity does too, so
+  `.antigravity-plugin/` and `hooks.json` are there.
 
 ## Change the spec first
 

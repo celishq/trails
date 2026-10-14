@@ -1,0 +1,5 @@
+{
+  "celis": {
+    "PreInvocation": [{ "type": "command", "command": "./plugins/celis/hooks/start.sh antigravity" }]
+  }
+}

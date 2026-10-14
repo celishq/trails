@@ -8,7 +8,8 @@ use std::process::{Command, Stdio};
 use support::{err, out, Repo};
 
 /// One agent: the file that declares its hooks, the events it runs them on, the variable that names the
-/// root, and whether the hook runs in the plugin root rather than the project.
+/// root, and whether the hook runs in the plugin root rather than the project. An empty `ask` is an agent
+/// with no prompt hook, and an empty variable an agent that names no root.
 struct Agent {
     name: &'static str,
     hooks: &'static str,
@@ -18,7 +19,7 @@ struct Agent {
     in_root: bool,
 }
 
-const AGENTS: [Agent; 4] = [
+const AGENTS: [Agent; 5] = [
     Agent {
         name: "claude",
         hooks: "plugins/celis/hooks/hooks.json",
@@ -51,6 +52,14 @@ const AGENTS: [Agent; 4] = [
         root: ("extensionPath", ""),
         in_root: false,
     },
+    Agent {
+        name: "antigravity",
+        hooks: "hooks.json",
+        start: "PreInvocation",
+        ask: "",
+        root: ("", ""),
+        in_root: true,
+    },
 ];
 
 fn checkout() -> PathBuf {
@@ -66,7 +75,11 @@ impl Agent {
     /// The command the agent's hooks file declares for `event`.
     fn command(&self, event: &str) -> String {
         let file = read(self.hooks);
-        let first = &file["hooks"][event][0];
+        let events = match self.name {
+            "antigravity" => &file["celis"],
+            _ => &file["hooks"],
+        };
+        let first = &events[event][0];
         let hook = if first["hooks"].is_array() {
             &first["hooks"][0]
         } else {
@@ -82,6 +95,8 @@ impl Agent {
         match self.name {
             "cursor" => serde_json::json!({"conversation_id": session, "session_id": "other",
                 "workspace_roots": [project], "prompt": prompt}),
+            "antigravity" => serde_json::json!({"conversationId": session,
+                "workspacePaths": [project], "invocationNum": 0}),
             _ => serde_json::json!({"session_id": session, "cwd": project, "prompt": prompt}),
         }
         .to_string()
@@ -96,6 +111,10 @@ impl Agent {
                 .as_str()
                 .unwrap()
                 .to_string(),
+            "antigravity" => json()["injectSteps"][0]["ephemeralMessage"]
+                .as_str()
+                .unwrap()
+                .to_string(),
             _ => stdout.to_string(),
         }
     }
@@ -103,6 +122,7 @@ impl Agent {
     /// Runs the hook of `event` with `stdin`, as the agent does, with `celis` on PATH.
     fn run(&self, repo: &Repo, event: &str, stdin: &str) -> String {
         let root = checkout().join(self.root.1);
+        let variable = Some(self.root.0).filter(|v| !v.is_empty());
         let celis = Path::new(env!("CARGO_BIN_EXE_celis")).parent().unwrap();
         let folder = if self.in_root {
             root.clone()
@@ -115,7 +135,7 @@ impl Agent {
             .env_clear()
             .env("PATH", format!("{}:/usr/bin:/bin", celis.display()))
             .env("CELIS_HOME", repo.home())
-            .env(self.root.0, &root)
+            .envs(variable.map(|v| (v, &root)))
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -140,7 +160,8 @@ fn steers(repo: &Repo, step: &str) -> Vec<String> {
 }
 
 /// Each agent's session start gives the card; an agent other than Claude Code also gets its session, to
-/// pass with `--session` (`spec/trails/04-trails.md`, "Sessions").
+/// pass with `--session`. Antigravity has no session start, and gets both before each call of the model
+/// (`spec/trails/04-trails.md`, "Sessions").
 #[test]
 fn each_agents_session_start_gives_the_card_and_its_session() {
     let repo = Repo::new();
@@ -161,7 +182,7 @@ fn each_agents_session_start_gives_the_card_and_its_session() {
 /// the person's project (`spec/trails/04-trails.md`, "Sessions").
 #[test]
 fn each_agents_prompt_hook_writes_a_steer_on_its_sessions_step() {
-    for agent in AGENTS {
+    for agent in AGENTS.into_iter().filter(|a| !a.ask.is_empty()) {
         let repo = Repo::new();
         let add = repo.run(
             &repo.path(),
@@ -241,4 +262,5 @@ fn each_manifest_names_its_hooks_and_each_marketplace_the_plugin() {
         "./plugins/celis"
     );
     assert_eq!(read("gemini-extension.json")["name"], "celis");
+    assert_eq!(read(".antigravity-plugin/plugin.json")["name"], "celis");
 }

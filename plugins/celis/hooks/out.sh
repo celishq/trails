@@ -6,6 +6,7 @@ say() {
   case "$1" in
     cursor) printf '{"additional_context": "%s"}\n' "$(json "$3")" ;;
     gemini) printf '{"hookSpecificOutput": {"hookEventName": "%s", "additionalContext": "%s"}}\n' "$2" "$(json "$3")" ;;
+    antigravity) printf '{"injectSteps": [{"ephemeralMessage": "%s"}]}\n' "$(json "$3")" ;;
     *) printf '%s\n' "$3" ;;
   esac
 }
@@ -30,6 +31,7 @@ project() {
 # The session of the hook's JSON $1, and where steps.md and past.md are under the plugin root $2.
 names() {
   id=$(field "$1" conversation_id)
+  [ -n "$id" ] || id=$(field "$1" conversationId)
   [ -n "$id" ] || id=$(field "$1" session_id)
   echo "celis session: $id. Pass --session $id to each celis step add."
   echo "steps.md: $2/steps.md"
