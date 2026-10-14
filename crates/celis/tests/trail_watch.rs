@@ -9,8 +9,11 @@ use std::sync::mpsc::{channel, Receiver};
 use std::time::{Duration, Instant};
 use support::{add, cli, err, finish, refusal, Repo};
 
-/// The screen that clears before each tree.
-const CLEAR: &str = "\x1b[H\x1b[2J\x1b[3J";
+/// What starts each tree: a frame drawn from the top left.
+const FRAME: &str = "\x1b[?2026h\x1b[H";
+
+/// The spinner's frames.
+const SPIN: &str = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏";
 
 /// A running `celis tree` on a terminal, and the text it printed so far.
 struct Watch {
@@ -77,12 +80,17 @@ impl Watch {
         plain(&String::from_utf8_lossy(&self.seen))
     }
 
-    /// The trees printed so far, one string each, after a wait of `wait` for more.
+    /// The trees printed so far, one string each with no line or frame codes, after a wait of `wait`
+    /// for more.
     fn trees(&mut self, wait: Duration) -> Vec<String> {
         self.shown(wait)
-            .split(CLEAR)
+            .split(FRAME)
             .skip(1)
-            .map(str::to_string)
+            .map(|t| {
+                t.replace("\x1b[K", "")
+                    .replace("\x1b[J", "")
+                    .replace("\x1b[?2026l", "")
+            })
             .collect()
     }
 
@@ -101,10 +109,21 @@ impl Watch {
         panic!("no {text:?} in {:?}", self.shown(Duration::ZERO));
     }
 
+    /// Types `keys` on the terminal.
+    fn press(&self, keys: &str) {
+        let written = unsafe { libc::write(self.lead, keys.as_ptr().cast(), keys.len()) };
+        assert_eq!(written, keys.len() as isize);
+    }
+
     /// Turns the terminal `columns` wide, and signals it.
     fn resize(&self, columns: u16) {
+        self.size(24, columns);
+    }
+
+    /// Turns the terminal `rows` high and `columns` wide, and signals it.
+    fn size(&self, rows: u16, columns: u16) {
         let size = libc::winsize {
-            ws_row: 24,
+            ws_row: rows,
             ws_col: columns,
             ws_xpixel: 0,
             ws_ypixel: 0,
@@ -175,7 +194,7 @@ fn watch_prints_the_tree_again_only_when_it_changes() {
     let trail = add(&repo, &["--", "the trail"]);
     finish(&repo, &trail[..8]);
     let mut watch = Watch::start(&repo, &[&trail[..8]]);
-    watch.until(&format!("✓ {}", &trail[..8]));
+    watch.until("✓ the trail");
     let shown = watch.trees(Duration::from_millis(1200)).len();
     let o = cli(
         &repo,
@@ -200,7 +219,7 @@ fn watch_with_no_id_prints_what_tree_prints() {
     assert!(o.status.success(), "{}", err(&o));
     watch.until("the shop trail");
     finish(&repo, &first[..8]);
-    watch.until(&format!("✓ {}", &first[..8]));
+    watch.until("✓ the first trail");
 }
 
 /// On a home with no store and no phrase, `tree` on a terminal shows the empty state, writes nothing, and
@@ -240,10 +259,10 @@ fn tree_refuses_watch() {
     refusal(&cli(&repo, &["tree", "--watch", "--json"]), 2, "usage");
 }
 
-/// On a terminal, `tree` clears the screen and its scrollback, and prints each tree from the top left, with
-/// no empty line between two trees (`spec/02-cli.md`, "Watching").
+/// On a terminal, `tree` draws on the alternate screen, each tree from the top left over the last one, with
+/// no clear (`spec/02-cli.md`, "Watching").
 #[test]
-fn watch_on_a_terminal_clears_the_screen_before_each_tree() {
+fn watch_draws_each_tree_over_the_last_on_the_alternate_screen() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the trail"]);
     let mut watch = Watch::start(&repo, &[&trail[..8]]);
@@ -253,12 +272,12 @@ fn watch_on_a_terminal_clears_the_screen_before_each_tree() {
     let shown = watch.shown(Duration::ZERO);
     let trees = watch.trees(Duration::ZERO);
     assert!(trees.len() >= 2, "{shown:?}");
-    assert!(shown.starts_with(CLEAR), "{shown:?}");
+    assert!(shown.starts_with("\x1b[?1049h"), "{shown:?}");
     assert!(!trees[0].contains("the step"), "{shown:?}");
-    assert!(!shown.contains("\r\n\r\n"), "{shown:?}");
+    assert!(!shown.contains("\x1b[2J"), "{shown:?}");
 }
 
-/// On a terminal, `tree` prints a tree whose times stand still again, cut to the new width, when the
+/// On a terminal, `tree` prints a tree whose times stand still again, wrapped to the new width, when the
 /// terminal's width changes (`spec/02-cli.md`, "Watching").
 #[test]
 fn watch_on_a_terminal_prints_the_tree_again_when_its_width_changes() {
@@ -273,13 +292,9 @@ fn watch_on_a_terminal_prints_the_tree_again_when_its_width_changes() {
     let mut watch = Watch::start(&repo, &[&trail[..8]]);
     watch.until("thirty characters");
     watch.resize(30);
-    watch.until("…");
+    watch.until("\r\n  past thirty characters");
     let trees = watch.trees(Duration::ZERO);
     assert!(trees.len() >= 2, "{trees:?}");
-    assert!(
-        !trees[trees.len() - 1].contains("thirty characters"),
-        "{trees:?}"
-    );
 }
 
 /// On a terminal, `tree` prints the tree again as the times it shows change, with no record landing
@@ -288,8 +303,155 @@ fn watch_on_a_terminal_prints_the_tree_again_when_its_width_changes() {
 fn watch_on_a_terminal_prints_the_tree_again_as_its_times_change() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the trail"]);
+    let step = add(&repo, &["--under", &trail[..8], "--", "the step"]);
+    let o = cli(&repo, &["step", "start", &step[..8]]);
+    assert!(o.status.success(), "{}", err(&o));
     let mut watch = Watch::start(&repo, &[&trail[..8]]);
-    watch.until("the trail");
+    watch.until("the step");
     watch.until("3s");
     assert!(watch.trees(Duration::ZERO).len() >= 2);
+}
+
+/// On an interrupt, `tree` leaves the alternate screen, prints the last tree whole and exits 0
+/// (`spec/02-cli.md`, "Watching").
+#[test]
+fn watch_leaves_the_last_tree_on_an_interrupt() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    let mut watch = Watch::start(&repo, &[&trail[..8]]);
+    watch.until("the trail");
+    let pid = libc::pid_t::try_from(watch.child.id()).unwrap();
+    assert_eq!(unsafe { libc::kill(pid, libc::SIGINT) }, 0);
+    assert_eq!(watch.child.wait().unwrap().code(), Some(0));
+    let shown = watch.shown(Duration::from_millis(200));
+    let (_, after) = shown.split_once("\x1b[?1049l").expect("the main screen");
+    assert!(after.contains("○ the trail\r\n"), "{shown:?}");
+}
+
+/// A watch spins a working step's mark and ends an active trail's second line with `active <time> ago`
+/// (`spec/02-cli.md`, "Watching").
+#[test]
+fn watch_spins_a_working_step_and_says_when_the_trail_was_active() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    let step = add(&repo, &["--under", &trail[..8], "--", "the step"]);
+    let o = cli(&repo, &["step", "start", &step[..8]]);
+    assert!(o.status.success(), "{}", err(&o));
+    let mut watch = Watch::start(&repo, &[&trail[..8]]);
+    watch.until("the step");
+    let trees = watch.trees(Duration::from_millis(1000));
+    let marks: std::collections::BTreeSet<char> = trees
+        .iter()
+        .flat_map(|t| t.chars())
+        .filter(|c| SPIN.contains(*c))
+        .collect();
+    assert!(marks.len() >= 3, "{trees:?}");
+    let last = trees.last().unwrap();
+    assert!(!last.contains('◐'), "{last:?}");
+    assert!(
+        last.contains(" · active ") && last.contains(" ago"),
+        "{last:?}"
+    );
+}
+
+/// A watch cuts a tree taller than the screen to end at its last row with `… <n> more lines`
+/// (`spec/02-cli.md`, "Watching").
+#[test]
+fn watch_cuts_a_tree_taller_than_the_screen() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    for n in 0..6 {
+        add(&repo, &["--under", &trail[..8], "--", &format!("step {n}")]);
+    }
+    let mut watch = Watch::start(&repo, &[&trail[..8]]);
+    watch.until("the trail");
+    watch.size(5, 80);
+    watch.until("more lines");
+    let last = watch.trees(Duration::ZERO).pop().unwrap();
+    let lines: Vec<&str> = last.split("\r\n").collect();
+    assert_eq!(lines.len(), 5, "{last:?}");
+    assert_eq!(lines[3], "… 6 more lines", "{last:?}");
+    assert!(lines[4].starts_with("↑↓ select"), "{last:?}");
+}
+
+/// A watch ends each tree with its keys, and `q` ends it as an interrupt does (`spec/02-cli.md`,
+/// "Watching").
+#[test]
+fn watch_names_its_keys_and_quits_on_q() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    let mut watch = Watch::start(&repo, &[&trail[..8]]);
+    watch.until("↑↓ select · enter open · f full · a all · q quit");
+    watch.press("q");
+    assert_eq!(watch.child.wait().unwrap().code(), Some(0));
+    let shown = watch.shown(Duration::from_millis(200));
+    let (_, after) = shown.split_once("\x1b[?1049l").expect("the main screen");
+    assert!(
+        after.contains("○ the trail") && !after.contains("q quit"),
+        "{shown:?}"
+    );
+    assert!(!shown.contains("qthe trail"), "{shown:?}");
+}
+
+/// `↓` selects a trail in reverse video, and `enter` opens a done trail into a block and closes it
+/// again (`spec/02-cli.md`, "Watching").
+#[test]
+fn watch_selects_a_trail_and_opens_it_with_enter() {
+    let repo = Repo::new();
+    let ended = add(&repo, &["--", "an ended trail"]);
+    let part = add(&repo, &["--under", &ended[..8], "--", "its part"]);
+    finish(&repo, &part[..8]);
+    add(&repo, &["--", "an active trail"]);
+    let mut watch = Watch::start(&repo, &[]);
+    watch.until("DONE");
+    watch.press("\x1b[B\x1b[B");
+    std::thread::sleep(Duration::from_millis(300));
+    let raw = String::from_utf8_lossy(&watch_raw(&mut watch)).into_owned();
+    assert!(raw.contains("\x1b[7man ended trail"), "{raw:?}");
+    watch.press("\r");
+    watch.until("its part");
+    watch.press("\r");
+    let start = Instant::now();
+    while watch
+        .trees(Duration::from_millis(100))
+        .last()
+        .unwrap()
+        .contains("its part")
+    {
+        assert!(start.elapsed() < Duration::from_secs(3), "still open");
+    }
+}
+
+/// The raw bytes a watch printed so far.
+fn watch_raw(watch: &mut Watch) -> Vec<u8> {
+    watch.shown(Duration::ZERO);
+    watch.seen.clone()
+}
+
+/// `f` turns the full tree on and off, and `a` every trail by day (`spec/02-cli.md`, "Watching").
+#[test]
+fn watch_turns_full_and_all_on_with_keys() {
+    let repo = Repo::new();
+    support::step_note(
+        &repo,
+        &support::account(),
+        None,
+        "an old trail",
+        support::now() - 2 * support::DAY,
+    );
+    let trail = add(&repo, &["--", "the trail"]);
+    let part = add(&repo, &["--under", &trail[..8], "--", "the part"]);
+    let o = cli(
+        &repo,
+        &["step", "done", &part[..8], "--as-planned", "--", "it works"],
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    add(&repo, &["--under", &trail[..8], "--", "next"]);
+    let mut watch = Watch::start(&repo, &[]);
+    watch.until("the part");
+    watch.press("f");
+    watch.until("done    it works");
+    watch.press("f");
+    watch.press("a");
+    watch.until("an old trail");
 }

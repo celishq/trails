@@ -137,19 +137,10 @@ impl Command {
 
     /// The width of the terminal stdout is, else `COLUMNS`; none when neither is known.
     fn columns(&self) -> Option<usize> {
-        if std::io::stdout().is_terminal() {
-            let mut size = libc::winsize {
-                ws_row: 0,
-                ws_col: 0,
-                ws_xpixel: 0,
-                ws_ypixel: 0,
-            };
-            let asked = unsafe { libc::ioctl(libc::STDOUT_FILENO, libc::TIOCGWINSZ, &mut size) };
-            if asked == 0 && size.ws_col > 0 {
-                return Some(usize::from(size.ws_col));
-            }
+        match size().map(|s| s.ws_col).filter(|&c| c > 0) {
+            Some(columns) => Some(usize::from(columns)),
+            None => self.env.get("COLUMNS").and_then(|c| c.parse().ok()),
         }
-        self.env.get("COLUMNS").and_then(|c| c.parse().ok())
     }
 
     /// The agent session this run belongs to, from the first set variable of `$CLAUDE_CODE_SESSION_ID`,
@@ -226,4 +217,19 @@ pub(crate) fn now() -> u64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map_or(0, |d| d.as_secs())
+}
+
+/// The size of the terminal stdout is; none off a terminal.
+pub(super) fn size() -> Option<libc::winsize> {
+    if !std::io::stdout().is_terminal() {
+        return None;
+    }
+    let mut size = libc::winsize {
+        ws_row: 0,
+        ws_col: 0,
+        ws_xpixel: 0,
+        ws_ypixel: 0,
+    };
+    let asked = unsafe { libc::ioctl(libc::STDOUT_FILENO, libc::TIOCGWINSZ, &mut size) };
+    (asked == 0).then_some(size)
 }

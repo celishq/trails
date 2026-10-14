@@ -8,34 +8,57 @@ fn short(id: &str) -> &str {
     &id[..8]
 }
 
-/// The lines `tree --full <args>` prints, each row without its details and each grade line cut to
-/// `grade`, since times vary.
+/// The lines `tree --full <args>` prints, each without its details, and each time in ` · ` parts or
+/// after a `took` label as `T`, since times vary.
 fn printed(repo: &Repo, args: &[&str]) -> Vec<String> {
     let mut all = vec!["tree", "--full"];
     all.extend(args);
     let o = cli(repo, &all);
     assert!(o.status.success(), "{}", err(&o));
-    out(&o)
-        .lines()
-        .map(|l| match l.find("took ") {
-            Some(n) if l[..n].trim_matches([' ', '│']).is_empty() => format!("{}grade", &l[..n]),
-            _ => bare(l),
-        })
-        .collect()
+    out(&o).lines().map(|l| untimed(&bare(l))).collect()
 }
 
-/// `line` without the details after its text: from the first two spaces after its branch lines.
+/// `line` without the details after its text: from the first two spaces after its guides and label.
 fn bare(line: &str) -> String {
-    let text = line.len() - line.trim_start_matches([' ', '│', '├', '└', '─']).len();
-    match line[text..].find("  ") {
-        Some(end) => line[..text + end].to_string(),
+    let text = line.len() - line.trim_start_matches([' ', '│']).len();
+    let label = ["done    ", "took    ", "changed "]
+        .iter()
+        .find(|l| line[text..].starts_with(*l))
+        .map_or(0, |l| l.len());
+    match line[text + label..].find("  ") {
+        Some(end) => line[..text + label + end].to_string(),
         None => line.trim_end().to_string(),
     }
 }
 
-/// `tree` prints the trail with its state and rules, then the steps under it, oldest first, each
-/// followed by its own, marked done or open, with the proof and grade of a done one
-/// (`spec/02-cli.md`, "Tree").
+/// `line` with each time, a ` · ` part or the text after `took`, as `T`.
+fn untimed(line: &str) -> String {
+    let time = |part: &str| {
+        !part.is_empty()
+            && part.split(' ').all(|w| {
+                w.len() > 1
+                    && w.is_ascii()
+                    && w[..w.len() - 1].bytes().all(|b| b.is_ascii_digit())
+                    && w.ends_with(['s', 'm', 'h', 'd'])
+            })
+    };
+    if let Some(n) = line.find("took    ") {
+        return format!("{}took    T", &line[..n]);
+    }
+    let parts: Vec<&str> = line.split(" · ").collect();
+    let parts: Vec<&str> = parts
+        .iter()
+        .map(|p| match time(p) {
+            true => "T",
+            false => p,
+        })
+        .collect();
+    parts.join(" · ")
+}
+
+/// `tree` prints the trail as a block: its title, then its project, progress, worked time and rules,
+/// then the rules with `--full`, then the steps under it, oldest first, each followed by its own one
+/// guide down, with the proof and grade of a done one (`spec/02-cli.md`, "Tree").
 #[test]
 fn tree_prints_the_trail_its_rules_and_the_steps_under_it() {
     let repo = Repo::new();
@@ -55,7 +78,7 @@ fn tree_prints_the_trail_its_rules_and_the_steps_under_it() {
     let colours = add(&repo, &["--under", short(&trail), "--", "colours"]);
     std::thread::sleep(std::time::Duration::from_millis(1100));
     let page = add(&repo, &["--under", short(&trail), "--", "customers page"]);
-    let badge = add(&repo, &["--under", short(&page), "--", "badge"]);
+    add(&repo, &["--under", short(&page), "--", "badge"]);
     let other = add(&repo, &["--", "other"]);
     add(&repo, &["--under", short(&other), "--", "elsewhere"]);
     let o = cli(
@@ -73,20 +96,22 @@ fn tree_prints_the_trail_its_rules_and_the_steps_under_it() {
     assert_eq!(
         printed(&repo, &[short(&trail)]),
         [
-            format!("● {} build the CRM", short(&trail)),
-            format!("  ├─ § {} colours are tokens", short(&rule)),
-            format!("  ├─ ✓ {} colours", short(&colours)),
-            "  │        done lint failed, passes".to_string(),
-            "  │        grade".to_string(),
-            format!("  └─ ○ {} customers page", short(&page)),
-            format!("     └─ ○ {} badge", short(&badge)),
+            "○ build the CRM".to_string(),
+            "  repo · 1 of 3 · T · § 1 rule".to_string(),
+            format!("  § {} colours are tokens", short(&rule)),
+            String::new(),
+            "  ✓ colours".to_string(),
+            "    done    lint failed, passes".to_string(),
+            "    took    T".to_string(),
+            "  ○ customers page".to_string(),
+            "  │ ○ badge".to_string(),
         ]
     );
 }
 
-/// `tree <id>` of an ask prints its trail's rules under its line (`spec/02-cli.md`, "Tree").
+/// `tree <id>` of an ask counts its trail's rules on its block (`spec/02-cli.md`, "Tree").
 #[test]
-fn tree_of_an_ask_prints_its_trails_rules() {
+fn tree_of_an_ask_counts_its_trails_rules() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "build the CRM"]);
     let scope = format!("trail:{}", short(&trail));
@@ -95,20 +120,23 @@ fn tree_of_an_ask_prints_its_trails_rules() {
         &["decide", "--scope", &scope, "--", "colours are tokens"],
     );
     assert!(o.status.success(), "{}", err(&o));
-    let rule = out(&o).trim().to_string();
     let ask = add(&repo, &["--under", short(&trail), "--", "customers page"]);
-    let badge = add(&repo, &["--under", short(&ask), "--", "badge"]);
+    add(&repo, &["--under", short(&ask), "--", "badge"]);
+    let o = cli(&repo, &["tree", short(&ask)]);
+    let lines: Vec<String> = out(&o).lines().map(|l| untimed(&bare(l))).collect();
     assert_eq!(
-        printed(&repo, &[short(&ask)]),
+        lines,
         [
-            format!("● {} customers page", short(&ask)),
-            format!("  ├─ § {} colours are tokens", short(&rule)),
-            format!("  └─ ○ {} badge", short(&badge)),
+            "○ customers page",
+            "  repo · 0 of 1 · § 1 rule",
+            "",
+            "  ○ badge"
         ]
     );
 }
 
-/// `tree` prints a done trail's proof and grade under its first line (`spec/02-cli.md`, "Tree").
+/// `tree` prints a done trail's proof and grade under its title, and no progress with no step under it
+/// (`spec/02-cli.md`, "Tree").
 #[test]
 fn tree_prints_a_done_trails_proof_and_grade() {
     let repo = Repo::new();
@@ -117,9 +145,10 @@ fn tree_prints_a_done_trails_proof_and_grade() {
     assert_eq!(
         printed(&repo, &[short(&trail)]),
         [
-            format!("✓ {} a small ask", short(&trail)),
-            "      done failed before, passes now".to_string(),
-            "      grade".to_string(),
+            "✓ a small ask",
+            "  repo · T",
+            "  done    failed before, passes now",
+            "  took    T",
         ]
     );
 }
@@ -151,21 +180,68 @@ fn tree_json_prints_each_step_with_its_under_and_state_and_writes_no_record() {
     assert_eq!(count(), before);
 }
 
-/// `tree` with no id prints every trail of the project, newest first, and refuses an id no step has
-/// with `no-step` (`spec/02-cli.md`, "Tree").
+/// `tree` with no id prints the active trails after `ACTIVE`, newest first, a blank line between two
+/// blocks, and refuses an id no step has with `no-step` (`spec/02-cli.md`, "Tree").
 #[test]
 fn tree_with_no_id_prints_every_trail_newest_first() {
     let repo = Repo::new();
     let first = add(&repo, &["--", "first trail"]);
     add(&repo, &["--under", short(&first), "--", "a part"]);
     std::thread::sleep(std::time::Duration::from_millis(1100));
-    let second = add(&repo, &["--", "second trail"]);
-    let heads: Vec<String> = printed(&repo, &[])
-        .into_iter()
-        .filter_map(|l| Some(l.strip_prefix("● ")?[..8].to_string()))
-        .collect();
-    assert_eq!(heads, [short(&second), short(&first)]);
+    add(&repo, &["--", "second trail"]);
+    let text = out(&cli(&repo, &["tree"]));
+    let lines: Vec<String> = text.lines().map(bare).collect();
+    assert_eq!(
+        lines,
+        [
+            "ACTIVE",
+            "○ second trail",
+            "  repo",
+            "",
+            "○ first trail",
+            "  repo · 0 of 1",
+            "",
+            "  ○ a part",
+        ],
+        "{text}"
+    );
     refusal(&cli(&repo, &["tree", "deadbeef", "--json"]), 1, "no-step");
+}
+
+/// `tree` with no id prints the active trails after `ACTIVE` and today's others after `DONE`, one line
+/// each with its project, steps, rules, worked time and id; a dropped one's reason follows it
+/// (`spec/02-cli.md`, "Tree").
+#[test]
+fn tree_with_no_id_groups_active_and_done_trails() {
+    let repo = Repo::new();
+    let dropped = add(&repo, &["--", "a dropped trail"]);
+    let o = cli(
+        &repo,
+        &["step", "drop", short(&dropped), "--", "not needed"],
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let ended = add(&repo, &["--", "an ended trail"]);
+    let scope = format!("trail:{}", short(&ended));
+    let o = cli(&repo, &["decide", "--scope", &scope, "--", "a rule"]);
+    assert!(o.status.success(), "{}", err(&o));
+    let part = add(&repo, &["--under", short(&ended), "--", "its part"]);
+    finish(&repo, short(&part));
+    add(&repo, &["--", "an active trail"]);
+    let text = out(&cli(&repo, &["tree"]));
+    let lines: Vec<&str> = text.lines().collect();
+    assert_eq!(lines[0], "ACTIVE", "{text}");
+    assert_eq!(lines[1], "○ an active trail", "{text}");
+    assert_eq!(lines[3], "", "{text}");
+    assert_eq!(lines[4], "DONE", "{text}");
+    let line = |what: &str| lines.iter().position(|l| l.contains(what)).unwrap();
+    let ended_line = lines[line("an ended trail")];
+    assert!(ended_line.starts_with("✓ an ended trail  "), "{text}");
+    assert!(ended_line.contains("  repo  1 step · 1 rule  "), "{text}");
+    assert!(ended_line.ends_with(short(&ended)), "{text}");
+    let at = line("a dropped trail");
+    assert!(lines[at].starts_with("✗ a dropped trail"), "{text}");
+    assert_eq!(lines[at + 1], "  not needed", "{text}");
+    assert!(!text.contains("its part"), "{text}");
 }
 
 /// `text` without its colour codes.
@@ -183,10 +259,8 @@ fn plain(text: &str) -> String {
     kept
 }
 
-/// With `CLICOLOR_FORCE=1`, `tree` draws branch lines, marks, underlined ids and dim columns at the right
-/// edge, with no start time when a title gets short, and a rule as a branch before the steps; with no id,
-/// each trail names its project; `NO_COLOR` turns it off
-/// (`spec/02-cli.md`, "Tree").
+/// With `CLICOLOR_FORCE=1`, `tree` draws guides, marks, underlined ids and details at the right edge,
+/// in columns; `NO_COLOR` turns the colour off and keeps the lines (`spec/02-cli.md`, "Tree").
 #[test]
 fn tree_draws_the_styled_tree_when_colour_is_forced() {
     let repo = Repo::new();
@@ -214,7 +288,6 @@ fn tree_draws_the_styled_tree_when_colour_is_forced() {
         ],
     );
     assert!(o.status.success(), "{}", err(&o));
-    let rule = out(&o).trim()[..8].to_string();
     let o = cli(&repo, &["step", "start", &open[..8]]);
     assert!(o.status.success(), "{}", err(&o));
     std::thread::sleep(std::time::Duration::from_millis(1100));
@@ -235,62 +308,35 @@ fn tree_draws_the_styled_tree_when_colour_is_forced() {
     let text = out(&o);
     assert!(text.contains("\x1b[4;"), "{text}");
     let lines: Vec<String> = plain(&text).lines().map(str::to_string).collect();
+    assert_eq!(lines[0], "◐ the trail", "{lines:?}");
     assert!(
-        lines[0].starts_with(&format!("● {} the trail ", &trail[..8])),
+        lines[1].starts_with("  repo · 0 of 3 · ") && lines[1].contains(" · § 1 rule  "),
         "{lines:?}"
     );
-    assert_eq!(lines[1], format!("  ├─ § {rule} a rule"), "{lines:?}");
-    assert!(
-        lines[2].starts_with(&format!("  ├─ ○ {} done part ", &done[..8])),
-        "{lines:?}"
-    );
-    assert!(
-        lines[3].starts_with(&format!("  │  └─ ◐ {} deeper part ", &open[..8])),
-        "{lines:?}"
-    );
-    assert!(
-        lines[4].starts_with(&format!("  └─ ○ {} the fix ", &fix[..8])),
-        "{lines:?}"
-    );
-    assert_eq!(lines.len(), 5, "{lines:?}");
+    assert_eq!(lines[2], "", "{lines:?}");
+    assert!(lines[3].starts_with("  ○ done part  "), "{lines:?}");
+    assert!(lines[4].starts_with("  │ ◐ deeper part  "), "{lines:?}");
+    assert!(lines[5].starts_with("  ○ the fix  "), "{lines:?}");
+    assert_eq!(lines.len(), 6, "{lines:?}");
     let column = |line: &str, text: &str| line.find(text).map(|n| line[..n].chars().count());
-    assert_eq!(column(&lines[2], "prices.py:40"), column(&lines[4], "a.py"));
-    for line in [&lines[0], &lines[3]] {
-        assert_eq!(line.chars().count(), 80, "{lines:?}");
+    assert_eq!(column(&lines[3], "prices.py:40"), column(&lines[5], "a.py"));
+    for (line, id) in [(1, &trail), (3, &done), (4, &open), (5, &fix)] {
+        assert_eq!(lines[line].chars().count(), 80, "{lines:?}");
+        assert!(lines[line].ends_with(&id[..8]), "{lines:?}");
     }
-    let took = |line: &str| line.rfind("s  ").map(|n| line[..n].chars().count());
-    assert_eq!(took(&lines[0]), took(&lines[3]), "{lines:?}");
-    let clock = |line: &str| {
-        let end: Vec<char> = line.chars().rev().take(6).collect();
-        end.len() == 6 && end[2] == ':' && end[5] == ' '
-    };
-    assert!(clock(&lines[0]), "{lines:?}");
-    let narrow = [("CLICOLOR_FORCE", "1"), ("COLUMNS", "50")];
-    let o = repo.run(&repo.path(), &["tree", &trail[..8]], &narrow, "");
-    let lines: Vec<String> = plain(&out(&o)).lines().map(str::to_string).collect();
-    assert!(lines[0].contains(" the trail "), "{lines:?}");
-    assert!(!lines.iter().any(|l| clock(l)), "{lines:?}");
     let o = repo.run(&repo.path(), &["tree"], &forced, "");
-    let first = plain(&out(&o)).lines().next().unwrap_or("").to_string();
-    assert!(
-        first.starts_with(&format!("● {} repo the trail", &trail[..8])),
-        "{first}"
-    );
+    let text = plain(&out(&o));
+    assert!(text.starts_with("ACTIVE\n◐ the trail\n"), "{text}");
     let off = [("CLICOLOR_FORCE", "1"), ("NO_COLOR", "1")];
     let o = repo.run(&repo.path(), &["tree", &trail[..8]], &off, "");
     assert!(!out(&o).contains('\x1b'), "{}", out(&o));
-    assert!(
-        out(&o).starts_with(&format!("● {}", &trail[..8])),
-        "{}",
-        out(&o)
-    );
+    assert!(out(&o).starts_with("◐ the trail\n"), "{}", out(&o));
 }
 
-/// The styled full tree starts each line under a step at the column of its title, ends a label one
-/// space before it, and wraps a long line and a rule at the width, keeping the branch line
-/// (`spec/02-cli.md`, "Tree").
+/// The full tree starts each line under a step at the column of its title, after its label, and wraps a
+/// long line and a rule at the width (`spec/02-cli.md`, "Tree").
 #[test]
-fn the_styled_full_tree_aligns_and_wraps_the_lines_under_a_step() {
+fn the_full_tree_aligns_and_wraps_the_lines_under_a_step() {
     let repo = Repo::new();
     let long =
         "one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen";
@@ -311,74 +357,106 @@ fn the_styled_full_tree_aligns_and_wraps_the_lines_under_a_step() {
     );
     assert!(o.status.success(), "{}", err(&o));
 
-    let forced = [("CLICOLOR_FORCE", "1"), ("COLUMNS", "60")];
-    let o = repo.run(&repo.path(), &["tree", &trail[..8], "--full"], &forced, "");
+    let width = [("COLUMNS", "60")];
+    let o = repo.run(&repo.path(), &["tree", &trail[..8], "--full"], &width, "");
     assert!(o.status.success(), "{}", err(&o));
-    let lines: Vec<String> = plain(&out(&o)).lines().map(str::to_string).collect();
+    let lines: Vec<String> = out(&o).lines().map(str::to_string).collect();
     for line in &lines {
         assert!(line.chars().count() <= 60, "{lines:?}");
     }
-    let block = |from: &str, lead: &str, rest: &str| -> String {
-        let at = lines.iter().position(|l| l.starts_with(from));
-        let at = at.unwrap_or_else(|| panic!("{from:?}: {lines:?}"));
-        let first = lines[at][lead.len()..].split("  ").next().unwrap_or("");
-        let mut words = vec![first.to_string()];
+    let block = |lead: &str, rest: &str| -> String {
+        let at = lines
+            .iter()
+            .position(|l| l.strip_prefix(lead).is_some_and(|t| t.starts_with("one")));
+        let at = at.unwrap_or_else(|| panic!("{lead:?}: {lines:?}"));
+        let mut text = lines[at][lead.len()..].to_string();
         for line in &lines[at + 1..] {
             match line.strip_prefix(rest) {
-                Some(more) if !more.starts_with(' ') => words.push(more.to_string()),
+                Some(more) if long.starts_with(&format!("{text} {more}")) => {
+                    text = format!("{text} {more}")
+                }
                 _ => break,
             }
         }
-        assert!(words.len() > 1, "{from}: {lines:?}");
-        words.join(" ")
+        assert!(text.len() > 60 - lead.len(), "{lead}: {lines:?}");
+        text
     };
-    let under_trail = " ".repeat("● 12345678 ".chars().count());
-    assert_eq!(
-        block(&format!("{under_trail}one"), &under_trail, &under_trail),
-        long
-    );
-    let rail = format!("  │  {}", " ".repeat("✓ 12345678 ".chars().count()));
-    let label = format!("  ├─ § {rule} ");
-    assert_eq!(block(&label, &label, &rail), long);
-    assert_eq!(block(&format!("{rail}one"), &rail, &rail), long);
-    let done = format!(
-        "  │{}done ",
-        " ".repeat(rail.chars().count() - "  │done ".chars().count())
-    );
-    assert_eq!(block(&done, &done, &rail), long);
+    assert_eq!(block("  ", "  "), long);
+    let label = format!("  § {rule} ");
+    assert_eq!(block(&label, &" ".repeat(label.chars().count())), long);
+    assert_eq!(block("    ", "    "), long);
+    assert_eq!(block("    done    ", "            "), long);
 }
 
-/// The short styled tree prints a rule as a branch without its reason, and the full tree prints it whole
+/// The short tree counts a trail's rules and leaves out their text, and the full tree prints it whole
 /// (`spec/02-cli.md`, "Tree").
 #[test]
-fn the_short_styled_tree_leaves_out_a_rules_reason() {
+fn the_short_tree_counts_rules_and_leaves_out_their_text() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the trail"]);
     let rule = "When you price: use cents, because floats lost a cent.";
     let scope = format!("trail:{}", &trail[..8]);
     let o = cli(&repo, &["decide", "--scope", &scope, "--", rule]);
     assert!(o.status.success(), "{}", err(&o));
-    let forced = [("CLICOLOR_FORCE", "1"), ("COLUMNS", "100")];
-    let short = plain(&out(&repo.run(
-        &repo.path(),
-        &["tree", &trail[..8]],
-        &forced,
-        "",
-    )));
-    assert!(
-        short.contains("  └─ § ") && short.contains(" When you price: use cents\n"),
-        "{short}"
-    );
-    assert!(!short.contains("because"), "{short}");
-    let full = repo.run(&repo.path(), &["tree", &trail[..8], "--full"], &forced, "");
-    assert!(plain(&out(&full)).contains(rule), "{}", out(&full));
+    let short = out(&cli(&repo, &["tree", &trail[..8]]));
+    assert!(short.contains(" · § 1 rule"), "{short}");
+    assert!(!short.contains("When you price"), "{short}");
+    let full = out(&cli(&repo, &["tree", &trail[..8], "--full"]));
+    assert!(full.contains(rule), "{full}");
 }
 
-/// `tree` with no id leaves out a trail with no record from today, and folds a trail that is not active
-/// into its own line, which counts its steps; `tree <id>` prints either whole (`spec/02-cli.md`,
+/// The short tree prints a done step's `changed` tag under it as `~ <changed>`, and marks a revised step
+/// `↻` (`spec/02-cli.md`, "Tree").
+#[test]
+fn the_short_tree_prints_what_changed_and_marks_a_revised_step() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    let part = add(&repo, &["--under", &trail[..8], "--", "the part"]);
+    let o = cli(
+        &repo,
+        &[
+            "step",
+            "done",
+            &part[..8],
+            "--changed",
+            "one file, not two",
+            "--",
+            "it works",
+        ],
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    std::thread::sleep(std::time::Duration::from_millis(1100));
+    add(&repo, &["--under", &trail[..8], "--", "next"]);
+    let text = out(&cli(&repo, &["tree", &trail[..8]]));
+    let lines: Vec<String> = text.lines().map(bare).collect();
+    assert_eq!(lines[3], "  ✓ the part", "{text}");
+    assert_eq!(lines[4], "    ~ one file, not two", "{text}");
+    let other = add(&repo, &["--", "another trail"]);
+    let o = cli(
+        &repo,
+        &[
+            "step",
+            "add",
+            "--under",
+            &other[..8],
+            "--replaces",
+            &part[..8],
+            "--",
+            "a better part",
+        ],
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let text = out(&cli(&repo, &["tree", &trail[..8]]));
+    assert!(
+        text.lines().any(|l| l.starts_with("  ↻ the part")),
+        "{text}"
+    );
+}
+
+/// `tree <id>` prints a trail with no record from today, and an ended one whole (`spec/02-cli.md`,
 /// "Tree").
 #[test]
-fn tree_with_no_id_folds_ended_trails_and_shows_only_today() {
+fn tree_with_no_id_shows_only_today_and_tree_with_an_id_prints_any_trail() {
     let repo = Repo::new();
     let by = support::account();
     let old = support::step_note(
@@ -391,21 +469,8 @@ fn tree_with_no_id_folds_ended_trails_and_shows_only_today() {
     let ended = add(&repo, &["--", "an ended trail"]);
     let part = add(&repo, &["--under", &ended[..8], "--", "its part"]);
     finish(&repo, &part[..8]);
-    finish(&repo, &ended[..8]);
-    let active = add(&repo, &["--", "an active trail"]);
-    add(&repo, &["--under", &active[..8], "--", "a live part"]);
-    let o = cli(&repo, &["tree"]);
-    let text = out(&o);
+    let text = out(&cli(&repo, &["tree"]));
     assert!(!text.contains("an old trail"), "{text}");
-    let line = |what: &str| text.lines().find(|l| l.contains(what)).unwrap_or("");
-    assert!(line("an active trail").starts_with("● "), "{text}");
-    assert!(text.contains("a live part"), "{text}");
-    let ended_line = line("an ended trail");
-    assert!(
-        ended_line.starts_with("✓ ") && ended_line.contains("  1 step  "),
-        "{text}"
-    );
-    assert!(!text.contains("its part"), "{text}");
     let o = cli(&repo, &["tree", &ended[..8]]);
     assert!(out(&o).contains("its part"), "{}", out(&o));
     let o = cli(&repo, &["tree", &old.id[..8]]);
@@ -413,19 +478,20 @@ fn tree_with_no_id_folds_ended_trails_and_shows_only_today() {
 }
 
 /// `tree` prints the short tree, with no line under a step, and `--full` adds the proof and grade; with
-/// `COLUMNS`, the short tree fits each line to that width, cutting a step's text with `…` and keeping its
-/// details (`spec/02-cli.md`, "Tree").
+/// `COLUMNS`, the short tree fits each line to that width: it wraps a block's title, cuts a step's
+/// title with `…` and keeps its time (`spec/02-cli.md`, "Tree").
 #[test]
 fn tree_prints_the_short_tree_and_the_full_tree_with_full() {
     let repo = Repo::new();
-    let trail = add(
+    let title = "a trail whose words run well past thirty characters";
+    let trail = add(&repo, &["--", title]);
+    let part = add(
         &repo,
-        &["--", "a trail whose words run well past thirty characters"],
+        &["--under", &trail[..8], "--", "a part whose words run long"],
     );
-    let part = add(&repo, &["--under", &trail[..8], "--", "part"]);
     finish(&repo, &part[..8]);
     let short = out(&cli(&repo, &["tree", &trail[..8]]));
-    assert_eq!(short.lines().count(), 2, "{short}");
+    assert_eq!(short.lines().count(), 4, "{short}");
     let full = out(&cli(&repo, &["tree", &trail[..8], "--full"]));
     assert!(
         full.lines().any(|l| l.trim_start().starts_with("done ")),
@@ -438,14 +504,20 @@ fn tree_prints_the_short_tree_and_the_full_tree_with_full() {
         "",
     );
     let cut = out(&o);
-    let first = cut.lines().next().unwrap_or("");
-    assert_eq!(first.chars().count(), 30, "{cut}");
-    assert!(first.contains('…') && first.ends_with('s'), "{cut}");
     assert!(cut.lines().all(|l| l.chars().count() <= 30), "{cut}");
+    let lines: Vec<&str> = cut.lines().collect();
+    let head: Vec<&str> = lines
+        .iter()
+        .take_while(|l| !l.starts_with("  repo"))
+        .map(|l| l.trim_start_matches("✓ ").trim())
+        .collect();
+    assert_eq!(head.join(" "), title, "{cut}");
+    let step = lines.last().unwrap();
+    assert!(step.contains('…') && step.ends_with('s'), "{cut}");
 }
 
-/// `tree` with no id prints today's trails of every project, in any folder, each with its project name
-/// and its title in one column; with none, it names `tree --all` (`spec/02-cli.md`, "Tree").
+/// `tree` with no id prints today's trails of every project, in any folder, each with its project name;
+/// with none, it names `tree --all` (`spec/02-cli.md`, "Tree").
 #[test]
 fn tree_with_no_id_prints_every_projects_trails_and_names_all_when_empty() {
     let repo = Repo::new();
@@ -464,14 +536,23 @@ fn tree_with_no_id_prints_every_projects_trails_and_names_all_when_empty() {
     let elsewhere = repo.other("elsewhere");
     let o = repo.run(&elsewhere, &["tree"], &[], "");
     let text = out(&o);
-    let lines: Vec<&str> = text.lines().collect();
-    assert_eq!(lines.len(), 2, "{text}");
-    assert!(lines[0].contains(" shopping a shop trail"), "{text}");
-    assert!(lines[1].contains(" repo     a repo trail"), "{text}");
+    let lines: Vec<String> = text.lines().map(bare).collect();
+    assert_eq!(
+        lines,
+        [
+            "ACTIVE",
+            "○ a shop trail",
+            "  shopping",
+            "",
+            "○ a repo trail",
+            "  repo"
+        ],
+        "{text}"
+    );
 }
 
-/// `tree --all` prints every trail in the store, of every project, newest first, each day's trails
-/// after a line with the day (`spec/02-cli.md`, "Tree").
+/// `tree --all` prints every trail in the store, of every project, newest first, one line each, each
+/// day's trails after a line with the day (`spec/02-cli.md`, "Tree").
 #[test]
 fn tree_all_prints_every_trail_of_every_project_by_day() {
     let repo = Repo::new();
@@ -497,7 +578,8 @@ fn tree_all_prints_every_trail_of_every_project_by_day() {
     for trail in [shop, old] {
         assert!(lines[trail - 1].starts_with(char::is_alphabetic), "{text}");
     }
-    assert!(lines[shop].contains(" shop a shop trail"), "{text}");
+    assert!(lines[shop].starts_with("○ a shop trail  "), "{text}");
+    assert!(lines[shop].contains("  shop  "), "{text}");
     refusal(
         &cli(&repo, &["tree", &past.id[..8], "--all", "--json"]),
         2,
@@ -505,8 +587,8 @@ fn tree_all_prints_every_trail_of_every_project_by_day() {
     );
 }
 
-/// The tree prints a trail's first ask on the trail's line when their texts match, and the ask's steps
-/// one level up; `--json` prints both (`spec/02-cli.md`, "Tree").
+/// The tree prints a trail's first ask as the trail when their texts match, and the ask's steps one
+/// level up; `--json` prints both (`spec/02-cli.md`, "Tree").
 #[test]
 fn the_tree_folds_a_trails_twin_first_ask() {
     let repo = Repo::new();
@@ -515,17 +597,64 @@ fn the_tree_folds_a_trails_twin_first_ask() {
     let ids: Vec<String> = out(&o).lines().map(str::to_string).collect();
     let (ask, trail) = (&ids[0], &ids[1]);
     let part = add(&repo, &["--under", &ask[..8], "--", "the part"]);
-    let styled = [("CLICOLOR_FORCE", "1")];
-    let o = repo.run(&repo.path(), &["tree", &trail[..8]], &styled, "");
-    let text = out(&o);
-    assert!(!text.contains(&ask[4..8]), "{text}");
-    let line = text.lines().find(|l| l.contains("the part")).unwrap();
-    assert!(line.starts_with("\u{1b}[2m  └─ "), "{text}");
-    let plain = out(&cli(&repo, &["tree", &trail[..8]]));
+    let text = out(&cli(&repo, &["tree", &trail[..8]]));
+    assert!(!text.contains(&ask[..8]), "{text}");
     assert!(
-        !plain.contains(&ask[..8]) && plain.contains(&part[..8]),
-        "{plain}"
+        text.lines()
+            .any(|l| l.starts_with("  ○ the part  ") && l.ends_with(&part[..8])),
+        "{text}"
     );
     let json = out(&cli(&repo, &["tree", &trail[..8], "--json"]));
     assert!(json.contains(ask.as_str()), "{json}");
+}
+
+/// In colour, a step whose newest record is less than 2 seconds old prints its title bold
+/// (`spec/02-cli.md`, "Tree").
+#[test]
+fn the_tree_prints_a_fresh_step_bold() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    let part = add(&repo, &["--under", &trail[..8], "--", "the part"]);
+    finish(&repo, &part[..8]);
+    let forced = [("CLICOLOR_FORCE", "1")];
+    let o = repo.run(&repo.path(), &["tree", &trail[..8]], &forced, "");
+    assert!(out(&o).contains("\x1b[1mthe part"), "{:?}", out(&o));
+    std::thread::sleep(std::time::Duration::from_millis(2100));
+    let o = repo.run(&repo.path(), &["tree", &trail[..8]], &forced, "");
+    assert!(out(&o).contains("\x1b[2mthe part"), "{:?}", out(&o));
+}
+
+/// Under 80 columns the short tree leaves out the ids; then, while a title would be cut below 20
+/// characters, the first column, then the time (`spec/02-cli.md`, "Tree").
+#[test]
+fn a_narrow_tree_leaves_out_ids_then_projects_then_times() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "a trail with a long title of many words"]);
+    let part = add(&repo, &["--under", &trail[..8], "--", "its part"]);
+    finish(&repo, &part[..8]);
+    let at = |columns: &str| {
+        let o = repo.run(&repo.path(), &["tree"], &[("COLUMNS", columns)], "");
+        let text = out(&o);
+        let line = text
+            .lines()
+            .find(|l| l.starts_with("✓ "))
+            .unwrap()
+            .to_string();
+        line
+    };
+    let wide = at("100");
+    assert!(
+        wide.ends_with(&trail[..8]) && wide.contains(" repo "),
+        "{wide}"
+    );
+    let narrow = at("70");
+    assert!(
+        !narrow.contains(&trail[..8]) && narrow.contains(" repo "),
+        "{narrow}"
+    );
+    assert!(narrow.ends_with('s'), "{narrow}");
+    let tight = at("38");
+    assert!(!tight.contains(" repo ") && tight.ends_with('s'), "{tight}");
+    let tiny = at("30");
+    assert!(!tiny.ends_with('s') && tiny.contains("1 step"), "{tiny}");
 }

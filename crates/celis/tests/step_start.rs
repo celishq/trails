@@ -26,7 +26,11 @@ fn a_started_step_is_working_until_it_closes() {
     assert!(o.status.success(), "{}", err(&o));
     assert_eq!(state(&repo, &trail, &step), "working");
     let tree = out(&cli(&repo, &["tree", &trail[..8]]));
-    assert!(tree.contains(&format!("◐ {}", &step[..8])), "{tree}");
+    assert!(
+        tree.lines()
+            .any(|l| l.starts_with("  ◐ the step  ") && l.ends_with(&step[..8])),
+        "{tree}"
+    );
     finish(&repo, &step[..8]);
     assert_eq!(state(&repo, &trail, &step), "done");
 }

@@ -30,7 +30,7 @@ fn run(repo: &Repo, args: &[&str]) -> std::process::Output {
     repo.run(&repo.path(), &all, &[], "")
 }
 
-/// The mark `tree --all` prints before the step `id`: `●` while it is open.
+/// The mark `tree --all` prints before the step `id`: `○` while it is open.
 fn mark(repo: &Repo, id: &str) -> String {
     let o = repo.run(&repo.path(), &["tree", "--all"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
@@ -56,11 +56,11 @@ fn a_step_is_open_until_a_done_names_it_and_done_carries_its_proof() {
     let by = &account();
     let p = step(&repo, by, "work.", &[], now() - 4 * 60).id;
     let q = step(&repo, by, "other.", &[], now() - 4 * 60 + 1).id;
-    assert_eq!(mark(&repo, &p), "●");
+    assert_eq!(mark(&repo, &p), "○");
     let o = run(&repo, &["done", &p, "--as-planned", "--", "proof"]);
     assert!(o.status.success(), "{}", err(&o));
     assert_eq!(mark(&repo, &p), "✓");
-    assert_eq!(mark(&repo, &q), "●");
+    assert_eq!(mark(&repo, &q), "○");
     let done = done_records(&repo);
     let note = done
         .iter()
@@ -85,7 +85,7 @@ fn a_reader_ignores_a_done_record_with_no_content() {
         &repo,
         &Note::write(by, 1985u16, now() - 3 * 60, tags, "").unwrap(),
     );
-    assert_eq!(mark(&repo, &p.id), "●");
+    assert_eq!(mark(&repo, &p.id), "○");
 }
 
 /// `done` refuses an empty proof as a usage error (`spec/02-cli.md`, "Step").

@@ -296,7 +296,7 @@ fn tree_prints_follows_and_reused_lines() {
     assert!(
         tree.lines().any(|l| l
             .trim_start_matches([' ', '│'])
-            .starts_with("reused 1 · saved ")),
+            .starts_with("reused  1 · saved ")),
         "{tree}"
     );
     let json = objects(&repo, &["tree", &b[..8]]);

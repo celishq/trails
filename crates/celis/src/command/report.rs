@@ -77,11 +77,7 @@ fn items(steps: Vec<Step>, indent: &str, lines: &mut Vec<String>) {
     for at in steps {
         let step = at.record();
         let state = at.state();
-        lines.push(format!(
-            "{indent}- {} {}",
-            look(state, false).0,
-            step.title()
-        ));
+        lines.push(format!("{indent}- {} {}", look(state).mark, step.title()));
         let mut under: Vec<String> = step.detail().map(str::to_string).collect();
         under.extend(step.places.iter().map(|p| format!("at `{p}`")));
         if let Some(check) = &step.check {

@@ -96,11 +96,11 @@ fn tree_prints_the_grade_of_each_done_step() {
     let lines: Vec<&str> = text.lines().collect();
     let at = lines
         .iter()
-        .position(|l| l.contains(&format!("✓ {}", &badge[..8])))
+        .position(|l| l.starts_with("  ✓ badge") && l.ends_with(&badge[..8]))
         .expect("the badge");
     let under = |n: usize| lines[at + n].trim_start_matches([' ', '│']);
-    assert_eq!(under(1), "done failed before, passes now", "{text}");
-    assert!(under(2).starts_with("took "), "{text}");
+    assert_eq!(under(1), "done    failed before, passes now", "{text}");
+    assert!(under(2).starts_with("took    "), "{text}");
     assert!(under(2).ends_with('s'), "{text}");
 }
 
@@ -151,6 +151,6 @@ fn took_counts_from_the_first_start_else_from_the_step() {
         let at = lines.iter().position(|l| l.contains(id)).expect("the step");
         lines[at + 2].trim_start_matches([' ', '│']).to_string()
     };
-    assert_eq!(took(&started.id[..8]), "took 1m 30s", "{text}");
-    assert_eq!(took(&unstarted.id[..8]), "took 1m 30s", "{text}");
+    assert_eq!(took(&started.id[..8]), "took    1m 30s", "{text}");
+    assert_eq!(took(&unstarted.id[..8]), "took    1m 30s", "{text}");
 }

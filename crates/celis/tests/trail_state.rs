@@ -76,7 +76,10 @@ fn a_trail_ends_thirty_minutes_after_its_newest_record() {
     assert_eq!(state(&repo, &left.id), "expired");
     let tree = out(&cli(&repo, &["tree", &left.id[..8]]));
     assert!(
-        tree.lines().nth(1).unwrap_or("").starts_with("  └─ ! "),
+        tree.lines()
+            .nth(3)
+            .unwrap_or("")
+            .starts_with("  ! open part"),
         "{tree}"
     );
     let read = out(&cli(&repo, &["past"]));
