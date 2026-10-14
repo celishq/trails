@@ -225,7 +225,7 @@ fn a_sessions_open_trail_is_the_trail_of_its_newest_step() {
 
 /// `prompt` names the working step of the session's trail on stderr, and asks for a step under it when
 /// the next work does not fit; with no working step, it names none; either way it ends with the hint to
-/// join a trail (`spec/trails/04-trails.md`, "Sessions").
+/// join a trail (`spec/trails/02-cli.md`, "Prompt").
 #[test]
 fn the_prompt_hook_names_the_working_step() {
     let repo = Repo::new();
@@ -271,8 +271,8 @@ fn joins(open: Option<&str>) -> String {
 }
 
 /// After the past agent was asked for, a later prompt with no open trail gives the hint to join a trail
-/// of today, of any project; with no trail of today, it gives none (`spec/trails/04-trails.md`,
-/// "Sessions").
+/// of today, of any project; with no trail of today, it gives none (`spec/trails/02-cli.md`,
+/// "Prompt").
 #[test]
 fn a_later_prompt_with_no_open_trail_hints_at_todays_trails() {
     let repo = Repo::new();
@@ -318,8 +318,8 @@ fn prompt_skips_a_harness_message() {
 }
 
 /// With no open trail in the session, `prompt` writes nothing, and prints on stderr one line that asks for
-/// the agent that brings what `past` prints, once `past` prints anything (`spec/trails/04-trails.md`,
-/// "Sessions").
+/// the agent that brings what `past` prints, once `past` prints anything (`spec/trails/02-cli.md`,
+/// "Prompt").
 #[test]
 fn a_prompt_with_no_open_trail_asks_for_the_past_agent() {
     let repo = Repo::new();
@@ -348,7 +348,7 @@ fn a_prompt_with_no_open_trail_asks_for_the_past_agent() {
 }
 
 /// `prompt` asks for the past agent once in a session, and again after a compaction's `SessionStart`
-/// (`spec/trails/04-trails.md`, "Sessions").
+/// (`spec/trails/02-cli.md`, "Prompt").
 #[test]
 fn a_session_asks_for_the_past_agent_once_until_a_compaction() {
     let repo = Repo::new();
@@ -420,7 +420,7 @@ fn a_session_comes_from_the_flag_else_the_first_set_variable() {
 }
 
 /// `prompt` takes the session from `conversation_id` when the hook has one, else from `session_id`
-/// (`spec/trails/04-trails.md`, "Sessions").
+/// (`spec/trails/02-cli.md`, "Prompt").
 #[test]
 fn prompt_takes_the_conversation_id_first() {
     let repo = Repo::new();

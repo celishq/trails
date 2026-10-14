@@ -33,7 +33,7 @@ fn a_started_step_is_working_until_it_closes() {
 
 /// `start` refuses an unknown step with `no-step` and a closed step with `closed`; on a working step it
 /// writes nothing and prints the id of the first `start`; it prints the id it wrote, and `{"id"}` with
-/// `--json` (`spec/trails/03-steps.md`, "The commands").
+/// `--json` (`spec/trails/02-cli.md`, "Step").
 #[test]
 fn start_refuses_unknown_and_closed_steps_and_starts_a_step_once() {
     let repo = Repo::new();
@@ -67,7 +67,7 @@ fn start_refuses_unknown_and_closed_steps_and_starts_a_step_once() {
 }
 
 /// `start` prints, after its id, the live decisions at the step's places, a folder's decisions holding
-/// for each file under it (`spec/trails/03-steps.md`, "The commands"; `spec/trails/01-decisions.md`,
+/// for each file under it (`spec/trails/02-cli.md`, "Step"; `spec/trails/01-decisions.md`,
 /// "Reading").
 #[test]
 fn start_prints_the_decisions_at_the_steps_places() {
@@ -101,8 +101,8 @@ fn start_prints_the_decisions_at_the_steps_places() {
     assert!(!text.contains("lib is frozen"), "{text}");
 }
 
-/// `start` does not run the step's check, and says nothing on stderr (`spec/trails/03-steps.md`,
-/// "Starting").
+/// `start` does not run the step's check, and says nothing on stderr (`spec/trails/02-cli.md`,
+/// "Step").
 #[test]
 fn start_does_not_run_the_steps_check() {
     let repo = Repo::new();

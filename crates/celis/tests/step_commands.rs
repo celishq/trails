@@ -1,4 +1,4 @@
-//! CIP-03, "The commands".
+//! CIP-02, "Step".
 
 mod support;
 
@@ -48,7 +48,7 @@ fn refusal(o: &Output, code: i32, name: &str) {
 }
 
 /// `step add` refuses empty text as a usage error; `done` refuses an unknown id with `no-step` and a closed step with `closed`, and
-/// takes the first 8 characters of an id (`spec/trails/03-steps.md`, "The commands").
+/// takes the first 8 characters of an id (`spec/trails/02-cli.md`, "Step").
 #[test]
 fn step_add_refuses_empty_text_and_the_other_commands_refuse_unknown_and_closed_ids() {
     let repo = Repo::plain();
@@ -73,7 +73,7 @@ fn step_add_refuses_empty_text_and_the_other_commands_refuse_unknown_and_closed_
 }
 
 /// A step prints as `<id, first 8> [<project name>] <text>`, then ` · <at>` when it has one, and with
-/// `--json` as the spec object (`spec/trails/03-steps.md`, "The commands").
+/// `--json` as the spec object (`spec/trails/02-cli.md`, "Step").
 #[test]
 fn a_step_prints_as_the_line_and_object_the_spec_gives() {
     let repo = Repo::plain();
@@ -135,7 +135,7 @@ fn written(repo: &Repo, label: &str, id: &str) -> Vec<Note> {
 }
 
 /// `add` and `done` print the id they wrote, and `{"id"}` with `--json`
-/// (`spec/trails/03-steps.md`, "The commands").
+/// (`spec/trails/02-cli.md`, "Step").
 #[test]
 fn the_step_commands_print_the_ids_they_wrote() {
     let repo = Repo::plain();
@@ -184,7 +184,7 @@ fn the_step_commands_print_the_ids_they_wrote() {
     assert!(out(&o).contains(&closed[0].id[..8]), "{}", out(&o));
 }
 
-/// `celis step split` is an unknown command, a usage error (`spec/trails/03-steps.md`, "The commands").
+/// `celis step split` is an unknown command, a usage error (`spec/trails/02-cli.md`, "Step").
 #[test]
 fn step_split_is_an_unknown_command_and_a_usage_error() {
     let repo = Repo::plain();
@@ -199,7 +199,7 @@ fn step_split_is_an_unknown_command_and_a_usage_error() {
     assert_eq!(o.status.code(), Some(2), "{}", err(&o));
 }
 
-/// `add` carries each `--at` and the `--check` as their tags (`spec/trails/03-steps.md`, "The commands").
+/// `add` carries each `--at` and the `--check` as their tags (`spec/trails/02-cli.md`, "Step").
 #[test]
 fn add_carries_each_place_and_the_check_as_their_tags() {
     let repo = Repo::plain();
@@ -248,7 +248,7 @@ fn a_steps_file_tags_read_as_places() {
 }
 
 /// `add` writes each `--at` as a path from the project's top folder
-/// (`spec/trails/03-steps.md`, "The commands").
+/// (`spec/trails/02-cli.md`, "Step").
 #[test]
 fn add_writes_its_places_from_the_projects_top_folder() {
     let repo = Repo::new();
@@ -273,7 +273,7 @@ fn add_writes_its_places_from_the_projects_top_folder() {
 }
 
 /// `done --pitfall` writes the pitfall as a decision at the step's place, which `read --at` gives in a
-/// later trail; with no place, as a rule of the step's trail (`spec/trails/03-steps.md`, "The commands").
+/// later trail; with no place, as a rule of the step's trail (`spec/trails/02-cli.md`, "Step").
 #[test]
 fn done_writes_a_pitfall_as_a_decision_at_the_steps_place() {
     let repo = Repo::new();
@@ -319,8 +319,8 @@ fn done_writes_a_pitfall_as_a_decision_at_the_steps_place() {
 }
 
 /// `add` says when the step under an ask it goes under already holds an open step that has not
-/// started, and still writes it; under an ask or a trail it says nothing (`spec/trails/03-steps.md`,
-/// "The commands").
+/// started, and still writes it; under an ask or a trail it says nothing (`spec/trails/02-cli.md`,
+/// "Step").
 #[test]
 fn add_says_when_a_step_ahead_has_not_started() {
     let repo = Repo::new();

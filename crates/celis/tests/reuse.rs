@@ -218,7 +218,7 @@ fn line<'a>(text: &'a str, id: &str) -> &'a str {
 }
 
 /// `stats` with nothing reused says so, and prints nothing with `--json`; it refuses an unknown id
-/// with `no-step` (`spec/trails/06-reuse.md`, "Derived").
+/// with `no-step` (`spec/trails/02-cli.md`, "Stats").
 #[test]
 fn stats_says_when_nothing_was_reused() {
     let repo = Repo::new();
@@ -232,7 +232,7 @@ fn stats_says_when_nothing_was_reused() {
 }
 
 /// `stats` prints each followed step, most followed at any depth first, then each used decision, then
-/// the total (`spec/trails/06-reuse.md`, "Derived").
+/// the total (`spec/trails/02-cli.md`, "Stats").
 #[test]
 fn stats_prints_the_followed_steps_the_used_decisions_and_the_total() {
     let repo = Repo::new();
@@ -258,7 +258,7 @@ fn stats_prints_the_followed_steps_the_used_decisions_and_the_total() {
 }
 
 /// `stats <id>` prints the step, then each step it follows, then each step that follows it, two spaces
-/// further in a level (`spec/trails/06-reuse.md`, "Derived").
+/// further in a level (`spec/trails/02-cli.md`, "Stats").
 #[test]
 fn stats_of_a_step_prints_its_sources_then_its_followers() {
     let repo = Repo::new();
@@ -281,7 +281,7 @@ fn stats_of_a_step_prints_its_sources_then_its_followers() {
 }
 
 /// `tree --full` prints a `follows` line under a step for each step it follows, and a `reused` line
-/// when steps follow it; `tree --json` gives the count (`spec/trails/06-reuse.md`, "Derived").
+/// when steps follow it; `tree --json` gives the count (`spec/trails/02-cli.md`, "Tree").
 #[test]
 fn tree_prints_follows_and_reused_lines() {
     let repo = Repo::new();

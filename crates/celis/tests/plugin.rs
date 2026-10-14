@@ -210,7 +210,7 @@ fn each_agents_prompt_hook_writes_a_prompt_on_its_sessions_trail() {
 }
 
 /// Claude Code's prompt hook asks for the past agent once a session, and again after a compaction's
-/// session start (`spec/trails/04-trails.md`, "Sessions").
+/// session start (`spec/trails/02-cli.md`, "Prompt").
 #[test]
 fn claudes_hooks_ask_for_the_past_agent_again_after_a_compaction() {
     let repo = Repo::new();

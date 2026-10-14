@@ -97,7 +97,7 @@ fn add_writes_a_step_in_a_project_in_git() {
 }
 
 /// `add` writes no step when an open step of the same project and `under` has the same text, and prints
-/// that step's id (`spec/trails/03-steps.md`, "The commands").
+/// that step's id (`spec/trails/02-cli.md`, "Step").
 #[test]
 fn add_must_not_write_a_step_an_open_one_of_the_project_already_states() {
     let repo = Repo::new();
