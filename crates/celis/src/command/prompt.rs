@@ -2,7 +2,7 @@
 
 use super::tree::today;
 use super::{Args, Command};
-use celis_trails::{Failure, Project, Trails};
+use celis_trails::{Failure, Project, State, Trails};
 use std::io::{Read, Write};
 use std::path::Path;
 
@@ -52,18 +52,19 @@ impl Command {
         let Some(trail) = steps.session(&project.id, session) else {
             return self.recall(&trails, err, project, &asked);
         };
-        let (record, working) = trails.prompt(&steps, trail, text)?;
+        let record = trails.prompt(trail, text)?;
         self.id(out, args, &record)?;
-        if let Some((on, step)) = working.and_then(|n| Some((n, steps.step(n)?))) {
+        let working = trail.tree().into_iter().skip(1);
+        if let Some(on) = working.into_iter().find(|s| s.state() == State::Working) {
             let line = format!(
                 "celis: you work on {} \"{}\"; when the next work does not fit it, add a step under it \
                  first, or replace it with step add --replaces.",
-                celis_trails::id::short(&on.id),
-                step.title()
+                celis_trails::id::short(on.id()),
+                on.title()
             );
             super::put(err, &line)?;
         }
-        super::put(err, &joins(Some(&trail.id)))
+        super::put(err, &joins(Some(trail.id())))
     }
 
     /// Names the agent that brings what `past` prints, when it prints anything and `asked` does not exist;

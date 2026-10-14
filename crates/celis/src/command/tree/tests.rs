@@ -1,5 +1,5 @@
 use super::*;
-use celis_nostr::Account;
+use celis_nostr::{Account, Note};
 use celis_trails::{Anchor, Mark};
 
 fn account() -> Account {
@@ -7,7 +7,7 @@ fn account() -> Account {
 }
 
 fn step(under: Option<&Note>, at: u64) -> Note {
-    Step {
+    StepRecord {
         anchor: Anchor {
             project: "p".into(),
             name: "repo".into(),
@@ -41,8 +41,13 @@ fn next(records: &[Note], now: u64) -> Option<u64> {
         width: None,
         next: Cell::default(),
     };
-    tree.print(&[&records[0]], "trail", false, &mut Vec::new())
-        .unwrap();
+    tree.print(
+        &[steps.get(&records[0].id).unwrap()],
+        "trail",
+        false,
+        &mut Vec::new(),
+    )
+    .unwrap();
     tree.next.get()
 }
 

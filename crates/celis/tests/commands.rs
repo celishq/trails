@@ -330,7 +330,7 @@ fn decide_refuses_empty_text_and_an_unknown_scope_as_a_usage_error() {
 fn decide_refuses_a_trail_the_project_has_not_open() {
     let repo = Repo::new();
     let t = now() - 5 * 60;
-    let done = step_note(&repo, &account(), None, "done", t);
+    let done = step_note(&repo, &account(), None, "reached", t);
     done_note(&repo, &account(), &done, t + 1);
     let active = step_note(&repo, &account(), None, "active", t + 2);
     let part = step_note(&repo, &account(), Some(&active), "part", t + 3);

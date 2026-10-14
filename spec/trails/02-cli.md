@@ -356,7 +356,7 @@ celis tree --all [--full]         every trail in the store, by day
   MUST NOT when `NO_COLOR` is set.
 - Without colour, `tree` MUST print the same lines, with no colour codes.
 - Each line of a step MUST start with its mark. A trail MUST be marked `●` when active, `✓` when
-  reached or revised, `✗` when dropped, and `!` when expired.
+  done or revised, `✗` when dropped, and `!` when expired.
 - When a trail's first ask has the trail's text, the tree MUST NOT print the ask, except with `--json`. It
   MUST print the ask's steps first under the trail, then the trail's other asks.
 - The tree MUST draw a step under its parent with `├─` before its mark, and the last one with `└─`.
@@ -397,7 +397,7 @@ tree   text  <mark> <id, first 8> <title>   <place>  <n> steps  <ran>  <started>
                └─ <mark> <id, first 8> <title>   ...
        json  {"trail": {"id", "created_at", "project", "content", "state", "links", "places", "proof", "grade",
              "reused", "reason"}}
-             · {"step": {<as "Step" gives it>, "state": "done | dropped | working | open | expired",
+             · {"step": {<as "Step" gives it>, "state": "open | working | done | revised | dropped | expired",
              "proof", "changed", "grade", "reused", "reason"}}, one a line
 grade  text  took <45s | 1m 30s | 2h 5m | 3d 2h>[ · revised by <id, first 8>, ...]
        json  "grade": {"took": <seconds>, "revised": [<id>]}

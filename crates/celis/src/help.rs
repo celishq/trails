@@ -160,7 +160,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "past",
         usage: &["celis past [--at <place>]..."],
-        summary: "Print this project's active trails with their rules and its decisions, then the done asks and reached trails of every project, newest first, one line each with its project, place, grade and day.",
+        summary: "Print this project's active trails with their rules and its decisions, then the done asks and done trails of every project, newest first, one line each with its project, place, grade and day.",
         args: &[("--at <place>", "a place whose decisions come first; zero or more")],
         examples: &["celis past", "celis past --at shelf/prices.py"],
     },

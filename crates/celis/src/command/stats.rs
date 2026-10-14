@@ -1,11 +1,9 @@
 //! `celis stats`: what later work reused, and what it saved.
 
 use super::{Args, Command};
-use celis_nostr::Note;
 use celis_trails::id::short;
 use celis_trails::trail::grade::saved;
-use celis_trails::trail::reuse::{sum, Link};
-use celis_trails::{Failure, Reuse, Steps};
+use celis_trails::{Failure, Reuse, Step};
 use serde_json::json;
 use std::io::Write;
 
@@ -29,29 +27,28 @@ impl Command {
         let reuse = Reuse::new(&steps);
         match id {
             Some(id) => {
-                let note = steps.find(id)?;
-                let note = steps.twin(note).unwrap_or(note);
-                chain(&steps, &reuse, note, args.json, out)
+                let step = steps.find(id)?;
+                chain(&reuse, step.twin().unwrap_or(step), args.json, out)
             }
             None => {
                 let decisions = trails.decisions();
-                let followed = reuse.followed();
                 let used = reuse.used(&decisions);
-                if followed.is_empty() && used.is_empty() {
+                if reuse.followed().is_empty() && used.is_empty() {
                     return match args.json {
                         true => Ok(()),
                         false => super::put(out, NOTHING),
                     };
                 }
-                for note in followed {
-                    let count = reuse.down(note).len();
-                    let save = reuse.saved(note);
-                    let value = json!({"id": note.id, "project": project(&steps, note),
-                        "content": steps.title(note), "followed": count, "saved": save,
-                        "revised": !steps.revised(&note.id).is_empty()});
-                    let mut line = format!("{} · followed {count}", head(&steps, note));
+                for &step in reuse.followed() {
+                    let count = reuse.down(step).len();
+                    let save = reuse.saved(step);
+                    let revised = !step.revised().is_empty();
+                    let value = json!({"id": step.id(), "project": step.record().anchor.name,
+                        "content": step.title(), "followed": count, "saved": save,
+                        "revised": revised});
+                    let mut line = format!("{} · followed {count}", head(step));
                     line.push_str(&saving(save));
-                    if !steps.revised(&note.id).is_empty() {
+                    if revised {
                         line.push_str(" · revised");
                     }
                     super::show(out, args.json, "followed", value, &line)?;
@@ -67,12 +64,11 @@ impl Command {
                     );
                     super::show(out, args.json, "used", value, &line)?;
                 }
-                let links = reuse.links();
-                let save = sum(links.iter().map(|l| reuse.saving(l)));
-                let value = json!({"follows": links.len(), "saved": save, "uses": uses});
+                let (follows, save) = reuse.total();
+                let value = json!({"follows": follows, "saved": save, "uses": uses});
                 let line = format!(
                     "total {}{} · {}",
-                    plural(links.len(), "follow"),
+                    plural(follows, "follow"),
                     saving(save),
                     plural(uses, "use")
                 );
@@ -82,59 +78,40 @@ impl Command {
     }
 }
 
-/// Prints `note` with its grade, then each step it follows, then each step that follows it, each at any
+/// Prints `step` with its grade, then each step it follows, then each step that follows it, each at any
 /// depth, two spaces further in a level.
-fn chain(
-    steps: &Steps,
-    reuse: &Reuse,
-    note: &Note,
-    json: bool,
-    out: &mut dyn Write,
-) -> Result<(), Failure> {
-    let grade = |n: &Note| steps.grade(n);
-    let value = json!({"id": note.id, "project": project(steps, note), "content": steps.title(note),
-        "grade": grade(note).map(|g| g.value()), "depth": 0});
-    let line = format!("{}{}", head(steps, note), took(steps, note));
+fn chain(reuse: &Reuse, step: Step, json: bool, out: &mut dyn Write) -> Result<(), Failure> {
+    let value = json!({"id": step.id(), "project": step.record().anchor.name,
+        "content": step.title(), "grade": step.grade().map(|g| g.value()), "depth": 0});
+    let line = format!("{}{}", head(step), took(step));
     super::show(out, json, "step", value, &line)?;
     let sources = reuse
-        .up(note)
+        .up(step)
         .into_iter()
         .map(|l| ("follows", l.source, l, None));
     let followers = reuse
-        .down(note)
+        .down(step)
         .into_iter()
         .map(|l| ("followed", l.step, l, reuse.saving(&l)));
     for (kind, at, link, save) in sources.chain(followers) {
-        let Link { depth, .. } = link;
-        let value = json!({"id": at.id, "project": project(steps, at), "content": steps.title(at),
-            "grade": grade(at).map(|g| g.value()), "saved": save, "depth": depth});
-        let indent = "  ".repeat(depth);
-        let line = format!(
-            "{indent}{kind} {}{}{}",
-            head(steps, at),
-            took(steps, at),
-            saving(save)
-        );
+        let value = json!({"id": at.id(), "project": at.record().anchor.name, "content": at.title(),
+            "grade": at.grade().map(|g| g.value()), "saved": save, "depth": link.depth});
+        let indent = "  ".repeat(link.depth);
+        let line = format!("{indent}{kind} {}{}{}", head(at), took(at), saving(save));
         super::show(out, json, kind, value, &line)?;
     }
     Ok(())
 }
 
-/// `<id, first 8> [<project name>] <title>` of `note`.
-fn head(steps: &Steps, note: &Note) -> String {
-    let name = steps.step(note).map(|s| s.anchor.name).unwrap_or_default();
-    format!("{} [{name}] {}", short(&note.id), steps.title(note))
+/// `<id, first 8> [<project name>] <title>` of `step`.
+fn head(step: Step) -> String {
+    let name = &step.record().anchor.name;
+    format!("{} [{name}] {}", short(step.id()), step.title())
 }
 
-/// The project name of `note`.
-fn project(steps: &Steps, note: &Note) -> String {
-    steps.step(note).map(|s| s.anchor.name).unwrap_or_default()
-}
-
-/// ` · <grade>` of a done `note`, else nothing.
-fn took(steps: &Steps, note: &Note) -> String {
-    steps
-        .grade(note)
+/// ` · <grade>` of a done `step`, else nothing.
+fn took(step: Step) -> String {
+    step.grade()
         .map_or(String::new(), |g| format!(" · {}", g.line()))
 }
 

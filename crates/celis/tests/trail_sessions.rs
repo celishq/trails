@@ -163,7 +163,7 @@ fn a_trail_asked_twice_is_reached() {
     support::finish(&repo, &written[0][..8]);
     support::finish(&repo, &trail[..8]);
     let head = objects(&repo, &["tree", &trail[..8]]);
-    assert_eq!(head[0]["trail"]["state"], "reached", "{head:?}");
+    assert_eq!(head[0]["trail"]["state"], "done", "{head:?}");
 }
 
 /// `step add --new` starts a second trail, which takes the session's next steps

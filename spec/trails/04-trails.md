@@ -94,15 +94,17 @@ celis decide --scope trail:4c1d22e0 -- "A senior pays 80% of the price, rounded 
 
 ## State
 
-A trail has no state record. Its state comes from its tree, so the person can see which tasks the agents
+A trail has no state record. It takes the states of a step (CIP-03, "Starting"), worked out from its
+tree, so the person can see which tasks the agents
 reached, and which work a later step revised. A trail ends when no step under it is open, or 30 minutes
 after the newest record of its tree.
 
 **Derived**
 
 ```
-active    not done, dropped or ended
-reached   done, or ended with no open step under it; no later step replaces a done step of its tree
+open      not done, dropped or ended, and no step of its tree works
+working   not done, dropped or ended, and a step of its tree works
+done      done, or ended with no open step under it; no later step replaces a done step of its tree
 revised   done, or ended with no open step under it; a later step replaces a done step of its tree
 dropped   the trail is dropped
 expired   ended with an open step under it
@@ -117,7 +119,8 @@ expired   ended with an open step under it
   steps that replace them, and the time.
 - A trail with steps under it MUST end when none of them is open.
 - A trail MUST end 30 minutes after the newest record of its tree.
-- A new step under an ended trail MUST make it active again.
+- A new step under an ended trail MUST make it open again.
+- A trail is active while it is open or working.
 - A reader MUST NOT count a step of an ended trail as open.
 
 ## The past
@@ -130,7 +133,7 @@ The list starts with what a new ask of the project must keep: its active trails 
 
 - What a new ask must keep: the project's active trails, each with its rules, and the live decisions in
   scope (CIP-01, "Reading").
-- Past work: a done ask, or a reached or revised trail, of every project.
+- Past work: a done ask, or a done or revised trail, of every project.
 - A trail with an ask of its own text is no past work, so the ask stands for it.
 
 > Why an agent chooses: it reads an ask in any language, and it tells the same kind of task from the same

@@ -140,7 +140,7 @@ fn tree_json_prints_each_step_with_its_under_and_state_and_writes_no_record() {
     let before = count();
     let lines = objects(&repo, &["tree", &trail]);
     assert_eq!(lines[0]["trail"]["id"], trail.as_str());
-    assert_eq!(lines[0]["trail"]["state"], "active");
+    assert_eq!(lines[0]["trail"]["state"], "open");
     assert_eq!(lines[0]["trail"]["links"], serde_json::json!([]));
     assert_eq!(lines[1]["step"]["id"], first.as_str());
     assert_eq!(lines[1]["step"]["links"][0]["to"], trail.as_str());

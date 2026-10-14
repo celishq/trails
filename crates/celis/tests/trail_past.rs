@@ -3,7 +3,7 @@
 mod support;
 
 use celis_nostr::Note;
-use celis_trails::{Anchor, Step};
+use celis_trails::{Anchor, StepRecord};
 use serde_json::Value;
 use std::path::Path;
 use std::time::Duration;
@@ -43,7 +43,7 @@ fn past_lists_done_asks_and_reached_trails_of_every_project_newest_first() {
         project: celis_trails::Project::at(&repo.other("shop")).id,
         name: "shop".to_string(),
     };
-    let reached = Step {
+    let reached = StepRecord {
         anchor: shop,
         under: None,
         replaces: None,

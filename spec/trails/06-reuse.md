@@ -34,7 +34,7 @@ A step MAY carry a `replaces` (CIP-03, "Steps") that names a done step, of any t
 - The done step MUST stay done.
 - A reader MUST read a done step as revised by each step whose `replaces` names it, written at or after
   its `done`.
-- A reader MUST read a trail as `revised` when it would be reached (CIP-04, "State"), and a done step of
+- A reader MUST read a trail as `revised` when it would be done (CIP-04, "State"), and a done step of
   its tree is revised.
 
 ## Derived

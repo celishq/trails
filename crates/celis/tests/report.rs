@@ -104,7 +104,7 @@ fn report_prints_the_trail_its_rules_and_its_steps_as_markdown() {
     let shown = lines(&report(&repo, &[t]));
     let want = [
         "## Build the CRM".to_string(),
-        format!("`{t}` · repo · active · 4 steps"),
+        format!("`{t}` · repo · open · 4 steps"),
         String::new(),
         "with a contacts list".to_string(),
         String::new(),

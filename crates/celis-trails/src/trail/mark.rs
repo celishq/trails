@@ -1,6 +1,6 @@
 //! What an agent does to a step.
 
-use crate::trail::step::NAMESPACE;
+use crate::trail::step_record::NAMESPACE;
 use anyhow::Result;
 use celis_nostr::{Account, Note};
 

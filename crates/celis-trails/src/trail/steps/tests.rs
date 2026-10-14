@@ -1,5 +1,5 @@
 use super::*;
-use crate::Anchor;
+use crate::{Anchor, State};
 use celis_nostr::Account;
 
 fn account() -> Account {
@@ -7,7 +7,7 @@ fn account() -> Account {
 }
 
 fn step(text: &str, at: u64) -> Note {
-    Step {
+    StepRecord {
         anchor: Anchor {
             project: "p".into(),
             name: "repo".into(),
@@ -32,8 +32,8 @@ fn done(id: &str, proof: &str, at: u64) -> Note {
     mark.record(&account(), id, at).unwrap()
 }
 
-fn ids(notes: Vec<&Note>) -> Vec<String> {
-    notes.into_iter().map(|n| n.id.clone()).collect()
+fn ids(steps: Vec<Step>) -> Vec<String> {
+    steps.into_iter().map(|s| s.id().to_string()).collect()
 }
 
 /// The first done record with a proof closes its step, and one with no content does not
@@ -47,7 +47,8 @@ fn the_first_done_with_a_proof_closes_its_step() {
     let later = done(&a.id, "later", 30);
     let records = vec![a.clone(), b.clone(), later, empty, first.clone()];
     let steps = Steps::new(&records, 0);
-    assert_eq!(steps.done(&a.id).map(|n| n.id.clone()), Some(first.id));
+    let done = steps.get(&a.id).and_then(|s| s.done());
+    assert_eq!(done.map(|n| n.id.clone()), Some(first.id));
     assert_eq!(ids(steps.open()), vec![b.id]);
 }
 
@@ -63,7 +64,7 @@ fn a_prefix_two_steps_share_finds_neither() {
     let steps = Steps::new(&records, 0);
     let refused = steps.find("abcdefgh").unwrap_err();
     assert_eq!((refused.name.as_str(), refused.code), ("no-step", 1));
-    assert_eq!(steps.find(&a.id).unwrap().id, a.id);
+    assert_eq!(steps.find(&a.id).unwrap().id(), a.id);
 }
 
 /// A step of an ended trail that is not done or dropped is expired, and a closed one keeps its status
@@ -74,9 +75,9 @@ fn an_open_step_of_an_ended_trail_is_expired() {
     let mut open = step("open", 11);
     let mut closed = step("closed", 12);
     for child in [&mut open, &mut closed] {
-        *child = Step {
+        *child = StepRecord {
             under: Some(trail.id.clone()),
-            ..Step::read(child).unwrap()
+            ..StepRecord::read(child).unwrap()
         }
         .record(&account(), child.created_at)
         .unwrap();
@@ -84,7 +85,8 @@ fn an_open_step_of_an_ended_trail_is_expired() {
     let proof = done(&closed.id, "proof", 13);
     let records = vec![trail, open.clone(), closed.clone(), proof];
     let steps = Steps::new(&records, 13 + LIFE);
-    assert_eq!(steps.status(&open.id), Status::Expired);
-    assert_eq!(steps.status(&closed.id), Status::Done);
-    assert_eq!(Steps::new(&records, 13).status(&open.id), Status::Open);
+    let state = |steps: &Steps, id: &str| steps.get(id).unwrap().state();
+    assert_eq!(state(&steps, &open.id), State::Expired);
+    assert_eq!(state(&steps, &closed.id), State::Done);
+    assert_eq!(state(&Steps::new(&records, 13), &open.id), State::Open);
 }
