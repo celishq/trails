@@ -79,30 +79,30 @@ celis --version                           celis <version> (<commit, first 8>)
 The page:
 
 ```
-celis keeps how you do your tasks. A trail is one task you give, the steps
-agents take toward it, and the decisions made on the way. Your agents use it
-through the celis plugin.
+celis remembers how your agents do your tasks. Each task you give becomes a
+trail: the steps your agents take and the decisions they make along the way.
+Your agents use celis through the celis plugin.
 
 Record work (your agents run these)
-  step     the steps of a trail: add, start, done, drop, edit
-  decide   a decision, in its scope
+  step     Add, start, finish, drop, or edit a step
+  decide   Record a decision
 
 Read
-  tree     a trail and its steps, with their grades
-  past     this project's active trails and decisions, every project's past work
-  stats    what later work reused, and what it saved
-  report   trails as Markdown, for a pull request
+  tree     Show a trail and its steps
+  past     Show this project's active trails, decisions, and past work
+  stats    Show what reused work saved
+  report   Show trails as Markdown for a pull request
 
 Set up
-  link     this project's trails kept in a folder: the repo, or a synced drive
-  unlink   this project's trails no longer kept in a folder
-  auth     the account's phrase: login, status, phrase
-  update   this binary, to the latest release or a version
-  issue    what went wrong, as Markdown for the celis team
+  link     Keep this project's trails in a folder, like the repo or a drive
+  unlink   Stop keeping this project's trails in a folder
+  auth     Manage your recovery phrase
+  update   Update celis to the latest version, or to the one you choose
+  issue    Write a problem report for the celis team
 
-$CELIS_HOME holds the phrase and the store.
+celis keeps your recovery phrase and records in $CELIS_HOME.
 
-See `celis <command> --help`.
+To learn more about a command, run `celis <command> --help`.
 ```
 
 The group page of `step`:
@@ -110,16 +110,16 @@ The group page of `step`:
 ```
 celis step <command>
 
-The steps of a trail: add one, then start, close, drop or edit it.
+Add steps to a trail, then start, finish, drop, or edit them.
 
 Commands
-  add      a step, under a trail or as a new trail
-  start    a step taken up, with the decisions at its places
-  done     a step closed with its proof
-  drop     a step no longer wanted, and the open steps under it
-  edit     a step's new title, places or check
+  add      Add a step to a trail, or start a new trail
+  start    Start a step and show the decisions at its places
+  done     Finish a step with proof that it works
+  drop     Drop a step you no longer need, and the open steps under it
+  edit     Change a step's title, places, or check
 
-See `celis step <command> --help`.
+To learn more about a command, run `celis step <command> --help`.
 ```
 
 A command page:
@@ -140,9 +140,9 @@ Examples
 - `celis`, `celis help`, `celis --help` and `celis -h` MUST print the page and exit 0.
 - `--help` or `-h` anywhere in a command MUST print the command page its words name, and else the page.
 - A group's name alone, `step` or `auth`, with or without `--help`, MUST print the group page. It MUST
-  list each command of the group with what it is, as a noun phrase.
+  list each command of the group with what it does.
 - `celis help <words>` MUST print what `celis <words> --help` prints.
-- The page and a group page MUST name each command with what it is, as a noun phrase.
+- The page and a group page MUST describe each command with a verb, in sentence case.
 - A command page MUST give a line to each argument and flag its usage names, and at least one example.
 - Every help page MUST exit 0, and print to stdout.
 - A line of a help page MUST NOT be longer than 80 characters.
