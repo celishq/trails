@@ -37,6 +37,8 @@ fn next(records: &[Note], now: u64) -> Option<u64> {
         grouped: false,
         width: None,
         view: &View::default(),
+        printed: Default::default(),
+        picked: Default::default(),
         spun: Cell::default(),
         order: Default::default(),
         next: Cell::default(),

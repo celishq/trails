@@ -63,10 +63,12 @@ impl Command {
             reuse: &reuse,
             colour: self.colour(),
             grouped: id.is_none() && !view.all,
-            width,
+            width: width.map(|w| w.saturating_sub(2 * usize::from(view.watch))),
             view,
             spun: Cell::default(),
             order: RefCell::default(),
+            printed: Cell::default(),
+            picked: Cell::default(),
             next: Cell::default(),
         };
         let mut printed = Vec::new();
@@ -76,6 +78,7 @@ impl Command {
             next: tree.next.get(),
             spun: tree.spun.get(),
             order: tree.order.take(),
+            picked: tree.picked.get(),
         })
     }
 }
@@ -89,10 +92,11 @@ pub(super) fn today<'a>(steps: &'a Steps<'a>, now: u64) -> Vec<Step<'a>> {
         .collect()
 }
 
-/// How a tree shows: full, all with no id, and in a watch, the spinner's frame, the trails whose block
-/// or line it flipped, and the trail it selected.
+/// How a tree shows: in a watch, with a cursor column; full; all with no id; and in a watch, the
+/// spinner's frame, the trails whose block or line it flipped, and the trail it selected.
 #[derive(Default)]
 pub(super) struct View {
+    pub watch: bool,
     pub full: bool,
     pub all: bool,
     pub spin: Option<usize>,
@@ -112,12 +116,22 @@ impl View {
 }
 
 /// A printed tree: its text, the earliest time a time it shows changes, whether it shows the spinner,
-/// and the ids of its trails in the order it prints them.
+/// the lines a watch selects in the order it prints them, and the line of the selected one.
 pub(super) struct Frame {
     pub text: String,
     pub next: Option<u64>,
     pub spun: bool,
-    pub order: Vec<String>,
+    pub order: Vec<Item>,
+    pub picked: Option<usize>,
+}
+
+/// A trail, rule or step a watch selects: its id, whether it is open, the trail or step it is under,
+/// and every rule and step under it.
+pub(super) struct Item {
+    pub id: String,
+    pub open: bool,
+    pub parent: Option<String>,
+    pub under: Vec<String>,
 }
 
 /// What `tree` with no id prints while it has no trail to print.
@@ -125,7 +139,8 @@ pub(super) const EMPTY: &str = "No active trails. Run `celis tree --all` to see 
 
 /// The steps and decisions a tree is printed from, and how: in colour; grouped, as today's `ACTIVE` and
 /// `DONE` trails; each line cut to `width`; as `view` shows it. `next` holds the earliest time a time it printed
-/// changes, `spun` whether it printed the spinner, and `order` the trails it printed.
+/// changes, `spun` whether it printed the spinner, `order` the lines a watch selects, `printed` the count of
+/// its lines, and `picked` the line of the selected trail.
 pub(super) struct Tree<'a> {
     pub steps: &'a Steps<'a>,
     pub decisions: &'a Decisions<'a>,
@@ -135,7 +150,9 @@ pub(super) struct Tree<'a> {
     pub width: Option<usize>,
     pub view: &'a View,
     pub spun: Cell<bool>,
-    pub order: RefCell<Vec<String>>,
+    pub order: RefCell<Vec<Item>>,
+    pub printed: Cell<usize>,
+    pub picked: Cell<Option<usize>>,
     pub next: Cell<Option<u64>>,
 }
 
@@ -157,8 +174,9 @@ enum Line {
     Row {
         lead: String,
         title: String,
-        cells: [Option<String>; 4],
+        cells: [Option<String>; 5],
     },
+    Picked(Box<Line>),
 }
 
 impl Tree<'_> {
@@ -187,7 +205,8 @@ impl Tree<'_> {
                 if trails.is_empty() {
                     continue;
                 }
-                let mut lines = vec![Line::Text(self.paint(BOLD, name))];
+                let head = format!("{name} · {}", trails.len());
+                let mut lines = vec![Line::Text(self.paint(BOLD, &head))];
                 let mut last = None;
                 for &note in &trails {
                     let block = self.view.full || name == "ACTIVE";
@@ -211,7 +230,7 @@ impl Tree<'_> {
         }
         for (n, group) in groups.into_iter().enumerate() {
             if n > 0 {
-                super::put(out, "")?;
+                self.put(out, "")?;
             }
             self.show(group, out)?;
         }
@@ -225,12 +244,40 @@ impl Tree<'_> {
         if last.is_some_and(|last| last || block) {
             lines.push(Line::Text(String::new()));
         }
-        self.order.borrow_mut().push(note.id().to_string());
         match block {
             true => self.block(note, lines),
             false => self.line(note, lines),
         }
         *last = Some(block);
+    }
+
+    /// Adds `item` to the order of the lines a watch selects, and selects the line at `first` of `lines`
+    /// when the view selected it.
+    fn pick(&self, item: Item, lines: &mut [Line], first: usize) {
+        if self.view.selected.as_ref() == Some(&item.id) {
+            let line = std::mem::replace(&mut lines[first], Line::Text(String::new()));
+            lines[first] = Line::Picked(Box::new(line));
+        }
+        self.order.borrow_mut().push(item);
+    }
+
+    /// The trail `note` as a line a watch selects, `open` when it prints as a block: with every rule of
+    /// `rules` and every step it prints under it.
+    fn item(&self, note: Step, open: bool, rules: &[Rule]) -> Item {
+        let rules = rules.iter().map(|(rule, _)| rule.id.clone());
+        let steps = Trail::new(note).parts().into_iter().flat_map(|p| p.tree());
+        Item {
+            id: note.id().to_string(),
+            open,
+            parent: None,
+            under: rules.chain(steps.map(|s| s.id().to_string())).collect(),
+        }
+    }
+
+    /// Whether the step or rule `id` shows what `--full` shows: with `--full`, unless the watch closed
+    /// it; else when the watch opened it.
+    fn open(&self, id: &str) -> bool {
+        self.view.full != self.view.flipped.contains(id)
     }
 
     /// Adds the object of the step `note`, named `key`, then each step under it as its own.
@@ -303,8 +350,8 @@ impl Tree<'_> {
             .rules(&note.record().anchor.project, owner.id())
     }
 
-    /// Adds `note` as a block: its mark and title, its project, progress, worked time, rules and id, the
-    /// lines under it and its rules with `full`, then its steps.
+    /// Adds `note` as a block: its mark and title, then after a hairline its progress, worked time, last
+    /// change in a watch, project and id, the lines under it with `full`, its rules, then its steps.
     fn block(&self, note: Step, lines: &mut Vec<Line>) {
         let step = note.record();
         let state = note.state();
@@ -315,46 +362,73 @@ impl Tree<'_> {
             Some(width) => wrap(step.title(), width),
             None => vec![step.title().to_string()],
         };
+        let first = lines.len();
         for (n, part) in title.iter().enumerate() {
             let lead = match n {
                 0 => format!("{} ", self.mark(state)),
                 _ => "  ".to_string(),
             };
-            let title = self.title(note, part, BOLD, note.newest());
+            let title = self.title(part, BOLD, note.newest());
             lines.push(Line::Text(format!("{lead}{title}")));
         }
-        let mut parts = vec![step.anchor.name.clone()];
+        self.pick(self.item(note, true, &summary.rules), lines, first);
+        let hair = self.paint(DIM, "│ ");
+        let mut parts = vec![];
         if summary.all > 0 {
-            parts.push(format!("{} of {}", summary.done, summary.all));
+            let all = count(summary.all, "step");
+            parts.push(format!("{} of {all} done", summary.done));
         }
-        parts.extend(summary.worked.map(took));
-        if !summary.rules.is_empty() {
-            parts.push(format!("§ {}", count(summary.rules.len(), "rule")));
-        }
+        parts.extend(summary.worked.map(|w| format!("worked {}", took(w))));
         if self.view.spin.is_some() && state.active() {
             let seconds = self.steps.now.saturating_sub(note.newest());
             self.until(self.steps.now + stride(seconds));
-            parts.push(format!("active {} ago", took(seconds)));
+            parts.push(format!("last change {} ago", took(seconds)));
         }
+        parts.push(step.anchor.name.clone());
         lines.push(Line::Row {
-            lead: "  ".to_string(),
+            lead: hair.clone(),
             title: self.paint(DIM, &parts.join(" · ")),
-            cells: [None, None, None, Some(self.id(note))],
+            cells: [None, None, None, None, Some(self.id(note))],
         });
-        self.closing(work, "  ", lines);
-        self.reused(work, "  ", lines);
         if self.view.full {
-            for (rule, decision) in summary.rules {
-                let first = format!("  § {} ", short(&rule.id));
-                let rest = " ".repeat(visible(&first));
-                self.text(lines, (first, rest), &decision.content);
-            }
+            self.closing(work, &hair, lines);
+            self.reused(work, &hair, lines);
         }
+        self.ruled(summary.rules, &hair, note.id(), lines);
         let parts = Trail::new(note).parts();
         if !parts.is_empty() {
-            lines.push(Line::Text(String::new()));
+            lines.push(Line::Text(self.paint(DIM, "│")));
         }
-        self.under(parts, 0, lines);
+        self.under(parts, &hair, note.id(), lines);
+    }
+
+    /// Adds each of `rules` of the trail `trail` after `rail`: as `§ <text>`, cut to fit, with its id at
+    /// the end; opened, as `§ <id> <text>`, wrapped.
+    fn ruled(&self, rules: Vec<Rule>, rail: &str, trail: &str, lines: &mut Vec<Line>) {
+        for (rule, decision) in rules {
+            let first = lines.len();
+            let id = short(&rule.id);
+            let open = self.open(&rule.id);
+            match open {
+                true => {
+                    let lead = format!("{rail}{} ", self.paint(DIM, &format!("§ {id}")));
+                    let rest = format!("{rail}{}", " ".repeat(visible(&lead) - visible(rail)));
+                    self.text(lines, (lead, rest), &decision.content, true, "");
+                }
+                false => lines.push(Line::Row {
+                    lead: format!("{rail}{}", self.paint(DIM, "§ ")),
+                    title: decision.content.clone(),
+                    cells: [None, None, None, None, Some(self.paint(DIM, &id))],
+                }),
+            }
+            let item = Item {
+                id: rule.id.clone(),
+                open,
+                parent: Some(trail.to_string()),
+                under: vec![],
+            };
+            self.pick(item, lines, first);
+        }
     }
 
     /// Adds `note` as one line: its mark and title, then its project, steps, rules, worked time and id;
@@ -364,62 +438,75 @@ impl Tree<'_> {
         let state = note.state();
         let work = self.work(note);
         let summary = self.summary(note, work);
-        let mut parts = match (summary.all, summary.done) {
-            (0, _) => vec![],
-            (all, done) if all == done => vec![count(all, "step")],
-            (all, done) => vec![format!("{done} of {all}")],
+        let steps = match (summary.all, summary.done) {
+            (0, _) => None,
+            (all, done) if all == done => Some(column(all, "step")),
+            (all, done) => Some(format!("{done} of {all}")),
         };
-        if !summary.rules.is_empty() {
-            parts.push(count(summary.rules.len(), "rule"));
-        }
+        let rules = summary.rules.len();
+        let first = lines.len();
         lines.push(Line::Row {
             lead: format!("{} ", self.mark(state)),
-            title: self.title(note, step.title(), look(state).title, note.newest()),
+            title: self.title(step.title(), look(state).title, note.newest()),
             cells: [
                 Some(step.anchor.name.clone()),
-                (!parts.is_empty()).then(|| parts.join(" · ")),
+                steps,
+                (rules > 0).then(|| column(rules, "rule")),
                 summary.worked.map(took),
                 Some(self.id(note)),
             ],
         });
+        self.pick(self.item(note, false, &summary.rules), lines, first);
         if let Some(reason) = work.dropped() {
-            self.text(lines, ("  ".into(), "  ".into()), &reason.content);
+            let leads = ("  ".into(), "  ".into());
+            self.text(lines, leads, &reason.content, self.view.full, DIM);
         }
     }
 
-    /// Adds the steps `notes`, each followed by its own, `depth` levels under a block's top steps.
-    fn under(&self, notes: Vec<Step>, depth: usize, lines: &mut Vec<Line>) {
+    /// Adds the steps `notes` under the step `above` after `rail`, each followed by its own one guide
+    /// further; an opened one with the lines `--full` prints under it.
+    fn under(&self, notes: Vec<Step>, rail: &str, above: &str, lines: &mut Vec<Line>) {
         for note in notes {
             let step = note.record();
             let state = note.state();
             if state.active() {
                 self.until(note.trail().newest() + LIFE);
             }
-            let guides = self.paint(DIM, &"│ ".repeat(depth));
+            let first = lines.len();
             lines.push(Line::Row {
-                lead: format!("  {guides}{} ", self.mark(state)),
-                title: self.title(note, step.title(), look(state).title, note.newest()),
+                lead: format!("{rail}{} ", self.mark(state)),
+                title: self.title(step.title(), look(state).title, note.newest()),
                 cells: [
                     step.at().map(last),
+                    None,
                     None,
                     self.worked(&note.tree()).map(took),
                     Some(self.id(note)),
                 ],
             });
-            let below = match note.children().is_empty() {
-                true => "  ",
-                false => "│ ",
+            let open = self.open(note.id());
+            let tree = note.tree().into_iter().filter(|s| s.id() != note.id());
+            let item = Item {
+                id: note.id().to_string(),
+                open,
+                parent: Some(above.to_string()),
+                under: tree.map(|s| s.id().to_string()).collect(),
             };
-            let rail = format!("  {guides}{}", self.paint(DIM, below));
-            if let (false, Some(changed)) =
-                (self.view.full, note.done().and_then(|d| d.tag("changed")))
-            {
-                let first = format!("{rail}~ ");
-                self.text(lines, (first, rail.clone()), changed);
+            self.pick(item, lines, first);
+            let guide = self.paint(DIM, "│ ");
+            let below = match note.children().is_empty() {
+                true => format!("{rail}  "),
+                false => format!("{rail}{guide}"),
+            };
+            if let (false, Some(changed)) = (open, note.done().and_then(|d| d.tag("changed"))) {
+                let first = format!("{below}{}", self.paint(DIM, "~ "));
+                self.text(lines, (first, below.clone()), changed, false, DIM);
             }
-            self.closing(note, &rail, lines);
-            self.reused(note, &rail, lines);
-            self.under(note.children(), depth + 1, lines);
+            if open {
+                self.closing(note, &below, lines);
+                self.reused(note, &below, lines);
+            }
+            self.under(note.children(), &format!("{rail}{guide}"), note.id(), lines);
         }
     }
 
@@ -448,26 +535,22 @@ impl Tree<'_> {
 
     /// Prints `lines`, each row's details in columns at the right edge of the width, or after the widest
     /// title; in the short tree, a row's title is cut so it fits, and a narrow width leaves out the ids,
-    /// then the first column and the time while a title would be cut below 20 characters.
+    /// then the first column and the time while a title would be cut below 20 characters. In a watch,
+    /// each line starts with the cursor column, and the selected one prints in reverse to the edge.
     fn show(&self, lines: Vec<Line>, out: &mut dyn Write) -> Result<(), Failure> {
-        let mut widths = [0; 4];
-        for line in &lines {
-            if let Line::Row { cells, .. } = line {
-                for (width, cell) in widths.iter_mut().zip(cells) {
-                    *width = (*width).max(cell.as_deref().map_or(0, visible));
-                }
+        let mut widths = [0; 5];
+        for (_, _, cells) in lines.iter().filter_map(row) {
+            for (width, cell) in widths.iter_mut().zip(cells) {
+                *width = (*width).max(cell.as_deref().map_or(0, visible));
             }
         }
         if let (false, Some(width)) = (self.view.full, self.width) {
             if width < 80 {
-                widths[3] = 0;
+                widths[4] = 0;
             }
-            for column in [0, 2] {
-                let short = lines.iter().any(|l| match l {
-                    Line::Row { lead, title, .. } => {
-                        width.saturating_sub(visible(lead) + room(&widths)) < visible(title).min(20)
-                    }
-                    Line::Text(_) => false,
+            for column in [0, 3] {
+                let short = lines.iter().filter_map(row).any(|(lead, title, _)| {
+                    width.saturating_sub(visible(lead) + room(&widths)) < visible(title).min(20)
                 });
                 if short {
                     widths[column] = 0;
@@ -475,62 +558,86 @@ impl Tree<'_> {
             }
         }
         let room = room(&widths);
-        let span = room.saturating_sub(2);
         let edge = match (self.view.full, self.width) {
             (false, Some(width)) => width,
             (_, width) => lines
                 .iter()
-                .filter_map(|l| match l {
-                    Line::Row { lead, title, .. } => Some(visible(lead) + visible(title) + room),
-                    Line::Text(_) => None,
-                })
+                .filter_map(row)
+                .map(|(lead, title, _)| visible(lead) + visible(title) + room)
                 .chain(width)
                 .max()
                 .unwrap_or(0),
         };
         for line in lines {
-            let (lead, title, cells) = match line {
-                Line::Text(text) => {
-                    super::put(out, &text)?;
-                    continue;
-                }
-                Line::Row { lead, title, cells } => (lead, title, cells),
+            let (picked, line) = match line {
+                Line::Picked(line) => (true, *line),
+                line => (false, line),
             };
-            let title = match (self.view.full, self.width) {
-                (false, Some(_)) => cut(&title, edge.saturating_sub(visible(&lead) + room).max(2)),
-                _ => title,
-            };
-            let block: Vec<String> = cells
-                .iter()
-                .zip(widths)
-                .enumerate()
-                .filter(|(_, (_, width))| *width > 0)
-                .map(|(n, (cell, width))| {
-                    let cell = cell.as_deref().unwrap_or("");
-                    let pad = " ".repeat(width - visible(cell));
-                    match n {
-                        2 => format!("{pad}{cell}"),
-                        _ => format!("{cell}{pad}"),
+            let text = self.render(line, &widths, edge);
+            let text = match (self.view.watch, picked) {
+                (false, _) => text,
+                (true, false) => format!("  {text}"),
+                (true, true) => {
+                    let pad = " ".repeat(edge.saturating_sub(visible(&text)));
+                    let text = format!("› {text}{pad}").replace("\x1b[0m", "\x1b[0;7m");
+                    if self.picked.get().is_none() {
+                        self.picked.set(Some(self.printed.get()));
                     }
-                })
-                .collect();
-            let block = block.join("  ");
-            let gap = edge.saturating_sub(visible(&lead) + visible(&title) + span);
-            let line = match block.trim_end() {
-                "" => format!("{lead}{title}"),
-                block => format!("{lead}{title}{}{}", " ".repeat(gap), self.paint(DIM, block)),
+                    self.paint(PICKED, &text)
+                }
             };
-            super::put(out, &line)?;
+            self.put(out, &text)?;
         }
         Ok(())
     }
 
-    /// Adds under `note` with `full` the lines of its text, its proof, change and grade when done, or its
-    /// reason when dropped, after `rail`.
-    fn closing(&self, note: Step, rail: &str, out: &mut Vec<Line>) {
-        if !self.view.full {
-            return;
+    /// The text of `line`: a row's title, cut in the short tree, then its details in the columns of
+    /// `widths`, ending at `edge`.
+    fn render(&self, line: Line, widths: &[usize; 5], edge: usize) -> String {
+        let (lead, title, cells) = match line {
+            Line::Row { lead, title, cells } => (lead, title, cells),
+            Line::Text(text) => return text,
+            Line::Picked(line) => return self.render(*line, widths, edge),
+        };
+        let from = (0..5).find(|&n| cells[n].is_some() && widths[n] > 0);
+        let mut widths = *widths;
+        widths[..from.unwrap_or(5)].fill(0);
+        let room = room(&widths);
+        let title = match (self.view.full, self.width) {
+            (false, Some(_)) => cut(&title, edge.saturating_sub(visible(&lead) + room).max(2)),
+            _ => title,
+        };
+        let block: Vec<String> = cells
+            .iter()
+            .zip(widths)
+            .enumerate()
+            .filter(|(_, (_, width))| *width > 0)
+            .map(|(n, (cell, width))| {
+                let cell = cell.as_deref().unwrap_or("");
+                let pad = " ".repeat(width - visible(cell));
+                match n {
+                    1..=3 => format!("{pad}{cell}"),
+                    _ => format!("{cell}{pad}"),
+                }
+            })
+            .collect();
+        let block = block.join("  ");
+        let gap = edge.saturating_sub(visible(&lead) + visible(&title) + room.saturating_sub(2));
+        match block.trim_end() {
+            "" => format!("{lead}{title}"),
+            block => format!("{lead}{title}{}{}", " ".repeat(gap), self.paint(DIM, block)),
         }
+    }
+
+    /// Writes the line `text`, and counts it.
+    fn put(&self, out: &mut dyn Write, text: &str) -> Result<(), Failure> {
+        self.printed.set(self.printed.get() + 1);
+        super::put(out, text)
+    }
+
+    /// Adds under `note` the lines of its text, its proof, change and grade when done, or its reason when
+    /// dropped, after `rail`.
+    fn closing(&self, note: Step, rail: &str, out: &mut Vec<Line>) {
         for line in note.record().detail() {
             self.labelled(out, rail, "", line);
         }
@@ -547,12 +654,9 @@ impl Tree<'_> {
         }
     }
 
-    /// Adds under `note` with `full` a `follows` line for each step it follows, then a `reused` line when
-    /// steps follow it, after `rail`.
+    /// Adds under `note` a `follows` line for each step it follows, then a `reused` line when steps follow
+    /// it, after `rail`.
     fn reused(&self, note: Step, rail: &str, out: &mut Vec<Line>) {
-        if !self.view.full {
-            return;
-        }
         for source in self.reuse.sources(note) {
             let line = format!("{} {}", short(source.id()), source.title());
             self.labelled(out, rail, "follows", &line);
@@ -585,33 +689,40 @@ impl Tree<'_> {
         )
     }
 
-    /// Adds `text` dim after `rail` and `label` padded to 8 characters, or after `rail` alone with no
-    /// label.
+    /// Adds `text` wrapped, dim, after `rail` and `label` padded to 8 characters, or after `rail` alone
+    /// with no label.
     fn labelled(&self, lines: &mut Vec<Line>, rail: &str, label: &str, text: &str) {
         let (first, rest) = match label {
             "" => (rail.to_string(), rail.to_string()),
             _ => (
-                format!("{rail}{label:<8}"),
+                format!("{rail}{}", self.paint(DIM, &format!("{label:<8}"))),
                 format!("{rail}{}", " ".repeat(8)),
             ),
         };
-        self.text(lines, (first, rest), text);
+        self.text(lines, (first, rest), text, true, DIM);
     }
 
-    /// Adds `text` dim after `leads.0`, its next lines after `leads.1`. The full tree wraps it at the
-    /// width, each line at the same column; the short tree cuts it.
-    fn text(&self, lines: &mut Vec<Line>, leads: (String, String), text: &str) {
+    /// Adds `text` in the colour `code` after `leads.0`, its next lines after `leads.1`: when `whole`,
+    /// wrapped at the width, each line at the same column; else cut to it.
+    fn text(
+        &self,
+        lines: &mut Vec<Line>,
+        leads: (String, String),
+        text: &str,
+        whole: bool,
+        code: &str,
+    ) {
         let (first, rest) = leads;
         let column = visible(&first);
         let measure = self.width.map(|w| w.saturating_sub(column).max(20));
-        let parts = match (self.view.full, measure) {
+        let parts = match (whole, measure) {
             (true, Some(measure)) => wrap(text, measure),
             (false, Some(measure)) => vec![cut(text, measure)],
             (_, None) => vec![text.to_string()],
         };
         for (n, part) in parts.iter().enumerate() {
             let lead = if n == 0 { &first } else { &rest };
-            lines.push(Line::Text(self.paint(DIM, &format!("{lead}{part}"))));
+            lines.push(Line::Text(format!("{lead}{}", self.paint(code, part))));
         }
     }
 
@@ -628,12 +739,8 @@ impl Tree<'_> {
         self.paint(look.text, mark)
     }
 
-    /// The title `text` of `note` in the colour `usual`: in reverse when the view selected it, else bold
-    /// for 2 seconds after its newest record at `newest`.
-    fn title(&self, note: Step, text: &str, usual: &str, newest: u64) -> String {
-        if self.view.selected.as_deref() == Some(note.id()) {
-            return self.paint(PICKED, text);
-        }
+    /// The title `text` in the colour `usual`, bold for 2 seconds after its newest record at `newest`.
+    fn title(&self, text: &str, usual: &str, newest: u64) -> String {
         if newest + FRESH <= self.steps.now {
             return self.paint(usual, text);
         }
@@ -663,10 +770,20 @@ const FRESH: u64 = 2;
 const SPIN: [&str; 10] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 const BOLD: &str = "1";
 const PICKED: &str = "7";
+const GREEN: &str = "32";
 const UNDERLINE: &str = "4;34";
+/// The lead, title and details of `line` when it is a row, also when it is selected.
+fn row(line: &Line) -> Option<(&String, &String, &[Option<String>; 5])> {
+    match line {
+        Line::Row { lead, title, cells } => Some((lead, title, cells)),
+        Line::Picked(line) => row(line),
+        Line::Text(_) => None,
+    }
+}
+
 /// The characters the detail columns of `widths` take with the two spaces before them; none when all are
 /// empty.
-fn room(widths: &[usize; 4]) -> usize {
+fn room(widths: &[usize; 5]) -> usize {
     let shown = widths.iter().filter(|w| **w > 0).count();
     match shown {
         0 => 0,
@@ -741,8 +858,8 @@ pub(super) fn look(state: State) -> Look {
     let (mark, text, title) = match state {
         State::Open => ("○", "", ""),
         State::Working => ("◐", "33", BOLD),
-        State::Done => ("✓", DIM, DIM),
-        State::Revised => ("↻", DIM, DIM),
+        State::Done => ("✓", GREEN, ""),
+        State::Revised => ("↻", GREEN, ""),
         State::Dropped => ("✗", "31", DIM),
         State::Expired => ("!", "31", DIM),
     };
@@ -753,6 +870,14 @@ pub(super) fn look(state: State) -> Look {
 fn count(n: usize, what: &str) -> String {
     match n {
         1 => format!("1 {what}"),
+        n => format!("{n} {what}s"),
+    }
+}
+
+/// `n` of `what` for a column whose numbers align right, as `1 step ` or `3 steps`.
+fn column(n: usize, what: &str) -> String {
+    match n {
+        1 => format!("1 {what} "),
         n => format!("{n} {what}s"),
     }
 }

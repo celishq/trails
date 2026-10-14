@@ -338,33 +338,39 @@ celis tree --all [--full]         every trail in the store, by day
   in any folder. A day MUST start at midnight, local time.
 - With no id and no trail to print, `tree` MUST print `No active trails. Run \`celis tree --all\` to see
   every trail.`, and with `--json` print nothing.
-- `tree` with no id MUST print its active trails after a line `ACTIVE`, then the others after a line
-  `DONE`, each group newest first. A group with no trail MUST be left out. A blank line MUST come between
+- `tree` with no id MUST print its active trails after a line `ACTIVE · <n>`, then the others after a
+  line `DONE · <n>`, each group newest first, `<n>` the count of its trails. A group with no trail MUST be left out. A blank line MUST come between
   two groups.
 - `tree --all` MUST print every trail in the store, of every project, newest first. Before the first trail
   of each day, it MUST print the day, as `Oct 9`. `tree --all` with an id MUST refuse as a usage error.
 - In the short tree, a trail of `ACTIVE` MUST print as a block, and every other trail with no id as one
   line. With `--full`, every trail MUST print as a block. `tree <id>` MUST print its step as a block.
 - A block MUST start with the step's mark and title. The title MUST wrap between words at the width,
-  and MUST NOT be cut. The next line MUST hold, ` · ` apart: the project, `<done> of <all>` when steps
-  are under it, the worked time, and `§ 1 rule` or `§ <n> rules` when it has rules; its id MUST end the
-  line. Then come a blank line and the steps under it, oldest first, each followed by its own. A blank
-  line MUST come between a block and the trail before or after it.
-- An ask MUST count its trail's rules. With `--full`, the rules MUST come after the block's second line,
-  each as `§ <id> <text>`, wrapped between words. The short tree MUST NOT print a rule's text.
+  and MUST NOT be cut. The next line MUST hold, ` · ` apart: `<done> of <all> steps done` (`of 1 step`
+  for one) when steps are under it, `worked <time>` when it has a worked time, and the project; its id
+  MUST end the line. Then come its rules, then a blank line
+  and the steps under it, oldest first, each followed by its own. A blank line MUST come between a block
+  and the trail before or after it.
+- Each line of a block after its title MUST start with a dim `│ ` hairline, the blank line before its
+  steps too.
+- A block MUST print each of its rules on a line `§ <text>`, its id at the end, the text cut to fit. With
+  `--full`, each MUST print as `§ <id> <text>`, wrapped between words. An ask MUST print its trail's
+  rules. A rule's text MUST print in normal weight, its `§` and its id dim.
 - A trail whose first ask holds its text MUST print as one step with that ask: the ask's proof, grade
   and reuse under the trail's title, and the ask's steps first under it (CIP-04, "Sessions"). A trail
   that is done or dropped itself MUST show its own done or drop. Its ask MUST NOT print, except with
   `--json`.
-- A top step of a block MUST start two spaces in. Each level down MUST add a dim `│ ` guide. A line under a
+- A top step of a block MUST start after the hairline. Each level down MUST add a dim `│ ` guide. A line under a
   step with steps under it MUST carry their guide.
 - A step line MUST end with its details: the last part of its place, its worked time and its id.
 - A trail's line MUST end with its details: its project, then `<n> steps` when every step is done, else
-  `<done> of <all>`, then ` · 1 rule` or ` · <n> rules` when it has rules, then its worked time and its
-  id. When it is dropped, its reason MUST follow on the next line, at the title's column.
+  `<done> of <all>`, then `1 rule` or `<n> rules` when it has rules, then its worked time and its id,
+  each in its own column. The steps and the rules MUST align their numbers right, `1 step ` and `1 rule `
+  with a space for the missing `s`. When it is dropped, its reason MUST follow on the next line, at the title's column.
 - The details MUST print in columns, two spaces apart, the same for every line of a group. A time MUST
   align right, the others left. A column no line fills MUST be left out. With a width, the short tree
-  MUST end them at the right edge; else they MUST start two spaces after the widest title.
+  MUST end them at the right edge; else they MUST start two spaces after the widest title. A line's title
+  MUST be cut only at its first detail, so it runs into the columns it leaves empty before it.
 - With a width under 80, the short tree MUST leave out the ids. Then, while a title of a group would be
   cut below 20 characters, it MUST leave out that group's first column, then its time.
 - The worked time of a step MUST be the sum, over each step of its tree with no step under it, of the
@@ -386,31 +392,32 @@ celis tree --all [--full]         every trail in the store, by day
   MUST NOT when `NO_COLOR` is set. Without colour, `tree` MUST print the same lines, with no colour
   codes.
 - In colour, a working step MUST print its mark in yellow and its title bold. A done or revised step
-  MUST print dim. A dropped or expired step MUST print its mark in red and its title dim. A block's title
+  MUST print its mark in green and its title in normal weight. A dropped or expired step MUST print its mark in red and its title dim. A block's title
   and a group's line MUST print bold. A step or trail whose newest record is less than 2 seconds old MUST
   print its title bold. Details, guides and the lines under a step MUST print dim. The tree
   MUST underline the shortest start of each id, 4 characters or more, that no other step's id has.
 - `tree` MUST NOT write a record.
 
 ```
-tree   text  ACTIVE
+tree   text  ACTIVE · <n>
              <mark> <title>
-               <project> · <done> of <all> · <worked> · § <n> rules                     <id, first 8>
-                <a line under the trail, as under a step>                  --full
-               § <id, first 8> <text>                                      --full, each rule
+             │ <done> of <all> steps done · worked <worked> · <project>                 <id, first 8>
+             │ <a line under the trail, as under a step>                   --full
+             │ § <text>                                                    <id, first 8>
+             │ § <id, first 8> <text>                                      --full, each rule
+             │
+             │ <mark> <title>                                <place>  <worked>  <id, first 8>
+             │ │ <mark> <title>                              <place>  <worked>  <id, first 8>
+             │ │   ~ <what changed>
+             │   done    <proof>                                           --full
+             │   changed <what changed>                                    --full
+             │   took    <its grade, without "took">                       --full
+             │   follows <id, first 8> <title>                             --full, each step it uses
+             │   reused  <n>[ · saved <time>]                              --full
+             │   dropped <reason>                                          --full
              
-               <mark> <title>                                <place>  <worked>  <id, first 8>
-               │ <mark> <title>                              <place>  <worked>  <id, first 8>
-               │   ~ <what changed>
-                 done    <proof>                                           --full
-                 changed <what changed>                                    --full
-                 took    <its grade, without "took">                       --full
-                 follows <id, first 8> <title>                             --full, each step it uses
-                 reused  <n>[ · saved <time>]                              --full
-                 dropped <reason>                                          --full
-             
-             DONE
-             <mark> <title>          <project>  <n> steps | <done> of <all>[ · <n> rules]  <worked>  <id>
+             DONE · <n>
+             <mark> <title>          <project>  <n> steps | <done> of <all>  [<n> rules]  <worked>  <id>
                <reason>                                                    when dropped
        json  {"trail": {"id", "created_at", "project", "content", "state", "links", "places", "proof", "grade",
              "reused", "reason"}}
@@ -426,22 +433,23 @@ grade  text  took <45s | 1m 30s | 2h 5m | 3d 2h>[ · revised by <id, first 8>, .
 celis tree 3fa2c1d0
 
 ◐ Add a senior tier to the price list
-  shop · 1 of 4 · 8m 42s · § 1 rule                                              3fa2c1d0
-
-  ✓ A senior pays 80%                                  prices.py:40   1m 30s  9b0e11aa
-  ◐ The frame shows the tier                                          7m 12s  5d7f3c21
-  │ ○ Add the badge to the frame                                              0a4e9d10
-  ○ Round the price down                                                      6c1b8e52
+│ 1 of 4 steps done · worked 8m 42s · shop                                       3fa2c1d0
+│ § A senior pays 80% of the price, rounded down to the cent.                    4c1d22e0
+│
+│ ✓ A senior pays 80%                                  prices.py:40   1m 30s  9b0e11aa
+│ ◐ The frame shows the tier                                          7m 12s  5d7f3c21
+│ │ ○ Add the badge to the frame                                              0a4e9d10
+│ ○ Round the price down                                                      6c1b8e52
 
 celis tree
 
-ACTIVE
+ACTIVE · 1
 ◐ Add a senior tier to the price list
-  shop · 1 of 4 · 8m 42s · § 1 rule                                              3fa2c1d0
-  …
+│ 1 of 4 steps done · worked 8m 42s · shop                                       3fa2c1d0
+│ …
 
-DONE
-✓ Fix the cart total                                    crm  3 steps      8m  1c9e44b2
+DONE · 1
+✓ Fix the cart total                                    crm  3 steps         8m  1c9e44b2
 ```
 
 ## Watching
@@ -456,7 +464,8 @@ and close.
 - A watch MUST print what `tree` with the same words prints off a terminal, but for the rules below. It
   MUST refuse an id no step has, with `no-step`, also with no store.
 - A working step's or trail's mark MUST be a spinner, `⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏`, one frame each 100 ms. The second
-  line of an active trail's block MUST end with `active <time> ago`, from the newest record of its tree.
+  line of an active trail's block MUST hold `last change <time> ago` before the project, from the newest
+  record of its tree.
 - With no id and no trail to print, it MUST print what `tree` prints.
 - It MUST print the tree again as soon as the terminal's width changes. It MUST print it again within
   one second after a time it shows changes.
@@ -466,16 +475,28 @@ and close.
   the tree changed.
 - It MUST draw on the terminal's alternate screen. It MUST draw each tree from the top left over the last
   one, each line cut to the width and cleared to its end, and clear the rest of the screen, with no clear
-  first. A tree taller than the screen MUST end at its last row with `… <n> more lines`.
+  first.
+- It MUST start each line with a column of two characters: `› ` on the first line of the selected
+  trail, rule or step, else two spaces. In colour, that line MUST print in reverse video to the right edge.
+- A tree taller than the rows above the key line MUST scroll. A first row `↑ <n> more` MUST stand for
+  the lines above, and a last row `↓ <n> more` for the lines below. The view MUST move to show the
+  selected line when the selection moves, and keep its place when the tree is drawn
+  again.
 - It MUST run until it is stopped, and MUST NOT write a record. On an interrupt it MUST leave the
-  alternate screen, print the last tree whole, and exit 0.
-- When stdin is a terminal, a watch MUST read keys, with no echo: `↑` and `↓` select the trail before or
-  after the selected one, in the order it prints them, and the first `↓` the first trail; `enter` prints
-  the selected trail as a block when it prints as one line, and else as one line; `f` turns `--full` on
+  alternate screen, print nothing, and exit 0.
+- When stdin is a terminal, a watch MUST read keys, with no echo: `↑` and `↓` select the trail, rule or
+  step before or after the selected one, in the order it prints them, and the first `↓` the first trail.
+  `→` opens the selected one: a trail prints as a block, a step shows the lines `--full` prints under it,
+  and a rule prints as `--full` prints it. `←` closes it: a trail prints as one line, a step hides those
+  lines, and a rule prints as the short tree does; on one that is closed, `←` selects the trail or step
+  it is under. `enter` opens the selected one when it is closed, and else closes it. `*` opens the
+  selected one and every rule and step under it, and closes them all when all are open. `c` copies the first 8 characters of the selected one's
+  id with the first of `pbcopy`, `wl-copy` and `xclip -selection clipboard` that runs. `PgUp` and `PgDn`, or
+  `space` for down, scroll one page; `g` and `G` scroll to the top and the end; `f` turns `--full` on
   and off; `a` turns `--all` on and off with no id; `q` ends it as an interrupt does.
-- In colour, it MUST print the selected trail's title in reverse video.
-- It MUST end each tree with a dim line: `↑↓ select · enter open · f full · a all · q quit`. The line
-  MUST NOT count toward the tree's height, and MUST NOT print when it ends.
+- It MUST print on the screen's last row a dim line:
+  `↑↓ select · ←→ close open · * open all under · c copy id · PgUp PgDn scroll · f full · a all · q quit`. After `c`, until
+  the next key, the line MUST be `copied <id, first 8>`, or `no pbcopy, wl-copy or xclip to copy with`.
 
 **Examples**
 

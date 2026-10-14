@@ -79,7 +79,7 @@ fn a_trail_ends_thirty_minutes_after_its_newest_record() {
         tree.lines()
             .nth(3)
             .unwrap_or("")
-            .starts_with("  ! open part"),
+            .starts_with("│ ! open part"),
         "{tree}"
     );
     let read = out(&cli(&repo, &["past"]));

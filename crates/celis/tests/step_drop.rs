@@ -48,13 +48,13 @@ fn tree_marks_a_dropped_step_with_its_reason_and_no_grade() {
     let lines: Vec<&str> = text.lines().collect();
     assert_eq!(lines[0], "✗ the trail", "{text}");
     assert!(lines[1].ends_with(&trail[..8]), "{text}");
-    assert_eq!(lines[2], "  dropped left behind", "{text}");
-    assert_eq!(lines[3], "", "{text}");
+    assert_eq!(lines[2], "│ dropped left behind", "{text}");
+    assert_eq!(lines[3], "│", "{text}");
     assert!(
-        lines[4].starts_with("  ✗ part  ") && lines[4].ends_with(&part[..8]),
+        lines[4].starts_with("│ ✗ part  ") && lines[4].ends_with(&part[..8]),
         "{text}"
     );
-    assert_eq!(lines[5], "    dropped wrong step", "{text}");
+    assert_eq!(lines[5], "│   dropped wrong step", "{text}");
     assert_eq!(lines.len(), 6, "{text}");
 }
 

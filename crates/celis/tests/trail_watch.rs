@@ -42,7 +42,7 @@ impl Watch {
             .args(args)
             .current_dir(repo.path())
             .env_clear()
-            .env("PATH", std::env::var("PATH").unwrap_or_default())
+            .env("PATH", path(repo))
             .env("CELIS_HOME", repo.home())
             .stdin(side(follow))
             .stdout(side(follow))
@@ -109,6 +109,21 @@ impl Watch {
         panic!("no {text:?} in {:?}", self.shown(Duration::ZERO));
     }
 
+    /// Waits until the newest tree no longer holds `text`.
+    fn without(&mut self, text: &str) {
+        let start = Instant::now();
+        while start.elapsed() < Duration::from_secs(5) {
+            if self
+                .trees(Duration::from_millis(50))
+                .last()
+                .is_some_and(|t| !t.contains(text))
+            {
+                return;
+            }
+        }
+        panic!("still {text:?} in {:?}", self.shown(Duration::ZERO));
+    }
+
     /// Types `keys` on the terminal.
     fn press(&self, keys: &str) {
         let written = unsafe { libc::write(self.lead, keys.as_ptr().cast(), keys.len()) };
@@ -143,6 +158,12 @@ impl Drop for Watch {
         let _ = self.child.wait();
         unsafe { libc::close(self.lead) };
     }
+}
+
+/// The watch's `PATH`: the home's `bin` folder, then the test's own.
+fn path(repo: &Repo) -> String {
+    let own = std::env::var("PATH").unwrap_or_default();
+    format!("{}:{own}", repo.home().join("bin").display())
 }
 
 /// `text` with no colour codes.
@@ -292,7 +313,7 @@ fn watch_on_a_terminal_prints_the_tree_again_when_its_width_changes() {
     let mut watch = Watch::start(&repo, &[&trail[..8]]);
     watch.until("thirty characters");
     watch.resize(30);
-    watch.until("\r\n  past thirty characters");
+    watch.until("\r\n    well past thirty");
     let trees = watch.trees(Duration::ZERO);
     assert!(trees.len() >= 2, "{trees:?}");
 }
@@ -312,10 +333,10 @@ fn watch_on_a_terminal_prints_the_tree_again_as_its_times_change() {
     assert!(watch.trees(Duration::ZERO).len() >= 2);
 }
 
-/// On an interrupt, `tree` leaves the alternate screen, prints the last tree whole and exits 0
-/// (`spec/02-cli.md`, "Watching").
+/// On an interrupt, `tree` leaves the alternate screen, prints nothing and exits 0 (`spec/02-cli.md`,
+/// "Watching").
 #[test]
-fn watch_leaves_the_last_tree_on_an_interrupt() {
+fn watch_leaves_nothing_on_an_interrupt() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the trail"]);
     let mut watch = Watch::start(&repo, &[&trail[..8]]);
@@ -325,10 +346,10 @@ fn watch_leaves_the_last_tree_on_an_interrupt() {
     assert_eq!(watch.child.wait().unwrap().code(), Some(0));
     let shown = watch.shown(Duration::from_millis(200));
     let (_, after) = shown.split_once("\x1b[?1049l").expect("the main screen");
-    assert!(after.contains("○ the trail\r\n"), "{shown:?}");
+    assert_eq!(after, "", "{shown:?}");
 }
 
-/// A watch spins a working step's mark and ends an active trail's second line with `active <time> ago`
+/// A watch spins a working step's mark and puts `last change <time> ago` on an active trail's second line
 /// (`spec/02-cli.md`, "Watching").
 #[test]
 fn watch_spins_a_working_step_and_says_when_the_trail_was_active() {
@@ -349,29 +370,45 @@ fn watch_spins_a_working_step_and_says_when_the_trail_was_active() {
     let last = trees.last().unwrap();
     assert!(!last.contains('◐'), "{last:?}");
     assert!(
-        last.contains(" · active ") && last.contains(" ago"),
+        last.contains(" · last change ") && last.contains(" ago · repo"),
         "{last:?}"
     );
 }
 
-/// A watch cuts a tree taller than the screen to end at its last row with `… <n> more lines`
-/// (`spec/02-cli.md`, "Watching").
+/// A watch prints its keys on the screen's last row, and scrolls a tree taller than the rows above
+/// them, with `↑ <n> more` and `↓ <n> more` rows; `G`, `g` and `PgDn` scroll it (`spec/02-cli.md`,
+/// "Watching").
 #[test]
-fn watch_cuts_a_tree_taller_than_the_screen() {
+fn watch_scrolls_a_tree_taller_than_the_screen() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the trail"]);
-    for n in 0..6 {
-        add(&repo, &["--under", &trail[..8], "--", &format!("step {n}")]);
+    for n in 0..20 {
+        add(
+            &repo,
+            &["--under", &trail[..8], "--", &format!("step {n:02}")],
+        );
     }
     let mut watch = Watch::start(&repo, &[&trail[..8]]);
     watch.until("the trail");
-    watch.size(5, 80);
-    watch.until("more lines");
+    watch.size(10, 80);
+    watch.until("↓ 15 more");
     let last = watch.trees(Duration::ZERO).pop().unwrap();
-    let lines: Vec<&str> = last.split("\r\n").collect();
-    assert_eq!(lines.len(), 5, "{last:?}");
-    assert_eq!(lines[3], "… 6 more lines", "{last:?}");
-    assert!(lines[4].starts_with("↑↓ select"), "{last:?}");
+    assert!(last.contains("\x1b[10;1H↑↓ select"), "{last:?}");
+    let rows: Vec<&str> = last
+        .split("\x1b[10;1H")
+        .next()
+        .unwrap()
+        .split("\r\n")
+        .collect();
+    assert_eq!(rows.len(), 9, "{last:?}");
+    assert_eq!(rows[8], "  ↓ 15 more", "{last:?}");
+    watch.press("G");
+    watch.until("↑ 15 more");
+    assert!(!watch.trees(Duration::ZERO).pop().unwrap().contains("  ↓ "));
+    watch.press("g");
+    watch.until("↓ 15 more");
+    watch.press("\x1b[6~");
+    watch.until("↑ 8 more");
 }
 
 /// A watch ends each tree with its keys, and `q` ends it as an interrupt does (`spec/02-cli.md`,
@@ -381,20 +418,19 @@ fn watch_names_its_keys_and_quits_on_q() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the trail"]);
     let mut watch = Watch::start(&repo, &[&trail[..8]]);
-    watch.until("↑↓ select · enter open · f full · a all · q quit");
+    watch.until(
+        "↑↓ select · ←→ close open · * open all under · c copy id · PgUp PgDn scroll · f full · a all · q quit",
+    );
     watch.press("q");
     assert_eq!(watch.child.wait().unwrap().code(), Some(0));
     let shown = watch.shown(Duration::from_millis(200));
     let (_, after) = shown.split_once("\x1b[?1049l").expect("the main screen");
-    assert!(
-        after.contains("○ the trail") && !after.contains("q quit"),
-        "{shown:?}"
-    );
+    assert_eq!(after, "", "{shown:?}");
     assert!(!shown.contains("qthe trail"), "{shown:?}");
 }
 
-/// `↓` selects a trail in reverse video, and `enter` opens a done trail into a block and closes it
-/// again (`spec/02-cli.md`, "Watching").
+/// `↓` selects a trail with the `›` cursor and its row in reverse video, and `enter` opens a done trail
+/// into a block and closes it again (`spec/02-cli.md`, "Watching").
 #[test]
 fn watch_selects_a_trail_and_opens_it_with_enter() {
     let repo = Repo::new();
@@ -407,7 +443,10 @@ fn watch_selects_a_trail_and_opens_it_with_enter() {
     watch.press("\x1b[B\x1b[B");
     std::thread::sleep(Duration::from_millis(300));
     let raw = String::from_utf8_lossy(&watch_raw(&mut watch)).into_owned();
-    assert!(raw.contains("\x1b[7man ended trail"), "{raw:?}");
+    assert!(raw.contains("\x1b[7m› "), "{raw:?}");
+    let last = watch.trees(Duration::ZERO).pop().unwrap();
+    assert!(last.contains("\r\n› ✓ an ended trail"), "{last:?}");
+    assert!(last.contains("\r\n  ○ an active trail"), "{last:?}");
     watch.press("\r");
     watch.until("its part");
     watch.press("\r");
@@ -454,4 +493,94 @@ fn watch_turns_full_and_all_on_with_keys() {
     watch.press("f");
     watch.press("a");
     watch.until("an old trail");
+}
+
+/// `↓` selects the steps of a block too, `enter` shows the lines `--full` prints under the selected
+/// step, and `c` copies its id's first 8 characters with `pbcopy` and says so (`spec/02-cli.md`,
+/// "Watching").
+#[test]
+fn watch_opens_a_step_and_copies_its_id() {
+    let repo = Repo::new();
+    let bin = repo.home().join("bin");
+    std::fs::create_dir_all(&bin).unwrap();
+    let copy = bin.join("pbcopy");
+    std::fs::write(&copy, "#!/bin/sh\ncat > \"$CELIS_HOME/copied\"\n").unwrap();
+    std::fs::set_permissions(&copy, std::os::unix::fs::PermissionsExt::from_mode(0o755)).unwrap();
+    let trail = add(&repo, &["--", "the trail"]);
+    let part = add(&repo, &["--under", &trail[..8], "--", "the part"]);
+    let o = cli(
+        &repo,
+        &["step", "done", &part[..8], "--as-planned", "--", "it works"],
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let mut watch = Watch::start(&repo, &[&trail[..8]]);
+    watch.until("the part");
+    watch.press("\x1b[B\x1b[B");
+    watch.until("\r\n› │ ✓ the part");
+    watch.press("\r");
+    watch.until("done    it works");
+    watch.press("c");
+    watch.until(&format!("copied {}", &part[..8]));
+    let copied = std::fs::read_to_string(repo.home().join("copied")).unwrap();
+    assert_eq!(copied, &part[..8]);
+}
+
+/// A block prints its rules before its steps, each cut to one line, and `enter` on a selected rule
+/// prints it whole, as `--full` does (`spec/02-cli.md`, "Watching").
+#[test]
+fn watch_opens_a_rule_whole() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    add(&repo, &["--under", &trail[..8], "--", "the part"]);
+    let rule = "When you price a senior: use cents, because floats lost a cent on the receipt.";
+    let scope = format!("trail:{}", &trail[..8]);
+    let o = cli(&repo, &["decide", "--scope", &scope, "--", rule]);
+    assert!(o.status.success(), "{}", err(&o));
+    let id = support::out(&o).trim()[..8].to_string();
+    let mut watch = Watch::start(&repo, &[&trail[..8]]);
+    watch.size(24, 60);
+    watch.until("│ § When you price");
+    let last = watch.trees(Duration::ZERO).pop().unwrap();
+    assert!(!last.contains("the receipt"), "{last:?}");
+    watch.press("\x1b[B\x1b[B");
+    watch.until("\r\n› │ § When you price");
+    watch.press("\r");
+    watch.until(&format!("│ § {id} When"));
+    watch.until("the receipt");
+}
+
+/// `*` opens the selected step and every step under it, and closes them all again; `←` on a closed
+/// step selects the step it is under, `→` opens it and `←` closes it (`spec/02-cli.md`, "Watching").
+#[test]
+fn watch_opens_and_closes_with_arrows_and_star() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    let parent = add(
+        &repo,
+        &["--under", &trail[..8], "--", "parent\nparent text"],
+    );
+    add(&repo, &["--under", &parent[..8], "--", "child\nchild text"]);
+    let mut watch = Watch::start(&repo, &[&trail[..8]]);
+    watch.until("child");
+    watch.press("\x1b[B\x1b[B");
+    watch.until("› │ ○ parent");
+    watch.press("*");
+    watch.until("parent text");
+    watch.until("child text");
+    watch.press("*");
+    watch.without("parent text");
+    watch.without("child text");
+    watch.press("\x1b[B");
+    watch.until("› │ │ ○ child");
+    watch.press("\x1b[D");
+    watch.until("› │ ○ parent");
+    watch.press("\x1b[C");
+    watch.until("parent text");
+    assert!(!watch
+        .trees(Duration::ZERO)
+        .pop()
+        .unwrap()
+        .contains("child text"));
+    watch.press("\x1b[D");
+    watch.without("parent text");
 }
