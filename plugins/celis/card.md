@@ -22,7 +22,8 @@ celis tree [<id>] [--full] [--all]
    `celis tree` prints: if it does, add it `--under <the trail's id>`. A trail ends when nothing in it is open. An
    ask that leaves the session's trail takes `--new`. It prints the ask's id
    first, and the trail's id second when it starts one. Write each rule the ask states with
-   `decide --scope trail:<the trail's id>`. Give the ask the project's own check.
+   `decide --scope trail:<the trail's id>`. Give the ask the project's own check. Give it `--uses <id>`
+   for each decision the agent brought that the ask keeps, and for each past work whose path it follows.
 4. Go from the global to the local, one step ahead. For a larger ask, add 2 to 5 steps `--under` it, one
    for each big shape of the work, with a title only. Take the shape that removes the most doubt, or that
    the others need, and add one step under it, one level more local, until a step is one small action:
@@ -30,7 +31,8 @@ celis tree [<id>] [--full] [--all]
    `expect: <the result>` on the line after its title. Add the next step after you close this one.
 5. For each step: `start`, and keep the decisions it prints. Do the work, then `done` with a proof a
    person can check: `--as-planned` when the result matches `expect`, else `--changed`. Add `--pitfall`
-   when something cost time. Replace a wrong shape with `--replaces <id>`.
+   when something cost time. Replace a wrong shape with `--replaces <id>`. When the work fixes a done
+   step, of this trail or a past one, add the fix with `--replaces <its id>`.
 6. When a step grows past one small action, or you try the same thing twice: stop. Write what you
    learned with `decide`, add smaller steps under the step, and take the first.
 7. Do what celis prints after a command. It names the next move.
