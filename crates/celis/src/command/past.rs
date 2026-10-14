@@ -8,17 +8,23 @@ use serde_json::json;
 use std::io::Write;
 
 impl Command {
-    /// Prints what `list` prints. Writes no record.
+    /// Prints what `list` prints, else a line that says there is nothing. Writes no record.
     pub(super) fn past(
         &self,
         args: &Args,
         out: &mut dyn Write,
         project: &Project,
     ) -> Result<(), Failure> {
-        if !self.held()? {
-            return Ok(());
+        let mut listed: Vec<u8> = Vec::new();
+        if self.held()? {
+            self.list(&self.trails()?, args, &mut listed, project)?;
         }
-        self.list(&self.trails()?, args, out, project)
+        if listed.is_empty() && !args.json {
+            return super::put(out, "No active trails, decisions or past work yet.");
+        }
+        out.write_all(&listed)
+            .map_err(anyhow::Error::from)
+            .map_err(Failure::from)
     }
 
     /// Prints the active trails of `project`, oldest first, each with its rules; then its live decisions at

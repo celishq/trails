@@ -3,53 +3,64 @@
 use celis_trails::Failure;
 
 /// The page: the reference for a person.
-pub const PAGE: &str = r#"celis keeps how you do your tasks. A trail is one task you give, the steps
-agents take toward it, and the decisions made on the way. Your agents use it
-through the celis plugin.
+pub const PAGE: &str = r#"celis remembers how your agents do your tasks. Each task you give becomes a
+trail: the steps your agents take and the decisions they make along the way.
+Your agents use celis through the celis plugin.
 
-Commands
-  decide   a decision, in its scope
-  tree     a trail and its steps, with their grades
-  past     this project's active trails and decisions, every project's past work
-  stats    what later work reused, and what it saved
-  report   trails as Markdown, for a pull request
-  issue    what went wrong, as Markdown for the celis team
-  link     keep this project's trails in a folder: the repo, or a synced drive
-  unlink   stop keeping this project's trails in a folder
-  step     the steps of a trail: add, start, done, drop, edit
-  auth     the account's phrase: login, status, phrase
-  update   this binary, to the latest release or a version
+Record work (your agents run these)
+  step     Add, start, finish, drop, or edit a step
+  decide   Record a decision
 
-$CELIS_HOME holds the phrase and the store.
+Read
+  tree     Show a trail and its steps
+  past     Show this project's active trails, decisions, and past work
+  stats    Show what reused work saved
+  report   Show trails as Markdown for a pull request
 
-See `celis <command> --help`."#;
+Set up
+  link     Keep this project's trails in a folder, like the repo or a drive
+  unlink   Stop keeping this project's trails in a folder
+  auth     Manage your recovery phrase
+  update   Update celis to the latest version, or to the one you choose
+  issue    Write a problem report for the celis team
+
+celis keeps your recovery phrase and records in $CELIS_HOME.
+
+To learn more about a command, run `celis <command> --help`."#;
 
 /// The page the words of a command line name, before any `--`; none when they run a command.
 pub fn named(args: &[String]) -> Option<String> {
     let words = words(args);
-    if words.is_empty() || words[0] == "help" {
-        return Some(PAGE.to_string());
+    if words.first() == Some(&"help") {
+        return Some(page_of(&words[1..]));
     }
-    if !args
+    let asked = args
         .iter()
         .take_while(|a| *a != "--")
-        .any(|a| a == "--help")
-    {
-        return None;
-    }
-    let group = GROUPS.iter().find(|(name, _)| words == [*name]);
-    Some(match (Verb::of(&words), group) {
-        (Some(verb), _) => verb.page(),
-        (None, Some((name, summary))) => group_page(name, summary),
-        (None, None) => PAGE.to_string(),
-    })
+        .any(|a| a == "--help" || a == "-h");
+    let group = words.len() == 1 && GROUPS.iter().any(|(name, ..)| words[0] == *name);
+    (words.is_empty() || asked || group).then(|| page_of(&words))
 }
 
-/// The help command for the words of a command line: `celis <command> --help`, else `celis help`.
+/// The page of `words`: the command page they name, else the group page, else the page.
+fn page_of(words: &[&str]) -> String {
+    let group = GROUPS.iter().find(|(name, ..)| words == [*name]);
+    match (Verb::of(words), group) {
+        (Some(verb), _) => verb.page(),
+        (None, Some(group)) => group_page(group),
+        (None, None) => PAGE.to_string(),
+    }
+}
+
+/// The help command for the words of a command line: `celis <command> --help`, else
+/// `celis <group> --help`, else `celis help`.
 pub fn see(args: &[String]) -> String {
-    match Verb::of(&words(args)) {
-        Some(verb) => format!("celis {} --help", verb.command),
-        None => "celis help".to_string(),
+    let words = words(args);
+    let group = GROUPS.iter().find(|(name, ..)| words.first() == Some(name));
+    match (Verb::of(&words), group) {
+        (Some(verb), _) => format!("celis {} --help", verb.command),
+        (None, Some((name, ..))) => format!("celis {name} --help"),
+        (None, None) => "celis help".to_string(),
     }
 }
 
@@ -84,69 +95,63 @@ fn edits(a: &str, b: &str) -> usize {
     row[b.len()]
 }
 
-/// The words of a command line before any `--`, without its flags.
+/// The words of a command line before any `--`, without its flags and `-h`.
 fn words(args: &[String]) -> Vec<&str> {
     args.iter()
         .map(String::as_str)
         .take_while(|a| *a != "--")
-        .filter(|a| !a.starts_with("--"))
+        .filter(|a| !a.starts_with("--") && *a != "-h")
         .collect()
 }
 
-/// The commands whose name has two words, by their first word, with what the group holds.
-pub const GROUPS: &[(&str, &str)] = &[
+/// A group: its first word, what it holds, and each of its commands with what it does.
+pub type Group = (
+    &'static str,
+    &'static str,
+    &'static [(&'static str, &'static str)],
+);
+
+/// The commands whose name has two words, by their first word: what the group holds, and each of its
+/// commands with what it does.
+pub const GROUPS: &[Group] = &[
     (
         "step",
-        "The steps of a trail: add one, then start, close, drop or edit it.",
+        "Add steps to a trail, then start, finish, drop, or edit them.",
+        &[
+            ("add", "Add a step to a trail, or start a new trail"),
+            ("start", "Start a step and show the decisions at its places"),
+            ("done", "Finish a step with proof that it works"),
+            (
+                "drop",
+                "Drop a step you no longer need, and the open steps under it",
+            ),
+            ("edit", "Change a step's title, places, or check"),
+        ],
     ),
     (
         "auth",
-        "The recovery phrase of your account, kept in $CELIS_HOME/phrase.",
+        "Manage your recovery phrase. celis keeps it in $CELIS_HOME/phrase.",
+        &[
+            ("login", "Save a recovery phrase and use its account"),
+            ("status", "Show your account and where its phrase is kept"),
+            ("phrase", "Show your recovery phrase"),
+        ],
     ),
 ];
 
-/// The page of the group `name`: its usage, `summary`, and each of its commands with the first sentence
-/// of what it does, wrapped under its column.
-fn group_page(name: &str, summary: &str) -> String {
-    let verbs: Vec<&Verb> = VERBS
-        .iter()
-        .filter(|v| v.command.split(' ').next() == Some(name) && v.command.contains(' '))
-        .collect();
-    let width = verbs
-        .iter()
-        .map(|v| v.command.len() - name.len() - 1)
-        .max()
-        .unwrap_or(0);
+/// The page of a group: its usage, what it holds, and each of its commands with what it does.
+fn group_page((name, summary, commands): &Group) -> String {
     let mut lines = vec![format!("celis {name} <command>"), String::new()];
     lines.extend(fill(summary));
     lines.push(String::new());
     lines.push("Commands".to_string());
-    for verb in verbs {
-        let command = &verb.command[name.len() + 1..];
-        let first = verb
-            .summary
-            .split(". ")
-            .next()
-            .unwrap_or("")
-            .trim_end_matches('.');
-        let indent = 2 + width + 4;
-        let mut wrapped: Vec<String> = vec![];
-        for word in first.split(' ') {
-            match wrapped.last_mut() {
-                Some(line) if indent + line.len() + 1 + word.len() <= 80 => {
-                    line.push(' ');
-                    line.push_str(word);
-                }
-                _ => wrapped.push(word.to_string()),
-            }
-        }
-        for (n, part) in wrapped.iter().enumerate() {
-            let head = if n == 0 { command } else { "" };
-            lines.push(format!("  {head:width$}    {part}"));
-        }
+    for (command, phrase) in *commands {
+        lines.push(format!("  {command:6}   {phrase}"));
     }
     lines.push(String::new());
-    lines.push(format!("See `celis {name} <command> --help`."));
+    lines.push(format!(
+        "To learn more about a command, run `celis {name} <command> --help`."
+    ));
     lines.join("\n")
 }
 
@@ -195,37 +200,37 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "past",
         usage: &["celis past [--at <place>]..."],
-        summary: "Print this project's active trails with their rules and its decisions, then the done asks and done trails of every project, newest first, one line each with its project, place, grade and day.",
-        args: &[("--at <place>", "a place whose decisions come first; zero or more")],
+        summary: "Show this project's active trails with their rules, and its decisions. Then show the finished work of every project, newest first, one line each with its project, place, grade, and day.",
+        args: &[("--at <place>", "A place whose decisions come first")],
         examples: &["celis past", "celis past --at shelf/prices.py"],
     },
     Verb {
         command: "stats",
         usage: &["celis stats [<id>] [--demo]"],
-        summary: "Print each step that later steps follow, with what they saved, then each decision steps used, then the total; with an id, the steps it follows and the steps that follow it. On a terminal, draw them as cards that update as work lands. Writes no record.",
+        summary: "Show each step that later work reused and what that saved, then each decision that steps followed, then the total. With an id, show what that step reused and what reused it. On a terminal, show them as cards that update as work lands. Changes nothing.",
         args: &[
-            ("<id>", "the step id, or a start of 4 or more characters; optional"),
-            ("--demo", "made-up trails of four weeks, in place of the store"),
+            ("<id>", "A step id, or its first 4 or more characters"),
+            ("--demo", "Show sample trails of four weeks"),
         ],
         examples: &["celis stats", "celis stats 9b0e11aa", "celis stats --demo"],
     },
     Verb {
         command: "report",
         usage: &["celis report <id>... [--demo]"],
-        summary: "Print the trail of each step the ids name as Markdown, for a pull request: a table of the trail, a table of its steps with their proofs, then their places and checks, and its rules. On a terminal, draw a card for each trail, and press m to copy the Markdown. Writes no record.",
+        summary: "Show the trail of each step as Markdown for a pull request: a table of the trail, a table of its steps with their proofs, then their places and checks, and its rules. On a terminal, show a card for each trail, and press m to copy the Markdown. Changes nothing.",
         args: &[
-            ("<id>", "a step id, or a start of 4 or more characters; one or more"),
-            ("--demo", "a made-up trail, in place of an id and the store"),
+            ("<id>", "A step id, or its first 4 or more characters"),
+            ("--demo", "Show a sample trail"),
         ],
         examples: &["celis report 3fa2c1d0", "celis report 3fa2c1d0 9e717e6f", "celis report --demo"],
     },
     Verb {
         command: "issue",
         usage: &["celis issue [<id>]... [-- <text>]"],
-        summary: "Print what went wrong as Markdown for the celis team: the text, the version, system, project and store, the last lines of the log, and the trail of each step the ids name. Writes no record.",
+        summary: "Write a problem report for the celis team as Markdown. It includes your text, the version, system, project, and store, the end of the log, and the trail of each step you name. Changes nothing.",
         args: &[
-            ("<id>", "a step id whose trail it adds; zero or more"),
-            ("<text>", "what went wrong; optional"),
+            ("<id>", "A step whose trail to include"),
+            ("<text>", "What went wrong"),
         ],
         examples: &[
             "celis issue -- \"celis prompt fails in each Cursor session\"",
@@ -235,25 +240,25 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "link",
         usage: &["celis link [<folder>]"],
-        summary: "Keep this project's trails in a folder, and sync it with the store both ways: .celis/trails/ in the repo, to commit them, or any folder, such as a synced drive. From now on, each command reads it and writes the project's records to it. Decisions with the me scope stay out.",
-        args: &[("<folder>", "the folder; default: .celis/trails in the top folder")],
+        summary: "Keep this project's trails in a folder, and keep the folder in sync with the store. Use .celis/trails/ in the repo to commit them, or any folder, like a synced drive. Decisions with the me scope stay private.",
+        args: &[("<folder>", "The folder (default: .celis/trails at the repo root)")],
         examples: &["celis link", "celis link ~/Drive/celis/shop"],
     },
     Verb {
         command: "unlink",
         usage: &["celis unlink [<folder>]"],
-        summary: "Stop keeping this project's trails in a folder on this machine. The folder and its records stay.",
-        args: &[("<folder>", "the folder; default: .celis/trails in the top folder")],
+        summary: "Stop keeping this project's trails in a folder on this computer. The folder and its records aren't deleted.",
+        args: &[("<folder>", "The folder (default: .celis/trails at the repo root)")],
         examples: &["celis unlink", "celis unlink ~/Drive/celis/shop"],
     },
     Verb {
         command: "decide",
         usage: &["celis decide [--scope <scope>] [--replaces <id>] -- <text>"],
-        summary: "Leave a decision, in its scope.",
+        summary: "Record a decision that later work must follow, in its scope.",
         args: &[
-            ("--scope <scope>", "at:<place>, trail:<id>, project or me; default: project"),
-            ("--replaces <id>", "the live decision it takes the place of; optional"),
-            ("<text>", "when it applies, what to do, and why"),
+            ("--scope <scope>", "at:<place>, trail:<id>, project, or me (default: project)"),
+            ("--replaces <id>", "The decision this one replaces"),
+            ("<text>", "When it applies, what to do, and why"),
         ],
         examples: &[
             "celis decide --scope at:shelf/prices.py \\",
@@ -263,65 +268,65 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "tree",
         usage: &["celis tree [<id>] [--full] [--all] [--demo]"],
-        summary: "Print a trail with its state, its rules and its steps with their grades; with no id, the active trails and those from today, of every project.",
+        summary: "Show a trail with its state, rules, and steps. With no id, show the active trails and today's trails of every project.",
         args: &[
-            ("<id>", "the step id, or a start of 4 or more characters; optional"),
-            ("--full", "add the proof, grade and reason under each step; optional"),
-            ("--all", "every trail of every project, by day, in place of an id; optional"),
-            ("--demo", "made-up trails in every state, in place of the store; optional"),
+            ("<id>", "A step id, or its first 4 or more characters"),
+            ("--full", "Also show each step's proof, grade, and reason"),
+            ("--all", "Show every trail of every project, by day"),
+            ("--demo", "Show sample trails in every state"),
         ],
         examples: &["celis tree 3fa2c1d0 --full", "celis tree --all"],
     },
     Verb {
         command: "prompt",
         usage: &["celis prompt"],
-        summary: "Read a hook's JSON on stdin, and record the person's prompt on the open trail of its session. A hook runs it on each prompt.",
+        summary: "Read a hook's JSON from stdin, and record the prompt on the open trail of its session. The plugin runs this on each prompt.",
         args: &[],
         examples: &["celis prompt < hook.json"],
     },
     Verb {
         command: "auth login",
         usage: &["celis auth login"],
-        summary: "Read a recovery phrase on stdin, keep it in $CELIS_HOME/phrase, and print the npub of its account. Every command signs as that account from now on. On a terminal it asks for the phrase, and does not show it.",
+        summary: "Save a recovery phrase from stdin in $CELIS_HOME/phrase, and show the npub of its account. celis signs every record with this account from now on. On a terminal, it asks for the phrase and hides what you type.",
         args: &[],
         examples: &["celis auth login", "celis auth login < phrase.txt"],
     },
     Verb {
         command: "auth status",
         usage: &["celis auth status"],
-        summary: "Print the npub of the account, and the path of its phrase. It never prints the phrase.",
+        summary: "Show your account's npub and where its phrase is kept. It never shows the phrase.",
         args: &[],
         examples: &["celis auth status"],
     },
     Verb {
         command: "auth phrase",
         usage: &["celis auth phrase"],
-        summary: "Print the kept recovery phrase, to give it to the Celis app or to another machine.",
+        summary: "Show your recovery phrase, so you can add it to the Celis app or another computer.",
         args: &[],
         examples: &["celis auth phrase"],
     },
     Verb {
         command: "update",
         usage: &["celis update [<version>]"],
-        summary: "Replace this celis with the build of a release from GitHub, by the install.sh of the latest release. With no version, it takes the latest, and does nothing when that is installed.",
+        summary: "Replace celis with a release build from GitHub, using the install.sh of the latest release. With no version, install the latest one, or do nothing if it's already installed.",
         args: &[
-            ("<version>", "the version to install, as 1.2.0 or v1.2.0; optional"),
+            ("<version>", "The version to install, like 1.2.0 or v1.2.0"),
         ],
         examples: &["celis update", "celis update 1.2.0"],
     },
     Verb {
         command: "step add",
         usage: &["celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>]... [--check <command>] [--new] [--session <id>] -- <text>"],
-        summary: "Leave a step. With no --under, it goes under the session's trail, else it starts a trail.",
+        summary: "Add a step. With no --under, it goes under the session's trail, or starts a new trail.",
         args: &[
-            ("--under <id>", "the open step it is a part of; optional"),
-            ("--replaces <id>", "a step it takes over, or a done step it fixes; optional"),
-            ("--uses <id>", "a decision it keeps, or a past step it follows; any"),
-            ("--at <place>", "file:line, a URL or any text; zero or more"),
-            ("--check <command>", "the command that proves the work; optional"),
-            ("--new", "a new trail, not a step of the session's trail; optional"),
-            ("--session <id>", "the session, when the hook names it; optional"),
-            ("<text>", "a short title, then the work a stranger can do"),
+            ("--under <id>", "The open step this step is part of"),
+            ("--replaces <id>", "A step this one takes over, or a finished step it fixes"),
+            ("--uses <id>", "A decision this step follows, or a past step it reuses"),
+            ("--at <place>", "A file:line, a URL, or any text"),
+            ("--check <command>", "A command that proves the work"),
+            ("--new", "Start a new trail, not a step of the session's trail"),
+            ("--session <id>", "The session, when the hook names it"),
+            ("<text>", "A short title, then details anyone can follow"),
         ],
         examples: &[
             "celis step add --under 3fa2c1d0 --check \"python3 -m unittest\" \\",
@@ -331,20 +336,20 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "step start",
         usage: &["celis step start <id>"],
-        summary: "Take up a step, and print the decisions at its places. It is working until it is done.",
-        args: &[("<id>", "the step id, or a start of 4 or more characters")],
+        summary: "Start a step and show the decisions at its places. The step stays in progress until it's done.",
+        args: &[("<id>", "A step id, or its first 4 or more characters")],
         examples: &["celis step start 4c1d22e0"],
     },
     Verb {
         command: "step done",
         usage: &["celis step done <id> [--changed <text>] [--as-planned] [--pitfall <text>] -- <proof>"],
-        summary: "Close a step with its proof and what changed, once the steps under it are done.",
+        summary: "Finish a step with its proof and what changed. Finish the steps under it first.",
         args: &[
-            ("<id>", "the step id, or a start of 4 or more characters"),
-            ("--changed", "how the work differs from the step's title"),
-            ("--as-planned", "the work did what the title says; give it or --changed"),
-            ("--pitfall", "what cost time, kept as a decision at the step's place"),
-            ("<proof>", "the check that failed before and passes now"),
+            ("<id>", "A step id, or its first 4 or more characters"),
+            ("--changed", "How the work differs from the step's title"),
+            ("--as-planned", "The work matches the title. Use this or --changed"),
+            ("--pitfall", "What cost time, saved as a decision at the step's place"),
+            ("<proof>", "The check that failed before and passes now"),
         ],
         examples: &[
             "celis step done 4c1d22e0 --as-planned --pitfall \"Run make_fixtures --yes.\" \\",
@@ -354,22 +359,22 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "step drop",
         usage: &["celis step drop <id> -- <reason>"],
-        summary: "Close a step whose work is no longer wanted, and each open step under it.",
+        summary: "Drop a step you no longer need, and each open step under it.",
         args: &[
-            ("<id>", "the step id, or a start of 4 or more characters"),
-            ("<reason>", "why the work is no longer wanted"),
+            ("<id>", "A step id, or its first 4 or more characters"),
+            ("<reason>", "Why you no longer need it"),
         ],
         examples: &["celis step drop 4c1d22e0 -- \"The person chose the shared table.\""],
     },
     Verb {
         command: "step edit",
         usage: &["celis step edit <id> [--at <place>]... [--check <command>] [-- <text>]"],
-        summary: "Give a step a new title, places or check. A title alone keeps the detail.",
+        summary: "Change a step's title, places, or check. A new title alone keeps the details.",
         args: &[
-            ("<id>", "the step id, or a start of 4 or more characters"),
-            ("--at <place>", "the places in place of the step's; zero or more"),
-            ("--check <command>", "the check in place of the step's; optional"),
-            ("<text>", "a new title, or a title and the detail; optional"),
+            ("<id>", "A step id, or its first 4 or more characters"),
+            ("--at <place>", "Places that replace the step's places"),
+            ("--check <command>", "A check that replaces the step's check"),
+            ("<text>", "A new title, or a title and details"),
         ],
         examples: &[
             "celis step edit 3fa2c1d0 -- \"Orange badges and buttons\"",
