@@ -2,22 +2,21 @@
 
 use serde_json::{json, Value};
 
-/// How the work of one closed step went: the seconds it took, and the steers that name it.
+/// How the work of one closed step went: the seconds it took.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Grade {
     pub took: u64,
-    pub steered: usize,
 }
 
 impl Grade {
     /// The text line printed under a done step.
     pub fn line(&self) -> String {
-        format!("took {} · steered {}", took(self.took), self.steered)
+        format!("took {}", took(self.took))
     }
 
     /// The `--json` value of this grade.
     pub fn value(&self) -> Value {
-        json!({"took": self.took, "steered": self.steered})
+        json!({"took": self.took})
     }
 }
 

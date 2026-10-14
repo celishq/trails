@@ -211,7 +211,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "prompt",
         usage: &["celis prompt"],
-        summary: "Read a hook's JSON on stdin, and record the person's prompt on the open trail of its session: a steer on the working step, else a prompt mark. A hook runs it on each prompt.",
+        summary: "Read a hook's JSON on stdin, and record the person's prompt on the open trail of its session. A hook runs it on each prompt.",
         args: &[],
         examples: &["celis prompt < hook.json"],
     },

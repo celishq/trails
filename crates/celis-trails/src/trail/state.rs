@@ -1,12 +1,11 @@
 //! Where one trail stands.
 
-/// Where one trail stands: active while open; reached alone or with help once done or ended with nothing
-/// open; dropped; or expired when it ended with a step open.
+/// Where one trail stands: active while open; reached once done or ended with nothing open; dropped; or
+/// expired when it ended with a step open.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum State {
     Active,
-    ReachedAlone,
-    ReachedWithHelp,
+    Reached,
     Dropped,
     Expired,
 }
@@ -16,14 +15,13 @@ impl State {
     pub fn text(self) -> &'static str {
         match self {
             State::Active => "active",
-            State::ReachedAlone => "reached alone",
-            State::ReachedWithHelp => "reached with help",
+            State::Reached => "reached",
             State::Dropped => "dropped",
             State::Expired => "expired",
         }
     }
 
     pub fn reached(self) -> bool {
-        matches!(self, State::ReachedAlone | State::ReachedWithHelp)
+        self == State::Reached
     }
 }

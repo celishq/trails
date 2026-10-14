@@ -7,9 +7,8 @@ use std::io::{Read, Write};
 use std::path::Path;
 
 impl Command {
-    /// Writes a hook's prompt as a steer on the oldest working step of the session's open trail, else on
-    /// the trail, signed now; prints its id, and names that step on `err`, then how a new ask joins a
-    /// trail. With no open trail, writes nothing, and names the agent that brings past work on `err`, once
+    /// Writes a hook's prompt on the session's open trail, signed now; prints its id, names the oldest
+    /// working step on `err`, then how a new ask joins a trail. With no open trail, writes nothing, and names the agent that brings past work on `err`, once
     /// a session. For a harness message, does neither. A compaction's `SessionStart` lets the session name
     /// the agent again.
     pub(super) fn prompt(

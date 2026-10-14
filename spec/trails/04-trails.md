@@ -34,7 +34,7 @@ The hook writes the person's prompts on the session's trail.
 ```
 ["session", "<session id>"]                  a step's tag, optional: the session that wrote it
 
-prompt kind 1985, a prompt while no step works
+prompt kind 1985, a prompt of the person
 { "kind": 1985, "content": "<the prompt's first line, 200 characters at most>",
   "tags": [["L", "celis.step"], ["l", "prompt", "celis.step"], ["e", "<trail id>"]] }
 ```
@@ -60,9 +60,9 @@ prompt kind 1985, a prompt while no step works
   MUST give its JSON to `prompt`.
 - With no open trail and no line for the past agent, it MUST print the join line when a trail of any
   project is one `tree` with no id prints. Else it MUST print nothing.
-- The prompt MUST be a steer on the oldest working step of the trail. With no working step, it MUST be a
-  prompt mark on the trail. Its text MUST be the prompt's first line, cut to 200 characters.
-- A reader MUST NOT count a prompt mark as a steer.
+- The prompt MUST be a prompt mark on the trail, also while a step works. Its text MUST be the prompt's
+  first line, cut to 200 characters.
+- A reader MUST ignore an old `steer` record.
 - `prompt` MUST write nothing for a prompt that starts with `<task-notification>` or `<agent-message`.
   The harness wrote it, not the person.
 - With a working step, `prompt` MUST then name it on stderr. The line asks for a step under it, or a
@@ -103,20 +103,19 @@ celis decide --scope trail:4c1d22e0 -- "A senior pays 80% of the price, rounded 
 ## State
 
 A trail has no state record. Its state comes from its tree, so the person can see which tasks the agent
-reached alone. A trail ends when no step under it is open, or 30 minutes after the newest record of its
+reached. A trail ends when no step under it is open, or 30 minutes after the newest record of its
 tree.
 
 ```
 active              not done, dropped or ended
-reached alone       done, or ended with no open step under it; no steer names a step of its tree
-reached with help   done, or ended with no open step under it; a steer names a step of its tree
+reached             done, or ended with no open step under it
 dropped             the trail is dropped
 expired             ended with an open step under it
 ```
 
 **Rules**
 
-- A reader MUST work out a trail's state from its tree, their `start`, `done`, `drop` and steer records,
+- A reader MUST work out a trail's state from its tree, their `start`, `done` and `drop` records,
   and the time.
 - The newest record of a tree MUST be the newest of its steps and the marks that name them.
 - A trail with steps under it MUST end when none of them is open.

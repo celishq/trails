@@ -231,7 +231,7 @@ impl<'a> Steps<'a> {
     }
 
     /// The state of the trail `note`: active while open, dropped when dropped, expired when it ended with
-    /// an open step, else reached alone or reached with help, as a steer names a step of its tree.
+    /// an open step, else reached.
     pub fn state(&self, note: &'a Note) -> State {
         if self.closed(&note.id).is_none() && !self.ended(note) {
             return State::Active;
@@ -244,10 +244,7 @@ impl<'a> Steps<'a> {
         if self.dropped(&note.id).is_some() {
             return State::Dropped;
         }
-        match tree.iter().any(|n| self.steers(&n.id) > 0) {
-            true => State::ReachedWithHelp,
-            false => State::ReachedAlone,
-        }
+        State::Reached
     }
 
     /// How the work of the done step `note` went; `None` while it is open.
@@ -257,13 +254,7 @@ impl<'a> Steps<'a> {
         let from = entry.start.unwrap_or(entry.note).created_at;
         Some(Grade {
             took: done.created_at.saturating_sub(from),
-            steered: entry.steers,
         })
-    }
-
-    /// The steers with content that name the step `id`.
-    pub fn steers(&self, id: &str) -> usize {
-        self.entry(id).map_or(0, |e| e.steers)
     }
 
     fn entry(&self, id: &str) -> Option<&Entry<'a>> {
@@ -287,7 +278,6 @@ struct Entry<'a> {
     children: Vec<&'a Note>,
     start: Option<&'a Note>,
     close: Option<(&'a Note, Status)>,
-    steers: usize,
     newest: u64,
 }
 
@@ -309,7 +299,6 @@ impl<'a> Index<'a> {
                         children: Vec::new(),
                         start: None,
                         close: None,
-                        steers: 0,
                         newest: note.created_at,
                     },
                 );
@@ -349,7 +338,6 @@ impl<'a> Entry<'a> {
             Mark::Drop { reason } if !reason.trim().is_empty() => {
                 self.close.get_or_insert((note, Status::Dropped));
             }
-            Mark::Steer { text } if !text.trim().is_empty() => self.steers += 1,
             Mark::Edit {
                 text,
                 places,

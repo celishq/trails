@@ -12,17 +12,17 @@ fn state(repo: &Repo, id: &str) -> String {
         .to_string()
 }
 
-/// A trail is active while open, reached alone when done with no steer in its tree, and reached with
-/// help when a steer names a step of its tree (`spec/trails/04-trails.md`, "State").
+/// A trail is active while open, and reached once done; a reader ignores an old steer
+/// (`spec/trails/04-trails.md`, "State").
 #[test]
-fn a_trails_state_comes_from_its_tree_and_its_steers() {
+fn a_trails_state_comes_from_its_tree_and_ignores_steers() {
     let repo = Repo::new();
     let alone = add(&repo, &["--", "alone"]);
     let part = add(&repo, &["--under", &alone[..8], "--", "part"]);
     assert_eq!(state(&repo, &alone), "active");
     finish(&repo, &part[..8]);
     finish(&repo, &alone[..8]);
-    assert_eq!(state(&repo, &alone), "reached alone");
+    assert_eq!(state(&repo, &alone), "reached");
 
     let helped = add(&repo, &["--", "helped"]);
     let part = add(&repo, &["--under", &helped[..8], "--", "part two"]);
@@ -31,7 +31,9 @@ fn a_trails_state_comes_from_its_tree_and_its_steers() {
     finish(&repo, &deeper[..8]);
     finish(&repo, &part[..8]);
     finish(&repo, &helped[..8]);
-    assert_eq!(state(&repo, &helped), "reached with help");
+    assert_eq!(state(&repo, &helped), "reached");
+    let tree = out(&cli(&repo, &["tree", &helped[..8], "--full"]));
+    assert!(!tree.contains("steered"), "{tree}");
 }
 
 /// A trail with steps under it and none open is reached at once; a new step under it makes it active
@@ -42,7 +44,7 @@ fn a_trail_with_no_open_step_under_it_is_reached_at_once() {
     let trail = add(&repo, &["--", "the trail"]);
     let part = add(&repo, &["--under", &trail[..8], "--", "part"]);
     finish(&repo, &part[..8]);
-    assert_eq!(state(&repo, &trail), "reached alone");
+    assert_eq!(state(&repo, &trail), "reached");
     let read = out(&cli(&repo, &["past"]));
     let active = format!("{} [repo] the trail", &trail[..8]);
     assert!(!read.lines().any(|l| l == active), "{read}");
@@ -70,7 +72,7 @@ fn a_trail_ends_thirty_minutes_after_its_newest_record() {
     done_note(&repo, &account(), &part, old);
     let left = step_note(&repo, &account(), None, "left", old);
     let open = step_note(&repo, &account(), Some(&left), "open part", old);
-    assert_eq!(state(&repo, &finished.id), "reached alone");
+    assert_eq!(state(&repo, &finished.id), "reached");
     assert_eq!(state(&repo, &left.id), "expired");
     let tree = out(&cli(&repo, &["tree", &left.id[..8]]));
     assert!(
@@ -102,5 +104,5 @@ fn a_sessions_trail_with_no_end_ends_thirty_minutes_after_its_newest_record() {
     let recent = trail("ten minutes ago", now() - 10 * 60);
     let quiet = trail("an hour ago", now() - 60 * 60);
     assert_eq!(state(&repo, &recent.id), "active");
-    assert_eq!(state(&repo, &quiet.id), "reached alone");
+    assert_eq!(state(&repo, &quiet.id), "reached");
 }

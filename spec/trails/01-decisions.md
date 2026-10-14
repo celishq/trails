@@ -14,7 +14,7 @@ machine shares it.
 
 ```
 $CELIS_HOME/trails/
-  shared/<created_at>-<id>.json    one record: a step, a done, a steer, a decision
+  shared/<created_at>-<id>.json    one record: a step, a done, a prompt, a decision
 
 $CELIS_HOME   CIP-02, "Commands"
 ```

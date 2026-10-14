@@ -265,8 +265,8 @@ impl Trails {
         })
     }
 
-    /// Writes a hook's prompt `text` as a steer on the oldest working step of `trail`, else as a prompt
-    /// mark on the trail; gives back the record and the working step.
+    /// Writes a hook's prompt `text` as a prompt mark on `trail`; gives back the record and the oldest
+    /// working step of the trail.
     pub fn prompt<'a>(
         &self,
         steps: &Steps<'a>,
@@ -278,11 +278,8 @@ impl Trails {
             .into_iter()
             .skip(1)
             .find(|n| steps.status(&n.id) == Status::Working);
-        let (mark, on) = match working {
-            Some(step) => (Mark::Steer { text }, step),
-            None => (Mark::Prompt { text }, trail),
-        };
-        let record = self.sign(|account, now| mark.record(account, &on.id, now))?;
+        let mark = Mark::Prompt { text };
+        let record = self.sign(|account, now| mark.record(account, &trail.id, now))?;
         Ok((record, working))
     }
 
@@ -331,11 +328,10 @@ impl Trails {
         let ask = steps.is_ask(note);
         let trail = steps.trail(note);
         let asked = self.records.iter().filter_map(|record| {
-            let (on, Mark::Prompt { text } | Mark::Steer { text }) = Mark::read(record)? else {
+            let (on, Mark::Prompt { text }) = Mark::read(record)? else {
                 return None;
             };
-            let during = ask && on == trail.id && record.created_at >= note.created_at;
-            (during || tree.iter().any(|n| n.id == on)).then_some(text)
+            (on == trail.id && record.created_at >= note.created_at).then_some(text)
         });
         let step = steps.step(note);
         let under = step.as_ref().and_then(|s| s.under.clone());

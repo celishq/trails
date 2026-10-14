@@ -131,7 +131,7 @@ text  celis: <id, first 8> is done; compare the result with its plan:
         added   <id, first 8> <title>                  each step under it added after the first started
         dropped <id, first 8> <title> · <reason>       each step under it dropped
         changed <id, first 8> <text>                   each done step under it with a changed, then its own
-        asked   <text>                                 each steer and prompt on its tree
+        asked   <text>                                 each prompt on its trail since the step
         open    <id, first 8> <title>                  each open step beside it
       celis: <the next move>
 
@@ -146,27 +146,10 @@ next move  ask      celis: write what a later plan should keep as rules with cel
 
 - `done` MUST print the review of the step it closed, every time.
 - `planned` MUST count the steps under it written before the first of them started.
-- On an ask, `asked` MUST also hold each prompt on its trail since the ask.
 - `open` MUST list the open steps under the step's `under`, other than the step.
 - The next move of an ask MUST be its `ask` line. Else, a done `--changed` MUST print the `changed`
   line, and any other done the `planned` line.
 - A trail's review MUST NOT print a next move.
-
-## Steering
-
-A steer records what the person asked for while a step was open, so the trail shows which steps the
-person had to steer. The prompt hook writes it (CIP-04, "Sessions").
-
-```json
-steer  kind 1985, signed by an agent (NIP-32)
-{ "kind": 1985, "content": "<what the person asked, in one sentence>",
-  "tags": [["L", "celis.step"], ["l", "steer", "celis.step"], ["e", "<step id>"]] }
-```
-
-**Rules**
-
-- A steer MUST NOT close its step.
-- A reader MUST ignore a steer with no content.
 
 ## Dropping
 
@@ -297,7 +280,6 @@ A grade shows how the work of a closed step went, so a new plan can follow the b
 ```
 took      the time from the step's first `start` to the `done` that settled it; with no `start`, from
           the step
-steered   the steers that name it
 ```
 
 **Rules**
@@ -306,6 +288,6 @@ steered   the steers that name it
 - `tree --full` MUST print a done step's grade under it, after its proof.
 
 ```
-text   took <45s | 1m 30s | 2h 5m | 3d 2h> · steered <n>
-json   "grade": {"took": <seconds>, "steered": 0}
+text   took <45s | 1m 30s | 2h 5m | 3d 2h>
+json   "grade": {"took": <seconds>}
 ```

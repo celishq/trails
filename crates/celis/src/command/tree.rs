@@ -547,8 +547,7 @@ fn cut(line: &str, width: usize) -> String {
 fn trail_look(state: State) -> (&'static str, &'static str) {
     match state {
         State::Active => ("●", "33"),
-        State::ReachedAlone => ("✓", "32"),
-        State::ReachedWithHelp => ("✓", "36"),
+        State::Reached => ("✓", "32"),
         State::Dropped => ("✗", "31"),
         State::Expired => ("!", "31"),
     }

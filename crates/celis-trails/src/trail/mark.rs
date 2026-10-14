@@ -5,18 +5,14 @@ use anyhow::Result;
 use celis_nostr::{Account, Note};
 
 /// What an agent does to a step: takes it up, closes it done with its proof and what changed from its
-/// plan, records what the person
-/// asked for while it was open, or drops it with the reason its work is no longer wanted. It gives a step
-/// a new title or text, places or check. On a trail, the hook records a prompt while no step works.
+/// plan, or drops it with the reason its work is no longer wanted. It gives a step a new title or text,
+/// places or check. On a trail, the hook records the person's prompt.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Mark {
     Start,
     Done {
         proof: String,
         changed: Option<String>,
-    },
-    Steer {
-        text: String,
     },
     Drop {
         reason: String,
@@ -37,7 +33,6 @@ impl Mark {
         let (label, content) = match self {
             Mark::Start => ("start", ""),
             Mark::Done { proof, .. } => ("done", proof.as_str()),
-            Mark::Steer { text } => ("steer", text.as_str()),
             Mark::Drop { reason } => ("drop", reason.as_str()),
             Mark::Edit { text, .. } => ("edit", text.as_str()),
             Mark::Prompt { text } => ("prompt", text.as_str()),
@@ -75,9 +70,6 @@ impl Mark {
             "done" => Mark::Done {
                 proof: note.content.clone(),
                 changed: note.tag("changed").map(str::to_string),
-            },
-            "steer" => Mark::Steer {
-                text: note.content.clone(),
             },
             "drop" => Mark::Drop {
                 reason: note.content.clone(),

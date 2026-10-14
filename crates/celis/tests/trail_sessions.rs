@@ -114,11 +114,11 @@ fn hook(repo: &Repo, hook: &str, json: serde_json::Value) -> std::process::Outpu
     o
 }
 
-/// `prompt` writes a hook's prompt as a steer on the oldest working step of the session's open trail,
-/// else as a prompt mark on the trail, its first line cut to 200 characters; with no such trail, it writes
-/// nothing (`spec/trails/04-trails.md`, "Sessions").
+/// `prompt` writes a hook's prompt as a prompt mark on the session's open trail, also while a step
+/// works, its first line cut to 200 characters; with no such trail, it writes nothing
+/// (`spec/trails/04-trails.md`, "Sessions").
 #[test]
-fn prompt_writes_the_prompt_as_a_steer_or_a_prompt_mark_on_the_sessions_trail() {
+fn prompt_writes_the_prompt_as_a_prompt_mark_on_the_sessions_trail() {
     let repo = Repo::new();
     let hook = |session: &str, prompt: &str| {
         let json = serde_json::json!({"session_id": session, "prompt": prompt}).to_string();
@@ -137,17 +137,21 @@ fn prompt_writes_the_prompt_as_a_steer_or_a_prompt_mark_on_the_sessions_trail() 
     let long = "x".repeat(300);
     assert!(hook("s1", &long).status.success());
     assert_eq!(out(&hook("s2", "another session")), "");
-    assert_eq!(marks(&repo, "steer"), [(step.clone(), "x".repeat(200))]);
+    assert_eq!(marks(&repo, "steer"), []);
+    let mut prompts = marks(&repo, "prompt");
+    prompts.sort();
     assert_eq!(
-        marks(&repo, "prompt"),
-        [(trail.clone(), "make it blue".to_string())]
+        prompts,
+        [
+            (trail.clone(), "make it blue".to_string()),
+            (trail.clone(), "x".repeat(200))
+        ]
     );
 }
 
-/// A prompt mark is no steer: a trail asked twice is still reached alone (`spec/trails/04-trails.md`,
-/// "Sessions").
+/// A trail asked twice is reached (`spec/trails/04-trails.md`, "Sessions").
 #[test]
-fn a_prompt_mark_is_no_steer() {
+fn a_trail_asked_twice_is_reached() {
     let repo = Repo::new();
     let written = ids(&repo, Some("s1"), "the trail");
     let trail = &written[1];
@@ -159,7 +163,7 @@ fn a_prompt_mark_is_no_steer() {
     support::finish(&repo, &written[0][..8]);
     support::finish(&repo, &trail[..8]);
     let head = objects(&repo, &["tree", &trail[..8]]);
-    assert_eq!(head[0]["trail"]["state"], "reached alone", "{head:?}");
+    assert_eq!(head[0]["trail"]["state"], "reached", "{head:?}");
 }
 
 /// `step add --new` starts a second trail, which takes the session's next steps

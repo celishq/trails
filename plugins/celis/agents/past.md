@@ -14,7 +14,7 @@ in your prompt. Run only `celis` commands, and change no file.
    - the past work of every project, one line each: its id, `[project]`, title, place, grade or state,
      and day.
 2. Choose up to 3 past work lines whose work is the same kind of task as the ask. Prefer the same
-   project, the same places, few steers, and newer days. Choose none when no line fits. The ask can be
+   project, the same places, and newer days. Choose none when no line fits. The ask can be
    in another language than the lines.
 3. Run `celis tree <id> --full` for each line you chose.
 

@@ -21,7 +21,7 @@ A CIP is one feature in one numbered file, `NN-name.md`, opening with frontmatte
 |---|---|---|---|
 | 01 | Decisions | the store, projects, the account, decisions, their scope, how they are read | — |
 | 02 | The command line | `celis`: commands, help, output and errors | CIP-01 |
-| 03 | Steps | the step, its project, closing, steering, grades, `celis step` | CIP-01, 02 |
+| 03 | Steps | the step, its project, closing, grades, `celis step` | CIP-01, 02 |
 | 04 | Trails | the trail, its rules, its state, `celis tree`, the past, watching | CIP-01, 02, 03 |
 | 05 | Reports | `celis report`: trails as Markdown for a pull request; the log; `celis issue` | CIP-01, 02, 03, 04 |
 
@@ -40,10 +40,9 @@ A CIP is one feature in one numbered file, `NN-name.md`, opening with frontmatte
 | 1111 with `step` in `celis.step` | kind: a step (NIP-22) | 03 |
 | 1985 with `done` in `celis.step` | kind: a done (NIP-32) | 03 |
 | 1985 with `start` in `celis.step` | kind: a start (NIP-32) | 03 |
-| 1985 with `steer` in `celis.step` | kind: a steer (NIP-32) | 03 |
 | 1985 with `drop` in `celis.step` | kind: a drop (NIP-32) | 03 |
 | 1985 with `edit` in `celis.step` | kind: an edit (NIP-32) | 03 |
-| 1985 with `prompt` in `celis.step` | kind: a prompt while no step works (NIP-32) | 04 |
+| 1985 with `prompt` in `celis.step` | kind: a prompt of the person (NIP-32) | 04 |
 | `under` · `replaces` · `at` · `check` | step tags; an old `file` reads as an `at` | 03 |
 | `figma:<key>` · `web:<host>` | project id of a step outside git | 03 |
 | `no-step` · `closed` · `open-steps` · `check-failed` | errors | 03 |
@@ -61,7 +60,6 @@ A CIP is one feature in one numbered file, `NN-name.md`, opening with frontmatte
 | `rule` | a live decision whose scope is a trail |
 | `scope` | where a decision holds: a place, a trail, the project, or every project |
 | `step` | one part of the work toward a trail, at a place: open, working, done or dropped |
-| `steer` | what you asked for while a step was open, written by the prompt hook |
 | `decision` | one sentence an agent writes, that holds in its scope until another replaces it |
 | `live` | a decision no other decision replaces |
 | `place` | a file, a `file:line`, a folder or a URL that a step or a decision is at |

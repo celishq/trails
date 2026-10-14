@@ -159,7 +159,7 @@ pub fn put(repo: &Repo, note: &Note) {
     Store::open(&repo.home()).unwrap().write(note).unwrap();
 }
 
-/// Writes a steer with `text` on the step `id`, as the prompt hook does.
+/// Writes an old steer record with `text` on the step `id`.
 pub fn steer(repo: &Repo, id: &str, text: &str) {
     let tags: Vec<Vec<String>> = vec![
         vec!["L".into(), "celis.step".into()],
