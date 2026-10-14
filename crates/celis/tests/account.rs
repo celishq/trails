@@ -93,7 +93,7 @@ fn every_command_signs_as_the_account() {
 }
 
 /// A phrase on stdin becomes the account every command signs as, the one the app gives for it, and the
-/// key of older versions goes (`spec/trails/01-decisions.md`, "The account").
+/// key of older versions goes (`spec/trails/02-cli.md`, "Auth").
 #[test]
 fn auth_login_keeps_the_phrase_stdin_gives() {
     let repo = Repo::plain();
@@ -114,7 +114,7 @@ fn auth_login_keeps_the_phrase_stdin_gives() {
 }
 
 /// `auth login` refuses a phrase given as words, and a text that is no phrase, and keeps its phrase
-/// (`spec/trails/01-decisions.md`, "The account").
+/// (`spec/trails/02-cli.md`, "Auth").
 #[test]
 fn auth_login_refuses_a_phrase_in_its_words_and_a_bad_phrase() {
     let repo = Repo::plain();
@@ -132,7 +132,7 @@ fn auth_login_refuses_a_phrase_in_its_words_and_a_bad_phrase() {
 }
 
 /// `auth` has only `login`, `status` and `phrase`: `new` and `logout` are no commands, since a written
-/// record mints a phrase and removing the file forgets it (`spec/trails/01-decisions.md`, "The account").
+/// record mints a phrase and removing the file forgets it (`spec/trails/02-cli.md`, "Auth").
 #[test]
 fn auth_has_no_new_and_no_logout() {
     let repo = Repo::plain();
@@ -149,7 +149,7 @@ fn auth_has_no_new_and_no_logout() {
 }
 
 /// `auth status` prints the npub and the path, never the phrase; `auth phrase` prints the phrase
-/// (`spec/trails/01-decisions.md`, "The account").
+/// (`spec/trails/02-cli.md`, "Auth").
 #[test]
 fn auth_status_shows_the_npub_and_auth_phrase_the_phrase() {
     let repo = Repo::plain();
@@ -167,7 +167,7 @@ fn auth_status_shows_the_npub_and_auth_phrase_the_phrase() {
 }
 
 /// With no phrase, `auth status` and `auth phrase` refuse and mint none
-/// (`spec/trails/01-decisions.md`, "The account").
+/// (`spec/trails/02-cli.md`, "Auth").
 #[test]
 fn auth_status_and_phrase_refuse_without_a_phrase() {
     let repo = Repo::plain();

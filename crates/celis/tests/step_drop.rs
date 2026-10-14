@@ -34,7 +34,7 @@ fn drop_closes_the_step_and_the_open_steps_under_it() {
 }
 
 /// A dropped trail has the state `dropped`; `tree` marks a dropped trail and step `✗`, with no state word,
-/// with its reason under it, and gives it no grade (`spec/trails/04-trails.md`, "The commands").
+/// with its reason under it, and gives it no grade (`spec/trails/02-cli.md`, "Tree").
 #[test]
 fn tree_marks_a_dropped_step_with_its_reason_and_no_grade() {
     let repo = Repo::new();
@@ -61,7 +61,7 @@ fn tree_marks_a_dropped_step_with_its_reason_and_no_grade() {
 }
 
 /// A drop with no reason is a usage error, and `drop` refuses an unknown step with `no-step` and a closed
-/// one with `closed` (`spec/trails/03-steps.md`, "The commands").
+/// one with `closed` (`spec/trails/02-cli.md`, "Step").
 #[test]
 fn drop_refuses_an_empty_reason_and_unknown_and_closed_steps() {
     let repo = Repo::new();

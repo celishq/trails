@@ -3,7 +3,6 @@
 use std::process::{Command, Output};
 
 const CLI: &str = include_str!("../../../spec/trails/02-cli.md");
-const STEPS: &str = include_str!("../../../spec/trails/03-steps.md");
 const CARD: &str = include_str!("../../../plugins/celis/card.md");
 
 fn run(args: &[&str]) -> Output {
@@ -52,12 +51,10 @@ fn squeeze(text: &str) -> String {
     text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
-/// Each command of the spec with its usage: `decide`, `tree` and `past` of CIP-02, and the step
-/// commands of CIP-03.
+/// Each command of the spec with its usage, as CIP-02 lists them.
 fn usages() -> Vec<(String, String)> {
     let mut found = Vec::new();
-    let lines = blocks(CLI, "Commands")[0].clone() + "\n" + &blocks(STEPS, "The commands")[0];
-    for line in lines
+    for line in blocks(CLI, "Commands")[0]
         .lines()
         .filter(|l| l.starts_with("celis ") && !l.contains(" | "))
     {

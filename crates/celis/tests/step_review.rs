@@ -73,7 +73,7 @@ fn done_changed_asks_to_reshape_the_plan() {
     );
 }
 
-/// A trail's review names no next move (`spec/trails/03-steps.md`, "Reviewing").
+/// A trail's review names no next move (`spec/trails/02-cli.md`, "Step").
 #[test]
 fn a_trails_review_names_no_next_move() {
     let repo = Repo::new();

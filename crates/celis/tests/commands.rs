@@ -34,7 +34,7 @@ fn project(id: &str) -> (&str, &str) {
 }
 
 /// `past` prints the active trails, oldest first, each with its rules, then the live decisions that are no
-/// rule, then the past work (`spec/trails/04-trails.md`, "The past").
+/// rule, then the past work (`spec/trails/02-cli.md`, "Past").
 #[test]
 fn past_prints_the_trails_with_their_rules_then_the_decisions_then_the_past_work() {
     let repo = Repo::new();
@@ -104,7 +104,7 @@ fn past_prints_a_reached_trail_only_as_past_work() {
     assert!(lines[0].starts_with(&format!("{} [repo] reached · ", short(&reached.id))));
 }
 
-/// `past` prints a decision at a place only for an `--at` place it is at (`spec/trails/04-trails.md`, "The past").
+/// `past` prints a decision at a place only for an `--at` place it is at (`spec/trails/02-cli.md`, "Past").
 #[test]
 fn past_prints_a_decision_at_a_place_only_at_its_at_place() {
     let repo = Repo::new();
@@ -137,7 +137,7 @@ fn past_prints_a_decision_at_a_place_only_at_its_at_place() {
     assert_eq!(ids(&["past", "--at", "b.py"]), [short(&b.id)]);
 }
 
-/// `past` prints every live decision, those at an `--at` place first, then the newest (`spec/trails/04-trails.md`, "The past").
+/// `past` prints every live decision, those at an `--at` place first, then the newest (`spec/trails/02-cli.md`, "Past").
 #[test]
 fn past_prints_every_decision_those_at_a_place_first() {
     let repo = Repo::new();
@@ -171,7 +171,7 @@ fn past_prints_every_decision_those_at_a_place_first() {
     assert_eq!(got[35], short(&others[0].id));
 }
 
-/// `past` writes no record (`spec/trails/04-trails.md`, "The past").
+/// `past` writes no record (`spec/trails/02-cli.md`, "Past").
 #[test]
 fn past_writes_no_record() {
     let repo = Repo::new();

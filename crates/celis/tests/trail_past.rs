@@ -79,7 +79,7 @@ fn past_lists_the_ask_in_place_of_a_trail_of_its_text() {
 }
 
 /// `past` prints each past work on one line: its id, project, title and place, its grade, and its day
-/// (`spec/trails/04-trails.md`, "The past").
+/// (`spec/trails/02-cli.md`, "Past").
 #[test]
 fn past_prints_one_tagged_line_for_each_past_work() {
     let repo = Repo::new();
@@ -101,7 +101,7 @@ fn past_prints_one_tagged_line_for_each_past_work() {
 }
 
 /// `past --json` prints each past work as a `past` object with its tags
-/// (`spec/trails/04-trails.md`, "The past").
+/// (`spec/trails/02-cli.md`, "Past").
 #[test]
 fn past_json_carries_each_past_works_tags() {
     let repo = Repo::new();

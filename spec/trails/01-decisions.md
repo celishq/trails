@@ -7,26 +7,28 @@ depends: []
 
 # CIP-01 — Decisions
 
+A decision is one sentence that holds in its scope until another replaces it. An agent writes it when it
+learns a rule that later work must keep. This CIP lets a reader know which decisions hold at a place, in
+a trail, in a project and in every project. It also defines the store, the project and the account that
+every other CIP uses.
+
 ## The store
 
-The store holds the trails, steps and decisions of every project on this machine. Every agent on the
-machine shares it.
+The store holds the records of every project on this machine. Every agent on the machine shares it.
 
 ```
 $CELIS_HOME/trails/
-  shared/<created_at>-<id>.json    one record: a step, a done, a steer, a decision
-
-$CELIS_HOME   CIP-02, "Commands"
+  shared/<created_at>-<id>.json    one record, as NIP-01 JSON
 ```
 
-**Rules**
+**Meaning**
 
-- A command MUST open the store in `$CELIS_HOME/trails/`, whatever the working folder.
-- With no store, `past` and `tree` MUST answer as an empty store, and write nothing.
-- With no store, every other command MUST create it.
-- A record MUST be written to a file named `<created_at>-<id>.json`, holding the record as NIP-01 JSON.
+- A writer and a reader MUST use the store in `$CELIS_HOME/trails/`, whatever the working folder.
+- A writer MUST write a record to a file named `<created_at>-<id>.json`, holding the record as NIP-01
+  JSON. It MUST create the store when there is none.
 - A record file MUST NOT change once written. A reader MUST NOT see a file that is half written.
 - A reader MUST skip a file that does not parse or whose record does not verify.
+- A reader MUST read no store as an empty store, and MUST create nothing.
 
 ## Projects
 
@@ -39,7 +41,7 @@ project id     the first commit of the git repo that holds the working folder: t
 project name   the name of the main checkout's folder; else of the working folder
 ```
 
-**Rules**
+**Meaning**
 
 - Every clone and every worktree of one repo MUST give the same project id.
 - The name MUST NOT change the project id.
@@ -55,33 +57,22 @@ three share one store; C reads only the decisions of `shop`.
 
 ## The account
 
+Every record is signed by the account. The phrase gives the account.
+
 ```
 phrase    $CELIS_HOME/phrase: 12 BIP-39 words, minted on first use when it does not exist
 account   the key the phrase gives (`celis-nostr`)
-
-celis auth   CIP-02, "Commands"
 ```
 
-**Rules**
+**Meaning**
 
-- The engine MUST write `$CELIS_HOME/phrase` readable by its owner alone. Two commands that mint at once
+- A writer MUST write `$CELIS_HOME/phrase` readable by its owner alone. Two writers that mint at once
   MUST end with one phrase.
 - A phrase MUST give the account the Celis app gives for it.
-- A command MUST mint a phrase only when it writes a record.
-- Every record that verifies MUST count, whatever account signed it.
-- Every command MUST sign as the account. An agent that works for you signs as you.
-- `auth login` MUST read the phrase from stdin. On a terminal, it MUST NOT echo the phrase.
-- `auth login` MUST refuse a phrase given as words of the command, as a usage error.
-- `auth login` MUST refuse a text that is not a BIP-39 phrase, and keep the phrase it had.
-- `auth status` MUST NOT print the phrase. With `--json`, it MUST print `{"npub", "path"}`.
-- `auth status` and `auth phrase` MUST refuse when no phrase is kept, and MUST NOT mint one.
-- `auth` MUST have only `login`, `status` and `phrase`. You forget a phrase by removing its file.
-- `auth login` MUST remove `$CELIS_HOME/key`, the key of older versions.
-
-**Examples**
-
-You copy the phrase from the Celis app and run `celis auth login`. The steps you add now count in the
-app's account. The steps the old phrase signed still count.
+- A writer MUST mint a phrase only when it writes a record.
+- A writer MUST sign every record as the account. An agent that works for you signs as you.
+- A record MUST NOT carry the phrase or the account's secret.
+- A reader MUST count every record that verifies, whatever account signed it.
 
 > **Why every signer counts.** Records from your other accounts, and later from other people over the
 > wire, land in one store. A record the store holds is one you chose to keep.
@@ -90,9 +81,6 @@ app's account. The steps the old phrase signed still count.
 > system. The Keychain can hold it later.
 
 ## Decisions
-
-A decision is one sentence that holds until another replaces it. An agent writes it, signed as your
-account, when it learns a rule that later work must keep. Each holds in its scope.
 
 ```json
 kind 1111, signed by the account (NIP-22)
@@ -108,11 +96,20 @@ kind 1111, signed by the account (NIP-22)
   "content": "When <what you see>: <what to do>, because <why>." }
 ```
 
-**Rules**
+```
+scope      where the decision holds ("Scope")
+replaces   the decision this one takes the place of
+```
 
-- A decision MUST be live until another decision names it in `replaces`.
+**Meaning**
+
+- A decision MUST carry content, the anchor `project:<project id>` and the project name.
 - A reader MUST ignore cairns (kind 1111 in `celis.cairn`), ratings (kind 7), outcomes (`celis.outcome`),
   source records (`celis.source`) and splits a store holds from before.
+
+**Derived**
+
+- A decision is live until another decision names it in `replaces`.
 
 **Examples**
 
@@ -125,8 +122,7 @@ kind 1111, signed by the account (NIP-22)
 
 ## Scope
 
-A decision holds in its scope. A scope is narrow or wide, so a rule for one file and a rule for all your
-work can live in one store.
+A scope is narrow or wide, so a rule for one file and a rule for all your work can live in one store.
 
 ```
 at:<place>        at one place of its project: a file, a file:line, a folder or a URL
@@ -135,8 +131,9 @@ project           in its project; a decision with no `scope` tag
 me                in every project
 ```
 
-**Rules**
+**Meaning**
 
+- A writer MUST write the whole id of the trail that `trail:<id>` names.
 - A reader MUST count a decision with no `scope` tag as `project`.
 - A reader MUST give a `me` decision in every project. It MUST give any other decision only in its own
   project.
@@ -151,36 +148,36 @@ me                   "When you write a commit message: use plain words, because 
 
 ## Places
 
-A place is a file, a `file:line`, a folder or a URL. A command writes and reads a path from the project's
-top folder. So `./a.rs`, a path from a subfolder and the full path name one place.
+A place is a file, a `file:line`, a folder or a URL. A record holds a path from the project's top folder,
+so `./a.rs`, a path from a subfolder and the full path name one place.
 
-**Rules**
+**Meaning**
 
-- A command MUST resolve a place that is a path against the working folder, and drop its `.` and `..`.
-- A command MUST write and read that path from the project's top folder. A `:<line>` MUST stay at its end.
-- A command MUST keep a URL, and a path outside the project's top folder, as it was given.
+- A writer MUST resolve a place that is a path against the working folder, and drop its `.` and `..`.
+- A writer MUST write that path from the project's top folder. A `:<line>` MUST stay at its end.
+- A writer MUST keep a URL, and a path outside the project's top folder, as it was given.
 
 **Examples**
 
 ```
-in ~/code/shop/src:   --at ./prices.py:40    →   src/prices.py:40
-in ~/code/shop:       --at /Users/me/code/shop/src/prices.py   →   src/prices.py
+in ~/code/shop/src:   ./prices.py:40                         →   src/prices.py:40
+in ~/code/shop:       /Users/me/code/shop/src/prices.py      →   src/prices.py
 ```
 
 ## Reading
 
 A reader gives the live decisions in scope, narrow first.
 
-```
-at a place   a decision with `at:<place>` at the place, under it when the place is a folder, or at a
-             folder that holds the place
-in scope     every live decision of the working folder's project, and every live `me` decision
-```
-
-**Rules**
+**Meaning**
 
 - A reader MUST give only live decisions in scope.
-- A decision at a file MUST be at that file whatever line its place names.
-- A decision at a folder MUST be at each place under that folder.
 - A reader MUST order decisions by scope, `at` first, then `trail`, then `project`, then `me`. In one
   scope, it MUST order them newest first, then by id.
+
+**Derived**
+
+- At a place: each live decision with `at:<place>` at the place, under it when the place is a folder,
+  or at a folder that holds the place.
+- In scope: every live decision of the working folder's project, and every live `me` decision.
+- A decision at a file is at that file whatever line its place names.
+- A decision at a folder is at each place under that folder.
