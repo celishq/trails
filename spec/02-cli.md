@@ -20,6 +20,7 @@ celis past [--at <place>]...                          this project's trails and 
 celis stats [<id>]                                    what later work reused, and what it saved
 celis report <id>...                                  the trails as Markdown, for a pull request
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
+celis mirror [--off]                                  keep this project's trails in its folder
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>]... [--check <command>] [--new] [--session <id>] -- <text>
                                                        leave a step
 celis step start <id>                                 take up a step, and see its decisions
@@ -87,6 +88,7 @@ Commands
   stats    what later work reused, and what it saved
   report   trails as Markdown, for a pull request
   issue    what went wrong, as Markdown for the celis team
+  mirror   keep this project's trails in its folder, to commit them
   step     the steps of a trail: add, start, done, drop, edit
   auth     the account's phrase: login, status, phrase
   update   this binary, to the latest release or a version
@@ -289,6 +291,39 @@ celis step done 4c1d22e0 --as-planned -- "python3 -m unittest: test_senior faile
 celis step drop 3fa2c1d0 -- "The person chose the shared price table instead."
 ```
 
+## Mirror
+
+`mirror` turns on the mirror of the working folder's project (CIP-01, "The mirror"), and syncs it with
+the store.
+
+**Rules**
+
+- `mirror` MUST create `.celis/trails/` in the top folder, and `.celis/README.md` when it is missing.
+- It MUST add the project id to `$CELIS_HOME/mirrors` when the id is not there.
+- It MUST copy each record of the store that the mirror holds and that `.celis/trails/` does not have
+  into `.celis/trails/`. It MUST copy each record of `.celis/trails/` that the store does not have into
+  the store.
+- It MUST print the folder, from the top folder, the count of records it copied out and the count it
+  copied in.
+- A second `mirror` MUST copy nothing.
+- `mirror --off` MUST take the project id out of `$CELIS_HOME/mirrors`, keep `.celis/`, copy nothing,
+  and print the folder and `off`.
+- `mirror` MUST NOT write a record.
+
+```
+mirror  text  .celis/trails · <out> out · <in> in
+        json  {"folder", "out", "in"}
+off     text  .celis/trails · off
+        json  {"folder", "off": true}
+```
+
+**Examples**
+
+```
+celis mirror
+celis mirror --off
+```
+
 ## Prompt
 
 The prompt hook of each agent gives the person's prompt to `prompt`, and gives its lines to the agent.
@@ -308,6 +343,10 @@ The prompt hook of each agent gives the person's prompt to `prompt`, and gives i
 - With a working step, `prompt` MUST name it on stderr. The line asks for a step under it, or a
   replacement, when the next work does not fit it.
 - With an open trail, `prompt` MUST then print the join line on stderr, with the trail's id.
+- When the working folder's top folder has `.celis/trails/` and the mirror is not on (CIP-01, "The
+  mirror"), `prompt` MUST print a line on stderr, once in a session, when the session has no open
+  trail, also with no store. The line MUST ask the agent to ask the person whether to sync the project, and say that the person
+  runs `celis mirror`.
 - The join line asks to add a new ask under the session's open trail when it fits, else under a related
   trail that `tree` with no id prints, else as a new trail.
 
@@ -441,8 +480,8 @@ and close.
   one second after a time it shows changes.
 - Between two trees, it MUST sleep until a record lands, a time it shows changes, or the width
   changes. With no time that runs, it MUST NOT wake on a timer.
-- It MUST print the tree again within one second after a record lands in the store, and only when
-  the tree changed.
+- It MUST print the tree again within one second after a record lands in the store, or in the mirror
+  when it is on (CIP-01, "The mirror"), and only when the tree changed.
 - It MUST clear the screen and its scrollback, and print each tree from the top left.
 - It MUST run until it is stopped, and MUST NOT write a record.
 

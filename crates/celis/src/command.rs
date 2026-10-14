@@ -7,6 +7,7 @@ mod decision;
 mod issue;
 mod json;
 mod line;
+mod mirror;
 mod past;
 mod prompt;
 mod report;
@@ -20,7 +21,7 @@ mod watch;
 use crate::help::{self, VERBS};
 use args::Args;
 use celis_nostr::Note;
-use celis_trails::{Failure, Project, Store, Trails};
+use celis_trails::{Failure, Mirror, Project, Store, Trails};
 use serde_json::json;
 use std::collections::HashMap;
 use std::io::{IsTerminal, Write};
@@ -84,6 +85,7 @@ impl Command {
             "stats" => self.stats(args, out),
             "report" => self.report(args, out),
             "issue" => self.issue(args, out),
+            "mirror" => self.mirror(args, out, &self.project()),
             "prompt" => self.prompt(args, out, err, &self.project()),
             "auth" => self.auth(args, out, err),
             "update" => self.update(args),
@@ -183,14 +185,21 @@ impl Command {
         home.ok_or_else(|| Failure::from(anyhow::anyhow!("neither CELIS_HOME nor HOME is set")))
     }
 
-    /// The trails of the store, opened now; a check runs for `CELIS_CHECK_SECONDS`, 600 when not set.
+    /// The trails of the store, with the working folder's mirror when it is on, opened now; a check runs
+    /// for `CELIS_CHECK_SECONDS`, 600 when not set.
     fn trails(&self) -> Result<Trails, Failure> {
         let limit = self
             .env
             .get("CELIS_CHECK_SECONDS")
             .and_then(|s| s.parse().ok())
             .unwrap_or(600);
-        Ok(Trails::open(Store::open(&self.home()?)?, now(), limit))
+        let home = self.home()?;
+        let store = Store::open(&home)?;
+        let store = match Mirror::on(&home, &self.folder) {
+            Some(mirror) => store.with(mirror),
+            None => store,
+        };
+        Ok(Trails::open(store, now(), limit))
     }
 
     fn id(&self, out: &mut dyn Write, args: &Args, note: &Note) -> Result<(), Failure> {

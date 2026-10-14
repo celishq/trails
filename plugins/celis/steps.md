@@ -25,6 +25,13 @@ When a subagent takes a step, give it the step's id. It runs `start` and `done` 
 its own steps `--under` it. To go on with another session's trail, add your first step `--under <its
 id>`.
 
+## Mirror
+
+A project can keep its trails in `.celis/trails/`, so that git carries them to the team. When celis says
+the project has a mirror this machine does not sync, ask the person whether to sync this project to
+celis. When the person wants to keep the trails in the repo, tell them to run `celis mirror` in the
+project themselves. Never run `celis mirror` yourself, and never write in `.celis/`.
+
 ## Stop
 
 Never write a proof for work you did not do. Stop and tell the person what is open when two reviews in

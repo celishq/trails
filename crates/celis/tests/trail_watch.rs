@@ -293,3 +293,25 @@ fn watch_on_a_terminal_prints_the_tree_again_as_its_times_change() {
     watch.until("3s");
     assert!(watch.trees(Duration::ZERO).len() >= 2);
 }
+
+/// On a terminal, `tree` prints the tree again within a second after a record lands in a mirror that is
+/// on (`spec/02-cli.md`, "Watching").
+#[test]
+fn watch_prints_the_tree_again_when_a_record_lands_in_the_mirror() {
+    let repo = Repo::new();
+    let o = cli(&repo, &["mirror"]);
+    assert!(o.status.success(), "{}", err(&o));
+    let trail = add(&repo, &["--", "the trail"]);
+    let mut watch = Watch::start(&repo, &[&trail[..8]]);
+    watch.until("the trail");
+    let stranger = celis_nostr::Account::new(&[2u8; 32]).unwrap();
+    let mut tags = support::step_tags((&repo.project_id(), "repo"));
+    tags.push(vec!["under".into(), trail.clone()]);
+    let note =
+        celis_nostr::Note::write(&stranger, 1111u16, support::now(), tags, "Ben's step").unwrap();
+    let path = repo.path().join(".celis/trails");
+    let name = format!("{}-{}.json", note.created_at, note.id);
+    std::fs::write(path.join(name), serde_json::to_string(&note).unwrap()).unwrap();
+    let took = watch.until("Ben's step");
+    assert!(took < Duration::from_millis(1500), "{took:?}");
+}

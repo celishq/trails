@@ -14,6 +14,7 @@ Commands
   stats    what later work reused, and what it saved
   report   trails as Markdown, for a pull request
   issue    what went wrong, as Markdown for the celis team
+  mirror   keep this project's trails in its folder, to commit them
   step     the steps of a trail: add, start, done, drop, edit
   auth     the account's phrase: login, status, phrase
   update   this binary, to the latest release or a version
@@ -223,6 +224,13 @@ pub const VERBS: &[Verb] = &[
             "celis issue -- \"celis prompt fails in each Cursor session\"",
             "celis issue 3fa2c1d0 -- \"The tree shows the step as open after done.\"",
         ],
+    },
+    Verb {
+        command: "mirror",
+        usage: &["celis mirror [--off]"],
+        summary: "Keep this project's trails in .celis/trails/ of its top folder, to commit them, and sync it with the store both ways. From now on, each command reads it and writes the project's records to it. Decisions with the me scope stay out.",
+        args: &[("--off", "stop the sync on this machine, and keep the folder; optional")],
+        examples: &["celis mirror", "celis mirror --off"],
     },
     Verb {
         command: "decide",

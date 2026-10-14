@@ -30,6 +30,45 @@ $CELIS_HOME/trails/
 - A reader MUST skip a file that does not parse or whose record does not verify.
 - A reader MUST read no store as an empty store, and MUST create nothing.
 
+## The mirror
+
+A project can keep a copy of its records in its own folder, so that git carries them to other machines
+and other people. The person turns it on by hand for each project.
+
+```
+<top folder>/.celis/
+  README.md                         what the folder holds, and how to install celis
+  trails/<created_at>-<id>.json     one record of the project, as in the store
+$CELIS_HOME/mirrors                 the id of each mirrored project, one a line
+```
+
+```
+holds   a record that names the project (`project:<project id>`) and has no `me` scope; or a record that
+        names no project and names, by an `e` tag, a record the mirror holds
+on      the project id is in `$CELIS_HOME/mirrors`, and `.celis/trails/` is in the working folder's
+        top folder
+```
+
+**Meaning**
+
+- Only `celis mirror` (CIP-02) MAY create `.celis/` or write `$CELIS_HOME/mirrors`. The folder stays
+  when the mirror is turned off.
+- When the mirror is on, a writer MUST write each record it holds to `.celis/trails/` as well, as the
+  store states.
+- When the mirror is on, a reader MUST read `.celis/trails/` with the store, and MUST copy into the store
+  each record there that the store does not have.
+- When the mirror is not on, a reader MUST NOT read `.celis/trails/`.
+- A mirror MUST NOT hold a `me` decision.
+
+**Examples**
+
+Ann runs `celis mirror` in `~/code/app`, and commits `.celis/`. Ben pulls, sees `.celis/trails/`, and
+runs `celis mirror` too. Now each one's agents read the other's trails of `app`. Ann's `me` decisions
+stay in her store.
+
+> **Why by hand.** A decision in the mirror is a rule that agents keep. A repo that turned the mirror on
+> by itself could give every clone's agents its rules.
+
 ## Projects
 
 A project is the code an agent works on. Every step and decision names its project.

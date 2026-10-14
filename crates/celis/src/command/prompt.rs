@@ -2,7 +2,7 @@
 
 use super::tree::today;
 use super::{Args, Command};
-use celis_trails::{Failure, Project, State, Trails};
+use celis_trails::{Failure, Mirror, Project, State, Trails};
 use std::io::{Read, Write};
 use std::path::Path;
 
@@ -44,8 +44,11 @@ impl Command {
         let notified = ["<task-notification>", "<agent-message"]
             .iter()
             .any(|t| text.starts_with(t));
-        if session.is_empty() || text.is_empty() || notified || !self.held()? {
+        if session.is_empty() || text.is_empty() || notified {
             return Ok(());
+        }
+        if !self.held()? {
+            return self.offer(err, project, &asked).map(|_| ());
         }
         let trails = self.trails()?;
         let steps = trails.steps();
@@ -67,8 +70,9 @@ impl Command {
         super::put(err, &joins(Some(trail.id())))
     }
 
-    /// Names the agent that brings what `past` prints, when it prints anything and `asked` does not exist;
-    /// then writes `asked`. Else, with a trail of today, says how a new ask joins it.
+    /// Names the agent that brings what `past` prints, when it prints anything and `asked` does not exist,
+    /// and asks to sync a mirror that is not on; then writes `asked`. Else, with a trail of today, says
+    /// how a new ask joins it.
     fn recall(
         &self,
         trails: &Trails,
@@ -80,8 +84,9 @@ impl Command {
         if !asked.exists() {
             self.list(trails, &Args::default(), &mut listed, project)?;
         }
+        let offer = self.offer(err, project, asked)?;
         if listed.is_empty() {
-            return match today(&trails.steps(), trails.now).is_empty() {
+            return match offer || today(&trails.steps(), trails.now).is_empty() {
                 true => Ok(()),
                 false => super::put(err, &joins(None)),
             };
@@ -97,6 +102,26 @@ impl Command {
         }
         std::fs::write(asked, "").map_err(anyhow::Error::from)?;
         Ok(())
+    }
+
+    /// Asks to sync the mirror of `project` when its folder exists, it is not on, and `asked` does not
+    /// exist; then writes `asked`. Returns whether it asked.
+    fn offer(&self, err: &mut dyn Write, project: &Project, asked: &Path) -> Result<bool, Failure> {
+        let mirror = Mirror::of(project);
+        if asked.exists() || !mirror.folder.is_dir() || mirror.is_on(&self.home()?) {
+            return Ok(false);
+        }
+        super::put(
+            err,
+            "celis: this project keeps its trails in .celis/trails/, and this machine does not sync \
+             them; ask the person whether to sync this project to celis, and if so, to run celis \
+             mirror in it themselves.",
+        )?;
+        if let Some(folder) = asked.parent() {
+            std::fs::create_dir_all(folder).map_err(anyhow::Error::from)?;
+        }
+        std::fs::write(asked, "").map_err(anyhow::Error::from)?;
+        Ok(true)
     }
 }
 
