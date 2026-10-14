@@ -2,21 +2,26 @@
 
 use serde_json::{json, Value};
 
-/// How the work of one closed step went: the seconds it took.
+/// How the work of one closed step went: the seconds it took, and the steps that replaced it after.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Grade {
     pub took: u64,
+    pub revised: Vec<String>,
 }
 
 impl Grade {
     /// The text line printed under a done step.
     pub fn line(&self) -> String {
-        format!("took {}", took(self.took))
+        let by: Vec<String> = self.revised.iter().map(|id| crate::id::short(id)).collect();
+        match by.is_empty() {
+            true => format!("took {}", took(self.took)),
+            false => format!("took {} · revised by {}", took(self.took), by.join(", ")),
+        }
     }
 
     /// The `--json` value of this grade.
     pub fn value(&self) -> Value {
-        json!({"took": self.took})
+        json!({"took": self.took, "revised": self.revised})
     }
 }
 

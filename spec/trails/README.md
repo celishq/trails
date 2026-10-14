@@ -24,6 +24,7 @@ A CIP is one feature in one numbered file, `NN-name.md`, opening with frontmatte
 | 03 | Steps | the step, its project, closing, grades, `celis step` | CIP-01, 02 |
 | 04 | Trails | the trail, its rules, its state, `celis tree`, the past, watching | CIP-01, 02, 03 |
 | 05 | Reports | `celis report`: trails as Markdown for a pull request; the log; `celis issue` | CIP-01, 02, 03, 04 |
+| 06 | Reuse | the steps and decisions a step uses, revisions, what reuse saved | CIP-01, 03, 04 |
 
 ## Names
 
@@ -46,6 +47,7 @@ A CIP is one feature in one numbered file, `NN-name.md`, opening with frontmatte
 | `under` · `replaces` · `at` · `check` | step tags; an old `file` reads as an `at` | 03 |
 | `figma:<key>` · `web:<host>` | project id of a step outside git | 03 |
 | `no-step` · `closed` · `open-steps` · `check-failed` | errors | 03 |
+| `uses` | step tag: a decision it keeps, or a step of another trail it follows | 06 |
 
 ## Words
 

@@ -231,7 +231,7 @@ impl<'a> Steps<'a> {
     }
 
     /// The state of the trail `note`: active while open, dropped when dropped, expired when it ended with
-    /// an open step, else reached.
+    /// an open step, revised when a later step replaced a done step of its tree, else reached.
     pub fn state(&self, note: &'a Note) -> State {
         if self.closed(&note.id).is_none() && !self.ended(note) {
             return State::Active;
@@ -244,7 +244,20 @@ impl<'a> Steps<'a> {
         if self.dropped(&note.id).is_some() {
             return State::Dropped;
         }
-        State::Reached
+        match tree.iter().any(|n| !self.revised(&n.id).is_empty()) {
+            true => State::Revised,
+            false => State::Reached,
+        }
+    }
+
+    /// The steps that replace the step `id` after it was done, oldest first.
+    pub fn revised(&self, id: &str) -> Vec<&'a Note> {
+        let Some(done) = self.done(id) else {
+            return Vec::new();
+        };
+        let entry = self.entry(id).map_or(&[][..], |e| &e.replaced[..]);
+        let later = entry.iter().filter(|n| n.created_at >= done.created_at);
+        later.copied().collect()
     }
 
     /// How the work of the done step `note` went; `None` while it is open.
@@ -254,6 +267,11 @@ impl<'a> Steps<'a> {
         let from = entry.start.unwrap_or(entry.note).created_at;
         Some(Grade {
             took: done.created_at.saturating_sub(from),
+            revised: self
+                .revised(&note.id)
+                .iter()
+                .map(|n| n.id.clone())
+                .collect(),
         })
     }
 
@@ -271,11 +289,13 @@ struct Index<'a> {
     entries: HashMap<&'a str, Entry<'a>>,
 }
 
-/// One step: its record, its text with its edits, its links and how its marks left it.
+/// One step: its record, its text with its edits, its links, the steps that replace it, and how its marks
+/// left it.
 struct Entry<'a> {
     note: &'a Note,
     step: Step,
     children: Vec<&'a Note>,
+    replaced: Vec<&'a Note>,
     start: Option<&'a Note>,
     close: Option<(&'a Note, Status)>,
     newest: u64,
@@ -297,6 +317,7 @@ impl<'a> Index<'a> {
                         note,
                         step,
                         children: Vec::new(),
+                        replaced: Vec::new(),
                         start: None,
                         close: None,
                         newest: note.created_at,
@@ -306,9 +327,12 @@ impl<'a> Index<'a> {
         }
         for &note in &all {
             let step = &entries[note.id.as_str()].step;
-            let under = step.under.clone();
+            let (under, replaces) = (step.under.clone(), step.replaces.clone());
             if let Some(parent) = under.and_then(|id| entries.get_mut(id.as_str())) {
                 parent.children.push(note);
+            }
+            if let Some(old) = replaces.and_then(|id| entries.get_mut(id.as_str())) {
+                old.replaced.push(note);
             }
         }
         for &note in &sorted {

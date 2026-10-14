@@ -4,13 +4,15 @@ use crate::Anchor;
 use anyhow::Result;
 use celis_nostr::{Account, Note};
 
-/// One part of the work on its project: the step it is a part of, the step whose plan it replaces, the places the work goes, the check that proves it, the session that wrote it, and
+/// One part of the work on its project: the step it is a part of, the step it replaces, the steps and
+/// decisions it uses, the places the work goes, the check that proves it, the session that wrote it, and
 /// the words. A step under no other is a trail.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Step {
     pub anchor: Anchor,
     pub under: Option<String>,
     pub replaces: Option<String>,
+    pub uses: Vec<String>,
     pub places: Vec<String>,
     pub check: Option<String>,
     pub session: Option<String>,
@@ -24,6 +26,7 @@ impl Step {
         let mut tags = self.anchor.tags();
         tags.extend(self.under.iter().map(|u| tag("under", u)));
         tags.extend(self.replaces.iter().map(|r| tag("replaces", r)));
+        tags.extend(self.uses.iter().map(|u| tag("uses", u)));
         tags.extend(self.places.iter().map(|p| tag("at", p)));
         tags.extend(self.check.iter().map(|c| tag("check", c)));
         tags.extend(self.session.iter().map(|s| tag("session", s)));
@@ -58,6 +61,7 @@ impl Step {
             anchor: Anchor::read(note)?,
             under: owned("under"),
             replaces: owned("replaces"),
+            uses: tagged("uses"),
             places: [tagged("at"), tagged("file")].concat(),
             check: owned("check"),
             session: owned("session"),
@@ -78,12 +82,16 @@ impl Step {
         })
     }
 
-    /// The `--json` links of this step: its `under` and `replaces`, in that order.
+    /// The `--json` links of this step: its `under`, `replaces` and each `uses`, in that order.
     pub fn links(&self) -> serde_json::Value {
         let links = [("under", &self.under), ("replaces", &self.replaces)];
-        let links: Vec<serde_json::Value> = links
+        let links = links
             .into_iter()
-            .filter_map(|(kind, to)| Some(serde_json::json!({"to": to.as_ref()?, "kind": kind})))
+            .filter_map(|(kind, to)| Some((kind, to.as_ref()?)));
+        let uses = self.uses.iter().map(|to| ("uses", to));
+        let links: Vec<serde_json::Value> = links
+            .chain(uses)
+            .map(|(kind, to)| serde_json::json!({"to": to, "kind": kind}))
             .collect();
         serde_json::Value::Array(links)
     }

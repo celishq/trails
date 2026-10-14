@@ -14,6 +14,7 @@ fn step(under: Option<&Note>, at: u64) -> Note {
         },
         under: under.map(|n| n.id.clone()),
         replaces: None,
+        uses: Vec::new(),
         places: Vec::new(),
         check: None,
         session: None,

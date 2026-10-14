@@ -49,6 +49,7 @@ impl Command {
             check: args.check.clone(),
             under: args.under.clone(),
             replaces: args.replaces.clone(),
+            uses: args.uses.clone(),
             session: args.session.clone().or_else(|| self.session()),
             new: args.new,
         };

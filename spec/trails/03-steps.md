@@ -22,7 +22,7 @@ and the lines after it hold the detail.
     ["i", "project:<project id>"], ["k", "project"],
     ["project", "<project name>"],
     ["under", "<id of the step it is a part of>"],                    optional
-    ["replaces", "<id of an open step whose plan it takes over>"],    optional
+    ["replaces", "<id of an open step whose plan it takes over>"],    optional; a done step (CIP-06)
     ["at", "<a place the work goes: file:line, a URL, any text>"],   zero or more
     ["check", "<the command that proves the work>"],                  optional
     ["session", "<the session of a trail>"],                          optional, a trail only (CIP-04)
@@ -168,7 +168,8 @@ drop   kind 1985, signed by an agent (NIP-32)
 - A dropped step MUST NOT have a grade.
 - `add --replaces <id>` MUST write the new step under the old step's `under`, when no `--under` is given.
 - It MUST then drop the old step and each open step under it, with `replaced by <new id, first 8>`.
-- It MUST refuse a trail as a usage error, and a closed step with `closed`.
+- It MUST refuse a trail as a usage error, and a dropped step with `closed`. A done step stays done
+  (CIP-06, "Revisions").
 
 ## Editing
 
@@ -208,7 +209,7 @@ The store is the only source of steps. A project that keeps `@todo` lines in its
 ## The commands
 
 ```
-celis step add [--under <id>] [--replaces <id>] [--at <place>]... [--check <command>] [--new] [--session <id>] -- <text>
+celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>]... [--check <command>] [--new] [--session <id>] -- <text>
                                                                leave a step
 celis step start <id>                                         take up a step, and see its decisions
 celis step done <id> [--changed <text>] [--as-planned] [--pitfall <text>] -- <proof>

@@ -47,6 +47,7 @@ fn past_lists_done_asks_and_reached_trails_of_every_project_newest_first() {
         anchor: shop,
         under: None,
         replaces: None,
+        uses: Vec::new(),
         places: vec!["Export.swift".to_string()],
         check: None,
         session: None,

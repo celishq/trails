@@ -41,19 +41,24 @@ impl Trails {
         Decisions::new(&self.records)
     }
 
-    /// Writes the step `draft` states. With no `under`, it goes in the replaced step's place, or under
-    /// the session's trail, else starts a trail; a session's new trail holds its first
-    /// ask. A replaced step's open tree drops. An open step with the same place and words is given back.
+    /// Writes the step `draft` states. With no `under`, it goes in the replaced open step's place, or
+    /// under the session's trail, else starts a trail; a session's new trail holds its first ask, which
+    /// takes the uses. A replaced open step's open tree drops; a replaced done step stays done. An open
+    /// step with the same place and words is given back.
     pub fn add(&self, draft: Draft) -> Result<Written, Failure> {
         let steps = self.steps();
-        let replaced = self.resolve(&steps, draft.replaces.as_deref(), true)?;
+        let replaced = self.resolve(&steps, draft.replaces.as_deref(), false)?;
+        if let Some(old) = replaced.filter(|n| steps.dropped(&n.id).is_some()) {
+            return Err(Failure::closed(&old.id));
+        }
+        let moved = replaced.filter(|n| steps.done(&n.id).is_none());
         let place =
             match replaced.and_then(|n| steps.step(n)) {
                 Some(old) if old.under.is_none() => return Err(Failure::usage(
                     "step add --replaces takes a step under a trail; edit a trail's title instead",
                 )),
-                Some(old) => old.under,
-                None => None,
+                Some(old) if moved.is_some() => old.under,
+                _ => None,
             };
         let named = match (&draft.under, &place) {
             (None, Some(place)) => Some(place),
@@ -64,8 +69,14 @@ impl Trails {
             (None, Some(session)) if !draft.new => steps.session(&draft.anchor.project, session),
             (under, _) => under,
         };
+        let trail = under.map(|n| steps.trail(n).id.as_str());
+        let uses = draft
+            .uses
+            .iter()
+            .map(|id| self.used(&steps, &draft.anchor.project, trail, id))
+            .collect::<Result<Vec<_>, _>>()?;
         let under = under.map(|n| n.id.clone());
-        let joined = match (&draft.under, &under, replaced) {
+        let joined = match (&draft.under, &under, moved) {
             (None, Some(trail), None) => Some(trail.clone()),
             _ => None,
         };
@@ -83,6 +94,7 @@ impl Trails {
             anchor: draft.anchor,
             under,
             replaces: replaced.map(|n| n.id.clone()),
+            uses,
             places: draft.places,
             check: draft.check,
             session: draft.session,
@@ -90,6 +102,7 @@ impl Trails {
         };
         if step.under.is_none() && step.session.is_some() {
             let head = Step {
+                uses: Vec::new(),
                 places: Vec::new(),
                 check: None,
                 ..step.clone()
@@ -120,7 +133,7 @@ impl Trails {
         let note = self.sign(|account, now| step.record(account, now))?;
         let reason = format!("replaced by {}", short(&note.id));
         written.records.push(note);
-        if let Some(old) = replaced {
+        if let Some(old) = moved {
             written
                 .records
                 .extend(self.drop_open(&steps, old, &reason)?);
@@ -295,6 +308,31 @@ impl Trails {
             false => steps.find(id),
         })
         .transpose()
+    }
+
+    /// The whole id of the live decision of `project`, or of the step of a trail other than `trail`, that
+    /// `id` names; a trail gives its first ask.
+    fn used(
+        &self,
+        steps: &Steps,
+        project: &str,
+        trail: Option<&str>,
+        id: &str,
+    ) -> Result<String, Failure> {
+        if let Ok(decision) = self.decisions().find(project, id) {
+            return Ok(decision.id.clone());
+        }
+        let note = steps.find(id)?;
+        let note = match steps.step(note).and_then(|s| s.under) {
+            Some(_) => note,
+            None => steps.under(&note.id).into_iter().next().unwrap_or(note),
+        };
+        if Some(steps.trail(note).id.as_str()) == trail {
+            return Err(Failure::usage(
+                "step add --uses takes a step of another trail",
+            ));
+        }
+        Ok(note.id.clone())
     }
 
     /// Drops each open step of the tree of `note` with `reason`.

@@ -548,6 +548,7 @@ fn trail_look(state: State) -> (&'static str, &'static str) {
     match state {
         State::Active => ("●", "33"),
         State::Reached => ("✓", "32"),
+        State::Revised => ("✓", "33"),
         State::Dropped => ("✗", "31"),
         State::Expired => ("!", "31"),
     }
