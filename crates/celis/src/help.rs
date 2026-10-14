@@ -201,17 +201,23 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "stats",
-        usage: &["celis stats [<id>]"],
-        summary: "Print each step that later steps follow, with what they saved, then each decision steps used, then the total; with an id, the steps it follows and the steps that follow it. Writes no record.",
-        args: &[("<id>", "the step id, or a start of 4 or more characters; optional")],
-        examples: &["celis stats", "celis stats 9b0e11aa"],
+        usage: &["celis stats [<id>] [--demo]"],
+        summary: "Print each step that later steps follow, with what they saved, then each decision steps used, then the total; with an id, the steps it follows and the steps that follow it. On a terminal, draw them as cards that update as work lands. Writes no record.",
+        args: &[
+            ("<id>", "the step id, or a start of 4 or more characters; optional"),
+            ("--demo", "made-up trails of four weeks, in place of the store"),
+        ],
+        examples: &["celis stats", "celis stats 9b0e11aa", "celis stats --demo"],
     },
     Verb {
         command: "report",
-        usage: &["celis report <id>..."],
-        summary: "Print the trail of each step the ids name as Markdown, for a pull request: its rules, and its steps with their places, checks, proofs and reasons. Writes no record.",
-        args: &[("<id>", "a step id, or a start of 4 or more characters; one or more")],
-        examples: &["celis report 3fa2c1d0", "celis report 3fa2c1d0 9e717e6f"],
+        usage: &["celis report <id>... [--demo]"],
+        summary: "Print the trail of each step the ids name as Markdown, for a pull request: a table of the trail, a table of its steps with their proofs, then their places and checks, and its rules. On a terminal, draw a card for each trail, and press m to copy the Markdown. Writes no record.",
+        args: &[
+            ("<id>", "a step id, or a start of 4 or more characters; one or more"),
+            ("--demo", "a made-up trail, in place of an id and the store"),
+        ],
+        examples: &["celis report 3fa2c1d0", "celis report 3fa2c1d0 9e717e6f", "celis report --demo"],
     },
     Verb {
         command: "issue",

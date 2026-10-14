@@ -33,6 +33,12 @@ impl Trails {
         }
     }
 
+    /// Moves it to `now`, with the records of its store as it last read them and as it wrote them since.
+    pub fn at(&mut self, now: u64) {
+        self.now = now;
+        self.records = self.store.records();
+    }
+
     /// Adds the records written to the store since the last read; whether there were any.
     pub fn fresh(&mut self) -> bool {
         let fresh = self.store.fresh();

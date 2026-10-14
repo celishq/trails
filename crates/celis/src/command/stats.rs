@@ -5,16 +5,26 @@ use super::{Args, Command};
 use celis_trails::id::short;
 use celis_trails::{Failure, Reuse, Step, Trail};
 use serde_json::json;
-use std::io::Write;
+use std::io::{IsTerminal, Write};
 
 /// What `stats` prints when nothing was reused.
 const NOTHING: &str = "Nothing was reused yet.";
 
 impl Command {
     /// Prints the step `args` names with the steps it follows and the steps that follow it, or with no id
-    /// each followed step, each used decision and the total. Writes no record.
+    /// each followed step, each used decision and the total; on a terminal with no `--json`, draws them
+    /// as cards. Writes no record.
     pub(super) fn stats(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let id = args.words.get(1);
+        if args.demo && id.is_some() {
+            return Err(Failure::usage("stats takes an id or --demo, not both"));
+        }
+        if args.demo {
+            return self.demo(args, out);
+        }
+        if std::io::stdout().is_terminal() && !args.json && self.held()? {
+            return self.board(args, out);
+        }
         if !self.held()? {
             return match id {
                 Some(id) => Err(Failure::no_step(id)),

@@ -2,9 +2,12 @@
 
 mod args;
 mod auth;
+mod board;
+mod card;
 mod clock;
 mod decision;
 mod demo;
+mod glyph;
 mod issue;
 mod json;
 mod line;
@@ -13,10 +16,14 @@ mod past;
 mod prompt;
 mod report;
 mod review;
+mod screen;
+mod sheet;
 mod stats;
 mod step;
+mod table;
 mod tree;
 mod update;
+mod wake;
 mod watch;
 
 use crate::help::{self, VERBS};
