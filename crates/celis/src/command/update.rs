@@ -3,7 +3,6 @@
 use super::{Args, Command};
 use anyhow::anyhow;
 use celis_trails::Failure;
-use std::io::Write;
 use std::process::Stdio;
 
 /// Where the releases are, when `$CELIS_BASE` is not set.
@@ -12,7 +11,7 @@ const BASE: &str = "https://github.com/celishq/trails/releases";
 impl Command {
     /// Runs the latest release's `install.sh` into the folder of the running `celis`, for the version in
     /// `args`, else the latest when it is not installed.
-    pub(super) fn update(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
+    pub(super) fn update(&self, args: &Args) -> Result<(), Failure> {
         if args.words.len() > 2 {
             return Err(Failure::usage("update takes one version"));
         }
@@ -37,25 +36,17 @@ impl Command {
         if !script.status.success() {
             return Err(anyhow!("could not download {url}").into());
         }
-        let mut sh = std::process::Command::new("sh")
+        let status = std::process::Command::new("sh")
+            .args(["-c", &String::from_utf8_lossy(&script.stdout)])
             .env("CELIS_BASE", base)
             .env("CELIS_VERSION", version)
             .env("CELIS_INSTALL_DIR", folder)
             .env("CELIS_UPDATE", "1")
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .spawn()
+            .status()
             .map_err(|e| anyhow!("could not run sh: {e}"))?;
-        sh.stdin
-            .take()
-            .ok_or_else(|| anyhow!("could not write to sh"))?
-            .write_all(&script.stdout)
-            .map_err(anyhow::Error::from)?;
-        let shown = sh.wait_with_output().map_err(anyhow::Error::from)?;
-        out.write_all(&shown.stdout).map_err(anyhow::Error::from)?;
-        match shown.status.success() {
+        match status.success() {
             true => Ok(()),
-            false => Err(anyhow!("install.sh failed; see above").into()),
+            false => Err(Failure::quiet(status.code().unwrap_or(1))),
         }
     }
 }

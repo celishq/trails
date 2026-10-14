@@ -170,11 +170,11 @@ $CELIS_BASE   where the releases are
 - With `<version>`, `update` MUST install `v<version>`, also when it is installed. A leading `v` of
   `<version>` MUST NOT count.
 - When the archive does not match its checksum, `update` MUST fail and leave the installed file as it was.
+- When `install.sh` fails, `update` MUST exit with its code and print no error of its own.
 - With `CELIS_UPDATE` set, `install.sh` MUST NOT change PATH or print the next steps of a first install.
 
 ```
 update  text  the output of install.sh
-              celis <version> is the latest.
 ```
 
 **Examples**

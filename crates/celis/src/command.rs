@@ -69,7 +69,9 @@ impl Command {
         } else {
             format!("celis: {}", failure.message)
         };
-        let _ = writeln!(err, "{line}");
+        if !failure.message.is_empty() {
+            let _ = writeln!(err, "{line}");
+        }
         failure.code
     }
 
@@ -84,7 +86,7 @@ impl Command {
             "issue" => self.issue(args, out),
             "prompt" => self.prompt(args, out, err, &self.project()),
             "auth" => self.auth(args, out, err),
-            "update" => self.update(args, out),
+            "update" => self.update(args),
             "" => Err(Failure::usage("expected: celis <command>")),
             verb => Err(help::unknown(verb, verbs())),
         }

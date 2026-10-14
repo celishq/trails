@@ -32,7 +32,7 @@ esac
 if [ -n "${CELIS_UPDATE:-}" ] && [ "$version" = latest ]; then
 	tag="$(curl -fsS -o /dev/null -w '%{redirect_url}' "$base/latest")" || fail "could not reach $base/latest"
 	version="${tag##*/tag/v}"
-	[ -n "$version" ] && [ "$version" != "$tag" ] || fail "$base/latest names no release"
+	[ "$version" != "$tag" ] || fail "$base/latest names no release"
 	case "$("$dir/celis" --version 2>/dev/null)" in
 	"celis $version" | "celis $version "*)
 		echo "celis $version is the latest."

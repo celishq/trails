@@ -200,19 +200,17 @@ fn update_installs_a_named_version() {
     assert_eq!(install.version(), "celis 1.2.0");
 }
 
-/// When the archive does not match its checksum, `update` fails and leaves the installed file as it
-/// was (`spec/02-cli.md`, "Update").
+/// When the archive does not match its checksum, `update` fails with the error of `install.sh` alone
+/// and leaves the installed file as it was (`spec/02-cli.md`, "Update").
 #[test]
 fn update_fails_on_a_wrong_checksum_and_keeps_the_file() {
     let install = Install::new();
     let server = Server::new("9.9.9", &["9.9.9"], Some("9.9.9"));
     let o = install.run(&install.file(), &server, &["update"]);
     assert_eq!(o.status.code(), Some(1));
-    assert!(
-        String::from_utf8_lossy(&o.stderr).contains("checksum"),
-        "{}",
-        String::from_utf8_lossy(&o.stderr)
-    );
+    let err = String::from_utf8_lossy(&o.stderr);
+    assert!(err.contains("checksum"), "{err}");
+    assert_eq!(err.matches("celis:").count(), 1, "{err}");
     assert_eq!(install.version(), "celis 0.0.0");
     let left: Vec<_> = std::fs::read_dir(install.folder.path().join("bin"))
         .unwrap()
