@@ -17,8 +17,8 @@ celis decide [--scope <scope>] [--replaces <id>] -- <text>
                                                        a decision, in its scope
 celis tree [<id>] [--full] [--all] [--demo]           a trail and its steps; again on each change
 celis past [--at <place>]...                          this project's trails and decisions, past work
-celis stats [<id>]                                    what later work reused, and what it saved
-celis report <id>...                                  the trails as Markdown, for a pull request
+celis stats [<id>] [--demo]                           what later work reused, and what it saved
+celis report <id>... [--demo]                         the trails as Markdown, for a pull request
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
 celis link [<folder>]                                 keep this project's trails in a folder
 celis unlink [<folder>]                               stop keeping them in a folder
@@ -441,7 +441,8 @@ celis tree --demo [--full] [--all]   made-up trails in every state, as tree prin
   a past day, with a step or a trail in each state, two working steps of two projects, a `changed` tag, rules, a dropped reason, a done step
   with steps under it, and a working one. It MUST write them in a folder of its own, which it MUST
   remove when it ends, and MUST NOT read or write the person's store. `tree --demo` with an id MUST
-  refuse as a usage error.
+  refuse as a usage error. The made-up trails MUST also hold a trail a day from 27 to 3 days ago, which
+  use rules, follow the steps of a week before, and change and revise less in the later two weeks.
 
 ```
 tree   text  <weekday>, <month> <day> · <n> active · <n> done
@@ -575,8 +576,8 @@ and close, and opens what they want to read.
   opens the selected one and every rule and step under it, and closes them all when all are open. `c`
   copies the first 8 characters of the selected trail's, rule's or step's id with the first of
   `pbcopy`, `wl-copy` and `xclip -selection clipboard` that runs. `m` copies the selected one as Markdown
-  the same way, as `celis report` writes it: a trail all of `celis report <id>`, a step its list item with
-  the lines and steps under it, a rule `- <text>`. `PgUp` and `PgDn`, or `space` for down,
+  the same way, as `celis report` writes it: a trail all of `celis report <id>`, a step the table of it
+  and the steps under it, a rule `- <text>`. `PgUp` and `PgDn`, or `space` for down,
   scroll one page; `g` and `G` scroll to the top and the end; `f` turns `--full` on and off; `a` turns
   `--all` on and off with no id; `q` ends it as an interrupt does.
 - It MUST print on the screen's last row a dim line, cut to the width:
@@ -656,6 +657,13 @@ celis past --at shelf/prices.py
 - With an id, it MUST print the step, then each step it follows, then each step that follows it, at any
   depth, depth first, two spaces further in a level. A saving MUST be against the source on that path.
 - `stats` MUST NOT write a record.
+- `stats --demo` MUST print or draw, as `stats` does, the made-up trails of `tree --demo`, in a folder it
+  removes when it ends. It MUST NOT read or write the person's store. With an id it MUST refuse as a
+  usage error.
+- On a terminal with no `--json`, `stats` MUST draw its cards on the alternate screen instead, as "Cards"
+  gives them, and again when a record lands, a key is read, a minute passes or the size changes. With an
+  id, it MUST draw the route of the step instead: each step it follows under `FOLLOWS`, the step as a
+  card with how long it took, then each step that follows it under `FOLLOWED BY` with what it saved.
 
 ```
 stats  text  <id, first 8> [<project>] <title> · followed <n>[ · saved <time>][ · revised]
@@ -676,6 +684,37 @@ celis stats
 celis stats 9b0e11aa
 ```
 
+### Cards
+
+Each card shows one kind of number, in the form of its data: a series as columns, a rank as bars, a share
+as a strip, a chain as a route. The periods are CIP-06 "Periods".
+
+```
+00 EFFECT · LAST 14 DAYS vs 14 BEFORE   as planned, rework, rules reused and time saved; each its value,
+                                        its change from the period before and its base
+01 REUSE                                the follows and what they saved; the 3 steps followed most
+02 RULES USED                           the 5 decisions used most, as bars, and the count of uses
+03 WORK · 14 DAYS                       the steps done each local day, as columns, and their total
+04 TIME A STEP TOOK                     the median took of the done steps with none under them, and a bar
+                                        for each of < 5m, 5-15m, 15m-1h, 1-4h and > 4h
+05 OUTCOME                              the closed steps as a strip: done, revised, dropped, expired
+06 PROJECTS · TIME                      the took of the done steps with none under them, a project a bar
+```
+
+**Rules**
+
+- The effect MUST print across the width, then the other cards three a row at 120 columns or more, two
+  at 80 or more, else one. Below 60 columns, numbers MUST print as plain bold text, else three rows high.
+- A change MUST print green when better, red when worse, dim when it moved less than 3 points or a
+  minute, and `· few records` when CIP-06 "Periods" shows no change.
+- The picked card MUST print in a heavy frame, the others in a dim one.
+- Keys: `←` `→` `↑` `↓` pick a card; `enter` opens it to its table, a row a line, where `↑` `↓` select a
+  row, `c` copies the first 8 characters of the selected row's id, and `←` or `enter` goes back. On the
+  route, `↑` `↓` select a step, `enter` goes to its route and `←` back. `m` copies the picked card, the
+  opened card or the route as a Markdown table under a `###` heading. `q` ends it as an interrupt does.
+- The last row MUST print the keys, dim: `←→↑↓ move · enter open · m copy markdown · q quit`, and on an
+  opened card or a route the keys it reads there, with `c copy <id, first 8>` when a row has an id.
+
 ## Report
 
 `report` prints the trails the ids name as Markdown (CIP-05, "The report").
@@ -683,32 +722,51 @@ celis stats 9b0e11aa
 **Rules**
 
 - `report` MUST refuse an id no step has, with `no-step`. It MUST refuse no id as a usage error.
+- `report --demo` MUST print or draw, as `report` does, the active trail of the made-up trails of `tree
+  --demo` that has a step in each state, in a folder it removes when it ends. It MUST NOT read or write
+  the person's store. With an id it MUST refuse as a usage error.
 - `report` MUST print the trail of the step each id names, once, in the order of the ids. A blank line
   MUST come between two trails.
-- `report` MUST print a trail's title as a heading, and its steps as a Markdown list, each with its mark
-  as `tree` marks it. A section with no line MUST be left out.
+- `report` MUST print a trail's title as a heading, then a table of the trail, then a table of its steps,
+  each with its mark as `tree` marks it, two no-break spaces and `└ ` a level in. Then a details block
+  of the texts, places and checks of its steps, and one of its rules. A section with no line MUST be left
+  out. A `|` in a cell MUST be escaped.
+- On a terminal with no `--json`, `report` MUST print a card a trail instead: its id, project and title,
+  how long it ran, its counts and state, a strip of a mark a step in its state's colour, a line a step
+  under it with how long it took, and its rules and lessons. Then, when stdin is a terminal, the dim line
+  `m copy markdown · any key to leave`, and read one key: `m` copies the Markdown as `tree`'s `m` does
+  and prints `copied markdown`; any key clears the line and ends.
 
 ```
 report  text  ## <title of the trail>
-              `<id, first 8>` · <project name> · <state> · <n> steps · took <ran>
+
+              | Id | State | Took | Steps | Rules | Revised | Dropped | Project |
+              |----|-------|-----:|------:|------:|--------:|--------:|---------|
+              | `<id, first 8>` | <mark> <state> | <ran> | <n> | <n> | <n> | <n> | <project name> |
 
               <the next line of its text>
 
               done: <proof>
 
-              **Rules**
+              | | Step | Took | Proof |
+              |-|------|-----:|-------|
+              | <mark> | <title> | <took> | <proof>[ · ~ changed: <what changed>] |   each step
+              | <mark> | <title> | — | dropped: <reason> |
 
-              - <text>                                                    each rule
+              <details><summary>Texts, places and checks</summary>
 
-              **Steps**
-
-              - <mark> <title>                                            each step, two spaces a level
+              - <mark> <title>                                            each step with any
                 - <the next line of its text>
                 - at `<place>`
                 - check passed `<command>` | check `<command>`
-                - done: <proof>
-                - changed: <what changed>
-                - dropped: <reason>
+
+              </details>
+
+              <details><summary><n> rules</summary>
+
+              - <text>                                                    each rule
+
+              </details>
         json  {"report": "<the text>"}
 ```
 

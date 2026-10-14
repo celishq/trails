@@ -206,17 +206,23 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "stats",
-        usage: &["celis stats [<id>]"],
-        summary: "Show each step that later work reused and what that saved, then each decision that steps followed, then the total. With an id, show what that step reused and what reused it. Changes nothing.",
-        args: &[("<id>", "A step id, or its first 4 or more characters")],
-        examples: &["celis stats", "celis stats 9b0e11aa"],
+        usage: &["celis stats [<id>] [--demo]"],
+        summary: "Show each step that later work reused and what that saved, then each decision that steps followed, then the total. With an id, show what that step reused and what reused it. On a terminal, show them as cards that update as work lands. Changes nothing.",
+        args: &[
+            ("<id>", "A step id, or its first 4 or more characters"),
+            ("--demo", "Show sample trails of four weeks"),
+        ],
+        examples: &["celis stats", "celis stats 9b0e11aa", "celis stats --demo"],
     },
     Verb {
         command: "report",
-        usage: &["celis report <id>..."],
-        summary: "Show the trail of each step as Markdown for a pull request: its rules, and its steps with their places, checks, proofs, and reasons. Changes nothing.",
-        args: &[("<id>", "A step id, or its first 4 or more characters")],
-        examples: &["celis report 3fa2c1d0", "celis report 3fa2c1d0 9e717e6f"],
+        usage: &["celis report <id>... [--demo]"],
+        summary: "Show the trail of each step as Markdown for a pull request: a table of the trail, a table of its steps with their proofs, then their places and checks, and its rules. On a terminal, show a card for each trail, and press m to copy the Markdown. Changes nothing.",
+        args: &[
+            ("<id>", "A step id, or its first 4 or more characters"),
+            ("--demo", "Show a sample trail"),
+        ],
+        examples: &["celis report 3fa2c1d0", "celis report 3fa2c1d0 9e717e6f", "celis report --demo"],
     },
     Verb {
         command: "issue",

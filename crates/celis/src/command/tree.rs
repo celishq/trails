@@ -1051,7 +1051,7 @@ fn closed(state: State) -> bool {
 }
 
 /// The characters of `text` a terminal shows; colour codes count none.
-fn visible(text: &str) -> usize {
+pub(super) fn visible(text: &str) -> usize {
     let mut count = 0;
     let mut code = false;
     for c in text.chars() {

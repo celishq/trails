@@ -7,6 +7,7 @@
 pub mod decision;
 pub mod failure;
 pub mod id;
+pub mod period;
 pub mod reuse;
 pub mod step;
 pub mod store;
@@ -19,6 +20,7 @@ pub use decision::Decision;
 pub use failure::Failure;
 pub use id::decision_id::DecisionId;
 pub use id::step_id::StepId;
+pub use period::Period;
 pub use reuse::Reuse;
 pub use step::check::Check;
 pub use step::grade::Grade;

@@ -55,3 +55,25 @@ saved       took of the source less took of the follower (CIP-03, "Grades"); bel
 - A saving MUST count only when both steps are done.
 - The saving of a step MUST be the sum of the savings of each follow at any depth below it, each against
   the source it names.
+
+## Periods
+
+A period is the span of time from one second up to another. Stats compares two of them: the last 14 days,
+and the 14 days before.
+
+```
+done        the steps whose done record falls in it
+planned     the done steps with no `changed` (CIP-03, "Closing")
+reworked    the done steps that a step revised (Revisions)
+added       the steps written in it
+ruled       the added steps whose uses name a decision
+closed      the steps done or dropped in it, and the expired steps of a trail whose newest record falls in it
+follows     the follows whose step is done in it, and the sum of their savings
+```
+
+**Rules**
+
+- A reader MUST NOT count a trail as a step of a period.
+- A share MUST be the count of its part in its base: planned and reworked in done, ruled in added.
+- A reader MUST NOT show a change of a share or of a saving when either period counts fewer than 10
+  records in its base.

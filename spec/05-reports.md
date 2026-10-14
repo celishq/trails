@@ -17,12 +17,14 @@ A report holds the trails the agent names, so a person can add the work to a pul
 
 **Derived**
 
-- Of a trail: its title, id, project, state (CIP-04, "State"), the count of steps under it, how long its
-  tree ran, the lines of its text after its title, and its proof when done.
-- Then its rules (CIP-04, "Rules"), and the steps under it, oldest first, each followed by its own.
-- Of a step: its state, its title, the lines of its text after its title, its places and its check. A
-  done step's check passed, because a `done` is written only after it passes (CIP-03, "Closing"). Then
-  its proof and what changed when done, or its reason when dropped.
+- Of a trail: its title, id, state (CIP-04, "State"), how long its tree ran, the count of steps under it,
+  of its rules, of its revised steps and of its dropped steps, and its project. Then the lines of its
+  text after its title, and its proof when done.
+- Then the steps under it, oldest first, each followed by its own: its state, its title, how long it took
+  when done, and its proof and what changed when done, or its reason when dropped.
+- Then of each step with any: the lines of its text after its title, its places and its check. A done
+  step's check passed, because a `done` is written only after it passes (CIP-03, "Closing").
+- Then its rules (CIP-04, "Rules").
 - When a trail's first ask has the trail's text, the ask stands for the trail. Its steps come first, then
   the trail's other asks.
 

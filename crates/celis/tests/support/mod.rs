@@ -11,6 +11,8 @@ use std::process::{Command, Output, Stdio};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tempfile::TempDir;
 
+pub mod watch;
+
 /// The phrase of every test home.
 pub const PHRASE: &str =
     "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
