@@ -9,7 +9,7 @@ fn records(repo: &Repo) -> usize {
 }
 
 /// `add` refuses an `--under` no step has with `no-step`, and a closed one with `closed`
-/// (`spec/trails/02-cli.md`, "Step").
+/// (`spec/02-cli.md`, "Step").
 #[test]
 fn add_refuses_an_unknown_or_closed_under() {
     let repo = Repo::new();
@@ -28,7 +28,7 @@ fn add_refuses_an_unknown_or_closed_under() {
 }
 
 /// `add` carries the whole id of `--under`, and the JSON of a step gives its `under` and `replaces` as
-/// `links` (`spec/trails/02-cli.md`, "Step").
+/// `links` (`spec/02-cli.md`, "Step").
 #[test]
 fn add_carries_the_whole_id_of_under_and_links_it() {
     let repo = Repo::new();
@@ -52,7 +52,7 @@ fn add_carries_the_whole_id_of_under_and_links_it() {
 }
 
 /// `done` refuses a step with an open step under it, with `open-steps`, and writes nothing
-/// (`spec/trails/02-cli.md`, "Step").
+/// (`spec/02-cli.md`, "Step").
 #[test]
 fn done_refuses_a_step_with_an_open_step_under_it() {
     let repo = Repo::new();

@@ -14,7 +14,7 @@ fn issue(repo: &Repo, args: &[&str], env: &[(&str, &str)]) -> String {
 }
 
 /// `issue` prints what went wrong as a heading and text, then the facts of this machine, with
-/// `$CELIS_HOME` under `~` and no phrase (`spec/trails/05-reports.md`, "The issue").
+/// `$CELIS_HOME` under `~` and no phrase (`spec/05-reports.md`, "The issue").
 #[test]
 fn issue_prints_what_went_wrong_and_the_facts() {
     let repo = Repo::new();
@@ -54,7 +54,7 @@ fn issue_prints_what_went_wrong_and_the_facts() {
 }
 
 /// With no text, the heading is `celis issue`; the log's last lines come in a code block, and the
-/// section is left out while the log is empty (`spec/trails/02-cli.md`, "Issue").
+/// section is left out while the log is empty (`spec/02-cli.md`, "Issue").
 #[test]
 fn issue_prints_the_log_when_it_has_lines() {
     let repo = Repo::new();
@@ -72,7 +72,7 @@ fn issue_prints_the_log_when_it_has_lines() {
 }
 
 /// `issue` prints the trails the ids name as `report` does, and refuses an id no step has with
-/// `no-step` (`spec/trails/02-cli.md`, "Issue").
+/// `no-step` (`spec/02-cli.md`, "Issue").
 #[test]
 fn issue_prints_the_trails_the_ids_name() {
     let repo = Repo::new();

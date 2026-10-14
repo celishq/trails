@@ -49,7 +49,7 @@ fn done_records(repo: &Repo) -> Vec<Note> {
 }
 
 /// A step is open until a `done` names it, and `done` carries its proof as content
-/// (`spec/trails/03-steps.md`, "Closing").
+/// (`spec/03-steps.md`, "Closing").
 #[test]
 fn a_step_is_open_until_a_done_names_it_and_done_carries_its_proof() {
     let repo = Repo::new();
@@ -69,7 +69,7 @@ fn a_step_is_open_until_a_done_names_it_and_done_carries_its_proof() {
     assert_eq!(note.content, "proof");
 }
 
-/// A reader ignores a `done` record with no content, so the step stays open (`spec/trails/03-steps.md`,
+/// A reader ignores a `done` record with no content, so the step stays open (`spec/03-steps.md`,
 /// "Closing").
 #[test]
 fn a_reader_ignores_a_done_record_with_no_content() {
@@ -88,7 +88,7 @@ fn a_reader_ignores_a_done_record_with_no_content() {
     assert_eq!(mark(&repo, &p.id), "●");
 }
 
-/// `done` refuses an empty proof as a usage error (`spec/trails/02-cli.md`, "Step").
+/// `done` refuses an empty proof as a usage error (`spec/02-cli.md`, "Step").
 #[test]
 fn done_refuses_an_empty_proof_as_a_usage_error() {
     let repo = Repo::plain();
@@ -99,7 +99,7 @@ fn done_refuses_an_empty_proof_as_a_usage_error() {
 }
 
 /// `done` asks what changed from the step's title, or that the work went as planned, and refuses neither
-/// or both as a usage error; the done record carries the change (`spec/trails/02-cli.md`, "Step").
+/// or both as a usage error; the done record carries the change (`spec/02-cli.md`, "Step").
 #[test]
 fn done_says_what_changed_or_that_it_went_as_planned() {
     let repo = Repo::new();

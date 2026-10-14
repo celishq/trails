@@ -161,7 +161,7 @@ fn prompts(repo: &Repo, step: &str) -> Vec<String> {
 
 /// Each agent's session start gives the card; an agent other than Claude Code also gets its session, to
 /// pass with `--session`. Antigravity has no session start, and gets both before each call of the model
-/// (`spec/trails/04-trails.md`, "Sessions").
+/// (`spec/04-trails.md`, "Sessions").
 #[test]
 fn each_agents_session_start_gives_the_card_and_its_session() {
     let repo = Repo::new();
@@ -179,7 +179,7 @@ fn each_agents_session_start_gives_the_card_and_its_session() {
 }
 
 /// Each agent's prompt hook writes the prompt on its session's trail while a step works, in the person's
-/// project (`spec/trails/04-trails.md`, "Sessions").
+/// project (`spec/04-trails.md`, "Sessions").
 #[test]
 fn each_agents_prompt_hook_writes_a_prompt_on_its_sessions_trail() {
     for agent in AGENTS.into_iter().filter(|a| !a.ask.is_empty()) {
@@ -210,7 +210,7 @@ fn each_agents_prompt_hook_writes_a_prompt_on_its_sessions_trail() {
 }
 
 /// Claude Code's prompt hook asks for the past agent once a session, and again after a compaction's
-/// session start (`spec/trails/02-cli.md`, "Prompt").
+/// session start (`spec/02-cli.md`, "Prompt").
 #[test]
 fn claudes_hooks_ask_for_the_past_agent_again_after_a_compaction() {
     let repo = Repo::new();

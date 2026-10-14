@@ -8,7 +8,7 @@ fn short(id: &str) -> String {
     id[..8].to_string()
 }
 
-/// A reader gives only live decisions of the working folder's project (`spec/trails/01-decisions.md`,
+/// A reader gives only live decisions of the working folder's project (`spec/01-decisions.md`,
 /// "Reading").
 #[test]
 fn a_reader_gives_only_live_decisions_of_the_working_folders_project() {
@@ -47,7 +47,7 @@ fn a_reader_gives_only_live_decisions_of_the_working_folders_project() {
 }
 
 /// A decision at a file is at that file whatever line its `at` names, and a folder holds what lies
-/// under it (`spec/trails/01-decisions.md`, "Reading").
+/// under it (`spec/01-decisions.md`, "Reading").
 #[test]
 fn a_decision_at_a_file_is_at_that_file_whatever_line_and_a_folder_holds_what_lies_under_it() {
     let repo = Repo::new();
@@ -93,7 +93,7 @@ fn a_decision_at_a_file_is_at_that_file_whatever_line_and_a_folder_holds_what_li
 }
 
 /// A reader orders decisions by scope, `at` first, then `project`, then `me`, and in one scope newest
-/// first, then by id (`spec/trails/01-decisions.md`, "Reading").
+/// first, then by id (`spec/01-decisions.md`, "Reading").
 #[test]
 fn a_reader_orders_decisions_by_scope_then_newest_first_then_by_id() {
     let repo = Repo::new();
@@ -118,7 +118,7 @@ fn a_reader_orders_decisions_by_scope_then_newest_first_then_by_id() {
 }
 
 /// A place resolves against the working folder and reads as a path from the project's top folder, so
-/// `./a`, a full path and a path from a subfolder name one place (`spec/trails/01-decisions.md`, "Places").
+/// `./a`, a full path and a path from a subfolder name one place (`spec/01-decisions.md`, "Places").
 #[test]
 fn a_place_reads_as_a_path_from_the_projects_top_folder() {
     let repo = Repo::new();

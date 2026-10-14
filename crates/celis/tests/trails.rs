@@ -5,7 +5,7 @@ mod support;
 use support::{add, objects, Repo};
 
 /// A reader counts a step with no `under` as a trail, and a step under one as no trail
-/// (`spec/trails/04-trails.md`, "Trails").
+/// (`spec/04-trails.md`, "Trails").
 #[test]
 fn a_reader_counts_a_step_with_no_under_as_a_trail() {
     let repo = Repo::new();
@@ -25,7 +25,7 @@ fn a_reader_counts_a_step_with_no_under_as_a_trail() {
 }
 
 /// A reader counts a step in the tree of the trail at the top of its `under` chain
-/// (`spec/trails/04-trails.md`, "Trails").
+/// (`spec/04-trails.md`, "Trails").
 #[test]
 fn a_step_counts_in_the_tree_of_the_trail_at_the_top_of_its_chain() {
     let repo = Repo::new();

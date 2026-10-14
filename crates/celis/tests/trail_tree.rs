@@ -35,7 +35,7 @@ fn bare(line: &str) -> String {
 
 /// `tree` prints the trail with its state and rules, then the steps under it, oldest first, each
 /// followed by its own, marked done or open, with the proof and grade of a done one
-/// (`spec/trails/02-cli.md`, "Tree").
+/// (`spec/02-cli.md`, "Tree").
 #[test]
 fn tree_prints_the_trail_its_rules_and_the_steps_under_it() {
     let repo = Repo::new();
@@ -84,7 +84,7 @@ fn tree_prints_the_trail_its_rules_and_the_steps_under_it() {
     );
 }
 
-/// `tree <id>` of an ask prints its trail's rules under its line (`spec/trails/02-cli.md`, "Tree").
+/// `tree <id>` of an ask prints its trail's rules under its line (`spec/02-cli.md`, "Tree").
 #[test]
 fn tree_of_an_ask_prints_its_trails_rules() {
     let repo = Repo::new();
@@ -108,7 +108,7 @@ fn tree_of_an_ask_prints_its_trails_rules() {
     );
 }
 
-/// `tree` prints a done trail's proof and grade under its first line (`spec/trails/02-cli.md`, "Tree").
+/// `tree` prints a done trail's proof and grade under its first line (`spec/02-cli.md`, "Tree").
 #[test]
 fn tree_prints_a_done_trails_proof_and_grade() {
     let repo = Repo::new();
@@ -125,7 +125,7 @@ fn tree_prints_a_done_trails_proof_and_grade() {
 }
 
 /// `tree --json` prints the trail, then one object a step with its links and state, and writes no
-/// record (`spec/trails/02-cli.md`, "Tree").
+/// record (`spec/02-cli.md`, "Tree").
 #[test]
 fn tree_json_prints_each_step_with_its_under_and_state_and_writes_no_record() {
     let repo = Repo::new();
@@ -152,7 +152,7 @@ fn tree_json_prints_each_step_with_its_under_and_state_and_writes_no_record() {
 }
 
 /// `tree` with no id prints every trail of the project, newest first, and refuses an id no step has
-/// with `no-step` (`spec/trails/02-cli.md`, "Tree").
+/// with `no-step` (`spec/02-cli.md`, "Tree").
 #[test]
 fn tree_with_no_id_prints_every_trail_newest_first() {
     let repo = Repo::new();
@@ -186,7 +186,7 @@ fn plain(text: &str) -> String {
 /// With `CLICOLOR_FORCE=1`, `tree` draws branch lines, marks, underlined ids and dim columns at the right
 /// edge, with no start time when a title gets short, and a rule as a branch before the steps; with no id,
 /// each trail names its project; `NO_COLOR` turns it off
-/// (`spec/trails/02-cli.md`, "Tree").
+/// (`spec/02-cli.md`, "Tree").
 #[test]
 fn tree_draws_the_styled_tree_when_colour_is_forced() {
     let repo = Repo::new();
@@ -288,7 +288,7 @@ fn tree_draws_the_styled_tree_when_colour_is_forced() {
 
 /// The styled full tree starts each line under a step at the column of its title, ends a label one
 /// space before it, and wraps a long line and a rule at the width, keeping the branch line
-/// (`spec/trails/02-cli.md`, "Tree").
+/// (`spec/02-cli.md`, "Tree").
 #[test]
 fn the_styled_full_tree_aligns_and_wraps_the_lines_under_a_step() {
     let repo = Repo::new();
@@ -349,7 +349,7 @@ fn the_styled_full_tree_aligns_and_wraps_the_lines_under_a_step() {
 }
 
 /// The short styled tree prints a rule as a branch without its reason, and the full tree prints it whole
-/// (`spec/trails/02-cli.md`, "Tree").
+/// (`spec/02-cli.md`, "Tree").
 #[test]
 fn the_short_styled_tree_leaves_out_a_rules_reason() {
     let repo = Repo::new();
@@ -375,7 +375,7 @@ fn the_short_styled_tree_leaves_out_a_rules_reason() {
 }
 
 /// `tree` with no id leaves out a trail with no record from today, and folds a trail that is not active
-/// into its own line, which counts its steps; `tree <id>` prints either whole (`spec/trails/02-cli.md`,
+/// into its own line, which counts its steps; `tree <id>` prints either whole (`spec/02-cli.md`,
 /// "Tree").
 #[test]
 fn tree_with_no_id_folds_ended_trails_and_shows_only_today() {
@@ -414,7 +414,7 @@ fn tree_with_no_id_folds_ended_trails_and_shows_only_today() {
 
 /// `tree` prints the short tree, with no line under a step, and `--full` adds the proof and grade; with
 /// `COLUMNS`, the short tree fits each line to that width, cutting a step's text with `…` and keeping its
-/// details (`spec/trails/02-cli.md`, "Tree").
+/// details (`spec/02-cli.md`, "Tree").
 #[test]
 fn tree_prints_the_short_tree_and_the_full_tree_with_full() {
     let repo = Repo::new();
@@ -445,7 +445,7 @@ fn tree_prints_the_short_tree_and_the_full_tree_with_full() {
 }
 
 /// `tree` with no id prints today's trails of every project, in any folder, each with its project name
-/// and its title in one column; with none, it names `tree --all` (`spec/trails/02-cli.md`, "Tree").
+/// and its title in one column; with none, it names `tree --all` (`spec/02-cli.md`, "Tree").
 #[test]
 fn tree_with_no_id_prints_every_projects_trails_and_names_all_when_empty() {
     let repo = Repo::new();
@@ -471,7 +471,7 @@ fn tree_with_no_id_prints_every_projects_trails_and_names_all_when_empty() {
 }
 
 /// `tree --all` prints every trail in the store, of every project, newest first, each day's trails
-/// after a line with the day (`spec/trails/02-cli.md`, "Tree").
+/// after a line with the day (`spec/02-cli.md`, "Tree").
 #[test]
 fn tree_all_prints_every_trail_of_every_project_by_day() {
     let repo = Repo::new();
@@ -506,7 +506,7 @@ fn tree_all_prints_every_trail_of_every_project_by_day() {
 }
 
 /// The tree prints a trail's first ask on the trail's line when their texts match, and the ask's steps
-/// one level up; `--json` prints both (`spec/trails/02-cli.md`, "Tree").
+/// one level up; `--json` prints both (`spec/02-cli.md`, "Tree").
 #[test]
 fn the_tree_folds_a_trails_twin_first_ask() {
     let repo = Repo::new();

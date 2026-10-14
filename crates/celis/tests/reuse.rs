@@ -47,7 +47,7 @@ fn links(step: &Value, kind: &str) -> Vec<String> {
 }
 
 /// `step add --uses` takes a live decision and a step of another trail, writes each whole id, and gives
-/// a trail id as its first ask (`spec/trails/06-reuse.md`, "Uses").
+/// a trail id as its first ask (`spec/06-reuse.md`, "Uses").
 #[test]
 fn uses_takes_a_decision_and_a_step_of_another_trail() {
     let repo = Repo::new();
@@ -78,7 +78,7 @@ fn uses_takes_a_decision_and_a_step_of_another_trail() {
 }
 
 /// `step add --uses` refuses an id no decision or step has with `no-step`, and a step of its own trail
-/// as a usage error (`spec/trails/06-reuse.md`, "Uses").
+/// as a usage error (`spec/06-reuse.md`, "Uses").
 #[test]
 fn uses_refuses_an_unknown_id_and_a_step_of_the_same_trail() {
     let repo = Repo::new();
@@ -109,7 +109,7 @@ fn uses_refuses_an_unknown_id_and_a_step_of_the_same_trail() {
 }
 
 /// On a session's new trail and its ask, the `uses` tags go on the ask only
-/// (`spec/trails/06-reuse.md`, "Uses").
+/// (`spec/06-reuse.md`, "Uses").
 #[test]
 fn uses_goes_on_the_ask_of_a_new_trail() {
     let repo = Repo::new();
@@ -121,7 +121,7 @@ fn uses_goes_on_the_ask_of_a_new_trail() {
 }
 
 /// `step add --replaces` takes a done step of another trail: the new step goes where `step add` puts it,
-/// the old one stays done, and its grade and trail read as revised (`spec/trails/06-reuse.md`,
+/// the old one stays done, and its grade and trail read as revised (`spec/06-reuse.md`,
 /// "Revisions").
 #[test]
 fn replaces_takes_a_done_step_and_reads_it_as_revised() {
@@ -159,7 +159,7 @@ fn replaces_takes_a_done_step_and_reads_it_as_revised() {
     assert!(tree.contains(&line), "{tree}");
 }
 
-/// `step add --replaces` still refuses a dropped step with `closed` (`spec/trails/03-steps.md`,
+/// `step add --replaces` still refuses a dropped step with `closed` (`spec/03-steps.md`,
 /// "Dropping").
 #[test]
 fn replaces_refuses_a_dropped_step() {
@@ -218,7 +218,7 @@ fn line<'a>(text: &'a str, id: &str) -> &'a str {
 }
 
 /// `stats` with nothing reused says so, and prints nothing with `--json`; it refuses an unknown id
-/// with `no-step` (`spec/trails/02-cli.md`, "Stats").
+/// with `no-step` (`spec/02-cli.md`, "Stats").
 #[test]
 fn stats_says_when_nothing_was_reused() {
     let repo = Repo::new();
@@ -232,7 +232,7 @@ fn stats_says_when_nothing_was_reused() {
 }
 
 /// `stats` prints each followed step, most followed at any depth first, then each used decision, then
-/// the total (`spec/trails/02-cli.md`, "Stats").
+/// the total (`spec/02-cli.md`, "Stats").
 #[test]
 fn stats_prints_the_followed_steps_the_used_decisions_and_the_total() {
     let repo = Repo::new();
@@ -258,7 +258,7 @@ fn stats_prints_the_followed_steps_the_used_decisions_and_the_total() {
 }
 
 /// `stats <id>` prints the step, then each step it follows, then each step that follows it, two spaces
-/// further in a level (`spec/trails/02-cli.md`, "Stats").
+/// further in a level (`spec/02-cli.md`, "Stats").
 #[test]
 fn stats_of_a_step_prints_its_sources_then_its_followers() {
     let repo = Repo::new();
@@ -281,7 +281,7 @@ fn stats_of_a_step_prints_its_sources_then_its_followers() {
 }
 
 /// `tree --full` prints a `follows` line under a step for each step it follows, and a `reused` line
-/// when steps follow it; `tree --json` gives the count (`spec/trails/02-cli.md`, "Tree").
+/// when steps follow it; `tree --json` gives the count (`spec/02-cli.md`, "Tree").
 #[test]
 fn tree_prints_follows_and_reused_lines() {
     let repo = Repo::new();
@@ -308,7 +308,7 @@ fn tree_prints_follows_and_reused_lines() {
 }
 
 /// A session's first ask that `--replaces` a done step carries the link, and its trail does not: the done
-/// step reads as revised once, and no `joined` line prints (`spec/trails/06-reuse.md`, "Revisions").
+/// step reads as revised once, and no `joined` line prints (`spec/06-reuse.md`, "Revisions").
 #[test]
 fn a_new_trail_that_replaces_a_done_step_links_it_once() {
     let repo = Repo::new();
@@ -357,7 +357,7 @@ fn a_new_trail_that_replaces_a_done_step_links_it_once() {
 }
 
 /// `step add` with `--uses` or a done `--replaces` refuses, as a usage error, an open step of the same
-/// place and words, and writes nothing (`spec/trails/02-cli.md`, "Step").
+/// place and words, and writes nothing (`spec/02-cli.md`, "Step").
 #[test]
 fn a_link_on_a_step_that_exists_is_refused() {
     let repo = Repo::new();
@@ -381,7 +381,7 @@ fn a_link_on_a_step_that_exists_is_refused() {
     refusal(&o, 2, "usage");
 }
 
-/// `--uses` writes each id once (`spec/trails/06-reuse.md`, "Uses").
+/// `--uses` writes each id once (`spec/06-reuse.md`, "Uses").
 #[test]
 fn uses_writes_each_id_once() {
     let repo = Repo::new();
@@ -404,7 +404,7 @@ fn uses_writes_each_id_once() {
 }
 
 /// `--uses` of a trail with no first ask of its text names the trail, and `stats` and `tree` count the
-/// follow on it (`spec/trails/06-reuse.md`, "Uses").
+/// follow on it (`spec/06-reuse.md`, "Uses").
 #[test]
 fn uses_of_a_trail_with_no_twin_names_the_trail() {
     let repo = Repo::new();
@@ -423,7 +423,7 @@ fn uses_of_a_trail_with_no_twin_names_the_trail() {
 }
 
 /// A session trail's line counts `reused` on its first ask in text and in `--json` alike
-/// (`spec/trails/02-cli.md`, "Tree").
+/// (`spec/02-cli.md`, "Tree").
 #[test]
 fn a_session_trail_counts_reused_on_its_first_ask() {
     let repo = Repo::new();
@@ -444,7 +444,7 @@ fn a_session_trail_counts_reused_on_its_first_ask() {
     assert_eq!(step(&repo, &past[1], &past[1])["reused"], 1);
 }
 
-/// A dropped trail's line shows its own drop, not its first ask's done (`spec/trails/02-cli.md`,
+/// A dropped trail's line shows its own drop, not its first ask's done (`spec/02-cli.md`,
 /// "Tree").
 #[test]
 fn a_dropped_trail_shows_its_own_drop() {

@@ -11,14 +11,14 @@ Thank you for your help. This guide tells you how to make a change that we can m
 
 - `crates/` is one Cargo workspace: `celis` (the command line), `celis-trails` (trails, steps, decisions
   and their store) and `celis-nostr` (the account, signed notes, encryption and the relay client).
-- `spec/trails/` holds the contract, as numbered CIPs. `spec/fixtures/` holds what two ends must match.
+- `spec/` holds the contract, as numbered CIPs. `spec/fixtures/` holds what two ends must match.
 - `plugins/celis/` is the plugin: one manifest per agent, and the same hooks. Gemini CLI installs from the
   repo root, so `gemini-extension.json` and `hooks/` are there. Antigravity does too, so
   `.antigravity-plugin/` and `hooks.json` are there.
 
 ## Change the spec first
 
-A change of behaviour starts in `spec/trails/`. Read [`spec/trails/README.md`](spec/trails/README.md) for
+A change of behaviour starts in `spec/`. Read [`spec/README.md`](spec/README.md) for
 how a CIP works. In short:
 
 - A CIP adds. It never changes another CIP. A new meaning for a name is a new CIP, with the next number.
@@ -31,7 +31,7 @@ The conventions are in [`AGENTS.md`](AGENTS.md). They apply to people and agents
 
 - Write a failing test first, then make it pass.
 - A test proves behaviour through the public surface, and cites the spec section it proves:
-  ``(`spec/trails/03-steps.md`, "Closing")``.
+  ``(`spec/03-steps.md`, "Closing")``.
 - A name is a noun for what a thing is. One primary type per file.
 - Docstrings on types and members only. No inline comments.
 

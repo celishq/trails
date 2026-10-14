@@ -148,7 +148,7 @@ fn out(o: &Output) -> String {
 }
 
 /// `update` installs the release `latest` redirects to over the file the running `celis` resolves
-/// to (`spec/trails/02-cli.md`, "Update").
+/// to (`spec/02-cli.md`, "Update").
 #[test]
 fn update_installs_the_latest_release_over_the_resolved_file() {
     let install = Install::new();
@@ -166,7 +166,7 @@ fn update_installs_the_latest_release_over_the_resolved_file() {
 }
 
 /// When the latest version is installed, `update` downloads nothing and says so
-/// (`spec/trails/02-cli.md`, "Update").
+/// (`spec/02-cli.md`, "Update").
 #[test]
 fn update_downloads_nothing_when_the_latest_is_installed() {
     let install = Install::new();
@@ -178,7 +178,7 @@ fn update_downloads_nothing_when_the_latest_is_installed() {
 
 /// With a version, `update` installs that version, though it is not the latest; a leading `v` does
 /// not count
-/// (`spec/trails/02-cli.md`, "Update").
+/// (`spec/02-cli.md`, "Update").
 #[test]
 fn update_installs_a_named_version() {
     let install = Install::new();
@@ -194,7 +194,7 @@ fn update_installs_a_named_version() {
 }
 
 /// With `--dry-run`, `update` prints the installed and the new version, and changes nothing
-/// (`spec/trails/02-cli.md`, "Update").
+/// (`spec/02-cli.md`, "Update").
 #[test]
 fn update_dry_run_changes_nothing() {
     let install = Install::new();
@@ -209,7 +209,7 @@ fn update_dry_run_changes_nothing() {
 }
 
 /// When the archive does not match its checksum, `update` fails and leaves the installed file as it
-/// was (`spec/trails/02-cli.md`, "Update").
+/// was (`spec/02-cli.md`, "Update").
 #[test]
 fn update_fails_on_a_wrong_checksum_and_keeps_the_file() {
     let install = Install::new();

@@ -24,7 +24,7 @@ fn the_longest_command_the_words_begin_with_names_the_verb() {
     assert!(Verb::of(&["step"]).is_none());
 }
 
-/// An unknown word names the nearest known one within two edits (`spec/trails/02-cli.md`, "Output and
+/// An unknown word names the nearest known one within two edits (`spec/02-cli.md`, "Output and
 /// errors").
 #[test]
 fn an_unknown_word_names_the_nearest_known_one_within_two_edits() {
