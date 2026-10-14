@@ -99,13 +99,20 @@ pub(super) struct Tree<'a> {
     pub next: Cell<Option<u64>>,
 }
 
-/// A line of the tree: text as it is, or a step's row whose details line up with the other rows'.
+/// A line of the tree: text as it is, a step's row whose details line up with the other rows', or a rule
+/// whose text goes on lines after `rest` and whose id stands in the first column.
 enum Line {
     Text(String),
     Row {
         lead: String,
         title: String,
         cells: [Option<String>; 4],
+    },
+    Rule {
+        lead: String,
+        rest: String,
+        text: String,
+        id: String,
     },
 }
 
@@ -121,21 +128,27 @@ impl Tree<'_> {
     ) -> Result<(), Failure> {
         let mut lines = vec![];
         let mut last = None;
+        let name = notes
+            .iter()
+            .filter_map(|n| self.steps.step(n))
+            .map(|s| s.anchor.name.chars().count())
+            .max()
+            .unwrap_or(0);
         for note in notes {
             let day = day(note.created_at);
             if self.all && !json && last.as_ref() != Some(&day) {
                 lines.push(Line::Text(self.paint(BOLD, &day)));
                 last = Some(day);
             }
-            self.trail(note, key, json, &mut lines);
+            self.trail(note, key, json, name, &mut lines);
         }
         self.show(lines, out)
     }
 
     /// Adds the step `note` with its state, its proof and grade when done, and its rules or an ask's
-    /// trail's rules, then the steps under it; a first ask with its text stands on its line. With `json`,
-    /// its object is `key`.
-    fn trail(&self, note: &Note, key: &str, json: bool, lines: &mut Vec<Line>) {
+    /// trail's rules, then the steps under it; a first ask with its text stands on its line, its project
+    /// `name` wide. With `json`, its object is `key`.
+    fn trail(&self, note: &Note, key: &str, json: bool, name: usize, lines: &mut Vec<Line>) {
         let Some(step) = self.steps.step(note) else {
             return;
         };
@@ -163,7 +176,10 @@ impl Tree<'_> {
         };
         let (mark, colour) = trail_look(state);
         let project = match self.named {
-            true => format!("{} ", self.paint(DIM, &step.anchor.name)),
+            true => format!(
+                "{} ",
+                self.paint(DIM, &format!("{:<name$}", step.anchor.name))
+            ),
             false => String::new(),
         };
         let lead = format!("{} {} {project}", self.paint(colour, mark), self.id(note));
@@ -183,6 +199,15 @@ impl Tree<'_> {
         .flatten()
         .collect();
         let column = visible(&lead);
+        let mut notes = self.steps.under(&note.id);
+        if let Some(ask) = self.steps.twin(note) {
+            notes.remove(0);
+            notes.splice(0..0, self.steps.under(&ask.id));
+        }
+        let rail = match folded || notes.is_empty() {
+            true => "",
+            false => "  │",
+        };
         lines.push(Line::Row {
             lead,
             title: self.paint(BOLD, step.title()),
@@ -207,26 +232,30 @@ impl Tree<'_> {
                 true => decision.content.as_str(),
                 false => decision.brief(),
             };
-            let text = format!("{} {content}", short(&rule.id));
-            self.labelled(lines, ("", column), "rule", &text);
-        }
-        let mut notes = self.steps.under(&note.id);
-        if let Some(ask) = self.steps.twin(note) {
-            notes.remove(0);
-            notes.splice(0..0, self.steps.under(&ask.id));
+            let gap = " ".repeat(column.saturating_sub(visible(rail) + "rule ".len()));
+            lines.push(Line::Rule {
+                lead: format!("{rail}{gap}rule "),
+                rest: format!("{rail}{}", " ".repeat(column.saturating_sub(visible(rail)))),
+                text: content.to_string(),
+                id: short(&rule.id).to_string(),
+            });
         }
         self.under(notes, "", json, lines)
     }
     /// Prints `lines`, each row's details in columns at the right edge of the width, or after the widest
-    /// title; in the short tree, a row's title is cut so it fits, and the start time goes when a title
-    /// would get shorter than 20 characters.
+    /// title; in the short tree, a row's title and a rule are cut so they fit, and the start time goes when
+    /// a title would get shorter than 20 characters. The full tree wraps a rule at the edge.
     fn show(&self, lines: Vec<Line>, out: &mut dyn Write) -> Result<(), Failure> {
         let mut widths = [0; 4];
         for line in &lines {
-            if let Line::Row { cells, .. } = line {
-                for (width, cell) in widths.iter_mut().zip(cells) {
-                    *width = (*width).max(cell.as_deref().map_or(0, visible));
+            match line {
+                Line::Row { cells, .. } => {
+                    for (width, cell) in widths.iter_mut().zip(cells) {
+                        *width = (*width).max(cell.as_deref().map_or(0, visible));
+                    }
                 }
+                Line::Rule { id, .. } => widths[0] = widths[0].max(visible(id)),
+                Line::Text(_) => {}
             }
         }
         if let (false, Some(width)) = (self.full, self.width) {
@@ -234,7 +263,7 @@ impl Tree<'_> {
                 Line::Row { lead, title, .. } => {
                     width.saturating_sub(visible(lead) + room(&widths)) < visible(title).min(20)
                 }
-                Line::Text(_) => false,
+                _ => false,
             });
             if short {
                 widths[3] = 0;
@@ -248,24 +277,13 @@ impl Tree<'_> {
                 .iter()
                 .filter_map(|l| match l {
                     Line::Row { lead, title, .. } => Some(visible(lead) + visible(title) + room),
-                    Line::Text(_) => None,
+                    _ => None,
                 })
                 .chain(width)
                 .max()
                 .unwrap_or(0),
         };
-        for line in lines {
-            let (lead, title, cells) = match line {
-                Line::Text(text) => {
-                    super::put(out, &text)?;
-                    continue;
-                }
-                Line::Row { lead, title, cells } => (lead, title, cells),
-            };
-            let title = match (self.full, self.width) {
-                (false, Some(_)) => cut(&title, edge.saturating_sub(visible(&lead) + room).max(2)),
-                _ => title,
-            };
+        let block = |cells: &[Option<String>; 4]| -> String {
             let block: Vec<String> = cells
                 .iter()
                 .zip(widths)
@@ -280,13 +298,49 @@ impl Tree<'_> {
                     }
                 })
                 .collect();
-            let block = block.join("  ");
-            let gap = edge.saturating_sub(visible(&lead) + visible(&title) + span);
-            let line = match block.trim_end() {
-                "" => format!("{lead}{title}"),
-                block => format!("{lead}{title}{}{}", " ".repeat(gap), self.paint(DIM, block)),
-            };
-            super::put(out, &line)?;
+            block.join("  ").trim_end().to_string()
+        };
+        let row = |head: String, block: &str| -> String {
+            let gap = edge.saturating_sub(visible(&head) + span);
+            match block {
+                "" => head,
+                block => format!("{head}{}{}", " ".repeat(gap.max(2)), self.paint(DIM, block)),
+            }
+        };
+        for line in lines {
+            match line {
+                Line::Text(text) => super::put(out, &text)?,
+                Line::Row { lead, title, cells } => {
+                    let title = match (self.full, self.width) {
+                        (false, Some(_)) => {
+                            cut(&title, edge.saturating_sub(visible(&lead) + room).max(2))
+                        }
+                        _ => title,
+                    };
+                    super::put(out, &row(format!("{lead}{title}"), &block(&cells)))?;
+                }
+                Line::Rule {
+                    lead,
+                    rest,
+                    text,
+                    id,
+                } => {
+                    let measure = edge.saturating_sub(visible(&lead) + room).max(20);
+                    let parts = match (self.full, self.width) {
+                        (true, Some(_)) => wrap(&text, measure),
+                        (false, Some(_)) => vec![cut(&text, measure)],
+                        _ => vec![text],
+                    };
+                    let id = block(&[Some(id), None, None, None]);
+                    for (n, part) in parts.iter().enumerate() {
+                        let line = match n {
+                            0 => row(self.paint(DIM, &format!("{lead}{part}")), &id),
+                            _ => self.paint(DIM, &format!("{rest}{part}")),
+                        };
+                        super::put(out, &line)?;
+                    }
+                }
+            }
         }
         Ok(())
     }

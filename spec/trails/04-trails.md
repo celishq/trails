@@ -175,7 +175,11 @@ celis tree --all [--full]         every trail in the store, by day
 - With a width, the short tree MUST end the details at the right edge. It MUST leave out the start time
   when a title would be cut below 20 characters. Else they MUST start two spaces
   after the widest title. A time MUST print as `14:02` on the day it is, else as `Oct 9`.
-- The short tree MUST print a rule without its reason: the text from `, because` on.
+- The short tree MUST print a rule without its reason: the text from `, because` on. A rule's id MUST
+  print in the first details column.
+- With no id, the tree MUST pad each project name to the widest, so each trail's title starts in the
+  same column.
+- A rule of a trail with steps under it MUST keep the branch line `│` of those steps.
 - In the tree, each line under a step MUST start at the column of the step's title. A label
   (`rule`, `done`, `took`, `dropped`) MUST end one space before that column.
 - With a width, the full tree MUST wrap a line under a step between words. Each wrapped line MUST
@@ -189,7 +193,7 @@ tree  text  <mark> <id, first 8> <title>   <place>  <state> · <n> steps  <ran> 
                   done <proof>
                   took <its grade, without "took">
                dropped <reason>
-                  rule <id, first 8> <text>
+              │   rule <text>                                  <id, first 8>
               ├─ <mark> <id, first 8> <title>   <place>  <took>  <started>
               │           <the lines under it, as under the trail>
               └─ <mark> <id, first 8> <title>   ...
@@ -205,7 +209,7 @@ tree  text  <mark> <id, first 8> <title>   <place>  <state> · <n> steps  <ran> 
 celis tree 3fa2c1d0
 
 ● 3fa2c1d0 Add a senior tier to the price list                                12m  14:02
-  rule 4c1d22e0 A senior pays 80% of the price, rounded down to the cent.
+  │   rule A senior pays 80%…          4c1d22e0
   ├─ ✓ 9b0e11aa A senior pays 80%      prices.py:40                   1m 30s  14:03
   ├─ ◐ 5d7f3c21 The frame shows the tier                              7m 12s  14:05
   │  └─ ○ 0a4e9d10 Add the badge to the frame
@@ -215,7 +219,7 @@ celis tree
 
 ● 3fa2c1d0 shop Add a senior tier to the price list                12m  14:02
   …
-✓ 1c9e44b2 crm Fix the cart total                    3 steps      8m  11:20
+✓ 1c9e44b2 crm  Fix the cart total                    3 steps      8m  11:20
 ```
 
 ## The past
