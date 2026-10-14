@@ -127,3 +127,14 @@ fn past_json_carries_each_past_works_tags() {
     assert_eq!(keys, want);
     assert_eq!(past[0]["project"], "repo");
 }
+
+/// With nothing to print, `past` prints one line that says so, and with `--json` nothing
+/// (`spec/02-cli.md`, "Past").
+#[test]
+fn past_with_nothing_to_print_says_so() {
+    let repo = Repo::new();
+    let text = cli(&repo, &["past"]);
+    assert!(text.status.success(), "{}", err(&text));
+    assert_eq!(out(&text).lines().count(), 1, "{}", out(&text));
+    assert!(out(&cli(&repo, &["past", "--json"])).is_empty());
+}

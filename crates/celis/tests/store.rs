@@ -173,7 +173,7 @@ fn past_with_no_store_must_answer_empty_and_create_nothing() {
     let repo = Repo::plain();
     let o = repo.run(&repo.path(), &["past"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
-    assert!(out(&o).is_empty(), "{}", out(&o));
+    assert!(out(&o).starts_with("No active trails,"), "{}", out(&o));
     assert!(!repo.store().exists());
 }
 
@@ -184,7 +184,7 @@ fn read_with_no_store_must_answer_empty_and_create_nothing() {
     let repo = Repo::new();
     let o = repo.run(&repo.path(), &["past"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
-    assert!(out(&o).is_empty(), "{}", out(&o));
+    assert!(out(&o).starts_with("No active trails,"), "{}", out(&o));
     assert!(!repo.store().exists());
 }
 

@@ -89,7 +89,7 @@ fn names(usage: &str) -> Vec<String> {
 /// (`spec/02-cli.md`, "Help").
 #[test]
 fn celis_and_celis_help_print_the_page() {
-    for args in [&[][..], &["help"], &["--help"]] {
+    for args in [&[][..], &["help"], &["--help"], &["-h"]] {
         assert_eq!(page(args).trim_end(), the_page().trim_end(), "{args:?}");
     }
 }
@@ -113,7 +113,51 @@ fn help_anywhere_prints_the_command_page_its_words_name() {
     assert_eq!(page(&args).trim_end(), the_page().trim_end(), "{args:?}");
 }
 
-/// `--help` after a group's name alone prints the group page: each of its commands with what it does
+/// `-h` prints what `--help` prints (`spec/02-cli.md`, "Help").
+#[test]
+fn h_prints_what_help_prints() {
+    for args in [&["tree"][..], &["step", "add"], &["step"]] {
+        let short: Vec<&str> = args.iter().copied().chain(["-h"]).collect();
+        let long: Vec<&str> = args.iter().copied().chain(["--help"]).collect();
+        assert_eq!(page(&short), page(&long), "{args:?}");
+    }
+}
+
+/// `celis help <words>` prints what `celis <words> --help` prints (`spec/02-cli.md`, "Help").
+#[test]
+fn help_before_words_prints_their_page() {
+    for args in [
+        &["tree"][..],
+        &["step", "add"],
+        &["step"],
+        &["auth"],
+        &["nope"],
+    ] {
+        let before: Vec<&str> = ["help"].into_iter().chain(args.iter().copied()).collect();
+        let after: Vec<&str> = args.iter().copied().chain(["--help"]).collect();
+        assert_eq!(page(&before), page(&after), "{args:?}");
+    }
+}
+
+/// The group page of `step` is as the spec shows it (`spec/02-cli.md`, "Help").
+#[test]
+fn the_step_group_page_is_as_the_spec_shows_it() {
+    assert_eq!(
+        page(&["step"]).trim_end(),
+        blocks(CLI, "Help")[2].trim_end()
+    );
+}
+
+/// A usage error inside a group names the group page (`spec/02-cli.md`, "Output and errors").
+#[test]
+fn a_usage_error_inside_a_group_names_the_group_page() {
+    let out = run(&["step", "nope"]);
+    assert_eq!(out.status.code(), Some(2));
+    let err = String::from_utf8_lossy(&out.stderr);
+    assert!(err.contains("See `celis step --help`."), "{err}");
+}
+
+/// A group's name alone, with or without `--help`, prints the group page: each of its commands with what it does
 /// (`spec/02-cli.md`, "Help").
 #[test]
 fn help_after_a_group_prints_its_commands() {
@@ -122,6 +166,7 @@ fn help_after_a_group_prints_its_commands() {
         ("step", &["add", "start", "done", "drop", "edit"]),
     ] {
         let shown = page(&[group, "--help"]);
+        assert_eq!(page(&[group]), shown, "{group}");
         assert!(
             shown.starts_with(&format!("celis {group} <command>")),
             "{shown}"
