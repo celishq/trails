@@ -8,14 +8,13 @@ fn short(id: &str) -> &str {
     &id[..8]
 }
 
-/// The lines `tree --full <args>` prints, each without its details, and each time in ` · ` parts or
-/// after a `took` label as `T`, since times vary.
+/// The lines `tree --full <args>` prints, each without its details.
 fn printed(repo: &Repo, args: &[&str]) -> Vec<String> {
     let mut all = vec!["tree", "--full"];
     all.extend(args);
     let o = cli(repo, &all);
     assert!(o.status.success(), "{}", err(&o));
-    out(&o).lines().map(|l| untimed(&bare(l))).collect()
+    out(&o).lines().map(bare).collect()
 }
 
 /// `line` without the details after its text: from the first two spaces after its guides and label.
@@ -31,78 +30,39 @@ fn bare(line: &str) -> String {
     }
 }
 
-/// `line` with each time, a ` · ` part or the text after `took`, as `T`.
-fn untimed(line: &str) -> String {
-    let time = |part: &str| {
-        !part.is_empty()
-            && part.split(' ').all(|w| {
-                w.len() > 1
-                    && w.is_ascii()
-                    && w[..w.len() - 1].bytes().all(|b| b.is_ascii_digit())
-                    && w.ends_with(['s', 'm', 'h', 'd'])
-            })
-    };
-    if let Some(n) = line.find("took    ") {
-        return format!("{}took    T", &line[..n]);
-    }
-    let parts: Vec<&str> = line.split(" · ").collect();
-    let parts: Vec<&str> = parts
-        .iter()
-        .map(|p| match time(p) {
-            true => "T",
-            false => p,
-        })
-        .collect();
-    parts.join(" · ")
-}
-
 /// `tree` prints the trail as a block: its title, then its project, progress, worked time and rules,
 /// then the rules with `--full`, then the steps under it, oldest first, each followed by its own one
 /// guide down, with the proof and grade of a done one (`spec/02-cli.md`, "Tree").
 #[test]
 fn tree_prints_the_trail_its_rules_and_the_steps_under_it() {
     let repo = Repo::new();
-    let trail = add(&repo, &["--", "build the CRM"]);
-    let o = cli(
+    let by = support::account();
+    let at = support::now() - 600;
+    let trail = support::step_note(&repo, &by, None, "build the CRM", at);
+    let scope = format!("trail:{}", trail.id);
+    let project = (repo.project_id(), "repo");
+    let rule = support::decision(
         &repo,
-        &[
-            "decide",
-            "--scope",
-            &format!("trail:{}", short(&trail)),
-            "--",
-            "colours are tokens",
-        ],
+        (&project.0, project.1),
+        &by,
+        (Some(&scope), None),
+        "colours are tokens",
+        at,
     );
-    assert!(o.status.success(), "{}", err(&o));
-    let rule = out(&o).trim().to_string();
-    let colours = add(&repo, &["--under", short(&trail), "--", "colours"]);
-    std::thread::sleep(std::time::Duration::from_millis(1100));
-    let page = add(&repo, &["--under", short(&trail), "--", "customers page"]);
-    add(&repo, &["--under", short(&page), "--", "badge"]);
-    let other = add(&repo, &["--", "other"]);
-    add(&repo, &["--under", short(&other), "--", "elsewhere"]);
-    let o = cli(
-        &repo,
-        &[
-            "step",
-            "done",
-            short(&colours),
-            "--as-planned",
-            "--",
-            "lint failed, passes",
-        ],
-    );
-    assert!(o.status.success(), "{}", err(&o));
+    let colours = support::step_note(&repo, &by, Some(&trail), "colours", at);
+    support::done_note(&repo, &by, &colours, at + 90);
+    let page = support::step_note(&repo, &by, Some(&trail), "customers page", at + 1);
+    support::step_note(&repo, &by, Some(&page), "badge", at + 2);
     assert_eq!(
-        printed(&repo, &[short(&trail)]),
+        printed(&repo, &[short(&trail.id)]),
         [
             "○ build the CRM".to_string(),
-            "  repo · 1 of 3 · T · § 1 rule".to_string(),
-            format!("  § {} colours are tokens", short(&rule)),
+            "  repo · 1 of 3 · 1m 30s · § 1 rule".to_string(),
+            format!("  § {} colours are tokens", short(&rule.id)),
             String::new(),
             "  ✓ colours".to_string(),
-            "    done    lint failed, passes".to_string(),
-            "    took    T".to_string(),
+            "    done    proof".to_string(),
+            "    took    1m 30s".to_string(),
             "  ○ customers page".to_string(),
             "  │ ○ badge".to_string(),
         ]
@@ -123,7 +83,7 @@ fn tree_of_an_ask_counts_its_trails_rules() {
     let ask = add(&repo, &["--under", short(&trail), "--", "customers page"]);
     add(&repo, &["--under", short(&ask), "--", "badge"]);
     let o = cli(&repo, &["tree", short(&ask)]);
-    let lines: Vec<String> = out(&o).lines().map(|l| untimed(&bare(l))).collect();
+    let lines: Vec<String> = out(&o).lines().map(bare).collect();
     assert_eq!(
         lines,
         [
@@ -140,15 +100,17 @@ fn tree_of_an_ask_counts_its_trails_rules() {
 #[test]
 fn tree_prints_a_done_trails_proof_and_grade() {
     let repo = Repo::new();
-    let trail = add(&repo, &["--", "a small ask"]);
-    finish(&repo, short(&trail));
+    let by = support::account();
+    let at = support::now() - 600;
+    let trail = support::step_note(&repo, &by, None, "a small ask", at);
+    support::done_note(&repo, &by, &trail, at + 45);
     assert_eq!(
-        printed(&repo, &[short(&trail)]),
+        printed(&repo, &[short(&trail.id)]),
         [
             "✓ a small ask",
-            "  repo · T",
-            "  done    failed before, passes now",
-            "  took    T",
+            "  repo · 45s",
+            "  done    proof",
+            "  took    45s",
         ]
     );
 }
@@ -657,4 +619,19 @@ fn a_narrow_tree_leaves_out_ids_then_projects_then_times() {
     assert!(!tight.contains(" repo ") && tight.ends_with('s'), "{tight}");
     let tiny = at("30");
     assert!(!tiny.ends_with('s') && tiny.contains("1 step"), "{tiny}");
+}
+
+/// A line under a step with steps under it carries their `│` guide (`spec/02-cli.md`, "Tree").
+#[test]
+fn a_line_under_a_step_with_steps_carries_their_guide() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    let parent = add(&repo, &["--under", &trail[..8], "--", "parent\nits text"]);
+    add(&repo, &["--under", &parent[..8], "--", "child"]);
+    let lines = printed(&repo, &[&trail[..8]]);
+    assert_eq!(
+        &lines[3..],
+        ["  ○ parent", "  │ its text", "  │ ○ child"],
+        "{lines:?}"
+    );
 }

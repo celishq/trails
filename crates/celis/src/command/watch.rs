@@ -29,7 +29,6 @@ impl Command {
         if let Some(terminal) = typed {
             unsafe { libc::tcsetattr(libc::STDIN_FILENO, libc::TCSANOW, &terminal) };
         }
-        let shown = shown.strip_suffix(KEYS).unwrap_or(&shown);
         write!(out, "\x1b[?25h\x1b[?1049l{shown}")
             .and_then(|_| out.flush())
             .map_err(anyhow::Error::from)?;
@@ -77,7 +76,7 @@ impl Command {
             if tree.is_empty() && args.words.len() < 2 {
                 tree = format!("{EMPTY}\n");
             }
-            draw(out, &format!("{tree}{KEYS}"), shown)?;
+            draw(out, &tree, shown)?;
             let order = frame.order;
             let wait = frame.next.map(until);
             let wait = match frame.spun {
@@ -90,7 +89,7 @@ impl Command {
                 match wake {
                     Ok(Wake::Record) => landed = true,
                     Ok(Wake::Resize) => shown.clear(),
-                    Ok(Wake::Key(key)) => press(key, &mut view, &order),
+                    Ok(Wake::Key(key)) => press(key, &mut view, &order, args.words.len() > 1),
                     Ok(Wake::Quit) | Err(RecvTimeoutError::Disconnected) => return Ok(()),
                     Err(RecvTimeoutError::Timeout) => break,
                 }
@@ -107,7 +106,7 @@ impl Command {
 }
 
 /// The line that ends each tree of a watch, dim, with the keys it reads.
-const KEYS: &str = "\x1b[2m↑↓ select · enter open · f full · a all · q quit\x1b[0m\n";
+const KEYS: &str = "\x1b[2m↑↓ select · enter open · f full · a all · q quit\x1b[0m";
 
 /// A key a watch reads.
 enum Key {
@@ -119,30 +118,27 @@ enum Key {
 }
 
 /// Changes `view` as `key` asks: moves the selection along `order`, flips the selected trail, or turns
-/// full or all.
-fn press(key: Key, view: &mut View, order: &[String]) {
+/// full on or off, and all when the watch `named` no id.
+fn press(key: Key, view: &mut View, order: &[String], named: bool) {
     let at = view
         .selected
         .as_ref()
         .and_then(|s| order.iter().position(|o| o == s));
-    let moved = match (key, at) {
-        (Key::Down, None) => order.first(),
-        (Key::Down, Some(at)) => order.get(at + 1).or(order.get(at)),
-        (Key::Up, Some(at)) => order.get(at.saturating_sub(1)),
-        (Key::Up, None) => None,
+    let last = order.len().saturating_sub(1);
+    match (key, at) {
+        (Key::Down, None) => view.selected = order.first().cloned(),
+        (Key::Down, Some(at)) => view.selected = Some(order[(at + 1).min(last)].clone()),
+        (Key::Up, Some(at)) => view.selected = Some(order[at.saturating_sub(1)].clone()),
+        (Key::Up, None) => {}
         (Key::Enter, _) => {
             if let Some(id) = view.selected.clone() {
                 if !view.flipped.remove(&id) {
                     view.flipped.insert(id);
                 }
             }
-            return;
         }
-        (Key::Full, _) => return view.full = !view.full,
-        (Key::All, _) => return view.all = !view.all,
-    };
-    if let Some(id) = moved {
-        view.selected = Some(id.clone());
+        (Key::Full, _) => view.full = !view.full,
+        (Key::All, _) => view.all = !view.all && !named,
     }
 }
 
@@ -195,7 +191,8 @@ fn spin() -> usize {
 }
 
 /// Draws `tree` over the screen from the top left, when it is not what `shown` holds: each line cut to the
-/// width and cleared to its end, the rest of the screen cleared, and the tree cut to the screen's height.
+/// width and cleared to its end, the tree cut to the screen's height but one row, then the keys, and the
+/// rest of the screen cleared.
 fn draw(out: &mut dyn Write, tree: &str, shown: &mut String) -> Result<(), Failure> {
     if tree.is_empty() || tree == shown {
         return Ok(());
@@ -207,15 +204,14 @@ fn draw(out: &mut dyn Write, tree: &str, shown: &mut String) -> Result<(), Failu
         .lines()
         .map(|l| width.map_or(l.to_string(), |w| cut(l, w)))
         .collect();
-    let keys = lines.pop_if(|l| l.contains("↑↓ select"));
-    if let Some(rows) = rows.map(|r| r.saturating_sub(usize::from(keys.is_some())).max(1)) {
+    if let Some(rows) = rows.map(|r| r.saturating_sub(1).max(1)) {
         if lines.len() > rows {
             let more = lines.len() - rows + 1;
             lines.truncate(rows - 1);
             lines.push(format!("… {more} more lines"));
         }
     }
-    lines.extend(keys);
+    lines.push(KEYS.to_string());
     write!(
         out,
         "\x1b[?2026h\x1b[H{}\x1b[K\x1b[J\x1b[?2026l",

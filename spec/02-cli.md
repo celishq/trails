@@ -356,7 +356,8 @@ celis tree --all [--full]         every trail in the store, by day
   and reuse under the trail's title, and the ask's steps first under it (CIP-04, "Sessions"). A trail
   that is done or dropped itself MUST show its own done or drop. Its ask MUST NOT print, except with
   `--json`.
-- A top step of a block MUST start two spaces in. Each level down MUST add a dim `│ ` guide.
+- A top step of a block MUST start two spaces in. Each level down MUST add a dim `│ ` guide. A line under a
+  step with steps under it MUST carry their guide.
 - A step line MUST end with its details: the last part of its place, its worked time and its id.
 - A trail's line MUST end with its details: its project, then `<n> steps` when every step is done, else
   `<done> of <all>`, then ` · 1 rule` or ` · <n> rules` when it has rules, then its worked time and its
@@ -452,10 +453,10 @@ and close.
 
 - On a terminal, `tree` with no `--json` MUST watch. Else it MUST print once. `tree` MUST NOT take a
   `--watch` flag.
-- A watch MUST print what `tree` with the same words prints off a terminal, with two changes: a working
-  step's or trail's mark MUST be a spinner, `⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏`, one frame each 100 ms; and the second line of
-  an active trail's block MUST end with `active <time> ago`, from the newest record of its tree. It MUST
-  refuse an id no step has, with `no-step`, also with no store.
+- A watch MUST print what `tree` with the same words prints off a terminal, but for the rules below. It
+  MUST refuse an id no step has, with `no-step`, also with no store.
+- A working step's or trail's mark MUST be a spinner, `⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏`, one frame each 100 ms. The second
+  line of an active trail's block MUST end with `active <time> ago`, from the newest record of its tree.
 - With no id and no trail to print, it MUST print what `tree` prints.
 - It MUST print the tree again as soon as the terminal's width changes. It MUST print it again within
   one second after a time it shows changes.
