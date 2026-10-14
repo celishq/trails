@@ -306,3 +306,159 @@ fn tree_prints_follows_and_reused_lines() {
         .unwrap();
     assert_eq!(at["reused"], 1, "{json:?}");
 }
+
+/// A session's first ask that `--replaces` a done step carries the link, and its trail does not: the done
+/// step reads as revised once, and no `joined` line prints (`spec/trails/06-reuse.md`, "Revisions").
+#[test]
+fn a_new_trail_that_replaces_a_done_step_links_it_once() {
+    let repo = Repo::new();
+    let old = ids(&repo, "s1", &["--", "the badge"]);
+    finish(&repo, &old[0][..8]);
+    let o = repo.run(
+        &repo.path(),
+        &[
+            "step",
+            "add",
+            "--replaces",
+            &old[0][..8],
+            "--",
+            "fix the badge",
+        ],
+        &[("CLAUDE_CODE_SESSION_ID", "s2")],
+        "",
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let fix: Vec<String> = out(&o).lines().map(str::to_string).collect();
+    let revised = step(&repo, &old[1], &old[0]);
+    assert_eq!(
+        revised["grade"]["revised"],
+        serde_json::json!([fix[0]]),
+        "{revised}"
+    );
+    let trail = step(&repo, &fix[1], &fix[1]);
+    assert!(links(&trail, "replaces").is_empty(), "{trail}");
+    let again = ids(&repo, "s2", &["--", "the next fix"]);
+    finish(&repo, &again[0][..8]);
+    let o = repo.run(
+        &repo.path(),
+        &[
+            "step",
+            "add",
+            "--replaces",
+            &again[0][..8],
+            "--",
+            "fix it again",
+        ],
+        &[("CLAUDE_CODE_SESSION_ID", "s2")],
+        "",
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    assert!(!err(&o).contains("joined"), "{}", err(&o));
+}
+
+/// `step add` with `--uses` or a done `--replaces` refuses, as a usage error, an open step of the same
+/// place and words, and writes nothing (`spec/trails/02-cli.md`, "Step").
+#[test]
+fn a_link_on_a_step_that_exists_is_refused() {
+    let repo = Repo::new();
+    let rule = decide(&repo, "When a price rounds: round down to the cent.");
+    let trail = add(&repo, &["--", "the trail"]);
+    add(&repo, &["--under", &trail[..8], "--", "the badge"]);
+    let o = cli(
+        &repo,
+        &[
+            "step",
+            "add",
+            "--json",
+            "--under",
+            &trail[..8],
+            "--uses",
+            &rule[..8],
+            "--",
+            "the badge",
+        ],
+    );
+    refusal(&o, 2, "usage");
+}
+
+/// `--uses` writes each id once (`spec/trails/06-reuse.md`, "Uses").
+#[test]
+fn uses_writes_each_id_once() {
+    let repo = Repo::new();
+    let rule = decide(&repo, "When a price rounds: round down to the cent.");
+    let trail = add(&repo, &["--", "the trail"]);
+    let id = add(
+        &repo,
+        &[
+            "--under",
+            &trail[..8],
+            "--uses",
+            &rule[..8],
+            "--uses",
+            &rule,
+            "--",
+            "a step",
+        ],
+    );
+    assert_eq!(links(&step(&repo, &trail, &id), "uses"), [rule]);
+}
+
+/// `--uses` of a trail with no first ask of its text names the trail, and `stats` and `tree` count the
+/// follow on it (`spec/trails/06-reuse.md`, "Uses").
+#[test]
+fn uses_of_a_trail_with_no_twin_names_the_trail() {
+    let repo = Repo::new();
+    let past = add(&repo, &["--", "the senior price"]);
+    let part = add(&repo, &["--under", &past[..8], "--", "a part"]);
+    finish(&repo, &part[..8]);
+    let trail = add(&repo, &["--new", "--", "the student price"]);
+    let id = add(
+        &repo,
+        &["--under", &trail[..8], "--uses", &past[..8], "--", "a step"],
+    );
+    assert_eq!(links(&step(&repo, &trail, &id), "uses"), [past.as_str()]);
+    let text = out(&cli(&repo, &["stats", &past[..8]]));
+    assert!(line(&text, &id).starts_with("  followed "), "{text}");
+    assert_eq!(step(&repo, &past, &past)["reused"], 1);
+}
+
+/// A session trail's line counts `reused` on its first ask in text and in `--json` alike
+/// (`spec/trails/02-cli.md`, "Tree").
+#[test]
+fn a_session_trail_counts_reused_on_its_first_ask() {
+    let repo = Repo::new();
+    let past = ids(&repo, "s1", &["--", "the senior price"]);
+    finish(&repo, &past[0][..8]);
+    let trail = add(&repo, &["--new", "--", "the student price"]);
+    add(
+        &repo,
+        &[
+            "--under",
+            &trail[..8],
+            "--uses",
+            &past[1][..8],
+            "--",
+            "a step",
+        ],
+    );
+    assert_eq!(step(&repo, &past[1], &past[1])["reused"], 1);
+}
+
+/// A dropped trail's line shows its own drop, not its first ask's done (`spec/trails/02-cli.md`,
+/// "Tree").
+#[test]
+fn a_dropped_trail_shows_its_own_drop() {
+    let repo = Repo::new();
+    let written = ids(&repo, "s1", &["--", "the trail"]);
+    finish(&repo, &written[0][..8]);
+    let more = add(&repo, &["--under", &written[1][..8], "--", "more"]);
+    let o = cli(
+        &repo,
+        &["step", "drop", &written[1][..8], "--", "abandoned"],
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let head = step(&repo, &written[1], &written[1]);
+    assert_eq!(head["reason"], "abandoned", "{head}");
+    assert_eq!(head["proof"], Value::Null, "{head}");
+    assert!(!more.is_empty());
+}

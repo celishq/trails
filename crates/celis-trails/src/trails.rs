@@ -8,7 +8,7 @@ pub mod written;
 use crate::id::short;
 use crate::{
     Check, Decision, DecisionId, Decisions, Draft, Failure, Mark, Notice, Review, Scope, State,
-    Step, StepId, StepRecord, Steps, Store, Written,
+    Step, StepId, StepRecord, Steps, Store, Trail, Written,
 };
 use celis_nostr::{Account, Note};
 use std::path::Path;
@@ -55,13 +55,21 @@ impl Trails {
             .uses
             .iter()
             .map(|id| self.used(&steps, &draft.anchor.project, trail, id));
-        let uses = uses.collect::<Result<Vec<_>, _>>()?;
+        let mut uses = uses.collect::<Result<Vec<String>, _>>()?;
+        let mut seen = std::collections::HashSet::new();
+        uses.retain(|id| seen.insert(id.clone()));
         let mut written = Written::default();
         if let Some(same) = same_open(&steps, &draft, under) {
+            if !uses.is_empty() || replaced.is_some_and(|r| r.done().is_some()) {
+                return Err(Failure::usage(format!(
+                    "the open step {} has the same text, and keeps its own links; give the new step other words",
+                    short(same.id())
+                )));
+            }
             written.records.push(same.note().clone());
             return Ok(written);
         }
-        let joined = match (&draft.under, under, moved) {
+        let joined = match (&draft.under, under, replaced) {
             (None, Some(trail), None) => Some(trail.step_id()),
             _ => None,
         };
@@ -89,9 +97,10 @@ impl Trails {
         Ok(written)
     }
 
-    /// Writes `ask` as a new trail with no places, check or uses, then `ask` under it; the ask first.
+    /// Writes `ask` as a new trail with no links, places or check, then `ask` under it; the ask first.
     fn start_trail(&self, ask: StepRecord) -> Result<Written, Failure> {
         let head = StepRecord {
+            replaces: None,
             uses: Vec::new(),
             places: Vec::new(),
             check: None,
@@ -250,7 +259,7 @@ impl Trails {
     }
 
     /// The whole id of the live decision of `project`, or of the step of a trail other than `trail`, that
-    /// `id` names; a trail gives its first ask.
+    /// `id` names; a trail gives the step that holds its work (`Trail::work`).
     fn used(
         &self,
         steps: &Steps,
@@ -258,13 +267,17 @@ impl Trails {
         trail: Option<&str>,
         id: &str,
     ) -> Result<String, Failure> {
-        if let Ok(decision) = self.decisions().find(project, id) {
-            return Ok(decision.id.clone());
-        }
-        let step = steps.find(id)?;
-        let step = match step.is_trail() {
-            true => step.children().first().copied().unwrap_or(step),
-            false => step,
+        let decision = self.decisions().find(project, id).ok();
+        let step = steps.find(id).ok();
+        let step = match (decision, step) {
+            (Some(_), Some(_)) => {
+                return Err(Failure::usage(format!(
+                    "{id} starts the id of a decision and of a step; give more of it"
+                )))
+            }
+            (Some(decision), None) => return Ok(decision.id.clone()),
+            (None, Some(step)) => Trail::new(step).work(),
+            (None, None) => return Err(Failure::no_step(id)),
         };
         if Some(step.trail().id()) == trail {
             return Err(Failure::usage(
@@ -304,11 +317,12 @@ impl Trails {
         let own = changed.map(|c| (step.step_id(), c.to_string()));
         let trail = step.trail();
         let since = step.note().created_at;
+        let ask = step.is_ask();
         let asked = self.records.iter().filter_map(|record| {
             let (on, Mark::Prompt { text }) = Mark::read(record)? else {
                 return None;
             };
-            (on == trail.id() && record.created_at >= since).then_some(text)
+            (ask && on == trail.id() && record.created_at >= since).then_some(text)
         });
         let expect = step
             .record()
@@ -319,7 +333,7 @@ impl Trails {
         let beside = under.map_or(Vec::new(), |u| u.children());
         Review {
             step: step.step_id(),
-            ask: step.is_ask(),
+            ask,
             expect,
             as_planned: changed.is_none(),
             planned: parts

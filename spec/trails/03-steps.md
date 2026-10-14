@@ -38,7 +38,7 @@ after it hold the detail. A step with no `under` is a trail (CIP-04).
 
 ```
 under      the step this one is a part of
-replaces   an open step whose plan it takes over, or a done step of any trail whose work it revises
+replaces   an open step whose plan it takes over; a done step, as CIP-06 "Revisions" states
 at         a place the work goes (CIP-01, "Places")
 check      the command that proves the work
 ```
@@ -172,7 +172,6 @@ drop   kind 1985, signed by the account (NIP-32)
 - A step that `replaces` an open step MUST go under that step's `under` when it names no `under`. Its
   writer MUST then drop the old step and each open step under it, with `replaced by <new id, first 8>`.
 - A step MUST NOT replace a trail or a dropped step.
-- A done step that a later step replaces MUST stay done.
 
 **Derived**
 

@@ -145,7 +145,10 @@ impl Tree<'_> {
     fn trail(&self, note: Step, key: &str, json: bool, name: usize, lines: &mut Vec<Line>) {
         let step = note.record();
         let state = note.state();
-        let work = Trail::new(note).work();
+        let work = match note.closed() {
+            Some(_) => note,
+            None => Trail::new(note).work(),
+        };
         let done = work.done();
         let grade = work.grade();
         let reason = work.dropped().map(|d| d.content.clone());
@@ -156,7 +159,7 @@ impl Tree<'_> {
                 "proof": done.map(|d| d.content.clone()),
                 "changed": done.and_then(|d| d.tag("changed")),
                 "grade": grade,
-                "reused": self.reuse.down(note).len(), "reason": reason});
+                "reused": self.reuse.down(work).len(), "reason": reason});
             lines.push(Line::Text(json!({ key: head }).to_string()));
             return self.under(note.children(), "", json, lines);
         }

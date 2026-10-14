@@ -18,7 +18,9 @@ paths later work followed, which rules it kept, what a follow saved, and which r
 
 **Rules**
 
-- A writer MUST write the whole id. An id that names a trail MUST be written as the id of its first ask.
+- A writer MUST write the whole id, once. An id that names a trail MUST be written as the id of the step
+  that holds its work: its first ask when that ask has the trail's text (CIP-04, "Sessions"), else the
+  trail.
 - A writer MUST NOT write a `uses` that names a step of the step's own trail.
 - When a writer writes a trail and its first ask together, the `uses` tags MUST go on the ask only.
 - A reader MUST read a `uses` that names a decision as a use of that decision.
@@ -32,6 +34,7 @@ A step MAY carry a `replaces` (CIP-03, "Steps") that names a done step, of any t
 **Rules**
 
 - The done step MUST stay done.
+- The writer of a trail and its first ask together MUST put the `replaces` on the ask only.
 - A reader MUST read a done step as revised by each step whose `replaces` names it, written at or after
   its `done`.
 - A reader MUST read a trail as `revised` when it would be done (CIP-04, "State"), and a done step of

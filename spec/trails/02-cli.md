@@ -224,9 +224,13 @@ app's account. The steps the old phrase signed still count.
   MUST print the id of that step.
 - `add --replaces` MUST refuse a trail as a usage error, and a dropped step with `closed`.
 - `add --uses` MUST write the whole id of each, as CIP-06 "Uses" states. It MUST refuse an id no live
-  decision and no step has, with `no-step`, and a step of the new step's trail, as a usage error.
+  decision and no step has, with `no-step`, a step of the new step's trail, and a start that both a
+  decision's and a step's id have, as a usage error.
+- `add` with `--uses`, or a `--replaces` of a done step, MUST refuse an open step of the same project,
+  `under` and text as a usage error, and write nothing.
 - `add` of a session's first ask MUST print the ask's id first, then the trail's (CIP-04, "Sessions").
-- `add` MUST print `joined` on stderr when a session's step joins its trail (CIP-04, "Sessions").
+- `add` MUST print `joined` on stderr when a session's step joins its trail (CIP-04, "Sessions"), and
+  not for a step that replaces another.
 - `start` MUST refuse an id no step has, with `no-step`, and a closed step, with `closed`. On a working
   step, it MUST write nothing and print the id of the step's first `start`.
 - `start` MUST then print the live decisions at the step's places (CIP-01, "Reading"), each once.
@@ -343,7 +347,8 @@ celis tree --all [--full]         every trail in the store, by day
   An ask MUST print its trail's rules. Then come the steps under it, oldest first, each followed by its
   own steps.
 - A trail whose first ask holds its text MUST print as one step with that ask: the ask's proof, grade
-  and reuse on the trail's line, and the ask's steps first under it (CIP-04, "Sessions").
+  and reuse on the trail's line, and the ask's steps first under it (CIP-04, "Sessions"). A trail that
+  is done or dropped itself MUST show its own done or drop.
 - `tree` MUST mark a done step `✓`, a dropped one `✗`, a working one `◐`, an open one `○`, and an
   expired one `!` (CIP-03, "Starting"; CIP-04, "State"). With `--full`, under a step come the lines of its
   text after its title. Then come the proof, what changed and the grade of a done step (CIP-03,

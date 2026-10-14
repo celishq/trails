@@ -183,9 +183,8 @@ impl<'a> Step<'a> {
         match self.entry.close {
             Some((_, Close::Dropped)) => State::Dropped,
             None if !self.ended() => {
-                let working =
-                    self.start().is_some() || parts.iter().any(|s| s.state() == State::Working);
-                match working {
+                let works = |s: &Step| s.start().is_some() && s.closed().is_none();
+                match works(&self) || parts.iter().any(works) {
                     true => State::Working,
                     false => State::Open,
                 }
