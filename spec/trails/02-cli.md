@@ -21,6 +21,7 @@ celis prompt                                          a person's prompt, from a 
 celis auth login                                      keep the phrase stdin gives (CIP-01)
 celis auth status                                     the account's npub (CIP-01)
 celis auth phrase                                     print the phrase (CIP-01)
+celis update [<version>] [--dry-run]                  this binary, to the latest release or a version
 
 $CELIS_HOME   where celis keeps the phrase and the store
               default: ~/Library/Application Support/Celis
@@ -76,6 +77,7 @@ Commands
   issue    what went wrong, as Markdown for the celis team
   step     the steps of a trail: add, start, done, drop, edit
   auth     the account's phrase: login, status, phrase
+  update   this binary, to the latest release or a version
 
 $CELIS_HOME holds the phrase and the store.
 
@@ -108,6 +110,42 @@ Examples
 - `celis --version` MUST print `celis <version>`, and the commit it was built from, when the build had one.
 - Each command line of the celis plugin's card MUST name the flags its command's usage names,
   and no other.
+
+## Update
+
+`update` replaces the running `celis` with the build of a release for this system and processor:
+`celis-<cpu>-<system>.tar.gz`, as `install.sh` downloads it.
+
+```
+$CELIS_BASE   where the releases are
+              default: https://github.com/celishq/trails/releases
+```
+
+**Rules**
+
+- With no `<version>`, `update` MUST take the version of the release that `$CELIS_BASE/latest` redirects
+  to, `…/tag/v<version>`. When that version is installed, it MUST download nothing and say so.
+- With `<version>`, `update` MUST install `v<version>`, also when it is installed.
+- `update` MUST download `$CELIS_BASE/download/v<version>/<archive>` and `<archive>.sha256`. When the
+  archive does not match its checksum, or the new `celis --version` fails, it MUST fail and leave the
+  installed file as it was.
+- `update` MUST replace the file the running `celis` resolves to with one rename in its folder.
+- With `--dry-run`, `update` MUST print the installed and the new version, and change nothing.
+
+```
+update  text  Updated celis <from> to <to> at <path>.
+              celis <version> is the latest.
+              celis <from> is installed; celis update installs <to>.      (--dry-run)
+        json  {"from", "to", "path", "updated"}
+```
+
+**Examples**
+
+```
+celis update
+celis update 0.4.0
+celis update --dry-run
+```
 
 ## Output and errors
 
