@@ -169,7 +169,7 @@ A scope is narrow or wide, so a rule for one file and a rule for all your work c
 
 ```
 at:<place>        at one place of its project: a file, a file:line, a folder or a URL
-trail:<step id>   in its project, while that trail is active (CIP-04)
+trail:<step id>   in its project: with the trail while it is active, then with its past work (CIP-04)
 project           in its project; a decision with no `scope` tag
 me                in every project
 ```

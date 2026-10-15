@@ -625,9 +625,9 @@ celis tree
   decisions (CIP-01, "Reading"). It MUST NOT print a decision at a place unless an `--at` place is at it.
 - Then it MUST print the past work of every project, newest first.
 - Each past work MUST print as one line: its id, project, title and place, its grade or else its state,
-  and its day.
-- With `--json`, each object MUST be named `past`, with its id, project, title, places, state, grade and
-  day.
+  and its day. Then it MUST print the rules of the trail it stands for (CIP-04, "The past").
+- With `--json`, each object MUST be named `past`, with its id, project, title, places, state, grade,
+  day and rules.
 - Without `--json`, when it prints nothing else, `past` MUST print one line that says so.
 - `past` MUST NOT write a record.
 
@@ -636,9 +636,10 @@ past  text  <id, first 8> [<project name>] <its title>[ · <place>]          eac
               rule <id, first 8> <text>                                     each of its rules
             <a decision, as "Commands" gives it>
             <id, first 8> [<project name>] <its title>[ · <place>] · <grade | state> · <yyyy-mm-dd>
+              rule <id, first 8> <text>                                     each rule of its trail
       json  {"trail": {"id", "created_at", "project", "content", "session", "rules": []}}
             · {"decision": {...}} · {"past": {"id", "created_at", "day", "project", "content",
-            "places", "state", "grade"}}
+            "places", "state", "grade", "rules": []}}
 ```
 
 **Examples**

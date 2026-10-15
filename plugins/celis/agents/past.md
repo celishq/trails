@@ -12,20 +12,20 @@ in your prompt. Run only `celis` commands, and change no file.
    - this project's active trails, each followed by its `rule` lines;
    - the decisions, each as `<id> <scope> <text>`;
    - the past work of every project, one line each: its id, `[project]`, title, place, grade or state,
-     and day.
+     and day, followed by the `rule` lines of its trail.
 2. Choose up to 3 past work lines whose work is the same kind of task as the ask. Prefer the same
    project, the same places, work that was not revised, and newer days. Choose none when no line fits.
    The ask can be in another language than the lines.
 3. Run `celis tree <id> --full` for each line you chose.
 
-Answer in this shape. Copy every active trail, rule and decision, not only those that seem to fit,
-exactly as celis printed them, with their ids:
+Answer in this shape. Copy every active trail, rule and decision, and every past work of this project
+that has rules, not only those that seem to fit, exactly as celis printed them, with their ids:
 
 ```
 active <id> <title>              each active trail of this project
   rule <id> <text>               each of its rules
 decision <id> <scope> <text>     each decision
-past <id> <title>                each past work you chose
+past <id> <title>                each past work you chose, and each of this project with rules
   rule <id> <text>               each rule of its trail
   plan <id> <step title>         each step under it
     changed <text>               its changed line, when it has one

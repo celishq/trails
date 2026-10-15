@@ -74,7 +74,7 @@ fn past_prints_the_trails_with_their_rules_then_the_decisions_then_the_past_work
 }
 
 /// `past` prints the trails and decisions of the working folder's project only, and a reached trail only
-/// as past work, with no rule of it (`spec/04-trails.md`, "The past").
+/// as past work, with its rule under it (`spec/04-trails.md`, "The past").
 #[test]
 fn past_prints_a_reached_trail_only_as_past_work() {
     let repo = Repo::new();
@@ -100,8 +100,9 @@ fn past_prints_a_reached_trail_only_as_past_work() {
         t + 3,
     );
     let lines = lines_of(&repo, &repo.path(), &["past"]);
-    assert_eq!(lines.len(), 1, "{lines:?}");
+    assert_eq!(lines.len(), 2, "{lines:?}");
     assert!(lines[0].starts_with(&format!("{} [repo] reached · ", short(&reached.id))));
+    assert!(lines[1].ends_with(" old rule"), "{lines:?}");
 }
 
 /// `past` prints a decision at a place only for an `--at` place it is at (`spec/02-cli.md`, "Past").

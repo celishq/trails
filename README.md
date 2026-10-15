@@ -86,6 +86,14 @@ To update it later, run `celis update`.
 **3. Give your agent a task.** When the task changes files, the agent keeps its steps in celis. Run
 `celis tree` in a second terminal to watch them as the agent works.
 
+celis keeps your notes and your key in `~/Library/Application Support/Celis` on macOS, and in
+`~/.local/share/celis` on Linux. To keep them in another folder, for a test or a
+separate setup, set `CELIS_HOME` to that folder before you start the agent:
+
+```bash
+CELIS_HOME="$PWD/.celis-home" claude
+```
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).

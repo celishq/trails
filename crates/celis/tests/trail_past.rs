@@ -122,6 +122,7 @@ fn past_json_carries_each_past_works_tags() {
         "id",
         "places",
         "project",
+        "rules",
         "state",
     ];
     assert_eq!(keys, want);
@@ -137,4 +138,45 @@ fn past_with_nothing_to_print_says_so() {
     assert!(text.status.success(), "{}", err(&text));
     assert_eq!(out(&text).lines().count(), 1, "{}", out(&text));
     assert!(out(&cli(&repo, &["past", "--json"])).is_empty());
+}
+
+/// `past` prints the live rules of a past trail under the line of the work that stands for it, and
+/// `--json` gives them as its `rules` (`spec/02-cli.md`, "Past").
+#[test]
+fn past_prints_the_rules_of_a_past_trail_under_its_line() {
+    let repo = Repo::new();
+    let run = |args: &[&str]| {
+        let o = repo.run(&repo.path(), args, &[], "");
+        assert!(o.status.success(), "{}", err(&o));
+        out(&o).trim().to_string()
+    };
+    let trail = run(&["step", "add", "--", "Build the Vendors page"]);
+    let scope = format!("trail:{}", &trail[..8]);
+    let rule = run(&[
+        "decide",
+        "--scope",
+        &scope,
+        "--",
+        "When an image sits by a name: leave its alt empty.",
+    ]);
+    run(&["step", "done", &trail[..8], "--as-planned", "--", "p"]);
+    std::thread::sleep(Duration::from_millis(1100));
+    let text = out(&cli(&repo, &["past"]));
+    let lines: Vec<&str> = text.lines().collect();
+    let at = lines
+        .iter()
+        .position(|l| l.starts_with(&trail[..8]))
+        .unwrap_or_else(|| panic!("{text}"));
+    assert_eq!(
+        lines[at + 1],
+        format!(
+            "  rule {} When an image sits by a name: leave its alt empty.",
+            &rule[..8]
+        )
+    );
+    let past = objects(&repo, &["past"])
+        .into_iter()
+        .find_map(|v| v.get("past").filter(|p| p["id"] == trail.as_str()).cloned())
+        .unwrap();
+    assert_eq!(past["rules"][0]["id"], rule.as_str());
 }

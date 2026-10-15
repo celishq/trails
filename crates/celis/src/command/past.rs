@@ -3,7 +3,7 @@
 
 use super::clock::date;
 use super::{Args, Command};
-use celis_trails::{Decisions, Failure, Project, Scope, Step, Trails};
+use celis_trails::{Decisions, Failure, Project, Scope, Step, Trail, Trails};
 use serde_json::json;
 use std::io::Write;
 
@@ -29,7 +29,7 @@ impl Command {
 
     /// Prints the active trails of `project`, oldest first, each with its rules; then its live decisions at
     /// each `--at` place, then its `project` and `me` ones; then each past work of every project, newest
-    /// first.
+    /// first, with the rules of the trail it stands for.
     pub(super) fn list(
         &self,
         trails: &Trails,
@@ -70,12 +70,24 @@ impl Command {
         for step in steps.past() {
             let (note, record) = (step.note(), step.record());
             let day = date(note.created_at);
+            let rules = held(step).map_or_else(Vec::new, |t| {
+                decisions.rules(&record.anchor.project, &t.note().id)
+            });
+            let listed: Vec<_> = rules
+                .iter()
+                .map(|(r, d)| super::json::decision(r, d))
+                .collect();
             let past = json!({"id": note.id, "created_at": note.created_at, "day": day,
                 "project": record.anchor.name, "content": record.content, "places": record.places,
                 "state": step.trail().state().text(),
-                "grade": step.grade()});
+                "grade": step.grade(), "rules": listed});
             let line = format!("{} · {day}", head(step));
             super::show(out, args.json, "past", past, &line)?;
+            if !args.json {
+                for (rule, decision) in &rules {
+                    super::put(out, &super::line::rule(rule, decision))?;
+                }
+            }
         }
         Ok(())
     }
@@ -105,6 +117,16 @@ fn trail(
         super::put(out, &super::line::rule(rule, &decision))?;
     }
     Ok(())
+}
+
+/// The trail whose rules the past work `step` holds: the trail itself, or the trail of its own text.
+fn held(step: Step) -> Option<Step> {
+    if step.is_trail() {
+        return Some(step);
+    }
+    let trail = step.trail();
+    let first = Trail::new(trail).first()?;
+    (first.note().id == step.note().id).then_some(trail)
 }
 
 /// The line of the past work `step`: its id, project, title and place, then its grade, else its state.

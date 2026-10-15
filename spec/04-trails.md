@@ -135,6 +135,8 @@ The list starts with what a new ask of the project must keep: its active trails 
   scope (CIP-01, "Reading").
 - Past work: a done ask, or a done or revised trail, of every project.
 - A trail with an ask of its own text is no past work, so the ask stands for it.
+- The rules of a past work: the rules of the trail it is, or of the trail it stands for. They stay after
+  the trail ends, so the next ask can keep what the trail learned.
 
 > Why an agent chooses: it reads an ask in any language, and it tells the same kind of task from the same
 > words. The list stays one line a work, so it fits the agent's context for thousands of asks.
