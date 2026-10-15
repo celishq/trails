@@ -236,10 +236,10 @@ fn claudes_hooks_ask_for_the_past_agent_again_after_a_compaction() {
         .contains("celis:past agent"));
 }
 
-/// Codex's prompt hook asks to do what past.md says in place of the past agent it does not have
+/// The prompt hooks of Codex and Gemini CLI ask to do what past.md says in place of the past agent
 /// (`spec/04-trails.md`, "The past").
 #[test]
-fn codexs_prompt_hook_names_past_md_for_the_past_agent() {
+fn codex_and_gemini_prompt_hooks_name_past_md_for_the_past_agent() {
     let repo = Repo::new();
     let o = repo.run(
         &repo.path(),
@@ -248,14 +248,20 @@ fn codexs_prompt_hook_names_past_md_for_the_past_agent() {
         "",
     );
     assert!(o.status.success(), "{}", err(&o));
-    let codex = &AGENTS[1];
-    let said = codex.run(
-        &repo,
-        codex.ask,
-        &codex.payload("s1", &repo.path(), "make it blue"),
-    );
-    assert!(said.contains("do what past.md says"), "{said}");
-    assert!(!said.contains("celis:past"), "{said}");
+    for agent in [&AGENTS[1], &AGENTS[3]] {
+        let said = agent.run(
+            &repo,
+            agent.ask,
+            &agent.payload(agent.name, &repo.path(), "make it blue"),
+        );
+        let said = agent.context(&said);
+        assert!(
+            said.contains("do what past.md says"),
+            "{}: {said}",
+            agent.name
+        );
+        assert!(!said.contains("celis:past"), "{}: {said}", agent.name);
+    }
 }
 
 /// Each manifest names the hooks file the agent runs, and each marketplace names the plugin's folder.

@@ -151,8 +151,8 @@ The list starts with what a new ask of the project must keep: its active trails 
 
 **Meaning**
 
-- Codex has no plugin agents. Its prompt hook MUST ask to do what the plugin's `past.md` says in place of
-  the `celis:past` agent.
+- Codex and Gemini CLI do not load the plugin's agents. Their prompt hooks MUST ask to do what the
+  plugin's `past.md` says in place of the `celis:past` agent.
 
 **Derived**
 
