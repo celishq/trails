@@ -107,12 +107,12 @@ start  kind 1985, signed by the account (NIP-32)
 open      no `start`, `done` or `drop` names the step
 working   a `start` names the step, and no `done` or `drop` does
 done      a `done` names the step
-revised   a `done` names the step, and a later step replaces it (CIP-06, "Revisions")
 dropped   a `drop` names the step
 expired   not done or dropped, and its trail ended (CIP-04, "State")
 ```
 
 - A reader works out a step's state from its `start`, `done` and `drop` records.
+- A done step that a later step revises (CIP-06, "Revisions") stays done; revised is no state.
 
 ## Closing
 

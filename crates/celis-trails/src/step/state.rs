@@ -1,14 +1,12 @@
 //! Where one step or trail stands.
 
-/// Where one step or trail stands: open, working, done, revised when a later step replaced its done work,
-/// dropped, or expired when its trail ended while it was open. A trail is working while a step of it
-/// works, done once done or ended with nothing open, and revised when a done step of it was revised.
+/// Where one step or trail stands: open, working, done, dropped, or expired when its trail ended while it
+/// was open. A trail is working while a step of it works, and done once done or ended with nothing open.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum State {
     Open,
     Working,
     Done,
-    Revised,
     Dropped,
     Expired,
 }
@@ -20,7 +18,6 @@ impl State {
             State::Open => "open",
             State::Working => "working",
             State::Done => "done",
-            State::Revised => "revised",
             State::Dropped => "dropped",
             State::Expired => "expired",
         }
@@ -31,8 +28,8 @@ impl State {
         matches!(self, State::Open | State::Working)
     }
 
-    /// Whether its work was reached: done or revised.
+    /// Whether its work was reached: done.
     pub fn reached(self) -> bool {
-        matches!(self, State::Done | State::Revised)
+        self == State::Done
     }
 }

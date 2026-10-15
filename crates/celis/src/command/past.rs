@@ -79,8 +79,8 @@ impl Command {
                 .collect();
             let past = json!({"id": note.id, "created_at": note.created_at, "day": day,
                 "project": record.anchor.name, "content": record.content, "places": record.places,
-                "state": step.trail().state().text(),
-                "grade": step.grade(), "rules": listed});
+                "state": step.trail().state().text(), "grade": step.grade(),
+                "revised": step.reworked().iter().map(|s| s.id()).collect::<Vec<_>>(), "rules": listed});
             let line = format!("{} · {day}", head(step));
             super::show(out, args.json, "past", past, &line)?;
             if !args.json {
@@ -129,10 +129,14 @@ fn held(step: Step) -> Option<Step> {
     (first.note().id == step.note().id).then_some(trail)
 }
 
-/// The line of the past work `step`: its id, project, title and place, then its grade, else its state.
+/// The line of the past work `step`: its id, project, title and place, then its grade, else its state
+/// and `revised` when its tree holds a revised step.
 fn head(step: Step) -> String {
     let how = step.grade().map_or_else(
-        || step.state().text().to_string(),
+        || match step.reworked().is_empty() {
+            true => step.state().text().to_string(),
+            false => format!("{} · revised", step.state().text()),
+        },
         |g| super::line::grade(&g),
     );
     format!("{} · {how}", super::line::step(step.note(), step.record()))

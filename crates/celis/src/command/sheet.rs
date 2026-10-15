@@ -454,24 +454,30 @@ fn time(last: &Period, inside: usize, ink: Ink) -> Sheet {
     }
 }
 
-/// The outcome: the steps closed in the last 14 days by how they ended, as a strip of shares.
+/// The outcome: the steps closed in the last 14 days by how they ended, as a strip of shares, with the
+/// count of revised done steps beside the done share.
 fn outcome(last: &Period, inside: usize, ink: Ink) -> Sheet {
     let closed = last.closed();
-    let states = [State::Done, State::Revised, State::Dropped, State::Expired];
+    let states = [State::Done, State::Dropped, State::Expired];
     let counts: Vec<usize> = states
         .iter()
         .map(|&st| closed.iter().filter(|s| s.state() == st).count())
         .collect();
     let total: usize = counts.iter().sum();
+    let revised = closed.iter().filter(|s| !s.revised().is_empty()).count();
     let mut face = vec![strip(&counts, inside.saturating_sub(4)), String::new()];
     for (&state, &n) in states.iter().zip(&counts) {
         let look = look(state);
         let share = (n * 100).checked_div(total).unwrap_or(0);
-        face.push(format!(
+        let mut line = format!(
             "{} {:<10}{n:>4} {share:>5}%",
             ink.paint(look.text, look.mark),
             state.text()
-        ));
+        );
+        if state == State::Done && revised > 0 {
+            line.push_str(&format!(" · {revised} revised"));
+        }
+        face.push(line);
     }
     let rows = closed
         .iter()

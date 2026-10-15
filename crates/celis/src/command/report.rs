@@ -73,6 +73,7 @@ fn card(trails: &Trails, trail: Step, width: usize, colour: bool) -> Card {
     let step = trail.record();
     let tree = &trail.tree()[1..];
     let of = |state: State| tree.iter().filter(|s| s.state() == state).count();
+    let revised = tree.iter().filter(|s| !s.revised().is_empty()).count();
     let rules = trails
         .decisions()
         .rules(&step.anchor.project, trail.id())
@@ -89,7 +90,7 @@ fn card(trails: &Trails, trail: Step, width: usize, colour: bool) -> Card {
         "{:<8}{:<8}{:<10}{}",
         tree.len(),
         rules,
-        of(State::Revised),
+        revised,
         of(State::Dropped)
     );
     let mut rows = vec![paint(colour, "1", step.title()), RULE.to_string()];
@@ -110,12 +111,15 @@ fn card(trails: &Trails, trail: Step, width: usize, colour: bool) -> Card {
             .iter()
             .map(|s| paint(colour, look(s.state()).text, "▮"))
             .collect();
-        let counts: Vec<String> = [State::Done, State::Revised, State::Dropped]
-            .into_iter()
-            .map(|s| (of(s), s.text()))
-            .filter(|(n, _)| *n > 0)
-            .map(|(n, s)| format!("{n} {s}"))
-            .collect();
+        let counts: Vec<String> = [
+            (of(State::Done), "done"),
+            (revised, "revised"),
+            (of(State::Dropped), "dropped"),
+        ]
+        .into_iter()
+        .filter(|(n, _)| *n > 0)
+        .map(|(n, s)| format!("{n} {s}"))
+        .collect();
         rows.extend([
             String::new(),
             format!("{cells}   {}", paint(colour, "2", &counts.join(" · "))),
@@ -213,7 +217,8 @@ pub(super) fn markdown(trails: &Trails, ids: &[String]) -> Result<String, Failur
     for trail in chosen(&steps, ids)? {
         let step = trail.record();
         let tree = &trail.tree()[1..];
-        let of = |state: State| tree.iter().filter(|s| s.state() == state).count();
+        let dropped = tree.iter().filter(|s| s.state() == State::Dropped).count();
+        let revised = tree.iter().filter(|s| !s.revised().is_empty()).count();
         let ran = took(trail.newest().saturating_sub(trail.note().created_at));
         let rules = decisions.rules(&step.anchor.project, trail.id());
         let mut lines = vec![
@@ -228,8 +233,8 @@ pub(super) fn markdown(trails: &Trails, ids: &[String]) -> Result<String, Failur
                 trail.state().text(),
                 tree.len(),
                 rules.len(),
-                of(State::Revised),
-                of(State::Dropped),
+                revised,
+                dropped,
                 cell(&step.anchor.name)
             ),
         ];

@@ -760,6 +760,54 @@ fn watch_marks_a_change_and_prints_no_place() {
     assert!(row.ends_with("✓~ the part"), "{rows:?}");
 }
 
+/// A revised step prints `↻` after its mark and `~`, and its working trail keeps the spinner with `↻`
+/// after it (`spec/02-cli.md`, "Watching").
+#[test]
+fn watch_marks_a_revised_step_and_spins_its_working_trail() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    let part = add(&repo, &["--under", &trail[..8], "--", "the part"]);
+    let o = cli(
+        &repo,
+        &[
+            "step",
+            "done",
+            &part[..8],
+            "--changed",
+            "one file",
+            "--",
+            "it works",
+        ],
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    std::thread::sleep(std::time::Duration::from_millis(1100));
+    let next = add(
+        &repo,
+        &[
+            "--under",
+            &trail[..8],
+            "--replaces",
+            &part[..8],
+            "--",
+            "next",
+        ],
+    );
+    let o = cli(&repo, &["step", "start", &next[..8]]);
+    assert!(o.status.success(), "{}", err(&o));
+    let mut watch = Watch::start(&repo, &["tree", &trail[..8]]);
+    watch.size(24, 80);
+    watch.until("1 closed step");
+    watch.press("\x1b[B\x1b[B\x1b[C");
+    watch.until("✓~↻ the part");
+    let rows = watch.rows();
+    let head = rows.iter().find(|r| r.contains("the trail")).unwrap();
+    let spun = head.chars().zip(head.chars().skip(1));
+    assert!(
+        spun.into_iter().any(|(a, b)| SPIN.contains(a) && b == '↻'),
+        "{rows:?}"
+    );
+}
+
 /// No line of the watch reaches the last column, so clearing to the end of a line never erases its
 /// last character (`spec/02-cli.md`, "Watching").
 #[test]

@@ -69,7 +69,7 @@ reader works out.
 | `trail` | one task you give, in your words: a step with no `under`, and the steps under it |
 | `rule` | a live decision whose scope is a trail |
 | `scope` | where a decision holds: a place, a trail, the project, or every project |
-| `step` | one part of the work toward a trail, at a place: open, working, done, revised, dropped or expired |
+| `step` | one part of the work toward a trail, at a place: open, working, done, dropped or expired |
 | `ask` | a step right under a trail: one thing you asked for |
 | `prompt` | what you wrote to the agent while a trail was open, written by the prompt hook |
 | `revised` | done work that a later step replaces |

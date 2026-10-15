@@ -121,7 +121,7 @@ fn uses_goes_on_the_ask_of_a_new_trail() {
 }
 
 /// `step add --replaces` takes a done step of another trail: the new step goes where `step add` puts it,
-/// the old one stays done, and its grade and trail read as revised (`spec/06-reuse.md`,
+/// the old one stays done, and its grade and trail read as revised while they stay done (`spec/06-reuse.md`,
 /// "Revisions").
 #[test]
 fn replaces_takes_a_done_step_and_reads_it_as_revised() {
@@ -153,7 +153,12 @@ fn replaces_takes_a_done_step_and_reads_it_as_revised() {
         "{revised}"
     );
     let head = objects(&repo, &["tree", &old_trail[..8]]);
-    assert_eq!(head[0]["trail"]["state"], "revised", "{head:?}");
+    assert_eq!(head[0]["trail"]["state"], "done", "{head:?}");
+    assert_eq!(
+        head[0]["trail"]["revised"],
+        serde_json::json!([part]),
+        "{head:?}"
+    );
     let tree = out(&cli(&repo, &["tree", &old_trail[..8], "--full"]));
     let line = format!(" · revised by {}", &fix[..8]);
     assert!(tree.contains(&line), "{tree}");

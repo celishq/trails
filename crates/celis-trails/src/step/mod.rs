@@ -131,13 +131,18 @@ impl<'a> Step<'a> {
         later.filter_map(|n| self.steps.get(&n.id)).collect()
     }
 
+    /// The steps of its tree that a later step revised.
+    pub fn reworked(self) -> Vec<Step<'a>> {
+        let tree = self.tree().into_iter();
+        tree.filter(|s| !s.revised().is_empty()).collect()
+    }
+
     /// Where it stands at the time of its store.
     pub fn state(self) -> State {
         if self.is_trail() {
             return self.trail_state();
         }
         match self.entry.close {
-            Some((_, Close::Done)) if !self.revised().is_empty() => State::Revised,
             Some((_, Close::Done)) => State::Done,
             Some((_, Close::Dropped)) => State::Dropped,
             None if self.trail().ended() => State::Expired,
@@ -176,7 +181,7 @@ impl<'a> Step<'a> {
     }
 
     /// Where it stands as a trail: working while open and a step of it works, else open; expired when
-    /// it ended with a step open; dropped; else revised when a done step of it was revised, else done.
+    /// it ended with a step open; dropped; else done.
     fn trail_state(self) -> State {
         let tree = self.tree();
         let parts = &tree[1..];
@@ -190,7 +195,6 @@ impl<'a> Step<'a> {
                 }
             }
             None if parts.iter().any(|s| s.closed().is_none()) => State::Expired,
-            _ if tree.iter().any(|s| !s.revised().is_empty()) => State::Revised,
             _ => State::Done,
         }
     }

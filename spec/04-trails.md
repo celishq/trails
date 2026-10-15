@@ -9,7 +9,7 @@ depends: [CIP-01, CIP-02, CIP-03]
 
 A trail is one task you give, in your words, and the steps agents take toward it. This CIP lets a reader
 know which trail a step belongs to, which session works on it, what the person asked on the way, which
-rules hold in it, whether it was reached, revised, dropped or left, and which past work is like a new ask.
+rules hold in it, whether it was reached, dropped or left, which of its work was revised, and which past work is like a new ask.
 
 ## Trails
 
@@ -104,8 +104,7 @@ after the newest record of its tree.
 ```
 open      not done, dropped or ended, and no step of its tree works
 working   not done, dropped or ended, and a step of its tree works
-done      done, or ended with no open step under it; no later step replaces a done step of its tree
-revised   done, or ended with no open step under it; a later step replaces a done step of its tree
+done      done, or ended with no open step under it
 dropped   the trail is dropped
 expired   ended with an open step under it
 ```
@@ -133,7 +132,7 @@ The list starts with what a new ask of the project must keep: its active trails 
 
 - What a new ask must keep: the project's active trails, each with its rules, and the live decisions in
   scope (CIP-01, "Reading").
-- Past work: a done ask, or a done or revised trail, of every project.
+- Past work: a done ask, or a done trail, of every project.
 - A trail with an ask of its own text is no past work, so the ask stands for it.
 - The rules of a past work: the rules of the trail it is, or of the trail it stands for. They stay after
   the trail ends, so the next ask can keep what the trail learned.

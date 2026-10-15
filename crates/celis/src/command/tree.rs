@@ -397,6 +397,8 @@ impl Tree<'_> {
             "project": step.anchor.project, "content": step.content,
             "links": super::json::links(step), "places": step.places, "session": step.session});
         self.closing_value(&mut head, note, self.work(note));
+        let reworked: Vec<&str> = note.reworked().iter().map(|s| s.id()).collect();
+        head["revised"] = json!(reworked);
         lines.push(Line::Text(json!({ key: head }).to_string()));
         self.objects(note.children(), lines);
     }
@@ -952,13 +954,22 @@ impl Tree<'_> {
         }
     }
 
-    /// The mark of `note`, with a yellow `~` after it when its done has a `changed` tag.
+    /// The mark of `note`, with a yellow `~` after it when its done has a `changed` tag, then a green `↻`
+    /// when it is revised.
     fn marked(&self, note: Step) -> String {
-        let mark = self.mark(note.state());
-        match self.work(note).done().and_then(|d| d.tag("changed")) {
-            Some(_) => format!("{mark}{}", self.paint(YELLOW, "~")),
-            None => mark,
+        let mut mark = self.mark(note.state());
+        if self
+            .work(note)
+            .done()
+            .and_then(|d| d.tag("changed"))
+            .is_some()
+        {
+            mark.push_str(&self.paint(YELLOW, "~"));
         }
+        if revised(note) {
+            mark.push_str(&self.paint(GREEN, "↻"));
+        }
+        mark
     }
 
     /// The mark of a step in `state` in its colour; in a watch, a working one's is the spinner.
@@ -1045,9 +1056,17 @@ fn room(widths: &[usize; 5]) -> usize {
     }
 }
 
-/// Whether a step in `state` is closed: done, revised or dropped.
+/// Whether a step in `state` is closed: done or dropped.
 fn closed(state: State) -> bool {
-    matches!(state, State::Done | State::Revised | State::Dropped)
+    matches!(state, State::Done | State::Dropped)
+}
+
+/// Whether `note` is revised: as a step, a later step replaces it; as a trail, a step of its tree is.
+pub(super) fn revised(note: Step) -> bool {
+    match note.is_trail() {
+        true => !note.reworked().is_empty(),
+        false => !note.revised().is_empty(),
+    }
 }
 
 /// The characters of `text` a terminal shows; colour codes count none.
@@ -1112,7 +1131,6 @@ pub(super) fn look(state: State) -> Look {
         State::Open => ("○", "", ""),
         State::Working => ("◐", YELLOW, BOLD),
         State::Done => ("✓", GREEN, ""),
-        State::Revised => ("↻", GREEN, ""),
         State::Dropped => ("✗", "31", DIM),
         State::Expired => ("!", "31", DIM),
     };

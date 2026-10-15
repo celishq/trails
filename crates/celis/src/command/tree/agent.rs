@@ -1,6 +1,6 @@
 //! The agent view of `celis tree`: every trail, rule and step with its id, plain and whole.
 
-use super::{Line, Summary, Tree};
+use super::{revised, Line, Summary, Tree};
 use crate::command::clock::took;
 use celis_trails::id::short;
 use celis_trails::{Step, Trail};
@@ -72,10 +72,15 @@ impl Tree<'_> {
         }
     }
 
-    /// The mark, id and title of `note`.
+    /// The mark, `↻` when it is revised, id and title of `note`.
     fn heading(&self, note: Step) -> String {
         let title = note.record().title();
-        format!("{} {} {title}", self.mark(note.state()), short(note.id()))
+        let flag = if revised(note) { "↻" } else { "" };
+        format!(
+            "{}{flag} {} {title}",
+            self.mark(note.state()),
+            short(note.id())
+        )
     }
 }
 
