@@ -1,16 +1,19 @@
 name: Release
 
-# Builds the `celis` command line for macOS and Linux, and puts every archive on the GitHub release of the
-# tag with `install.sh`. celis.ai serves the `install.sh` of the latest release. A last job installs the
-# release with its own `install.sh` on clean runners.
+# Builds the `celis` command line for macOS and Linux, and puts every archive on a GitHub release with
+# `install.sh`. celis.ai serves the `install.sh` of the latest release. A last job installs the release with
+# its own `install.sh` on clean runners.
 #
-# A GitHub release published on a `v1.2.3` tag gets the archives of version 1.2.3, which each build reads
-# from `CELIS_VERSION`; the repo says 0.0.0. A manual run builds as 0.0.0, and publishes nothing.
+# A manual run with a version, such as `1.2.3`, writes it in each plugin manifest, commits that to main, tags
+# the commit `v1.2.3`, and releases from it, so each agent sees a new plugin version. Each build reads the
+# version from `CELIS_VERSION`. A manual run with no version builds as 0.0.0, and publishes nothing.
 
 on:
-  release:
-    types: [published]
   workflow_dispatch:
+    inputs:
+      version:
+        description: "The version to release, such as 1.2.3. Empty builds as 0.0.0 and publishes nothing."
+        required: false
 
 concurrency:
   group: ${{ github.workflow }}
@@ -24,18 +27,34 @@ jobs:
   version:
     name: Version
     runs-on: namespace-profile-linux
+    permissions:
+      contents: write
     outputs:
       version: ${{ steps.version.outputs.version }}
+      ref: ${{ steps.version.outputs.ref }}
     steps:
       - uses: actions/checkout@v7
       - id: version
+        env:
+          INPUT: ${{ inputs.version }}
         run: |
           set -euo pipefail
-          VERSION=0.0.0
-          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
-            VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${INPUT#v}"
+          REF="$GITHUB_SHA"
+          if [ -n "$VERSION" ]; then
+            sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" \
+              plugins/celis/.*-plugin/plugin.json gemini-extension.json .antigravity-plugin/plugin.json
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -am "release: v$VERSION"
+            git tag "v$VERSION"
+            git push origin HEAD:main "v$VERSION"
+            REF="v$VERSION"
+          else
+            VERSION=0.0.0
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "ref=$REF" >> "$GITHUB_OUTPUT"
 
   linux:
     name: Linux builds
@@ -43,6 +62,8 @@ jobs:
     needs: version
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.version.outputs.ref }}
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.RUST_TOOLCHAIN }}
@@ -76,6 +97,8 @@ jobs:
     needs: version
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.version.outputs.ref }}
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.RUST_TOOLCHAIN }}
@@ -101,13 +124,15 @@ jobs:
 
   publish:
     name: Publish to GitHub Releases
-    if: github.ref_type == 'tag'
+    if: needs.version.outputs.version != '0.0.0'
     runs-on: namespace-profile-linux
     needs: [version, linux, mac]
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.version.outputs.ref }}
       - uses: actions/download-artifact@v7
         with:
           pattern: cli-*
@@ -116,7 +141,8 @@ jobs:
       - name: Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "$GITHUB_REF_NAME" dist/* install.sh --repo "$GITHUB_REPOSITORY" --clobber
+          VERSION: ${{ needs.version.outputs.version }}
+        run: gh release create "v$VERSION" dist/* install.sh --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes
 
   smoke:
     name: Install on ${{ matrix.runner }}
