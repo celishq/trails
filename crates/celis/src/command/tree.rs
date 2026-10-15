@@ -5,7 +5,7 @@ use super::clock::{saved, stride, took};
 use super::{Args, Command};
 use celis_trails::id::short;
 use celis_trails::step::steps::LIFE;
-use celis_trails::{Decisions, Failure, Reuse, State, Step, Steps, Trail, Trails};
+use celis_trails::{Decisions, Failure, Flags, Reuse, State, Step, Steps, Tally, Trail, Trails};
 use serde_json::json;
 use std::cell::{Cell, RefCell};
 use std::collections::HashSet;
@@ -338,7 +338,7 @@ impl Tree<'_> {
     fn item(&self, note: Step, open: bool, rules: &[Rule]) -> Item {
         let parts = Trail::new(note).parts();
         let folded = (!rules.is_empty()).then(|| format!("{RULES}{}", note.id()));
-        let closed = parts.iter().any(|p| closed(p.state()));
+        let closed = parts.iter().any(|p| p.state().closed());
         let closed = closed.then(|| format!("{CLOSED}{}", note.id()));
         let rules = rules.iter().map(|(rule, _)| rule.id.clone());
         let steps = parts.into_iter().flat_map(|p| p.tree());
@@ -381,7 +381,7 @@ impl Tree<'_> {
             || note.dropped().is_some()
             || !self.reuse.sources(note).is_empty()
             || !self.reuse.down(note).is_empty();
-        lines || (closed(note.state()) && !note.children().is_empty())
+        lines || (note.state().closed() && !note.children().is_empty())
     }
 
     /// Whether the step or rule `id` shows what `--full` shows: with `--full`, unless the watch closed
@@ -418,8 +418,10 @@ impl Tree<'_> {
         let done = work.done();
         value["state"] = json!(note.state().text());
         value["proof"] = json!(done.map(|d| d.content.clone()));
-        value["changed"] = json!(done.and_then(|d| d.tag("changed")));
+        value["changed"] = json!(work.changed());
         value["grade"] = json!(work.grade());
+        let by: Vec<&str> = work.revised().iter().map(|s| s.id()).collect();
+        value["revised_by"] = json!(by);
         value["reused"] = json!(self.reuse.down(work).len());
         value["reason"] = json!(work.dropped().map(|d| d.content.clone()));
     }
@@ -446,7 +448,7 @@ impl Tree<'_> {
         };
         Summary {
             all: shown.len(),
-            done: shown.iter().filter(|s| s.state().reached()).count(),
+            done: Tally::of(&shown).done,
             worked,
             rules: self.rules(note),
         }
@@ -499,7 +501,7 @@ impl Tree<'_> {
         let (shut, rest): (Vec<Step>, Vec<Step>) = Trail::new(note)
             .parts()
             .into_iter()
-            .partition(|p| closed(p.state()));
+            .partition(|p| p.state().closed());
         if !summary.rules.is_empty() {
             let last = shut.is_empty() && rest.is_empty();
             self.ruled(summary.rules, last, note.id(), lines);
@@ -568,7 +570,7 @@ impl Tree<'_> {
         let id = format!("{CLOSED}{trail}");
         let open = self.open(&id);
         let (lead, rail) = self.branch("  ", last, Some(open));
-        let done = steps.iter().any(|s| s.state().reached());
+        let done = steps.iter().any(|s| s.state() == State::Done);
         let dropped = steps.iter().any(|s| s.state() == State::Dropped);
         let marks = format!(
             "{}{}",
@@ -648,7 +650,7 @@ impl Tree<'_> {
             let (lead, rail) = self.branch(rail, n + 1 == all, self.opens(note).then_some(open));
             let tree = note.tree().into_iter().filter(|s| s.id() != note.id());
             let tree: Vec<String> = tree.map(|s| s.id().to_string()).collect();
-            let folded = state.reached() && !tree.is_empty() && !open;
+            let folded = state == State::Done && !tree.is_empty() && !open;
             let below = match note.children().is_empty() || folded {
                 true => format!("{rail}  "),
                 false => format!("{rail}{}", self.paint(DIM, "│ ")),
@@ -662,7 +664,7 @@ impl Tree<'_> {
                     None,
                     folded.then(|| column(tree.len(), "step")),
                     None,
-                    match closed(state) {
+                    match state.closed() {
                         true => None,
                         false => self.worked(&note.tree()).map(took),
                     },
@@ -867,13 +869,12 @@ impl Tree<'_> {
         for line in note.record().detail() {
             self.labelled(out, rail, "", line);
         }
-        if let (Some(done), Some(took)) = (note.done(), note.grade()) {
+        if let (Some(done), Some(line)) = (note.done(), super::line::grade(note)) {
             self.labelled(out, rail, "done", &done.content);
             if let Some(changed) = done.tag("changed") {
                 self.labelled(out, rail, "changed", changed);
             }
             if grade {
-                let line = super::line::grade(&took);
                 self.labelled(out, rail, "took", line.trim_start_matches("took "));
             }
         }
@@ -954,22 +955,11 @@ impl Tree<'_> {
         }
     }
 
-    /// The mark of `note`, with a yellow `~` after it when its done has a `changed` tag, then a green `↻`
-    /// when it is revised.
+    /// The mark of `note` with its flags after it, each in its colour.
     fn marked(&self, note: Step) -> String {
-        let mut mark = self.mark(note.state());
-        if self
-            .work(note)
-            .done()
-            .and_then(|d| d.tag("changed"))
-            .is_some()
-        {
-            mark.push_str(&self.paint(YELLOW, "~"));
-        }
-        if revised(note) {
-            mark.push_str(&self.paint(GREEN, "↻"));
-        }
-        mark
+        let signs = signs(note.flags()).into_iter();
+        let flags = signs.map(|(sign, code)| self.paint(code, sign));
+        self.mark(note.state()) + &flags.collect::<String>()
     }
 
     /// The mark of a step in `state` in its colour; in a watch, a working one's is the spinner.
@@ -1056,17 +1046,13 @@ fn room(widths: &[usize; 5]) -> usize {
     }
 }
 
-/// Whether a step in `state` is closed: done or dropped.
-fn closed(state: State) -> bool {
-    matches!(state, State::Done | State::Dropped)
-}
-
-/// Whether `note` is revised: as a step, a later step replaces it; as a trail, a step of its tree is.
-pub(super) fn revised(note: Step) -> bool {
-    match note.is_trail() {
-        true => !note.reworked().is_empty(),
-        false => !note.revised().is_empty(),
-    }
+/// The signs of `flags` with their colours: `~` when changed, then `↻` when revised.
+pub(super) fn signs(flags: Flags) -> Vec<(&'static str, &'static str)> {
+    let all = [(flags.changed, "~", YELLOW), (flags.revised, "↻", GREEN)];
+    all.into_iter()
+        .filter(|(on, ..)| *on)
+        .map(|(_, sign, code)| (sign, code))
+        .collect()
 }
 
 /// The characters of `text` a terminal shows; colour codes count none.

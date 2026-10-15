@@ -49,7 +49,7 @@ impl Command {
                 for &step in reuse.followed() {
                     let count = reuse.down(step).len();
                     let save = reuse.saved(step);
-                    let revised = !step.revised().is_empty();
+                    let revised = step.flags().revised;
                     let value = json!({"id": step.id(), "project": step.record().anchor.name,
                         "content": step.title(), "followed": count, "saved": save,
                         "revised": revised});
@@ -118,8 +118,7 @@ fn head(step: Step) -> String {
 
 /// ` · <grade>` of a done `step`, else nothing.
 fn took(step: Step) -> String {
-    step.grade()
-        .map_or(String::new(), |g| format!(" · {}", super::line::grade(&g)))
+    super::line::grade(step).map_or(String::new(), |g| format!(" · {g}"))
 }
 
 /// ` · saved <time>`, or nothing with no saving.

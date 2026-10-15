@@ -1,14 +1,16 @@
 //! A step: what it says, the marks agents leave on it, and how it stands.
 
 pub mod check;
+pub mod flags;
 pub mod grade;
 pub mod mark;
 pub mod state;
 pub mod step_record;
 pub mod steps;
+pub mod tally;
 
 use crate::step::steps::{Close, Entry, LIFE};
-use crate::{Grade, State, StepId, StepRecord, Steps};
+use crate::{Flags, Grade, State, StepId, StepRecord, Steps, Trail};
 use celis_nostr::Note;
 
 /// One step of a store as it stands: its record with its edits, where it sits in its trail, how its
@@ -137,6 +139,26 @@ impl<'a> Step<'a> {
         tree.filter(|s| !s.revised().is_empty()).collect()
     }
 
+    /// What its done says changed, from its first ask's done when it is an open trail.
+    pub fn changed(self) -> Option<&'a str> {
+        let work = match self.closed() {
+            Some(_) => self,
+            None => Trail::new(self).work(),
+        };
+        work.done()?.tag("changed")
+    }
+
+    pub fn flags(self) -> Flags {
+        let revised = match self.is_trail() {
+            true => !self.reworked().is_empty(),
+            false => !self.revised().is_empty(),
+        };
+        Flags {
+            changed: self.changed().is_some(),
+            revised,
+        }
+    }
+
     /// Where it stands at the time of its store.
     pub fn state(self) -> State {
         if self.is_trail() {
@@ -157,7 +179,6 @@ impl<'a> Step<'a> {
         let from = self.start().unwrap_or(self.note()).created_at;
         Some(Grade {
             took: done.created_at.saturating_sub(from),
-            revised: self.revised().iter().map(|s| s.step_id()).collect(),
         })
     }
 

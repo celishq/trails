@@ -132,12 +132,9 @@ fn held(step: Step) -> Option<Step> {
 /// The line of the past work `step`: its id, project, title and place, then its grade, else its state
 /// and `revised` when its tree holds a revised step.
 fn head(step: Step) -> String {
-    let how = step.grade().map_or_else(
-        || match step.reworked().is_empty() {
-            true => step.state().text().to_string(),
-            false => format!("{} · revised", step.state().text()),
-        },
-        |g| super::line::grade(&g),
-    );
+    let how = super::line::grade(step).unwrap_or_else(|| match step.flags().revised {
+        false => step.state().text().to_string(),
+        true => format!("{} · revised", step.state().text()),
+    });
     format!("{} · {how}", super::line::step(step.note(), step.record()))
 }

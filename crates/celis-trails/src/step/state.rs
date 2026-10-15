@@ -28,8 +28,8 @@ impl State {
         matches!(self, State::Open | State::Working)
     }
 
-    /// Whether its work was reached: done.
-    pub fn reached(self) -> bool {
-        self == State::Done
+    /// Whether its work ended: done or dropped.
+    pub fn closed(self) -> bool {
+        matches!(self, State::Done | State::Dropped)
     }
 }

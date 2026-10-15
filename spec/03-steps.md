@@ -220,7 +220,6 @@ no record.
 ```
 took      the time from the step's first `start` to the `done` that settled it; with no `start`, from
           the step
-revised   the steps that replace it after it was done
 ```
 
 **Meaning**

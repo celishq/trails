@@ -421,9 +421,10 @@ celis tree --demo [--full] [--all]   made-up trails in every state, as tree prin
   or dropped itself MUST show its own done or drop. Its ask MUST NOT print, except with `--json`.
 - `tree` MUST mark a step or a trail `○` when open, `◐` when working, `✓` when done, `✗` when dropped,
   and `!` when expired (CIP-03, "Starting"; CIP-04, "State"). Its mark MUST be its only sign of its
-  state. A revised step, and a trail with a revised step in its tree (CIP-06, "Revisions"), MUST print
-  `↻` right after its mark. With `--json`, a trail MUST hold `revised`, the ids of the revised steps of
-  its tree.
+  state. Its flags MUST follow its mark: `~` when its done has a `changed` tag, then `↻` when it is
+  revised (CIP-06, "Revisions"). A trail takes its first ask's `changed`, and is revised when a step of
+  its tree is. Flags MUST NOT change the mark. With `--json`, a step MUST hold `revised_by`, the ids of
+  the steps that revise it, and a trail `revised`, the ids of the revised steps of its tree.
 - The worked time of a step MUST be the sum, over each step of its tree with no step under it, of the
   time a done one took, and of the time since a working one started. A worked time of none
   MUST be left out.
@@ -464,11 +465,11 @@ tree   text  <weekday>, <month> <day> · <n> active · <n> done
                    dropped <reason>
              <mark> <id, first 8> <title> · <done>/<all> steps · <worked> worked      --all
        json  {"trail": {"id", "created_at", "project", "content", "state", "links", "places", "proof", "grade",
-             "reused", "revised", "reason"}}
+             "revised_by", "reused", "revised", "reason"}}
              · {"step": {<as "Step" gives it>, "state": "open | working | done | dropped | expired",
-             "proof", "changed", "grade", "reused", "reason"}}, one a line
+             "proof", "changed", "grade", "revised_by", "reused", "reason"}}, one a line
 grade  text  took <45s | 1m 30s | 2h 5m | 3d 2h>[ · revised by <id, first 8>, ...]
-       json  "grade": {"took": <seconds>, "revised": [<id>]}
+       json  "grade": {"took": <seconds>}
 ```
 
 **Examples**
@@ -518,9 +519,8 @@ and close, and opens what they want to read.
   start under its parent's mark, after a dim `│  ` while the parent has a line after it in its level,
   else after three spaces. A line under a step MUST start at its title's column, after a dim `│` under
   its mark when steps print under it.
-- A done step with a `changed` tag MUST print `~` right after its mark, and so MUST a trail whose done
-  has one. A revised step, and a trail with a revised step in its tree, MUST print `↻` after the mark
-  and any `~`. Neither changes the mark.
+- A step and a trail MUST print their flags after the mark, as `tree` does (Tree): `~` in yellow, `↻`
+  in green.
 - A line opens when it hides or shows something: a trail, the rules line, the closed line, a step with
   lines under it, and a done or dropped step with steps under it.
 - The `§ <n> rules` line MUST be open with `--full`, else closed. Open, it MUST hold a line under it for

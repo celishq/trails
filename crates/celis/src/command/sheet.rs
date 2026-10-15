@@ -5,7 +5,7 @@ use super::clock::{day, midnight, saved, took};
 use super::glyph::{bar, columns, digits, strip};
 use super::table::{Row, Table};
 use super::tree::{cut, look, visible};
-use celis_trails::{Period, Reuse, State, Step, Trails};
+use celis_trails::{Period, Reuse, State, Step, Tally, Trails};
 use std::collections::BTreeMap;
 
 /// A card of stats: its title, the rows of its face, and the table it opens to.
@@ -458,13 +458,10 @@ fn time(last: &Period, inside: usize, ink: Ink) -> Sheet {
 /// count of revised done steps beside the done share.
 fn outcome(last: &Period, inside: usize, ink: Ink) -> Sheet {
     let closed = last.closed();
+    let tally = Tally::of(&closed);
     let states = [State::Done, State::Dropped, State::Expired];
-    let counts: Vec<usize> = states
-        .iter()
-        .map(|&st| closed.iter().filter(|s| s.state() == st).count())
-        .collect();
+    let counts: Vec<usize> = states.iter().map(|&st| tally.count(st)).collect();
     let total: usize = counts.iter().sum();
-    let revised = closed.iter().filter(|s| !s.revised().is_empty()).count();
     let mut face = vec![strip(&counts, inside.saturating_sub(4)), String::new()];
     for (&state, &n) in states.iter().zip(&counts) {
         let look = look(state);
@@ -474,8 +471,8 @@ fn outcome(last: &Period, inside: usize, ink: Ink) -> Sheet {
             ink.paint(look.text, look.mark),
             state.text()
         );
-        if state == State::Done && revised > 0 {
-            line.push_str(&format!(" · {revised} revised"));
+        if state == State::Done && tally.revised > 0 {
+            line.push_str(&format!(" · {} revised", tally.revised));
         }
         face.push(line);
     }
