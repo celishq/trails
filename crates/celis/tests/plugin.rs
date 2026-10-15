@@ -236,6 +236,28 @@ fn claudes_hooks_ask_for_the_past_agent_again_after_a_compaction() {
         .contains("celis:past agent"));
 }
 
+/// Codex's prompt hook asks to do what past.md says in place of the past agent it does not have
+/// (`spec/04-trails.md`, "The past").
+#[test]
+fn codexs_prompt_hook_names_past_md_for_the_past_agent() {
+    let repo = Repo::new();
+    let o = repo.run(
+        &repo.path(),
+        &["decide", "--", "When you test: set A=1."],
+        &[],
+        "",
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let codex = &AGENTS[1];
+    let said = codex.run(
+        &repo,
+        codex.ask,
+        &codex.payload("s1", &repo.path(), "make it blue"),
+    );
+    assert!(said.contains("do what past.md says"), "{said}");
+    assert!(!said.contains("celis:past"), "{said}");
+}
+
 /// Each manifest names the hooks file the agent runs, and each marketplace names the plugin's folder.
 #[test]
 fn each_manifest_names_its_hooks_and_each_marketplace_the_plugin() {

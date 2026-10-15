@@ -149,6 +149,11 @@ The past shows how a task like a new one was done, so a new plan can follow the 
 agent chooses it: `past` lists, and the plugin's `celis:past` agent reads the list and opens the trees.
 The list starts with what a new ask of the project must keep: its active trails and its decisions.
 
+**Meaning**
+
+- Codex has no plugin agents. Its prompt hook MUST ask to do what the plugin's `past.md` says in place of
+  the `celis:past` agent.
+
 **Derived**
 
 - What a new ask must keep: the project's active trails, each with its rules, and the live decisions in
