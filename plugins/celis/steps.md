@@ -4,9 +4,8 @@ The cases that the card does not cover, and that no command prints. Do not run `
 
 ## Decisions
 
-A place is a file, a `file:line`, a folder, or a URL. A scope is `at:<place>`, `trail:<id>`, `project`
-(the default), or `me` for every project of the person. A standing convention the person gives is a
-`project` decision, or `me` when it holds in all their work.
+A place is a file, a `file:line`, a folder, or a URL. A rule that holds at one place takes the scope
+`at:<place>`.
 
 When you move a file: write each decision at its old place again at the new place, with
 `decide --replaces <id> --scope at:<new place>`. Run `celis past --at <old place>` to see them.

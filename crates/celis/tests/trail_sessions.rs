@@ -469,3 +469,32 @@ fn prompt_takes_the_conversation_id_first() {
         [(trail, "make it blue".to_string())]
     );
 }
+
+/// A session's first `step add` says on stderr which printed id is the ask and which the new trail
+/// (`spec/02-cli.md`, "Step").
+#[test]
+fn a_sessions_first_ask_names_its_ids() {
+    let repo = Repo::new();
+    let env = [("CLAUDE_CODE_SESSION_ID", "s1")];
+    let o = repo.run(
+        &repo.path(),
+        &["step", "add", "--", "make the badges orange"],
+        &env,
+        "",
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let ids: Vec<String> = out(&o).lines().map(str::to_string).collect();
+    let line = format!(
+        "celis: {} is the ask, under its new trail {}.",
+        &ids[0][..8],
+        &ids[1][..8]
+    );
+    assert!(err(&o).contains(&line), "{}", err(&o));
+    let o = repo.run(
+        &repo.path(),
+        &["step", "add", "--", "now the buttons"],
+        &env,
+        "",
+    );
+    assert!(!err(&o).contains("is the ask"), "{}", err(&o));
+}

@@ -128,6 +128,10 @@ impl Trails {
         };
         let ask = self.sign(|account, now| ask.record(account, now))?;
         Ok(Written {
+            notices: vec![Notice::Started {
+                ask: StepId::new(&ask.id),
+                trail: StepId::new(&trail.id),
+            }],
             records: vec![ask, trail],
             ..Written::default()
         })

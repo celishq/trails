@@ -158,6 +158,11 @@ impl Command {
 
     fn notice(&self, notice: &Notice, err: &mut dyn Write) -> Result<(), Failure> {
         let line = match notice {
+            Notice::Started { ask, trail } => format!(
+                "celis: {} is the ask, under its new trail {}.",
+                short(ask),
+                short(trail)
+            ),
             Notice::Joined(trail) => format!(
                 "celis: the step joined the trail {}; edit its title when it no longer covers the work.",
                 short(trail)
