@@ -120,7 +120,7 @@ fn tree_json_gives_a_done_step_its_grade() {
         .expect("a step");
     let grade = step["grade"].as_object().expect("a grade");
     let keys: Vec<&str> = grade.keys().map(String::as_str).collect();
-    assert_eq!(keys, ["revised", "took"]);
+    assert_eq!(keys, ["took"]);
 }
 
 /// `took` counts from the step's first `start`, and from the step when it has none

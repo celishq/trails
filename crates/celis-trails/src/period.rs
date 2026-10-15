@@ -1,7 +1,7 @@
 //! The work of a store in one span of time.
 
 use crate::reuse::Link;
-use crate::{Reuse, State, Step, Steps};
+use crate::{Reuse, State, Step, Steps, Tally};
 
 /// The work of a store from `from` up to `to`: the steps done, added and closed in that time, and the
 /// follows they made. A trail counts as none of them.
@@ -26,14 +26,12 @@ impl<'a> Period<'a> {
     /// How many of its done steps went as planned: done with no `changed`.
     pub fn planned(&self) -> usize {
         let done = self.done().into_iter();
-        done.filter(|s| s.done().and_then(|d| d.tag("changed")).is_none())
-            .count()
+        done.filter(|s| !s.flags().changed).count()
     }
 
     /// How many of its done steps a later step revised.
     pub fn reworked(&self) -> usize {
-        let done = self.done().into_iter();
-        done.filter(|s| !s.revised().is_empty()).count()
+        Tally::of(&self.done()).revised
     }
 
     /// The steps added in it, oldest first.

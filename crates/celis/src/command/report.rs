@@ -6,7 +6,7 @@ use super::glyph::digits;
 use super::tree::{look, visible};
 use super::{Args, Command};
 use celis_trails::id::short;
-use celis_trails::{Failure, State, Step, Steps, Trail, Trails};
+use celis_trails::{Failure, State, Step, Steps, Tally, Trail, Trails};
 use serde_json::json;
 use std::io::{IsTerminal, Read, Write};
 
@@ -72,7 +72,7 @@ fn chosen<'a>(steps: &'a Steps<'a>, ids: &[String]) -> Result<Vec<Step<'a>>, Fai
 fn card(trails: &Trails, trail: Step, width: usize, colour: bool) -> Card {
     let step = trail.record();
     let tree = &trail.tree()[1..];
-    let of = |state: State| tree.iter().filter(|s| s.state() == state).count();
+    let tally = Tally::of(tree);
     let rules = trails
         .decisions()
         .rules(&step.anchor.project, trail.id())
@@ -89,8 +89,8 @@ fn card(trails: &Trails, trail: Step, width: usize, colour: bool) -> Card {
         "{:<8}{:<8}{:<10}{}",
         tree.len(),
         rules,
-        of(State::Revised),
-        of(State::Dropped)
+        tally.revised,
+        tally.dropped
     );
     let mut rows = vec![paint(colour, "1", step.title()), RULE.to_string()];
     match width < NARROW {
@@ -110,12 +110,15 @@ fn card(trails: &Trails, trail: Step, width: usize, colour: bool) -> Card {
             .iter()
             .map(|s| paint(colour, look(s.state()).text, "▮"))
             .collect();
-        let counts: Vec<String> = [State::Done, State::Revised, State::Dropped]
-            .into_iter()
-            .map(|s| (of(s), s.text()))
-            .filter(|(n, _)| *n > 0)
-            .map(|(n, s)| format!("{n} {s}"))
-            .collect();
+        let counts: Vec<String> = [
+            (tally.done, "done"),
+            (tally.revised, "revised"),
+            (tally.dropped, "dropped"),
+        ]
+        .into_iter()
+        .filter(|(n, _)| *n > 0)
+        .map(|(n, s)| format!("{n} {s}"))
+        .collect();
         rows.extend([
             String::new(),
             format!("{cells}   {}", paint(colour, "2", &counts.join(" · "))),
@@ -136,10 +139,7 @@ fn card(trails: &Trails, trail: Step, width: usize, colour: bool) -> Card {
             rows.push(format!("{mark} {title}{pad} {}", paint(colour, "2", &time)));
         }
     }
-    let lessons = tree
-        .iter()
-        .filter(|s| s.done().and_then(|d| d.tag("changed")).is_some())
-        .count();
+    let lessons = tree.iter().filter(|s| s.flags().changed).count();
     let mut notes = vec![];
     if rules > 0 {
         notes.push(format!(
@@ -213,7 +213,7 @@ pub(super) fn markdown(trails: &Trails, ids: &[String]) -> Result<String, Failur
     for trail in chosen(&steps, ids)? {
         let step = trail.record();
         let tree = &trail.tree()[1..];
-        let of = |state: State| tree.iter().filter(|s| s.state() == state).count();
+        let tally = Tally::of(tree);
         let ran = took(trail.newest().saturating_sub(trail.note().created_at));
         let rules = decisions.rules(&step.anchor.project, trail.id());
         let mut lines = vec![
@@ -228,8 +228,8 @@ pub(super) fn markdown(trails: &Trails, ids: &[String]) -> Result<String, Failur
                 trail.state().text(),
                 tree.len(),
                 rules.len(),
-                of(State::Revised),
-                of(State::Dropped),
+                tally.revised,
+                tally.dropped,
                 cell(&step.anchor.name)
             ),
         ];
@@ -302,7 +302,7 @@ fn table(steps: Vec<Step>) -> Vec<String> {
         let mut under: Vec<String> = step.detail().map(str::to_string).collect();
         under.extend(step.places.iter().map(|p| format!("at `{p}`")));
         if let Some(check) = &step.check {
-            match state.reached() {
+            match state == State::Done {
                 true => under.push(format!("check passed `{check}`")),
                 false => under.push(format!("check `{check}`")),
             }

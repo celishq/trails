@@ -122,6 +122,7 @@ fn past_json_carries_each_past_works_tags() {
         "id",
         "places",
         "project",
+        "revised",
         "rules",
         "state",
     ];

@@ -3,7 +3,7 @@
 use super::clock::took;
 use celis_nostr::Note;
 use celis_trails::id::short;
-use celis_trails::{Decision, Grade, StepRecord};
+use celis_trails::{Decision, Step, StepRecord};
 
 /// `<id, first 8> [<project name>] <title>[ · <first place>]` of the step `record` that `note` holds.
 pub(super) fn step(note: &Note, record: &StepRecord) -> String {
@@ -34,11 +34,12 @@ pub(super) fn rule(note: &Note, decision: &Decision) -> String {
     format!("  rule {} {}", short(&note.id), decision.content)
 }
 
-/// `took <time>[ · revised by <id, first 8>, ...]`.
-pub(super) fn grade(grade: &Grade) -> String {
-    let by: Vec<String> = grade.revised.iter().map(|id| short(id)).collect();
-    match by.is_empty() {
-        true => format!("took {}", took(grade.took)),
-        false => format!("took {} · revised by {}", took(grade.took), by.join(", ")),
-    }
+/// `took <time>[ · revised by <id, first 8>, ...]` of a done `step`; `None` while it is not done.
+pub(super) fn grade(step: Step) -> Option<String> {
+    let took = took(step.grade()?.took);
+    let by: Vec<String> = step.revised().iter().map(|s| short(s.id())).collect();
+    Some(match by.is_empty() {
+        true => format!("took {took}"),
+        false => format!("took {took} · revised by {}", by.join(", ")),
+    })
 }

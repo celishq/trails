@@ -419,11 +419,14 @@ celis tree --demo [--full] [--all]   made-up trails in every state, as tree prin
 - A trail whose first ask holds its text MUST print as one step with that ask: the ask's proof, grade
   and reuse as the trail's, and the ask's steps first under it (CIP-04, "Sessions"). A trail that is done
   or dropped itself MUST show its own done or drop. Its ask MUST NOT print, except with `--json`.
-- `tree` MUST mark a step or a trail `○` when open, `◐` when working, `✓` when done, `↻` when revised,
-  `✗` when dropped, and `!` when expired (CIP-03, "Starting"; CIP-04, "State"). Its mark MUST be its
-  only sign of its state.
+- `tree` MUST mark a step or a trail `○` when open, `◐` when working, `✓` when done, `✗` when dropped,
+  and `!` when expired (CIP-03, "Starting"; CIP-04, "State"). Its mark MUST be its only sign of its
+  state. Its flags MUST follow its mark: `~` when its done has a `changed` tag, then `↻` when it is
+  revised (CIP-06, "Revisions"). A trail takes its first ask's `changed`, and is revised when a step of
+  its tree is. Flags MUST NOT change the mark. With `--json`, a step MUST hold `revised_by`, the ids of
+  the steps that revise it, and a trail `revised`, the ids of the revised steps of its tree.
 - The worked time of a step MUST be the sum, over each step of its tree with no step under it, of the
-  time a done or revised one took, and of the time since a working one started. A worked time of none
+  time a done one took, and of the time since a working one started. A worked time of none
   MUST be left out.
 - The agent view MUST print each trail as a block: with no id and no `--all`, every trail; `tree <id>`
   its step; `tree --all`, with `--full` only. Else a trail MUST print as one line: `<mark> <id, first 8>
@@ -462,11 +465,11 @@ tree   text  <weekday>, <month> <day> · <n> active · <n> done
                    dropped <reason>
              <mark> <id, first 8> <title> · <done>/<all> steps · <worked> worked      --all
        json  {"trail": {"id", "created_at", "project", "content", "state", "links", "places", "proof", "grade",
-             "reused", "reason"}}
-             · {"step": {<as "Step" gives it>, "state": "open | working | done | revised | dropped | expired",
-             "proof", "changed", "grade", "reused", "reason"}}, one a line
+             "revised_by", "reused", "revised", "reason"}}
+             · {"step": {<as "Step" gives it>, "state": "open | working | done | dropped | expired",
+             "proof", "changed", "grade", "revised_by", "reused", "reason"}}, one a line
 grade  text  took <45s | 1m 30s | 2h 5m | 3d 2h>[ · revised by <id, first 8>, ...]
-       json  "grade": {"took": <seconds>, "revised": [<id>]}
+       json  "grade": {"took": <seconds>}
 ```
 
 **Examples**
@@ -508,7 +511,7 @@ and close, and opens what they want to read.
   first line. Under it, at the title's column after a dim `│ `, come its lines: `took <worked time>`,
   `active <time> ago` from the newest record of its tree while it is active, the project with an id, then the lines the agent view prints with `--full`
   but its `took`. Then comes its tree, under its mark: a line `§ <n> rules` (`rule` for one) when it
-  has rules, a line `<marks> <n> closed steps` (`step` for one) when steps under it are done, revised or
+  has rules, a line `<marks> <n> closed steps` (`step` for one) when steps under it are done or
   dropped, then its other steps, oldest first, each followed by its own. A blank line MUST come between
   a block and the trail before or after it.
 - The tree MUST draw each line of a level with a dim `├─ ` before it, and the last one with `└─ `. A
@@ -516,19 +519,19 @@ and close, and opens what they want to read.
   start under its parent's mark, after a dim `│  ` while the parent has a line after it in its level,
   else after three spaces. A line under a step MUST start at its title's column, after a dim `│` under
   its mark when steps print under it.
-- A done step with a `changed` tag MUST print `~` right after its mark, and so MUST a trail whose done
-  has one.
+- A step and a trail MUST print their flags after the mark, as `tree` does (Tree): `~` in yellow, `↻`
+  in green.
 - A line opens when it hides or shows something: a trail, the rules line, the closed line, a step with
-  lines under it, and a done, revised or dropped step with steps under it.
+  lines under it, and a done or dropped step with steps under it.
 - The `§ <n> rules` line MUST be open with `--full`, else closed. Open, it MUST hold a line under it for
   each rule, `§ <text>`, the text wrapped between words.
-- The closed line MUST hold the trail's done, revised and dropped steps at its top level, and print
-  them, oldest first, only when it is open. Its marks MUST be `✓` when one is done or revised, then `✗`
+- The closed line MUST hold the trail's done and dropped steps at its top level, and print
+  them, oldest first, only when it is open. Its marks MUST be `✓` when one is done, then `✗`
   when one is dropped. It MUST be open with `--full`, else closed.
-- A done or revised step with steps under it MUST print them only when it is open; closed, its line
+- A done step with steps under it MUST print them only when it is open; closed, its line
   MUST hold `<n> steps` for the steps of its tree.
 - A step line MUST end with its details: `<n> steps` when it is closed, and its worked time while it is
-  not done, revised or dropped. It MUST NOT print its places. A trail's line MUST end with `<n> steps`
+  not done or dropped. It MUST NOT print its places. A trail's line MUST end with `<n> steps`
   when every step is done, else `<done> of <all>`, then `1 rule` or `<n> rules`, then its worked time,
   each in its own column. The steps and the rules MUST align their numbers right, `1 step ` and `1 rule `
   with a space for the missing `s`.
@@ -543,7 +546,7 @@ and close, and opens what they want to read.
   agent view prints with `--full`, each after its label padded to 8 characters and wrapped at the width,
   each line at the same column. A closed step MUST NOT print a line under it.
 - It MUST print in colour, but not when `NO_COLOR` is set; with no colour, it MUST print the same lines.
-- In colour, a working step MUST print its mark in yellow and its title bold. A done or revised step
+- In colour, a working step MUST print its mark in yellow and its title bold. A done step
   MUST print its mark in green and its title in normal weight. A dropped or expired step MUST print its
   mark in red and its title dim. A block's title, a day's line and a project's name MUST print bold. A step or trail whose newest record is less than 2 seconds old MUST print its title bold.
   Details, tree lines and the lines under a step MUST print dim. Each `§` MUST print magenta.
@@ -624,10 +627,10 @@ celis tree
 - Then it MUST print the live decisions at each `--at` place, then the project's live `project` and `me`
   decisions (CIP-01, "Reading"). It MUST NOT print a decision at a place unless an `--at` place is at it.
 - Then it MUST print the past work of every project, newest first.
-- Each past work MUST print as one line: its id, project, title and place, its grade or else its state,
-  and its day. Then it MUST print the rules of the trail it stands for (CIP-04, "The past").
+- Each past work MUST print as one line: its id, project, title and place, its grade or else its state
+  and ` · revised` when its tree holds a revised step (CIP-06, "Revisions"), and its day. Then it MUST print the rules of the trail it stands for (CIP-04, "The past").
 - With `--json`, each object MUST be named `past`, with its id, project, title, places, state, grade,
-  day and rules.
+  revised, day and rules.
 - Without `--json`, when it prints nothing else, `past` MUST print one line that says so.
 - `past` MUST NOT write a record.
 
@@ -635,11 +638,11 @@ celis tree
 past  text  <id, first 8> [<project name>] <its title>[ · <place>]          each active trail
               rule <id, first 8> <text>                                     each of its rules
             <a decision, as "Commands" gives it>
-            <id, first 8> [<project name>] <its title>[ · <place>] · <grade | state> · <yyyy-mm-dd>
+            <id, first 8> [<project name>] <its title>[ · <place>] · <grade | state[ · revised]> · <yyyy-mm-dd>
               rule <id, first 8> <text>                                     each rule of its trail
       json  {"trail": {"id", "created_at", "project", "content", "session", "rules": []}}
             · {"decision": {...}} · {"past": {"id", "created_at", "day", "project", "content",
-            "places", "state", "grade", "rules": []}}
+            "places", "state", "grade", "revised", "rules": []}}
 ```
 
 **Examples**
@@ -702,7 +705,7 @@ as a strip, a chain as a route. The periods are CIP-06 "Periods".
 03 WORK · 14 DAYS                       the steps done each local day, as columns, and their total
 04 TIME A STEP TOOK                     the median took of the done steps with none under them, and a bar
                                         for each of < 5m, 5-15m, 15m-1h, 1-4h and > 4h
-05 OUTCOME                              the closed steps as a strip: done, revised, dropped, expired
+05 OUTCOME                              the closed steps as a strip: done, dropped, expired; revised beside done
 06 PROJECTS · TIME                      the took of the done steps with none under them, a project a bar
 ```
 

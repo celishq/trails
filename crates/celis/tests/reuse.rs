@@ -121,7 +121,7 @@ fn uses_goes_on_the_ask_of_a_new_trail() {
 }
 
 /// `step add --replaces` takes a done step of another trail: the new step goes where `step add` puts it,
-/// the old one stays done, and its grade and trail read as revised (`spec/06-reuse.md`,
+/// the old one stays done, and it and its trail read as revised while they stay done (`spec/06-reuse.md`,
 /// "Revisions").
 #[test]
 fn replaces_takes_a_done_step_and_reads_it_as_revised() {
@@ -147,13 +147,14 @@ fn replaces_takes_a_done_step_and_reads_it_as_revised() {
     assert_eq!(links(&json, "under"), [trail], "{json}");
     assert_eq!(links(&json, "replaces"), [part.as_str()], "{json}");
     let revised = step(&repo, old_trail, &part);
-    assert_eq!(
-        revised["grade"]["revised"],
-        serde_json::json!([fix]),
-        "{revised}"
-    );
+    assert_eq!(revised["revised_by"], serde_json::json!([fix]), "{revised}");
     let head = objects(&repo, &["tree", &old_trail[..8]]);
-    assert_eq!(head[0]["trail"]["state"], "revised", "{head:?}");
+    assert_eq!(head[0]["trail"]["state"], "done", "{head:?}");
+    assert_eq!(
+        head[0]["trail"]["revised"],
+        serde_json::json!([part]),
+        "{head:?}"
+    );
     let tree = out(&cli(&repo, &["tree", &old_trail[..8], "--full"]));
     let line = format!(" · revised by {}", &fix[..8]);
     assert!(tree.contains(&line), "{tree}");
@@ -351,7 +352,7 @@ fn a_new_trail_that_replaces_a_done_step_links_it_once() {
     let fix: Vec<String> = out(&o).lines().map(str::to_string).collect();
     let revised = step(&repo, &old[1], &old[0]);
     assert_eq!(
-        revised["grade"]["revised"],
+        revised["revised_by"],
         serde_json::json!([fix[0]]),
         "{revised}"
     );

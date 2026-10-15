@@ -260,8 +260,9 @@ fn the_agent_view_prints_whole_lines_with_no_colour() {
     );
 }
 
-/// `tree` prints a done step's `changed` tag under it as `~ <changed>`, and marks a revised step `↻`
-/// (`spec/02-cli.md`, "Tree").
+/// `tree` prints a done step's `changed` tag under it as `~ <changed>`, and its flags after the mark: `~`
+/// when changed, then `↻` on a revised step and its trail, which keep their states (`spec/02-cli.md`,
+/// "Tree").
 #[test]
 fn tree_prints_what_changed_and_marks_a_revised_step() {
     let repo = Repo::new();
@@ -283,7 +284,7 @@ fn tree_prints_what_changed_and_marks_a_revised_step() {
     std::thread::sleep(std::time::Duration::from_millis(1100));
     add(&repo, &["--under", short(&trail), "--", "next"]);
     let lines = printed(&repo, &[short(&trail)]);
-    let done = format!("  ✓ {} the part · ", short(&part));
+    let done = format!("  ✓~ {} the part · ", short(&part));
     assert!(lines[2].starts_with(&done), "{lines:?}");
     assert_eq!(lines[3], "    ~ one file, not two");
     let other = add(&repo, &["--", "another trail"]);
@@ -302,7 +303,17 @@ fn tree_prints_what_changed_and_marks_a_revised_step() {
     );
     assert!(o.status.success(), "{}", err(&o));
     let lines = printed(&repo, &[short(&trail)]);
-    assert!(lines[2].starts_with("  ↻ "), "{lines:?}");
+    assert!(lines[0].starts_with("○↻ "), "{lines:?}");
+    assert!(
+        lines[2].starts_with(&format!("  ✓~↻ {}", short(&part))),
+        "{lines:?}"
+    );
+    let json = objects(&repo, &["tree", short(&trail)]);
+    let step = json
+        .iter()
+        .find(|o| o["step"]["id"] == part.as_str())
+        .unwrap();
+    assert_eq!(step["step"]["state"], "done", "{json:?}");
 }
 
 /// `tree <id>` prints a trail with no record from today, and `tree` with no id only today's
@@ -376,7 +387,7 @@ fn tree_demo_prints_every_state_and_writes_nothing() {
     let text = out(&o);
     let working = text.lines().filter(|l| l.starts_with("◐ ")).count();
     assert!(working >= 2, "{text}");
-    for mark in ["○ ", "◐ ", "✓ ", "↻ ", "✗ ", "! "] {
+    for mark in ["○ ", "◐ ", "✓ ", "✓↻ ", "✗ ", "! "] {
         assert!(
             text.lines().any(|l| l.trim_start().starts_with(mark)),
             "{mark}: {text}"
