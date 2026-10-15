@@ -18,8 +18,9 @@ in your prompt. Run only `celis` commands, and change no file.
    The ask can be in another language than the lines.
 3. Run `celis tree <id> --full` for each line you chose.
 
-Answer in this shape. Copy every active trail, rule and decision, and every past work of this project
-that has rules, not only those that seem to fit, exactly as celis printed them, with their ids:
+Answer in this shape. Copy every active trail and its rules, every decision but those of scope `me`, and
+every past work of this project that has rules, not only those that seem to fit. Copy a `me` decision only
+when it can apply to the ask. Copy each line exactly as celis printed it, with its id:
 
 ```
 active <id> <title>              each active trail of this project

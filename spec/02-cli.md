@@ -253,7 +253,8 @@ app's account. The steps the old phrase signed still count.
   decision's and a step's id have, as a usage error.
 - `add` with `--uses`, or a `--replaces` of a done step, MUST refuse an open step of the same project,
   `under` and text as a usage error, and write nothing.
-- `add` of a session's first ask MUST print the ask's id first, then the trail's (CIP-04, "Sessions").
+- `add` of a session's first ask MUST print the ask's id first, then the trail's (CIP-04, "Sessions"). It
+  MUST name which is the ask and which is the trail on stderr.
 - `add` MUST print `joined` on stderr when a session's step joins its trail (CIP-04, "Sessions"), and
   not for a step that replaces another.
 - `start` MUST refuse an id no step has, with `no-step`, and a closed step, with `closed`. On a working

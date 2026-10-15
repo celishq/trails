@@ -77,6 +77,27 @@ CLAUDE_CODE_SESSION_ID=4c1d22e0 celis step add --under 3fa2c1d0 -- "Check the co
 celis step add --session 95e9be99 -- "Now the links."                        a step under its trail
 ```
 
+## Plugin version
+
+The plugin and the `celis` command come from one release. An agent updates its copy of the plugin only
+when the manifest's version changes.
+
+**Meaning**
+
+- Each agent's manifest MUST carry the same `version`: the version of the last release.
+- A release MUST write its version in each manifest, and release from that commit.
+- The session start MUST tell the agent to have the person update the older of the two, when the version
+  `celis --version` prints differs from the manifest's. A version of `0.0.0` on either side is a build
+  from the repo, and MUST NOT count.
+
+**Examples**
+
+```
+celis 1.4.0, plugin 1.3.0    the session start names both and asks for an update
+celis 1.4.0, plugin 1.4.0    nothing
+celis 0.0.0, plugin 1.4.0    nothing: a build from the repo
+```
+
 ## Rules
 
 A trail's rules are the live decisions with the scope `trail:<id>` (CIP-01, "Scope"). Each is one

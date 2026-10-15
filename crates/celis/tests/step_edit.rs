@@ -96,7 +96,7 @@ fn add_says_when_a_step_joins_the_sessions_trail() {
     let repo = Repo::new();
     let env = [("CLAUDE_CODE_SESSION_ID", "s1")];
     let o = repo.run(&repo.path(), &["step", "add", "--", "the trail"], &env, "");
-    assert!(err(&o).is_empty(), "{}", err(&o));
+    assert!(!err(&o).contains("joined"), "{}", err(&o));
     let trail = out(&o).lines().nth(1).unwrap_or("").to_string();
     let o = repo.run(
         &repo.path(),

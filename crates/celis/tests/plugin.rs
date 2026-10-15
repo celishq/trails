@@ -265,3 +265,79 @@ fn each_manifest_names_its_hooks_and_each_marketplace_the_plugin() {
     assert_eq!(read("gemini-extension.json")["name"], "celis");
     assert_eq!(read(".antigravity-plugin/plugin.json")["name"], "celis");
 }
+
+/// Each agent's manifest carries one version, so each agent updates the plugin on a release
+/// (`spec/04-trails.md`, "Plugin version").
+#[test]
+fn each_manifest_carries_one_version() {
+    let manifests = [
+        "plugins/celis/.claude-plugin/plugin.json",
+        "plugins/celis/.codex-plugin/plugin.json",
+        "plugins/celis/.cursor-plugin/plugin.json",
+        "gemini-extension.json",
+        ".antigravity-plugin/plugin.json",
+    ];
+    let first = read(manifests[0])["version"].clone();
+    assert!(first.is_string(), "{}: no version", manifests[0]);
+    for manifest in manifests {
+        assert_eq!(read(manifest)["version"], first, "{manifest}");
+    }
+}
+
+/// What Claude Code's session start gives when `celis --version` prints `celis` and the manifest carries
+/// `plugin`, run from a copy of the plugin with a `celis` that only prints its version.
+fn start_with_versions(celis: &str, plugin: &str) -> String {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("celis");
+    for rel in [
+        "hooks/start.sh",
+        "hooks/out.sh",
+        "card.md",
+        ".claude-plugin/plugin.json",
+    ] {
+        let to = root.join(rel);
+        std::fs::create_dir_all(to.parent().unwrap()).unwrap();
+        std::fs::copy(checkout().join("plugins/celis").join(rel), &to).unwrap();
+    }
+    let manifest = serde_json::json!({"name": "celis", "version": plugin});
+    std::fs::write(
+        root.join(".claude-plugin/plugin.json"),
+        manifest.to_string(),
+    )
+    .unwrap();
+    let bin = dir.path().join("bin");
+    std::fs::create_dir(&bin).unwrap();
+    let fake =
+        format!("#!/bin/sh\n[ \"$1\" = --version ] && echo 'celis {celis} (abcd1234)'\nexit 0\n");
+    std::fs::write(bin.join("celis"), fake).unwrap();
+    Command::new("chmod")
+        .arg("755")
+        .arg(bin.join("celis"))
+        .status()
+        .unwrap();
+    let o = Command::new("sh")
+        .arg(root.join("hooks/start.sh"))
+        .env_clear()
+        .env("PATH", format!("{}:/usr/bin:/bin", bin.display()))
+        .stdin(Stdio::null())
+        .output()
+        .unwrap();
+    assert!(o.status.success(), "{}", err(&o));
+    out(&o)
+}
+
+/// The session start names both versions when the plugin and `celis` differ, and nothing when they match
+/// or one is a build from the repo (`spec/04-trails.md`, "Plugin version").
+#[test]
+fn session_start_names_a_version_mismatch() {
+    let notice = "celis 1.4.0 is installed, and the celis plugin is 1.3.0.";
+    assert!(start_with_versions("1.4.0", "1.3.0").contains(notice));
+    for (celis, plugin) in [("1.4.0", "1.4.0"), ("0.0.0", "1.4.0"), ("1.4.0", "0.0.0")] {
+        let context = start_with_versions(celis, plugin);
+        assert!(context.starts_with("How to do an ask"), "{context}");
+        assert!(
+            !context.contains("is installed, and the celis plugin"),
+            "{celis} {plugin}: {context}"
+        );
+    }
+}
