@@ -14,8 +14,8 @@ celis tree [<id>] [--full] [--all] [--demo]
    agent, do what the `past.md` the session start names says, yourself. When the ask conflicts with a
    rule it brings, the ask wins: replace the rule with `decide --replaces <id>`.
 2. An ask that changes a file, however small, or that works toward a result someone can check, gets a
-   trail. A question, an explanation, a review or an investigation gets none: answer it, and run no
-   command below.
+   trail: review feedback to fix too. A question, an explanation, or a review or investigation you only
+   report on gets none: answer it, and run no command below.
 3. Add the ask with `step add` where the prompt hook says. With no hint, add it under the session's
    trail, else with `--new`. An ask that corrects done work takes `--replaces <its id>`. Give the ask the
    project's own check, and `--uses <id>` for each decision or past work it follows.
@@ -33,5 +33,7 @@ celis tree [<id>] [--full] [--all] [--demo]
 
 A rule reads "When <what you see>: <what to do>, because <the reason>." Its scope is `trail:<id>` when it
 holds for this task, `project` (the default) when it holds for the repo, and `me` when it holds in all the
-person's work. When the person asks you to remember something, write it as one rule. Read the `steps.md`
-the session start names for moved files, past work, subagents, links, and when to stop.
+person's work. When the person asks you to remember something, or states how the work must be done
+(review feedback, a convention, a correction), write each point as one rule before you do the work.
+Read the `steps.md` the session start names for moved files, past work, subagents, links, and when to
+stop.

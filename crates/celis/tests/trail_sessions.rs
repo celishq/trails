@@ -295,14 +295,19 @@ fn joins(open: Option<&str>) -> String {
     match open {
         Some(id) => format!(
             "celis: when this prompt is a new ask, add it under the session's trail {}, when it fits; \
-             else run celis tree and add it --under a related trail of today; else add it --new.",
+             else run celis tree and add it --under a related trail of today; else add it --new. {RULES}",
             &id[..8]
         ),
-        None => "celis: when this prompt is a new ask, run celis tree and add it --under a related \
-                 trail of today; else start a new trail."
-            .to_string(),
+        None => format!(
+            "celis: when this prompt is a new ask, run celis tree and add it --under a related \
+             trail of today; else start a new trail. {RULES}"
+        ),
     }
 }
+
+/// The sentence of a new ask's line that asks to write the rules the prompt states.
+const RULES: &str = "Write each rule this prompt states (review feedback, a convention, a \
+                     correction) with celis decide before you change a file.";
 
 /// After the past agent was asked for, a later prompt with no open trail gives the hint to join a trail
 /// of today, of any project; with no trail of today, it gives none (`spec/02-cli.md`,
@@ -377,6 +382,7 @@ fn a_prompt_with_no_open_trail_asks_for_the_past_agent() {
     assert!(said.contains("celis:past agent"), "{said}");
     assert!(said.contains("before any other tool"), "{said}");
     assert!(said.contains("wait for its answer"), "{said}");
+    assert!(said.contains(RULES), "{said}");
     assert!(!said.contains("SHELF_OFFLINE"), "{said}");
     assert!(marks(&repo, "prompt").is_empty());
 }

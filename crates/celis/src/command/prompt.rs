@@ -115,12 +115,12 @@ impl Command {
             }
             return Ok(false);
         }
-        super::put(
-            err,
+        let line = format!(
             "celis: a new ask in this session; before any other tool, run the celis:past agent in the \
              foreground with the ask and the places it may touch, and wait for its answer; it brings this \
-             project's active trails and decisions, and the past work like the ask.",
-        )?;
+             project's active trails and decisions, and the past work like the ask. {RULES}"
+        );
+        super::put(err, &line)?;
         mark(asked)?;
         Ok(true)
     }
@@ -157,14 +157,19 @@ fn joins(open: Option<&str>) -> String {
     match open {
         Some(id) => format!(
             "celis: when this prompt is a new ask, add it under the session's trail {}, when it fits; \
-             else run celis tree and add it --under a related trail of today; else add it --new.",
+             else run celis tree and add it --under a related trail of today; else add it --new. {RULES}",
             celis_trails::id::short(id)
         ),
-        None => "celis: when this prompt is a new ask, run celis tree and add it --under a related \
-                 trail of today; else start a new trail."
-            .to_string(),
+        None => format!(
+            "celis: when this prompt is a new ask, run celis tree and add it --under a related \
+             trail of today; else start a new trail. {RULES}"
+        ),
     }
 }
+
+/// The sentence of a new ask's line that asks to write the rules the prompt states.
+const RULES: &str = "Write each rule this prompt states (review feedback, a convention, a \
+                     correction) with celis decide before you change a file.";
 
 /// The hook's JSON on stdin; a usage error when it is no JSON.
 fn hook() -> Result<serde_json::Value, Failure> {

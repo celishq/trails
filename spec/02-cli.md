@@ -381,6 +381,8 @@ The prompt hook of each agent gives the person's prompt to `prompt`, and gives i
   to link the project, and say that the person runs `celis link`.
 - The join line asks to add a new ask under the session's open trail when it fits, else under a related
   trail that `tree` with no id prints, else as a new trail.
+- The line for the past agent and the join line MUST end by asking to write each rule the prompt states
+  (review feedback, a convention, a correction) with `decide` before any file changes.
 
 **Examples**
 
