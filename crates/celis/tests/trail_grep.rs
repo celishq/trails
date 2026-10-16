@@ -265,3 +265,17 @@ fn grep_help_prints_the_command_page() {
     let text = grep(&repo, &["--help"]);
     assert!(text.starts_with("celis grep"), "{text}");
 }
+
+/// The legend names the trails of lines that `grep` numbers with `-n` (`spec/02-cli.md`, "Grep").
+#[test]
+fn grep_names_the_trails_of_numbered_lines() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "Build the Vendors page"]);
+    let text = grep(&repo, &["-n", "Vendors"]);
+    assert!(text.starts_with("1:"), "{text}");
+    let legend: Vec<&str> = text.lines().skip_while(|l| *l != "trails").collect();
+    assert!(
+        legend[1].starts_with(&format!("{} [repo] Build the Vendors page", &trail[..8])),
+        "{text}"
+    );
+}
