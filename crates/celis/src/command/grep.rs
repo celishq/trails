@@ -259,7 +259,7 @@ fn rule(note: &Note, decision: &Decision, by: Option<&Note>, trail: &str) -> Str
         format!("replaced-by {}", short(&b.id))
     });
     format!(
-        "{} {trail} [{}] rule {} {state} {} {}",
+        "{} {trail} [{}] rule {} {state} {{{}}} {}",
         date(note.created_at),
         decision.anchor.name,
         short(&note.id),

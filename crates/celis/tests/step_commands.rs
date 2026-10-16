@@ -301,7 +301,7 @@ fn done_writes_a_pitfall_as_a_decision_at_the_steps_place() {
     assert!(
         later
             .lines()
-            .any(|l| l.contains(" live at:src/a.rs the fixture needs --yes")),
+            .any(|l| l.contains(" live {at:src/a.rs} the fixture needs --yes")),
         "{later}"
     );
 }

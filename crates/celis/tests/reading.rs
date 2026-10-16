@@ -137,7 +137,7 @@ fn a_place_reads_as_a_path_from_the_projects_top_folder() {
     assert_eq!(read_ids(&repo, &src, &["--at", "../src"]), [id.as_str()]);
     let o = repo.run(&root, &["grep", "at:src/a.rs:3"], &[], "");
     assert!(
-        support::out(&o).contains(&format!("rule {id} live at:src/a.rs:3 kept")),
+        support::out(&o).contains(&format!("rule {id} live {{at:src/a.rs:3}} kept")),
         "{}",
         support::out(&o)
     );

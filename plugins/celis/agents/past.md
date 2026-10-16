@@ -16,13 +16,14 @@ item is one line:
 ```
 
 The kinds are `trail`, `step`, `proof`, `changed`, `dropped` and `rule`. A trail or step line gives its
-state and its places (`at:<place>`). A rule line gives `live`, or `replaced-by <id>`, then its scope. A
+state and its places (`at:<place>`). A rule line gives `live`, or `replaced-by <id>`, then its scope in braces: `{me}`, `{project}`,
+`{trail:<id>}` or `{at:<place>}`. A
 replaced rule is a past mistake: the rule that replaced it holds. After the lines, `project [<name>]`
 names this project, and `trails` gives the title of each trail of the lines. When the output is too
 long, celis cuts it and gives each trail it cut, with how many lines of each kind it holds.
 
-1. Run `celis grep -E " rule [0-9a-f]{8} live me "`, then, with the name that its `project` line gives,
-   `celis grep -E "\[<name>\] rule [0-9a-f]{8} live project "`. Keep every line of both.
+1. Run `celis grep " live {me} "`, then, with the name that its `project` line gives,
+   `celis grep "\[<name>\] rule [0-9a-f]* live {project} "`. Keep every line of both.
 2. Search for the ask: `celis grep -i -E "<word>|<word>|..."`, with the words of the ask, their
    synonyms in the language of the lines, and the places of the ask. When too many lines match, narrow
    the search: add `-w`, more words, or a second `| grep`. When no line matches, try other words. Stop

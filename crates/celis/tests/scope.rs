@@ -59,7 +59,7 @@ fn no_scope_tag_is_the_project_and_an_unknown_scope_is_skipped() {
     put(&repo, &unknown);
     let text = out(&cli(&repo, &["grep", " rule "]));
     assert!(
-        text.contains(&format!("rule {} live project Keep", &here[..8])),
+        text.contains(&format!("rule {} live {{project}} Keep", &here[..8])),
         "{text}"
     );
     assert!(!text.contains("Team rule."), "{text}");

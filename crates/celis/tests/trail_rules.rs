@@ -49,7 +49,7 @@ fn a_decision_is_a_rule_of_a_trail_only_when_its_scope_names_it() {
     );
     let text = out(&cli(
         &repo,
-        &["grep", &format!(" live trail:{}", &mine.id[..8])],
+        &["grep", &format!(" live {{trail:{}}}", &mine.id[..8])],
     ));
     let rules: Vec<&str> = text
         .lines()

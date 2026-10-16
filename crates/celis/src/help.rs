@@ -207,7 +207,7 @@ pub const VERBS: &[Verb] = &[
         ],
         examples: &[
             "celis grep -i -E \"price|cents\"",
-            "celis grep -E \" rule [0-9a-f]{8} live (me|project) \"",
+            "celis grep \" live {me} \"",
             "celis grep -A3 9b0e11aa",
         ],
     },

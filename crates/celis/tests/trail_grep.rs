@@ -143,7 +143,7 @@ fn grep_prints_decisions_as_rules_live_or_replaced() {
     let held = line(&text, "initials");
     assert!(
         held.ends_with(&format!(
-            "{t} [repo] rule {} live trail:{t} When a vendor has no logo: show its initials",
+            "{t} [repo] rule {} live {{trail:{t}}} When a vendor has no logo: show its initials",
             &rule[..8]
         )),
         "{held}"
@@ -151,14 +151,14 @@ fn grep_prints_decisions_as_rules_live_or_replaced() {
     let gone = line(&text, "floats");
     assert!(
         gone.ends_with(&format!(
-            "- [repo] rule {} replaced-by {} project When a price prints: use floats",
+            "- [repo] rule {} replaced-by {} {{project}} When a price prints: use floats",
             &old[..8],
             &new[..8]
         )),
         "{gone}"
     );
     assert!(
-        line(&text, "cents").contains(&format!(" rule {} live project ", &new[..8])),
+        line(&text, "cents").contains(&format!(" rule {} live {{project}} ", &new[..8])),
         "{text}"
     );
 }

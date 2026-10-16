@@ -209,13 +209,13 @@ in ~/code/shop:       /Users/me/code/shop/src/prices.py      →   src/prices.py
 
 ## Reading
 
-A reader gives the live decisions in scope, narrow first.
+A reader gives the live decisions in scope. `step start` gives those at the step's places, and an agent
+finds the others with `grep` by their scope mark (CIP-02, "Grep").
 
 **Meaning**
 
 - A reader MUST give only live decisions in scope.
-- A reader MUST order decisions by scope, `at` first, then `trail`, then `project`, then `me`. In one
-  scope, it MUST order them newest first, then by id.
+- A reader MUST order the decisions at a place newest first, then by id.
 
 **Derived**
 

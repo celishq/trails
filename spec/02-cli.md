@@ -642,7 +642,8 @@ the options it knows. An agent finds what a new ask must keep and the past work 
 - A trail or a step MUST print its state, then `revised-by <ids>` when a done step replaces it (CIP-06,
   "Revisions"), then `at:<place>` for each place.
 - A decision MUST print as a `rule` of any scope, a pitfall too: `live`, or `replaced-by <id>` when a
-  decision replaces it (CIP-01, "Decisions"), then its scope.
+  decision replaces it (CIP-01, "Decisions"), then its scope in braces: `{me}`, `{project}`,
+  `{trail:<id, first 8>}` or `{at:<place>}`.
 - `grep` MUST print the lines `grep` prints, cut at the end of a line where they and their legend pass
   14,000 bytes. Then `project [<name>]` of the working folder, then `trails`, then the legend: each trail
   of the printed lines once, in the order they print.
@@ -656,7 +657,7 @@ the options it knows. An agent finds what a new ask must keep and the past work 
 ```
 grep  view    <yyyy-mm-dd> <trail id, first 8 | -> [<project name>] <kind> <id, first 8> <fields> <text>
                 trail | step   <open | working | done | dropped | expired>[ revised-by <id>,…][ at:<place>]…
-                rule           <live | replaced-by <id>> <scope>
+                rule           <live | replaced-by <id>> {<scope>}
                 proof | changed | dropped                              the step's id, no fields
       cut     celis: <n> more lines in <n> trails match; narrow the search, or open one with celis tree <id> --full
               <id, first 8> [<project name>] <its title> · <yyyy-mm-dd> · <n> <kind>s, …   each trail cut
@@ -670,7 +671,7 @@ grep  view    <yyyy-mm-dd> <trail id, first 8 | -> [<project name>] <kind> <id, 
 
 ```
 celis grep -i -E "price|cents"
-celis grep -E " rule [0-9a-f]{8} live (me|project) "
+celis grep " live {me} "
 celis grep -A3 9b0e11aa
 ```
 
