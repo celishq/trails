@@ -8,13 +8,14 @@ use celis_nostr::Note;
 use celis_trails::id::short;
 use celis_trails::{Decision, Mark, Scope, Step, Trails};
 use std::collections::HashMap;
+use std::hash::{DefaultHasher, Hash, Hasher};
 
 /// Every trail of every project with its rules and steps, and each decision with no trail, newest made
 /// first; with the header of each trail.
 #[derive(Default)]
 pub(super) struct View {
     rows: Vec<Row>,
-    lines: HashMap<String, usize>,
+    lines: HashMap<u64, usize>,
     headers: HashMap<String, Header>,
 }
 
@@ -49,7 +50,7 @@ impl View {
         let lines = rows
             .iter()
             .enumerate()
-            .map(|(n, r)| (r.line(), n))
+            .map(|(n, r)| (hash(&r.line()), n))
             .collect();
         View {
             rows,
@@ -68,8 +69,9 @@ impl View {
     pub fn row<'a>(&self, line: &'a str) -> Option<(&'a str, &Row)> {
         let mut rest = line;
         loop {
-            if let Some(&n) = self.lines.get(rest) {
-                return Some((&line[..line.len() - rest.len()], &self.rows[n]));
+            let row = self.lines.get(&hash(rest)).map(|&n| &self.rows[n]);
+            if let Some(row) = row.filter(|r| r.line() == rest) {
+                return Some((&line[..line.len() - rest.len()], row));
             }
             let digits = rest.find(|c: char| !c.is_ascii_digit())?;
             match rest[digits..].chars().next() {
@@ -142,6 +144,13 @@ fn rule(note: &Note, decision: &Decision, by: Option<&Note>, trail: Option<Strin
         head: format!("{} {state} {{{}}}", short(&note.id), decision.scope.short()),
         text: flat(&decision.content),
     }
+}
+
+/// The hash of `line`, by which the view finds its row.
+fn hash(line: &str) -> u64 {
+    let mut hasher = DefaultHasher::new();
+    line.hash(&mut hasher);
+    hasher.finish()
 }
 
 /// `text` on one line.
