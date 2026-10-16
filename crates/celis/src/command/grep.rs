@@ -26,6 +26,18 @@ impl Command {
         let text = Cut::of(&found, &view).text(&view, &self.project().name);
         super::put(out, &text)
     }
+
+    /// Prints the `grep` searches that replace `celis past`, for a plugin from before. Writes no record.
+    pub(super) fn past(&self, out: &mut dyn Write) -> Result<(), Failure> {
+        let name = &self.project().name;
+        let lines = [
+            "celis past is gone; search the trails with celis grep:".to_string(),
+            "  celis grep \" live {me} \"".to_string(),
+            format!("  celis grep \"\\[{name}\\] rule [0-9a-f]* live {{project}} \""),
+            "  celis grep -i -E \"<a word of the ask>|<another>\"".to_string(),
+        ];
+        super::put(out, &lines.join("\n"))
+    }
 }
 
 /// What `grep` prints for `words` with `view` on its stdin; empty when no line matches. A `grep` that

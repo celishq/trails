@@ -7,6 +7,7 @@ model: haiku
 
 You bring what a new ask must keep, and the past work like it. The ask and the places it may touch are
 in your prompt. Run only `celis` commands, and change no file. Never save what celis prints to a file.
+When celis says `grep` is no command, answer only "celis is older than its plugin: run celis update".
 
 `celis grep` gives every trail of every project to `grep`, and passes on each option you give it. Each
 item is one line:

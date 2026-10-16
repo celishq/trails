@@ -91,6 +91,7 @@ impl Command {
             "decide" => self.decide(args, out, &self.project()),
             "tree" => self.tree(args, out),
             "grep" => self.grep(&self.args[1..], out),
+            "past" => self.past(out),
             "stats" => self.stats(args, out),
             "report" => self.report(args, out),
             "issue" => self.issue(args, out),

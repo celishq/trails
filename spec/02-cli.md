@@ -654,6 +654,8 @@ the options it knows. An agent finds what a new ask must keep and the past work 
 - When `grep` prints nothing and exits 1, `grep` MUST print `No line matches.` and exit 0. When `grep`
   exits 2, it MUST exit 2 and print no line of its own.
 - `grep` MUST NOT write a record.
+- `past`, which `grep` replaces, MUST print the `grep` searches of a new ask, with the working folder's
+  project's name, and write nothing, so that a plugin from before goes on. No help page MUST name it.
 
 ```
 grep  view    <yyyy-mm-dd> <trail id, first 8 | -> [<project name>] <kind> <id, first 8> <fields> <text>
