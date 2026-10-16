@@ -1,6 +1,6 @@
 //! `celis grep`: every trail of every project as lines, through the system `grep`.
 
-mod cut;
+mod found;
 mod header;
 mod kind;
 mod row;
@@ -8,14 +8,14 @@ mod view;
 
 use super::Command;
 use celis_trails::Failure;
-use cut::Cut;
+use found::Found;
 use std::io::Write;
 use std::process::Stdio;
 use view::View;
 
 impl Command {
-    /// Gives `words` to the system `grep` with the view on its stdin, and prints the cut of what it
-    /// prints. Writes no record.
+    /// Gives `words` to the system `grep` with the view on its stdin, and prints what it found,
+    /// grouped by trail. Writes no record.
     pub(super) fn grep(&self, words: &[String], out: &mut dyn Write) -> Result<(), Failure> {
         let view = match self.held()? {
             true => View::of(&self.trails()?),
@@ -27,8 +27,10 @@ impl Command {
         if found.is_empty() {
             return Ok(());
         }
-        let text = Cut::of(&found, &view).text(&view, &self.project().name, &found);
-        super::put(out, &text)
+        match Found::of(&found, &view) {
+            Some(lines) => super::put(out, &lines.text(&self.project().name)),
+            None => super::put(out, &found),
+        }
     }
 
     /// Prints the `grep` searches that replace `celis past`, for a plugin from before. Writes no record.

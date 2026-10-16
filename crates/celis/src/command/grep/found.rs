@@ -20,15 +20,17 @@ struct Group<'a> {
     lines: Vec<(&'a str, &'a Row)>,
 }
 
-/// The lines found, grouped by trail, most lines first, split where they and their headers pass
-/// [`LINES`] bytes.
-pub(super) struct Cut<'a> {
+/// The lines `grep` found in the view, grouped by trail, most lines first, split where they and their
+/// headers pass [`LINES`] bytes.
+pub(super) struct Found<'a> {
+    view: &'a View,
     shown: Vec<Group<'a>>,
     rest: Vec<Group<'a>>,
 }
 
-impl<'a> Cut<'a> {
-    pub fn of(found: &'a str, view: &'a View) -> Cut<'a> {
+impl<'a> Found<'a> {
+    /// The lines of `found` that are lines of `view`; none when no line is.
+    pub fn of(found: &'a str, view: &'a View) -> Option<Found<'a>> {
         let mut groups: Vec<Group> = Vec::new();
         for line in found.lines() {
             let Some(found) = view.row(line) else {
@@ -42,6 +44,9 @@ impl<'a> Cut<'a> {
                     lines: vec![found],
                 }),
             }
+        }
+        if groups.is_empty() {
+            return None;
         }
         groups.sort_by_key(|g| std::cmp::Reverse(g.lines.len()));
         let (mut used, mut shown, mut rest) = (0, Vec::new(), Vec::new());
@@ -67,25 +72,22 @@ impl<'a> Cut<'a> {
                 shown.push(group);
             }
         }
-        Cut { shown, rest }
+        Some(Found { view, shown, rest })
     }
 
     /// Each trail's header and its lines; then, when lines were cut, the index of their trails; then the
-    /// project of `project`, within [`OUTPUT`] bytes. What `grep` printed, when no line is of the view.
-    pub fn text(&self, view: &View, project: &str, found: &str) -> String {
-        if self.shown.is_empty() {
-            return found.to_string();
-        }
+    /// project of `project`, within [`OUTPUT`] bytes.
+    pub fn text(&self, project: &str) -> String {
         let mut text = Vec::new();
         for group in &self.shown {
-            text.push(header(view, &group.trail));
+            text.push(header(self.view, &group.trail));
             let lines = group.lines.iter();
             text.extend(lines.map(|(before, row)| format!("  {before}{}", row.shown())));
         }
         let end = [String::new(), format!("project [{project}]")];
         if !self.rest.is_empty() {
             let used = bytes(&text) + bytes(&end);
-            text.extend(self.index(view, OUTPUT.saturating_sub(used)));
+            text.extend(self.index(OUTPUT.saturating_sub(used)));
         }
         text.extend(end);
         text.join("\n")
@@ -93,7 +95,7 @@ impl<'a> Cut<'a> {
 
     /// How many lines were cut, then each trail they belong to with the count of each kind, while they
     /// fit in `room` bytes, then how many trails did not fit.
-    fn index(&self, view: &View, room: usize) -> Vec<String> {
+    fn index(&self, room: usize) -> Vec<String> {
         let lines: usize = self.rest.iter().map(|g| g.lines.len()).sum();
         let trails = self.rest.iter().filter(|g| g.trail.is_some()).count();
         let mut text = vec![
@@ -118,7 +120,7 @@ impl<'a> Cut<'a> {
             let head = group
                 .trail
                 .as_deref()
-                .and_then(|t| view.header(t))
+                .and_then(|t| self.view.header(t))
                 .map_or("-".to_string(), |h| h.short(TITLE));
             let line = format!("{head} · {}", tally.join(", "));
             if used + line.len() + MORE > room {
