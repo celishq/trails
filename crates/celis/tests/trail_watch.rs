@@ -375,17 +375,17 @@ fn watch_opens_the_rules_line() {
     assert!(o.status.success(), "{}", err(&o));
     let mut watch = Watch::start(&repo, &["tree", &trail[..8]]);
     watch.size(24, 60);
-    watch.until("├▸ § 1 rule");
+    watch.until("└▸ § 1 rule");
     let last = watch.trees(Duration::ZERO).pop().unwrap();
     assert!(
         !last.contains("When you price") && !last.contains(&trail[..8]),
         "{last:?}"
     );
-    watch.press("\x1b[B\x1b[B");
-    watch.until("\r\n▌   ├▸ § 1 rule");
+    watch.press("\x1b[B\x1b[B\x1b[B");
+    watch.until("\r\n▌   └▸ § 1 rule");
     watch.press("\x1b[C");
-    watch.until("├▾ § 1 rule");
-    watch.until("│  └─ § When you price");
+    watch.until("└▾ § 1 rule");
+    watch.until("   └─ § When you price");
     watch.until("the receipt");
 }
 
@@ -472,14 +472,14 @@ fn watch_draws_a_block_with_tree_lines_and_colour_anchors() {
         "{rows:?}"
     );
     assert_eq!(rows[3], "    │ repo", "{rows:?}");
-    assert_eq!(rows[4], "    ├▸ § 1 rule", "{rows:?}");
+    assert!(rows[4] == "    ├─ ○ the fix", "{rows:?}");
     assert!(rows[5].starts_with("    ├─ ○ done part  "), "{rows:?}");
     assert!(rows[6].starts_with("    │  └─ "), "{rows:?}");
     assert!(
         !rows[5].contains("prices.py") && rows[5].ends_with('s'),
         "{rows:?}"
     );
-    assert!(rows[7] == "    └─ ○ the fix", "{rows:?}");
+    assert_eq!(rows[7], "    └▸ § 1 rule", "{rows:?}");
     assert!(!rows.join("\n").contains(&trail[..8]), "{rows:?}");
     let raw = watch.coloured(Duration::ZERO);
     for anchor in ["\x1b[35m§", "\x1b[1mrepo"] {
@@ -506,8 +506,72 @@ fn watch_prints_a_fresh_step_bold() {
     assert!(raw.contains("\x1b[32m✓\x1b[0m 1 closed step"), "{raw:?}");
 }
 
+/// A block prints its open steps newest first, then its rules line, then its closed line, and a step
+/// folds its own closed steps the same way (`spec/02-cli.md`, "Watching").
+#[test]
+fn watch_prints_open_steps_then_rules_then_closed_steps() {
+    let repo = Repo::new();
+    let by = support::account();
+    let at = support::now() - 60;
+    let trail = support::step_note(&repo, &by, None, "the trail", at);
+    let scope = format!("trail:{}", trail.id);
+    let project = (repo.project_id(), "repo");
+    let rule = (Some(scope.as_str()), None);
+    support::decision(&repo, (&project.0, project.1), &by, rule, "a rule", at);
+    let finished = support::step_note(&repo, &by, Some(&trail), "finished", at + 1);
+    support::done_note(&repo, &by, &finished, at + 2);
+    let parent = support::step_note(&repo, &by, Some(&trail), "parent", at + 3);
+    let old = support::step_note(&repo, &by, Some(&parent), "old child", at + 4);
+    support::done_note(&repo, &by, &old, at + 5);
+    support::step_note(&repo, &by, Some(&parent), "new child", at + 6);
+    support::step_note(&repo, &by, Some(&trail), "newest", at + 7);
+    let mut watch = Watch::start(&repo, &["tree", &trail.id[..8]]);
+    watch.size(24, 80);
+    watch.until("newest");
+    let rows = watch.rows();
+    let tree: Vec<&str> = rows
+        .iter()
+        .map(|r| r.trim_end())
+        .skip_while(|r| !r.contains("newest"))
+        .collect();
+    let starts = [
+        "    ├─ ○ newest",
+        "    ├─ ○ parent",
+        "    │  ├─ ○ new child",
+        "    │  └▸ ✓ 1 closed step",
+        "    ├▸ § 1 rule",
+        "    └▸ ✓ 1 closed step",
+    ];
+    assert_eq!(tree.len(), starts.len(), "{rows:?}");
+    for (row, start) in tree.iter().zip(starts) {
+        assert!(row.starts_with(start), "{start:?} in {rows:?}");
+    }
+}
+
+/// The closed line holds a trail's expired steps too, and marks them `!` after `✓` and `✗`
+/// (`spec/02-cli.md`, "Watching").
+#[test]
+fn watch_holds_expired_steps_in_the_closed_line() {
+    let repo = Repo::new();
+    let by = support::account();
+    let at = support::now() - 2 * 3600;
+    let trail = support::step_note(&repo, &by, None, "the trail", at);
+    let done = support::step_note(&repo, &by, Some(&trail), "done part", at + 1);
+    support::done_note(&repo, &by, &done, at + 2);
+    support::step_note(&repo, &by, Some(&trail), "left part", at + 3);
+    let mut watch = Watch::start(&repo, &["tree", &trail.id[..8]]);
+    watch.size(24, 80);
+    watch.until("2 closed steps");
+    let rows = watch.rows();
+    assert!(
+        rows.iter().any(|r| r.ends_with("└▸ ✓! 2 closed steps")),
+        "{rows:?}"
+    );
+    assert!(!rows.join("\n").contains("left part"), "{rows:?}");
+}
+
 /// The closed line holds the done and dropped steps, marked `✓✗`; open, a done step with steps under it
-/// prints them only when it is open, its line holding their count and no time while closed
+/// prints its own closed line only when it is open, its line holding their count and no time while closed
 /// (`spec/02-cli.md`, "Watching").
 #[test]
 fn watch_folds_closed_steps_and_done_branches() {
@@ -528,16 +592,18 @@ fn watch_folds_closed_steps_and_done_branches() {
     watch.until("next");
     let rows = watch.rows();
     assert!(
-        rows.iter().any(|r| r.ends_with("├▸ ✓✗ 2 closed steps")),
+        rows.iter().any(|r| r.ends_with("└▸ ✓✗ 2 closed steps")),
         "{rows:?}"
     );
     assert!(!rows.join("\n").contains("parent"), "{rows:?}");
-    watch.press("\x1b[B\x1b[B\x1b[C");
+    watch.press("\x1b[B\x1b[B\x1b[B\x1b[C");
     watch.until("parent");
     let rows = watch.rows();
     let line = rows.iter().find(|r| r.contains("parent")).unwrap();
     assert!(line.ends_with("1 step "), "{rows:?}");
     assert!(!rows.join("\n").contains("child") && !rows.join("\n").contains("not needed"));
+    watch.press("\x1b[B\x1b[B\x1b[C");
+    watch.until("✓ 1 closed step");
     watch.press("\x1b[B\x1b[C");
     watch.until("✓ child");
 }
@@ -753,14 +819,14 @@ fn watch_marks_a_change_and_prints_no_place() {
     let mut watch = Watch::start(&repo, &["tree", &trail[..8]]);
     watch.size(24, 80);
     watch.until("1 closed step");
-    watch.press("\x1b[B\x1b[B\x1b[C");
+    watch.press("\x1b[B\x1b[B\x1b[B\x1b[C");
     watch.until("✓~ the part");
     let rows = watch.rows();
     let row = rows.iter().find(|r| r.contains("the part")).unwrap();
     assert!(row.ends_with("✓~ the part"), "{rows:?}");
 }
 
-/// A revised step prints `↻` after its mark and `~`, and its working trail keeps the spinner with `↻`
+/// A revised step prints `↻` after its mark, then `~`, and its working trail keeps the spinner with `↻`
 /// after it (`spec/02-cli.md`, "Watching").
 #[test]
 fn watch_marks_a_revised_step_and_spins_its_working_trail() {
@@ -797,8 +863,8 @@ fn watch_marks_a_revised_step_and_spins_its_working_trail() {
     let mut watch = Watch::start(&repo, &["tree", &trail[..8]]);
     watch.size(24, 80);
     watch.until("1 closed step");
-    watch.press("\x1b[B\x1b[B\x1b[C");
-    watch.until("✓~↻ the part");
+    watch.press("\x1b[B\x1b[B\x1b[B\x1b[C");
+    watch.until("✓↻~ the part");
     let rows = watch.rows();
     let head = rows.iter().find(|r| r.contains("the trail")).unwrap();
     let spun = head.chars().zip(head.chars().skip(1));
