@@ -146,8 +146,8 @@ expired   ended with an open step under it
 ## The past
 
 The past shows how a task like a new one was done, so a new plan can follow the path that worked. An
-agent chooses it: `past` lists, and the plugin's `celis:past` agent reads the list and opens the trees.
-The list starts with what a new ask of the project must keep: its active trails and its decisions.
+agent searches it: the plugin's `celis:past` agent runs `grep` first for the live `project` and `me`
+decisions, then for the words of the ask, and opens the trees it chooses.
 
 **Meaning**
 
@@ -156,12 +156,13 @@ The list starts with what a new ask of the project must keep: its active trails 
 
 **Derived**
 
-- What a new ask must keep: the project's active trails, each with its rules, and the live decisions in
-  scope (CIP-01, "Reading").
+- What a new ask must keep: the project's live `project` and `me` decisions, and the rules of the
+  trails like it (CIP-01, "Reading").
 - Past work: a done ask, or a done trail, of every project.
 - A trail with an ask of its own text is no past work, so the ask stands for it.
 - The rules of a past work: the rules of the trail it is, or of the trail it stands for. They stay after
   the trail ends, so the next ask can keep what the trail learned.
 
-> Why an agent chooses: it reads an ask in any language, and it tells the same kind of task from the same
-> words. The list stays one line a work, so it fits the agent's context for thousands of asks.
+> Why an agent searches: it reads an ask in any language, and it tells the same kind of task from the
+> same words. A search prints only the lines that match, so it fits the agent's context for any store,
+> and a smarter agent searches better with no change to celis.

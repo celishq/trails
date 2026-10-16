@@ -16,7 +16,7 @@ usage, what they print, and their errors. The other CIPs state the records and w
 celis decide [--scope <scope>] [--replaces <id>] -- <text>
                                                        a decision, in its scope
 celis tree [<id>] [--full] [--all] [--demo]           a trail and its steps; again on each change
-celis past [--at <place>]...                          this project's trails and decisions, past work
+celis grep <grep option>... <pattern>                 every trail, through the system grep
 celis stats [<id>] [--demo]                           what later work reused, and what it saved
 celis report <id>... [--demo]                         the trails as Markdown, for a pull request
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
@@ -89,7 +89,7 @@ Record work (your agents run these)
 
 Read
   tree     Show a trail and its steps
-  past     Show this project's active trails, decisions, and past work
+  grep     Search every trail with grep
   stats    Show what reused work saved
   report   Show trails as Markdown for a pull request
 
@@ -157,7 +157,7 @@ Examples
 
 - A command MUST take an id whole, or as its first 4 or more characters when only one record's id
   starts with them.
-- Every command MUST accept `--json`, and then print one JSON object a line, and nothing else, to stdout.
+- Every command but `grep` MUST accept `--json`, and then print one JSON object a line, and nothing else, to stdout.
 - A command that writes a record MUST print its id. With `--json`, it prints `{"id"}`.
 - A command MUST NOT ask a question. On a terminal, `auth login` asks for the phrase.
 - A usage error MUST name the narrowest help page that covers it: `celis <command> --help`, else
@@ -175,8 +175,8 @@ Examples
 **Examples**
 
 ```
-$ celis pats
-celis: no command "pats"; did you mean "past"? See `celis help`.
+$ celis gerp
+celis: no command "gerp"; did you mean "grep"? See `celis help`.
 ```
 
 ## Update
@@ -362,8 +362,8 @@ The prompt hook of each agent gives the person's prompt to `prompt`, and gives i
 - `prompt` MUST read a hook's `{"session_id", "prompt"}` on stdin. A `conversation_id` (Cursor) MUST name
   the session in place of `session_id`.
 - `prompt` MUST write the prompt mark as CIP-04 "Sessions" states, and print the record's id.
-- With no open trail, `prompt` MUST print one line on stderr, when `past` prints anything. The line MUST
-  ask to run the `celis:past` agent with the ask before any other tool, and to wait for it.
+- With no open trail, `prompt` MUST print one line on stderr, when the store holds any record. The line
+  MUST ask to run the `celis:past` agent with the ask before any other tool, and to wait for it.
 - `prompt` MUST print that line once in a session. A hook's `{"session_id", "source": "compact"}` on
   stdin MUST let the session print it again, and MUST write and print nothing. The session start hook
   MUST give its JSON to `prompt`.
@@ -622,39 +622,56 @@ celis tree
 ↑↓ select · ←→ close open · * open all under · PgUp PgDn scroll · f full · a all · q quit
 ```
 
-## Past
+## Grep
 
-`past` prints what a new ask of the project must keep, then the past work of every project (CIP-04,
-"The past").
+`grep` gives every trail of every project to the system `grep`, as lines, so an agent searches them with
+the options it knows. An agent finds what a new ask must keep and the past work like it this way
+(CIP-04, "The past").
 
 **Rules**
 
-- `past` MUST print the working folder's project's active trails, oldest first, each with its rules.
-- Then it MUST print the live decisions at each `--at` place, then the project's live `project` and `me`
-  decisions (CIP-01, "Reading"). It MUST NOT print a decision at a place unless an `--at` place is at it.
-- Then it MUST print the past work of every project, newest first.
-- Each past work MUST print as one line: its id, project, title and place, its grade or else its state
-  and ` · revised` when its tree holds a revised step (CIP-06, "Revisions"), and its day. Then it MUST print the rules of the trail it stands for (CIP-04, "The past").
-- With `--json`, each object MUST be named `past`, with its id, project, title, places, state, grade,
-  revised, day and rules.
-- Without `--json`, when it prints nothing else, `past` MUST print one line that says so.
-- `past` MUST NOT write a record.
+- `grep` MUST give each word after `grep` to the system `grep`, as it is, with the view on its stdin.
+  Only `celis grep --help` MUST print the command page.
+- The view MUST hold every trail of every project, newest made first, and each live or replaced
+  decision of a scope other than `trail:<id>` in its place by when it was made.
+- A trail MUST print as its line, then its rules, newest first, then its steps. Each level of steps MUST
+  print newest made first, each step with its proof, its `changed` text and its drop reason, then the
+  steps under it.
+- Each line MUST hold the day its record was made, the trail's id, the project, the kind, the id and the
+  text, with each newline of the text as a space. A decision with no trail MUST print `-` as its trail.
+- A trail or a step MUST print its state, then `revised-by <ids>` when a done step replaces it (CIP-06,
+  "Revisions"), then `at:<place>` for each place.
+- A decision MUST print as a `rule` of any scope, a pitfall too: `live`, or `replaced-by <id>` when a
+  decision replaces it (CIP-01, "Decisions"), then its scope.
+- `grep` MUST print the lines `grep` prints, up to 14,000 bytes, cut at the end of a line. Then
+  `project [<name>]` of the working folder, then `trails`, then each trail of the printed lines once, in
+  the order they print.
+- When lines are cut, `grep` MUST print how many lines in how many trails it cut before `project`, then
+  each trail it cut, with the count of each kind of line, until the output reaches 20,000 bytes, then how
+  many trails it did not print.
+- When `grep` prints nothing and exits 1, `grep` MUST print `No line matches.` and exit 0. When `grep`
+  exits 2, it MUST exit 2 and print no line of its own.
+- `grep` MUST NOT write a record.
 
 ```
-past  text  <id, first 8> [<project name>] <its title>[ · <place>]          each active trail
-              rule <id, first 8> <text>                                     each of its rules
-            <a decision, as "Commands" gives it>
-            <id, first 8> [<project name>] <its title>[ · <place>] · <grade | state[ · revised]> · <yyyy-mm-dd>
-              rule <id, first 8> <text>                                     each rule of its trail
-      json  {"trail": {"id", "created_at", "project", "content", "session", "rules": []}}
-            · {"decision": {...}} · {"past": {"id", "created_at", "day", "project", "content",
-            "places", "state", "grade", "revised", "rules": []}}
+grep  view    <yyyy-mm-dd> <trail id, first 8 | -> [<project name>] <kind> <id, first 8> <fields> <text>
+                trail | step   <open | working | done | dropped | expired>[ revised-by <id>,…][ at:<place>]…
+                rule           <live | replaced-by <id>> <scope>
+                proof | changed | dropped                              the step's id, no fields
+      cut     celis: <n> more lines in <n> trails match; narrow the search, or open one with celis tree <id> --full
+              <id, first 8> [<project name>] <its title> · <yyyy-mm-dd> · <n> <kind>s, …   each trail cut
+              … <n> more trails
+      legend  project [<project name>]
+              trails
+              <id, first 8> [<project name>] <its title> · <yyyy-mm-dd>              each trail printed
 ```
 
 **Examples**
 
 ```
-celis past --at shelf/prices.py
+celis grep -i -E "price|cents"
+celis grep -E " rule [0-9a-f]{8} live (me|project) "
+celis grep -A3 9b0e11aa
 ```
 
 ## Stats
