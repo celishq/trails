@@ -208,7 +208,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "grep",
         usage: &["celis grep <grep option>... <pattern>"],
-        summary: "Search every trail of every project with the system grep. Each trail, step, proof, change, drop reason, and rule is one line with its day, trail, project, kind, and id. Show at most 20,000 bytes, then the trails cut and the trails shown. Changes nothing.",
+        summary: "Search every trail of every project with the system grep. Each trail, step, proof, change, drop reason, and rule is one line with its day, trail, project, kind, and id. Show the lines found under the header of their trail, the trails with the most lines first, at most 8,000 bytes, then the trails cut. Changes nothing.",
         args: &[
             ("<grep option>", "Any option of grep, such as -i, -E, -w, or -A 3"),
             ("<pattern>", "What to find, as grep reads it"),

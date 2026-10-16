@@ -1,19 +1,21 @@
 //! `celis grep`: every trail of every project as lines, through the system `grep`.
 
-mod cut;
+mod found;
+mod header;
 mod kind;
+mod row;
 mod view;
 
 use super::Command;
 use celis_trails::Failure;
-use cut::Cut;
+use found::Found;
 use std::io::Write;
 use std::process::Stdio;
 use view::View;
 
 impl Command {
-    /// Gives `words` to the system `grep` with the view on its stdin, and prints the cut of what it
-    /// prints. Writes no record.
+    /// Gives `words` to the system `grep` with the view on its stdin, and prints what it found,
+    /// grouped by trail. Writes no record.
     pub(super) fn grep(&self, words: &[String], out: &mut dyn Write) -> Result<(), Failure> {
         let view = match self.held()? {
             true => View::of(&self.trails()?),
@@ -25,20 +27,18 @@ impl Command {
         if found.is_empty() {
             return Ok(());
         }
-        let text = Cut::of(&found, &view).text(&view, &self.project().name);
-        super::put(out, &text)
+        match Found::of(&found, &view) {
+            Some(lines) => super::put(out, &lines.text(&self.project().name)),
+            None => super::put(out, &found),
+        }
     }
 
-    /// Prints the `grep` searches that replace `celis past`, for a plugin from before. Writes no record.
+    /// Prints that `celis past` is gone, for a plugin from before. Writes no record.
     pub(super) fn past(&self, out: &mut dyn Write) -> Result<(), Failure> {
-        let name = &self.project().name;
-        let lines = [
-            "celis past is gone; search the trails with celis grep:".to_string(),
-            "  celis grep \" live {me} \"".to_string(),
-            format!("  celis grep \"\\[{name}\\] rule [0-9a-f]* live {{project}} \""),
-            "  celis grep -i -E \"<a word of the ask>|<another>\"".to_string(),
-        ];
-        super::put(out, &lines.join("\n"))
+        super::put(
+            out,
+            "celis past is gone: update the celis plugin, whose past.md searches the trails with celis grep.",
+        )
     }
 }
 

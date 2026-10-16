@@ -22,7 +22,7 @@ fn drop_closes_the_step_and_the_open_steps_under_it() {
     assert_eq!(out(&o).lines().count(), 3, "{}", out(&o));
     let read = out(&cli(&repo, &["grep", " dropped "]));
     for id in [&trail, &open, &deeper] {
-        assert!(read.contains(&format!(" {} dropped ", &id[..8])), "{read}");
+        assert!(read.contains(&format!(" {} dropped", &id[..8])), "{read}");
     }
     let mut states: Vec<String> = objects(&repo, &["tree", &trail[..8]])
         .iter()

@@ -47,7 +47,8 @@ fn a_trail_with_no_open_step_under_it_is_reached_at_once() {
     assert_eq!(state(&repo, &trail), "done");
     let read = out(&cli(&repo, &["grep", " trail "]));
     assert!(
-        read.contains(&format!(" trail {} done the trail", &trail[..8])),
+        read.lines()
+            .any(|l| l == format!("  trail {} done", &trail[..8])),
         "{read}"
     );
     add(&repo, &["--under", &trail[..8], "--", "more"]);
@@ -86,7 +87,8 @@ fn a_trail_ends_thirty_minutes_after_its_newest_record() {
     );
     let read = out(&cli(&repo, &["grep", "left\\|open part"]));
     assert!(
-        read.contains(&format!(" trail {} expired left", &left.id[..8])),
+        read.lines()
+            .any(|l| l == format!("  trail {} expired", &left.id[..8])),
         "{read}"
     );
     assert!(

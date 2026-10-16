@@ -2,7 +2,7 @@
 
 mod support;
 
-use support::{add, cli, err, finish, objects, out, refusal, Repo};
+use support::{add, cli, err, finish, noon, objects, out, refusal, Repo};
 
 fn short(id: &str) -> &str {
     &id[..8]
@@ -436,7 +436,8 @@ fn the_tree_folds_a_trails_twin_first_ask() {
 fn tree_demo_prints_every_state_and_writes_nothing() {
     let repo = Repo::new();
     let temp = tempfile::tempdir().unwrap();
-    let env = [("TMPDIR", temp.path().to_str().unwrap())];
+    let zone = noon();
+    let env = [("TMPDIR", temp.path().to_str().unwrap()), ("TZ", &zone)];
     let o = repo.run(&repo.path(), &["tree", "--demo"], &env, "");
     assert!(o.status.success(), "{}", err(&o));
     let text = out(&o);

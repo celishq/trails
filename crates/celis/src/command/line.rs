@@ -5,13 +5,6 @@ use celis_nostr::Note;
 use celis_trails::id::short;
 use celis_trails::{Decision, Step};
 
-/// `<id, first 8> [<project name>] <title>` of `step`.
-pub(super) fn step(step: Step) -> String {
-    let record = step.record();
-    let name = &record.anchor.name;
-    format!("{} [{name}] {}", short(step.id()), record.title())
-}
-
 /// `<id, first 8> <scope> <text>` of the decision that `note` holds.
 pub(super) fn decision(note: &Note, decision: &Decision) -> String {
     format!(

@@ -645,30 +645,42 @@ the options it knows. An agent finds what a new ask must keep and the past work 
 - A decision MUST print as a `rule` of any scope, a pitfall too: `live`, or `replaced-by <id>` when a
   decision replaces it (CIP-01, "Decisions"), then its scope in braces: `{me}`, `{project}`,
   `{trail:<id, first 8>}` or `{at:<place>}`.
-- `grep` MUST print the lines `grep` prints, cut at the end of a line where they and their legend pass
-  14,000 bytes. Then `project [<name>]` of the working folder, then `trails`, then the legend: each trail
-  of the printed lines once, in the order they print.
+- `grep` MUST print each line `grep` prints under the header of its trail, `<id, first 8> [<project
+  name>] <its title> · <yyyy-mm-dd>`, and each line with no trail under `- rules of no trail`. A line
+  MUST print two spaces in, with what `grep` put before it, then the line after its day, its trail and,
+  when it has a trail, its project. A trail's own line MUST leave out its title, which its header
+  gives. The trails MUST print most lines first, then in the order of the view. A line of `grep` that is no line of the view, such as `--`, MUST NOT print.
+- When no line of `grep` is a line of the view, as with `-c`, `-l` or `-o`, `grep` MUST print what
+  `grep` prints, and nothing else.
+- `grep` MUST cut the lines at the end of a line where they and their headers pass 6,500 bytes. Then it
+  MUST print `project [<name>]` of the working folder.
 - When lines are cut, `grep` MUST print how many lines in how many trails it cut before `project`, then
-  each trail it cut, with the count of each kind of line, until the output reaches 20,000 bytes, then how
-  many trails it did not print. The lines with no trail MUST count as the trail `-`.
+  each trail it cut, with its title cut at 80 characters and the count of each kind of line, until the
+  output reaches 8,000 bytes, then how many trails it did not print. The lines with no trail MUST count
+  as one trail, `- rules of no trail`.
 - When `grep` exits 1, as it does when no line matches, `grep` MUST print `No line matches.` and exit 0.
   When `grep` exits 0 and prints nothing, as with `-q`, it MUST print nothing. When `grep` exits 2, it
   MUST exit 2 and print no line of its own.
 - `grep` MUST NOT write a record.
-- `past`, which `grep` replaces, MUST print the `grep` searches of a new ask, with the working folder's
-  project's name, and write nothing, so that a plugin from before goes on. No help page MUST name it.
+- `past`, which `grep` replaces, MUST print that it is gone and that the plugin's `past.md` searches with
+  `grep`, and write nothing, so that the agent of a plugin from before asks for an update. No help page
+  MUST name it.
 
 ```
 grep  view    <yyyy-mm-dd> <trail id, first 8 | -> [<project name>] <kind> <id, first 8> <fields> <text>
                 trail | step   <open | working | done | dropped | expired>[ revised-by <id>,…][ at:<place>]…
                 rule           <live | replaced-by <id>> {<scope>}
                 proof | changed | dropped                              the step's id, no fields
-      cut     celis: <n> more lines in <n> trails match; narrow the search, or open one with celis tree <id> --full
-              <id, first 8> [<project name>] <its title> · <yyyy-mm-dd> · <n> <kind>s, …   each trail cut
+      lines   <id, first 8> [<project name>] <its title> · <yyyy-mm-dd>              each trail of the lines
+                trail <id, first 8> <fields>                            the trail's own line
+                <kind> <id, first 8> <fields> <text>                    each other line of the trail
+              - rules of no trail
+                [<project name>] rule <id, first 8> <fields> <text>     each line with no trail
+      cut     celis: <n> more lines in <n> trails match; narrow the search, or search one trail with celis grep " <id> \["
+              <id, first 8> [<project name>] <its title, cut at 80> · <n> <kind>s, …   each trail cut
+              - rules of no trail · <n> rules                            the lines with no trail, when cut
               … <n> more trails
-      legend  project [<project name>]
-              trails
-              <id, first 8> [<project name>] <its title> · <yyyy-mm-dd>              each trail printed
+      end     project [<project name>]
 ```
 
 **Examples**

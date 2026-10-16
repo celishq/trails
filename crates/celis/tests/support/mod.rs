@@ -463,19 +463,47 @@ pub fn read_ids(repo: &Repo, folder: &Path, args: &[&str]) -> Vec<String> {
         .collect()
 }
 
+/// A `TZ` where it is now about noon, so the hours before now fall on the same day.
+pub fn noon() -> String {
+    let secs = std::time::UNIX_EPOCH.elapsed().unwrap().as_secs();
+    format!("NOON{}", (secs / 3600 % 24) as i64 - 12)
+}
+
 /// The ids, first 8 characters, of the live rules of the project `name` that `celis grep` prints in
 /// `folder`, in order.
 pub fn live_ids(repo: &Repo, folder: &Path, name: &str) -> Vec<String> {
     let o = repo.run(folder, &["grep", " rule [0-9a-f]* live "], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     let project = format!("[{name}]");
-    out(&o)
-        .lines()
-        .filter_map(|l| {
-            let words: Vec<&str> = l.split(' ').collect();
-            let at = words.iter().position(|w| *w == "rule")?;
-            (words.get(2) == Some(&project.as_str()) && words.get(at + 2) == Some(&"live"))
-                .then(|| words[at + 1].to_string())
-        })
+    found(&out(&o))
+        .into_iter()
+        .filter(|(of, line)| *of == project && line.split(' ').nth(2) == Some("live"))
+        .filter_map(|(_, line)| Some(line.strip_prefix("rule ")?.split(' ').next()?.to_string()))
+        .collect()
+}
+
+/// `[<project>]` and the line from its kind on, of each line `celis grep` printed in `text`.
+pub fn found(text: &str) -> Vec<(String, String)> {
+    let mut project = String::new();
+    let mut lines = Vec::new();
+    for l in text.lines().take_while(|l| !l.is_empty()) {
+        let Some(line) = l.strip_prefix("  ") else {
+            project = l.split(' ').nth(1).unwrap_or("").to_string();
+            continue;
+        };
+        lines.push(match line.split_once(' ') {
+            Some((of, rest)) if of.starts_with('[') => (of.to_string(), rest.to_string()),
+            _ => (project.clone(), line.to_string()),
+        });
+    }
+    lines
+}
+
+/// The ids, first 8 characters, of the lines of `kind` that `celis grep` printed in `text`, in order.
+pub fn ids(text: &str, kind: &str) -> Vec<String> {
+    let kind = format!("{kind} ");
+    found(text)
+        .into_iter()
+        .filter_map(|(_, line)| Some(line.strip_prefix(&kind)?.split(' ').next()?.to_string()))
         .collect()
 }
