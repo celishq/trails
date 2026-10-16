@@ -43,3 +43,11 @@ pub(super) fn grade(step: Step) -> Option<String> {
         false => format!("took {took} · revised by {}", by.join(", ")),
     })
 }
+
+/// `<n> <word>s`, or `1 <word>`.
+pub(super) fn plural(n: usize, word: &str) -> String {
+    match n {
+        1 => format!("1 {word}"),
+        n => format!("{n} {word}s"),
+    }
+}

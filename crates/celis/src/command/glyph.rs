@@ -23,19 +23,29 @@ const TALL: [&str; 9] = [" ", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "
 /// The shade of each part of a strip, in turn.
 const SHADES: [&str; 4] = ["█", "▓", "▒", "░"];
 
-/// `text` three rows high: each digit big, a space between two, any other character on the last row.
+/// `text` three rows high: each digit big with a space before it, any other character right after on
+/// the last row, or on the middle row when `text` has no digit.
 pub(super) fn digits(text: &str) -> [String; 3] {
-    let mut rows: [Vec<String>; 3] = Default::default();
-    for c in text.chars() {
+    let low = match text.chars().any(|c| c.is_ascii_digit()) {
+        true => 2,
+        false => 1,
+    };
+    let mut rows: [String; 3] = Default::default();
+    for (i, c) in text.chars().enumerate() {
         for (r, row) in rows.iter_mut().enumerate() {
-            row.push(match c.to_digit(10) {
-                Some(d) => DIGITS[d as usize][r].to_string(),
-                None if r == 2 => c.to_string(),
-                None => " ".to_string(),
-            });
+            match c.to_digit(10) {
+                Some(d) => {
+                    if i > 0 {
+                        row.push(' ');
+                    }
+                    row.push_str(DIGITS[d as usize][r]);
+                }
+                None if r == low => row.push(c),
+                None => row.push(' '),
+            }
         }
     }
-    rows.map(|r| r.join(" "))
+    rows
 }
 
 /// A bar `width` wide that fills the share of `n` to `most`, in eighths of a character.
@@ -49,17 +59,24 @@ pub(super) fn bar(n: usize, most: usize, width: usize) -> String {
 }
 
 /// `rows` lines of columns, a value a column and a space between two, the largest value the full height,
-/// in eighths of a row; the top line first.
-pub(super) fn columns(values: &[usize], rows: usize) -> Vec<String> {
+/// in eighths of a row, any other value at least an eighth, and a zero `zero` on the last line; the top
+/// line first.
+pub(super) fn columns(values: &[usize], rows: usize, zero: &str) -> Vec<String> {
     let most = values.iter().copied().max().unwrap_or(0);
     let heights: Vec<usize> = values
         .iter()
-        .map(|v| (v * rows * 8).checked_div(most).unwrap_or(0))
+        .map(|&v| match v {
+            0 => 0,
+            v => (v * rows * 8 / most).max(1),
+        })
         .collect();
     (0..rows)
         .rev()
         .map(|r| {
-            let line = heights.iter().map(|h| TALL[h.saturating_sub(r * 8).min(8)]);
+            let line = heights.iter().map(|&h| match (h, r) {
+                (0, 0) => zero,
+                (h, r) => TALL[h.saturating_sub(r * 8).min(8)],
+            });
             line.collect::<Vec<_>>().join(" ")
         })
         .collect()

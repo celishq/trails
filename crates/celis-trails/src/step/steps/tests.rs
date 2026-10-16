@@ -90,3 +90,24 @@ fn an_open_step_of_an_ended_trail_is_expired() {
     assert_eq!(state(&steps, &closed.id), State::Done);
     assert_eq!(state(&Steps::new(&records, 13), &open.id), State::Open);
 }
+
+/// A store has a closed step once a step under a trail is done or expired; a done trail alone does not
+/// count (`spec/06-reuse.md`, "Periods").
+#[test]
+fn a_step_under_a_trail_closes_the_store() {
+    let trail = step("trail", 10);
+    let part = StepRecord {
+        under: Some(StepId::new(&trail.id)),
+        ..StepRecord::read(&step("part", 11)).unwrap()
+    }
+    .record(&account(), 11)
+    .unwrap();
+    let ended = done(&trail.id, "proof", 12);
+    let records = vec![trail, part.clone(), ended];
+    assert!(!Steps::new(&records[..1], 12).closed_any());
+    assert!(!Steps::new(&records[..2], 12).closed_any());
+    let proof = done(&part.id, "proof", 13);
+    let closed = [records.clone(), vec![proof]].concat();
+    assert!(Steps::new(&closed, 13).closed_any());
+    assert!(Steps::new(&records[..2], 11 + LIFE).closed_any());
+}

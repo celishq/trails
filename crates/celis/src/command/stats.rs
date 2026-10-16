@@ -1,6 +1,7 @@
 //! `celis stats`: what later work reused, and what it saved.
 
 use super::clock::saved;
+use super::line::plural;
 use super::{Args, Command};
 use celis_trails::id::short;
 use celis_trails::{Failure, Reuse, Step, Trail};
@@ -22,7 +23,7 @@ impl Command {
         if args.demo {
             return self.demo(args, out);
         }
-        if std::io::stdout().is_terminal() && !args.json && self.held()? {
+        if std::io::stdout().is_terminal() && !args.json {
             return self.board(args, out);
         }
         if !self.held()? {
@@ -124,12 +125,4 @@ fn took(step: Step) -> String {
 /// ` · saved <time>`, or nothing with no saving.
 fn saving(save: Option<i64>) -> String {
     save.map_or(String::new(), |s| format!(" · saved {}", saved(s)))
-}
-
-/// `<n> <word>s`, or `1 <word>`.
-fn plural(n: usize, word: &str) -> String {
-    match n {
-        1 => format!("1 {word}"),
-        n => format!("{n} {word}s"),
-    }
 }

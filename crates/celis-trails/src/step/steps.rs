@@ -57,6 +57,13 @@ impl<'a> Steps<'a> {
             .collect()
     }
 
+    /// Whether a step that is not a trail has ended: done, dropped or expired.
+    pub fn closed_any(&'a self) -> bool {
+        let all = self.all().into_iter();
+        all.filter(|s| !s.is_trail())
+            .any(|s| s.closed_at().is_some())
+    }
+
     /// Every trail of the project `project`, oldest first.
     pub fn trails(&'a self, project: &str) -> Vec<Step<'a>> {
         let roots = self.roots().into_iter();
