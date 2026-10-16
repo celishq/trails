@@ -382,6 +382,10 @@ fn a_prompt_with_no_open_trail_asks_for_the_past_agent() {
     assert!(said.contains("celis:past agent"), "{said}");
     assert!(said.contains("before any other tool"), "{said}");
     assert!(said.contains("wait for its answer"), "{said}");
+    assert!(
+        said.contains("--uses <id> for each past line the ask follows"),
+        "{said}"
+    );
     assert!(said.contains(RULES), "{said}");
     assert!(!said.contains("SHELF_OFFLINE"), "{said}");
     assert!(marks(&repo, "prompt").is_empty());

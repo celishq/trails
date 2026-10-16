@@ -51,7 +51,6 @@ fn stats_on_a_terminal_draws_its_cards() {
         "CELIS STATS",
         "00 EFFECT",
         "AS PLANNED",
-        "no data before",
         "01 REUSE",
         "02 RULES USED",
         "03 WORK · 14 DAYS",
@@ -63,6 +62,7 @@ fn stats_on_a_terminal_draws_its_cards() {
     ] {
         assert!(shown.contains(text), "{text:?} in\n{shown}");
     }
+    assert!(!shown.contains("no data before"), "{shown}");
     watch.until("←→↑↓ move · enter open · m copy markdown · q quit");
 }
 
