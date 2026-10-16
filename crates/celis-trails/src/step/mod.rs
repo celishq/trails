@@ -10,7 +10,7 @@ pub mod steps;
 pub mod tally;
 
 use crate::step::steps::{Close, Entry, LIFE};
-use crate::{Flags, Grade, State, StepId, StepRecord, Steps, Trail};
+use crate::{Flags, Grade, Mark, State, StepId, StepRecord, Steps, Trail};
 use celis_nostr::Note;
 
 /// One step of a store as it stands: its record with its edits, where it sits in its trail, how its
@@ -105,6 +105,13 @@ impl<'a> Step<'a> {
     /// The first done record with a proof, or drop record with a reason, that names it.
     pub fn closed(self) -> Option<&'a Note> {
         self.entry.close.map(|(note, _)| note)
+    }
+
+    /// The record that closed it, with its mark: done with its proof and what changed, or dropped with
+    /// its reason.
+    pub fn close(self) -> Option<(&'a Note, Mark)> {
+        let note = self.closed()?;
+        Some((note, Mark::read(note)?.1))
     }
 
     /// The second it ended: when a done or a drop closed it, or the newest record of its trail when it

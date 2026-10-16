@@ -39,14 +39,4 @@ impl Scope {
             scope => scope.text(),
         }
     }
-
-    /// The order a reader gives decisions in: `at` first, then `trail`, `project` and `me`.
-    pub fn rank(&self) -> u8 {
-        match self {
-            Scope::At(_) => 0,
-            Scope::Trail(_) => 1,
-            Scope::Project => 2,
-            Scope::Me => 3,
-        }
-    }
 }

@@ -4,7 +4,7 @@ use super::clock::date;
 use super::Command;
 use celis_nostr::Note;
 use celis_trails::id::short;
-use celis_trails::{Decision, Decisions, Failure, Scope, Step, Steps, Trails};
+use celis_trails::{Decision, Decisions, Failure, Mark, Scope, Step, Steps, Trails};
 use std::collections::HashMap;
 use std::io::Write;
 use std::process::Stdio;
@@ -37,7 +37,7 @@ impl Command {
             roots.map(|s| (short(s.id()), s)).collect()
         });
         let legend = |id: &str| match heads.get(id) {
-            Some(s) => format!("{} · {}", head(*s), date(s.note().created_at)),
+            Some(s) => format!("{} · {}", super::line::step(*s), date(s.note().created_at)),
             None => id.to_string(),
         };
         let lines: Vec<&str> = found.lines().collect();
@@ -76,11 +76,7 @@ fn run(words: &[String], view: String) -> Result<String, Failure> {
         Some(0 | 1) => Ok(String::from_utf8_lossy(&output.stdout)
             .trim_end()
             .to_string()),
-        _ => Err(Failure {
-            name: "usage".to_string(),
-            message: String::new(),
-            code: 2,
-        }),
+        _ => Err(Failure::quiet(2)),
     }
 }
 
@@ -182,18 +178,18 @@ fn day(line: &str) -> Option<usize> {
 fn view<'a>(steps: &'a Steps<'a>, decisions: &Decisions<'a>) -> Vec<String> {
     let mut rules: HashMap<&str, Vec<String>> = HashMap::new();
     let mut blocks: Vec<(u64, &str, Vec<String>)> = Vec::new();
-    for (note, decision, by) in decisions.every().into_iter().rev() {
+    for (note, decision, by) in decisions.every() {
         match &decision.scope {
             Scope::Trail(id) => {
                 rules
                     .entry(id.as_str())
                     .or_default()
-                    .push(rule(note, decision, by, &short(id)))
+                    .push(rule(note, decision, *by, &short(id)))
             }
             _ => blocks.push((
                 note.created_at,
                 &note.id,
-                vec![rule(note, decision, by, "-")],
+                vec![rule(note, decision, *by, "-")],
             )),
         }
     }
@@ -210,9 +206,7 @@ fn view<'a>(steps: &'a Steps<'a>, decisions: &Decisions<'a>) -> Vec<String> {
 /// Adds the steps under `parent` of `root` to `lines`, newest made first, each with its marks and then
 /// the steps under it.
 fn level<'a>(root: Step<'a>, parent: Step<'a>, lines: &mut Vec<String>) {
-    let mut children = parent.children();
-    children.sort_by(|a, b| (b.note().created_at, b.id()).cmp(&(a.note().created_at, a.id())));
-    for child in children {
+    for child in parent.children().into_iter().rev() {
         lines.push(step(root, child, "step"));
         let line = |note: &Note, kind: &str, text: &str| {
             format!(
@@ -222,14 +216,13 @@ fn level<'a>(root: Step<'a>, parent: Step<'a>, lines: &mut Vec<String>) {
                 flat(text)
             )
         };
-        if let Some(done) = child.done() {
-            lines.push(line(done, "proof", &done.content));
-            if let Some(changed) = done.tag("changed") {
-                lines.push(line(done, "changed", changed));
+        match child.close() {
+            Some((note, Mark::Done { proof, changed })) => {
+                lines.push(line(note, "proof", &proof));
+                lines.extend(changed.map(|c| line(note, "changed", &c)));
             }
-        }
-        if let Some(dropped) = child.dropped() {
-            lines.push(line(dropped, "dropped", &dropped.content));
+            Some((note, Mark::Drop { reason })) => lines.push(line(note, "dropped", &reason)),
+            _ => {}
         }
         level(root, child, lines);
     }
@@ -272,17 +265,6 @@ fn rule(note: &Note, decision: &Decision, by: Option<&Note>, trail: &str) -> Str
 fn lead(root: Step, note: &Note) -> String {
     let name = &root.record().anchor.name;
     format!("{} {} [{name}]", date(note.created_at), short(root.id()))
-}
-
-/// `<id, first 8> [<project name>] <title>` of the trail `trail`.
-fn head(trail: Step) -> String {
-    let record = trail.record();
-    format!(
-        "{} [{}] {}",
-        short(trail.id()),
-        record.anchor.name,
-        record.title()
-    )
 }
 
 /// `text` on one line.
