@@ -39,7 +39,7 @@ Send in one message each call that does not wait on the output of another.
    words. Stop when a search brings no new useful line, or after 4 searches.
 3. Choose up to 5 trails whose work is the same kind of task as the ask, or whose rules can apply to it.
    Prefer this project, the same places, work that was not revised, and newer days. Get the lines of
-   each, all in one message:
+   each with its own call, and send the calls in one message:
    `celis grep -E " <id> \[[^]]*\] (trail|rule|step|changed|dropped) "`.
 
 Answer in this shape. Copy each line as celis printed it, with its id:
