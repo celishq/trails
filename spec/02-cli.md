@@ -651,9 +651,12 @@ the options it knows. An agent finds what a new ask must keep and the past work 
 - When lines are cut, `grep` MUST print how many lines in how many trails it cut before `project`, then
   each trail it cut, with the count of each kind of line, until the output reaches 20,000 bytes, then how
   many trails it did not print. The lines with no trail MUST count as the trail `-`.
-- When `grep` prints nothing and exits 1, `grep` MUST print `No line matches.` and exit 0. When `grep`
-  exits 2, it MUST exit 2 and print no line of its own.
+- When `grep` exits 1, as it does when no line matches, `grep` MUST print `No line matches.` and exit 0.
+  When `grep` exits 0 and prints nothing, as with `-q`, it MUST print nothing. When `grep` exits 2, it
+  MUST exit 2 and print no line of its own.
 - `grep` MUST NOT write a record.
+- `past`, which `grep` replaces, MUST print the `grep` searches of a new ask, with the working folder's
+  project's name, and write nothing, so that a plugin from before goes on. No help page MUST name it.
 
 ```
 grep  view    <yyyy-mm-dd> <trail id, first 8 | -> [<project name>] <kind> <id, first 8> <fields> <text>

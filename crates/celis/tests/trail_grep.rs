@@ -279,3 +279,169 @@ fn grep_names_the_trails_of_numbered_lines() {
         "{text}"
     );
 }
+
+/// `past` writes nothing and prints the `grep` searches that replace it, with the project's name, so an
+/// old plugin's agent goes on (`spec/02-cli.md`, "Past").
+#[test]
+fn past_prints_the_searches_that_replace_it() {
+    let repo = Repo::new();
+    let o = cli(&repo, &["past", "--at", "src/a.rs"]);
+    assert!(o.status.success(), "{}", err(&o));
+    let text = out(&o);
+    assert!(
+        text.starts_with("celis past is gone; search the trails with celis grep:"),
+        "{text}"
+    );
+    assert!(text.contains("celis grep \" live {me} \""), "{text}");
+    assert!(
+        text.contains("celis grep \"\\[repo\\] rule [0-9a-f]* live {project} \""),
+        "{text}"
+    );
+    assert!(!repo.store().exists());
+}
+
+/// With `-q`, a match prints nothing, and no match still says so (`spec/02-cli.md`, "Grep").
+#[test]
+fn grep_q_prints_nothing_on_a_match() {
+    let repo = Repo::new();
+    add(&repo, &["--", "Build the Vendors page"]);
+    assert_eq!(grep(&repo, &["-q", "Vendors"]), "");
+    assert_eq!(
+        grep(&repo, &["-q", "nothing like it"]).trim(),
+        "No line matches."
+    );
+}
+
+/// The view matches `spec/fixtures/grep-view.json`, and the first searches of `past.md` find exactly the
+/// lines it keeps (`spec/02-cli.md`, "Grep").
+#[test]
+fn the_view_and_the_past_agents_first_searches_match_the_fixture() {
+    use celis_trails::{Anchor, Mark, StepId, StepRecord};
+    use support::{account, decision, put};
+    let fixture: serde_json::Value =
+        serde_json::from_str(include_str!("../../../spec/fixtures/grep-view.json")).unwrap();
+    let past = include_str!("../../../plugins/celis/agents/past.md");
+    let repo = Repo::new();
+    let (by, id) = (account(), repo.project_id());
+    let t = 1_768_478_400;
+    let step = |under: Option<&str>, places: &[&str], text: &str, at: u64| {
+        let record = StepRecord {
+            anchor: Anchor {
+                project: id.clone(),
+                name: "repo".to_string(),
+            },
+            under: under.map(StepId::new),
+            replaces: None,
+            uses: Vec::new(),
+            places: places.iter().map(|p| p.to_string()).collect(),
+            check: None,
+            session: None,
+            content: text.to_string(),
+        };
+        let note = record.record(&by, at).unwrap();
+        put(&repo, &note);
+        note
+    };
+    let mark = |mark: Mark, step: &str, at: u64| put(&repo, &mark.record(&by, step, at).unwrap());
+    let trail = step(None, &[], "Build the Vendors page", t);
+    let table = step(Some(&trail.id), &["src/vendors.rs"], "Add the table", t + 1);
+    let done = Mark::Done {
+        proof: "the table shows".into(),
+        changed: Some("a list, not a table".into()),
+    };
+    mark(done, &table.id, t + 2);
+    let chart = step(Some(&trail.id), &[], "Add the chart", t + 3);
+    mark(
+        Mark::Drop {
+            reason: "no data for it".into(),
+        },
+        &chart.id,
+        t + 4,
+    );
+    let project = (id.as_str(), "repo");
+    let scope = format!("trail:{}", trail.id);
+    let rule = decision(
+        &repo,
+        project,
+        &by,
+        (Some(&scope), None),
+        "When a vendor has no logo: show its initials.",
+        t + 5,
+    );
+    let old = decision(
+        &repo,
+        project,
+        &by,
+        (None, None),
+        "When a price prints: use floats.",
+        t + 6,
+    );
+    let new = decision(
+        &repo,
+        project,
+        &by,
+        (None, Some(&old.id)),
+        "When a price prints: use cents.",
+        t + 7,
+    );
+    let me = decision(
+        &repo,
+        project,
+        &by,
+        (Some("me"), None),
+        "When you write a commit message: use plain words.",
+        t + 8,
+    );
+    let names = [
+        ("trail", &trail),
+        ("table", &table),
+        ("chart", &chart),
+        ("rule", &rule),
+        ("old", &old),
+        ("new", &new),
+        ("me", &me),
+    ];
+    let fill = |line: &serde_json::Value| {
+        let mut line = line.as_str().unwrap().to_string();
+        for (name, note) in &names {
+            line = line.replace(&format!("<{name}>"), &note.id[..8]);
+        }
+        line
+    };
+    let lines = |text: String| -> Vec<String> {
+        text.lines()
+            .take_while(|l| !l.is_empty())
+            .map(str::to_string)
+            .collect()
+    };
+    let want: Vec<String> = fixture["lines"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(fill)
+        .collect();
+    assert_eq!(lines(grep(&repo, &[""])), want);
+    let step_one = past
+        .split("\n1. ")
+        .nth(1)
+        .unwrap()
+        .split("\n2. ")
+        .next()
+        .unwrap();
+    let mut kept = Vec::new();
+    for search in step_one.split("`celis grep \"").skip(1) {
+        let pattern = search
+            .split("\"`")
+            .next()
+            .unwrap()
+            .replace("<name>", "repo");
+        kept.extend(lines(grep(&repo, &[&pattern])));
+    }
+    let want: Vec<String> = fixture["kept"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(fill)
+        .collect();
+    assert_eq!(kept, want);
+}
