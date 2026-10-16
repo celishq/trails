@@ -147,7 +147,7 @@ expired   ended with an open step under it
 
 The past shows how a task like a new one was done, so a new plan can follow the path that worked. An
 agent searches it: the plugin's `celis:past` agent runs `grep` first for the live `project` and `me`
-decisions, then for the words of the ask, and opens the trees it chooses.
+decisions, then for the words of the ask, and then for the lines of the trails it chooses.
 
 **Meaning**
 
