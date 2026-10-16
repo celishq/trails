@@ -8,6 +8,7 @@ mod clock;
 mod decision;
 mod demo;
 mod glyph;
+mod grep;
 mod ink;
 mod issue;
 mod json;
@@ -53,18 +54,26 @@ pub struct Command {
 impl Command {
     /// Runs, writing to `out` and `err`, or prints the help page its words name. Returns the exit code.
     pub fn run(&self, out: &mut dyn Write, err: &mut dyn Write) -> i32 {
-        if let Some(page) = help::named(&self.args) {
+        let grep = self.args.first().is_some_and(|a| a == "grep")
+            && !self.args.iter().any(|a| a == "--help");
+        if let Some(page) = help::named(&self.args).filter(|_| !grep) {
             let _ = writeln!(out, "{page}");
             return 0;
         }
-        let json = Args::asks_json(&self.args);
-        let args = Args::parse(&self.args);
+        let json = !grep && Args::asks_json(&self.args);
+        let args = match grep {
+            true => Ok(Args {
+                words: vec!["grep".to_string()],
+                ..Args::default()
+            }),
+            false => Args::parse(&self.args),
+        };
         let words = args.as_ref().map_or(vec![], |a| a.words.clone());
         let mut failure = match args.and_then(|a| self.go(&a, out, err)) {
             Ok(()) => return 0,
             Err(failure) => failure,
         };
-        if failure.code == 2 {
+        if failure.code == 2 && !failure.message.is_empty() {
             let stop = if failure.message.ends_with('?') {
                 ""
             } else {
@@ -91,6 +100,7 @@ impl Command {
             "decide" => self.decide(args, out, &self.project()),
             "tree" => self.tree(args, out),
             "past" => self.past(args, out, &self.project()),
+            "grep" => self.grep(&self.args[1..], out),
             "stats" => self.stats(args, out),
             "report" => self.report(args, out),
             "issue" => self.issue(args, out),

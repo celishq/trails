@@ -643,12 +643,12 @@ the options it knows. An agent finds what a new ask must keep and the past work 
   "Revisions"), then `at:<place>` for each place.
 - A decision MUST print as a `rule` of any scope, a pitfall too: `live`, or `replaced-by <id>` when a
   decision replaces it (CIP-01, "Decisions"), then its scope.
-- `grep` MUST print the lines `grep` prints, up to 14,000 bytes, cut at the end of a line. Then
-  `project [<name>]` of the working folder, then `trails`, then each trail of the printed lines once, in
-  the order they print.
+- `grep` MUST print the lines `grep` prints, cut at the end of a line where they and their legend pass
+  14,000 bytes. Then `project [<name>]` of the working folder, then `trails`, then the legend: each trail
+  of the printed lines once, in the order they print.
 - When lines are cut, `grep` MUST print how many lines in how many trails it cut before `project`, then
   each trail it cut, with the count of each kind of line, until the output reaches 20,000 bytes, then how
-  many trails it did not print.
+  many trails it did not print. The lines with no trail MUST count as the trail `-`.
 - When `grep` prints nothing and exits 1, `grep` MUST print `No line matches.` and exit 0. When `grep`
   exits 2, it MUST exit 2 and print no line of its own.
 - `grep` MUST NOT write a record.

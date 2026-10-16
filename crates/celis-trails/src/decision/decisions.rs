@@ -2,12 +2,13 @@
 
 use crate::{Decision, DecisionId, Failure, Scope};
 use celis_nostr::Note;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 /// The decisions of a store that no other replaces, read once: by scope, narrowest first, then newest
 /// first, then by id.
 pub struct Decisions<'a> {
     live: Vec<(&'a Note, Decision)>,
+    every: Vec<(&'a Note, Decision)>,
 }
 
 impl<'a> Decisions<'a> {
@@ -20,6 +21,7 @@ impl<'a> Decisions<'a> {
             .iter()
             .filter_map(|(_, d)| d.replaces.clone())
             .collect();
+        let every = counted.clone();
         let mut live: Vec<(&'a Note, Decision)> = counted
             .into_iter()
             .filter(|(n, _)| !replaced.contains(&DecisionId::new(&n.id)))
@@ -27,7 +29,20 @@ impl<'a> Decisions<'a> {
         live.sort_by(|(a, x), (b, y)| {
             (x.scope.rank(), b.created_at, &a.id).cmp(&(y.scope.rank(), a.created_at, &b.id))
         });
-        Decisions { live }
+        Decisions { live, every }
+    }
+
+    /// Every decision of every project, live or replaced, each with the decision that replaces it.
+    pub fn every(&self) -> Vec<(&'a Note, &Decision, Option<&'a Note>)> {
+        let by: HashMap<&str, &'a Note> = self
+            .every
+            .iter()
+            .filter_map(|(n, d)| Some((&**d.replaces.as_ref()?, *n)))
+            .collect();
+        let every = self.every.iter();
+        every
+            .map(|(n, d)| (*n, d, by.get(n.id.as_str()).copied()))
+            .collect()
     }
 
     /// The live decisions in scope in the project `project`.

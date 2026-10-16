@@ -13,7 +13,7 @@ Record work (your agents run these)
 
 Read
   tree     Show a trail and its steps
-  past     Show this project's active trails, decisions, and past work
+  grep     Search every trail with grep
   stats    Show what reused work saved
   report   Show trails as Markdown for a pull request
 
@@ -197,6 +197,20 @@ impl Verb {
 
 /// The help of each command.
 pub const VERBS: &[Verb] = &[
+    Verb {
+        command: "grep",
+        usage: &["celis grep <grep option>... <pattern>"],
+        summary: "Search every trail of every project with the system grep. Each trail, step, proof, change, drop reason, and rule is one line with its day, trail, project, kind, and id. Show at most 20,000 bytes, then the trails cut and the trails shown. Changes nothing.",
+        args: &[
+            ("<grep option>", "Any option of grep, such as -i, -E, -w, or -A 3"),
+            ("<pattern>", "What to find, as grep reads it"),
+        ],
+        examples: &[
+            "celis grep -i -E \"price|cents\"",
+            "celis grep -E \" rule [0-9a-f]{8} live (me|project) \"",
+            "celis grep -A3 9b0e11aa",
+        ],
+    },
     Verb {
         command: "past",
         usage: &["celis past [--at <place>]..."],
