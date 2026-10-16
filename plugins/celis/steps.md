@@ -8,7 +8,7 @@ A place is a file, a `file:line`, a folder, or a URL. A rule that holds at one p
 `at:<place>`.
 
 When you move a file: write each decision at its old place again at the new place, with
-`decide --replaces <id> --scope at:<new place>`. Run `celis past --at <old place>` to see them.
+`decide --replaces <id> --scope at:<new place>`. Run `celis grep "at:<old place>"` to see them.
 
 ## Past work
 
