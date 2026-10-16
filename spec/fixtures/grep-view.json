@@ -1,0 +1,29 @@
+{
+  "about": [
+    "The view `celis grep` searches, and the lines the past agent's first searches must find in it.",
+    "celis writes the view and `plugins/celis/agents/past.md` reads it, so both must match this file:",
+    "the CLI test builds the store below, compares the view to `lines`, then runs the first searches",
+    "past.md names and checks that they find exactly `kept`.",
+    "",
+    "Each <name> stands for the first 8 characters of a record's id, which a test knows only once it",
+    "has written the record. All records are made on 2026-01-15 at noon UTC, in the order of `lines`",
+    "read from the bottom of each block: the trail, then the table step, its done, the chart step, its",
+    "drop, the trail's rule, the floats rule, the cents rule that replaces it, and the me rule."
+  ],
+  "lines": [
+    "2026-01-15 - [repo] rule <me> live {me} When you write a commit message: use plain words.",
+    "2026-01-15 - [repo] rule <new> live {project} When a price prints: use cents.",
+    "2026-01-15 - [repo] rule <old> replaced-by <new> {project} When a price prints: use floats.",
+    "2026-01-15 <trail> [repo] trail <trail> done Build the Vendors page",
+    "2026-01-15 <trail> [repo] rule <rule> live {trail:<trail>} When a vendor has no logo: show its initials.",
+    "2026-01-15 <trail> [repo] step <chart> dropped Add the chart",
+    "2026-01-15 <trail> [repo] dropped <chart> no data for it",
+    "2026-01-15 <trail> [repo] step <table> done at:src/vendors.rs Add the table",
+    "2026-01-15 <trail> [repo] proof <table> the table shows",
+    "2026-01-15 <trail> [repo] changed <table> a list, not a table"
+  ],
+  "kept": [
+    "2026-01-15 - [repo] rule <me> live {me} When you write a commit message: use plain words.",
+    "2026-01-15 - [repo] rule <new> live {project} When a price prints: use cents."
+  ]
+}
