@@ -53,7 +53,7 @@ impl Command {
         let trails = self.trails()?;
         let steps = trails.steps();
         let Some(trail) = steps.session(&project.id, session) else {
-            if !self.recall(&trails, err, project, &asked)? {
+            if !self.recall(&trails, err, &asked)? {
                 self.offer(err, project, &asked)?;
             }
             return Ok(());
@@ -95,21 +95,12 @@ impl Command {
         super::put(err, &joins(Some(trail.id())))
     }
 
-    /// Names the agent that brings what `past` prints, when it prints anything and `asked` does not exist;
-    /// then writes `asked`. Else, with a trail of today, says how a new ask joins it. Returns whether it
-    /// named the agent.
-    fn recall(
-        &self,
-        trails: &Trails,
-        err: &mut dyn Write,
-        project: &Project,
-        asked: &Path,
-    ) -> Result<bool, Failure> {
-        let mut listed = Vec::new();
-        if !asked.exists() {
-            self.list(trails, &Args::default(), &mut listed, project)?;
-        }
-        if listed.is_empty() {
+    /// Names the past agent, when the store holds any record and `asked` does not exist; then writes
+    /// `asked`. Else, with a trail of today, says how a new ask joins it. Returns whether it named the
+    /// agent.
+    fn recall(&self, trails: &Trails, err: &mut dyn Write, asked: &Path) -> Result<bool, Failure> {
+        let held = !trails.steps().all().is_empty() || !trails.decisions().every().is_empty();
+        if asked.exists() || !held {
             if !today(&trails.steps(), trails.now).is_empty() {
                 super::put(err, &joins(None))?;
             }
@@ -117,8 +108,8 @@ impl Command {
         }
         let line = format!(
             "celis: a new ask in this session; before any other tool, run the celis:past agent in the \
-             foreground with the ask and the places it may touch, and wait for its answer; it brings this \
-             project's active trails and decisions, and the past work like the ask. {RULES}"
+             foreground with the ask and the places it may touch, and wait for its answer; it brings the \
+             rules the ask must keep, and the past work like it. {RULES}"
         );
         super::put(err, &line)?;
         mark(asked)?;
