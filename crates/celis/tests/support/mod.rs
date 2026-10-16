@@ -469,21 +469,35 @@ pub fn live_ids(repo: &Repo, folder: &Path, name: &str) -> Vec<String> {
     let o = repo.run(folder, &["grep", " rule [0-9a-f]* live "], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     let project = format!("[{name}]");
-    let mut trail = String::new();
-    let mut ids = Vec::new();
-    for l in out(&o).lines() {
+    found(&out(&o))
+        .into_iter()
+        .filter(|(of, line)| *of == project && line.split(' ').nth(2) == Some("live"))
+        .filter_map(|(_, line)| Some(line.strip_prefix("rule ")?.split(' ').next()?.to_string()))
+        .collect()
+}
+
+/// `[<project>]` and the line from its kind on, of each line `celis grep` printed in `text`.
+pub fn found(text: &str) -> Vec<(String, String)> {
+    let mut project = String::new();
+    let mut lines = Vec::new();
+    for l in text.lines().take_while(|l| !l.is_empty()) {
         let Some(line) = l.strip_prefix("  ") else {
-            trail = l.split(' ').nth(1).unwrap_or("").to_string();
+            project = l.split(' ').nth(1).unwrap_or("").to_string();
             continue;
         };
-        let words: Vec<&str> = line.split(' ').collect();
-        let (at, of) = match words.first() {
-            Some(w) if w.starts_with('[') => (1, *w),
-            _ => (0, trail.as_str()),
-        };
-        if of == project && words.get(at) == Some(&"rule") && words.get(at + 2) == Some(&"live") {
-            ids.push(words[at + 1].to_string());
-        }
+        lines.push(match line.split_once(' ') {
+            Some((of, rest)) if of.starts_with('[') => (of.to_string(), rest.to_string()),
+            _ => (project.clone(), line.to_string()),
+        });
     }
-    ids
+    lines
+}
+
+/// The ids, first 8 characters, of the lines of `kind` that `celis grep` printed in `text`, in order.
+pub fn ids(text: &str, kind: &str) -> Vec<String> {
+    let kind = format!("{kind} ");
+    found(text)
+        .into_iter()
+        .filter_map(|(_, line)| Some(line.strip_prefix(&kind)?.split(' ').next()?.to_string()))
+        .collect()
 }

@@ -32,10 +32,7 @@ fn store_step(repo: &Repo, by: &Account, text: &str, at: u64) -> Note {
 fn trails(repo: &Repo) -> Vec<String> {
     let o = repo.run(&repo.path(), &["grep", " trail "], &[], "");
     assert!(o.status.success(), "{}", err(&o));
-    out(&o)
-        .lines()
-        .filter_map(|l| Some(l.strip_prefix("  trail ")?.split(' ').next()?.to_string()))
-        .collect()
+    support::ids(&out(&o), "trail")
 }
 
 fn steps(repo: &Repo) -> usize {
