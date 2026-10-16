@@ -19,13 +19,13 @@ fn a_bar_fills_its_share_in_eighths() {
     assert_eq!(bar(0, 0, 3), "   ");
 }
 
-/// Columns print a value a column, the tallest the full height, in eighths of a row; a zero as a dot,
+/// Columns print a value a column, the tallest the full height, in eighths of a row; a zero as its mark,
 /// and any other value at least an eighth (`spec/02-cli.md`, "Cards").
 #[test]
 fn columns_print_each_value_as_a_column() {
-    assert_eq!(columns(&[0, 1, 2, 4], 2), ["      █", "· ▄ █ █"]);
-    assert_eq!(columns(&[0, 0], 2), ["   ", "· ·"]);
-    assert_eq!(columns(&[1, 100], 1), ["▁ █"]);
+    assert_eq!(columns(&[0, 1, 2, 4], 2, "·"), ["      █", "· ▄ █ █"]);
+    assert_eq!(columns(&[0, 0], 2, "·"), ["   ", "· ·"]);
+    assert_eq!(columns(&[1, 100], 1, "·"), ["▁ █"]);
 }
 
 /// A strip splits its width by the share of each part, the largest remainders first, with a shade a

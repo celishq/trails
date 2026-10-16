@@ -2,7 +2,7 @@
 
 use super::card::{paint, Card, RULE};
 use super::clock::took;
-use super::glyph::digits;
+use super::ink::Ink;
 use super::tree::{look, visible};
 use super::{Args, Command};
 use celis_trails::id::short;
@@ -96,13 +96,11 @@ fn card(trails: &Trails, trail: Step, width: usize, colour: bool) -> Card {
     match width < NARROW {
         true => rows.extend([format!("took {}", paint(colour, "1", &ran)), labels, values]),
         false => {
-            let big = digits(&ran);
-            let room = big.iter().map(|r| visible(r)).max().unwrap_or(0) + 3;
-            let side = [labels, values, String::new()];
-            for (row, side) in big.iter().zip(side) {
-                let pad = " ".repeat(room - visible(row));
-                rows.push(format!("{}{pad}{side}", paint(colour, "1", row)));
-            }
+            let ink = Ink {
+                plain: false,
+                colour,
+            };
+            rows.extend(ink.beside(&ran, &[labels, values], 3));
         }
     }
     if !tree.is_empty() {

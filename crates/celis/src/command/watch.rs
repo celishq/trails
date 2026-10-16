@@ -30,13 +30,8 @@ impl Command {
     ) -> Result<(), Failure> {
         let mut screen = Screen::default();
         let empty = format!("{EMPTY}\n");
-        if !self.held()? {
-            screen.draw(out, &empty, None, &legend(None))?;
-            while !self.held()? {
-                if let Ok(Wake::Quit) = events.recv_timeout(Duration::from_millis(250)) {
-                    return Ok(());
-                }
-            }
+        if !self.waited(&mut screen, out, (&empty, &legend(None)), &events)? {
+            return Ok(());
         }
         let mut trails = self.trails()?;
         if let Some(id) = args.words.get(1) {

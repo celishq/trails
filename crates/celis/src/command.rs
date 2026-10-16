@@ -8,6 +8,7 @@ mod clock;
 mod decision;
 mod demo;
 mod glyph;
+mod ink;
 mod issue;
 mod json;
 mod line;

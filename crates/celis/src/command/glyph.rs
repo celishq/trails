@@ -59,9 +59,9 @@ pub(super) fn bar(n: usize, most: usize, width: usize) -> String {
 }
 
 /// `rows` lines of columns, a value a column and a space between two, the largest value the full height,
-/// in eighths of a row, any other value at least an eighth, and a zero a `·` on the last line; the top
+/// in eighths of a row, any other value at least an eighth, and a zero `zero` on the last line; the top
 /// line first.
-pub(super) fn columns(values: &[usize], rows: usize) -> Vec<String> {
+pub(super) fn columns(values: &[usize], rows: usize, zero: &str) -> Vec<String> {
     let most = values.iter().copied().max().unwrap_or(0);
     let heights: Vec<usize> = values
         .iter()
@@ -74,7 +74,7 @@ pub(super) fn columns(values: &[usize], rows: usize) -> Vec<String> {
         .rev()
         .map(|r| {
             let line = heights.iter().map(|&h| match (h, r) {
-                (0, 0) => "·",
+                (0, 0) => zero,
                 (h, r) => TALL[h.saturating_sub(r * 8).min(8)],
             });
             line.collect::<Vec<_>>().join(" ")

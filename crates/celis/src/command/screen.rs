@@ -32,6 +32,27 @@ impl Command {
         done
     }
 
+    /// With no store, draws `text` and `keys` on `screen` and writes nothing until a store is made;
+    /// whether to go on, false on an interrupt or `q`.
+    pub(super) fn waited(
+        &self,
+        screen: &mut Screen,
+        out: &mut dyn Write,
+        (text, keys): (&str, &str),
+        events: &Receiver<Wake>,
+    ) -> Result<bool, Failure> {
+        if self.held()? {
+            return Ok(true);
+        }
+        screen.draw(out, text, None, keys)?;
+        while !self.held()? {
+            if let Ok(Wake::Quit) = events.recv_timeout(Duration::from_millis(250)) {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
+
     /// Sends a `Record` to `send` each time a record lands in the store or a linked folder, saying
     /// whether in a linked folder; the watcher that does it, kept while it should.
     pub(super) fn listen(&self, send: Sender<Wake>) -> Result<RecommendedWatcher, Failure> {

@@ -3,14 +3,15 @@
 
 use super::card::{grid, paint, Card};
 use super::clock::{saved, took, weekday};
+use super::ink::Ink;
 use super::screen::{clipboard, Screen};
-use super::sheet::{sheets, Sheet};
+use super::sheet::{sheets, Sheet, CARDS};
 use super::table::{Row, Table};
 use super::tree::{cut, look, visible};
 use super::wake::{Key, Wake};
 use super::{Args, Command};
 use celis_trails::id::short;
-use celis_trails::{Failure, Period, Reuse, Step, Trail, Trails};
+use celis_trails::{Failure, Reuse, Step, Trail, Trails};
 use std::io::Write;
 use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender};
 use std::time::Duration;
@@ -21,18 +22,18 @@ impl Command {
     /// no store, it writes nothing and waits for one. On an interrupt or `q`, leaves the alternate
     /// screen with nothing printed, and ends.
     pub(super) fn board(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
-        let route = match args.words.get(1) {
+        let view = match args.words.get(1) {
             Some(id) if !self.held()? => return Err(Failure::no_step(id)),
-            Some(id) => Some(
+            Some(id) => View::Route(
                 Trail::new(self.trails()?.steps().find(id)?)
                     .work()
                     .id()
                     .to_string(),
             ),
-            None => None,
+            None => View::Cards,
         };
         let board = Board {
-            route,
+            view,
             ..Board::default()
         };
         self.screen(out, |out, wakes| self.boarded(board, out, wakes))
@@ -47,14 +48,9 @@ impl Command {
     ) -> Result<(), Failure> {
         let mut screen = Screen::default();
         let width = || self.columns().map_or(WIDTH, |c| c.saturating_sub(1));
-        if !self.held()? {
-            let page = empty(&weekday(super::now()), width(), self.colour());
-            screen.draw(out, &page.text, page.line, &page.legend)?;
-            while !self.held()? {
-                if let Ok(Wake::Quit) = events.recv_timeout(Duration::from_millis(250)) {
-                    return Ok(());
-                }
-            }
+        let page = empty(&weekday(super::now()), width(), self.colour());
+        if !self.waited(&mut screen, out, (&page.text, &page.legend), &events)? {
+            return Ok(());
         }
         let mut trails = self.trails()?;
         let _watcher = self.listen(send)?;
@@ -105,16 +101,29 @@ const WIDTH: usize = 80;
 /// The width below which a board draws its numbers as plain text.
 const NARROW: usize = 60;
 
-/// Where a board stands: the picked card, whether it is opened, the selected row, the step whose route
-/// it shows, the routes it came from, and the cards a row it last drew.
+/// Where a board stands: what it shows, the picked card, the selected row, the routes it came from,
+/// and the cards a row it last drew.
 #[derive(Default)]
 struct Board {
+    view: View,
     picked: usize,
-    opened: bool,
     row: usize,
-    route: Option<String>,
     back: Vec<String>,
     per_row: usize,
+}
+
+/// What a board shows.
+#[derive(Default)]
+enum View {
+    /// The empty card of a store with no closed step.
+    Empty,
+    /// Every card, the picked one framed.
+    #[default]
+    Cards,
+    /// The picked card opened to its table.
+    Card,
+    /// The route of the step with this id.
+    Route(String),
 }
 
 /// One drawn page: its text, the line to keep in view, its key line, the id `c` copies, the Markdown
@@ -132,11 +141,17 @@ impl Board {
     /// The page of `trails` it shows, `width` wide.
     fn page(&mut self, trails: &Trails, width: usize, colour: bool) -> Page {
         let steps = trails.steps();
-        if let Some(step) = self.route.as_deref().and_then(|id| steps.get(id)) {
-            return self.route(trails, step, width, colour);
+        if let View::Route(id) = &self.view {
+            if let Some(step) = steps.get(id) {
+                return self.route(trails, step, width, colour);
+            }
         }
-        if Period::new(&steps, 0, u64::MAX).closed().is_empty() {
+        if !steps.closed_any() {
+            self.view = View::Empty;
             return empty(&status(trails), width, colour);
+        }
+        if let View::Empty = self.view {
+            self.view = View::Cards;
         }
         self.per_row = match width {
             w if w >= 120 => 3,
@@ -146,10 +161,10 @@ impl Board {
         let card = (width - (self.per_row - 1)) / self.per_row;
         let full = card * self.per_row + self.per_row - 1;
         let sheets = sheets(trails, full - 4, card - 4, width < NARROW, colour);
-        self.picked = self.picked.min(sheets.len() - 1);
-        match self.opened {
-            true => self.opened(&sheets[self.picked], width, colour),
-            false => self.cards(trails, sheets, (full, card), width, colour),
+        self.picked = self.picked.min(CARDS - 1);
+        match self.view {
+            View::Card => self.opened(&sheets[self.picked], width, colour),
+            _ => self.cards(trails, sheets, (full, card), width, colour),
         }
     }
 
@@ -157,15 +172,12 @@ impl Board {
     fn cards(
         &self,
         trails: &Trails,
-        sheets: Vec<Sheet>,
+        sheets: [Sheet; CARDS],
         (full, card): (usize, usize),
         width: usize,
         colour: bool,
     ) -> Page {
-        let mut lines = vec![
-            header(" CELIS STATS", &status(trails), width, colour),
-            String::new(),
-        ];
+        let mut lines = head(None, &status(trails), width, colour);
         let markdown = sheets[self.picked]
             .table
             .markdown(&sheets[self.picked].title);
@@ -204,8 +216,7 @@ impl Board {
     fn opened(&mut self, sheet: &Sheet, width: usize, colour: bool) -> Page {
         let ids: Vec<Option<String>> = sheet.table.rows.iter().map(|r| r.id.clone()).collect();
         self.row = self.row.min(ids.len().saturating_sub(1));
-        let title = format!(" CELIS STATS › {}", sheet.title);
-        let mut lines = vec![header(&title, "", width, colour), String::new()];
+        let mut lines = head(Some(&sheet.title), "", width, colour);
         lines.extend(sheet.table.lines(width, Some(self.row), colour));
         let copy = ids.get(self.row).cloned().flatten();
         Page {
@@ -226,11 +237,8 @@ impl Board {
         let down = reuse.down(step);
         let count = up.len() + down.len();
         self.row = self.row.min(count.saturating_sub(1));
-        let title = format!(" CELIS STATS › {}", short(step.id()));
-        let mut lines = vec![
-            header(&title, &step.record().anchor.name, width, colour),
-            String::new(),
-        ];
+        let name = &step.record().anchor.name;
+        let mut lines = head(Some(&short(step.id())), name, width, colour);
         let mut rows = vec![];
         let mut table = vec![];
         let mut line = None;
@@ -278,31 +286,16 @@ impl Board {
             }
             lines.push(String::new());
         }
-        let time = step.grade().map(|g| took(g.took));
-        let big = match width < NARROW {
-            true => vec![paint(colour, "1", time.as_deref().unwrap_or("—"))],
-            false => super::glyph::digits(time.as_deref().unwrap_or("—"))
-                .iter()
-                .map(|r| paint(colour, "1", r))
-                .collect(),
+        let ink = Ink {
+            plain: width < NARROW,
+            colour,
         };
-        let revised = step.revised().len();
+        let time = step.grade().map_or("—".into(), |g| took(g.took));
         let side = [
-            paint(colour, "2", "took"),
-            paint(colour, "2", &format!("revised {revised}")),
+            ink.dim("took"),
+            ink.dim(&format!("revised {}", step.revised().len())),
         ];
-        let room = big.iter().map(|r| visible(r)).max().unwrap_or(0) + 3;
-        let face: Vec<String> = big
-            .iter()
-            .enumerate()
-            .map(|(i, r)| {
-                format!(
-                    "{r}{}{}",
-                    " ".repeat(room - visible(r)),
-                    side.get(i).map_or("", String::as_str)
-                )
-            })
-            .collect();
+        let face = ink.beside(&time, &side, 3);
         let look = look(step.state());
         let card = Card {
             title: format!("{} {}", look.mark, step.title()),
@@ -351,45 +344,40 @@ impl Board {
         }
     }
 
-    /// Moves as `key` asks on `page`: among the cards, the rows of an opened card, or along a route;
-    /// nothing on a page with no Markdown, as the empty page.
+    /// Moves as `key` asks on `page`: among the cards, the rows of an opened card, or along a route.
     fn press(&mut self, key: Key, page: &Page) {
-        if page.markdown.is_none() {
-            return;
-        }
         let last = page.rows.len().saturating_sub(1);
-        if self.route.is_some() {
-            match key {
-                Key::Up => self.row = self.row.saturating_sub(1),
-                Key::Down => self.row = (self.row + 1).min(last),
-                Key::Enter | Key::Right => {
-                    if let Some(Some(id)) = page.rows.get(self.row) {
-                        let from = self.route.replace(id.clone());
-                        self.back.extend(from);
-                        self.row = 0;
-                    }
+        match (&self.view, key) {
+            (View::Empty, _) => {}
+            (View::Card | View::Route(_), Key::Up) => self.row = self.row.saturating_sub(1),
+            (View::Card | View::Route(_), Key::Down) => self.row = (self.row + 1).min(last),
+            (View::Card, Key::Left | Key::Enter) => self.view = View::Cards,
+            (View::Route(from), Key::Enter | Key::Right) => {
+                if let Some(Some(id)) = page.rows.get(self.row) {
+                    self.back.push(from.clone());
+                    self.view = View::Route(id.clone());
+                    self.row = 0;
                 }
-                Key::Left => {
-                    if let Some(id) = self.back.pop() {
-                        self.route = Some(id);
-                        self.row = 0;
-                    }
+            }
+            (View::Route(_), Key::Left) => {
+                if let Some(id) = self.back.pop() {
+                    self.view = View::Route(id);
+                    self.row = 0;
                 }
-                _ => {}
             }
-            return;
-        }
-        if self.opened {
-            match key {
-                Key::Up => self.row = self.row.saturating_sub(1),
-                Key::Down => self.row = (self.row + 1).min(last),
-                Key::Left | Key::Enter => self.opened = false,
-                _ => {}
+            (View::Cards, Key::Enter) => {
+                self.view = View::Card;
+                self.row = 0;
             }
-            return;
+            (View::Cards, key) => self.picked = self.next(key),
+            _ => {}
         }
+    }
+
+    /// The card `key` picks from the picked one, among the effect across the width and the rest a row.
+    fn next(&self, key: Key) -> usize {
         let per_row = self.per_row.max(1);
-        self.picked = match key {
+        let picked = match key {
             Key::Left => self.picked.saturating_sub(1),
             Key::Right => self.picked + 1,
             Key::Down if self.picked == 0 => 1,
@@ -397,12 +385,8 @@ impl Board {
             Key::Up if self.picked <= per_row => 0,
             Key::Up => self.picked - per_row,
             _ => self.picked,
-        }
-        .min(6);
-        if let Key::Enter = key {
-            self.opened = true;
-            self.row = 0;
-        }
+        };
+        picked.min(CARDS - 1)
     }
 }
 
@@ -419,7 +403,7 @@ fn empty(right: &str, width: usize, colour: bool) -> Page {
         ],
         picked: false,
     };
-    let mut lines = vec![header(" CELIS STATS", right, width, colour), String::new()];
+    let mut lines = head(None, right, width, colour);
     lines.extend(card.lines(width, card.rows.len() + 2, colour));
     Page {
         text: lines.join("\n"),
@@ -442,15 +426,18 @@ fn status(trails: &Trails) -> String {
     format!("● {active} active · {}", weekday(trails.now))
 }
 
-/// `left` bold and `right` dim at the two ends of a line `width` wide.
-fn header(left: &str, right: &str, width: usize, colour: bool) -> String {
-    let pad = width.saturating_sub(visible(left) + visible(right) + 1);
-    format!(
+/// The head of a page, `width` wide: ` CELIS STATS[ › <place>]` bold and `right` dim at the two ends,
+/// then a blank line.
+fn head(place: Option<&str>, right: &str, width: usize, colour: bool) -> Vec<String> {
+    let left = place.map_or(" CELIS STATS".into(), |p| format!(" CELIS STATS › {p}"));
+    let pad = width.saturating_sub(visible(&left) + visible(right) + 1);
+    let line = format!(
         "{}{}{}",
-        paint(colour, "1", left),
+        paint(colour, "1", &left),
         " ".repeat(pad),
         paint(colour, "2", right)
-    )
+    );
+    vec![line, String::new()]
 }
 
 /// The key line: `keys`, then `c copy <id>` for the id `copy` names, then the copy and quit keys.

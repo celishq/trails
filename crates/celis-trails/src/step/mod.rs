@@ -107,6 +107,16 @@ impl<'a> Step<'a> {
         self.entry.close.map(|(note, _)| note)
     }
 
+    /// The second it ended: when a done or a drop closed it, or the newest record of its trail when it
+    /// expired; none while it is open.
+    pub fn closed_at(self) -> Option<u64> {
+        match (self.closed(), self.state()) {
+            (Some(close), _) => Some(close.created_at),
+            (None, State::Expired) => Some(self.trail().newest()),
+            _ => None,
+        }
+    }
+
     /// The done record that closed it.
     pub fn done(self) -> Option<&'a Note> {
         match self.entry.close {

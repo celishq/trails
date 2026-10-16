@@ -1,7 +1,7 @@
 //! The work of a store in one span of time.
 
 use crate::reuse::Link;
-use crate::{Reuse, State, Step, Steps, Tally};
+use crate::{Reuse, Step, Steps, Tally};
 
 /// The work of a store from `from` up to `to`: the steps done, added and closed in that time, and the
 /// follows they made. A trail counts as none of them.
@@ -54,11 +54,7 @@ impl<'a> Period<'a> {
     /// oldest first.
     pub fn closed(&self) -> Vec<Step<'a>> {
         self.parts()
-            .filter(|s| match (s.closed(), s.state()) {
-                (Some(close), _) => self.holds(close.created_at),
-                (None, State::Expired) => self.holds(s.trail().newest()),
-                _ => false,
-            })
+            .filter(|s| s.closed_at().is_some_and(|at| self.holds(at)))
             .collect()
     }
 

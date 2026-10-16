@@ -40,12 +40,11 @@ fn worked(later: u64) -> (TempDir, Trails) {
     (home, trails)
 }
 
-/// The face of each card of `trails`, its rows joined by new lines.
-fn faces(trails: &Trails) -> Vec<String> {
-    sheets(trails, 92, 43, false, false)
-        .into_iter()
-        .map(|s| s.face.join("\n"))
-        .collect()
+/// The face of the card of `trails` whose title starts with `title`, its rows joined by new lines.
+fn face(trails: &Trails, title: &str) -> String {
+    let sheets = sheets(trails, 92, 43, false, false);
+    let sheet = sheets.iter().find(|s| s.title.starts_with(title));
+    sheet.expect(title).face.join("\n")
 }
 
 /// With no record in the 14 days before, the effect says `no data before`, and the work card says
@@ -53,12 +52,13 @@ fn faces(trails: &Trails) -> Vec<String> {
 #[test]
 fn a_card_with_no_data_before_says_so() {
     let (_home, trails) = worked(3_600);
-    let faces = faces(&trails);
-    assert!(faces[0].contains("· no data before"), "{}", faces[0]);
-    assert!(!faces[0].contains("few records"), "{}", faces[0]);
-    assert!(faces[3].contains("first 14 days"), "{}", faces[3]);
-    assert!(!faces[3].contains("vs 14 days before"), "{}", faces[3]);
-    assert!(faces[3].contains("· · ·"), "{}", faces[3]);
+    let effect = face(&trails, "00 EFFECT");
+    assert!(effect.contains("· no data before"), "{effect}");
+    assert!(!effect.contains("few records"), "{effect}");
+    let work = face(&trails, "03 WORK");
+    assert!(work.contains("first 14 days"), "{work}");
+    assert!(!work.contains("vs 14 days before"), "{work}");
+    assert!(work.contains("· · ·"), "{work}");
 }
 
 /// With no step done or closed in the last 14 days, the work, time and outcome cards each say so in one
@@ -66,17 +66,15 @@ fn a_card_with_no_data_before_says_so() {
 #[test]
 fn a_card_with_nothing_in_14_days_says_so() {
     let (_home, trails) = worked(20 * DAY);
-    let faces = faces(&trails);
-    assert!(faces[3].contains("no step done in 14 days"), "{}", faces[3]);
-    assert!(!faces[3].contains("today"), "{}", faces[3]);
-    assert!(faces[4].contains("no step done in 14 days"), "{}", faces[4]);
-    assert!(!faces[4].contains("< 5m"), "{}", faces[4]);
-    assert!(
-        faces[5].contains("no step closed in 14 days"),
-        "{}",
-        faces[5]
-    );
-    assert!(!faces[5].contains("dropped"), "{}", faces[5]);
+    let work = face(&trails, "03 WORK");
+    assert!(work.contains("no step done in 14 days"), "{work}");
+    assert!(!work.contains("today"), "{work}");
+    let time = face(&trails, "04 TIME");
+    assert!(time.contains("no step done in 14 days"), "{time}");
+    assert!(!time.contains("< 5m"), "{time}");
+    let outcome = face(&trails, "05 OUTCOME");
+    assert!(outcome.contains("no step closed in 14 days"), "{outcome}");
+    assert!(!outcome.contains("dropped"), "{outcome}");
 }
 
 /// The effect counts its base as `1 step`, and a big share puts its `%` right after its digits
@@ -84,7 +82,7 @@ fn a_card_with_nothing_in_14_days_says_so() {
 #[test]
 fn the_effect_counts_one_step_and_its_share_whole() {
     let (_home, trails) = worked(3_600);
-    let effect = &faces(&trails)[0];
+    let effect = face(&trails, "00 EFFECT");
     assert!(effect.contains("1 step "), "{effect}");
     assert!(!effect.contains("1 steps"), "{effect}");
     assert!(effect.contains("▀▀▀%"), "{effect}");
