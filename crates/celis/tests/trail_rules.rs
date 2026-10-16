@@ -53,8 +53,7 @@ fn a_decision_is_a_rule_of_a_trail_only_when_its_scope_names_it() {
     ));
     let rules: Vec<&str> = text
         .lines()
-        .take_while(|l| !l.is_empty())
-        .filter_map(|l| l.split(' ').nth(4))
+        .filter_map(|l| l.strip_prefix("  rule ")?.split(' ').next())
         .collect();
     assert_eq!(rules, [&rule.id[..8]]);
 }

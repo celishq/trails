@@ -34,8 +34,7 @@ fn trails(repo: &Repo) -> Vec<String> {
     assert!(o.status.success(), "{}", err(&o));
     out(&o)
         .lines()
-        .take_while(|l| !l.is_empty())
-        .filter_map(|l| Some(l.split(' ').nth(4)?.to_string()))
+        .filter_map(|l| Some(l.strip_prefix("  trail ")?.split(' ').next()?.to_string()))
         .collect()
 }
 

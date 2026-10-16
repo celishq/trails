@@ -271,13 +271,13 @@ fn grep_cuts_long_output_and_lists_the_trails_it_cut() {
         cut.ends_with("search one trail with celis grep \" <id> \\[\""),
         "{cut}"
     );
-    let index = line(&text, " · 3 steps");
+    let index = line(&text, " · 1 trail, 3 steps");
     let title = index.split(" · ").next().unwrap();
     assert!(
         title.ends_with('…') && title.chars().count() <= 98,
         "{index}"
     );
-    assert!(text.ends_with("project [repo]"), "{text}");
+    assert!(text.trim_end().ends_with("project [repo]"), "{text}");
 }
 
 /// With no line that matches, `grep` says so and exits 0; when `grep` fails, it exits 2

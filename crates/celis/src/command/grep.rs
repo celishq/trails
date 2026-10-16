@@ -25,7 +25,7 @@ impl Command {
         if found.is_empty() {
             return Ok(());
         }
-        let text = Cut::of(&found, &view).text(&view, &self.project().name);
+        let text = Cut::of(&found, &view).text(&view, &self.project().name, &found);
         super::put(out, &text)
     }
 

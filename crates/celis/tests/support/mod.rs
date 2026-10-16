@@ -469,13 +469,21 @@ pub fn live_ids(repo: &Repo, folder: &Path, name: &str) -> Vec<String> {
     let o = repo.run(folder, &["grep", " rule [0-9a-f]* live "], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     let project = format!("[{name}]");
-    out(&o)
-        .lines()
-        .filter_map(|l| {
-            let words: Vec<&str> = l.split(' ').collect();
-            let at = words.iter().position(|w| *w == "rule")?;
-            (words.get(2) == Some(&project.as_str()) && words.get(at + 2) == Some(&"live"))
-                .then(|| words[at + 1].to_string())
-        })
-        .collect()
+    let mut trail = String::new();
+    let mut ids = Vec::new();
+    for l in out(&o).lines() {
+        let Some(line) = l.strip_prefix("  ") else {
+            trail = l.split(' ').nth(1).unwrap_or("").to_string();
+            continue;
+        };
+        let words: Vec<&str> = line.split(' ').collect();
+        let (at, of) = match words.first() {
+            Some(w) if w.starts_with('[') => (1, *w),
+            _ => (0, trail.as_str()),
+        };
+        if of == project && words.get(at) == Some(&"rule") && words.get(at + 2) == Some(&"live") {
+            ids.push(words[at + 1].to_string());
+        }
+    }
+    ids
 }

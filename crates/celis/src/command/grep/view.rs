@@ -13,15 +13,33 @@ pub(super) struct Row {
     pub trail: Option<String>,
     pub kind: Kind,
     pub line: String,
+    body: usize,
+}
+
+impl Row {
+    /// The line after its day, its trail and, when it has a trail, its project.
+    pub fn body(&self) -> &str {
+        &self.line[self.body..]
+    }
+
+    /// The row of `trail` and `kind` whose line is `lead`, a space, then `body`.
+    fn of(trail: Option<String>, kind: Kind, lead: &str, body: &str) -> Row {
+        Row {
+            trail,
+            kind,
+            line: format!("{lead} {body}"),
+            body: lead.len() + 1,
+        }
+    }
 }
 
 /// Every trail of every project with its rules and steps, and each decision with no trail, newest made
-/// first; with the legend line of each trail.
+/// first; with the header of each trail.
 #[derive(Default)]
 pub(super) struct View {
     rows: Vec<Row>,
     lines: HashMap<String, usize>,
-    titles: HashMap<String, String>,
+    titles: HashMap<String, (String, String)>,
 }
 
 impl View {
@@ -44,8 +62,8 @@ impl View {
         }
         let mut titles = HashMap::new();
         for root in steps.roots() {
-            let title = format!("{} · {}", line::step(root), date(root.note().created_at));
-            titles.insert(short(root.id()), title);
+            let head = (line::step(root), date(root.note().created_at));
+            titles.insert(short(root.id()), head);
             let mut rows = vec![step(root, root, Kind::Trail)];
             rows.extend(rules.remove(root.id()).unwrap_or_default());
             level(root, root, &mut rows);
@@ -90,8 +108,19 @@ impl View {
     pub fn title(&self, id: &str) -> String {
         self.titles
             .get(id)
-            .cloned()
-            .unwrap_or_else(|| id.to_string())
+            .map_or_else(|| id.to_string(), |(head, day)| format!("{head} · {day}"))
+    }
+
+    /// `<id, first 8> [<project name>] <title>` of the trail `id`, its title cut at `chars` characters.
+    pub fn short(&self, id: &str, chars: usize) -> String {
+        let Some((head, _)) = self.titles.get(id) else {
+            return id.to_string();
+        };
+        let start = head.find("] ").map_or(0, |n| n + 2);
+        match head[start..].char_indices().nth(chars) {
+            Some((end, _)) => format!("{}…", &head[..start + end]),
+            None => head.clone(),
+        }
     }
 }
 
@@ -100,16 +129,9 @@ impl View {
 fn level<'a>(root: Step<'a>, parent: Step<'a>, rows: &mut Vec<Row>) {
     for child in parent.children().into_iter().rev() {
         rows.push(step(root, child, Kind::Step));
-        let row = |note: &Note, kind: Kind, text: &str| Row {
-            trail: Some(short(root.id())),
-            kind,
-            line: format!(
-                "{} {} {} {}",
-                lead(root, note),
-                kind.text(),
-                short(child.id()),
-                flat(text)
-            ),
+        let row = |note: &Note, kind: Kind, text: &str| {
+            let body = format!("{} {} {}", kind.text(), short(child.id()), flat(text));
+            Row::of(Some(short(root.id())), kind, &lead(root, note), &body)
         };
         match child.close() {
             Some((note, Mark::Done { proof, changed })) => {
@@ -132,16 +154,19 @@ fn step(root: Step, step: Step, kind: Kind) -> Row {
         fields.push(format!("revised-by {}", by.join(",")));
     }
     fields.extend(record.places.iter().map(|p| format!("at:{p}")));
-    let line = format!(
-        "{} {} {} {} {}",
-        lead(root, step.note()),
+    let body = format!(
+        "{} {} {} {}",
         kind.text(),
         short(step.id()),
         fields.join(" "),
         flat(&record.content)
     );
-    let trail = Some(short(root.id()));
-    Row { trail, kind, line }
+    Row::of(
+        Some(short(root.id())),
+        kind,
+        &lead(root, step.note()),
+        &body,
+    )
 }
 
 /// The row of the decision `note` holds, as a rule of `trail`, replaced by `by` when given.
@@ -149,19 +174,26 @@ fn rule(note: &Note, decision: &Decision, by: Option<&Note>, trail: Option<Strin
     let state = by.map_or("live".to_string(), |b| {
         format!("replaced-by {}", short(&b.id))
     });
-    let line = format!(
-        "{} {} [{}] rule {} {state} {{{}}} {}",
-        date(note.created_at),
-        trail.as_deref().unwrap_or("-"),
-        decision.anchor.name,
+    let (day, name) = (date(note.created_at), format!("[{}]", decision.anchor.name));
+    let body = format!(
+        "rule {} {state} {{{}}} {}",
         short(&note.id),
         decision.scope.short(),
         flat(&decision.content)
     );
-    Row {
-        trail,
-        kind: Kind::Rule,
-        line,
+    match &trail {
+        Some(id) => Row::of(
+            trail.clone(),
+            Kind::Rule,
+            &format!("{day} {id} {name}"),
+            &body,
+        ),
+        None => Row::of(
+            None,
+            Kind::Rule,
+            &format!("{day} -"),
+            &format!("{name} {body}"),
+        ),
     }
 }
 
