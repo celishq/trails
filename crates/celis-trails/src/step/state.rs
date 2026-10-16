@@ -28,6 +28,11 @@ impl State {
         matches!(self, State::Open | State::Working)
     }
 
+    /// Whether work on it stopped: done, dropped or expired.
+    pub fn ended(self) -> bool {
+        !self.active()
+    }
+
     /// Whether its work ended: done or dropped.
     pub fn closed(self) -> bool {
         matches!(self, State::Done | State::Dropped)
