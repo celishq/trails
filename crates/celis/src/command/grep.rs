@@ -1,6 +1,7 @@
 //! `celis grep`: every trail of every project as lines, through the system `grep`.
 
 mod cut;
+mod header;
 mod kind;
 mod row;
 mod view;

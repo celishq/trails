@@ -1,5 +1,6 @@
 //! What `grep` prints of the lines it found.
 
+use super::header::{self, Header};
 use super::kind::Kind;
 use super::row::Row;
 use super::view::View;
@@ -117,7 +118,8 @@ impl<'a> Cut<'a> {
             let head = group
                 .trail
                 .as_deref()
-                .map_or("-".to_string(), |t| view.short(t, TITLE));
+                .and_then(|t| view.header(t))
+                .map_or("-".to_string(), |h| h.short(TITLE));
             let line = format!("{head} · {}", tally.join(", "));
             if used + line.len() + MORE > room {
                 text.push(format!("… {} more trails", self.rest.len() - n));
@@ -130,11 +132,12 @@ impl<'a> Cut<'a> {
     }
 }
 
-/// The header of the lines of `trail`: its title, or `- rules of no trail`.
+/// The header of the lines of `trail`.
 fn header(view: &View, trail: &Option<String>) -> String {
     trail
         .as_deref()
-        .map_or("- rules of no trail".to_string(), |t| view.title(t))
+        .and_then(|t| view.header(t))
+        .map_or(header::NONE.to_string(), Header::text)
 }
 
 /// The bytes `lines` take, each with its newline.

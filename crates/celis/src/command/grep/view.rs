@@ -1,9 +1,9 @@
 //! The view `grep` searches: every trail of every project, one line an item.
 
+use super::header::Header;
 use super::kind::Kind;
 use super::row::Row;
 use crate::command::clock::date;
-use crate::command::line;
 use celis_nostr::Note;
 use celis_trails::id::short;
 use celis_trails::{Decision, Mark, Scope, Step, Trails};
@@ -15,7 +15,7 @@ use std::collections::HashMap;
 pub(super) struct View {
     rows: Vec<Row>,
     lines: HashMap<String, usize>,
-    titles: HashMap<String, (String, String)>,
+    headers: HashMap<String, Header>,
 }
 
 impl View {
@@ -36,10 +36,9 @@ impl View {
                 )),
             }
         }
-        let mut titles = HashMap::new();
+        let mut headers = HashMap::new();
         for root in steps.roots() {
-            let head = (line::step(root), date(root.note().created_at));
-            titles.insert(short(root.id()), head);
+            headers.insert(short(root.id()), Header::of(root));
             let mut rows = vec![step(root, root, Kind::Trail)];
             rows.extend(rules.remove(root.id()).unwrap_or_default());
             level(root, root, &mut rows);
@@ -55,7 +54,7 @@ impl View {
         View {
             rows,
             lines,
-            titles,
+            headers,
         }
     }
 
@@ -80,23 +79,9 @@ impl View {
         }
     }
 
-    /// `<id, first 8> [<project name>] <title> · <yyyy-mm-dd>` of the trail `id`.
-    pub fn title(&self, id: &str) -> String {
-        self.titles
-            .get(id)
-            .map_or_else(|| id.to_string(), |(head, day)| format!("{head} · {day}"))
-    }
-
-    /// `<id, first 8> [<project name>] <title>` of the trail `id`, its title cut at `chars` characters.
-    pub fn short(&self, id: &str, chars: usize) -> String {
-        let Some((head, _)) = self.titles.get(id) else {
-            return id.to_string();
-        };
-        let start = head.find("] ").map_or(0, |n| n + 2);
-        match head[start..].char_indices().nth(chars) {
-            Some((end, _)) => format!("{}…", &head[..start + end]),
-            None => head.clone(),
-        }
+    /// The header of the trail `id`.
+    pub fn header(&self, id: &str) -> Option<&Header> {
+        self.headers.get(id)
     }
 }
 
