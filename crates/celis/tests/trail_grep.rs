@@ -337,21 +337,20 @@ fn grep_prints_numbered_lines_under_their_trail() {
     );
 }
 
-/// `past` writes nothing and prints the `grep` searches that replace it, with the project's name, so an
-/// old plugin's agent goes on (`spec/02-cli.md`, "Past").
+/// `past` writes nothing and prints that it is gone and that the plugin's `past.md` searches with `grep`
+/// (`spec/02-cli.md`, "Grep").
 #[test]
-fn past_prints_the_searches_that_replace_it() {
+fn past_says_it_is_gone() {
     let repo = Repo::new();
     let o = cli(&repo, &["past", "--at", "src/a.rs"]);
     assert!(o.status.success(), "{}", err(&o));
     let text = out(&o);
     assert!(
-        text.starts_with("celis past is gone; search the trails with celis grep:"),
+        text.starts_with("celis past is gone: update the celis plugin"),
         "{text}"
     );
-    assert!(text.contains("celis grep \" live {me} \""), "{text}");
     assert!(
-        text.contains("celis grep \"\\[repo\\] rule [0-9a-f]* live {project} \""),
+        text.contains("past.md searches the trails with celis grep"),
         "{text}"
     );
     assert!(!repo.store().exists());
