@@ -38,9 +38,10 @@ The conventions are in [`AGENTS.md`](AGENTS.md). They apply to people and agents
 ## Verify
 
 ```bash
-make verify        # fmt, clippy -D warnings, and the tests — what CI runs
-make fmt           # write the formatting that verify checks
-make install-cli   # build `celis` from this checkout into ~/.local/bin
+make verify            # fmt, clippy -D warnings, and the tests — what CI runs
+make fmt               # write the formatting that verify checks
+make install-cli       # build `celis` from this checkout into ~/.local/bin
+make release V=1.2.3   # open the release PR of 1.2.3, for maintainers
 ```
 
 To try the plugin from this checkout for one session, run `claude --plugin-dir plugins/celis` or
@@ -54,3 +55,17 @@ To try the plugin from this checkout for one session, run `claude --plugin-dir p
 - Say in the description which CIP the change follows, and how you checked it.
 
 By contributing, you agree that your work is licensed under the [MIT License](LICENSE).
+
+## Release
+
+Only maintainers release. A release PR needs a branch in this repo, so a fork cannot open one.
+
+1. On an up-to-date `main`, run `make release V=1.2.3`. It checks the version and your checkout, then opens
+   a release PR. If it stops, its message tells you what to fix.
+2. Wait for the checks, including "Release builds", then squash-merge the PR.
+3. The merge builds `celis` from the merge commit, tags it `v1.2.3`, publishes the GitHub release, and
+   installs it on clean runners. Agents see the new plugin version when you merge; the release follows a few
+   minutes later.
+
+If the Release run fails before it publishes, re-run it from the Actions tab. If it fails after it publishes,
+fix the problem in a new PR and release the next version.

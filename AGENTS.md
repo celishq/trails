@@ -33,6 +33,5 @@
 make verify   # fmt, clippy -D warnings, and the tests
 ```
 
-A release is a manual run of the Release workflow with a version. It writes the version in each plugin manifest,
-commits that to `main`, tags it `v<version>`, and publishes the GitHub release. The repo keeps `crates/celis` at
-`0.0.0`; the release passes the version in through `CELIS_VERSION`.
+A release follows the Release section of `CONTRIBUTING.md`. The repo keeps `crates/celis` at `0.0.0`; the
+release passes the version in through `CELIS_VERSION`.

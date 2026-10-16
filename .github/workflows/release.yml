@@ -1,138 +1,46 @@
 name: Release
 
-# Builds the `celis` command line for macOS and Linux, and puts every archive on a GitHub release with
-# `install.sh`. celis.ai serves the `install.sh` of the latest release. A last job installs the release with
-# its own `install.sh` on clean runners.
-#
-# A manual run with a version, such as `1.2.3`, writes it in each plugin manifest, commits that to main, tags
-# the commit `v1.2.3`, and releases from it, so each agent sees a new plugin version. Each build reads the
-# version from `CELIS_VERSION`. A manual run with no version builds as 0.0.0, and publishes nothing.
+# Publishes a release when a merge to main carries a manifest version with no tag yet: the merge of the PR
+# that `make release` opens. It builds the archives from the merge commit, tags it `v<version>`, and puts every
+# archive on its GitHub release with `install.sh`. celis.ai serves the `install.sh` of the latest release. A
+# last job installs the release with its own `install.sh` on clean runners.
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "The version to release, such as 1.2.3. Empty builds as 0.0.0 and publishes nothing."
-        required: false
+  push:
+    branches: [main]
 
 concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: false
 
-# The compiler the release builds with.
-env:
-  RUST_TOOLCHAIN: "1.96.0"
-
 jobs:
   version:
     name: Version
     runs-on: namespace-profile-linux
-    permissions:
-      contents: write
     outputs:
       version: ${{ steps.version.outputs.version }}
-      ref: ${{ steps.version.outputs.ref }}
     steps:
       - uses: actions/checkout@v7
       - id: version
-        env:
-          INPUT: ${{ inputs.version }}
         run: |
-          set -euo pipefail
-          VERSION="${INPUT#v}"
-          REF="$GITHUB_SHA"
-          if [ -n "$VERSION" ]; then
-            sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" \
-              plugins/celis/.*-plugin/plugin.json gemini-extension.json .antigravity-plugin/plugin.json
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -am "release: v$VERSION"
-            git tag "v$VERSION"
-            git push origin HEAD:main "v$VERSION"
-            REF="v$VERSION"
-          else
-            VERSION=0.0.0
-          fi
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "ref=$REF" >> "$GITHUB_OUTPUT"
+          version=$(sh scripts/version.sh)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
-  linux:
-    name: Linux builds
-    runs-on: namespace-profile-linux
+  build:
     needs: version
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ needs.version.outputs.ref }}
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ env.RUST_TOOLCHAIN }}
-          targets: x86_64-unknown-linux-musl,aarch64-unknown-linux-musl
-      # Zig is the C compiler and linker for both musl targets, so the bundled SQLite and `ring` build
-      # without a cross toolchain, and the binaries run on any Linux.
-      - name: Install cargo-zigbuild
-        run: pip3 install --break-system-packages ziglang cargo-zigbuild
-      - name: Build
-        working-directory: crates
-        env:
-          CELIS_VERSION: ${{ needs.version.outputs.version }}
-        run: |
-          set -euo pipefail
-          for target in x86_64-unknown-linux-musl aarch64-unknown-linux-musl; do
-            cargo zigbuild --release --locked -p celis --target "$target"
-            mkdir -p "../dist"
-            tar -czf "../dist/celis-$target.tar.gz" -C "target/$target/release" celis
-          done
-      - name: Checksums
-        working-directory: dist
-        run: for f in *.tar.gz; do sha256sum "$f" > "$f.sha256"; done
-      - uses: actions/upload-artifact@v7
-        with:
-          name: cli-linux
-          path: dist/
-
-  mac:
-    name: macOS builds
-    runs-on: namespace-profile-mac
-    needs: version
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ needs.version.outputs.ref }}
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ env.RUST_TOOLCHAIN }}
-          targets: aarch64-apple-darwin,x86_64-apple-darwin
-      - name: Build
-        working-directory: crates
-        env:
-          CELIS_VERSION: ${{ needs.version.outputs.version }}
-        run: |
-          set -euo pipefail
-          mkdir -p ../dist
-          for target in aarch64-apple-darwin x86_64-apple-darwin; do
-            cargo build --release --locked -p celis --target "$target"
-            tar -czf "../dist/celis-$target.tar.gz" -C "target/$target/release" celis
-          done
-      - name: Checksums
-        working-directory: dist
-        run: for f in *.tar.gz; do shasum -a 256 "$f" > "$f.sha256"; done
-      - uses: actions/upload-artifact@v7
-        with:
-          name: cli-mac
-          path: dist/
+    if: needs.version.outputs.version != ''
+    uses: ./.github/workflows/build.yml
+    with:
+      version: ${{ needs.version.outputs.version }}
 
   publish:
     name: Publish to GitHub Releases
-    if: needs.version.outputs.version != '0.0.0'
+    needs: [version, build]
     runs-on: namespace-profile-linux
-    needs: [version, linux, mac]
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v7
-        with:
-          ref: ${{ needs.version.outputs.ref }}
       - uses: actions/download-artifact@v7
         with:
           pattern: cli-*
@@ -142,7 +50,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.version.outputs.version }}
-        run: gh release create "v$VERSION" dist/* install.sh --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes
+        run: gh release create "v$VERSION" dist/* install.sh --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --generate-notes
 
   smoke:
     name: Install on ${{ matrix.runner }}

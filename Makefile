@@ -1,4 +1,4 @@
-.PHONY: verify fmt install-cli
+.PHONY: verify fmt install-cli release
 
 verify:
 	cd crates && cargo fmt --check
@@ -12,3 +12,6 @@ install-cli:
 	cd crates && cargo build --release -p celis
 	mkdir -p $(HOME)/.local/bin
 	install -m 755 crates/target/release/celis $(HOME)/.local/bin/celis
+
+release:
+	sh scripts/release.sh "$(V)"
