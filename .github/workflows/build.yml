@@ -1,0 +1,77 @@
+name: Build
+
+# Builds the `celis` release archives for macOS and Linux, with checksums, as the `cli-linux` and `cli-mac`
+# artifacts.
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: "The version each build reads from `CELIS_VERSION`, such as 1.2.3."
+        required: true
+        type: string
+
+# The compiler the release builds with.
+env:
+  RUST_TOOLCHAIN: "1.96.0"
+
+jobs:
+  linux:
+    name: Linux builds
+    runs-on: namespace-profile-linux
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          targets: x86_64-unknown-linux-musl,aarch64-unknown-linux-musl
+      # Zig is the C compiler and linker for both musl targets, so the bundled SQLite and `ring` build
+      # without a cross toolchain, and the binaries run on any Linux.
+      - name: Install cargo-zigbuild
+        run: pip3 install --break-system-packages ziglang cargo-zigbuild
+      - name: Build
+        working-directory: crates
+        env:
+          CELIS_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          for target in x86_64-unknown-linux-musl aarch64-unknown-linux-musl; do
+            cargo zigbuild --release --locked -p celis --target "$target"
+            mkdir -p "../dist"
+            tar -czf "../dist/celis-$target.tar.gz" -C "target/$target/release" celis
+          done
+      - name: Checksums
+        working-directory: dist
+        run: for f in *.tar.gz; do sha256sum "$f" > "$f.sha256"; done
+      - uses: actions/upload-artifact@v7
+        with:
+          name: cli-linux
+          path: dist/
+
+  mac:
+    name: macOS builds
+    runs-on: namespace-profile-mac
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+      - name: Build
+        working-directory: crates
+        env:
+          CELIS_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p ../dist
+          for target in aarch64-apple-darwin x86_64-apple-darwin; do
+            cargo build --release --locked -p celis --target "$target"
+            tar -czf "../dist/celis-$target.tar.gz" -C "target/$target/release" celis
+          done
+      - name: Checksums
+        working-directory: dist
+        run: for f in *.tar.gz; do shasum -a 256 "$f" > "$f.sha256"; done
+      - uses: actions/upload-artifact@v7
+        with:
+          name: cli-mac
+          path: dist/

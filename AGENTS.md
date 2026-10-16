@@ -33,6 +33,7 @@
 make verify   # fmt, clippy -D warnings, and the tests
 ```
 
-A release is a manual run of the Release workflow with a version. It writes the version in each plugin manifest,
-commits that to `main`, tags it `v<version>`, and publishes the GitHub release. The repo keeps `crates/celis` at
-`0.0.0`; the release passes the version in through `CELIS_VERSION`.
+A release is `make release V=<version>` on an up-to-date `main`. It opens a PR that writes the version in each
+plugin manifest, and CI builds the release archives on it. Squash-merge the PR when its checks pass: the merge
+tags the commit `v<version>` and publishes the GitHub release. The repo keeps `crates/celis` at `0.0.0`; the
+release passes the version in through `CELIS_VERSION`.

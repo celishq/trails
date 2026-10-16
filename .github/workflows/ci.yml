@@ -75,4 +75,39 @@ jobs:
           mkdir -p "$HOME"
           gemini extensions validate "$GITHUB_WORKSPACE"
           gemini extensions install "$GITHUB_WORKSPACE" --consent < /dev/null
-          gemini extensions list 2>&1 | grep -F 'celis (0.0.0)'
+          gemini extensions list 2>&1 | grep -F "celis ($(jq -r .version "$GITHUB_WORKSPACE/gemini-extension.json"))"
+
+  # A PR whose manifests carry a version with no tag yet is a release PR. It must be higher than the latest
+  # release, and its release archives must build before the merge can publish them.
+  release-version:
+    name: Release version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: version
+        run: |
+          version=$(sh scripts/version.sh)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  release-builds:
+    needs: release-version
+    if: needs.release-version.outputs.version != ''
+    uses: ./.github/workflows/build.yml
+    with:
+      version: ${{ needs.release-version.outputs.version }}
+
+  # The one required check of the release: it passes when the PR is no release, or when its archives built.
+  release:
+    name: Release builds
+    needs: [release-version, release-builds]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          VERSION: ${{ needs.release-version.result }}
+          BUILDS: ${{ needs.release-builds.result }}
+        run: |
+          [ "$VERSION" = success ] || { echo "::error::Release version is $VERSION."; exit 1; }
+          case "$BUILDS" in success | skipped) ;; *) echo "::error::Release builds are $BUILDS."; exit 1 ;; esac
