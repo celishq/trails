@@ -648,8 +648,8 @@ the options it knows. An agent finds what a new ask must keep and the past work 
 - `grep` MUST print each line `grep` prints under the header of its trail, `<id, first 8> [<project
   name>] <its title> · <yyyy-mm-dd>`, and each line with no trail under `- rules of no trail`. A line
   MUST print two spaces in, with what `grep` put before it, then the line after its day, its trail and,
-  when it has a trail, its project. The trails MUST print most lines first, then in the order of the
-  view. A line of `grep` that is no line of the view, such as `--`, MUST NOT print.
+  when it has a trail, its project. A trail's own line MUST leave out its title, which its header
+  gives. The trails MUST print most lines first, then in the order of the view. A line of `grep` that is no line of the view, such as `--`, MUST NOT print.
 - When no line of `grep` is a line of the view, as with `-c`, `-l` or `-o`, `grep` MUST print what
   `grep` prints, and nothing else.
 - `grep` MUST cut the lines at the end of a line where they and their headers pass 6,500 bytes. Then it
@@ -657,7 +657,7 @@ the options it knows. An agent finds what a new ask must keep and the past work 
 - When lines are cut, `grep` MUST print how many lines in how many trails it cut before `project`, then
   each trail it cut, with its title cut at 80 characters and the count of each kind of line, until the
   output reaches 8,000 bytes, then how many trails it did not print. The lines with no trail MUST count
-  as the trail `-`.
+  as one trail, `- rules of no trail`.
 - When `grep` exits 1, as it does when no line matches, `grep` MUST print `No line matches.` and exit 0.
   When `grep` exits 0 and prints nothing, as with `-q`, it MUST print nothing. When `grep` exits 2, it
   MUST exit 2 and print no line of its own.
@@ -671,11 +671,13 @@ grep  view    <yyyy-mm-dd> <trail id, first 8 | -> [<project name>] <kind> <id, 
                 rule           <live | replaced-by <id>> {<scope>}
                 proof | changed | dropped                              the step's id, no fields
       lines   <id, first 8> [<project name>] <its title> · <yyyy-mm-dd>              each trail of the lines
-                <kind> <id, first 8> <fields> <text>                    each line of the trail
+                trail <id, first 8> <fields>                            the trail's own line
+                <kind> <id, first 8> <fields> <text>                    each other line of the trail
               - rules of no trail
                 [<project name>] rule <id, first 8> <fields> <text>     each line with no trail
       cut     celis: <n> more lines in <n> trails match; narrow the search, or search one trail with celis grep " <id> \["
               <id, first 8> [<project name>] <its title, cut at 80> · <n> <kind>s, …   each trail cut
+              - rules of no trail · <n> rules                            the lines with no trail, when cut
               … <n> more trails
       end     project [<project name>]
 ```

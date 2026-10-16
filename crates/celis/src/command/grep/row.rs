@@ -21,11 +21,12 @@ impl Row {
     }
 
     /// The line as the output shows it under its trail: from its kind on, after its project when it
-    /// has no trail.
+    /// has no trail, and without the title of a trail.
     pub fn shown(&self) -> String {
-        match self.trail {
-            Some(_) => self.rest(),
-            None => format!("[{}] {}", self.project, self.rest()),
+        match (&self.trail, self.kind) {
+            (_, Kind::Trail) => format!("{} {}", self.kind.text(), self.head),
+            (Some(_), _) => self.rest(),
+            (None, _) => format!("[{}] {}", self.project, self.rest()),
         }
     }
 

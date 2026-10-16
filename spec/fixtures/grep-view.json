@@ -25,7 +25,7 @@
   ],
   "printed": [
     "<trail> [repo] Build the Vendors page · 2026-01-15",
-    "  trail <trail> done Build the Vendors page",
+    "  trail <trail> done",
     "  rule <rule> live {trail:<trail>} When a vendor has no logo: show its initials.",
     "  step <chart> dropped Add the chart",
     "  dropped <chart> no data for it",

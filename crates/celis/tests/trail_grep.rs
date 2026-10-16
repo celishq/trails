@@ -64,7 +64,7 @@ fn grep_prints_a_trail_and_its_step_as_lines() {
     );
     assert_eq!(
         line(&text, &format!(" trail {t} ")),
-        format!("  trail {t} open Build the Vendors page")
+        format!("  trail {t} open")
     );
     assert_eq!(
         line(&text, &format!(" step {s} ")),
@@ -280,6 +280,25 @@ fn grep_cuts_long_output_and_lists_the_trails_it_cut() {
     assert!(text.trim_end().ends_with("project [repo]"), "{text}");
 }
 
+/// The cut lines with no trail count as `- rules of no trail`, the name of their header
+/// (`spec/02-cli.md`, "Grep").
+#[test]
+fn grep_names_the_cut_rules_of_no_trail_as_their_header() {
+    let repo = Repo::new();
+    let long = "the same long rule text again and again ".repeat(5);
+    for n in 0..40 {
+        let o = cli(&repo, &["decide", "--", &format!("When {n}: {long}")]);
+        assert!(o.status.success(), "{}", err(&o));
+    }
+    let text = grep(&repo, &[" rule "]);
+    assert!(text.starts_with("- rules of no trail\n"), "{text}");
+    assert!(
+        text.lines()
+            .any(|l| l.starts_with("- rules of no trail · ") && l.ends_with(" rules")),
+        "{text}"
+    );
+}
+
 /// With no line that matches, `grep` says so and exits 0; when `grep` fails, it exits 2
 /// (`spec/02-cli.md`, "Grep").
 #[test]
@@ -314,7 +333,7 @@ fn grep_prints_numbered_lines_under_their_trail() {
     );
     assert_eq!(
         text.lines().nth(1),
-        Some(format!("  1:trail {t} open Build the Vendors page").as_str())
+        Some(format!("  1:trail {t} open").as_str())
     );
 }
 

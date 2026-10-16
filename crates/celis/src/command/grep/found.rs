@@ -121,7 +121,7 @@ impl<'a> Found<'a> {
                 .trail
                 .as_deref()
                 .and_then(|t| self.view.header(t))
-                .map_or("-".to_string(), |h| h.short(TITLE));
+                .map_or(header::NONE.to_string(), |h| h.short(TITLE));
             let line = format!("{head} · {}", tally.join(", "));
             if used + line.len() + MORE > room {
                 text.push(format!("… {} more trails", self.rest.len() - n));
