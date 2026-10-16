@@ -299,3 +299,15 @@ fn past_prints_the_searches_that_replace_it() {
     );
     assert!(!repo.store().exists());
 }
+
+/// With `-q`, a match prints nothing, and no match still says so (`spec/02-cli.md`, "Grep").
+#[test]
+fn grep_q_prints_nothing_on_a_match() {
+    let repo = Repo::new();
+    add(&repo, &["--", "Build the Vendors page"]);
+    assert_eq!(grep(&repo, &["-q", "Vendors"]), "");
+    assert_eq!(
+        grep(&repo, &["-q", "nothing like it"]).trim(),
+        "No line matches."
+    );
+}
