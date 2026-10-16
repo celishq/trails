@@ -1,5 +1,5 @@
 {
   "name": "celis",
-  "version": "0.0.0",
+  "version": "0.0.7",
   "description": "The celis trail for agents: your tasks as trails of graded steps, and the decisions made at each place, loaded at the start of each session."
 }
