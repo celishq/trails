@@ -3,21 +3,7 @@
 use super::clock::took;
 use celis_nostr::Note;
 use celis_trails::id::short;
-use celis_trails::{Decision, Step, StepRecord};
-
-/// `<id, first 8> [<project name>] <title>[ · <first place>]` of the step `record` that `note` holds.
-pub(super) fn step(note: &Note, record: &StepRecord) -> String {
-    let mut line = format!(
-        "{} [{}] {}",
-        short(&note.id),
-        record.anchor.name,
-        record.title()
-    );
-    if let Some(at) = record.at() {
-        line.push_str(&format!(" · {at}"));
-    }
-    line
-}
+use celis_trails::{Decision, Step};
 
 /// `<id, first 8> <scope> <text>` of the decision that `note` holds.
 pub(super) fn decision(note: &Note, decision: &Decision) -> String {
@@ -27,11 +13,6 @@ pub(super) fn decision(note: &Note, decision: &Decision) -> String {
         decision.scope.short(),
         decision.content
     )
-}
-
-/// `  rule <id, first 8> <text>` of the decision that `note` holds, as a rule of a trail.
-pub(super) fn rule(note: &Note, decision: &Decision) -> String {
-    format!("  rule {} {}", short(&note.id), decision.content)
 }
 
 /// `took <time>[ · revised by <id, first 8>, ...]` of a done `step`; `None` while it is not done.

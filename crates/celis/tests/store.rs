@@ -15,7 +15,7 @@ fn a_command_must_open_the_store_in_celis_home_whatever_the_working_folder() {
     let wrote = repo.run(&repo.path(), &["step", "add", "--", text], &[], "");
     assert!(wrote.status.success(), "{}", err(&wrote));
     let tree = repo.worktree("feat-a");
-    let listed = repo.run(&tree, &["past"], &[], "");
+    let listed = repo.run(&tree, &["grep", "make"], &[], "");
     assert!(out(&listed).contains(text), "{}", out(&listed));
     let outside = tempfile::tempdir().unwrap();
     let elsewhere = repo.run(outside.path(), &["step", "add", "--", "Run make."], &[], "");
@@ -166,26 +166,16 @@ fn no_record_file_must_carry_the_accounts_secret() {
     }
 }
 
-/// With no store, `past` answers as an empty store and creates nothing
+/// With no store, `grep` answers as an empty store and creates nothing, inside git or not
 /// (`spec/01-decisions.md`, "The store").
 #[test]
-fn past_with_no_store_must_answer_empty_and_create_nothing() {
-    let repo = Repo::plain();
-    let o = repo.run(&repo.path(), &["past"], &[], "");
-    assert!(o.status.success(), "{}", err(&o));
-    assert!(out(&o).starts_with("No active trails,"), "{}", out(&o));
-    assert!(!repo.store().exists());
-}
-
-/// With no store, `read` answers as an empty store and creates nothing (`spec/01-decisions.md`, "The
-/// store").
-#[test]
-fn read_with_no_store_must_answer_empty_and_create_nothing() {
-    let repo = Repo::new();
-    let o = repo.run(&repo.path(), &["past"], &[], "");
-    assert!(o.status.success(), "{}", err(&o));
-    assert!(out(&o).starts_with("No active trails,"), "{}", out(&o));
-    assert!(!repo.store().exists());
+fn grep_with_no_store_must_answer_empty_and_create_nothing() {
+    for repo in [Repo::new(), Repo::plain()] {
+        let o = repo.run(&repo.path(), &["grep", "x"], &[], "");
+        assert!(o.status.success(), "{}", err(&o));
+        assert_eq!(out(&o).trim(), "No line matches.");
+        assert!(!repo.store().exists());
+    }
 }
 
 /// With no store, `tree` answers as an empty store and creates nothing (`spec/01-decisions.md`, "The

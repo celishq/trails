@@ -212,13 +212,6 @@ pub const VERBS: &[Verb] = &[
         ],
     },
     Verb {
-        command: "past",
-        usage: &["celis past [--at <place>]..."],
-        summary: "Show this project's active trails with their rules, and its decisions. Then show the finished work of every project, newest first, one line each with its project, place, grade, and day.",
-        args: &[("--at <place>", "A place whose decisions come first")],
-        examples: &["celis past", "celis past --at shelf/prices.py"],
-    },
-    Verb {
         command: "stats",
         usage: &["celis stats [<id>] [--demo]"],
         summary: "Show each step that later work reused and what that saved, then each decision that steps followed, then the total. With an id, show what that step reused and what reused it. On a terminal, show them as cards that update as work lands. Changes nothing.",

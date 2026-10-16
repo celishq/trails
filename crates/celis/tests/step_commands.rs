@@ -72,8 +72,7 @@ fn step_add_refuses_empty_text_and_the_other_commands_refuse_unknown_and_closed_
     assert!(o.status.success(), "{}", err(&o));
 }
 
-/// A step prints as `<id, first 8> [<project name>] <text>`, then ` · <at>` when it has one, and with
-/// `--json` as the spec object (`spec/02-cli.md`, "Step").
+/// A step prints with `--json` as the spec object (`spec/02-cli.md`, "Step").
 #[test]
 fn a_step_prints_as_the_line_and_object_the_spec_gives() {
     let repo = Repo::plain();
@@ -92,14 +91,6 @@ fn a_step_prints_as_the_line_and_object_the_spec_gives() {
     for n in [&trail, &first] {
         put(&repo, n);
     }
-    let o = repo.run(&repo.path(), &["past"], &[], "");
-    assert!(o.status.success(), "{}", err(&o));
-    let text = out(&o);
-    assert_eq!(
-        text.lines().next(),
-        Some(format!("{} [repo] the trail · a.rs:1", &trail.id[..8]).as_str()),
-        "{text}"
-    );
     let o = repo.run(&repo.path(), &["tree", &trail.id[..8], "--json"], &[], "");
     let json = out(&o);
     let object = json
@@ -306,11 +297,11 @@ fn done_writes_a_pitfall_as_a_decision_at_the_steps_place() {
         "{rules}"
     );
     support::finish(&repo, &trail[..8]);
-    let later = out(&cli(&repo, &["past", "--at", "src/a.rs"]));
+    let later = out(&cli(&repo, &["grep", "at:src/a.rs"]));
     assert!(
         later
             .lines()
-            .any(|l| l.contains("at:src/a.rs the fixture needs --yes")),
+            .any(|l| l.contains(" live at:src/a.rs the fixture needs --yes")),
         "{later}"
     );
 }

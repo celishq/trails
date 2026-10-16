@@ -31,7 +31,7 @@ fn every_command_accepts_json_and_prints_the_id() {
     assert_eq!(objs.len(), 1);
     assert!(is_id(objs[0]["id"].as_str().unwrap()));
 
-    let o = repo.run(&dir, &["past", "--json"], &[], "");
+    let o = repo.run(&dir, &["tree", "--all", "--json"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     objects(&out(&o));
 }
@@ -100,7 +100,7 @@ fn a_trail_or_step_command_with_stdin_left_open_asks_nothing() {
         vec!["decide", "--scope", &scope, "--", "80%"],
         vec!["tree", &trail[..8]],
         vec!["step", "add", "--", "four"],
-        vec!["past"],
+        vec!["grep", "senior"],
         vec!["step", "done", &closed, "--as-planned", "--", "it passes"],
     ];
     for args in runs {
@@ -108,19 +108,19 @@ fn a_trail_or_step_command_with_stdin_left_open_asks_nothing() {
     }
 }
 
-/// `read` run with its stdin left open finishes, and prints no question (`spec/02-cli.md`, "Output
+/// `grep` run with its stdin left open finishes, and prints no question (`spec/02-cli.md`, "Output
 /// and errors").
 #[test]
-fn read_with_stdin_left_open_asks_nothing() {
+fn grep_with_stdin_left_open_asks_nothing() {
     let repo = Repo::new();
     trail_id(&repo, "senior tier");
-    without_asking(&repo, &["past"]);
+    without_asking(&repo, &["grep", "senior"]);
 }
 
-/// `read --at` and `decide` run with their stdin left open finish, and print no question
+/// `decide` and a `grep` for its place run with their stdin left open finish, and print no question
 /// (`spec/02-cli.md`, "Output and errors").
 #[test]
-fn read_at_and_decide_with_stdin_left_open_ask_nothing() {
+fn decide_and_grep_at_with_stdin_left_open_ask_nothing() {
     let repo = Repo::new();
     for args in [
         vec![
@@ -130,7 +130,7 @@ fn read_at_and_decide_with_stdin_left_open_ask_nothing() {
             "--",
             "When you edit: test, because.",
         ],
-        vec!["past", "--at", "a.py"],
+        vec!["grep", "at:a.py"],
     ] {
         without_asking(&repo, &args);
     }
@@ -181,7 +181,7 @@ fn decide_replaces_takes_the_first_8_characters_of_an_id() {
     let args = ["decide", "--replaces", &id[..8], "--", "new"];
     let o = repo.run(&repo.path(), &args, &[], "");
     assert!(o.status.success(), "{}", err(&o));
-    let read = out(&repo.run(&repo.path(), &["past"], &[], ""));
+    let read = out(&repo.run(&repo.path(), &["grep", " live "], &[], ""));
     assert!(read.contains("new") && !read.contains("old"), "{read}");
 }
 
@@ -196,7 +196,7 @@ fn a_trail_or_step_command_prints_one_json_object_a_line_with_json() {
     for args in [
         vec!["decide", "--json", "--scope", &scope, "--", "80%"],
         vec!["tree", "--json", &trail],
-        vec!["past", "--json"],
+        vec!["tree", "--all", "--json"],
         vec!["step", "done", "--json", &id, "--as-planned", "--", "p"],
     ] {
         let o = repo.run(&repo.path(), &args, &[], "");
@@ -207,33 +207,14 @@ fn a_trail_or_step_command_prints_one_json_object_a_line_with_json() {
     }
 }
 
-/// `read` accepts `--json` and prints one JSON object a line, and nothing else (`spec/02-cli.md`,
-/// "Output and errors").
+/// `decide` accepts `--json` and prints one JSON object a line (`spec/02-cli.md`, "Output and
+/// errors").
 #[test]
-fn read_prints_one_json_object_a_line_with_json() {
+fn decide_prints_one_json_object_a_line_with_json() {
     let repo = Repo::plain();
-    trail_id(&repo, "g");
-    step_id(&repo, "one");
-    let o = repo.run(&repo.path(), &["decide", "--", "one"], &[], "");
+    let o = repo.run(&repo.path(), &["decide", "--json", "--", "one"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
-    let o = repo.run(&repo.path(), &["past", "--json"], &[], "");
-    assert!(o.status.success(), "{}", err(&o));
-    assert_eq!(objects(&out(&o)).len(), 3, "{}", out(&o));
-}
-
-/// `decide` and `read` accept `--json` and print one JSON object a line (`spec/02-cli.md`,
-/// "Output and errors").
-#[test]
-fn decide_and_read_print_one_json_object_a_line_with_json() {
-    let repo = Repo::plain();
-    for args in [
-        vec!["decide", "--json", "--", "one"],
-        vec!["past", "--json"],
-    ] {
-        let o = repo.run(&repo.path(), &args, &[], "");
-        assert!(o.status.success(), "{args:?}: {}", err(&o));
-        assert_eq!(objects(&out(&o)).len(), 1, "{args:?}");
-    }
+    assert_eq!(objects(&out(&o)).len(), 1);
 }
 
 /// A trail or step command that writes a record prints its id, and `{"id"}` with `--json`
@@ -292,7 +273,7 @@ fn a_usage_error_names_the_narrowest_help_page() {
     let repo = Repo::new();
     let dir = repo.path();
     for (args, page) in [
-        (&["past", "--nope"][..], "celis past --help"),
+        (&["tree", "--nope"][..], "celis tree --help"),
         (&["frobnicate"][..], "celis help"),
     ] {
         let usage = repo.run(&dir, args, &[], "");

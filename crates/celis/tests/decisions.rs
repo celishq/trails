@@ -3,7 +3,7 @@
 mod support;
 
 use celis_nostr::{Account, Note};
-use support::{account, cairn, decision, now, put, rating, read_ids, Repo, DAY};
+use support::{account, cairn, decision, live_ids, now, put, rating, Repo, DAY};
 
 fn short(id: &str) -> String {
     id[..8].to_string()
@@ -33,7 +33,7 @@ fn a_decision_counts_whatever_account_signed_it() {
         now() - 2 * DAY,
     );
     assert_eq!(
-        read_ids(&repo, &repo.path(), &[]),
+        live_ids(&repo, &repo.path(), "repo"),
         [short(&theirs.id), short(&signed.id)]
     );
 }
@@ -79,7 +79,7 @@ fn a_decision_is_live_until_another_decision_replaces_it() {
         now() - DAY,
     );
     assert_eq!(
-        read_ids(&repo, &repo.path(), &[]),
+        live_ids(&repo, &repo.path(), "repo"),
         [short(&new.id), short(&gone.id)]
     );
 }
@@ -133,5 +133,5 @@ fn a_reader_ignores_cairns_ratings_outcomes_source_records_and_splits_from_befor
         &repo,
         &Note::write(by, 1985u16, now() - DAY + 1, split, "").unwrap(),
     );
-    assert_eq!(read_ids(&repo, &repo.path(), &[]), [short(&kept.id)]);
+    assert_eq!(live_ids(&repo, &repo.path(), "repo"), [short(&kept.id)]);
 }

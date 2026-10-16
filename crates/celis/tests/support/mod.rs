@@ -442,19 +442,40 @@ pub fn objects(repo: &Repo, args: &[&str]) -> Vec<serde_json::Value> {
         .collect()
 }
 
-/// The ids, first 8 characters, of the decisions `celis past <args> --json` prints in `folder`, in
-/// order.
+/// The ids, first 8 characters, of the decisions `step start` prints in `folder` for a new step that
+/// `step add --new <args>` adds, in order.
 pub fn read_ids(repo: &Repo, folder: &Path, args: &[&str]) -> Vec<String> {
-    let mut all = vec!["past"];
+    let text = format!("a step that reads {}", args.join(" "));
+    let mut all = vec!["step", "add", "--new"];
     all.extend(args);
-    all.push("--json");
+    all.extend(["--", &text]);
     let o = repo.run(folder, &all, &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+    let id = out(&o).lines().next().unwrap().to_string();
+    let o = repo.run(folder, &["step", "start", &id, "--json"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     out(&o)
         .lines()
         .filter_map(|l| {
             let v: serde_json::Value = serde_json::from_str(l).unwrap();
             Some(v.get("decision")?["id"].as_str()?[..8].to_string())
+        })
+        .collect()
+}
+
+/// The ids, first 8 characters, of the live rules of the project `name` that `celis grep` prints in
+/// `folder`, in order.
+pub fn live_ids(repo: &Repo, folder: &Path, name: &str) -> Vec<String> {
+    let o = repo.run(folder, &["grep", " rule [0-9a-f]* live "], &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+    let project = format!("[{name}]");
+    out(&o)
+        .lines()
+        .filter_map(|l| {
+            let words: Vec<&str> = l.split(' ').collect();
+            let at = words.iter().position(|w| *w == "rule")?;
+            (words.get(2) == Some(&project.as_str()) && words.get(at + 2) == Some(&"live"))
+                .then(|| words[at + 1].to_string())
         })
         .collect()
 }

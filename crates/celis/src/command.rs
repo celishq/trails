@@ -14,7 +14,6 @@ mod issue;
 mod json;
 mod line;
 mod link;
-mod past;
 mod prompt;
 mod report;
 mod review;
@@ -99,7 +98,6 @@ impl Command {
             "step" => self.step(args, out, err, &self.project()),
             "decide" => self.decide(args, out, &self.project()),
             "tree" => self.tree(args, out),
-            "past" => self.past(args, out, &self.project()),
             "grep" => self.grep(&self.args[1..], out),
             "stats" => self.stats(args, out),
             "report" => self.report(args, out),

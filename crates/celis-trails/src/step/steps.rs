@@ -1,6 +1,6 @@
 //! The steps of a store, as they stand at one moment.
 
-use crate::{Failure, Mark, State, Step, StepRecord, Trail};
+use crate::{Failure, Mark, Step, StepRecord};
 use celis_nostr::Note;
 use std::collections::HashMap;
 
@@ -86,20 +86,6 @@ impl<'a> Steps<'a> {
         })?;
         let trail = newest.trail();
         trail.closed().is_none().then_some(trail)
-    }
-
-    /// The past work, newest first: each done ask, and each reached trail with no twin.
-    pub fn past(&'a self) -> Vec<Step<'a>> {
-        let mut past: Vec<Step<'a>> = self
-            .all()
-            .into_iter()
-            .filter(|s| match s.is_trail() {
-                false => s.done().is_some() && s.is_ask(),
-                true => s.state() == State::Done && Trail::new(*s).first().is_none(),
-            })
-            .collect();
-        past.reverse();
-        past
     }
 }
 

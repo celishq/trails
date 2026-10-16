@@ -8,8 +8,8 @@ fn short(id: &str) -> String {
     id[..8].to_string()
 }
 
-/// A reader gives only live decisions of the working folder's project (`spec/01-decisions.md`,
-/// "Reading").
+/// A reader gives only live decisions of the working folder's project at a place
+/// (`spec/01-decisions.md`, "Reading").
 #[test]
 fn a_reader_gives_only_live_decisions_of_the_working_folders_project() {
     let repo = Repo::new();
@@ -20,7 +20,7 @@ fn a_reader_gives_only_live_decisions_of_the_working_folders_project() {
         &repo,
         project,
         &account(),
-        (None, None),
+        (Some("at:src/a.rs"), None),
         "old",
         now() - 4 * DAY,
     );
@@ -28,7 +28,7 @@ fn a_reader_gives_only_live_decisions_of_the_working_folders_project() {
         &repo,
         project,
         &account(),
-        (None, Some(&old.id)),
+        (Some("at:src/a.rs"), Some(&old.id)),
         "new",
         now() - 3 * DAY,
     );
@@ -36,12 +36,13 @@ fn a_reader_gives_only_live_decisions_of_the_working_folders_project() {
         &repo,
         ("elsewhere", "shop"),
         &account(),
-        (None, None),
+        (Some("at:src/a.rs"), None),
         "foreign",
         now() - 2 * DAY,
     );
-    assert_eq!(read_ids(&repo, &repo.path(), &[]), [short(&new.id)]);
-    let in_shop = read_ids(&repo, &shop, &[]);
+    let at = ["--at", "src/a.rs"];
+    assert_eq!(read_ids(&repo, &repo.path(), &at), [short(&new.id)]);
+    let in_shop = read_ids(&repo, &shop, &at);
     assert!(!in_shop.contains(&short(&new.id)), "{in_shop:?}");
     assert!(!in_shop.contains(&short(&foreign.id)), "{in_shop:?}");
 }
@@ -92,28 +93,25 @@ fn a_decision_at_a_file_is_at_that_file_whatever_line_and_a_folder_holds_what_li
     assert_eq!(read_ids(&repo, &folder, &["--at", "src/xy"]), [sibling]);
 }
 
-/// A reader orders decisions by scope, `at` first, then `project`, then `me`, and in one scope newest
-/// first, then by id (`spec/01-decisions.md`, "Reading").
+/// A reader orders the decisions at a place newest first, then by id (`spec/01-decisions.md`,
+/// "Reading").
 #[test]
-fn a_reader_orders_decisions_by_scope_then_newest_first_then_by_id() {
+fn a_reader_orders_decisions_newest_first_then_by_id() {
     let repo = Repo::new();
     let id = repo.project_id();
     let project = (id.as_str(), "repo");
-    let make = |scope: Option<&str>, text: &str, at: u64| {
+    let make = |text: &str, at: u64| {
+        let scope = Some("at:src/a.rs");
         short(&decision(&repo, project, &account(), (scope, None), text, at).id)
     };
-    let mine = make(Some("me"), "m", now() - DAY);
     let same = now() - 3 * DAY;
-    let mut tied: Vec<String> = ["a", "b", "c"]
-        .iter()
-        .map(|t| make(None, t, same))
-        .collect();
+    let mut tied: Vec<String> = ["a", "b", "c"].iter().map(|t| make(t, same)).collect();
     tied.sort();
-    let newest = make(None, "n", now() - 2 * DAY);
-    let placed = make(Some("at:src/a.rs"), "p", now() - 5 * DAY);
-    let mut want = vec![placed, newest];
+    let newest = make("n", now() - 2 * DAY);
+    let oldest = make("o", now() - 5 * DAY);
+    let mut want = vec![newest];
     want.extend(tied);
-    want.push(mine);
+    want.push(oldest);
     assert_eq!(read_ids(&repo, &repo.path(), &["--at", "src/a.rs"]), want);
 }
 
@@ -137,9 +135,9 @@ fn a_place_reads_as_a_path_from_the_projects_top_folder() {
     assert_eq!(read_ids(&repo, &root, &["--at", &full]), [id.as_str()]);
     assert_eq!(read_ids(&repo, &src, &["--at", "a.rs"]), [id.as_str()]);
     assert_eq!(read_ids(&repo, &src, &["--at", "../src"]), [id.as_str()]);
-    let o = repo.run(&root, &["past", "--json", "--at", "src/a.rs"], &[], "");
+    let o = repo.run(&root, &["grep", "at:src/a.rs:3"], &[], "");
     assert!(
-        support::out(&o).contains("\"at:src/a.rs:3\""),
+        support::out(&o).contains(&format!("rule {id} live at:src/a.rs:3 kept")),
         "{}",
         support::out(&o)
     );
