@@ -363,7 +363,8 @@ The prompt hook of each agent gives the person's prompt to `prompt`, and gives i
   the session in place of `session_id`.
 - `prompt` MUST write the prompt mark as CIP-04 "Sessions" states, and print the record's id.
 - With no open trail, `prompt` MUST print one line on stderr, when `past` prints anything. The line MUST
-  ask to run the `celis:past` agent with the ask before any other tool, and to wait for it.
+  ask to run the `celis:past` agent with the ask before any other tool, and to wait for it, then to add
+  the ask with `--uses` and the id of each `past` line it follows.
 - `prompt` MUST print that line once in a session. A hook's `{"session_id", "source": "compact"}` on
   stdin MUST let the session print it again, and MUST write and print nothing. The session start hook
   MUST give its JSON to `prompt`.
@@ -724,14 +725,15 @@ as a strip, a chain as a route. The periods are CIP-06 "Periods".
 - The effect MUST print across the width, then the other cards three a row at 120 columns or more, two
   at 80 or more, else one. Below 60 columns, numbers MUST print as plain bold text, else three rows high.
 - A change MUST print green when better, red when worse, dim when it moved less than 3 points or a
-  minute, `· no data before` when the 14 days before count no record, and `· few records` when CIP-06
-  "Periods" shows no other change.
-- A big value with no digit MUST print on its middle row, and a unit MUST print right after its last
-  digit, as `100%`.
-- The work card MUST print `first 14 days` in place of its change when the 14 days before hold no done
-  step, and a dim `·` for a day with no done step. With no step done in 14 days, the work and time cards
-  MUST print `no step done in 14 days`, and the outcome card with no step closed `no step closed in 14
-  days`, in place of their charts.
+  minute, nothing when the 14 days before count no record, and `· few records` when CIP-06 "Periods"
+  shows no other change. When no measure has a change, the effect MUST print no change row and no
+  `vs 14 BEFORE` in its title.
+- A big value with no digit MUST print on its middle row, and a unit MUST print one space after its last
+  digit, as `100 %`.
+- The work card MUST print no change when the 14 days before hold no done step, and a dim `·` for a day
+  with no done step. With no step done in 14 days, the work and time cards MUST print `no step done in
+  14 days`, and the outcome card with no step closed `no step closed in 14 days`, in place of their
+  charts.
 - The picked card MUST print in a heavy frame, the others in a dim one.
 - Keys: `←` `→` `↑` `↓` pick a card; `enter` opens it to its table, a row a line, where `↑` `↓` select a
   row, `c` copies the first 8 characters of the selected row's id, and `←` or `enter` goes back. On the

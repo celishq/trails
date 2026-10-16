@@ -118,7 +118,8 @@ impl Command {
         let line = format!(
             "celis: a new ask in this session; before any other tool, run the celis:past agent in the \
              foreground with the ask and the places it may touch, and wait for its answer; it brings this \
-             project's active trails and decisions, and the past work like the ask. {RULES}"
+             project's active trails and decisions, and the past work like the ask; add the ask with \
+             --uses <id> for each past line the ask follows. {RULES}"
         );
         super::put(err, &line)?;
         mark(asked)?;
