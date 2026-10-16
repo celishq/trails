@@ -47,16 +47,19 @@ fn face(trails: &Trails, title: &str) -> String {
     sheet.expect(title).face.join("\n")
 }
 
-/// With no record in the 14 days before, the effect says `no data before`, and the work card says
-/// `first 14 days` and draws a dot on each day with no step done (`spec/02-cli.md`, "Cards").
+/// With no record in the 14 days before, the effect prints no change row and no `vs 14 BEFORE`, and the
+/// work card no change, and a dot on each day with no step done (`spec/02-cli.md`, "Cards").
 #[test]
-fn a_card_with_no_data_before_says_so() {
+fn a_card_with_no_data_before_shows_no_change() {
     let (_home, trails) = worked(3_600);
-    let effect = face(&trails, "00 EFFECT");
-    assert!(effect.contains("· no data before"), "{effect}");
+    let sheets = sheets(&trails, 92, 43, false, false);
+    assert_eq!(sheets[0].title, "00 EFFECT · LAST 14 DAYS");
+    let effect = sheets[0].face.join("\n");
+    assert_eq!(sheets[0].face.len(), 5, "{effect}");
+    assert!(!effect.contains("no data before"), "{effect}");
     assert!(!effect.contains("few records"), "{effect}");
     let work = face(&trails, "03 WORK");
-    assert!(work.contains("first 14 days"), "{work}");
+    assert!(!work.contains("first 14 days"), "{work}");
     assert!(!work.contains("vs 14 days before"), "{work}");
     assert!(work.contains("· · ·"), "{work}");
 }
@@ -77,7 +80,7 @@ fn a_card_with_nothing_in_14_days_says_so() {
     assert!(!outcome.contains("dropped"), "{outcome}");
 }
 
-/// The effect counts its base as `1 step`, and a big share puts its `%` right after its digits
+/// The effect counts its base as `1 step`, and a big share puts its `%` a space after its digits
 /// (`spec/02-cli.md`, "Cards").
 #[test]
 fn the_effect_counts_one_step_and_its_share_whole() {
@@ -85,5 +88,5 @@ fn the_effect_counts_one_step_and_its_share_whole() {
     let effect = face(&trails, "00 EFFECT");
     assert!(effect.contains("1 step "), "{effect}");
     assert!(!effect.contains("1 steps"), "{effect}");
-    assert!(effect.contains("▀▀▀%"), "{effect}");
+    assert!(effect.contains("▀▀▀ %"), "{effect}");
 }

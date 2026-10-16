@@ -122,17 +122,17 @@ impl Measure {
     }
 
     /// The change from the period before, coloured green when better and red when worse, dim when it
-    /// moved little; `· no data before` when the period before counts none, `· few records` when a
-    /// period counts fewer than `FEW`.
-    fn change(&self, ink: Ink) -> String {
+    /// moved little; none when the period before counts none, `· few records` when a period counts
+    /// fewer than `FEW`.
+    fn change(&self, ink: Ink) -> Option<String> {
         if self.before.base == 0 {
-            return ink.dim("· no data before");
+            return None;
         }
         let (Some(last), Some(before)) = (self.last.value, self.before.value) else {
-            return ink.dim("· few records");
+            return Some(ink.dim("· few records"));
         };
         if self.last.base < FEW || self.before.base < FEW {
-            return ink.dim("· few records");
+            return Some(ink.dim("· few records"));
         }
         let moved = last - before;
         let small = match self.time {
@@ -156,7 +156,7 @@ impl Measure {
             (false, true) => "32",
             (false, false) => "31",
         };
-        ink.paint(tone, &text)
+        Some(ink.paint(tone, &text))
     }
 }
 
@@ -220,7 +220,16 @@ fn effect(last: &Period, before: &Period, reuse: &Reuse, inside: usize, ink: Ink
     for r in 0..bigs[0].len() {
         face.push(bigs.iter().map(|b| cell(b[r].clone())).collect());
     }
-    face.push(measures.iter().map(|m| cell(m.change(ink))).collect());
+    let changes: Vec<Option<String>> = measures.iter().map(|m| m.change(ink)).collect();
+    let compared = changes.iter().any(Option::is_some);
+    if compared {
+        face.push(
+            changes
+                .into_iter()
+                .map(|c| cell(c.unwrap_or_default()))
+                .collect(),
+        );
+    }
     face.push(
         measures
             .iter()
@@ -240,7 +249,10 @@ fn effect(last: &Period, before: &Period, reuse: &Reuse, inside: usize, ink: Ink
         })
         .collect();
     Sheet {
-        title: format!("00 EFFECT · LAST {DAYS} DAYS vs {DAYS} BEFORE"),
+        title: match compared {
+            true => format!("00 EFFECT · LAST {DAYS} DAYS vs {DAYS} BEFORE"),
+            false => format!("00 EFFECT · LAST {DAYS} DAYS"),
+        },
         face,
         table: Table {
             head: vec!["Measure", "Last 14 days", "14 days before", "Base"],
@@ -343,7 +355,7 @@ fn rules(trails: &Trails, reuse: &Reuse, inside: usize, ink: Ink) -> Sheet {
 }
 
 /// The work: the steps done each day of the last 14, as columns, and their total against the 14 days
-/// before.
+/// before when those hold a done step.
 fn work(steps: &celis_trails::Steps, before: &Period, now: u64, inside: usize, ink: Ink) -> Sheet {
     let today = midnight(now);
     let starts: Vec<u64> = (0..DAYS)
@@ -357,14 +369,17 @@ fn work(steps: &celis_trails::Steps, before: &Period, now: u64, inside: usize, i
     let total: usize = counts.iter().sum();
     let earlier = before.done().len();
     let moved = match (earlier, total >= earlier) {
-        (0, _) => format!("first {DAYS} days"),
-        (_, true) => format!("▲ {} vs {DAYS} days before", total - earlier),
-        (_, false) => format!("▼ {} vs {DAYS} days before", earlier - total),
+        (0, _) => None,
+        (_, true) => Some(format!("▲ {} vs {DAYS} days before", total - earlier)),
+        (_, false) => Some(format!("▼ {} vs {DAYS} days before", earlier - total)),
     };
-    let side = [ink.dim("steps done"), ink.dim(&moved)];
+    let moved = moved.map(|m| ink.dim(&m));
+    let side: Vec<String> = std::iter::once(ink.dim("steps done"))
+        .chain(moved.clone())
+        .collect();
     let mut face = ink.beside(&total.to_string(), &side, 2);
     if ink.plain {
-        face.push(ink.dim(&moved));
+        face.extend(moved);
     }
     face.push(String::new());
     if total == 0 {
