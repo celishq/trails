@@ -1,7 +1,8 @@
 //! What `grep` prints of the lines it found.
 
 use super::kind::Kind;
-use super::view::{Row, View};
+use super::row::Row;
+use super::view::View;
 
 /// The bytes the lines and their headers may take.
 const LINES: usize = 6_500;
@@ -29,8 +30,10 @@ impl<'a> Cut<'a> {
     pub fn of(found: &'a str, view: &'a View) -> Cut<'a> {
         let mut groups: Vec<Group> = Vec::new();
         for line in found.lines() {
-            let Some(row) = view.row(line) else { continue };
-            let found = (&line[..line.len() - row.line.len()], row);
+            let Some(found) = view.row(line) else {
+                continue;
+            };
+            let row = found.1;
             match groups.iter_mut().find(|g| g.trail == row.trail) {
                 Some(group) => group.lines.push(found),
                 None => groups.push(Group {
@@ -48,7 +51,7 @@ impl<'a> Cut<'a> {
             }
             used += header(view, &group.trail).len() + 1;
             let fit = group.lines.iter().take_while(|(before, row)| {
-                used += before.len() + row.body().len() + 3;
+                used += before.len() + row.shown().len() + 3;
                 used <= LINES
             });
             let fit = fit.count().max(usize::from(shown.is_empty()));
@@ -76,7 +79,7 @@ impl<'a> Cut<'a> {
         for group in &self.shown {
             text.push(header(view, &group.trail));
             let lines = group.lines.iter();
-            text.extend(lines.map(|(before, row)| format!("  {before}{}", row.body())));
+            text.extend(lines.map(|(before, row)| format!("  {before}{}", row.shown())));
         }
         let end = [String::new(), format!("project [{project}]")];
         if !self.rest.is_empty() {

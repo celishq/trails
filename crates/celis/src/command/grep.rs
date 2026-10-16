@@ -2,6 +2,7 @@
 
 mod cut;
 mod kind;
+mod row;
 mod view;
 
 use super::Command;
