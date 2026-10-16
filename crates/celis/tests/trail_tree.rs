@@ -429,6 +429,12 @@ fn the_tree_folds_a_trails_twin_first_ask() {
     assert!(json.contains(ask.as_str()), "{json}");
 }
 
+/// A `TZ` where it is now about noon, so the hours before now fall on the same day.
+fn noon() -> String {
+    let secs = std::time::UNIX_EPOCH.elapsed().unwrap().as_secs();
+    format!("NOON{}", (secs / 3600 % 24) as i64 - 12)
+}
+
 /// `tree --demo` prints made-up trails of two projects with a step or a trail in each state, a change,
 /// rules and a dropped reason, `--all` a past day too, in a folder it removes, and writes nothing to
 /// the store; with an id it refuses (`spec/02-cli.md`, "Tree").
@@ -436,7 +442,8 @@ fn the_tree_folds_a_trails_twin_first_ask() {
 fn tree_demo_prints_every_state_and_writes_nothing() {
     let repo = Repo::new();
     let temp = tempfile::tempdir().unwrap();
-    let env = [("TMPDIR", temp.path().to_str().unwrap())];
+    let zone = noon();
+    let env = [("TMPDIR", temp.path().to_str().unwrap()), ("TZ", &zone)];
     let o = repo.run(&repo.path(), &["tree", "--demo"], &env, "");
     assert!(o.status.success(), "{}", err(&o));
     let text = out(&o);
