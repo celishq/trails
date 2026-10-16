@@ -10,42 +10,57 @@ use super::tree::{cut, look, visible};
 use super::wake::{Key, Wake};
 use super::{Args, Command};
 use celis_trails::id::short;
-use celis_trails::{Failure, Reuse, Step, Trail, Trails};
+use celis_trails::{Failure, Period, Reuse, Step, Trail, Trails};
 use std::io::Write;
 use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender};
 use std::time::Duration;
 
 impl Command {
     /// Draws the cards of stats on the alternate screen, or the route of the step `args` names, then
-    /// again when a record lands, a key is read, a minute passes or the terminal's size changes. On an
-    /// interrupt or `q`, leaves the alternate screen with nothing printed, and ends.
+    /// again when a record lands, a key is read, a minute passes or the terminal's size changes. With
+    /// no store, it writes nothing and waits for one. On an interrupt or `q`, leaves the alternate
+    /// screen with nothing printed, and ends.
     pub(super) fn board(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
-        let trails = self.trails()?;
         let route = match args.words.get(1) {
-            Some(id) => Some(Trail::new(trails.steps().find(id)?).work().id().to_string()),
+            Some(id) if !self.held()? => return Err(Failure::no_step(id)),
+            Some(id) => Some(
+                Trail::new(self.trails()?.steps().find(id)?)
+                    .work()
+                    .id()
+                    .to_string(),
+            ),
             None => None,
         };
         let board = Board {
             route,
             ..Board::default()
         };
-        self.screen(out, |out, wakes| self.boarded(board, trails, out, wakes))
+        self.screen(out, |out, wakes| self.boarded(board, out, wakes))
     }
 
     /// The board's loop: draws each page it reads from the store, until an interrupt.
     fn boarded(
         &self,
         mut board: Board,
-        mut trails: Trails,
         out: &mut dyn Write,
         (send, events): (Sender<Wake>, Receiver<Wake>),
     ) -> Result<(), Failure> {
-        let _watcher = self.listen(send)?;
         let mut screen = Screen::default();
+        let width = || self.columns().map_or(WIDTH, |c| c.saturating_sub(1));
+        if !self.held()? {
+            let page = empty(&weekday(super::now()), width(), self.colour());
+            screen.draw(out, &page.text, page.line, &page.legend)?;
+            while !self.held()? {
+                if let Ok(Wake::Quit) = events.recv_timeout(Duration::from_millis(250)) {
+                    return Ok(());
+                }
+            }
+        }
+        let mut trails = self.trails()?;
+        let _watcher = self.listen(send)?;
         loop {
             trails.now = super::now();
-            let width = self.columns().map_or(WIDTH, |c| c.saturating_sub(1));
-            let page = board.page(&trails, width, self.colour());
+            let page = board.page(&trails, width(), self.colour());
             screen.draw(out, &page.text, page.line, &page.legend)?;
             let mut wake = events.recv_timeout(Duration::from_secs(60));
             let (mut landed, mut linked) = (false, false);
@@ -120,6 +135,9 @@ impl Board {
         if let Some(step) = self.route.as_deref().and_then(|id| steps.get(id)) {
             return self.route(trails, step, width, colour);
         }
+        if Period::new(&steps, 0, u64::MAX).closed().is_empty() {
+            return empty(&status(trails), width, colour);
+        }
         self.per_row = match width {
             w if w >= 120 => 3,
             w if w >= 80 => 2,
@@ -144,14 +162,10 @@ impl Board {
         width: usize,
         colour: bool,
     ) -> Page {
-        let steps = trails.steps();
-        let active = steps
-            .roots()
-            .into_iter()
-            .filter(|s| s.state().active())
-            .count();
-        let right = format!("● {active} active · {}", weekday(trails.now));
-        let mut lines = vec![header(" CELIS STATS", &right, width, colour), String::new()];
+        let mut lines = vec![
+            header(" CELIS STATS", &status(trails), width, colour),
+            String::new(),
+        ];
         let markdown = sheets[self.picked]
             .table
             .markdown(&sheets[self.picked].title);
@@ -337,8 +351,12 @@ impl Board {
         }
     }
 
-    /// Moves as `key` asks on `page`: among the cards, the rows of an opened card, or along a route.
+    /// Moves as `key` asks on `page`: among the cards, the rows of an opened card, or along a route;
+    /// nothing on a page with no Markdown, as the empty page.
     fn press(&mut self, key: Key, page: &Page) {
+        if page.markdown.is_none() {
+            return;
+        }
         let last = page.rows.len().saturating_sub(1);
         if self.route.is_some() {
             match key {
@@ -386,6 +404,42 @@ impl Board {
             self.row = 0;
         }
     }
+}
+
+/// The page of a store with no closed step, `right` in its header: a card that says how stats fill.
+fn empty(right: &str, width: usize, colour: bool) -> Page {
+    let card = Card {
+        title: "NO STATS YET".into(),
+        rows: vec![
+            "Stats show when your agent finishes its first step.".into(),
+            format!(
+                "Run {} to see sample data.",
+                paint(colour, "1", "celis stats --demo")
+            ),
+        ],
+        picked: false,
+    };
+    let mut lines = vec![header(" CELIS STATS", right, width, colour), String::new()];
+    lines.extend(card.lines(width, card.rows.len() + 2, colour));
+    Page {
+        text: lines.join("\n"),
+        line: None,
+        legend: "q quit".into(),
+        copy: None,
+        markdown: None,
+        rows: vec![],
+    }
+}
+
+/// `● <n> active · <weekday>` of `trails`.
+fn status(trails: &Trails) -> String {
+    let active = trails
+        .steps()
+        .roots()
+        .into_iter()
+        .filter(|s| s.state().active())
+        .count();
+    format!("● {active} active · {}", weekday(trails.now))
 }
 
 /// `left` bold and `right` dim at the two ends of a line `width` wide.

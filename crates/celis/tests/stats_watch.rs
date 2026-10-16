@@ -51,7 +51,7 @@ fn stats_on_a_terminal_draws_its_cards() {
         "CELIS STATS",
         "00 EFFECT",
         "AS PLANNED",
-        "few records",
+        "no data before",
         "01 REUSE",
         "02 RULES USED",
         "03 WORK · 14 DAYS",
@@ -64,6 +64,47 @@ fn stats_on_a_terminal_draws_its_cards() {
         assert!(shown.contains(text), "{text:?} in\n{shown}");
     }
     watch.until("←→↑↓ move · enter open · m copy markdown · q quit");
+}
+
+/// With no store, `stats` on a terminal draws the empty board and writes nothing, ignores `enter`, then
+/// draws the cards when the first step closes (`spec/02-cli.md`, "Stats").
+#[test]
+fn stats_with_no_store_draws_the_empty_board_until_a_step_closes() {
+    let repo = Repo::new();
+    let mut watch = Watch::start(&repo, &["stats"]);
+    watch.size(40, 100);
+    watch.until("NO STATS YET");
+    let shown = watch.rows().join("\n");
+    for text in ["CELIS STATS", "first step", "celis stats --demo"] {
+        assert!(shown.contains(text), "{text:?} in\n{shown}");
+    }
+    assert!(!shown.contains("00 EFFECT"), "{shown}");
+    watch.until("q quit");
+    assert!(!repo.store().join("shared").exists());
+    let trail = add(&repo, &["--", "the trail"]);
+    let part = add(&repo, &["--under", &trail[..8], "--", "the part"]);
+    watch.until("NO STATS YET");
+    watch.press("\r");
+    ok(
+        &repo,
+        &["step", "done", &part[..8], "--as-planned", "--", "it works"],
+    );
+    watch.until("00 EFFECT");
+    let shown = watch.rows().join("\n");
+    assert!(!shown.contains("CELIS STATS ›"), "{shown}");
+}
+
+/// With an open trail and no closed step, `stats` on a terminal draws the empty board, and `q` ends it
+/// (`spec/02-cli.md`, "Stats").
+#[test]
+fn stats_with_no_closed_step_draws_the_empty_board() {
+    let repo = Repo::new();
+    add(&repo, &["--", "the trail"]);
+    let mut watch = Watch::start(&repo, &["stats"]);
+    watch.size(40, 100);
+    watch.until("NO STATS YET");
+    watch.press("q");
+    assert!(watch.child.wait().unwrap().success());
 }
 
 /// `enter` opens the picked card to a row a record, `c` copies the selected row's id, `m` the card as a

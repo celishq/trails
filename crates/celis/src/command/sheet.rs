@@ -3,6 +3,7 @@
 use super::card::paint;
 use super::clock::{day, midnight, saved, took};
 use super::glyph::{bar, columns, digits, strip};
+use super::stats::plural;
 use super::table::{Row, Table};
 use super::tree::{cut, look, visible};
 use celis_trails::{Period, Reuse, State, Step, Tally, Trails};
@@ -117,8 +118,12 @@ impl Measure {
     }
 
     /// The change from the period before, coloured green when better and red when worse, dim when it
-    /// moved little; `· few records` when a period counts fewer than `FEW`.
+    /// moved little; `· no data before` when the period before counts none, `· few records` when a
+    /// period counts fewer than `FEW`.
     fn change(&self, ink: Ink) -> String {
+        if self.bases.1 == 0 {
+            return ink.paint("2", "· no data before");
+        }
         let (Some(last), Some(before)) = (self.last, self.before) else {
             return ink.paint("2", "· few records");
         };
@@ -162,21 +167,21 @@ fn effect(last: &Period, before: &Period, reuse: &Reuse, inside: usize, ink: Ink
             "AS PLANNED",
             (last.planned(), done(last)),
             (before.planned(), done(before)),
-            "steps",
+            "step",
             true,
         ),
         Measure::share(
             "REWORK",
             (last.reworked(), done(last)),
             (before.reworked(), done(before)),
-            "steps",
+            "step",
             false,
         ),
         Measure::share(
             "RULES REUSED",
             (last.ruled(), last.added().len()),
             (before.ruled(), before.added().len()),
-            "steps",
+            "step",
             true,
         ),
         Measure {
@@ -184,7 +189,7 @@ fn effect(last: &Period, before: &Period, reuse: &Reuse, inside: usize, ink: Ink
             last: gain,
             before: gain_before,
             bases: (follows, follows_before),
-            unit: "follows",
+            unit: "follow",
             up: true,
             time: true,
         },
@@ -207,7 +212,7 @@ fn effect(last: &Period, before: &Period, reuse: &Reuse, inside: usize, ink: Ink
     face.push(
         measures
             .iter()
-            .map(|m| cell(ink.paint("2", &format!("{} {}", m.bases.0, m.unit))))
+            .map(|m| cell(ink.paint("2", &plural(m.bases.0, m.unit))))
             .collect(),
     );
     let rows = measures
@@ -218,7 +223,7 @@ fn effect(last: &Period, before: &Period, reuse: &Reuse, inside: usize, ink: Ink
                 title_case(m.label),
                 m.text(m.last),
                 m.text(m.before),
-                format!("{} {}", m.bases.0, m.unit),
+                plural(m.bases.0, m.unit),
             ],
         })
         .collect();
@@ -352,9 +357,10 @@ fn work(steps: &celis_trails::Steps, before: &Period, now: u64, inside: usize, i
         .collect();
     let total: usize = counts.iter().sum();
     let earlier = before.done().len();
-    let moved = match total >= earlier {
-        true => format!("▲ {} vs 14 days before", total - earlier),
-        false => format!("▼ {} vs 14 days before", earlier - total),
+    let moved = match (earlier, total >= earlier) {
+        (0, _) => "first 14 days".to_string(),
+        (_, true) => format!("▲ {} vs 14 days before", total - earlier),
+        (_, false) => format!("▼ {} vs 14 days before", earlier - total),
     };
     let big = ink.big(&total.to_string());
     let room = big.iter().map(|r| visible(r)).max().unwrap_or(0) + 2;
@@ -371,10 +377,15 @@ fn work(steps: &celis_trails::Steps, before: &Period, now: u64, inside: usize, i
         face.push(ink.paint("2", &moved));
     }
     face.push(String::new());
-    face.extend(columns(&counts, 2));
-    let first = day(starts[0]);
-    let pad = " ".repeat(27usize.min(inside).saturating_sub(first.len() + 5));
-    face.push(ink.paint("2", &format!("{first}{pad}today")));
+    if total == 0 {
+        face.push(ink.paint("2", "no step done in 14 days"));
+    } else {
+        let dot = ink.paint("2", "·");
+        face.extend(columns(&counts, 2).iter().map(|l| l.replace('·', &dot)));
+        let first = day(starts[0]);
+        let pad = " ".repeat(27usize.min(inside).saturating_sub(first.len() + 5));
+        face.push(ink.paint("2", &format!("{first}{pad}today")));
+    }
     let rows = starts
         .iter()
         .zip(&counts)
@@ -411,10 +422,6 @@ fn time(last: &Period, inside: usize, ink: Ink) -> Sheet {
         .filter_map(|s| Some((s.grade()?.took, s)))
         .collect();
     done.sort_by_key(|(t, _)| std::cmp::Reverse(*t));
-    let median = match done.len() {
-        0 => "—".to_string(),
-        n => took(done[n / 2].0),
-    };
     let spans: [(&str, u64); 5] = [
         ("< 5m", 300),
         ("5-15m", 900),
@@ -429,13 +436,23 @@ fn time(last: &Period, inside: usize, ink: Ink) -> Sheet {
     }
     let most = counts.iter().copied().max().unwrap_or(0);
     let width = inside.saturating_sub(13);
-    let mut face = vec![
-        format!("{} {}", ink.paint("2", "median"), ink.paint("1", &median)),
-        String::new(),
-    ];
-    for ((label, _), n) in spans.iter().zip(counts) {
-        face.push(format!("{label:<7} {} {n:>3}", bar(n, most, width)));
-    }
+    let face = match done.get(done.len() / 2) {
+        None => vec![ink.paint("2", "no step done in 14 days")],
+        Some((median, _)) => {
+            let mut face = vec![
+                format!(
+                    "{} {}",
+                    ink.paint("2", "median"),
+                    ink.paint("1", &took(*median))
+                ),
+                String::new(),
+            ];
+            for ((label, _), n) in spans.iter().zip(counts) {
+                face.push(format!("{label:<7} {} {n:>3}", bar(n, most, width)));
+            }
+            face
+        }
+    };
     let rows = done
         .iter()
         .map(|(t, s)| Row {
@@ -462,20 +479,26 @@ fn outcome(last: &Period, inside: usize, ink: Ink) -> Sheet {
     let states = [State::Done, State::Dropped, State::Expired];
     let counts: Vec<usize> = states.iter().map(|&st| tally.count(st)).collect();
     let total: usize = counts.iter().sum();
-    let mut face = vec![strip(&counts, inside.saturating_sub(4)), String::new()];
-    for (&state, &n) in states.iter().zip(&counts) {
-        let look = look(state);
-        let share = (n * 100).checked_div(total).unwrap_or(0);
-        let mut line = format!(
-            "{} {:<10}{n:>4} {share:>5}%",
-            ink.paint(look.text, look.mark),
-            state.text()
-        );
-        if state == State::Done && tally.revised > 0 {
-            line.push_str(&format!(" · {} revised", tally.revised));
+    let face = match total {
+        0 => vec![ink.paint("2", "no step closed in 14 days")],
+        _ => {
+            let mut face = vec![strip(&counts, inside.saturating_sub(4)), String::new()];
+            for (&state, &n) in states.iter().zip(&counts) {
+                let look = look(state);
+                let share = n * 100 / total;
+                let mut line = format!(
+                    "{} {:<10}{n:>4} {share:>5}%",
+                    ink.paint(look.text, look.mark),
+                    state.text()
+                );
+                if state == State::Done && tally.revised > 0 {
+                    line.push_str(&format!(" · {} revised", tally.revised));
+                }
+                face.push(line);
+            }
+            face
         }
-        face.push(line);
-    }
+    };
     let rows = closed
         .iter()
         .map(|s| Row {
@@ -565,3 +588,6 @@ fn title_case(label: &str) -> String {
         c.to_uppercase().collect::<String>() + chars.as_str()
     })
 }
+
+#[cfg(test)]
+mod tests;

@@ -675,6 +675,10 @@ celis past --at shelf/prices.py
   gives them, and again when a record lands, a key is read, a minute passes or the size changes. With an
   id, it MUST draw the route of the step instead: each step it follows under `FOLLOWS`, the step as a
   card with how long it took, then each step that follows it under `FOLLOWED BY` with what it saved.
+- On a terminal with no `--json` and no id, when no step has closed yet, `stats` MUST draw the header and
+  a `NO STATS YET` card that names `celis stats --demo`, with the key line `q quit`, and read no other
+  key. With no store, it MUST write nothing and wait for one, as `tree` does. It MUST draw the cards
+  when the first step closes.
 
 ```
 stats  text  <id, first 8> [<project>] <title> · followed <n>[ · saved <time>][ · revised]
@@ -717,7 +721,14 @@ as a strip, a chain as a route. The periods are CIP-06 "Periods".
 - The effect MUST print across the width, then the other cards three a row at 120 columns or more, two
   at 80 or more, else one. Below 60 columns, numbers MUST print as plain bold text, else three rows high.
 - A change MUST print green when better, red when worse, dim when it moved less than 3 points or a
-  minute, and `· few records` when CIP-06 "Periods" shows no change.
+  minute, `· no data before` when the 14 days before count no record, and `· few records` when CIP-06
+  "Periods" shows no other change.
+- A big value with no digit MUST print on its middle row, and a unit MUST print right after its last
+  digit, as `100%`.
+- The work card MUST print `first 14 days` in place of its change when the 14 days before hold no done
+  step, and a dim `·` for a day with no done step. With no step done in 14 days, the work and time cards
+  MUST print `no step done in 14 days`, and the outcome card with no step closed `no step closed in 14
+  days`, in place of their charts.
 - The picked card MUST print in a heavy frame, the others in a dim one.
 - Keys: `←` `→` `↑` `↓` pick a card; `enter` opens it to its table, a row a line, where `↑` `↓` select a
   row, `c` copies the first 8 characters of the selected row's id, and `←` or `enter` goes back. On the

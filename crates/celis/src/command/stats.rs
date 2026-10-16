@@ -22,7 +22,7 @@ impl Command {
         if args.demo {
             return self.demo(args, out);
         }
-        if std::io::stdout().is_terminal() && !args.json && self.held()? {
+        if std::io::stdout().is_terminal() && !args.json {
             return self.board(args, out);
         }
         if !self.held()? {
@@ -127,7 +127,7 @@ fn saving(save: Option<i64>) -> String {
 }
 
 /// `<n> <word>s`, or `1 <word>`.
-fn plural(n: usize, word: &str) -> String {
+pub(super) fn plural(n: usize, word: &str) -> String {
     match n {
         1 => format!("1 {word}"),
         n => format!("{n} {word}s"),
