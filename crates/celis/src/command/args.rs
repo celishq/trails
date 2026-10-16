@@ -26,16 +26,23 @@ pub(crate) struct Args {
 }
 
 impl Args {
-    /// Whether `--json` is among `args` before any `--`.
+    /// Whether `--json` is among `args` before any `--`, when they are not raw (`help::raw`).
     pub fn asks_json(args: &[String]) -> bool {
-        args.iter()
-            .take_while(|a| *a != "--")
-            .any(|a| a == "--json")
+        !crate::help::raw(args)
+            && args
+                .iter()
+                .take_while(|a| *a != "--")
+                .any(|a| a == "--json")
     }
 
-    /// The words of `args`; an unknown flag, or a flag without its value, is a usage error.
+    /// The words of `args`, only the verb when they are raw; an unknown flag, or a flag without its
+    /// value, is a usage error.
     pub fn parse(args: &[String]) -> Result<Args, Failure> {
         let mut parsed = Args::default();
+        if crate::help::raw(args) {
+            parsed.words = args[..1].to_vec();
+            return Ok(parsed);
+        }
         let mut bad = None;
         let mut rest = args.iter();
         while let Some(arg) = rest.next() {

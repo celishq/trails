@@ -48,6 +48,11 @@ impl Trails {
         !fresh.is_empty()
     }
 
+    /// Whether the store holds no record.
+    pub fn is_empty(&self) -> bool {
+        self.records.is_empty()
+    }
+
     pub fn steps(&self) -> Steps<'_> {
         Steps::new(&self.records, self.now)
     }

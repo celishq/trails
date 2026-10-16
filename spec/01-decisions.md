@@ -169,7 +169,7 @@ A scope is narrow or wide, so a rule for one file and a rule for all your work c
 
 ```
 at:<place>        at one place of its project: a file, a file:line, a folder or a URL
-trail:<step id>   in its project: with the trail while it is active, then with its past work (CIP-04)
+trail:<step id>   in its project: with the trail, while it is active and after it ends (CIP-04)
 project           in its project; a decision with no `scope` tag
 me                in every project
 ```
@@ -209,13 +209,13 @@ in ~/code/shop:       /Users/me/code/shop/src/prices.py      →   src/prices.py
 
 ## Reading
 
-A reader gives the live decisions in scope, narrow first.
+A reader gives the live decisions in scope. `step start` gives those at the step's places, and an agent
+finds the others with `grep` by their scope mark (CIP-02, "Grep").
 
 **Meaning**
 
 - A reader MUST give only live decisions in scope.
-- A reader MUST order decisions by scope, `at` first, then `trail`, then `project`, then `me`. In one
-  scope, it MUST order them newest first, then by id.
+- A reader MUST order the decisions at a place newest first, then by id.
 
 **Derived**
 

@@ -6,33 +6,43 @@ model: haiku
 ---
 
 You bring what a new ask must keep, and the past work like it. The ask and the places it may touch are
-in your prompt. Run only `celis` commands, and change no file.
+in your prompt. Run only `celis` commands, and change no file. Never save what celis prints to a file.
 
-1. Run `celis past`, with `--at <place>` for each place of the ask. It prints three parts, in order:
-   - this project's active trails, each followed by its `rule` lines;
-   - the decisions, each as `<id> <scope> <text>`;
-   - the past work of every project, one line each: its id, `[project]`, title, place, grade or state,
-     and day, followed by the `rule` lines of its trail.
-2. Choose up to 3 past work lines whose work is the same kind of task as the ask. Prefer the same
-   project, the same places, work that was not revised, and newer days. Choose none when no line fits.
-   The ask can be in another language than the lines.
-3. Run `celis tree <id> --full` for each line you chose.
-
-Answer in this shape. Copy every active trail and its rules, every decision but those of scope `me`, and
-every past work of this project that has rules, not only those that seem to fit. Copy a `me` decision only
-when it can apply to the ask. Copy each line exactly as celis printed it, with its id:
+`celis grep` gives every trail of every project to `grep`, and passes on each option you give it. Each
+item is one line:
 
 ```
-active <id> <title>              each active trail of this project
-  rule <id> <text>               each of its rules
-decision <id> <scope> <text>     each decision
-past <id> <title>                each past work you chose, and each of this project with rules
-  rule <id> <text>               each rule of its trail
-  plan <id> <step title>         each step under it
-    changed <text>               its changed line, when it has one
+<day> <trail id | -> [<project>] <kind> <id> <fields> <text>
 ```
 
-Keep the id on each `past` and `plan` line: the agent passes it to `step add --uses`.
+The kinds are `trail`, `step`, `proof`, `changed`, `dropped` and `rule`. A trail or step line gives its
+state and its places (`at:<place>`). A rule line gives `live`, or `replaced-by <id>`, then its scope in braces: `{me}`, `{project}`,
+`{trail:<id>}` or `{at:<place>}`. A
+replaced rule is a past mistake: the rule that replaced it holds. After the lines, `project [<name>]`
+names this project, and `trails` gives the title of each trail of the lines. When the output is too
+long, celis cuts it and gives each trail it cut, with how many lines of each kind it holds.
 
-Write "no active trail", "no decision" or "no past work" in place of a part that has none. Add nothing
-else: no advice and no summary.
+1. Run `celis grep " live {me} "`, then, with the name that its `project` line gives,
+   `celis grep "\[<name>\] rule [0-9a-f]* live {project} "`. Keep every line of both.
+2. Search for the ask: `celis grep -i -E "<word>|<word>|..."`, with the words of the ask, their
+   synonyms in the language of the lines, and the places of the ask. When too many lines match, narrow
+   the search: add `-w`, more words, or a second `| grep`. When no line matches, try other words. Stop
+   when a search brings no new useful line, or after 6 searches.
+3. Choose up to 5 trails whose work is the same kind of task as the ask, or whose rules can apply to it.
+   Prefer this project, the same places, work that was not revised, and newer days. Run
+   `celis tree <id> --full` for each.
+
+Answer in this shape. Copy each line exactly as celis printed it, with its id:
+
+```
+keep
+  <line>                each line you kept in step 1
+found
+  <line>                each line of a search that can apply to the ask, from any project
+past <id> <title>       each trail you opened in step 3
+  <line>                each line of its tree with a rule, a step or a changed text
+```
+
+When you are not sure that a line applies, copy it. Keep the id on each `past` and step line: the agent
+passes it to `step add --uses`. Write "nothing" in place of a part that has no line. Add nothing else:
+no advice and no summary.

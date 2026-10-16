@@ -1,47 +1,53 @@
-//! The live decisions of a store.
+//! The decisions of a store.
 
-use crate::{Decision, DecisionId, Failure, Scope};
+use crate::{Decision, Failure, Scope};
 use celis_nostr::Note;
-use std::collections::HashSet;
+use std::collections::HashMap;
 
-/// The decisions of a store that no other replaces, read once: by scope, narrowest first, then newest
-/// first, then by id.
+/// The decisions of a store, read once, newest first, then by id; each with the decision that replaces
+/// it, if one does. A decision no other replaces is live.
 pub struct Decisions<'a> {
-    live: Vec<(&'a Note, Decision)>,
+    every: Vec<(&'a Note, Decision, Option<&'a Note>)>,
 }
 
 impl<'a> Decisions<'a> {
     pub fn new(records: &'a [Note]) -> Decisions<'a> {
-        let counted: Vec<(&'a Note, Decision)> = records
+        let read: Vec<(&'a Note, Decision)> = records
             .iter()
             .filter_map(|n| Some((n, Decision::read(n)?)))
             .collect();
-        let replaced: HashSet<DecisionId> = counted
+        let by: HashMap<&str, &'a Note> = read
             .iter()
-            .filter_map(|(_, d)| d.replaces.clone())
+            .filter_map(|(n, d)| Some((&**d.replaces.as_ref()?, *n)))
             .collect();
-        let mut live: Vec<(&'a Note, Decision)> = counted
-            .into_iter()
-            .filter(|(n, _)| !replaced.contains(&DecisionId::new(&n.id)))
+        let mut every: Vec<_> = read
+            .iter()
+            .map(|(n, d)| (*n, d.clone(), by.get(n.id.as_str()).copied()))
             .collect();
-        live.sort_by(|(a, x), (b, y)| {
-            (x.scope.rank(), b.created_at, &a.id).cmp(&(y.scope.rank(), a.created_at, &b.id))
-        });
-        Decisions { live }
+        every.sort_by(|(a, ..), (b, ..)| (b.created_at, &a.id).cmp(&(a.created_at, &b.id)));
+        Decisions { every }
+    }
+
+    /// Every decision of every project, live or replaced.
+    pub fn every(&self) -> &[(&'a Note, Decision, Option<&'a Note>)] {
+        &self.every
     }
 
     /// The live decisions in scope in the project `project`.
     pub fn live(&self, project: &str) -> Vec<(&'a Note, Decision)> {
-        self.live
-            .iter()
-            .filter(|(_, d)| d.scope == Scope::Me || d.anchor.project == project)
-            .cloned()
+        let live = self.every.iter().filter(|(.., by)| by.is_none());
+        live.filter(|(_, d, _)| d.scope == Scope::Me || d.anchor.project == project)
+            .map(|(n, d, _)| (*n, d.clone()))
             .collect()
     }
 
     /// The live decision of any project whose id is `id`.
     pub fn get(&self, id: &str) -> Option<(&'a Note, Decision)> {
-        self.live.iter().find(|(n, _)| n.id == id).cloned()
+        let live = self
+            .every
+            .iter()
+            .find(|(n, _, by)| by.is_none() && n.id == id);
+        live.map(|(n, d, _)| (*n, d.clone()))
     }
 
     /// The live decision in scope in `project` whose id is `id`, or the only one whose id starts with `id`

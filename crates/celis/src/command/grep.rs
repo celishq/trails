@@ -1,0 +1,61 @@
+//! `celis grep`: every trail of every project as lines, through the system `grep`.
+
+mod cut;
+mod kind;
+mod view;
+
+use super::Command;
+use celis_trails::Failure;
+use cut::Cut;
+use std::io::Write;
+use std::process::Stdio;
+use view::View;
+
+impl Command {
+    /// Gives `words` to the system `grep` with the view on its stdin, and prints the cut of what it
+    /// prints. Writes no record.
+    pub(super) fn grep(&self, words: &[String], out: &mut dyn Write) -> Result<(), Failure> {
+        let view = match self.held()? {
+            true => View::of(&self.trails()?),
+            false => View::default(),
+        };
+        let found = run(words, view.text())?;
+        if found.is_empty() {
+            return super::put(out, "No line matches.");
+        }
+        let text = Cut::of(&found, &view).text(&view, &self.project().name);
+        super::put(out, &text)
+    }
+}
+
+/// What `grep` prints for `words` with `view` on its stdin; empty when no line matches. A `grep` that
+/// fails exits 2, with its own message.
+fn run(words: &[String], view: String) -> Result<String, Failure> {
+    unsafe { libc::signal(libc::SIGPIPE, libc::SIG_IGN) };
+    let output = feed(words, view);
+    unsafe { libc::signal(libc::SIGPIPE, libc::SIG_DFL) };
+    let output = output.map_err(anyhow::Error::from)?;
+    match output.status.code() {
+        Some(0 | 1) => Ok(String::from_utf8_lossy(&output.stdout)
+            .trim_end()
+            .to_string()),
+        _ => Err(Failure::quiet(2)),
+    }
+}
+
+/// The output of `grep` run with `words` and `view` on its stdin, which it may stop reading.
+fn feed(words: &[String], view: String) -> std::io::Result<std::process::Output> {
+    let mut grep = std::process::Command::new("grep")
+        .args(words)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()?;
+    let mut stdin = grep.stdin.take().expect("a piped stdin");
+    let feed = std::thread::spawn(move || {
+        let _ = stdin.write_all(view.as_bytes());
+        let _ = stdin.write_all(b"\n");
+    });
+    let output = grep.wait_with_output();
+    let _ = feed.join();
+    output
+}

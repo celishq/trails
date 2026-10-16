@@ -2,7 +2,7 @@
 
 mod support;
 
-use support::{account, decision, now, objects, step_note, Repo};
+use support::{account, cli, decision, now, out, step_note, Repo};
 
 /// A reader counts a decision as a rule of a trail only when its scope names that trail, and a replaced
 /// one not at all (`spec/04-trails.md`, "Rules").
@@ -47,15 +47,14 @@ fn a_decision_is_a_rule_of_a_trail_only_when_its_scope_names_it() {
         "theirs",
         t + 5,
     );
-    let rules: Vec<String> = objects(&repo, &["past"])
-        .iter()
-        .filter_map(|v| v.get("trail"))
-        .find(|t| t["id"] == mine.id.as_str())
-        .expect("the trail")["rules"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|r| r["id"].as_str().unwrap().to_string())
+    let text = out(&cli(
+        &repo,
+        &["grep", &format!(" live {{trail:{}}}", &mine.id[..8])],
+    ));
+    let rules: Vec<&str> = text
+        .lines()
+        .take_while(|l| !l.is_empty())
+        .filter_map(|l| l.split(' ').nth(4))
         .collect();
-    assert_eq!(rules, [rule.id]);
+    assert_eq!(rules, [&rule.id[..8]]);
 }

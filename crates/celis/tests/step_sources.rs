@@ -3,7 +3,6 @@
 mod support;
 
 use celis_nostr::{Account, Note};
-use serde_json::Value;
 use std::process::Output;
 use support::{account, err, now, out, put, Repo};
 
@@ -29,21 +28,14 @@ fn store_step(repo: &Repo, by: &Account, text: &str, at: u64) -> Note {
     note
 }
 
-/// The step and trail objects `read --json` prints in the repo.
-fn listed(repo: &Repo) -> Vec<Value> {
-    let o = repo.run(&repo.path(), &["past", "--json"], &[], "");
+/// The ids, first 8 characters, of the trails `grep` prints in the repo.
+fn trails(repo: &Repo) -> Vec<String> {
+    let o = repo.run(&repo.path(), &["grep", " trail "], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     out(&o)
         .lines()
-        .map(|l| serde_json::from_str::<Value>(l).unwrap())
-        .filter_map(|l| l.get("step").or_else(|| l.get("trail")).cloned())
-        .collect()
-}
-
-fn ids(objects: &[Value]) -> Vec<String> {
-    objects
-        .iter()
-        .map(|o| o["id"].as_str().unwrap().to_string())
+        .take_while(|l| !l.is_empty())
+        .filter_map(|l| Some(l.split(' ').nth(4)?.to_string()))
         .collect()
 }
 
@@ -65,7 +57,7 @@ fn a_reader_reads_steps_from_the_store_only() {
     let kept = store_step(&repo, by, "in the store", now() - 3 * 60);
     repo.write("a.rs", "// @todo #1 in the code\n");
     repo.git(&["add", "."]);
-    assert_eq!(ids(&listed(&repo)), vec![kept.id]);
+    assert_eq!(trails(&repo), [kept.id[..8].to_string()]);
 }
 
 /// A reader ignores a `done` that names its step with a `step` tag
@@ -84,7 +76,7 @@ fn a_reader_ignores_a_done_that_names_its_step_with_a_step_tag() {
         &repo,
         &Note::write(by, 1985u16, now() - 60, tags, "proof").unwrap(),
     );
-    assert_eq!(ids(&listed(&repo)), vec![kept.id]);
+    assert_eq!(trails(&repo), [kept.id[..8].to_string()]);
 }
 
 /// `add` writes a step in a project in git as outside it (`spec/03-steps.md`, "Sources").
@@ -93,7 +85,7 @@ fn add_writes_a_step_in_a_project_in_git() {
     let repo = Repo::new();
     let o = run(&repo, &["add", "--", "undo it."]);
     assert!(o.status.success(), "{}", err(&o));
-    assert_eq!(ids(&listed(&repo)).len(), 1);
+    assert_eq!(trails(&repo).len(), 1);
 }
 
 /// `add` writes no step when an open step of the same project and `under` has the same text, and prints

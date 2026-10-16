@@ -20,7 +20,7 @@ fn the_longest_command_the_words_begin_with_names_the_verb() {
         Verb::of(&["step", "add", "x"]).map(|v| v.command),
         Some("step add")
     );
-    assert_eq!(Verb::of(&["past"]).map(|v| v.command), Some("past"));
+    assert_eq!(Verb::of(&["grep"]).map(|v| v.command), Some("grep"));
     assert!(Verb::of(&["step"]).is_none());
 }
 

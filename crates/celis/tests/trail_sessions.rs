@@ -325,6 +325,7 @@ fn a_later_prompt_with_no_open_trail_hints_at_todays_trails() {
     let shop = repo.other("shop");
     let o = repo.run(&shop, &["step", "add", "--", "a shop trail"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
+    assert!(hook("s9").contains("celis:past agent"));
     assert_eq!(hook("s9"), format!("{}\n", joins(None)));
     let o = repo.run(
         &repo.path(),
@@ -357,8 +358,7 @@ fn prompt_skips_a_harness_message() {
 }
 
 /// With no open trail in the session, `prompt` writes nothing, and prints on stderr one line that asks for
-/// the agent that brings what `past` prints, once `past` prints anything (`spec/02-cli.md`,
-/// "Prompt").
+/// the past agent, once the store holds any record (`spec/02-cli.md`, "Prompt").
 #[test]
 fn a_prompt_with_no_open_trail_asks_for_the_past_agent() {
     let repo = Repo::new();

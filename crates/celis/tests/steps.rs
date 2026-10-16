@@ -101,7 +101,7 @@ fn a_reader_counts_a_record_as_a_step_only_with_the_label() {
     let step = build("step", "a real step");
     let other = build("other", "not a step");
 
-    let all = run(&repo, &["past"]);
+    let all = run(&repo, &["grep", ""]);
     let text = support::out(&all);
     assert!(text.contains(&step.id[..8]), "{text}");
     assert!(!text.contains(&other.id[..8]), "{text}");

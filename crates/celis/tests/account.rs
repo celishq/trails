@@ -48,7 +48,7 @@ fn one_fresh_home_race() {
     assert_eq!(std::fs::read_to_string(&phrase).unwrap(), first);
 }
 
-/// `read` shows a step the account signed, and one another account signed
+/// `grep` shows a step the account signed, and one another account signed
 /// (`spec/01-decisions.md`, "The account").
 #[test]
 fn a_record_counts_whatever_account_signed_it() {
@@ -58,11 +58,11 @@ fn a_record_counts_whatever_account_signed_it() {
     let by_account = step_signed(&repo, &account(), "By the account.", at).id;
     let by_stranger = step_signed(&repo, &stranger, "By a stranger.", at).id;
 
-    let o = repo.run(&repo.path(), &["past", "--json"], &[], "");
+    let o = repo.run(&repo.path(), &["grep", "By "], &[], "");
     assert!(o.status.success(), "{o:?}");
     let listed = out(&o);
-    assert!(listed.contains(&by_account), "{listed}");
-    assert!(listed.contains(&by_stranger), "{listed}");
+    assert!(listed.contains(&by_account[..8]), "{listed}");
+    assert!(listed.contains(&by_stranger[..8]), "{listed}");
 }
 
 /// Every command signs as the account, whatever session the agent runs in
@@ -188,7 +188,7 @@ fn a_command_that_only_reads_mints_no_phrase() {
     let o = repo.run(&repo.path(), &["step", "add", "--", "work"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     std::fs::remove_file(repo.home().join("phrase")).unwrap();
-    for args in [&["past"][..], &["tree", "--all"]] {
+    for args in [&["grep", "work"][..], &["tree", "--all"]] {
         let o = repo.run(&repo.path(), args, &[], "");
         assert!(o.status.success(), "{args:?}: {}", err(&o));
     }

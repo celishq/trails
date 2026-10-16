@@ -6,7 +6,7 @@ use super::ink::Ink;
 use super::tree::{look, visible};
 use super::{Args, Command};
 use celis_trails::id::short;
-use celis_trails::{Failure, State, Step, Steps, Tally, Trail, Trails};
+use celis_trails::{Failure, Mark, State, Step, Steps, Tally, Trail, Trails};
 use serde_json::json;
 use std::io::{IsTerminal, Read, Write};
 
@@ -285,14 +285,14 @@ fn table(steps: Vec<Step>) -> Vec<String> {
             n => format!("{}└ ", "\u{a0}\u{a0}".repeat(n)),
         };
         let time = at.grade().map_or("—".to_string(), |g| took(g.took));
-        let mut proof: Vec<String> = vec![];
-        if let Some(done) = at.done() {
-            proof.push(done.content.clone());
-            proof.extend(done.tag("changed").map(|c| format!("~ changed: {c}")));
-        }
-        if let Some(dropped) = at.dropped() {
-            proof.push(format!("dropped: {}", dropped.content));
-        }
+        let proof: Vec<String> = match at.close() {
+            Some((_, Mark::Done { proof, changed })) => {
+                let changed = changed.map(|c| format!("~ changed: {c}"));
+                std::iter::once(proof).chain(changed).collect()
+            }
+            Some((_, Mark::Drop { reason })) => vec![format!("dropped: {reason}")],
+            _ => vec![],
+        };
         let title = cell(at.title());
         let proof = cell(&proof.join(" · "));
         rows.push(format!("| {mark} | {lead}{title} | {time} | {proof} |"));

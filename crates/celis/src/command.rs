@@ -8,12 +8,12 @@ mod clock;
 mod decision;
 mod demo;
 mod glyph;
+mod grep;
 mod ink;
 mod issue;
 mod json;
 mod line;
 mod link;
-mod past;
 mod prompt;
 mod report;
 mod review;
@@ -64,7 +64,7 @@ impl Command {
             Ok(()) => return 0,
             Err(failure) => failure,
         };
-        if failure.code == 2 {
+        if failure.code == 2 && !failure.message.is_empty() {
             let stop = if failure.message.ends_with('?') {
                 ""
             } else {
@@ -90,7 +90,7 @@ impl Command {
             "step" => self.step(args, out, err, &self.project()),
             "decide" => self.decide(args, out, &self.project()),
             "tree" => self.tree(args, out),
-            "past" => self.past(args, out, &self.project()),
+            "grep" => self.grep(&self.args[1..], out),
             "stats" => self.stats(args, out),
             "report" => self.report(args, out),
             "issue" => self.issue(args, out),

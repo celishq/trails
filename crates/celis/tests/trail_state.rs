@@ -45,9 +45,11 @@ fn a_trail_with_no_open_step_under_it_is_reached_at_once() {
     let part = add(&repo, &["--under", &trail[..8], "--", "part"]);
     finish(&repo, &part[..8]);
     assert_eq!(state(&repo, &trail), "done");
-    let read = out(&cli(&repo, &["past"]));
-    let active = format!("{} [repo] the trail", &trail[..8]);
-    assert!(!read.lines().any(|l| l == active), "{read}");
+    let read = out(&cli(&repo, &["grep", " trail "]));
+    assert!(
+        read.contains(&format!(" trail {} done the trail", &trail[..8])),
+        "{read}"
+    );
     add(&repo, &["--under", &trail[..8], "--", "more"]);
     assert_eq!(state(&repo, &trail), "open");
     let locked = add(&repo, &["--", "locked"]);
@@ -82,10 +84,15 @@ fn a_trail_ends_thirty_minutes_after_its_newest_record() {
             .starts_with(&format!("  ! {} open part", &open.id[..8])),
         "{tree}"
     );
-    let read = out(&cli(&repo, &["past"]));
-    let active = format!("{} [repo] left", &left.id[..8]);
-    assert!(!read.lines().any(|l| l == active), "{read}");
-    assert!(!read.contains(&open.id[..8]), "{read}");
+    let read = out(&cli(&repo, &["grep", "left\\|open part"]));
+    assert!(
+        read.contains(&format!(" trail {} expired left", &left.id[..8])),
+        "{read}"
+    );
+    assert!(
+        read.contains(&format!(" step {} expired open part", &open.id[..8])),
+        "{read}"
+    );
     let o = cli(&repo, &["step", "start", &open.id[..8]]);
     assert!(o.status.success(), "{}", err(&o));
     assert_eq!(state(&repo, &left.id), "working");

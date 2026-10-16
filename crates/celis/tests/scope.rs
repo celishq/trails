@@ -3,18 +3,7 @@
 mod support;
 
 use celis_nostr::Note;
-use support::{account, cli, decision_tags, err, now, objects, out, put, Repo};
-
-/// The ids of the decisions `read --json --at src/a.rs` prints in `folder`.
-fn decisions(repo: &Repo, folder: &std::path::Path) -> Vec<String> {
-    let o = repo.run(folder, &["past", "--json", "--at", "src/a.rs"], &[], "");
-    assert!(o.status.success(), "{}", err(&o));
-    out(&o)
-        .lines()
-        .filter_map(|l| serde_json::from_str::<serde_json::Value>(l).ok())
-        .filter_map(|v| Some(v.get("decision")?["id"].as_str()?.to_string()))
-        .collect()
-}
+use support::{account, cli, decision_tags, err, now, out, put, refusal, Repo};
 
 fn decide(repo: &Repo, args: &[&str]) -> String {
     let mut all = vec!["decide"];
@@ -24,8 +13,8 @@ fn decide(repo: &Repo, args: &[&str]) -> String {
     out(&o).trim().to_string()
 }
 
-/// A reader gives a `me` decision in every project, and a decision with any other scope only in its own
-/// (`spec/01-decisions.md`, "Scope").
+/// A reader gives a `me` decision in every project, and a decision with any other scope only in its own,
+/// so only a `me` decision can be replaced from another project (`spec/01-decisions.md`, "Scope").
 #[test]
 fn a_me_decision_holds_in_every_project_and_others_only_in_their_own() {
     let repo = Repo::new();
@@ -33,11 +22,22 @@ fn a_me_decision_holds_in_every_project_and_others_only_in_their_own() {
     let mine = decide(&repo, &["--scope", "me", "--", "Use plain words."]);
     let here = decide(&repo, &["--", "Keep prices in cents."]);
     let placed = decide(&repo, &["--scope", "at:src/a.rs", "--", "Round down."]);
-    assert_eq!(decisions(&repo, &shop), std::slice::from_ref(&mine));
-    let local = decisions(&repo, &repo.path());
-    for id in [&mine, &here, &placed] {
-        assert!(local.contains(id), "{local:?}");
+    for id in [&here, &placed] {
+        let o = repo.run(
+            &shop,
+            &["decide", "--json", "--replaces", &id[..8], "--", "x"],
+            &[],
+            "",
+        );
+        refusal(&o, 1, "no-decision");
     }
+    let o = repo.run(
+        &shop,
+        &["decide", "--replaces", &mine[..8], "--", "x"],
+        &[],
+        "",
+    );
+    assert!(o.status.success(), "{}", err(&o));
 }
 
 /// A reader counts a decision with no `scope` tag as `project`, and skips one whose scope it does not
@@ -57,13 +57,10 @@ fn no_scope_tag_is_the_project_and_an_unknown_scope_is_skipped() {
     tags.push(vec!["scope".into(), "team:design".into()]);
     let unknown = Note::write(&account(), 1111u16, now(), tags, "Team rule.").unwrap();
     put(&repo, &unknown);
-    let shown = objects(&repo, &["past"]);
-    let scopes: Vec<(&str, &str)> = shown
-        .iter()
-        .filter_map(|v| {
-            let d = v.get("decision")?;
-            Some((d["id"].as_str()?, d["scope"].as_str()?))
-        })
-        .collect();
-    assert_eq!(scopes, [(here.as_str(), "project")]);
+    let text = out(&cli(&repo, &["grep", " rule "]));
+    assert!(
+        text.contains(&format!("rule {} live {{project}} Keep", &here[..8])),
+        "{text}"
+    );
+    assert!(!text.contains("Team rule."), "{text}");
 }
