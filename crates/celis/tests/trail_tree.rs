@@ -2,7 +2,7 @@
 
 mod support;
 
-use support::{add, cli, err, finish, objects, out, refusal, Repo};
+use support::{add, cli, err, finish, noon, objects, out, refusal, Repo};
 
 fn short(id: &str) -> &str {
     &id[..8]
@@ -427,12 +427,6 @@ fn the_tree_folds_a_trails_twin_first_ask() {
     assert_eq!(lines[2], format!("  ○ {} the part", short(&part)));
     let json = out(&cli(&repo, &["tree", short(trail), "--json"]));
     assert!(json.contains(ask.as_str()), "{json}");
-}
-
-/// A `TZ` where it is now about noon, so the hours before now fall on the same day.
-fn noon() -> String {
-    let secs = std::time::UNIX_EPOCH.elapsed().unwrap().as_secs();
-    format!("NOON{}", (secs / 3600 % 24) as i64 - 12)
 }
 
 /// `tree --demo` prints made-up trails of two projects with a step or a trail in each state, a change,

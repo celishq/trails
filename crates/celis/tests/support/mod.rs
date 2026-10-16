@@ -463,6 +463,12 @@ pub fn read_ids(repo: &Repo, folder: &Path, args: &[&str]) -> Vec<String> {
         .collect()
 }
 
+/// A `TZ` where it is now about noon, so the hours before now fall on the same day.
+pub fn noon() -> String {
+    let secs = std::time::UNIX_EPOCH.elapsed().unwrap().as_secs();
+    format!("NOON{}", (secs / 3600 % 24) as i64 - 12)
+}
+
 /// The ids, first 8 characters, of the live rules of the project `name` that `celis grep` prints in
 /// `folder`, in order.
 pub fn live_ids(repo: &Repo, folder: &Path, name: &str) -> Vec<String> {
