@@ -28,8 +28,16 @@ celis keeps your recovery phrase and records in $CELIS_HOME.
 
 To learn more about a command, run `celis <command> --help`."#;
 
+/// Whether a command line gives its words to its command as they are: `grep` but `grep --help`.
+pub fn raw(args: &[String]) -> bool {
+    args.first().is_some_and(|a| a == "grep") && !args.iter().any(|a| a == "--help")
+}
+
 /// The page the words of a command line name, before any `--`; none when they run a command.
 pub fn named(args: &[String]) -> Option<String> {
+    if raw(args) {
+        return None;
+    }
     let words = words(args);
     if words.first() == Some(&"help") {
         return Some(page_of(&words[1..]));

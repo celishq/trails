@@ -53,20 +53,12 @@ pub struct Command {
 impl Command {
     /// Runs, writing to `out` and `err`, or prints the help page its words name. Returns the exit code.
     pub fn run(&self, out: &mut dyn Write, err: &mut dyn Write) -> i32 {
-        let grep = self.args.first().is_some_and(|a| a == "grep")
-            && !self.args.iter().any(|a| a == "--help");
-        if let Some(page) = help::named(&self.args).filter(|_| !grep) {
+        if let Some(page) = help::named(&self.args) {
             let _ = writeln!(out, "{page}");
             return 0;
         }
-        let json = !grep && Args::asks_json(&self.args);
-        let args = match grep {
-            true => Ok(Args {
-                words: vec!["grep".to_string()],
-                ..Args::default()
-            }),
-            false => Args::parse(&self.args),
-        };
+        let json = Args::asks_json(&self.args);
+        let args = Args::parse(&self.args);
         let words = args.as_ref().map_or(vec![], |a| a.words.clone());
         let mut failure = match args.and_then(|a| self.go(&a, out, err)) {
             Ok(()) => return 0,

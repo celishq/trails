@@ -99,8 +99,7 @@ impl Command {
     /// `asked`. Else, with a trail of today, says how a new ask joins it. Returns whether it named the
     /// agent.
     fn recall(&self, trails: &Trails, err: &mut dyn Write, asked: &Path) -> Result<bool, Failure> {
-        let held = !trails.steps().all().is_empty() || !trails.decisions().every().is_empty();
-        if asked.exists() || !held {
+        if asked.exists() || trails.is_empty() {
             if !today(&trails.steps(), trails.now).is_empty() {
                 super::put(err, &joins(None))?;
             }

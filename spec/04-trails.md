@@ -158,10 +158,7 @@ decisions, then for the words of the ask, and opens the trees it chooses.
 
 - What a new ask must keep: the project's live `project` and `me` decisions, and the rules of the
   trails like it (CIP-01, "Reading").
-- Past work: a done ask, or a done trail, of every project.
-- A trail with an ask of its own text is no past work, so the ask stands for it.
-- The rules of a past work: the rules of the trail it is, or of the trail it stands for. They stay after
-  the trail ends, so the next ask can keep what the trail learned.
+- The rules of a trail stay after it ends, so the next ask can keep what the trail learned.
 
 > Why an agent searches: it reads an ask in any language, and it tells the same kind of task from the
 > same words. A search prints only the lines that match, so it fits the agent's context for any store,
