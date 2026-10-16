@@ -30,13 +30,10 @@ fn grep_gives_its_words_to_grep() {
     let text = grep(&repo, &["-i", "VENDORS"]);
     assert!(text.contains("Build the Vendors page"), "{text}");
     assert!(!text.contains("Fix the login"), "{text}");
-    assert_eq!(
-        grep(&repo, &["-c", "-i", "vendors"]).lines().next(),
-        Some("1")
-    );
+    assert_eq!(grep(&repo, &["-c", "-i", "vendors"]).trim(), "1");
 }
 
-/// Each line holds the day, the trail, the project, the kind, the id, the state and places, and the text
+/// Each line prints under its trail's header with the kind, the id, the state and places, and the text
 /// (`spec/02-cli.md`, "Grep").
 #[test]
 fn grep_prints_a_trail_and_its_step_as_lines() {
@@ -55,18 +52,23 @@ fn grep_prints_a_trail_and_its_step_as_lines() {
     );
     let text = grep(&repo, &["Vendors\\|table"]);
     let (t, s) = (&trail[..8], &step[..8]);
-    let head = line(&text, &format!(" trail {t} "));
+    let header = text.lines().next().unwrap();
     assert!(
-        head.ends_with(&format!("{t} [repo] trail {t} open Build the Vendors page")),
-        "{head}"
+        header.starts_with(&format!("{t} [repo] Build the Vendors page · ")),
+        "{text}"
     );
-    assert_eq!(head.split(' ').next().map(str::len), Some(10), "{head}");
-    let step = line(&text, &format!(" step {s} "));
-    assert!(
-        step.ends_with(&format!(
-            "{t} [repo] step {s} open at:src/vendors.rs Add the table expect: it shows"
-        )),
-        "{step}"
+    assert_eq!(
+        header.rsplit(' ').next().map(str::len),
+        Some(10),
+        "{header}"
+    );
+    assert_eq!(
+        line(&text, &format!(" trail {t} ")),
+        format!("  trail {t} open Build the Vendors page")
+    );
+    assert_eq!(
+        line(&text, &format!(" step {s} ")),
+        format!("  step {s} open at:src/vendors.rs Add the table expect: it shows")
     );
 }
 
@@ -94,25 +96,26 @@ fn grep_prints_proofs_changes_and_drop_reasons() {
     let o = cli(&repo, &["step", "drop", &gone[..8], "--", "no data for it"]);
     assert!(o.status.success(), "{}", err(&o));
     let text = grep(&repo, &[""]);
-    let t = &trail[..8];
-    assert!(line(&text, "] proof ").ends_with(&format!(
-        "{t} [repo] proof {} the page shows it",
-        &done[..8]
-    )));
-    assert!(line(&text, "] changed ").ends_with(&format!(
-        "[repo] changed {} a list, not a table",
-        &done[..8]
-    )));
-    assert!(line(&text, "] dropped ")
-        .ends_with(&format!("[repo] dropped {} no data for it", &gone[..8])));
+    assert_eq!(
+        line(&text, "  proof "),
+        format!("  proof {} the page shows it", &done[..8])
+    );
+    assert_eq!(
+        line(&text, "  changed "),
+        format!("  changed {} a list, not a table", &done[..8])
+    );
+    assert_eq!(
+        line(&text, "  dropped "),
+        format!("  dropped {} no data for it", &gone[..8])
+    );
     assert!(
         line(&text, &format!(" step {} ", &gone[..8])).contains(" dropped "),
         "{text}"
     );
 }
 
-/// A decision prints as a `rule`: live or replaced, then its scope; one of a trail prints the trail, one
-/// of the project `-` (`spec/02-cli.md`, "Grep").
+/// A decision prints as a `rule`: live or replaced, then its scope; one of a trail prints under the trail,
+/// one of the project under `- rules of no trail` with its project (`spec/02-cli.md`, "Grep").
 #[test]
 fn grep_prints_decisions_as_rules_live_or_replaced() {
     let repo = Repo::new();
@@ -140,22 +143,21 @@ fn grep_prints_decisions_as_rules_live_or_replaced() {
     ]);
     let text = grep(&repo, &[" rule "]);
     let t = &trail[..8];
-    let held = line(&text, "initials");
-    assert!(
-        held.ends_with(&format!(
-            "{t} [repo] rule {} live {{trail:{t}}} When a vendor has no logo: show its initials",
+    assert_eq!(
+        line(&text, "initials"),
+        format!(
+            "  rule {} live {{trail:{t}}} When a vendor has no logo: show its initials",
             &rule[..8]
-        )),
-        "{held}"
+        )
     );
-    let gone = line(&text, "floats");
-    assert!(
-        gone.ends_with(&format!(
-            "- [repo] rule {} replaced-by {} {{project}} When a price prints: use floats",
+    assert!(text.lines().any(|l| l == "- rules of no trail"), "{text}");
+    assert_eq!(
+        line(&text, "floats"),
+        format!(
+            "  [repo] rule {} replaced-by {} {{project}} When a price prints: use floats",
             &old[..8],
             &new[..8]
-        )),
-        "{gone}"
+        )
     );
     assert!(
         line(&text, "cents").contains(&format!(" rule {} live {{project}} ", &new[..8])),
@@ -172,7 +174,21 @@ fn grep_prints_the_newest_trail_first() {
     add(&repo, &["--new", "--", "Fix the login"]);
     let text = grep(&repo, &[" trail "]);
     let first = text.lines().next().unwrap();
-    assert!(first.ends_with("Fix the login"), "{text}");
+    assert!(first.contains("] Fix the login · "), "{text}");
+}
+
+/// The trail with the most lines found prints first (`spec/02-cli.md`, "Grep").
+#[test]
+fn grep_prints_the_trail_with_most_lines_first() {
+    let repo = Repo::new();
+    let old = add(&repo, &["--", "Build the vendor page"]);
+    add(&repo, &["--under", &old[..8], "--", "Add the vendor table"]);
+    add(&repo, &["--under", &old[..8], "--", "Add the vendor chart"]);
+    std::thread::sleep(Duration::from_millis(1100));
+    add(&repo, &["--new", "--", "Fix the vendor login"]);
+    let text = grep(&repo, &["vendor"]);
+    let first = text.lines().next().unwrap();
+    assert!(first.contains("] Build the vendor page · "), "{text}");
 }
 
 /// A done step that a later step replaces prints `revised-by` (`spec/02-cli.md`, "Grep").
@@ -193,35 +209,44 @@ fn grep_prints_who_revised_a_done_step() {
     );
 }
 
-/// After the lines, `grep` names the working folder's project and each trail of them once
+/// The lines print under their trail's header, then the working folder's project, with no legend
 /// (`spec/02-cli.md`, "Grep").
 #[test]
-fn grep_ends_with_the_project_and_a_legend_of_trails() {
+fn grep_ends_with_the_project_and_no_legend() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "Build the Vendors page"]);
     add(
         &repo,
         &["--under", &trail[..8], "--", "Add the vendor table"],
     );
-    let text = grep(&repo, &["vendor"]);
-    let legend: Vec<&str> = text
-        .lines()
-        .skip_while(|l| *l != "project [repo]")
-        .collect();
-    assert_eq!(legend.get(1), Some(&"trails"), "{text}");
-    let day = text.split(' ').next().unwrap();
-    assert_eq!(
-        legend[2..],
-        [format!(
-            "{} [repo] Build the Vendors page · {day}",
-            &trail[..8]
-        )],
+    let text = grep(&repo, &["-i", "vendor"]);
+    let lines: Vec<&str> = text.lines().collect();
+    assert_eq!(lines.len(), 5, "{text}");
+    assert!(
+        lines[1].starts_with("  trail ") && lines[2].starts_with("  step "),
         "{text}"
+    );
+    assert_eq!(lines[3..], ["", "project [repo]"], "{text}");
+}
+
+/// A line of `grep` that is no line of the view, such as `--`, does not print (`spec/02-cli.md`,
+/// "Grep").
+#[test]
+fn grep_drops_its_group_separators() {
+    let repo = Repo::new();
+    add(&repo, &["--", "Build the Vendors page"]);
+    add(&repo, &["--new", "--", "Fix the login"]);
+    add(&repo, &["--new", "--", "Build the Vendors list"]);
+    let text = grep(&repo, &["-A0", "Vendors"]);
+    assert!(!text.lines().any(|l| l == "--"), "{text}");
+    assert_eq!(
+        text.lines().filter(|l| l.starts_with("  trail ")).count(),
+        2
     );
 }
 
-/// Past 14,000 bytes of lines, `grep` cuts them, counts what it cut and lists each trail it cut, and
-/// stays within 20,000 bytes (`spec/02-cli.md`, "Grep").
+/// Past 6,500 bytes of lines, `grep` cuts them, counts what it cut and lists each trail it cut with its
+/// title cut at 80 characters, and stays within 8,000 bytes (`spec/02-cli.md`, "Grep").
 #[test]
 fn grep_cuts_long_output_and_lists_the_trails_it_cut() {
     let repo = Repo::new();
@@ -236,14 +261,23 @@ fn grep_cuts_long_output_and_lists_the_trails_it_cut() {
         }
     }
     let text = grep(&repo, &["long title"]);
-    assert!(text.len() <= 20_000, "{}", text.len());
+    assert!(text.len() <= 8_000, "{}", text.len());
     let cut = line(&text, "celis: ");
     assert!(
         cut.contains(" more lines in ") && cut.contains(" trails match;"),
         "{cut}"
     );
-    assert!(text.contains(" · 3 steps"), "{text}");
-    assert!(text.lines().any(|l| l == "trails"), "{text}");
+    assert!(
+        cut.ends_with("search one trail with celis grep \" <id> \\[\""),
+        "{cut}"
+    );
+    let index = line(&text, " · 3 steps");
+    let title = index.split(" · ").next().unwrap();
+    assert!(
+        title.ends_with('…') && title.chars().count() <= 98,
+        "{index}"
+    );
+    assert!(text.ends_with("project [repo]"), "{text}");
 }
 
 /// With no line that matches, `grep` says so and exits 0; when `grep` fails, it exits 2
@@ -266,17 +300,21 @@ fn grep_help_prints_the_command_page() {
     assert!(text.starts_with("celis grep"), "{text}");
 }
 
-/// The legend names the trails of lines that `grep` numbers with `-n` (`spec/02-cli.md`, "Grep").
+/// A line that `grep` numbers with `-n` prints its number, under its trail's header
+/// (`spec/02-cli.md`, "Grep").
 #[test]
-fn grep_names_the_trails_of_numbered_lines() {
+fn grep_prints_numbered_lines_under_their_trail() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "Build the Vendors page"]);
     let text = grep(&repo, &["-n", "Vendors"]);
-    assert!(text.starts_with("1:"), "{text}");
-    let legend: Vec<&str> = text.lines().skip_while(|l| *l != "trails").collect();
+    let t = &trail[..8];
     assert!(
-        legend[1].starts_with(&format!("{} [repo] Build the Vendors page", &trail[..8])),
+        text.starts_with(&format!("{t} [repo] Build the Vendors page · ")),
         "{text}"
+    );
+    assert_eq!(
+        text.lines().nth(1),
+        Some(format!("  1:trail {t} open Build the Vendors page").as_str())
     );
 }
 
@@ -312,8 +350,8 @@ fn grep_q_prints_nothing_on_a_match() {
     );
 }
 
-/// The view matches `spec/fixtures/grep-view.json`, and the first searches of `past.md` find exactly the
-/// lines it keeps (`spec/02-cli.md`, "Grep").
+/// The view and what `grep` prints of it match `spec/fixtures/grep-view.json`, and the first searches of
+/// `past.md` print exactly the lines it keeps (`spec/02-cli.md`, "Grep").
 #[test]
 fn the_view_and_the_past_agents_first_searches_match_the_fixture() {
     use celis_trails::{Anchor, Mark, StepId, StepRecord};
@@ -414,7 +452,14 @@ fn the_view_and_the_past_agents_first_searches_match_the_fixture() {
             .map(str::to_string)
             .collect()
     };
-    let want: Vec<String> = fixture["lines"]
+    for want in fixture["lines"].as_array().unwrap().iter().map(fill) {
+        assert_eq!(
+            grep(&repo, &["-c", "-x", "-F", &want]).trim(),
+            "1",
+            "{want}"
+        );
+    }
+    let want: Vec<String> = fixture["printed"]
         .as_array()
         .unwrap()
         .iter()
