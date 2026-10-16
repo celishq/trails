@@ -6,6 +6,7 @@ use super::{Args, Command};
 use celis_trails::id::short;
 use celis_trails::step::steps::LIFE;
 use celis_trails::{Decisions, Failure, Flags, Reuse, State, Step, Steps, Tally, Trail, Trails};
+use level::{ids, Level};
 use serde_json::json;
 use std::cell::{Cell, RefCell};
 use std::collections::HashSet;
@@ -318,8 +319,8 @@ impl Tree<'_> {
         match (self.view.watch, block) {
             (true, true) => self.block(note, lines),
             (true, false) => self.line(note, lines),
-            (false, true) => self.plain(note, lines),
-            (false, false) => self.plain_line(note, lines),
+            (false, true) => self.agent_block(note, lines),
+            (false, false) => self.agent_line(note, lines),
         }
         *last = Some(block);
     }
@@ -336,23 +337,14 @@ impl Tree<'_> {
     /// The trail `note` as a line a watch selects, `open` when it prints as a block: with every rule of
     /// `rules` and every step it prints under it.
     fn item(&self, note: Step, open: bool, rules: &[Rule]) -> Item {
-        let parts = Trail::new(note).parts();
         let folded = (!rules.is_empty()).then(|| format!("{RULES}{}", note.id()));
-        let closed = parts.iter().any(|p| p.state().closed());
-        let closed = closed.then(|| format!("{CLOSED}{}", note.id()));
         let rules = rules.iter().map(|(rule, _)| rule.id.clone());
-        let steps = parts.into_iter().flat_map(|p| p.tree());
-        let steps = steps.map(|s| s.id().to_string());
+        let steps = Level::of(Trail::new(note).parts()).ids(note.id());
         Item {
             id: note.id().to_string(),
             open,
             parent: None,
-            under: folded
-                .into_iter()
-                .chain(closed)
-                .chain(rules)
-                .chain(steps)
-                .collect(),
+            under: folded.into_iter().chain(rules).chain(steps).collect(),
         }
     }
 
@@ -466,7 +458,7 @@ impl Tree<'_> {
 
     /// Adds `note` as a block: `▾`, its mark and title, then its lines: its worked time, its last change
     /// while active, its project with no grouping, and the lines `--full` prints but its grade; then its
-    /// tree: its rules, its closed steps, then its other steps.
+    /// tree: its active steps, its rules, then its closed steps.
     fn block(&self, note: Step, lines: &mut Vec<Line>) {
         let step = note.record();
         let state = note.state();
@@ -498,26 +490,43 @@ impl Tree<'_> {
         }
         self.closing(work, &hair, false, lines);
         self.reused(work, &hair, lines);
-        let (shut, rest): (Vec<Step>, Vec<Step>) = Trail::new(note)
-            .parts()
-            .into_iter()
-            .partition(|p| p.state().closed());
-        if !summary.rules.is_empty() {
-            let last = shut.is_empty() && rest.is_empty();
-            self.ruled(summary.rules, last, note.id(), lines);
-        }
-        if !shut.is_empty() {
-            self.shut(shut, rest.is_empty(), note.id(), lines);
-        }
-        self.under(rest, "  ", note.id(), lines);
+        let level = Level::of(Trail::new(note).parts());
+        self.level(level, summary.rules, "  ", note.id(), lines);
     }
 
-    /// Adds the rules line `§ <n> rules` of the trail `trail`, the `last` of its level; open, a line under
-    /// it for each of `rules`: `§ <text>`, wrapped, its id at the end.
-    fn ruled(&self, rules: Vec<Rule>, last: bool, trail: &str, lines: &mut Vec<Line>) {
+    /// Adds `level` under the line `above` after `rail`: its active steps, the rules line of `rules`,
+    /// then its closed line.
+    fn level(
+        &self,
+        level: Level,
+        rules: Vec<Rule>,
+        rail: &str,
+        above: &str,
+        lines: &mut Vec<Line>,
+    ) {
+        let more = !rules.is_empty() || !level.ended.is_empty();
+        self.steps(level.active, rail, above, more, lines);
+        if !rules.is_empty() {
+            self.rules_line(rules, rail, level.ended.is_empty(), above, lines);
+        }
+        if !level.ended.is_empty() {
+            self.closed_line(level.ended, rail, above, lines);
+        }
+    }
+
+    /// Adds the rules line `§ <n> rules` of the trail `trail` after `rail`, the `last` of its level;
+    /// open, a line under it for each of `rules`: `§ <text>`, wrapped, its id at the end.
+    fn rules_line(
+        &self,
+        rules: Vec<Rule>,
+        rail: &str,
+        last: bool,
+        trail: &str,
+        lines: &mut Vec<Line>,
+    ) {
         let id = format!("{RULES}{trail}");
         let open = self.open(&id);
-        let (lead, rail) = self.branch("  ", last, Some(open));
+        let (lead, rail) = self.branch(rail, last, Some(open));
         let mark = self.paint(MAGENTA, "§");
         let first = lines.len();
         lines.push(Line::Row {
@@ -564,27 +573,19 @@ impl Tree<'_> {
         }
     }
 
-    /// Adds the closed line `<marks> <n> closed steps` of the trail `trail`, the `last` of its level: `✓`
-    /// when one of `steps` is done or revised, `✗` when one is dropped; open, the steps under it.
-    fn shut(&self, steps: Vec<Step>, last: bool, trail: &str, lines: &mut Vec<Line>) {
-        let id = format!("{CLOSED}{trail}");
+    /// Adds the closed line `<marks> <n> closed steps` of the ended `steps` of the line `above`, the last
+    /// of its level after `rail`: `✓` when one is done, `✗` when one is dropped, `!` when one is expired;
+    /// open, the steps under it.
+    fn closed_line(&self, steps: Vec<Step>, rail: &str, above: &str, lines: &mut Vec<Line>) {
+        let id = format!("{CLOSED}{above}");
         let open = self.open(&id);
-        let (lead, rail) = self.branch("  ", last, Some(open));
-        let done = steps.iter().any(|s| s.state() == State::Done);
-        let dropped = steps.iter().any(|s| s.state() == State::Dropped);
-        let marks = format!(
-            "{}{}",
-            if done {
-                self.paint(GREEN, "✓")
-            } else {
-                String::new()
-            },
-            if dropped {
-                self.paint(RED, "✗")
-            } else {
-                String::new()
-            },
-        );
+        let (lead, rail) = self.branch(rail, true, Some(open));
+        let tally = Tally::of(&steps);
+        let marks: String = [State::Done, State::Dropped, State::Expired]
+            .into_iter()
+            .filter(|state| tally.count(*state) > 0)
+            .map(|state| self.paint(look(state).text, look(state).mark))
+            .collect();
         let first = lines.len();
         lines.push(Line::Row {
             lead: format!("{lead}{marks} "),
@@ -593,16 +594,15 @@ impl Tree<'_> {
             cells: Default::default(),
             rest: None,
         });
-        let under = steps.iter().flat_map(|s| s.tree());
         let item = Item {
             id: id.clone(),
             open,
-            parent: Some(trail.to_string()),
-            under: under.map(|s| s.id().to_string()).collect(),
+            parent: Some(above.to_string()),
+            under: ids(&steps),
         };
         self.pick(item, lines, first);
         if open {
-            self.under(steps, &rail, &id, lines);
+            self.steps(steps, &rail, &id, false, lines);
         }
     }
 
@@ -635,10 +635,10 @@ impl Tree<'_> {
         self.pick(self.item(note, false, &summary.rules), lines, first);
     }
 
-    /// Adds the steps `notes` under the line `above` after `rail`, each followed by its own one level
-    /// down; an open one with its title wrapped and the lines `--full` prints under it, a closed done one
-    /// with no time and its steps folded.
-    fn under(&self, notes: Vec<Step>, rail: &str, above: &str, lines: &mut Vec<Line>) {
+    /// Adds the steps `notes` under the line `above` after `rail`, the last of their level unless `more`,
+    /// each followed by its own one level down; an open one with its title wrapped and the lines `--full`
+    /// prints under it, a closed done one with no time and its steps folded.
+    fn steps(&self, notes: Vec<Step>, rail: &str, above: &str, more: bool, lines: &mut Vec<Line>) {
         let all = notes.len();
         for (n, note) in notes.into_iter().enumerate() {
             let step = note.record();
@@ -647,10 +647,11 @@ impl Tree<'_> {
                 self.until(note.trail().newest() + LIFE);
             }
             let open = self.open(note.id());
-            let (lead, rail) = self.branch(rail, n + 1 == all, self.opens(note).then_some(open));
-            let tree = note.tree().into_iter().filter(|s| s.id() != note.id());
-            let tree: Vec<String> = tree.map(|s| s.id().to_string()).collect();
-            let folded = state == State::Done && !tree.is_empty() && !open;
+            let last = n + 1 == all && !more;
+            let (lead, rail) = self.branch(rail, last, self.opens(note).then_some(open));
+            let size = note.tree().len() - 1;
+            let level = Level::of(note.children());
+            let folded = state == State::Done && size > 0 && !open;
             let below = match note.children().is_empty() || folded {
                 true => format!("{rail}  "),
                 false => format!("{rail}{}", self.paint(DIM, "│ ")),
@@ -662,7 +663,7 @@ impl Tree<'_> {
                 tone: self.tone(look(state).title, note.newest()),
                 cells: [
                     None,
-                    folded.then(|| column(tree.len(), "step")),
+                    folded.then(|| column(size, "step")),
                     None,
                     match state.closed() {
                         true => None,
@@ -676,7 +677,7 @@ impl Tree<'_> {
                 id: note.id().to_string(),
                 open,
                 parent: Some(above.to_string()),
-                under: tree,
+                under: level.ids(note.id()),
             };
             self.pick(item, lines, first);
             if open {
@@ -684,7 +685,7 @@ impl Tree<'_> {
                 self.reused(note, &below, lines);
             }
             if !folded {
-                self.under(note.children(), &rail, note.id(), lines);
+                self.level(level, vec![], &rail, note.id(), lines);
             }
         }
     }
@@ -1018,7 +1019,6 @@ pub(super) const MORE: &str = "+more";
 const CLOSED: &str = "✓";
 /// The colour of a project's name.
 const PROJECT: &str = BOLD;
-const RED: &str = "31";
 const UNDERLINE: &str = "4;34";
 /// The lead, title and details of `line` when it is a row, also when it is selected, and whether its
 /// title wraps.
@@ -1046,9 +1046,9 @@ fn room(widths: &[usize; 5]) -> usize {
     }
 }
 
-/// The signs of `flags` with their colours: `~` when changed, then `↻` when revised.
+/// The signs of `flags` with their colours: `↻` when revised, then `~` when changed.
 pub(super) fn signs(flags: Flags) -> Vec<(&'static str, &'static str)> {
-    let all = [(flags.changed, "~", YELLOW), (flags.revised, "↻", GREEN)];
+    let all = [(flags.revised, "↻", GREEN), (flags.changed, "~", YELLOW)];
     all.into_iter()
         .filter(|(on, ..)| *on)
         .map(|(_, sign, code)| (sign, code))
@@ -1140,5 +1140,6 @@ fn column(n: usize, what: &str) -> String {
 }
 
 mod agent;
+mod level;
 #[cfg(test)]
 mod tests;

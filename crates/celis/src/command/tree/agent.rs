@@ -1,14 +1,14 @@
 //! The agent view of `celis tree`: every trail, rule and step with its id, plain and whole.
 
-use super::{signs, Line, Summary, Tree};
+use super::{signs, Level, Line, Summary, Tree};
 use crate::command::clock::took;
 use celis_trails::id::short;
 use celis_trails::{Step, Trail};
 
 impl Tree<'_> {
     /// Adds `note` as a block: its mark, id and title, then two spaces in its progress and worked time,
-    /// its own lines, its rules, then its steps.
-    pub(super) fn plain(&self, note: Step, lines: &mut Vec<Line>) {
+    /// its own lines, its active steps, its rules, then its other steps.
+    pub(super) fn agent_block(&self, note: Step, lines: &mut Vec<Line>) {
         let work = self.work(note);
         let summary = self.summary(note, work);
         let heading = match self.grouped && note.state().active() {
@@ -21,15 +21,17 @@ impl Tree<'_> {
             lines.push(Line::Text(format!("  {progress}")));
         }
         self.below(work, "  ", lines);
+        let level = Level::of(Trail::new(note).parts());
+        self.agent_steps(level.active, "  ", lines);
         for (rule, decision) in &summary.rules {
             let line = format!("  § {} {}", short(&rule.id), decision.content);
             lines.push(Line::Text(line));
         }
-        self.steps(Trail::new(note).parts(), "  ", lines);
+        self.agent_steps(level.ended, "  ", lines);
     }
 
     /// Adds `note` as one line: its mark, id and title, then its progress and worked time.
-    pub(super) fn plain_line(&self, note: Step, lines: &mut Vec<Line>) {
+    pub(super) fn agent_line(&self, note: Step, lines: &mut Vec<Line>) {
         let summary = self.summary(note, self.work(note));
         let line = match progress(&summary) {
             progress if progress.is_empty() => self.heading(note),
@@ -39,8 +41,8 @@ impl Tree<'_> {
     }
 
     /// Adds the steps `notes` after `indent`, each as its mark, id and title, its first place and
-    /// worked time, then its lines and its steps two spaces further in.
-    fn steps(&self, notes: Vec<Step>, indent: &str, lines: &mut Vec<Line>) {
+    /// worked time, then its lines and its level two spaces further in.
+    fn agent_steps(&self, notes: Vec<Step>, indent: &str, lines: &mut Vec<Line>) {
         for note in notes {
             let mut line = format!("{indent}{}", self.heading(note));
             if let Some(at) = note.record().at() {
@@ -52,7 +54,9 @@ impl Tree<'_> {
             lines.push(Line::Text(line));
             let under = format!("{indent}  ");
             self.below(note, &under, lines);
-            self.steps(note.children(), &under, lines);
+            let level = Level::of(note.children());
+            self.agent_steps(level.active, &under, lines);
+            self.agent_steps(level.ended, &under, lines);
         }
     }
 

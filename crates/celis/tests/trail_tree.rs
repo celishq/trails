@@ -18,8 +18,9 @@ fn printed(repo: &Repo, args: &[&str]) -> Vec<String> {
 }
 
 /// `tree <id>` prints the trail as a block: its mark, id and title, then two spaces in its progress and
-/// worked time, its rules, then the steps under it, oldest first, each followed by its own two spaces
-/// further in; `--full` adds the proof and grade of a done one (`spec/02-cli.md`, "Tree").
+/// worked time, its open steps, its rules, then its closed steps, each group newest first and each step
+/// followed by its own two spaces further in, in the same order; `--full` adds the proof and grade of a
+/// done one (`spec/02-cli.md`, "Tree").
 #[test]
 fn tree_prints_the_trail_its_rules_and_the_steps_under_it() {
     let repo = Repo::new();
@@ -40,36 +41,90 @@ fn tree_prints_the_trail_its_rules_and_the_steps_under_it() {
     support::done_note(&repo, &by, &colours, at + 90);
     let page = support::step_note(&repo, &by, Some(&trail), "customers page", at + 1);
     let badge = support::step_note(&repo, &by, Some(&page), "badge", at + 2);
+    let seal = support::step_note(&repo, &by, Some(&page), "seal", at + 3);
+    support::done_note(&repo, &by, &seal, at + 33);
+    let stamp = support::step_note(&repo, &by, Some(&page), "stamp", at + 4);
+    let logo = support::step_note(&repo, &by, Some(&trail), "logo", at + 5);
+    support::done_note(&repo, &by, &logo, at + 65);
+    let footer = support::step_note(&repo, &by, Some(&trail), "footer", at + 6);
     let ids = |text: &str| {
         text.replace("{t}", short(&trail.id))
             .replace("{r}", short(&rule.id))
             .replace("{c}", short(&colours.id))
             .replace("{p}", short(&page.id))
             .replace("{b}", short(&badge.id))
+            .replace("{s}", short(&seal.id))
+            .replace("{m}", short(&stamp.id))
+            .replace("{l}", short(&logo.id))
+            .replace("{f}", short(&footer.id))
     };
     let lines = [
         "○ {t} build the CRM",
-        "  1/3 steps · 1m 30s worked",
-        "  § {r} colours are tokens",
-        "  ✓ {c} colours · 1m 30s",
-        "  ○ {p} customers page",
+        "  3/7 steps · 3m 0s worked",
+        "  ○ {f} footer",
+        "  ○ {p} customers page · 30s",
+        "    ○ {m} stamp",
         "    ○ {b} badge",
+        "    ✓ {s} seal · 30s",
+        "  § {r} colours are tokens",
+        "  ✓ {l} logo · 1m 0s",
+        "  ✓ {c} colours · 1m 30s",
     ];
     assert_eq!(printed(&repo, &[short(&trail.id)]), lines.map(ids), "short");
     let full = [
         "○ {t} build the CRM",
-        "  1/3 steps · 1m 30s worked",
+        "  3/7 steps · 3m 0s worked",
+        "  ○ {f} footer",
+        "  ○ {p} customers page · 30s",
+        "    ○ {m} stamp",
+        "    ○ {b} badge",
+        "    ✓ {s} seal · 30s",
+        "      done    proof",
+        "      took    30s",
         "  § {r} colours are tokens",
+        "  ✓ {l} logo · 1m 0s",
+        "    done    proof",
+        "    took    1m 0s",
         "  ✓ {c} colours · 1m 30s",
         "    done    proof",
         "    took    1m 30s",
-        "  ○ {p} customers page",
-        "    ○ {b} badge",
     ];
     assert_eq!(
         printed(&repo, &[short(&trail.id), "--full"]),
         full.map(ids),
         "full"
+    );
+}
+
+/// `tree <id>` prints an expired step with the closed steps, after the rules (`spec/02-cli.md`, "Tree").
+#[test]
+fn tree_prints_an_expired_step_with_the_closed_ones() {
+    let repo = Repo::new();
+    let by = support::account();
+    let at = support::now() - 2 * 3600;
+    let trail = support::step_note(&repo, &by, None, "the trail", at);
+    let scope = format!("trail:{}", trail.id);
+    let project = (repo.project_id(), "repo");
+    let rule = support::decision(
+        &repo,
+        (&project.0, project.1),
+        &by,
+        (Some(&scope), None),
+        "a rule",
+        at,
+    );
+    let done = support::step_note(&repo, &by, Some(&trail), "done part", at + 1);
+    support::done_note(&repo, &by, &done, at + 31);
+    let left = support::step_note(&repo, &by, Some(&trail), "left part", at + 2);
+    let lines = printed(&repo, &[short(&trail.id)]);
+    assert_eq!(
+        lines[2..],
+        [
+            format!("  § {} a rule", short(&rule.id)),
+            format!("  ! {} left part", short(&left.id)),
+            format!("  ✓ {} done part · 30s", short(&done.id)),
+        ],
+        "{lines:?}"
     );
 }
 
@@ -92,8 +147,8 @@ fn tree_of_an_ask_prints_its_trails_rules() {
         [
             format!("○ {} customers page", short(&ask)),
             "  0/1 step".to_string(),
-            format!("  § {rule} colours are tokens"),
             format!("  ○ {} badge", short(&badge)),
+            format!("  § {rule} colours are tokens"),
         ]
     );
 }
@@ -260,8 +315,8 @@ fn the_agent_view_prints_whole_lines_with_no_colour() {
     );
 }
 
-/// `tree` prints a done step's `changed` tag under it as `~ <changed>`, and its flags after the mark: `~`
-/// when changed, then `↻` on a revised step and its trail, which keep their states (`spec/02-cli.md`,
+/// `tree` prints a done step's `changed` tag under it as `~ <changed>`, and its flags after the mark: `↻`
+/// on a revised step and its trail, then `~` when changed, which keep their states (`spec/02-cli.md`,
 /// "Tree").
 #[test]
 fn tree_prints_what_changed_and_marks_a_revised_step() {
@@ -285,8 +340,8 @@ fn tree_prints_what_changed_and_marks_a_revised_step() {
     add(&repo, &["--under", short(&trail), "--", "next"]);
     let lines = printed(&repo, &[short(&trail)]);
     let done = format!("  ✓~ {} the part · ", short(&part));
-    assert!(lines[2].starts_with(&done), "{lines:?}");
-    assert_eq!(lines[3], "    ~ one file, not two");
+    assert!(lines[3].starts_with(&done), "{lines:?}");
+    assert_eq!(lines[4], "    ~ one file, not two");
     let other = add(&repo, &["--", "another trail"]);
     let o = cli(
         &repo,
@@ -305,7 +360,7 @@ fn tree_prints_what_changed_and_marks_a_revised_step() {
     let lines = printed(&repo, &[short(&trail)]);
     assert!(lines[0].starts_with("○↻ "), "{lines:?}");
     assert!(
-        lines[2].starts_with(&format!("  ✓~↻ {}", short(&part))),
+        lines[3].starts_with(&format!("  ✓↻~ {}", short(&part))),
         "{lines:?}"
     );
     let json = objects(&repo, &["tree", short(&trail)]);

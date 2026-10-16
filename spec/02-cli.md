@@ -424,8 +424,8 @@ celis tree --demo [--full] [--all]   made-up trails in every state, as tree prin
   or dropped itself MUST show its own done or drop. Its ask MUST NOT print, except with `--json`.
 - `tree` MUST mark a step or a trail `○` when open, `◐` when working, `✓` when done, `✗` when dropped,
   and `!` when expired (CIP-03, "Starting"; CIP-04, "State"). Its mark MUST be its only sign of its
-  state. Its flags MUST follow its mark: `~` when its done has a `changed` tag, then `↻` when it is
-  revised (CIP-06, "Revisions"). A trail takes its first ask's `changed`, and is revised when a step of
+  state. Its flags MUST follow its mark: `↻` when it is revised (CIP-06, "Revisions"), then `~` when
+  its done has a `changed` tag. A trail takes its first ask's `changed`, and is revised when a step of
   its tree is. Flags MUST NOT change the mark. With `--json`, a step MUST hold `revised_by`, the ids of
   the steps that revise it, and a trail `revised`, the ids of the revised steps of its tree.
 - The worked time of a step MUST be the sum, over each step of its tree with no step under it, of the
@@ -436,8 +436,9 @@ celis tree --demo [--full] [--all]   made-up trails in every state, as tree prin
   <title>`, then ` · ` and its progress and worked time, as on a block's second line.
 - A block MUST start with `<mark> <id, first 8> <title>`. Two spaces in, then come: `<done>/<all> steps`
   (`step` for one) when steps are under it and `<time> worked` when it has a worked time, ` · ` apart, on
-  one line; each rule as `§ <id, first 8> <text>`; then the steps under it, oldest first, each followed by
-  its own, two spaces further in. An ask MUST print its trail's rules.
+  one line; then the steps under it that are open or working; each rule as `§ <id, first 8> <text>`; then
+  the other steps under it. Each step MUST be followed by its own, two spaces further in, in the same
+  order. Steps of one group MUST print newest first. An ask MUST print its trail's rules.
 - A step MUST print as `<mark> <id, first 8> <title>`, then ` · <place>` with its first place whole and
   ` · <worked>` with its worked time.
 - Two spaces further in than a step come its lines: `~ <changed>` for a done step with a `changed` tag,
@@ -461,10 +462,11 @@ tree   text  <weekday>, <month> <day> · <n> active · <n> done
              <mark> <id, first 8> <title>
                <done>/<all> steps · <worked> worked
                done    <proof>                                   --full, and changed, took, follows, reused
-               § <id, first 8> <text>                            each rule
-               <mark> <id, first 8> <title> · <place> · <worked>
-                 ~ <what changed>
+               <mark> <id, first 8> <title> · <place> · <worked>  open or working, newest first
                  <mark> <id, first 8> <title> · <worked>
+               § <id, first 8> <text>                            each rule
+               <mark> <id, first 8> <title> · <place> · <worked>  the others, newest first
+                 ~ <what changed>
                    dropped <reason>
              <mark> <id, first 8> <title> · <done>/<all> steps · <worked> worked      --all
        json  {"trail": {"id", "created_at", "project", "content", "state", "links", "places", "proof", "grade",
@@ -484,11 +486,11 @@ Tue, Oct 14 · 1 active · 1 done
 
 ◐ 3fa2c1d0 Add a senior tier to the price list · shop
   1/4 steps · 8m 42s worked
-  § 4c1d22e0 A senior pays 80% of the price, rounded down to the cent.
-  ✓ 9b0e11aa A senior pays 80% · shelf/prices.py:40 · 1m 30s
+  ○ 6c1b8e52 Round the price down
   ◐ 5d7f3c21 The frame shows the tier · 7m 12s
     ○ 0a4e9d10 Add the badge to the frame
-  ○ 6c1b8e52 Round the price down
+  § 4c1d22e0 A senior pays 80% of the price, rounded down to the cent.
+  ✓ 9b0e11aa A senior pays 80% · shelf/prices.py:40 · 1m 30s
 
 crm
 ✓ 1c9e44b2 Fix the cart total
@@ -513,24 +515,25 @@ and close, and opens what they want to read.
   title MUST wrap between words at the width, and MUST NOT be cut; an active trail's project MUST end its
   first line. Under it, at the title's column after a dim `│ `, come its lines: `took <worked time>`,
   `active <time> ago` from the newest record of its tree while it is active, the project with an id, then the lines the agent view prints with `--full`
-  but its `took`. Then comes its tree, under its mark: a line `§ <n> rules` (`rule` for one) when it
-  has rules, a line `<marks> <n> closed steps` (`step` for one) when steps under it are done or
-  dropped, then its other steps, oldest first, each followed by its own. A blank line MUST come between
+  but its `took`. Then comes its tree, under its mark: its steps that are open or working, newest first,
+  each followed by its own; a line `§ <n> rules` (`rule` for one) when it has rules; then a line
+  `<marks> <n> closed steps` (`step` for one) when its other steps are done, dropped or expired. A step
+  MUST print the steps under it the same way, with no rules line. A blank line MUST come between
   a block and the trail before or after it.
 - The tree MUST draw each line of a level with a dim `├─ ` before it, and the last one with `└─ `. A
   line that opens MUST put `▸` in place of the `─` while closed and `▾` while open. A level down MUST
   start under its parent's mark, after a dim `│  ` while the parent has a line after it in its level,
   else after three spaces. A line under a step MUST start at its title's column, after a dim `│` under
   its mark when steps print under it.
-- A step and a trail MUST print their flags after the mark, as `tree` does (Tree): `~` in yellow, `↻`
-  in green.
+- A step and a trail MUST print their flags after the mark, as `tree` does (Tree): `↻` in green, `~`
+  in yellow.
 - A line opens when it hides or shows something: a trail, the rules line, the closed line, a step with
   lines under it, and a done or dropped step with steps under it.
 - The `§ <n> rules` line MUST be open with `--full`, else closed. Open, it MUST hold a line under it for
   each rule, `§ <text>`, the text wrapped between words.
-- The closed line MUST hold the trail's done and dropped steps at its top level, and print
-  them, oldest first, only when it is open. Its marks MUST be `✓` when one is done, then `✗`
-  when one is dropped. It MUST be open with `--full`, else closed.
+- The closed line MUST hold the done, dropped and expired steps of its level, and print them, newest
+  first, only when it is open. Its marks MUST be `✓` when one is done, then `✗` when one is dropped,
+  then `!` when one is expired. It MUST be open with `--full`, else closed.
 - A done step with steps under it MUST print them only when it is open; closed, its line
   MUST hold `<n> steps` for the steps of its tree.
 - A step line MUST end with its details: `<n> steps` when it is closed, and its worked time while it is
