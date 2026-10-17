@@ -1,8 +1,9 @@
 //! The agent view of `celis tree`: every trail, rule and step with its id, plain and whole.
 
 use super::{signs, Level, Line, Summary, Tree};
-use crate::command::clock::took;
-use celis_trails::id::short;
+use crate::progress::Flags;
+use crate::text::clock::took;
+use celis_trails::records::id::short;
 use celis_trails::{Step, Trail};
 
 impl Tree<'_> {
@@ -79,7 +80,7 @@ impl Tree<'_> {
     /// The mark and flags, id and title of `note`.
     fn heading(&self, note: Step) -> String {
         let title = note.record().title();
-        let flags: String = signs(note.flags()).into_iter().map(|(s, _)| s).collect();
+        let flags: String = signs(Flags::of(note)).into_iter().map(|(s, _)| s).collect();
         format!(
             "{}{flags} {} {title}",
             self.mark(note.state()),

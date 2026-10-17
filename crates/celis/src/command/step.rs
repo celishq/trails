@@ -1,13 +1,15 @@
 //! `celis step`: leave, close and drop steps.
 
-use super::{Args, Command};
-use celis_trails::id::short;
-use celis_trails::{Draft, Failure, Notice, Project, Written};
+use crate::command::{Args, Command};
+use crate::failure::Failure;
+use crate::progress::Review;
+use celis_trails::records::id::short;
+use celis_trails::{Draft, Notice, Place, Project, Written};
 use std::io::Write;
 
 impl Command {
     /// Runs `step <verb>` with `args`, writing to `out` and notes to `err`.
-    pub(super) fn step(
+    pub(crate) fn step(
         &self,
         args: &Args,
         out: &mut dyn Write,
@@ -44,7 +46,7 @@ impl Command {
             places: args
                 .places
                 .iter()
-                .map(|p| project.place(p, &self.folder))
+                .map(|p| Place::resolve(p, &project.folder, &self.folder))
                 .collect(),
             check: args.check.clone(),
             under: args.under.clone(),
@@ -91,8 +93,11 @@ impl Command {
                 )),
             };
         let pitfall = args.pitfall.clone();
-        let written = trails.done(id, proof, changed, pitfall, &project.folder)?;
-        self.print(written, args, out, err)
+        let written = trails.done(id, proof, changed.clone(), pitfall, &project.folder)?;
+        self.print(written, args, out, err)?;
+        let steps = trails.steps();
+        let review = Review::of(trails.records(), steps.find(id)?, changed.as_deref());
+        self.review(&review, err)
     }
 
     /// Drops the open step `args` names and each open step under it, and prints each drop's id.
@@ -122,7 +127,7 @@ impl Command {
         let places = args
             .places
             .iter()
-            .map(|p| project.place(p, &self.folder))
+            .map(|p| Place::resolve(p, &project.folder, &self.folder))
             .collect();
         let written = trails.edit(id, text, places, args.check.clone())?;
         self.print(written, args, out, &mut std::io::sink())
@@ -130,7 +135,7 @@ impl Command {
 
     /// Prints the id of each record of `written` and each of its decisions on `out`, and its notices on
     /// `err`.
-    pub(super) fn print(
+    pub(crate) fn print(
         &self,
         written: Written,
         args: &Args,
@@ -141,12 +146,12 @@ impl Command {
             self.id(out, args, record)?;
         }
         for (said, decision) in &written.decisions {
-            let line = super::line::decision(said, decision);
+            let line = crate::text::line::decision(said, decision);
             super::show(
                 out,
                 args.json,
                 "decision",
-                super::json::decision(said, decision),
+                crate::text::json::decision(said, decision),
                 &line,
             )?;
         }
@@ -171,7 +176,6 @@ impl Command {
                 "celis: {} has not started; keep one step ahead: take it first, or drop it.",
                 short(step)
             ),
-            Notice::Review(review) => return self.review(review, err),
         };
         super::put(err, &line)
     }

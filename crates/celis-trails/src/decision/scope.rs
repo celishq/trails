@@ -35,7 +35,7 @@ impl Scope {
     /// The scope as a line shows it, with a trail's id cut to its first 8 characters.
     pub fn short(&self) -> String {
         match self {
-            Scope::Trail(id) => format!("trail:{}", crate::id::short(id)),
+            Scope::Trail(id) => format!("trail:{}", crate::records::id::short(id)),
             scope => scope.text(),
         }
     }

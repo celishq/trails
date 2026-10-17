@@ -7,7 +7,7 @@ mod row;
 mod view;
 
 use super::Command;
-use celis_trails::Failure;
+use crate::failure::Failure;
 use found::Found;
 use std::io::Write;
 use std::process::Stdio;
@@ -16,7 +16,7 @@ use view::View;
 impl Command {
     /// Gives `words` to the system `grep` with the view on its stdin, and prints what it found,
     /// grouped by trail. Writes no record.
-    pub(super) fn grep(&self, words: &[String], out: &mut dyn Write) -> Result<(), Failure> {
+    pub(crate) fn grep(&self, words: &[String], out: &mut dyn Write) -> Result<(), Failure> {
         let view = match self.held()? {
             true => View::of(&self.trails()?),
             false => View::default(),
@@ -34,7 +34,7 @@ impl Command {
     }
 
     /// Prints that `celis past` is gone, for a plugin from before. Writes no record.
-    pub(super) fn past(&self, out: &mut dyn Write) -> Result<(), Failure> {
+    pub(crate) fn past(&self, out: &mut dyn Write) -> Result<(), Failure> {
         super::put(
             out,
             "celis past is gone: update the celis plugin, whose past.md searches the trails with celis grep.",

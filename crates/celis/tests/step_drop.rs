@@ -34,7 +34,7 @@ fn drop_closes_the_step_and_the_open_steps_under_it() {
 }
 
 /// A dropped trail has the state `dropped`; `tree` marks a dropped trail and step `✗`, with no state word,
-/// with its reason under it, and gives it no grade (`spec/02-cli.md`, "Tree").
+/// with its reason under it, and gives it no grade.
 #[test]
 fn tree_marks_a_dropped_step_with_its_reason_and_no_grade() {
     let repo = Repo::new();

@@ -108,7 +108,7 @@ fn a_reader_counts_a_record_as_a_step_only_with_the_label() {
 }
 
 /// A step's text line holds only its title, its first line; the full tree prints the other lines under
-/// it (`spec/03-steps.md`, "Steps").
+/// it.
 #[test]
 fn a_steps_line_holds_its_title_and_the_full_tree_its_detail() {
     let repo = Repo::new();

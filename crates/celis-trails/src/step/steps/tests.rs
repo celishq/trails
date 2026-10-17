@@ -49,11 +49,12 @@ fn the_first_done_with_a_proof_closes_its_step() {
     let steps = Steps::new(&records, 0);
     let done = steps.get(&a.id).and_then(|s| s.done());
     assert_eq!(done.map(|n| n.id.clone()), Some(first.id));
-    assert_eq!(ids(steps.open()), vec![b.id]);
+    let open = steps.all().into_iter().filter(|s| s.closed().is_none());
+    assert_eq!(ids(open.collect()), vec![b.id]);
 }
 
 /// A prefix of 8 characters that two steps' ids share finds neither, with `no-step`, while a full
-/// id still finds its step (`spec/02-cli.md`, "Step").
+/// id still finds its step (`spec/02-cli.md`, "Output and errors").
 #[test]
 fn a_prefix_two_steps_share_finds_neither() {
     let mut a = step("a", 10);
@@ -63,12 +64,12 @@ fn a_prefix_two_steps_share_finds_neither() {
     let records = vec![a.clone(), b];
     let steps = Steps::new(&records, 0);
     let refused = steps.find("abcdefgh").unwrap_err();
-    assert_eq!((refused.name.as_str(), refused.code), ("no-step", 1));
+    assert!(matches!(refused, Refusal::NoStep(id) if id == "abcdefgh"));
     assert_eq!(steps.find(&a.id).unwrap().id(), a.id);
 }
 
-/// A step of an ended trail that is not done or dropped is expired, and a closed one keeps its status
-/// (`spec/04-trails.md`, "State").
+/// A step of an ended trail that is not done or dropped is expired, and a closed one keeps its
+/// status.
 #[test]
 fn an_open_step_of_an_ended_trail_is_expired() {
     let trail = step("trail", 10);
@@ -92,7 +93,7 @@ fn an_open_step_of_an_ended_trail_is_expired() {
 }
 
 /// A store has a closed step once a step under a trail is done or expired; a done trail alone does not
-/// count (`spec/06-reuse.md`, "Periods").
+/// count.
 #[test]
 fn a_step_under_a_trail_closes_the_store() {
     let trail = step("trail", 10);

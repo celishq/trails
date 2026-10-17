@@ -1,4 +1,4 @@
-//! CIP-01, "Scope".
+//! CIP-05, "Scope".
 
 mod support;
 
@@ -14,7 +14,7 @@ fn decide(repo: &Repo, args: &[&str]) -> String {
 }
 
 /// A reader gives a `me` decision in every project, and a decision with any other scope only in its own,
-/// so only a `me` decision can be replaced from another project (`spec/01-decisions.md`, "Scope").
+/// so only a `me` decision can be replaced from another project (`spec/05-decisions.md`, "Scope").
 #[test]
 fn a_me_decision_holds_in_every_project_and_others_only_in_their_own() {
     let repo = Repo::new();
@@ -41,7 +41,7 @@ fn a_me_decision_holds_in_every_project_and_others_only_in_their_own() {
 }
 
 /// A reader counts a decision with no `scope` tag as `project`, and skips one whose scope it does not
-/// know (`spec/01-decisions.md`, "Scope").
+/// know (`spec/05-decisions.md`, "Scope").
 #[test]
 fn no_scope_tag_is_the_project_and_an_unknown_scope_is_skipped() {
     let repo = Repo::new();

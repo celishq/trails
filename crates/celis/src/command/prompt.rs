@@ -1,8 +1,9 @@
 //! `celis prompt`: what a session's hook writes on the trail it works on.
 
 use super::tree::today;
-use super::{Args, Command};
-use celis_trails::{Failure, Link, Project, State, Trails};
+use crate::command::{Args, Command};
+use crate::failure::Failure;
+use celis_trails::{Link, Project, State, Trails};
 use std::io::{Read, Write};
 use std::path::Path;
 
@@ -11,7 +12,7 @@ impl Command {
     /// working step and every done step on `err`, then how a new ask joins a trail. With no open trail, writes nothing, and names the agent that brings past work on `err`, once
     /// a session. For a harness message, does neither. A compaction's `SessionStart` lets the session name
     /// the agent again.
-    pub(super) fn prompt(
+    pub(crate) fn prompt(
         &self,
         args: &Args,
         out: &mut dyn Write,
@@ -65,7 +66,7 @@ impl Command {
             let line = format!(
                 "celis: you work on {} \"{}\"; when the next work does not fit it, add a step under it \
                  first, or replace it with step add --replaces.",
-                celis_trails::id::short(on.id()),
+                celis_trails::records::id::short(on.id()),
                 on.title()
             );
             super::put(err, &line)?;
@@ -86,7 +87,7 @@ impl Command {
             for step in done {
                 let line = format!(
                     "  {} \"{}\"",
-                    celis_trails::id::short(step.id()),
+                    celis_trails::records::id::short(step.id()),
                     step.title()
                 );
                 super::put(err, &line)?;
@@ -149,7 +150,7 @@ fn joins(open: Option<&str>) -> String {
         Some(id) => format!(
             "celis: when this prompt is a new ask, add it under the session's trail {}, when it fits; \
              else run celis tree and add it --under a related trail of today; else add it --new. {RULES}",
-            celis_trails::id::short(id)
+            celis_trails::records::id::short(id)
         ),
         None => format!(
             "celis: when this prompt is a new ask, run celis tree and add it --under a related \

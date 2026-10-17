@@ -1,14 +1,15 @@
 //! `celis auth`: the account's phrase.
 
 use super::{put, show, Args, Command};
+use crate::failure::Failure;
 use celis_nostr::Identity;
-use celis_trails::{Failure, Phrase};
+use celis_trails::Phrase;
 use serde_json::json;
 use std::io::{IsTerminal, Read, Write};
 
 impl Command {
     /// Runs the `auth` command its second word names.
-    pub(super) fn auth(
+    pub(crate) fn auth(
         &self,
         args: &Args,
         out: &mut dyn Write,

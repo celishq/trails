@@ -38,7 +38,7 @@ impl Kind {
     pub fn count(self, n: usize) -> String {
         match self {
             Kind::Changed | Kind::Dropped => format!("{n} {}", self.text()),
-            noun => crate::command::line::plural(n, noun.text()),
+            noun => crate::text::line::plural(n, noun.text()),
         }
     }
 }

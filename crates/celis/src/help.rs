@@ -1,6 +1,6 @@
 //! The help of `celis`: the page, and the page of each command.
 
-use celis_trails::Failure;
+use crate::failure::Failure;
 
 /// The page: the reference for a person.
 pub const PAGE: &str = r#"celis remembers how your agents do your tasks. Each task you give becomes a

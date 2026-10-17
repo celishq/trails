@@ -1,4 +1,4 @@
-//! A decision: one sentence that holds in its scope until another replaces it.
+//! CIP-05: a decision, one sentence that holds in its scope until another replaces it.
 
 pub mod decisions;
 pub mod scope;

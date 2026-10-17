@@ -54,8 +54,7 @@ fn next(records: &[Note], now: u64) -> Option<u64> {
 }
 
 /// The tree changes next when the first time it shows changes: a working step's time in seconds the next
-/// second, in hours the next minute, else when the trail ends; a closed tree, never (`spec/02-cli.md`,
-/// "Watching").
+/// second, in hours the next minute, else when the trail ends; a closed tree, never.
 #[test]
 fn the_tree_changes_next_when_its_first_time_changes() {
     let now = 1_800_000_000;

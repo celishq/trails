@@ -1,4 +1,4 @@
-//! A trail as a person reads it.
+//! CIP-04: a trail, and the step that holds its own work.
 
 use crate::Step;
 

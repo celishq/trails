@@ -89,8 +89,7 @@ fn edit_changes_the_check_and_places_and_a_title_keeps_the_detail() {
     );
 }
 
-/// `step add` says on stderr when a session's step joins its trail (`spec/02-cli.md`,
-/// "Step").
+/// `step add` says on stderr when a session's step joins its trail.
 #[test]
 fn add_says_when_a_step_joins_the_sessions_trail() {
     let repo = Repo::new();

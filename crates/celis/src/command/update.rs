@@ -1,8 +1,8 @@
 //! `celis update`: the running `celis`, replaced with the build of a release by its `install.sh`.
 
-use super::{Args, Command};
+use crate::command::{Args, Command};
+use crate::failure::Failure;
 use anyhow::anyhow;
-use celis_trails::Failure;
 use std::process::Stdio;
 
 /// Where the releases are, when `$CELIS_BASE` is not set.
@@ -11,7 +11,7 @@ const BASE: &str = "https://github.com/celishq/trails/releases";
 impl Command {
     /// Runs the latest release's `install.sh` into the folder of the running `celis`, for the version in
     /// `args`, else the latest when it is not installed.
-    pub(super) fn update(&self, args: &Args) -> Result<(), Failure> {
+    pub(crate) fn update(&self, args: &Args) -> Result<(), Failure> {
         if args.words.len() > 2 {
             return Err(Failure::usage("update takes one version"));
         }

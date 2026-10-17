@@ -57,7 +57,7 @@ fn a_reader_reads_steps_from_the_store_only() {
 }
 
 /// A reader ignores a `done` that names its step with a `step` tag
-/// (`spec/03-steps.md`, "Sources").
+/// (`spec/01-records.md`, "Records").
 #[test]
 fn a_reader_ignores_a_done_that_names_its_step_with_a_step_tag() {
     let repo = Repo::new();

@@ -1,11 +1,13 @@
 //! `celis tree`: a trail with its state, its rules and the steps under it.
 
-use super::clock::{day, midnight, weekday};
-use super::clock::{saved, stride, took};
-use super::{Args, Command};
-use celis_trails::id::short;
+use crate::command::{Args, Command};
+use crate::failure::Failure;
+use crate::progress::{Flags, Grade, Reuse, Tally};
+use crate::text::clock::{day, midnight, weekday};
+use crate::text::clock::{saved, stride, took};
+use celis_trails::records::id::short;
 use celis_trails::step::steps::LIFE;
-use celis_trails::{Decisions, Failure, Flags, Reuse, State, Step, Steps, Tally, Trail, Trails};
+use celis_trails::{Decisions, State, Step, Steps, Trail, Trails};
 use level::{ids, Level};
 use serde_json::json;
 use std::cell::{Cell, RefCell};
@@ -16,7 +18,7 @@ impl Command {
     /// Prints the step `args` names with every step under it, or with no id each trail of every project
     /// that is active or has a record from today, newest first, else `EMPTY`; on a terminal with no
     /// `--json`, again on each change. Writes no record.
-    pub(super) fn tree(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
+    pub(crate) fn tree(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let id = args.words.get(1);
         if args.all && id.is_some() {
             return Err(Failure::usage("tree takes an id or --all, not both"));
@@ -47,7 +49,7 @@ impl Command {
     }
 
     /// The tree of `trails` that `args` names, `width` wide, as `view` shows it.
-    pub(super) fn frame(
+    pub(crate) fn frame(
         &self,
         trails: &Trails,
         args: &Args,
@@ -90,7 +92,7 @@ impl Command {
 }
 
 /// Each trail of every project that is active or has a record from the day of `now`, newest first.
-pub(super) fn today<'a>(steps: &'a Steps<'a>, now: u64) -> Vec<Step<'a>> {
+pub(crate) fn today<'a>(steps: &'a Steps<'a>, now: u64) -> Vec<Step<'a>> {
     let midnight = midnight(now);
     let roots = steps.roots().into_iter().rev();
     roots
@@ -101,7 +103,7 @@ pub(super) fn today<'a>(steps: &'a Steps<'a>, now: u64) -> Vec<Step<'a>> {
 /// How a tree shows: in a watch, with a cursor column; full; all with no id; and in a watch, the
 /// spinner's frame, the lines it opened or closed, and the line it selected.
 #[derive(Default)]
-pub(super) struct View {
+pub(crate) struct View {
     pub watch: bool,
     pub full: bool,
     pub all: bool,
@@ -123,7 +125,7 @@ impl View {
 
 /// A printed tree: its text, the earliest time a time it shows changes, whether it shows the spinner,
 /// the lines a watch selects in the order it prints them, and the line of the selected one.
-pub(super) struct Frame {
+pub(crate) struct Frame {
     pub text: String,
     pub next: Option<u64>,
     pub spun: bool,
@@ -133,7 +135,7 @@ pub(super) struct Frame {
 
 /// A trail, rule or step a watch selects: its id, whether it is open, the trail or step it is under,
 /// and every rule and step under it.
-pub(super) struct Item {
+pub(crate) struct Item {
     pub id: String,
     pub open: bool,
     pub parent: Option<String>,
@@ -149,13 +151,13 @@ impl Item {
 }
 
 /// What `tree` with no id prints while it has no trail to print.
-pub(super) const EMPTY: &str = "No active trails. Run `celis tree --all` to see every trail.";
+pub(crate) const EMPTY: &str = "No active trails. Run `celis tree --all` to see every trail.";
 
 /// The steps and decisions a tree is printed from, and how: in colour; grouped by day and project; each
 /// line cut to `width`; as `view` shows it, off a watch as the agent view. `next` holds the earliest time a time it printed
 /// changes, `spun` whether it printed the spinner, `order` the lines a watch selects, `printed` the count of
 /// its lines, and `picked` the line of the selected trail.
-pub(super) struct Tree<'a> {
+pub(crate) struct Tree<'a> {
     pub steps: &'a Steps<'a>,
     pub decisions: &'a Decisions<'a>,
     pub reuse: &'a Reuse<'a>,
@@ -387,7 +389,7 @@ impl Tree<'_> {
         let step = note.record();
         let mut head = json!({"id": note.id(), "created_at": note.note().created_at,
             "project": step.anchor.project, "content": step.content,
-            "links": super::json::links(step), "places": step.places, "session": step.session});
+            "links": crate::text::json::links(step), "places": step.places, "session": step.session});
         self.closing_value(&mut head, note, self.work(note));
         let reworked: Vec<&str> = note.reworked().iter().map(|s| s.id()).collect();
         head["revised"] = json!(reworked);
@@ -398,7 +400,7 @@ impl Tree<'_> {
     /// Adds the object of each step of `notes`, each followed by its own.
     fn objects(&self, notes: Vec<Step>, lines: &mut Vec<Line>) {
         for note in notes {
-            let mut value = super::json::step(note.note(), note.record());
+            let mut value = crate::text::json::step(note.note(), note.record());
             self.closing_value(&mut value, note, note);
             lines.push(Line::Text(json!({ "step": value }).to_string()));
             self.objects(note.children(), lines);
@@ -411,7 +413,7 @@ impl Tree<'_> {
         value["state"] = json!(note.state().text());
         value["proof"] = json!(done.map(|d| d.content.clone()));
         value["changed"] = json!(work.changed());
-        value["grade"] = json!(work.grade());
+        value["grade"] = json!(Grade::of(work));
         let by: Vec<&str> = work.revised().iter().map(|s| s.id()).collect();
         value["revised_by"] = json!(by);
         value["reused"] = json!(self.reuse.down(work).len());
@@ -697,7 +699,7 @@ impl Tree<'_> {
         let leaves = tree.iter().filter(|s| s.children().is_empty());
         let (mut total, mut any, mut running) = (0, false, false);
         for leaf in leaves {
-            match (leaf.grade(), leaf.start()) {
+            match (Grade::of(*leaf), leaf.start()) {
                 (Some(grade), _) => total += grade.took,
                 (None, Some(start)) if leaf.state() == State::Working => {
                     total += now.saturating_sub(start.created_at);
@@ -870,7 +872,7 @@ impl Tree<'_> {
         for line in note.record().detail() {
             self.labelled(out, rail, "", line);
         }
-        if let (Some(done), Some(line)) = (note.done(), super::line::grade(note)) {
+        if let (Some(done), Some(line)) = (note.done(), crate::text::line::grade(note)) {
             self.labelled(out, rail, "done", &done.content);
             if let Some(changed) = done.tag("changed") {
                 self.labelled(out, rail, "changed", changed);
@@ -958,7 +960,7 @@ impl Tree<'_> {
 
     /// The mark of `note` with its flags after it, each in its colour.
     fn marked(&self, note: Step) -> String {
-        let signs = signs(note.flags()).into_iter();
+        let signs = signs(Flags::of(note)).into_iter();
         let flags = signs.map(|(sign, code)| self.paint(code, sign));
         self.mark(note.state()) + &flags.collect::<String>()
     }
@@ -1014,7 +1016,7 @@ const MAGENTA: &str = "35";
 /// What starts the id of a trail's rules line in a watch's order.
 const RULES: &str = "§";
 /// The id of the `Show more` line in a watch's order.
-pub(super) const MORE: &str = "+more";
+pub(crate) const MORE: &str = "+more";
 /// What starts the id of a trail's closed line in a watch's order.
 const CLOSED: &str = "✓";
 /// The colour of a project's name.
@@ -1047,7 +1049,7 @@ fn room(widths: &[usize; 5]) -> usize {
 }
 
 /// The signs of `flags` with their colours: `↻` when revised, then `~` when changed.
-pub(super) fn signs(flags: Flags) -> Vec<(&'static str, &'static str)> {
+pub(crate) fn signs(flags: Flags) -> Vec<(&'static str, &'static str)> {
     let all = [(flags.revised, "↻", GREEN), (flags.changed, "~", YELLOW)];
     all.into_iter()
         .filter(|(on, ..)| *on)
@@ -1056,7 +1058,7 @@ pub(super) fn signs(flags: Flags) -> Vec<(&'static str, &'static str)> {
 }
 
 /// The characters of `text` a terminal shows; colour codes count none.
-pub(super) fn visible(text: &str) -> usize {
+pub(crate) fn visible(text: &str) -> usize {
     let mut count = 0;
     let mut code = false;
     for c in text.chars() {
@@ -1086,7 +1088,7 @@ fn wrap(text: &str, width: usize) -> Vec<String> {
 }
 
 /// `line` cut to `width` visible characters, its last one `…`, when it is wider.
-pub(super) fn cut(line: &str, width: usize) -> String {
+pub(crate) fn cut(line: &str, width: usize) -> String {
     if width < 2 || visible(line) <= width {
         return line.to_string();
     }
@@ -1105,14 +1107,14 @@ pub(super) fn cut(line: &str, width: usize) -> String {
 }
 
 /// How a step in a state prints: its mark, the colour of its mark, and the colour of its title.
-pub(super) struct Look {
+pub(crate) struct Look {
     pub mark: &'static str,
     pub text: &'static str,
     pub title: &'static str,
 }
 
 /// How a step or a trail in `state` prints.
-pub(super) fn look(state: State) -> Look {
+pub(crate) fn look(state: State) -> Look {
     let (mark, text, title) = match state {
         State::Open => ("○", "", ""),
         State::Working => ("◐", YELLOW, BOLD),

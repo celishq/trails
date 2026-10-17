@@ -1,4 +1,4 @@
-//! CIP-05, "The log".
+//! The log of failed runs.
 
 mod support;
 
@@ -14,8 +14,7 @@ fn logged(repo: &Repo) -> Vec<String> {
 }
 
 /// A run that fails adds a line with its time, exit code, words and message, and leaves out the flags,
-/// their values and the text after `--`; a run that succeeds adds none (`spec/05-reports.md`,
-/// "The log").
+/// their values and the text after `--`; a run that succeeds adds none.
 #[test]
 fn a_failed_run_adds_its_words_and_message_to_the_log() {
     let repo = Repo::new();

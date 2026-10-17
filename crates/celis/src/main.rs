@@ -1,7 +1,12 @@
 //! celis — the command line over the trail.
 
 mod command;
+mod demo;
+mod failure;
 mod help;
+mod progress;
+mod terminal;
+mod text;
 
 use std::io::Write;
 

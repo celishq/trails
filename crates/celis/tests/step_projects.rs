@@ -1,4 +1,4 @@
-//! CIP-03, "Projects".
+//! CIP-01, "Projects".
 
 mod support;
 
@@ -29,7 +29,7 @@ fn anchor(note: &Note) -> String {
 
 /// Outside git, `step add --at <URL>` names the project `figma:<file key>` for a figma.com /file/ or
 /// /design/ URL and `web:<host>` for any other URL; two steps at one Figma file from two folders name the
-/// same project (`spec/03-steps.md`, "Projects").
+/// same project (`spec/01-records.md`, "Projects").
 #[test]
 fn outside_git_a_url_names_the_project() {
     let repo = Repo::plain();
@@ -54,7 +54,7 @@ fn outside_git_a_url_names_the_project() {
 }
 
 /// Outside git, `step add --at <URL>` names the project too: the file name segment of a Figma URL, else the
-/// host (`spec/03-steps.md`, "Projects").
+/// host (`spec/01-records.md`, "Projects").
 #[test]
 fn outside_git_a_url_gives_the_project_its_name() {
     let repo = Repo::plain();
@@ -72,7 +72,7 @@ fn outside_git_a_url_gives_the_project_its_name() {
 }
 
 /// Outside git, two steps at one Figma file whose URLs hold two file names carry one project id and each
-/// its own project name (`spec/03-steps.md`, "Projects").
+/// its own project name (`spec/01-records.md`, "Projects").
 #[test]
 fn one_figma_file_under_two_names_is_one_project_with_two_names() {
     let repo = Repo::plain();

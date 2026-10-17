@@ -1,4 +1,4 @@
-//! CIP-01, "Decisions".
+//! CIP-05, "Decisions".
 
 mod support;
 
@@ -9,7 +9,7 @@ fn short(id: &str) -> String {
     id[..8].to_string()
 }
 
-/// A reader counts a decision whatever account signed it (`spec/01-decisions.md`, "The account").
+/// A reader counts a decision whatever account signed it (`spec/01-records.md`, "The account").
 #[test]
 fn a_decision_counts_whatever_account_signed_it() {
     let repo = Repo::plain();
@@ -38,7 +38,7 @@ fn a_decision_counts_whatever_account_signed_it() {
     );
 }
 
-/// A decision is live until another decision names it in `replaces` (`spec/01-decisions.md`,
+/// A decision is live until another decision names it in `replaces` (`spec/05-decisions.md`,
 /// "Decisions").
 #[test]
 fn a_decision_is_live_until_another_decision_replaces_it() {
@@ -85,7 +85,7 @@ fn a_decision_is_live_until_another_decision_replaces_it() {
 }
 
 /// A reader ignores cairns, ratings, outcomes, source records and splits a store holds from before
-/// (`spec/01-decisions.md`, "Decisions").
+/// (`spec/01-records.md`, "Records").
 #[test]
 fn a_reader_ignores_cairns_ratings_outcomes_source_records_and_splits_from_before() {
     let repo = Repo::plain();

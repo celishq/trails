@@ -3,7 +3,8 @@
 ## Layout
 
 - `crates/` is one Cargo workspace. Run cargo from there.
-- `spec/` holds the contract, as CIPs. `spec/fixtures/` holds what two ends must match.
+- `spec/` holds the contract, as CIPs. `spec/fixtures/` holds what two ends must match. Before you change
+  `spec/`, read and follow `spec/README.md`, "How a CIP works".
 - `plugins/celis/` is the plugin: one manifest per agent, and the same hooks. Gemini CLI installs from the
   repo root, so `gemini-extension.json` and `hooks/` are there. Antigravity does too, so
   `.antigravity-plugin/` and `hooks.json` are there. The card's command lines match the usage in
@@ -20,7 +21,7 @@
 - On types and members only. No inline comments.
 - A docstring states what the item does, not how or why. Five lines on a type, three on a member, none
   where the name says it.
-- A test cites the spec section it proves: ``(`spec/03-steps.md`, "Section")``.
+- A test of a spec rule cites its section: ``(`spec/03-steps.md`, "Section")``.
 
 ## Tests
 

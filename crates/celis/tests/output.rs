@@ -267,7 +267,7 @@ fn a_replaces_no_live_decision_has_is_named_no_decision_under_json() {
     assert_eq!(object["error"], "no-decision");
 }
 
-/// A usage error names the narrowest help page that covers it (`spec/02-cli.md`, "Output and errors").
+/// A usage error names the narrowest help page that covers it.
 #[test]
 fn a_usage_error_names_the_narrowest_help_page() {
     let repo = Repo::new();
@@ -283,8 +283,8 @@ fn a_usage_error_names_the_narrowest_help_page() {
     }
 }
 
-/// An unknown command names the known one nearest it, when two edits or fewer turn one into the other
-/// (`spec/02-cli.md`, "Output and errors").
+/// An unknown command names the known one nearest it, when two edits or fewer turn one into the
+/// other.
 #[test]
 fn an_unknown_command_names_the_known_one_nearest_it() {
     let repo = Repo::new();
@@ -311,8 +311,7 @@ fn without_json_an_error_is_one_line() {
     assert!(object["message"].is_string());
 }
 
-/// A code-1 error without `--json` is one line on stderr, `celis: <message>`
-/// (`spec/02-cli.md`, "Output and errors").
+/// A code-1 error without `--json` is one line on stderr, `celis: <message>`.
 #[test]
 fn a_code_1_error_without_json_is_one_celis_line() {
     let repo = Repo::plain();
@@ -464,8 +463,7 @@ fn step_done_prints_json_objects_with_json() {
     assert!(is_id(lines[0]["id"].as_str().unwrap()));
 }
 
-/// An unknown command more than two edits from every known one names no "did you mean"
-/// (`spec/02-cli.md`, "Output and errors").
+/// An unknown command more than two edits from every known one names no "did you mean".
 #[test]
 fn an_unknown_command_far_from_every_known_one_names_no_suggestion() {
     let repo = Repo::plain();
@@ -525,8 +523,7 @@ fn each_refusal_names_itself_under_json() {
     assert_eq!(object["error"], "error");
 }
 
-/// A command whose reader closes stdout stops with no message (`spec/02-cli.md`, "Output and
-/// errors").
+/// A command whose reader closes stdout stops with no message.
 #[test]
 fn a_closed_reader_stops_a_command_with_no_message() {
     let repo = Repo::plain();

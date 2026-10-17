@@ -1,4 +1,4 @@
-//! The plugin's hooks, run as each agent's manifest declares them (CIP-04, "Sessions").
+//! The plugin's hooks, run as each agent's manifest declares them.
 
 mod support;
 
@@ -160,8 +160,8 @@ fn prompts(repo: &Repo, step: &str) -> Vec<String> {
 }
 
 /// Each agent's session start gives the card; an agent other than Claude Code also gets its session, to
-/// pass with `--session`. Antigravity has no session start, and gets both before each call of the model
-/// (`spec/04-trails.md`, "Sessions").
+/// pass with `--session`. Antigravity has no session start, and gets both before each call of the
+/// model.
 #[test]
 fn each_agents_session_start_gives_the_card_and_its_session() {
     let repo = Repo::new();
@@ -210,7 +210,7 @@ fn each_agents_prompt_hook_writes_a_prompt_on_its_sessions_trail() {
 }
 
 /// Claude Code's prompt hook asks for the past agent once a session, and again after a compaction's
-/// session start (`spec/02-cli.md`, "Prompt").
+/// session start.
 #[test]
 fn claudes_hooks_ask_for_the_past_agent_again_after_a_compaction() {
     let repo = Repo::new();
@@ -236,8 +236,7 @@ fn claudes_hooks_ask_for_the_past_agent_again_after_a_compaction() {
         .contains("celis:past agent"));
 }
 
-/// The prompt hooks of Codex and Gemini CLI ask to do what past.md says in place of the past agent
-/// (`spec/04-trails.md`, "The past").
+/// The prompt hooks of Codex and Gemini CLI ask to do what past.md says in place of the past agent.
 #[test]
 fn codex_and_gemini_prompt_hooks_name_past_md_for_the_past_agent() {
     let repo = Repo::new();
@@ -294,8 +293,7 @@ fn each_manifest_names_its_hooks_and_each_marketplace_the_plugin() {
     assert_eq!(read(".antigravity-plugin/plugin.json")["name"], "celis");
 }
 
-/// Each agent's manifest carries one version, so each agent updates the plugin on a release
-/// (`spec/04-trails.md`, "Plugin version").
+/// Each agent's manifest carries one version, so each agent updates the plugin on a release.
 #[test]
 fn each_manifest_carries_one_version() {
     let manifests = [
@@ -355,7 +353,7 @@ fn start_with_versions(celis: &str, plugin: &str) -> String {
 }
 
 /// The session start names both versions when the plugin and `celis` differ, and nothing when they match
-/// or one is a build from the repo (`spec/04-trails.md`, "Plugin version").
+/// or one is a build from the repo.
 #[test]
 fn session_start_names_a_version_mismatch() {
     let notice = "celis 1.4.0 is installed, and the celis plugin is 1.3.0.";

@@ -1,6 +1,6 @@
 //! The words of one command line.
 
-use celis_trails::Failure;
+use crate::failure::Failure;
 
 /// The words of one command line, split into the verb and its words, the flags and the text after `--`.
 #[derive(Clone, Default)]

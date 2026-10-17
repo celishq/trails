@@ -1,13 +1,14 @@
 //! `celis decide`: write a decision.
 
-use super::{Args, Command};
-use celis_trails::{Decision, Failure, Project, Scope};
+use crate::command::{Args, Command};
+use crate::failure::Failure;
+use celis_trails::{Decision, Place, Project, Scope};
 use std::io::Write;
 
 impl Command {
     /// Writes the decision `args` states on `project`, in its scope, signed by the account now, and
     /// prints its id.
-    pub(super) fn decide(
+    pub(crate) fn decide(
         &self,
         args: &Args,
         out: &mut dyn Write,
@@ -23,7 +24,7 @@ impl Command {
             None => Scope::Project,
         };
         let scope = match scope {
-            Scope::At(place) => Scope::At(project.place(&place, &self.folder)),
+            Scope::At(place) => Scope::At(Place::resolve(&place, &project.folder, &self.folder)),
             scope => scope,
         };
         let decision = Decision {
