@@ -5,7 +5,7 @@ use super::ink::Ink;
 use super::table::{Row, Table};
 use crate::command::tree::{cut, look, visible};
 use crate::progress::{Grade, Period, Reuse, Tally};
-use crate::text::clock::{day, midnight, saved, took};
+use crate::text::clock::{day, midnight, took};
 use crate::text::line::plural;
 use celis_trails::{State, Step, Trails};
 use std::collections::BTreeMap;
@@ -51,7 +51,7 @@ pub(crate) fn sheets(
     );
     let ink = Ink { plain, colour };
     [
-        effect(&last, &before, &reuse, full, ink),
+        effect(&last, &before, full, ink),
         followed(&reuse, inside, ink),
         rules(trails, &reuse, inside, ink),
         work(&steps, &before, now, inside, ink),
@@ -66,62 +66,40 @@ fn nothing(what: &str) -> String {
     format!("no step {what} in {DAYS} days")
 }
 
-/// One number of the effect: its label, its reading in each period, the word for the records it
+/// One number of the effect: its label, its share in each period, the word for the records it
 /// counts, and whether more is better.
 struct Measure {
     label: &'static str,
-    last: Reading,
-    before: Reading,
+    last: Share,
+    before: Share,
     unit: &'static str,
     up: bool,
-    time: bool,
 }
 
-/// A measure in one period: its value, none with no records, and the records it counts.
+/// The records of one period that count toward a measure, `part`, among the records it counts, `base`.
 #[derive(Clone, Copy)]
-struct Reading {
-    value: Option<i64>,
+struct Share {
+    part: usize,
     base: usize,
 }
 
-impl Reading {
-    /// The share of `part` in `base`, in percent.
-    fn share((part, base): (usize, usize)) -> Reading {
-        Reading {
-            value: (base > 0).then(|| (part * 100 / base) as i64),
-            base,
-        }
+impl Share {
+    fn new(part: usize, base: usize) -> Share {
+        Share { part, base }
+    }
+
+    /// `part` in `base`, in percent; none with no records.
+    fn percent(self) -> Option<i64> {
+        (self.base > 0).then(|| (self.part * 100 / self.base) as i64)
+    }
+
+    /// The percent as the card shows it, `—` with no records.
+    fn text(self) -> String {
+        self.percent().map_or("—".to_string(), |v| format!("{v}%"))
     }
 }
 
 impl Measure {
-    /// A share of `part` in `base` for each period, in percent.
-    fn share(
-        label: &'static str,
-        last: (usize, usize),
-        before: (usize, usize),
-        unit: &'static str,
-        up: bool,
-    ) -> Measure {
-        Measure {
-            label,
-            last: Reading::share(last),
-            before: Reading::share(before),
-            unit,
-            up,
-            time: false,
-        }
-    }
-
-    /// `value` as the card shows it.
-    fn text(&self, value: Option<i64>) -> String {
-        match (value, self.time) {
-            (None, _) => "—".to_string(),
-            (Some(v), true) => saved(v).replace(' ', ""),
-            (Some(v), false) => format!("{v}%"),
-        }
-    }
-
     /// The change from the period before, coloured green when better and red when worse, dim when it
     /// moved little; none when the period before counts none, `· few records` when a period counts
     /// fewer than `FEW`.
@@ -129,30 +107,20 @@ impl Measure {
         if self.before.base == 0 {
             return None;
         }
-        let (Some(last), Some(before)) = (self.last.value, self.before.value) else {
+        let (Some(last), Some(before)) = (self.last.percent(), self.before.percent()) else {
             return Some(ink.dim("· few records"));
         };
         if self.last.base < FEW || self.before.base < FEW {
             return Some(ink.dim("· few records"));
         }
         let moved = last - before;
-        let small = match self.time {
-            true => moved.abs() < 60,
-            false => moved.abs() < 3,
+        let by = match moved.signum() {
+            0 => "=".to_string(),
+            1 => format!("▲ {moved}"),
+            _ => format!("▼ {}", -moved),
         };
-        let step = |v: i64| match self.time {
-            true => unit(v),
-            false => self.text(Some(v)),
-        };
-        let by = match (moved.signum(), self.time) {
-            (0, _) => "=".to_string(),
-            (1, true) => format!("▲ {}", unit(moved)),
-            (_, true) => format!("▼ {}", unit(-moved)),
-            (1, false) => format!("▲ {moved}"),
-            (_, false) => format!("▼ {}", -moved),
-        };
-        let text = format!("{} → {}  {by}", step(before), step(last));
-        let tone = match (small, (moved > 0) == self.up) {
+        let text = format!("{before}% → {last}%  {by}");
+        let tone = match (moved.abs() < 3, (moved > 0) == self.up) {
             (true, _) => "2",
             (false, true) => "32",
             (false, false) => "31",
@@ -161,47 +129,30 @@ impl Measure {
     }
 }
 
-/// The effect: as planned, rework, rules reused and time saved in the last 14 days, against the 14
-/// days before.
-fn effect(last: &Period, before: &Period, reuse: &Reuse, inside: usize, ink: Ink) -> Sheet {
+/// The effect: as planned, rework and rules reused in the last 14 days, against the 14 days before.
+fn effect(last: &Period, before: &Period, inside: usize, ink: Ink) -> Sheet {
     let done = |p: &Period| p.done().len();
-    let (follows, gain) = last.follows(reuse);
-    let (follows_before, gain_before) = before.follows(reuse);
     let measures = [
-        Measure::share(
-            "AS PLANNED",
-            (last.planned(), done(last)),
-            (before.planned(), done(before)),
-            "step",
-            true,
-        ),
-        Measure::share(
-            "REWORK",
-            (last.reworked(), done(last)),
-            (before.reworked(), done(before)),
-            "step",
-            false,
-        ),
-        Measure::share(
-            "RULES REUSED",
-            (last.ruled(), last.added().len()),
-            (before.ruled(), before.added().len()),
-            "step",
-            true,
-        ),
         Measure {
-            label: "TIME SAVED",
-            last: Reading {
-                value: gain,
-                base: follows,
-            },
-            before: Reading {
-                value: gain_before,
-                base: follows_before,
-            },
-            unit: "follow",
+            label: "AS PLANNED",
+            last: Share::new(last.planned(), done(last)),
+            before: Share::new(before.planned(), done(before)),
+            unit: "step",
             up: true,
-            time: true,
+        },
+        Measure {
+            label: "REWORK",
+            last: Share::new(last.reworked(), done(last)),
+            before: Share::new(before.reworked(), done(before)),
+            unit: "step",
+            up: false,
+        },
+        Measure {
+            label: "RULES REUSED",
+            last: Share::new(last.ruled(), last.added().len()),
+            before: Share::new(before.ruled(), before.added().len()),
+            unit: "step",
+            up: true,
         },
     ];
     let column = (inside / measures.len()).max(1);
@@ -214,10 +165,7 @@ fn effect(last: &Period, before: &Period, reuse: &Reuse, inside: usize, ink: Ink
         .iter()
         .map(|m| cell(ink.dim(m.label)))
         .collect::<String>()];
-    let bigs: Vec<Vec<String>> = measures
-        .iter()
-        .map(|m| ink.big(&m.text(m.last.value)))
-        .collect();
+    let bigs: Vec<Vec<String>> = measures.iter().map(|m| ink.big(&m.last.text())).collect();
     for r in 0..bigs[0].len() {
         face.push(bigs.iter().map(|b| cell(b[r].clone())).collect());
     }
@@ -243,8 +191,8 @@ fn effect(last: &Period, before: &Period, reuse: &Reuse, inside: usize, ink: Ink
             id: None,
             cells: vec![
                 title_case(m.label),
-                m.text(m.last.value),
-                m.text(m.before.value),
+                m.last.text(),
+                m.before.text(),
                 plural(m.last.base, m.unit),
             ],
         })
@@ -263,25 +211,17 @@ fn effect(last: &Period, before: &Period, reuse: &Reuse, inside: usize, ink: Ink
     }
 }
 
-/// The reuse: the follows and the time they saved, and the steps followed most.
+/// The reuse: the follows, and the steps followed most.
 fn followed(reuse: &Reuse, inside: usize, ink: Ink) -> Sheet {
-    let (follows, gain) = reuse.total();
-    let side = [
-        format!("{}   {}", ink.dim("follows"), ink.dim("saved")),
-        format!("{:<10}{}", "", gain.map_or("—".to_string(), saved)),
-    ];
-    let mut face = ink.beside(&follows.to_string(), &side, 2);
+    let side = [ink.dim("follows")];
+    let mut face = ink.beside(&reuse.total().to_string(), &side, 2);
     face.push(String::new());
     let steps = reuse.followed();
     if steps.is_empty() {
         face.push(ink.dim("no step followed another yet"));
     }
     for &step in steps.iter().take(3) {
-        let tail = format!(
-            " ──▶ {:<3}{:>8}",
-            reuse.down(step).len(),
-            reuse.saved(step).map_or(String::new(), saved)
-        );
+        let tail = format!(" ──▶ {:>3}", reuse.followers(step));
         let title = cut(step.title(), inside.saturating_sub(visible(&tail) + 1));
         let pad = " ".repeat(inside.saturating_sub(visible(&title) + visible(&tail)));
         face.push(format!("{title}{pad}{tail}"));
@@ -293,8 +233,7 @@ fn followed(reuse: &Reuse, inside: usize, ink: Ink) -> Sheet {
             cells: vec![
                 s.title().to_string(),
                 s.record().anchor.name.clone(),
-                reuse.down(s).len().to_string(),
-                reuse.saved(s).map_or("—".to_string(), saved),
+                reuse.followers(s).to_string(),
             ],
         })
         .collect();
@@ -302,7 +241,7 @@ fn followed(reuse: &Reuse, inside: usize, ink: Ink) -> Sheet {
         title: "01 REUSE".into(),
         face,
         table: Table {
-            head: vec!["Step", "Project", "Followed", "Saved"],
+            head: vec!["Step", "Project", "Followed"],
             rows,
             wide: 0,
         },
@@ -566,18 +505,6 @@ fn projects(last: &Period, inside: usize, ink: Ink) -> Sheet {
             rows,
             wide: 0,
         },
-    }
-}
-
-/// `seconds` in its largest unit only, as `46m`, with a `-` when below zero.
-fn unit(seconds: i64) -> String {
-    let sign = if seconds < 0 { "-" } else { "" };
-    let s = seconds.unsigned_abs();
-    match s {
-        s if s >= 86_400 => format!("{sign}{}d", s / 86_400),
-        s if s >= 3_600 => format!("{sign}{}h", s / 3_600),
-        s if s >= 60 => format!("{sign}{}m", s / 60),
-        s => format!("{sign}{s}s"),
     }
 }
 

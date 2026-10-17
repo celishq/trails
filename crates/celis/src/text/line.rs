@@ -16,9 +16,14 @@ pub(crate) fn decision(note: &Note, decision: &Decision) -> String {
     )
 }
 
+/// How long a done `step` took, as `46m 3s`; `None` while it is not done.
+pub(crate) fn time(step: Step) -> Option<String> {
+    Grade::of(step).map(|g| took(g.took))
+}
+
 /// `took <time>[ · revised by <id, first 8>, ...]` of a done `step`; `None` while it is not done.
 pub(crate) fn grade(step: Step) -> Option<String> {
-    let took = took(Grade::of(step)?.took);
+    let took = time(step)?;
     let by: Vec<String> = step.revised().iter().map(|s| short(s.id())).collect();
     Some(match by.is_empty() {
         true => format!("took {took}"),

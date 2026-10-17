@@ -66,7 +66,7 @@ impl Tree<'_> {
     fn below(&self, note: Step, indent: &str, lines: &mut Vec<Line>) {
         if self.view.full {
             self.closing(note, indent, true, lines);
-            self.reused(note, indent, lines);
+            self.followed(note, indent, lines);
             return;
         }
         if let Some(changed) = note.changed() {

@@ -4,7 +4,7 @@ use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::progress::{Flags, Grade, Reuse, Tally};
 use crate::text::clock::{day, midnight, weekday};
-use crate::text::clock::{saved, stride, took};
+use crate::text::clock::{stride, took};
 use celis_trails::records::id::short;
 use celis_trails::step::steps::LIFE;
 use celis_trails::{Decisions, State, Step, Steps, Trail, Trails};
@@ -374,7 +374,7 @@ impl Tree<'_> {
             || note.done().is_some()
             || note.dropped().is_some()
             || !self.reuse.sources(note).is_empty()
-            || !self.reuse.down(note).is_empty();
+            || self.reuse.followers(note) > 0;
         lines || (note.state().closed() && !note.children().is_empty())
     }
 
@@ -416,7 +416,7 @@ impl Tree<'_> {
         value["grade"] = json!(Grade::of(work));
         let by: Vec<&str> = work.revised().iter().map(|s| s.id()).collect();
         value["revised_by"] = json!(by);
-        value["reused"] = json!(self.reuse.down(work).len());
+        value["followed"] = json!(self.reuse.followers(work));
         value["reason"] = json!(work.dropped().map(|d| d.content.clone()));
     }
 
@@ -491,7 +491,7 @@ impl Tree<'_> {
             lines.push(Line::Text(format!("{hair}{project}")));
         }
         self.closing(work, &hair, false, lines);
-        self.reused(work, &hair, lines);
+        self.followed(work, &hair, lines);
         let level = Level::of(Trail::new(note).parts());
         self.level(level, summary.rules, "  ", note.id(), lines);
     }
@@ -684,7 +684,7 @@ impl Tree<'_> {
             self.pick(item, lines, first);
             if open {
                 self.closing(note, &below, true, lines);
-                self.reused(note, &below, lines);
+                self.followed(note, &below, lines);
             }
             if !folded {
                 self.level(level, vec![], &rail, note.id(), lines);
@@ -886,20 +886,16 @@ impl Tree<'_> {
         }
     }
 
-    /// Adds under `note` a `follows` line for each step it follows, then a `reused` line when steps follow
+    /// Adds under `note` a `follows` line for each step it follows, then a `followed` line when steps follow
     /// it, after `rail`.
-    fn reused(&self, note: Step, rail: &str, out: &mut Vec<Line>) {
+    fn followed(&self, note: Step, rail: &str, out: &mut Vec<Line>) {
         for source in self.reuse.sources(note) {
             let line = format!("{} {}", short(source.id()), source.title());
             self.labelled(out, rail, "follows", &line);
         }
-        let count = self.reuse.down(note).len();
+        let count = self.reuse.followers(note);
         if count > 0 {
-            let save = self.reuse.saved(note);
-            let line = save.map_or(count.to_string(), |s| {
-                format!("{count} · saved {}", saved(s))
-            });
-            self.labelled(out, rail, "reused", &line);
+            self.labelled(out, rail, "followed", &count.to_string());
         }
     }
 
@@ -927,8 +923,8 @@ impl Tree<'_> {
         let (first, rest) = match label {
             "" => (rail.to_string(), rail.to_string()),
             _ => (
-                format!("{rail}{}", self.paint(DIM, &format!("{label:<8}"))),
-                format!("{rail}{}", " ".repeat(8)),
+                format!("{rail}{}", self.paint(DIM, &format!("{label:<9}"))),
+                format!("{rail}{}", " ".repeat(9)),
             ),
         };
         self.text(lines, (first, rest), text, true, DIM);

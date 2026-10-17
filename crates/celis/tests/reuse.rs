@@ -261,21 +261,22 @@ fn stats_prints_the_followed_steps_the_used_decisions_and_the_total() {
     let text = out(&cli(&repo, &["stats"]));
     let lines: Vec<&str> = text.lines().collect();
     assert!(lines[0].starts_with(&a[..8]), "{text}");
-    assert!(lines[0].contains(" · followed 2 · saved "), "{text}");
+    assert!(!text.contains("saved"), "{text}");
+    assert!(lines[0].contains(" · followed 2"), "{text}");
     assert!(lines[1].starts_with(&b[..8]), "{text}");
-    assert!(lines[1].contains(" · followed 1 · saved "), "{text}");
+    assert!(lines[1].contains(" · followed 1"), "{text}");
     assert!(
         lines[2].starts_with(&format!("decision {}", &rule[..8])),
         "{text}"
     );
     assert!(lines[2].ends_with(" · used 2"), "{text}");
-    assert!(lines[3].starts_with("total 2 follows · saved "), "{text}");
-    assert!(lines[3].ends_with(" · 2 uses"), "{text}");
+    assert_eq!(lines[3], "total 2 follows · 2 uses", "{text}");
     let json = objects(&repo, &["stats"]);
     assert_eq!(json[0]["followed"]["id"], a, "{json:?}");
     assert_eq!(json[0]["followed"]["followed"], 2, "{json:?}");
     assert_eq!(json[2]["used"]["used"], 2, "{json:?}");
     assert_eq!(json[3]["total"]["follows"], 2, "{json:?}");
+    assert!(json[3]["total"].get("saved").is_none(), "{json:?}");
 }
 
 /// `stats <id>` prints the step, then each step it follows, then each step that follows it, two spaces
@@ -297,27 +298,26 @@ fn stats_of_a_step_prints_its_sources_then_its_followers() {
     );
     let text = out(&cli(&repo, &["stats", &a[..8]]));
     assert!(line(&text, &b).starts_with("  followed "), "{text}");
-    assert!(line(&text, &b).contains(" · saved "), "{text}");
+    assert!(!text.contains("saved"), "{text}");
     assert!(line(&text, &c).starts_with("    followed "), "{text}");
 }
 
-/// `tree --full` prints a `follows` line under a step for each step it follows, and a `reused` line
+/// `tree --full` prints a `follows` line under a step for each step it follows, and a `followed` line
 /// when steps follow it; `tree --json` gives the count.
 #[test]
-fn tree_prints_follows_and_reused_lines() {
+fn tree_prints_follows_and_followed_lines() {
     let repo = Repo::new();
     let (a, b, _, _) = chain(&repo);
     let tree = out(&cli(&repo, &["tree", &b[..8], "--full"]));
-    let follows = format!("follows {} a senior pays 80%", &a[..8]);
+    let follows = format!("follows  {} a senior pays 80%", &a[..8]);
     assert!(
         tree.lines()
             .any(|l| l.trim_start_matches([' ', '│']) == follows),
         "{tree}"
     );
     assert!(
-        tree.lines().any(|l| l
-            .trim_start_matches([' ', '│'])
-            .starts_with("reused  1 · saved ")),
+        tree.lines()
+            .any(|l| l.trim_start_matches([' ', '│']) == "followed 1"),
         "{tree}"
     );
     let json = objects(&repo, &["tree", &b[..8]]);
@@ -325,7 +325,7 @@ fn tree_prints_follows_and_reused_lines() {
         .iter()
         .find_map(|v| v.get("step").or(v.get("trail")))
         .unwrap();
-    assert_eq!(at["reused"], 1, "{json:?}");
+    assert_eq!(at["followed"], 1, "{json:?}");
 }
 
 /// A session's first ask that `--replaces` a done step carries the link, and its trail does not: the done
@@ -440,12 +440,12 @@ fn uses_of_a_trail_with_no_twin_names_the_trail() {
     assert_eq!(links(&step(&repo, &trail, &id), "uses"), [past.as_str()]);
     let text = out(&cli(&repo, &["stats", &past[..8]]));
     assert!(line(&text, &id).starts_with("  followed "), "{text}");
-    assert_eq!(step(&repo, &past, &past)["reused"], 1);
+    assert_eq!(step(&repo, &past, &past)["followed"], 1);
 }
 
-/// A session trail's line counts `reused` on its first ask in text and in `--json` alike.
+/// A session trail's line counts `followed` on its first ask in text and in `--json` alike.
 #[test]
-fn a_session_trail_counts_reused_on_its_first_ask() {
+fn a_session_trail_counts_followed_on_its_first_ask() {
     let repo = Repo::new();
     let past = ids(&repo, "s1", &["--", "the senior price"]);
     finish(&repo, &past[0][..8]);
@@ -461,7 +461,7 @@ fn a_session_trail_counts_reused_on_its_first_ask() {
             "a step",
         ],
     );
-    assert_eq!(step(&repo, &past[1], &past[1])["reused"], 1);
+    assert_eq!(step(&repo, &past[1], &past[1])["followed"], 1);
 }
 
 /// A dropped trail's line shows its own drop, not its first ask's done.

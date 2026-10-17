@@ -1,9 +1,8 @@
-//! `celis stats`: what later work reused, and what it saved.
+//! `celis stats`: what later work reused.
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::progress::{Flags, Grade, Reuse};
-use crate::text::clock::saved;
 use crate::text::line::plural;
 use celis_trails::records::id::short;
 use celis_trails::{Step, Trail};
@@ -50,14 +49,11 @@ impl Command {
                     };
                 }
                 for &step in reuse.followed() {
-                    let count = reuse.down(step).len();
-                    let save = reuse.saved(step);
+                    let count = reuse.followers(step);
                     let revised = Flags::of(step).revised;
                     let value = json!({"id": step.id(), "project": step.record().anchor.name,
-                        "content": step.title(), "followed": count, "saved": save,
-                        "revised": revised});
+                        "content": step.title(), "followed": count, "revised": revised});
                     let mut line = format!("{} · followed {count}", head(step));
-                    line.push_str(&saving(save));
                     if revised {
                         line.push_str(" · revised");
                     }
@@ -74,12 +70,11 @@ impl Command {
                     );
                     super::show(out, args.json, "used", value, &line)?;
                 }
-                let (follows, save) = reuse.total();
-                let value = json!({"follows": follows, "saved": save, "uses": uses});
+                let follows = reuse.total();
+                let value = json!({"follows": follows, "uses": uses});
                 let line = format!(
-                    "total {}{} · {}",
+                    "total {} · {}",
                     plural(follows, "follow"),
-                    saving(save),
                     plural(uses, "use")
                 );
                 super::show(out, args.json, "total", value, &line)
@@ -95,19 +90,16 @@ fn chain(reuse: &Reuse, step: Step, json: bool, out: &mut dyn Write) -> Result<(
         "content": step.title(), "grade": Grade::of(step), "depth": 0});
     let line = format!("{}{}", head(step), took(step));
     super::show(out, json, "step", value, &line)?;
-    let sources = reuse
-        .up(step)
-        .into_iter()
-        .map(|l| ("follows", l.source, l, None));
+    let sources = reuse.up(step).into_iter().map(|l| ("follows", l.source, l));
     let followers = reuse
         .down(step)
         .into_iter()
-        .map(|l| ("followed", l.step, l, reuse.saving(&l)));
-    for (kind, at, link, save) in sources.chain(followers) {
+        .map(|l| ("followed", l.step, l));
+    for (kind, at, link) in sources.chain(followers) {
         let value = json!({"id": at.id(), "project": at.record().anchor.name, "content": at.title(),
-            "grade": Grade::of(at), "saved": save, "depth": link.depth});
+            "grade": Grade::of(at), "depth": link.depth});
         let indent = "  ".repeat(link.depth);
-        let line = format!("{indent}{kind} {}{}{}", head(at), took(at), saving(save));
+        let line = format!("{indent}{kind} {}{}", head(at), took(at));
         super::show(out, json, kind, value, &line)?;
     }
     Ok(())
@@ -122,9 +114,4 @@ fn head(step: Step) -> String {
 /// ` · <grade>` of a done `step`, else nothing.
 fn took(step: Step) -> String {
     crate::text::line::grade(step).map_or(String::new(), |g| format!(" · {g}"))
-}
-
-/// ` · saved <time>`, or nothing with no saving.
-fn saving(save: Option<i64>) -> String {
-    save.map_or(String::new(), |s| format!(" · saved {}", saved(s)))
 }

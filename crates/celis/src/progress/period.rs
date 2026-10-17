@@ -1,6 +1,6 @@
 //! The work of a store in one span of time.
 
-use super::{Flags, Follow, Reuse, Tally};
+use super::{Flags, Tally};
 use celis_trails::{Step, Steps};
 
 /// The work of a store from `from` up to `to`: the steps done, added and closed in that time, and the
@@ -56,25 +56,6 @@ impl<'a> Period<'a> {
         self.parts()
             .filter(|s| s.closed_at().is_some_and(|at| self.holds(at)))
             .collect()
-    }
-
-    /// The count of follows whose step was done in it, and the seconds they saved, each against its
-    /// source.
-    pub fn follows(&self, reuse: &Reuse<'a>) -> (usize, Option<i64>) {
-        let follows: Vec<Follow<'a>> = self
-            .done()
-            .into_iter()
-            .flat_map(|step| {
-                let sources = reuse.sources(step).into_iter();
-                sources.map(move |source| Follow {
-                    step,
-                    source,
-                    depth: 1,
-                })
-            })
-            .collect();
-        let saved = follows.iter().filter_map(|l| reuse.saving(l));
-        (follows.len(), saved.reduce(|a, b| a + b))
     }
 
     /// Every step of the store that is not a trail, oldest first.

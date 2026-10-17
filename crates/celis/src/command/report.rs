@@ -3,10 +3,11 @@
 use super::tree::{look, visible};
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use crate::progress::{Flags, Grade, Tally};
+use crate::progress::{Flags, Tally};
 use crate::terminal::card::{paint, Card, RULE};
 use crate::terminal::ink::Ink;
 use crate::text::clock::took;
+use crate::text::line::time;
 use celis_trails::records::id::short;
 use celis_trails::{Mark, State, Step, Steps, Trail, Trails};
 use serde_json::json;
@@ -130,7 +131,7 @@ fn card(trails: &Trails, trail: Step, width: usize, colour: bool) -> Card {
         let inside = width - 4;
         for part in parts {
             let look = look(part.state());
-            let time = Grade::of(part).map_or(part.state().text().to_string(), |g| took(g.took));
+            let time = time(part).unwrap_or_else(|| part.state().text().to_string());
             let title = super::tree::cut(part.title(), inside.saturating_sub(time.len() + 4));
             let pad = " ".repeat(inside.saturating_sub(visible(&title) + time.len() + 3));
             let mark = paint(colour, look.text, look.mark);
@@ -284,7 +285,7 @@ fn table(steps: Vec<Step>) -> Vec<String> {
             0 => String::new(),
             n => format!("{}└ ", "\u{a0}\u{a0}".repeat(n)),
         };
-        let time = Grade::of(at).map_or("—".to_string(), |g| took(g.took));
+        let time = time(at).unwrap_or("—".to_string());
         let proof: Vec<String> = match at.close() {
             Some((_, Mark::Done { proof, changed })) => {
                 let changed = changed.map(|c| format!("~ changed: {c}"));
