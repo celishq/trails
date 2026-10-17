@@ -327,3 +327,50 @@ fn add_says_when_a_step_ahead_has_not_started() {
         )
     );
 }
+
+/// `add` finds an open step of the same `under` and text, and names a step ahead that has not started,
+/// also when their trail ended an hour ago.
+#[test]
+fn add_ignores_whether_the_trail_ended() {
+    let repo = Repo::plain();
+    let by = &account();
+    let id = repo.project_id();
+    let hour_ago = now() - 60 * 60;
+    let trail = step(by, (&id, "repo"), "the trail", &[], hour_ago);
+    let ask = step(
+        by,
+        (&id, "repo"),
+        "the ask",
+        &[("under", &trail.id)],
+        hour_ago + 1,
+    );
+    let shape = step(
+        by,
+        (&id, "repo"),
+        "a shape",
+        &[("under", &ask.id)],
+        hour_ago + 2,
+    );
+    let first = step(
+        by,
+        (&id, "repo"),
+        "first",
+        &[("under", &shape.id)],
+        hour_ago + 3,
+    );
+    for note in [&trail, &ask, &shape, &first] {
+        put(&repo, note);
+    }
+    let again = run(&repo, &["add", "--under", &shape.id[..8], "--", "first"]);
+    assert!(again.status.success(), "{}", err(&again));
+    assert_eq!(out(&again).trim(), first.id);
+    let second = run(&repo, &["add", "--under", &shape.id[..8], "--", "second"]);
+    assert!(second.status.success(), "{}", err(&second));
+    assert_eq!(
+        err(&second),
+        format!(
+            "celis: {} has not started; keep one step ahead: take it first, or drop it.\n",
+            &first.id[..8]
+        )
+    );
+}

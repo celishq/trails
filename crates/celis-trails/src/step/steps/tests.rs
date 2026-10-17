@@ -49,7 +49,8 @@ fn the_first_done_with_a_proof_closes_its_step() {
     let steps = Steps::new(&records, 0);
     let done = steps.get(&a.id).and_then(|s| s.done());
     assert_eq!(done.map(|n| n.id.clone()), Some(first.id));
-    assert_eq!(ids(steps.open()), vec![b.id]);
+    let open = steps.all().into_iter().filter(|s| s.closed().is_none());
+    assert_eq!(ids(open.collect()), vec![b.id]);
 }
 
 /// A prefix of 8 characters that two steps' ids share finds neither, with `no-step`, while a full

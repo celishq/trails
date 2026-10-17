@@ -50,13 +50,6 @@ impl<'a> Steps<'a> {
         }
     }
 
-    /// Every open step whose trail has not ended, oldest first.
-    pub fn open(&'a self) -> Vec<Step<'a>> {
-        let all = self.all().into_iter();
-        all.filter(|s| s.closed().is_none() && !s.trail().ended())
-            .collect()
-    }
-
     /// Whether a step that is not a trail has ended: done, dropped or expired.
     pub fn closed_any(&'a self) -> bool {
         let all = self.all().into_iter();

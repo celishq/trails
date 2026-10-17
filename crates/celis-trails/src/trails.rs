@@ -6,8 +6,8 @@ pub mod written;
 
 use crate::records::id::short;
 use crate::{
-    Check, Decision, DecisionId, Decisions, Draft, Mark, Notice, Refusal, Scope, State, Step,
-    StepId, StepRecord, Steps, Store, Trail, Written,
+    Check, Decision, DecisionId, Decisions, Draft, Mark, Notice, Refusal, Scope, Step, StepId,
+    StepRecord, Steps, Store, Trail, Written,
 };
 use celis_nostr::{Account, Note};
 use std::path::Path;
@@ -376,9 +376,10 @@ fn parent<'a>(
 /// The open step of the project of `draft`, under `under`, with the same words.
 fn same_open<'a>(steps: &'a Steps<'a>, draft: &Draft, under: Option<Step<'a>>) -> Option<Step<'a>> {
     let under = under.map(|u| u.id());
-    steps.open().into_iter().find(|s| {
+    steps.all().into_iter().find(|s| {
         let record = s.record();
-        record.anchor.project == draft.anchor.project
+        s.closed().is_none()
+            && record.anchor.project == draft.anchor.project
             && record.under.as_deref() == under
             && s.note().content == draft.content
     })
@@ -388,6 +389,8 @@ fn same_open<'a>(steps: &'a Steps<'a>, draft: &Draft, under: Option<Step<'a>>) -
 fn ahead(under: Option<Step>) -> Option<StepId> {
     let parent = under.filter(|p| p.ask().is_some_and(|a| a.id() != p.id()))?;
     let children = parent.children().into_iter();
-    let open = children.into_iter().find(|s| s.state() == State::Open)?;
+    let open = children
+        .into_iter()
+        .find(|s| s.closed().is_none() && s.start().is_none())?;
     Some(open.step_id())
 }
