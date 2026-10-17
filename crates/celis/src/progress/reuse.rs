@@ -9,6 +9,7 @@ use std::collections::{HashMap, HashSet};
 pub struct Reuse<'a> {
     sources: HashMap<&'a str, Vec<Step<'a>>>,
     followers: HashMap<&'a str, Vec<Step<'a>>>,
+    reach: HashMap<&'a str, usize>,
     followed: Vec<Step<'a>>,
     uses: HashMap<&'a str, usize>,
 }
@@ -26,11 +27,13 @@ impl<'a> Reuse<'a> {
         let mut reuse = Reuse {
             sources: HashMap::new(),
             followers: HashMap::new(),
+            reach: HashMap::new(),
             followed: Vec::new(),
             uses: HashMap::new(),
         };
         for step in steps.all() {
-            for id in &step.record().uses {
+            let mut seen = HashSet::new();
+            for id in step.record().uses.iter().filter(|id| seen.insert(*id)) {
                 match steps.get(id) {
                     Some(source) => {
                         reuse.sources.entry(step.id()).or_default().push(source);
@@ -40,13 +43,22 @@ impl<'a> Reuse<'a> {
                 }
             }
         }
-        let all = steps.all().into_iter();
-        let mut followed: Vec<(usize, Step<'a>)> = all
+        let mut followed: Vec<Step<'a>> = steps
+            .all()
+            .into_iter()
             .filter(|s| reuse.followers.contains_key(s.id()))
-            .map(|s| (reuse.down(s).len(), s))
             .collect();
-        followed.sort_by_key(|(count, s)| (Reverse(*count), Reverse(s.note().created_at), s.id()));
-        reuse.followed = followed.into_iter().map(|(_, s)| s).collect();
+        for &step in &followed {
+            reuse.reach.insert(step.id(), reuse.down(step).len());
+        }
+        followed.sort_by_key(|&s| {
+            (
+                Reverse(reuse.followers(s)),
+                Reverse(s.note().created_at),
+                s.id(),
+            )
+        });
+        reuse.followed = followed;
         reuse
     }
 
@@ -69,25 +81,14 @@ impl<'a> Reuse<'a> {
         found
     }
 
+    /// The count of steps that follow `step` at any depth.
+    pub fn followers(&self, step: Step<'a>) -> usize {
+        self.reach.get(step.id()).copied().unwrap_or(0)
+    }
+
     /// The count of follows in the store.
     pub fn total(&self) -> usize {
-        let follows: Vec<Follow<'a>> = self
-            .followers
-            .values()
-            .flatten()
-            .flat_map(|&step| {
-                let sources = self.sources(step).into_iter();
-                sources.map(move |source| Follow {
-                    step,
-                    source,
-                    depth: 1,
-                })
-            })
-            .collect();
-        let mut follows = follows;
-        follows.sort_by_key(|l| (l.step.id(), l.source.id()));
-        follows.dedup_by_key(|l| (l.step.id(), l.source.id()));
-        follows.len()
+        self.sources.values().map(Vec::len).sum()
     }
 
     /// Each step that a step follows, most followed at any depth first, then newest first, then by id.

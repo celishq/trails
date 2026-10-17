@@ -49,7 +49,7 @@ impl Command {
                     };
                 }
                 for &step in reuse.followed() {
-                    let count = reuse.down(step).len();
+                    let count = reuse.followers(step);
                     let revised = Flags::of(step).revised;
                     let value = json!({"id": step.id(), "project": step.record().anchor.name,
                         "content": step.title(), "followed": count, "revised": revised});

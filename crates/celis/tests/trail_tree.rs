@@ -79,15 +79,15 @@ fn tree_prints_the_trail_its_rules_and_the_steps_under_it() {
         "    ○ {m} stamp",
         "    ○ {b} badge",
         "    ✓ {s} seal · 30s",
-        "      done    proof",
-        "      took    30s",
+        "      done     proof",
+        "      took     30s",
         "  § {r} colours are tokens",
         "  ✓ {l} logo · 1m 0s",
-        "    done    proof",
-        "    took    1m 0s",
+        "    done     proof",
+        "    took     1m 0s",
         "  ✓ {c} colours · 1m 30s",
-        "    done    proof",
-        "    took    1m 30s",
+        "    done     proof",
+        "    took     1m 30s",
     ];
     assert_eq!(
         printed(&repo, &[short(&trail.id), "--full"]),
@@ -167,8 +167,8 @@ fn tree_prints_a_done_trails_proof_and_grade() {
         [
             format!("✓ {} a small ask", short(&trail.id)),
             "  45s worked".to_string(),
-            "  done    proof".to_string(),
-            "  took    45s".to_string(),
+            "  done     proof".to_string(),
+            "  took     45s".to_string(),
         ]
     );
 }

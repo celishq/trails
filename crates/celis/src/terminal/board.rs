@@ -10,8 +10,9 @@ use super::wake::{Key, Wake};
 use crate::command::tree::{cut, look, visible};
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use crate::progress::{Grade, Reuse};
-use crate::text::clock::{took, weekday};
+use crate::progress::Reuse;
+use crate::text::clock::weekday;
+use crate::text::line::time;
 use celis_trails::records::id::short;
 use celis_trails::{Step, Trail, Trails};
 use std::io::Write;
@@ -246,7 +247,7 @@ impl Board {
         let mut line = None;
         let mut item = |lines: &mut Vec<String>, kind: &str, at: Step, depth: usize| {
             let look = look(at.state());
-            let tail = Grade::of(at).map_or(at.state().text().to_string(), |g| took(g.took));
+            let tail = time(at).unwrap_or_else(|| at.state().text().to_string());
             let lead = "  ".repeat(depth.saturating_sub(1));
             let room = width.saturating_sub(visible(&tail) + lead.len() + 8);
             let name = cut(at.title(), room);
@@ -271,7 +272,7 @@ impl Board {
                     kind.to_string(),
                     at.title().to_string(),
                     at.record().anchor.name.clone(),
-                    Grade::of(at).map_or("—".into(), |g| took(g.took)),
+                    time(at).unwrap_or("—".into()),
                 ],
             });
         };
@@ -286,12 +287,12 @@ impl Board {
             plain: width < NARROW,
             colour,
         };
-        let time = Grade::of(step).map_or("—".into(), |g| took(g.took));
+        let took = time(step).unwrap_or("—".into());
         let side = [
             ink.dim("took"),
             ink.dim(&format!("revised {}", step.revised().len())),
         ];
-        let face = ink.beside(&time, &side, 3);
+        let face = ink.beside(&took, &side, 3);
         let look = look(step.state());
         let card = Card {
             title: format!("{} {}", look.mark, step.title()),

@@ -193,7 +193,7 @@ fn watch_spins_a_working_step_and_says_when_the_trail_was_active() {
     let last = trees.last().unwrap();
     assert!(!last.contains('◐'), "{last:?}");
     assert!(
-        last.contains("│ active  ") && last.contains(" ago\r\n    │ repo"),
+        last.contains("│ active   ") && last.contains(" ago\r\n    │ repo"),
         "{last:?}"
     );
 }
@@ -303,7 +303,7 @@ fn watch_turns_full_and_all_on_with_keys() {
     let mut watch = Watch::start(&repo, &["tree"]);
     watch.until("1 closed step");
     watch.press("f");
-    watch.until("done    it works");
+    watch.until("done     it works");
     watch.until("the part");
     watch.press("f");
     watch.press("a");
@@ -338,11 +338,11 @@ fn watch_opens_a_step_and_copies_its_id() {
     watch.until(&format!("c copy {}", &part[..8]));
     assert!(!watch.rows().join("\n").contains("it works"));
     watch.press("\r");
-    watch.until("done    it works");
+    watch.until("done     it works");
     let rows = watch.rows();
     let done = rows
         .iter()
-        .find(|r| r.contains("done    it works"))
+        .find(|r| r.contains("done     it works"))
         .unwrap();
     assert!(done.starts_with("▌ "), "{rows:?}");
     watch.press("c");
@@ -461,9 +461,9 @@ fn watch_draws_a_block_with_tree_lines_and_colour_anchors() {
     watch.until("the fix");
     let rows = watch.rows();
     assert!(rows[0].starts_with("  ▾ "), "{rows:?}");
-    assert!(rows[1].starts_with("    │ took    "), "{rows:?}");
+    assert!(rows[1].starts_with("    │ took     "), "{rows:?}");
     assert!(
-        rows[2].starts_with("    │ active  ") && rows[2].ends_with(" ago"),
+        rows[2].starts_with("    │ active   ") && rows[2].ends_with(" ago"),
         "{rows:?}"
     );
     assert_eq!(rows[3], "    │ repo", "{rows:?}");
@@ -718,9 +718,9 @@ fn watch_full_aligns_and_wraps_the_lines_under_a_step() {
     assert!(rows.iter().all(|r| r.chars().count() <= 60), "{rows:?}");
     let at = rows
         .iter()
-        .position(|r| r.contains(" done    one "))
+        .position(|r| r.contains(" done     one "))
         .unwrap_or_else(|| panic!("{rows:?}"));
-    let column = rows[at].find("done    ").unwrap() + "done    ".len();
+    let column = rows[at].find("done     ").unwrap() + "done     ".len();
     let mut text = rows[at][column..].trim_end().to_string();
     for row in &rows[at + 1..] {
         let lead = row.get(..column).unwrap_or("x");
