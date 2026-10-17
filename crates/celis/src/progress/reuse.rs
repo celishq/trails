@@ -1,13 +1,11 @@
 //! What later work reused of the steps and decisions of a store.
 
-use super::Grade;
 use celis_nostr::Note;
 use celis_trails::{Decision, Decisions, Step, Steps};
 use std::cmp::Reverse;
 use std::collections::{HashMap, HashSet};
 
-/// What later work reused of a store: which steps follow which, what each follow saved, and how often a
-/// step used each decision.
+/// What later work reused of a store: which steps follow which, and how often a step used each decision.
 pub struct Reuse<'a> {
     sources: HashMap<&'a str, Vec<Step<'a>>>,
     followers: HashMap<&'a str, Vec<Step<'a>>>,
@@ -71,19 +69,8 @@ impl<'a> Reuse<'a> {
         found
     }
 
-    /// The seconds the step of `link` saved against its source; `None` unless both are done.
-    pub fn saving(&self, link: &Follow<'a>) -> Option<i64> {
-        let took = |s: Step| Grade::of(s).map(|g| g.took as i64);
-        Some(took(link.source)? - took(link.step)?)
-    }
-
-    /// The seconds the steps that follow `step` at any depth saved, each against its source.
-    pub fn saved(&self, step: Step<'a>) -> Option<i64> {
-        sum(self.down(step).iter().map(|l| self.saving(l)))
-    }
-
-    /// The count of follows in the store, and the seconds they saved, each against its source.
-    pub fn total(&self) -> (usize, Option<i64>) {
+    /// The count of follows in the store.
+    pub fn total(&self) -> usize {
         let follows: Vec<Follow<'a>> = self
             .followers
             .values()
@@ -100,7 +87,7 @@ impl<'a> Reuse<'a> {
         let mut follows = follows;
         follows.sort_by_key(|l| (l.step.id(), l.source.id()));
         follows.dedup_by_key(|l| (l.step.id(), l.source.id()));
-        (follows.len(), sum(follows.iter().map(|l| self.saving(l))))
+        follows.len()
     }
 
     /// Each step that a step follows, most followed at any depth first, then newest first, then by id.
@@ -150,9 +137,4 @@ impl<'a> Reuse<'a> {
             self.walk(to, depth + 1, up, seen, found);
         }
     }
-}
-
-/// The sum of each saving of `savings`; `None` when none is given.
-fn sum(savings: impl Iterator<Item = Option<i64>>) -> Option<i64> {
-    savings.flatten().reduce(|a, b| a + b)
 }

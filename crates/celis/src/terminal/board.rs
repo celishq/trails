@@ -11,7 +11,7 @@ use crate::command::tree::{cut, look, visible};
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::progress::{Grade, Reuse};
-use crate::text::clock::{saved, took, weekday};
+use crate::text::clock::{took, weekday};
 use celis_trails::records::id::short;
 use celis_trails::{Step, Trail, Trails};
 use std::io::Write;
@@ -244,45 +244,41 @@ impl Board {
         let mut rows = vec![];
         let mut table = vec![];
         let mut line = None;
-        let mut item =
-            |lines: &mut Vec<String>, kind: &str, at: Step, depth: usize, gain: Option<i64>| {
-                let look = look(at.state());
-                let time = Grade::of(at).map_or(at.state().text().to_string(), |g| took(g.took));
-                let gain_text = gain.map_or(String::new(), |g| format!("  saved {}", saved(g)));
-                let tail = format!("{time}{gain_text}");
-                let lead = "  ".repeat(depth.saturating_sub(1));
-                let room = width.saturating_sub(visible(&tail) + lead.len() + 8);
-                let name = cut(at.title(), room);
-                let pad = " ".repeat(room.saturating_sub(visible(&name)));
-                let text = format!(
-                    "{lead}{} {name}{pad}  {}",
-                    paint(colour, look.text, look.mark),
-                    paint(colour, "2", &tail)
-                );
-                let picked = rows.len() == self.row;
-                if picked {
-                    line = Some(lines.len());
-                }
-                lines.push(match picked {
-                    true => format!("▌ {text}"),
-                    false => format!("  {text}"),
-                });
-                rows.push(Some(at.id().to_string()));
-                table.push(Row {
-                    id: Some(at.id().to_string()),
-                    cells: vec![
-                        kind.to_string(),
-                        at.title().to_string(),
-                        at.record().anchor.name.clone(),
-                        Grade::of(at).map_or("—".into(), |g| took(g.took)),
-                        gain.map_or("—".into(), saved),
-                    ],
-                });
-            };
+        let mut item = |lines: &mut Vec<String>, kind: &str, at: Step, depth: usize| {
+            let look = look(at.state());
+            let tail = Grade::of(at).map_or(at.state().text().to_string(), |g| took(g.took));
+            let lead = "  ".repeat(depth.saturating_sub(1));
+            let room = width.saturating_sub(visible(&tail) + lead.len() + 8);
+            let name = cut(at.title(), room);
+            let pad = " ".repeat(room.saturating_sub(visible(&name)));
+            let text = format!(
+                "{lead}{} {name}{pad}  {}",
+                paint(colour, look.text, look.mark),
+                paint(colour, "2", &tail)
+            );
+            let picked = rows.len() == self.row;
+            if picked {
+                line = Some(lines.len());
+            }
+            lines.push(match picked {
+                true => format!("▌ {text}"),
+                false => format!("  {text}"),
+            });
+            rows.push(Some(at.id().to_string()));
+            table.push(Row {
+                id: Some(at.id().to_string()),
+                cells: vec![
+                    kind.to_string(),
+                    at.title().to_string(),
+                    at.record().anchor.name.clone(),
+                    Grade::of(at).map_or("—".into(), |g| took(g.took)),
+                ],
+            });
+        };
         if !up.is_empty() {
             lines.push(paint(colour, "2", "  FOLLOWS"));
             for link in &up {
-                item(&mut lines, "follows", link.source, link.depth, None);
+                item(&mut lines, "follows", link.source, link.depth);
             }
             lines.push(String::new());
         }
@@ -306,19 +302,7 @@ impl Board {
         if !down.is_empty() {
             lines.extend([String::new(), paint(colour, "2", "  FOLLOWED BY")]);
             for link in &down {
-                item(
-                    &mut lines,
-                    "followed by",
-                    link.step,
-                    link.depth,
-                    reuse.saving(link),
-                );
-            }
-            if let Some(total) = reuse.saved(step) {
-                lines.extend([
-                    String::new(),
-                    format!("  saved in total  {}", paint(colour, "1", &saved(total))),
-                ]);
+                item(&mut lines, "followed by", link.step, link.depth);
             }
         }
         if count == 0 {
@@ -329,7 +313,7 @@ impl Board {
         }
         let copy = rows.get(self.row).cloned().flatten();
         let markdown = Table {
-            head: vec!["Link", "Step", "Project", "Took", "Saved"],
+            head: vec!["Link", "Step", "Project", "Took"],
             rows: table,
             wide: 1,
         }

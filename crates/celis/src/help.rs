@@ -14,7 +14,7 @@ Record work (your agents run these)
 Read
   tree     Show a trail and its steps
   grep     Search every trail with grep
-  stats    Show what reused work saved
+  stats    Show what later work reused
   report   Show trails as Markdown for a pull request
 
 Set up
@@ -222,7 +222,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "stats",
         usage: &["celis stats [<id>] [--demo]"],
-        summary: "Show each step that later work reused and what that saved, then each decision that steps followed, then the total. With an id, show what that step reused and what reused it. On a terminal, show them as cards that update as work lands. Changes nothing.",
+        summary: "Show each step that later work reused and how often, then each decision that steps followed, then the total. With an id, show what that step reused and what reused it. On a terminal, show them as cards that update as work lands. Changes nothing.",
         args: &[
             ("<id>", "A step id, or its first 4 or more characters"),
             ("--demo", "Show sample trails of four weeks"),

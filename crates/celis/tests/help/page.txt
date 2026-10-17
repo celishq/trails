@@ -9,7 +9,7 @@ Record work (your agents run these)
 Read
   tree     Show a trail and its steps
   grep     Search every trail with grep
-  stats    Show what reused work saved
+  stats    Show what later work reused
   report   Show trails as Markdown for a pull request
 
 Set up

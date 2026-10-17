@@ -18,7 +18,7 @@ celis decide [--scope <scope>] [--replaces <id>] -- <text>
                                                        a decision, in its scope
 celis tree [<id>] [--full] [--all] [--demo]           a trail and its steps; again on each change
 celis grep <grep option>... <pattern>                 every trail, through the system grep
-celis stats [<id>] [--demo]                           what later work reused, and what it saved
+celis stats [<id>] [--demo]                           what later work reused
 celis report <id>... [--demo]                         the trails as Markdown, for a pull request
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
 celis link [<folder>]                                 keep this project's trails in a folder

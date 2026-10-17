@@ -1,5 +1,4 @@
 use super::*;
-use crate::progress::Reuse;
 use celis_nostr::{Account, Note};
 use celis_trails::step::steps::LIFE;
 use celis_trails::{Anchor, Mark, StepId, StepRecord, Steps};
@@ -108,24 +107,4 @@ fn a_period_closes_done_dropped_and_expired_steps() {
     let period = Period::new(&steps, 100, 200);
     assert_eq!(titles(period.closed()), ["finished", "gone", "left"]);
     assert!(Period::new(&steps, 200, 300).closed().is_empty());
-}
-
-/// A period counts each follow whose step was done in it, and the time those follows saved against
-/// their sources.
-#[test]
-fn a_period_counts_its_follows_and_their_saving() {
-    let trail = step("trail", 10, None, &[], None);
-    let source = step("source", 11, Some(&trail), &[], None);
-    let follows = step("follows", 30, Some(&trail), &[&source.id], None);
-    let records = vec![
-        trail,
-        source.clone(),
-        follows.clone(),
-        done(&source.id, None, 21),
-        done(&follows.id, None, 34),
-    ];
-    let steps = Steps::new(&records, 50);
-    let reuse = Reuse::new(&steps);
-    assert_eq!(Period::new(&steps, 30, 40).follows(&reuse), (1, Some(6)));
-    assert_eq!(Period::new(&steps, 0, 30).follows(&reuse), (0, None));
 }

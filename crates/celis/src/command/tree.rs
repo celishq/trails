@@ -4,7 +4,7 @@ use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::progress::{Flags, Grade, Reuse, Tally};
 use crate::text::clock::{day, midnight, weekday};
-use crate::text::clock::{saved, stride, took};
+use crate::text::clock::{stride, took};
 use celis_trails::records::id::short;
 use celis_trails::step::steps::LIFE;
 use celis_trails::{Decisions, State, Step, Steps, Trail, Trails};
@@ -895,11 +895,7 @@ impl Tree<'_> {
         }
         let count = self.reuse.down(note).len();
         if count > 0 {
-            let save = self.reuse.saved(note);
-            let line = save.map_or(count.to_string(), |s| {
-                format!("{count} · saved {}", saved(s))
-            });
-            self.labelled(out, rail, "reused", &line);
+            self.labelled(out, rail, "reused", &count.to_string());
         }
     }
 

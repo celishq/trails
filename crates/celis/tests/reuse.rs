@@ -261,21 +261,22 @@ fn stats_prints_the_followed_steps_the_used_decisions_and_the_total() {
     let text = out(&cli(&repo, &["stats"]));
     let lines: Vec<&str> = text.lines().collect();
     assert!(lines[0].starts_with(&a[..8]), "{text}");
-    assert!(lines[0].contains(" · followed 2 · saved "), "{text}");
+    assert!(!text.contains("saved"), "{text}");
+    assert!(lines[0].contains(" · followed 2"), "{text}");
     assert!(lines[1].starts_with(&b[..8]), "{text}");
-    assert!(lines[1].contains(" · followed 1 · saved "), "{text}");
+    assert!(lines[1].contains(" · followed 1"), "{text}");
     assert!(
         lines[2].starts_with(&format!("decision {}", &rule[..8])),
         "{text}"
     );
     assert!(lines[2].ends_with(" · used 2"), "{text}");
-    assert!(lines[3].starts_with("total 2 follows · saved "), "{text}");
-    assert!(lines[3].ends_with(" · 2 uses"), "{text}");
+    assert_eq!(lines[3], "total 2 follows · 2 uses", "{text}");
     let json = objects(&repo, &["stats"]);
     assert_eq!(json[0]["followed"]["id"], a, "{json:?}");
     assert_eq!(json[0]["followed"]["followed"], 2, "{json:?}");
     assert_eq!(json[2]["used"]["used"], 2, "{json:?}");
     assert_eq!(json[3]["total"]["follows"], 2, "{json:?}");
+    assert!(json[3]["total"].get("saved").is_none(), "{json:?}");
 }
 
 /// `stats <id>` prints the step, then each step it follows, then each step that follows it, two spaces
@@ -297,7 +298,7 @@ fn stats_of_a_step_prints_its_sources_then_its_followers() {
     );
     let text = out(&cli(&repo, &["stats", &a[..8]]));
     assert!(line(&text, &b).starts_with("  followed "), "{text}");
-    assert!(line(&text, &b).contains(" · saved "), "{text}");
+    assert!(!text.contains("saved"), "{text}");
     assert!(line(&text, &c).starts_with("    followed "), "{text}");
 }
 
@@ -315,9 +316,8 @@ fn tree_prints_follows_and_reused_lines() {
         "{tree}"
     );
     assert!(
-        tree.lines().any(|l| l
-            .trim_start_matches([' ', '│'])
-            .starts_with("reused  1 · saved ")),
+        tree.lines()
+            .any(|l| l.trim_start_matches([' ', '│']) == "reused  1"),
         "{tree}"
     );
     let json = objects(&repo, &["tree", &b[..8]]);
