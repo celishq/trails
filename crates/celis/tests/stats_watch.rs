@@ -1,4 +1,4 @@
-//! CIP-02, "Stats".
+//! The view `stats` shows on a terminal.
 
 mod support;
 
@@ -38,8 +38,7 @@ fn copied(repo: &Repo) -> String {
 }
 
 /// On a terminal, `stats` draws its cards: the effect, reuse, rules, work, time, outcome and projects,
-/// a number from fewer than 10 records says so, and the keys it reads end the screen
-/// (`spec/02-cli.md`, "Stats").
+/// a number from fewer than 10 records says so, and the keys it reads end the screen.
 #[test]
 fn stats_on_a_terminal_draws_its_cards() {
     let (repo, _) = worked();
@@ -67,7 +66,7 @@ fn stats_on_a_terminal_draws_its_cards() {
 }
 
 /// With no store, `stats` on a terminal draws the empty board and writes nothing, ignores `enter`, then
-/// draws the cards when the first step closes (`spec/02-cli.md`, "Stats").
+/// draws the cards when the first step closes.
 #[test]
 fn stats_with_no_store_draws_the_empty_board_until_a_step_closes() {
     let repo = Repo::new();
@@ -94,8 +93,8 @@ fn stats_with_no_store_draws_the_empty_board_until_a_step_closes() {
     assert!(!shown.contains("CELIS STATS ›"), "{shown}");
 }
 
-/// With an open trail and no closed step, `stats` on a terminal draws the empty board, and `q` ends it
-/// (`spec/02-cli.md`, "Stats").
+/// With an open trail and no closed step, `stats` on a terminal draws the empty board, and `q`
+/// ends it.
 #[test]
 fn stats_with_no_closed_step_draws_the_empty_board() {
     let repo = Repo::new();
@@ -108,7 +107,7 @@ fn stats_with_no_closed_step_draws_the_empty_board() {
 }
 
 /// `enter` opens the picked card to a row a record, `c` copies the selected row's id, `m` the card as a
-/// Markdown table, and `←` goes back to the cards (`spec/02-cli.md`, "Stats").
+/// Markdown table, and `←` goes back to the cards.
 #[test]
 fn stats_opens_a_card_and_copies_it() {
     let (repo, part) = worked();
@@ -135,7 +134,7 @@ fn stats_opens_a_card_and_copies_it() {
 }
 
 /// On a terminal, `stats <id>` draws the step with the steps it follows and the steps that follow it,
-/// and `enter` goes to the selected one (`spec/02-cli.md`, "Stats").
+/// and `enter` goes to the selected one.
 #[test]
 fn stats_with_an_id_draws_its_route() {
     let repo = Repo::new();
@@ -188,8 +187,7 @@ fn stats_with_an_id_draws_its_route() {
     watch.until("FOLLOWED BY");
 }
 
-/// Below 60 columns, `stats` prints one card a row and its numbers as plain text
-/// (`spec/02-cli.md`, "Stats").
+/// Below 60 columns, `stats` prints one card a row and its numbers as plain text.
 #[test]
 fn stats_at_a_narrow_width_prints_plain_numbers() {
     let (repo, _) = worked();
@@ -206,7 +204,7 @@ fn stats_at_a_narrow_width_prints_plain_numbers() {
 }
 
 /// `stats --demo` fills every card from made-up trails: each number of the effect shows its change, and
-/// steps were followed and rules used (`spec/02-cli.md`, "Stats").
+/// steps were followed and rules used.
 #[test]
 fn stats_demo_fills_every_card() {
     let repo = Repo::new();
@@ -225,7 +223,7 @@ fn stats_demo_fills_every_card() {
 }
 
 /// Off a terminal, `stats --demo` prints the made-up trails' follows, uses and total from a folder it
-/// removes, writes nothing to the store, and refuses an id (`spec/02-cli.md`, "Stats").
+/// removes, writes nothing to the store, and refuses an id.
 #[test]
 fn stats_demo_prints_and_writes_nothing() {
     let repo = Repo::new();

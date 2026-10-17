@@ -126,7 +126,7 @@ fn written(repo: &Repo, label: &str, id: &str) -> Vec<Note> {
 }
 
 /// `add` and `done` print the id they wrote, and `{"id"}` with `--json`
-/// (`spec/02-cli.md`, "Step").
+/// (`spec/02-cli.md`, "Output and errors").
 #[test]
 fn the_step_commands_print_the_ids_they_wrote() {
     let repo = Repo::plain();
@@ -175,7 +175,7 @@ fn the_step_commands_print_the_ids_they_wrote() {
     assert!(out(&o).contains(&closed[0].id[..8]), "{}", out(&o));
 }
 
-/// `celis step split` is an unknown command, a usage error (`spec/02-cli.md`, "Step").
+/// `celis step split` is an unknown command, a usage error.
 #[test]
 fn step_split_is_an_unknown_command_and_a_usage_error() {
     let repo = Repo::plain();
@@ -217,7 +217,7 @@ fn add_carries_each_place_and_the_check_as_their_tags() {
 }
 
 /// A reader counts only a step's `at` tags as places, not its old `file` tags
-/// (`spec/03-steps.md`, "Steps").
+/// (`spec/01-records.md`, "Records").
 #[test]
 fn a_reader_ignores_a_steps_old_file_tags() {
     let repo = Repo::new();
@@ -307,8 +307,7 @@ fn done_writes_a_pitfall_as_a_decision_at_the_steps_place() {
 }
 
 /// `add` says when the step under an ask it goes under already holds an open step that has not
-/// started, and still writes it; under an ask or a trail it says nothing (`spec/02-cli.md`,
-/// "Step").
+/// started, and still writes it; under an ask or a trail it says nothing.
 #[test]
 fn add_says_when_a_step_ahead_has_not_started() {
     let repo = Repo::new();

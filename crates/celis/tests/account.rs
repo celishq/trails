@@ -6,7 +6,7 @@ use celis_nostr::{Account, Identity};
 use support::{account, err, now, out, step_signed, Repo, PHRASE};
 
 /// With no `$CELIS_HOME/phrase`, two runs at once mint one phrase, readable by its owner alone
-/// (`spec/01-decisions.md`, "The account").
+/// (`spec/01-records.md`, "The account").
 #[test]
 fn a_fresh_home_mints_one_phrase_for_its_owner_alone() {
     for _ in 0..30 {
@@ -49,7 +49,7 @@ fn one_fresh_home_race() {
 }
 
 /// `grep` shows a step the account signed, and one another account signed
-/// (`spec/01-decisions.md`, "The account").
+/// (`spec/01-records.md`, "The account").
 #[test]
 fn a_record_counts_whatever_account_signed_it() {
     let repo = Repo::plain();
@@ -66,7 +66,7 @@ fn a_record_counts_whatever_account_signed_it() {
 }
 
 /// Every command signs as the account, whatever session the agent runs in
-/// (`spec/01-decisions.md`, "The account").
+/// (`spec/01-records.md`, "The account").
 #[test]
 fn every_command_signs_as_the_account() {
     let repo = Repo::plain();
@@ -132,7 +132,7 @@ fn auth_login_refuses_a_phrase_in_its_words_and_a_bad_phrase() {
 }
 
 /// `auth` has only `login`, `status` and `phrase`: `new` and `logout` are no commands, since a written
-/// record mints a phrase and removing the file forgets it (`spec/02-cli.md`, "Auth").
+/// record mints a phrase and removing the file forgets it (`spec/02-cli.md`, "Commands").
 #[test]
 fn auth_has_no_new_and_no_logout() {
     let repo = Repo::plain();
@@ -148,8 +148,7 @@ fn auth_has_no_new_and_no_logout() {
     );
 }
 
-/// `auth status` prints the npub and the path, never the phrase; `auth phrase` prints the phrase
-/// (`spec/02-cli.md`, "Auth").
+/// `auth status` prints the npub and the path, never the phrase; `auth phrase` prints the phrase.
 #[test]
 fn auth_status_shows_the_npub_and_auth_phrase_the_phrase() {
     let repo = Repo::plain();
@@ -181,7 +180,7 @@ fn auth_status_and_phrase_refuse_without_a_phrase() {
 }
 
 /// A command that writes no record mints no phrase, even where the store exists
-/// (`spec/01-decisions.md`, "The account").
+/// (`spec/01-records.md`, "The account").
 #[test]
 fn a_command_that_only_reads_mints_no_phrase() {
     let repo = Repo::plain();

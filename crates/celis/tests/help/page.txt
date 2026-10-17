@@ -1,0 +1,24 @@
+celis remembers how your agents do your tasks. Each task you give becomes a
+trail: the steps your agents take and the decisions they make along the way.
+Your agents use celis through the celis plugin.
+
+Record work (your agents run these)
+  step     Add, start, finish, drop, or edit a step
+  decide   Record a decision
+
+Read
+  tree     Show a trail and its steps
+  grep     Search every trail with grep
+  stats    Show what reused work saved
+  report   Show trails as Markdown for a pull request
+
+Set up
+  link     Keep this project's trails in a folder, like the repo or a drive
+  unlink   Stop keeping this project's trails in a folder
+  auth     Manage your recovery phrase
+  update   Update celis to the latest version, or to the one you choose
+  issue    Write a problem report for the celis team
+
+celis keeps your recovery phrase and records in $CELIS_HOME.
+
+To learn more about a command, run `celis <command> --help`.

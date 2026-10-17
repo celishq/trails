@@ -239,7 +239,7 @@ fn line<'a>(text: &'a str, id: &str) -> &'a str {
 }
 
 /// `stats` with nothing reused says so, and prints nothing with `--json`; it refuses an unknown id
-/// with `no-step` (`spec/02-cli.md`, "Stats").
+/// with `no-step`.
 #[test]
 fn stats_says_when_nothing_was_reused() {
     let repo = Repo::new();
@@ -253,7 +253,7 @@ fn stats_says_when_nothing_was_reused() {
 }
 
 /// `stats` prints each followed step, most followed at any depth first, then each used decision, then
-/// the total (`spec/02-cli.md`, "Stats").
+/// the total.
 #[test]
 fn stats_prints_the_followed_steps_the_used_decisions_and_the_total() {
     let repo = Repo::new();
@@ -279,7 +279,7 @@ fn stats_prints_the_followed_steps_the_used_decisions_and_the_total() {
 }
 
 /// `stats <id>` prints the step, then each step it follows, then each step that follows it, two spaces
-/// further in a level (`spec/02-cli.md`, "Stats").
+/// further in a level.
 #[test]
 fn stats_of_a_step_prints_its_sources_then_its_followers() {
     let repo = Repo::new();
@@ -302,7 +302,7 @@ fn stats_of_a_step_prints_its_sources_then_its_followers() {
 }
 
 /// `tree --full` prints a `follows` line under a step for each step it follows, and a `reused` line
-/// when steps follow it; `tree --json` gives the count (`spec/02-cli.md`, "Tree").
+/// when steps follow it; `tree --json` gives the count.
 #[test]
 fn tree_prints_follows_and_reused_lines() {
     let repo = Repo::new();
@@ -443,8 +443,7 @@ fn uses_of_a_trail_with_no_twin_names_the_trail() {
     assert_eq!(step(&repo, &past, &past)["reused"], 1);
 }
 
-/// A session trail's line counts `reused` on its first ask in text and in `--json` alike
-/// (`spec/02-cli.md`, "Tree").
+/// A session trail's line counts `reused` on its first ask in text and in `--json` alike.
 #[test]
 fn a_session_trail_counts_reused_on_its_first_ask() {
     let repo = Repo::new();
@@ -465,8 +464,7 @@ fn a_session_trail_counts_reused_on_its_first_ask() {
     assert_eq!(step(&repo, &past[1], &past[1])["reused"], 1);
 }
 
-/// A dropped trail's line shows its own drop, not its first ask's done (`spec/02-cli.md`,
-/// "Tree").
+/// A dropped trail's line shows its own drop, not its first ask's done.
 #[test]
 fn a_dropped_trail_shows_its_own_drop() {
     let repo = Repo::new();

@@ -1,7 +1,7 @@
 use super::*;
 
 /// A number prints as digits three rows high, and the letters a space after it on the last row; text with
-/// no digit prints on the middle row (`spec/02-cli.md`, "Cards").
+/// no digit prints on the middle row.
 #[test]
 fn a_number_prints_three_rows_high() {
     assert_eq!(digits("12m"), ["▀█  ▀▀█  ", " █  █▀▀  ", "▀▀▀ ▀▀▀ m"]);
@@ -10,8 +10,7 @@ fn a_number_prints_three_rows_high() {
     assert_eq!(digits("—"), [" ", "—", " "]);
 }
 
-/// A bar fills its width in the share of `n` to `most`, in eighths of a character
-/// (`spec/02-cli.md`, "Cards").
+/// A bar fills its width in the share of `n` to `most`, in eighths of a character.
 #[test]
 fn a_bar_fills_its_share_in_eighths() {
     assert_eq!(bar(4, 4, 4), "████");
@@ -21,7 +20,7 @@ fn a_bar_fills_its_share_in_eighths() {
 }
 
 /// Columns print a value a column, the tallest the full height, in eighths of a row; a zero as its mark,
-/// and any other value at least an eighth (`spec/02-cli.md`, "Cards").
+/// and any other value at least an eighth.
 #[test]
 fn columns_print_each_value_as_a_column() {
     assert_eq!(columns(&[0, 1, 2, 4], 2, "·"), ["      █", "· ▄ █ █"]);
@@ -30,7 +29,7 @@ fn columns_print_each_value_as_a_column() {
 }
 
 /// A strip splits its width by the share of each part, the largest remainders first, with a shade a
-/// part (`spec/02-cli.md`, "Cards").
+/// part.
 #[test]
 fn a_strip_splits_its_width_by_share() {
     assert_eq!(strip(&[3, 1], 8), "██████▓▓");

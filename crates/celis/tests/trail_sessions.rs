@@ -149,7 +149,7 @@ fn prompt_writes_the_prompt_as_a_prompt_mark_on_the_sessions_trail() {
     );
 }
 
-/// A trail asked twice is reached (`spec/04-trails.md`, "Sessions").
+/// A trail asked twice is reached.
 #[test]
 fn a_trail_asked_twice_is_reached() {
     let repo = Repo::new();
@@ -225,7 +225,7 @@ fn a_sessions_open_trail_is_the_trail_of_its_newest_step() {
 
 /// `prompt` names the working step of the session's trail on stderr, and asks for a step under it when
 /// the next work does not fit; with no working step, it names none; either way it ends with the hint to
-/// join a trail (`spec/02-cli.md`, "Prompt").
+/// join a trail.
 #[test]
 fn the_prompt_hook_names_the_working_step() {
     let repo = Repo::new();
@@ -256,7 +256,7 @@ fn the_prompt_hook_names_the_working_step() {
 }
 
 /// `prompt` names every done step of the session's trail, its first ask too, and says a change to done
-/// work replaces it (`spec/02-cli.md`, "Prompt").
+/// work replaces it.
 #[test]
 fn the_prompt_hook_names_the_done_steps() {
     let repo = Repo::new();
@@ -310,8 +310,7 @@ const RULES: &str = "Write each rule this prompt states (review feedback, a conv
                      correction) with celis decide before you change a file.";
 
 /// After the past agent was asked for, a later prompt with no open trail gives the hint to join a trail
-/// of today, of any project; with no trail of today, it gives none (`spec/02-cli.md`,
-/// "Prompt").
+/// of today, of any project; with no trail of today, it gives none.
 #[test]
 fn a_later_prompt_with_no_open_trail_hints_at_todays_trails() {
     let repo = Repo::new();
@@ -358,7 +357,7 @@ fn prompt_skips_a_harness_message() {
 }
 
 /// With no open trail in the session, `prompt` writes nothing, and prints on stderr one line that asks for
-/// the past agent, once the store holds any record (`spec/02-cli.md`, "Prompt").
+/// the past agent, once the store holds any record.
 #[test]
 fn a_prompt_with_no_open_trail_asks_for_the_past_agent() {
     let repo = Repo::new();
@@ -391,8 +390,8 @@ fn a_prompt_with_no_open_trail_asks_for_the_past_agent() {
     assert!(marks(&repo, "prompt").is_empty());
 }
 
-/// `prompt` asks for the past agent once in a session, and again after a compaction's `SessionStart`
-/// (`spec/02-cli.md`, "Prompt").
+/// `prompt` asks for the past agent once in a session, and again after a compaction's
+/// `SessionStart`.
 #[test]
 fn a_session_asks_for_the_past_agent_once_until_a_compaction() {
     let repo = Repo::new();
@@ -480,8 +479,7 @@ fn prompt_takes_the_conversation_id_first() {
     );
 }
 
-/// A session's first `step add` says on stderr which printed id is the ask and which the new trail
-/// (`spec/02-cli.md`, "Step").
+/// A session's first `step add` says on stderr which printed id is the ask and which the new trail.
 #[test]
 fn a_sessions_first_ask_names_its_ids() {
     let repo = Repo::new();

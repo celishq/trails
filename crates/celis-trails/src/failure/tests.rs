@@ -7,8 +7,7 @@ fn any_other_error_exits_1_with_its_text() {
     assert!(failure.message.contains("disk full"));
 }
 
-/// An error about an id or a step's state names the `celis` command that shows or fixes it
-/// (`spec/02-cli.md`, "Output and errors").
+/// An error about an id or a step's state names the `celis` command that shows or fixes it.
 #[test]
 fn an_error_about_an_id_names_the_command_that_fixes_it() {
     for failure in [

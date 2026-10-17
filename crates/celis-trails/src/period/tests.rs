@@ -46,7 +46,7 @@ fn titles<'a>(steps: Vec<Step<'a>>) -> Vec<&'a str> {
 }
 
 /// A period holds the steps done in it, not the trails, and counts those done as planned and those
-/// revised later (`spec/06-reuse.md`, "Periods").
+/// revised later.
 #[test]
 fn a_period_counts_its_done_steps_as_planned_and_reworked() {
     let trail = step("trail", 10, None, &[], None);
@@ -72,8 +72,7 @@ fn a_period_counts_its_done_steps_as_planned_and_reworked() {
     assert_eq!(period.reworked(), 1);
 }
 
-/// A period counts the steps added in it that use a decision, and not those that use only a step
-/// (`spec/06-reuse.md`, "Periods").
+/// A period counts the steps added in it that use a decision, and not those that use only a step.
 #[test]
 fn a_period_counts_its_added_steps_that_use_a_decision() {
     let trail = step("trail", 10, None, &[], None);
@@ -89,7 +88,7 @@ fn a_period_counts_its_added_steps_that_use_a_decision() {
 }
 
 /// A period's closed steps are those done or dropped in it, and those that expired with a trail whose
-/// newest record is in it (`spec/06-reuse.md`, "Periods").
+/// newest record is in it.
 #[test]
 fn a_period_closes_done_dropped_and_expired_steps() {
     let trail = step("trail", 100, None, &[], None);
@@ -111,7 +110,7 @@ fn a_period_closes_done_dropped_and_expired_steps() {
 }
 
 /// A period counts each follow whose step was done in it, and the time those follows saved against
-/// their sources (`spec/06-reuse.md`, "Periods").
+/// their sources.
 #[test]
 fn a_period_counts_its_follows_and_their_saving() {
     let trail = step("trail", 10, None, &[], None);

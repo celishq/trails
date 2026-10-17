@@ -48,7 +48,7 @@ fn face(trails: &Trails, title: &str) -> String {
 }
 
 /// With no record in the 14 days before, the effect prints no change row and no `vs 14 BEFORE`, and the
-/// work card no change, and a dot on each day with no step done (`spec/02-cli.md`, "Cards").
+/// work card no change, and a dot on each day with no step done.
 #[test]
 fn a_card_with_no_data_before_shows_no_change() {
     let (_home, trails) = worked(3_600);
@@ -65,7 +65,7 @@ fn a_card_with_no_data_before_shows_no_change() {
 }
 
 /// With no step done or closed in the last 14 days, the work, time and outcome cards each say so in one
-/// line in place of their chart (`spec/02-cli.md`, "Cards").
+/// line in place of their chart.
 #[test]
 fn a_card_with_nothing_in_14_days_says_so() {
     let (_home, trails) = worked(20 * DAY);
@@ -80,8 +80,7 @@ fn a_card_with_nothing_in_14_days_says_so() {
     assert!(!outcome.contains("dropped"), "{outcome}");
 }
 
-/// The effect counts its base as `1 step`, and a big share puts its `%` a space after its digits
-/// (`spec/02-cli.md`, "Cards").
+/// The effect counts its base as `1 step`, and a big share puts its `%` a space after its digits.
 #[test]
 fn the_effect_counts_one_step_and_its_share_whole() {
     let (_home, trails) = worked(3_600);

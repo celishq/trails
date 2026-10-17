@@ -2,164 +2,56 @@
 cip: 4
 title: Trails
 status: draft
-depends: [CIP-01, CIP-02, CIP-03]
+depends: [CIP-01, CIP-03, CIP-05]
 ---
 
 # CIP-04 — Trails
 
-A trail is one task you give, in your words, and the steps agents take toward it. This CIP lets a reader
-know which trail a step belongs to, which session works on it, what the person asked on the way, which
-rules hold in it, whether it was reached, dropped or left, which of its work was revised, and which past work is like a new ask.
+A trail is one task the person gives, in their words, and the steps agents take toward it.
 
 ## Trails
 
-A trail is a step with no `under` (CIP-03, "Steps"). The steps under it, and the steps under those, are
-its tree. An ask is a step right under a trail.
+A trail is a step with no `under` (CIP-03). The steps under it, at any depth, are its tree. An ask is a
+step right under a trail.
 
-**Meaning**
+**Readers**
 
-- A reader MUST count a step with no `under` as a trail.
 - A reader MUST count a step in the tree of the trail at the top of its `under` chain.
-
-**Examples**
-
-```
-"The price list shows a senior tier at 80% of the price, and the receipt shows it."
-"Make the badges orange."
-```
 
 ## Sessions
 
-A session is one run of an agent, and a subagent shares it. Claude Code names it in
-`CLAUDE_CODE_SESSION_ID`, and Codex in `CODEX_THREAD_ID`. Other agents give it to their hooks only, so the
-hook names it to the agent, and the agent passes it with `--session`. Many sessions can work on one trail.
-The prompt hook writes the person's prompts on the session's trail.
+A session is one run of an agent; a subagent shares it. Many sessions can work on one trail.
 
 ```
-["session", "<session id>"]                  a step's tag, optional: the session that wrote it
+["session", "<session id>"]     a step's tag
 ```
 
 ```json
-prompt  kind 1985, signed by the account (NIP-32)
 { "kind": 1985, "content": "<the prompt's first line, 200 characters at most>",
   "tags": [["L", "celis.step"], ["l", "prompt", "celis.step"], ["e", "<trail id>"]] }
 ```
 
-**Meaning**
+- `session`: `--session`, else the first set variable of `CLAUDE_CODE_SESSION_ID`, `CODEX_THREAD_ID` and
+  `CELIS_SESSION_ID`.
+- `prompt`: what the person wrote while the trail was open.
 
-- A writer MUST write a `session` tag on each step, when it has a session: `--session`, else the first
-  set variable of `CLAUDE_CODE_SESSION_ID`, `CODEX_THREAD_ID` and `CELIS_SESSION_ID`.
-- A trail with a session MUST hold each ask as a step under it, the first ask too. So a writer MUST write
-  the trail, then the ask under it with the same text.
-- A step with no `under`, while its session has an open trail, MUST go under that trail, unless it asks
-  for a new trail (`--new`). Else it MUST be a new trail. It MUST NOT join another session's trail
-  without `--under`.
-- The prompt hook MUST write a prompt as a `prompt` on the session's open trail, and only there. With no
-  open trail, it MUST write nothing.
-- Its text MUST be the prompt's first line, cut to 200 characters.
-- The hook MUST write nothing for a prompt that starts with `<task-notification>` or `<agent-message`.
-  The harness wrote it, not the person.
-- A reader MUST ignore a kind 1985 record with `steer` in `celis.step`. Older versions wrote it.
+**Writers**
 
-**Derived**
-
-- A session's open trail is the trail of its newest step, while that trail is not done or dropped.
-- A prompt counts in an ask's review when it was written while that ask was open (CIP-03, "Reviewing").
-
-**Examples**
-
-```
-CLAUDE_CODE_SESSION_ID=95e9be99 celis step add -- "Make the badges orange."    a trail, the ask under it
-CLAUDE_CODE_SESSION_ID=95e9be99 celis step add -- "Now the buttons too."       a step under it
-CLAUDE_CODE_SESSION_ID=95e9be99 celis step add --new -- "Fix the login page."  a second trail
-CLAUDE_CODE_SESSION_ID=4c1d22e0 celis step add -- "Check the colours."        a trail of its own
-CLAUDE_CODE_SESSION_ID=4c1d22e0 celis step add --under 3fa2c1d0 -- "Check the colours."  goes there
-celis step add --session 95e9be99 -- "Now the links."                        a step under its trail
-```
-
-## Plugin version
-
-The plugin and the `celis` command come from one release. An agent updates its copy of the plugin only
-when the manifest's version changes.
-
-**Meaning**
-
-- Each agent's manifest MUST carry the same `version`: the version of the last release.
-- A release MUST write its version in each manifest, and release from that commit.
-- The session start MUST tell the agent to have the person update the older of the two, when the version
-  `celis --version` prints differs from the manifest's. A version of `0.0.0` on either side is a build
-  from the repo, and MUST NOT count.
-
-**Examples**
-
-```
-celis 1.4.0, plugin 1.3.0    the session start names both and asks for an update
-celis 1.4.0, plugin 1.4.0    nothing
-celis 0.0.0, plugin 1.4.0    nothing: a build from the repo
-```
+- A writer MUST write a `session` tag on each step that has a session.
+- A session's open trail is the trail of its newest step, while it is not done or dropped.
+- A trail with a session MUST hold each ask under it, the first too: the writer writes the trail, then the
+  ask with the same text.
+- A step with no `under` MUST go under its session's open trail, unless it asks for a new trail, else be
+  a new trail. It MUST NOT join another session's trail without `under`.
+- The prompt hook MUST write a prompt on its session's open trail only, and nothing with no open trail.
+  It MUST write nothing for a prompt that starts with `<task-notification>` or `<agent-message`.
 
 ## Rules
 
-A trail's rules are the live decisions with the scope `trail:<id>` (CIP-01, "Scope"). Each is one
-sentence a check can fail.
-
-**Meaning**
-
-- A reader MUST count a decision as a rule of a trail only when its scope names that trail.
-
-**Examples**
-
-```
-celis decide --scope trail:4c1d22e0 -- "A senior pays 80% of the price, rounded down to the cent."
-```
+A trail's rules are its live decisions with the scope `trail:<id>` (CIP-05, "Scope").
 
 ## State
 
-A trail has no state record. It takes the states of a step (CIP-03, "Starting"), worked out from its
-tree, so the person can see which tasks the agents
-reached, and which work a later step revised. A trail ends when no step under it is open, or 30 minutes
-after the newest record of its tree.
+**Readers**
 
-**Derived**
-
-```
-open      not done, dropped or ended, and no step of its tree works
-working   not done, dropped or ended, and a step of its tree works
-done      done, or ended with no open step under it
-dropped   the trail is dropped
-expired   ended with an open step under it
-```
-
-- The newest record of a tree is the newest of its steps and the records that name them.
-- A step of an ended trail that is not done or dropped is `expired`. A closed step keeps its state.
-
-**Meaning**
-
-- A reader MUST work out a trail's state from its tree, their `start`, `done` and `drop` records, the
-  steps that replace them, and the time.
-- A trail with steps under it MUST end when none of them is open.
-- A trail MUST end 30 minutes after the newest record of its tree.
-- A new step under an ended trail MUST make it open again.
-- A trail is active while it is open or working.
-- A reader MUST NOT count a step of an ended trail as open.
-
-## The past
-
-The past shows how a task like a new one was done, so a new plan can follow the path that worked. An
-agent searches it: the plugin's `celis:past` agent runs `grep` first for the live `project` and `me`
-decisions, then for the words of the ask, and then for the lines of the trails it chooses.
-
-**Meaning**
-
-- Codex and Gemini CLI do not load the plugin's agents. Their prompt hooks MUST ask to do what the
-  plugin's `past.md` says in place of the `celis:past` agent.
-
-**Derived**
-
-- What a new ask must keep: the project's live `project` and `me` decisions, and the rules of the
-  trails like it (CIP-01, "Reading").
-- The rules of a trail stay after it ends, so the next ask can keep what the trail learned.
-
-> Why an agent searches: it reads an ask in any language, and it tells the same kind of task from the
-> same words. A search prints only the lines that match, so it fits the agent's context for any store,
-> and a smarter agent searches better with no change to celis.
+- A trail takes the states of a step (CIP-03, "Starting") from its own records.

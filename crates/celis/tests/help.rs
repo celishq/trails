@@ -4,6 +4,8 @@ use std::process::{Command, Output};
 
 const CLI: &str = include_str!("../../../spec/02-cli.md");
 const CARD: &str = include_str!("../../../plugins/celis/card.md");
+const PAGE: &str = include_str!("help/page.txt");
+const STEP: &str = include_str!("help/step.txt");
 
 fn run(args: &[&str]) -> Output {
     let home = tempfile::tempdir().unwrap();
@@ -40,11 +42,6 @@ fn blocks(doc: &str, heading: &str) -> Vec<String> {
         }
     }
     found
-}
-
-/// The page as the spec shows it.
-fn the_page() -> String {
-    blocks(CLI, "Help")[1].clone()
 }
 
 fn squeeze(text: &str) -> String {
@@ -85,12 +82,11 @@ fn names(usage: &str) -> Vec<String> {
     found
 }
 
-/// `celis`, `celis help` and `celis --help` print the page as the spec shows it, and exit 0
-/// (`spec/02-cli.md`, "Help").
+/// `celis`, `celis help` and `celis --help` print the page `help/page.txt` holds, and exit 0.
 #[test]
 fn celis_and_celis_help_print_the_page() {
     for args in [&[][..], &["help"], &["--help"], &["-h"]] {
-        assert_eq!(page(args).trim_end(), the_page().trim_end(), "{args:?}");
+        assert_eq!(page(args).trim_end(), PAGE.trim_end(), "{args:?}");
     }
 }
 
@@ -110,10 +106,10 @@ fn help_anywhere_prints_the_command_page_its_words_name() {
         );
     }
     let args = ["nope", "--help"];
-    assert_eq!(page(&args).trim_end(), the_page().trim_end(), "{args:?}");
+    assert_eq!(page(&args).trim_end(), PAGE.trim_end(), "{args:?}");
 }
 
-/// `-h` prints what `--help` prints (`spec/02-cli.md`, "Help").
+/// `-h` prints what `--help` prints.
 #[test]
 fn h_prints_what_help_prints() {
     for args in [&["tree"][..], &["step", "add"], &["step"]] {
@@ -123,7 +119,7 @@ fn h_prints_what_help_prints() {
     }
 }
 
-/// `celis help <words>` prints what `celis <words> --help` prints (`spec/02-cli.md`, "Help").
+/// `celis help <words>` prints what `celis <words> --help` prints.
 #[test]
 fn help_before_words_prints_their_page() {
     for args in [
@@ -139,16 +135,13 @@ fn help_before_words_prints_their_page() {
     }
 }
 
-/// The group page of `step` is as the spec shows it (`spec/02-cli.md`, "Help").
+/// `celis step` prints the group page `help/step.txt` holds.
 #[test]
-fn the_step_group_page_is_as_the_spec_shows_it() {
-    assert_eq!(
-        page(&["step"]).trim_end(),
-        blocks(CLI, "Help")[2].trim_end()
-    );
+fn celis_step_prints_the_group_page() {
+    assert_eq!(page(&["step"]).trim_end(), STEP.trim_end());
 }
 
-/// A usage error inside a group names the group page (`spec/02-cli.md`, "Output and errors").
+/// A usage error inside a group names the group page.
 #[test]
 fn a_usage_error_inside_a_group_names_the_group_page() {
     let out = run(&["step", "nope"]);
@@ -157,8 +150,8 @@ fn a_usage_error_inside_a_group_names_the_group_page() {
     assert!(err.contains("See `celis step --help`."), "{err}");
 }
 
-/// A group's name alone, with or without `--help`, prints the group page: each of its commands with what it does
-/// (`spec/02-cli.md`, "Help").
+/// A group's name alone, with or without `--help`, prints the group page: each of its commands
+/// with what it does.
 #[test]
 fn help_after_a_group_prints_its_commands() {
     for (group, commands) in [
@@ -188,8 +181,8 @@ fn help_after_a_group_prints_its_commands() {
     }
 }
 
-/// A command page gives one line to each argument and flag its usage names, and at least one example
-/// (`spec/02-cli.md`, "Help").
+/// A command page gives one line to each argument and flag its usage names, and at least one
+/// example.
 #[test]
 fn a_command_page_gives_a_line_to_each_argument_and_an_example() {
     for (command, usage) in usages() {
@@ -220,8 +213,7 @@ fn a_command_page_gives_a_line_to_each_argument_and_an_example() {
     }
 }
 
-/// No line of a help page is longer than 80 characters, and no page names a spec file
-/// (`spec/02-cli.md`, "Help").
+/// No line of a help page is longer than 80 characters, and no page names a spec file.
 #[test]
 fn every_help_page_fits_80_columns_and_names_no_spec() {
     let mut pages = vec![page(&["help"])];

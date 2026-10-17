@@ -1,4 +1,4 @@
-//! CIP-02, "Watching".
+//! The view `tree` shows on a terminal.
 
 mod support;
 
@@ -16,7 +16,7 @@ fn records(repo: &Repo) -> usize {
 }
 
 /// On a terminal, `tree <id>` prints the tree, then prints it again within a second after a record lands,
-/// and writes no record (`spec/02-cli.md`, "Watching").
+/// and writes no record.
 #[test]
 fn watch_prints_the_tree_again_when_a_record_lands() {
     let repo = Repo::new();
@@ -33,7 +33,7 @@ fn watch_prints_the_tree_again_when_a_record_lands() {
 }
 
 /// On a terminal, `tree <id>` of a trail whose times stand still prints it again only when a record
-/// changes the tree (`spec/02-cli.md`, "Watching").
+/// changes the tree.
 #[test]
 fn watch_prints_the_tree_again_only_when_it_changes() {
     let repo = Repo::new();
@@ -51,7 +51,7 @@ fn watch_prints_the_tree_again_only_when_it_changes() {
 }
 
 /// On a terminal, `tree` with no id says no trail is there and names `tree --all`, then prints what `tree`
-/// prints: the trails of every project (`spec/02-cli.md`, "Watching").
+/// prints: the trails of every project.
 #[test]
 fn watch_with_no_id_prints_what_tree_prints() {
     let repo = Repo::new();
@@ -69,7 +69,7 @@ fn watch_with_no_id_prints_what_tree_prints() {
 }
 
 /// On a home with no store and no phrase, `tree` on a terminal shows the empty state, writes nothing, and
-/// shows the first trail once another command writes it (`spec/01-decisions.md`, "The store").
+/// shows the first trail once another command writes it.
 #[test]
 fn watch_on_an_empty_home_writes_nothing_and_waits_for_the_store() {
     let repo = Repo::new();
@@ -82,7 +82,7 @@ fn watch_on_an_empty_home_writes_nothing_and_waits_for_the_store() {
     watch.until("the first trail");
 }
 
-/// On a terminal, `tree` refuses an id no step has (`spec/02-cli.md`, "Watching").
+/// On a terminal, `tree` refuses an id no step has (`spec/02-cli.md`, "Output and errors").
 #[test]
 fn watch_refuses_an_unknown_id() {
     let repo = Repo::new();
@@ -98,7 +98,7 @@ fn watch_refuses_an_unknown_id() {
     );
 }
 
-/// `tree` takes no `--watch`: it is a usage error (`spec/02-cli.md`, "Watching").
+/// `tree` takes no `--watch`: it is a usage error (`spec/02-cli.md`, "Commands").
 #[test]
 fn tree_refuses_watch() {
     let repo = Repo::new();
@@ -106,7 +106,7 @@ fn tree_refuses_watch() {
 }
 
 /// On a terminal, `tree` draws on the alternate screen, each tree from the top left over the last one, with
-/// no clear (`spec/02-cli.md`, "Watching").
+/// no clear.
 #[test]
 fn watch_draws_each_tree_over_the_last_on_the_alternate_screen() {
     let repo = Repo::new();
@@ -124,7 +124,7 @@ fn watch_draws_each_tree_over_the_last_on_the_alternate_screen() {
 }
 
 /// On a terminal, `tree` prints a tree whose times stand still again, wrapped to the new width, when the
-/// terminal's width changes (`spec/02-cli.md`, "Watching").
+/// terminal's width changes.
 #[test]
 fn watch_on_a_terminal_prints_the_tree_again_when_its_width_changes() {
     let repo = Repo::new();
@@ -143,8 +143,8 @@ fn watch_on_a_terminal_prints_the_tree_again_when_its_width_changes() {
     assert!(trees.len() >= 2, "{trees:?}");
 }
 
-/// On a terminal, `tree` prints the tree again as the times it shows change, with no record landing
-/// (`spec/02-cli.md`, "Watching").
+/// On a terminal, `tree` prints the tree again as the times it shows change, with no record
+/// landing.
 #[test]
 fn watch_on_a_terminal_prints_the_tree_again_as_its_times_change() {
     let repo = Repo::new();
@@ -158,8 +158,7 @@ fn watch_on_a_terminal_prints_the_tree_again_as_its_times_change() {
     assert!(watch.trees(Duration::ZERO).len() >= 2);
 }
 
-/// On an interrupt, `tree` leaves the alternate screen, prints nothing and exits 0 (`spec/02-cli.md`,
-/// "Watching").
+/// On an interrupt, `tree` leaves the alternate screen, prints nothing and exits 0.
 #[test]
 fn watch_leaves_nothing_on_an_interrupt() {
     let repo = Repo::new();
@@ -174,8 +173,7 @@ fn watch_leaves_nothing_on_an_interrupt() {
     assert_eq!(after, "", "{shown:?}");
 }
 
-/// A watch spins a working step's mark and puts `active <time> ago` under an active trail's title
-/// (`spec/02-cli.md`, "Watching").
+/// A watch spins a working step's mark and puts `active <time> ago` under an active trail's title.
 #[test]
 fn watch_spins_a_working_step_and_says_when_the_trail_was_active() {
     let repo = Repo::new();
@@ -201,8 +199,7 @@ fn watch_spins_a_working_step_and_says_when_the_trail_was_active() {
 }
 
 /// A watch prints its keys on the screen's last row, and scrolls a tree taller than the rows above
-/// them, with `↑ <n> more` and `↓ <n> more` rows; `G`, `g` and `PgDn` scroll it (`spec/02-cli.md`,
-/// "Watching").
+/// them, with `↑ <n> more` and `↓ <n> more` rows; `G`, `g` and `PgDn` scroll it.
 #[test]
 fn watch_scrolls_a_tree_taller_than_the_screen() {
     let repo = Repo::new();
@@ -236,8 +233,7 @@ fn watch_scrolls_a_tree_taller_than_the_screen() {
     watch.until("↑ 8 more");
 }
 
-/// A watch ends each tree with its keys, and `q` ends it as an interrupt does (`spec/02-cli.md`,
-/// "Watching").
+/// A watch ends each tree with its keys, and `q` ends it as an interrupt does.
 #[test]
 fn watch_names_its_keys_and_quits_on_q() {
     let repo = Repo::new();
@@ -255,7 +251,7 @@ fn watch_names_its_keys_and_quits_on_q() {
 }
 
 /// `↓` selects a trail with a `▌` in the cursor column in the text's colour and its title bold, and
-/// `enter` opens a done trail into a block and closes it again (`spec/02-cli.md`, "Watching").
+/// `enter` opens a done trail into a block and closes it again.
 #[test]
 fn watch_selects_a_trail_and_opens_it_with_enter() {
     let repo = Repo::new();
@@ -285,7 +281,7 @@ fn watch_raw(watch: &mut Watch) -> Vec<u8> {
     watch.seen.clone()
 }
 
-/// `f` turns the full tree on and off, and `a` every trail by day (`spec/02-cli.md`, "Watching").
+/// `f` turns the full tree on and off, and `a` every trail by day.
 #[test]
 fn watch_turns_full_and_all_on_with_keys() {
     let repo = Repo::new();
@@ -316,7 +312,7 @@ fn watch_turns_full_and_all_on_with_keys() {
 
 /// `↓` selects the closed line of a block, `→` shows the steps in it, `enter` shows the lines `--full`
 /// prints under the selected step, `c` copies its id's first 8 characters with `pbcopy`, `m` its table
-/// as Markdown, and each says so (`spec/02-cli.md`, "Watching").
+/// as Markdown, and each says so.
 #[test]
 fn watch_opens_a_step_and_copies_its_id() {
     let repo = Repo::new();
@@ -363,7 +359,7 @@ fn watch_opens_a_step_and_copies_its_id() {
 }
 
 /// A block folds its rules to one line, and `→` opens it to a line a rule, each wrapped whole; the
-/// watch prints no ids (`spec/02-cli.md`, "Watching").
+/// watch prints no ids.
 #[test]
 fn watch_opens_the_rules_line() {
     let repo = Repo::new();
@@ -390,7 +386,7 @@ fn watch_opens_the_rules_line() {
 }
 
 /// `*` opens the selected step and every step under it, and closes them all again; `←` on a closed
-/// step selects the step it is under, `→` opens it and `←` closes it (`spec/02-cli.md`, "Watching").
+/// step selects the step it is under, `→` opens it and `←` closes it.
 #[test]
 fn watch_opens_and_closes_with_arrows_and_star() {
     let repo = Repo::new();
@@ -426,8 +422,7 @@ fn watch_opens_and_closes_with_arrows_and_star() {
 }
 
 /// The watch draws a block with its lines under its title, its tree lines, its rules folded to one
-/// line, its details in columns and no ids, in colour: § magenta, places blue, the project bold
-/// (`spec/02-cli.md`, "Watching").
+/// line, its details in columns and no ids, in colour: § magenta, places blue, the project bold.
 #[test]
 fn watch_draws_a_block_with_tree_lines_and_colour_anchors() {
     let repo = Repo::new();
@@ -488,7 +483,7 @@ fn watch_draws_a_block_with_tree_lines_and_colour_anchors() {
 }
 
 /// A step whose newest record is less than 2 seconds old prints its title bold, then in normal weight;
-/// the closed line's mark is green (`spec/02-cli.md`, "Watching").
+/// the closed line's mark is green.
 #[test]
 fn watch_prints_a_fresh_step_bold() {
     let repo = Repo::new();
@@ -507,7 +502,7 @@ fn watch_prints_a_fresh_step_bold() {
 }
 
 /// A block prints its open steps newest first, then its rules line, then its closed line, and a step
-/// folds its own closed steps the same way (`spec/02-cli.md`, "Watching").
+/// folds its own closed steps the same way.
 #[test]
 fn watch_prints_open_steps_then_rules_then_closed_steps() {
     let repo = Repo::new();
@@ -548,8 +543,7 @@ fn watch_prints_open_steps_then_rules_then_closed_steps() {
     }
 }
 
-/// The closed line holds a trail's expired steps too, and marks them `!` after `✓` and `✗`
-/// (`spec/02-cli.md`, "Watching").
+/// The closed line holds a trail's expired steps too, and marks them `!` after `✓` and `✗`.
 #[test]
 fn watch_holds_expired_steps_in_the_closed_line() {
     let repo = Repo::new();
@@ -571,8 +565,8 @@ fn watch_holds_expired_steps_in_the_closed_line() {
 }
 
 /// The closed line holds the done and dropped steps, marked `✓✗`; open, a done step with steps under it
-/// prints its own closed line only when it is open, its line holding their count and no time while closed
-/// (`spec/02-cli.md`, "Watching").
+/// prints its own closed line only when it is open, its line holding their count and no time while
+/// closed.
 #[test]
 fn watch_folds_closed_steps_and_done_branches() {
     let repo = Repo::new();
@@ -609,8 +603,7 @@ fn watch_folds_closed_steps_and_done_branches() {
 }
 
 /// With no id, the watch starts with today's line and its counts, groups the trails by project, and
-/// ends with `Show more`, which `enter` turns into every trail by day and `Show less`
-/// (`spec/02-cli.md`, "Watching").
+/// ends with `Show more`, which `enter` turns into every trail by day and `Show less`.
 #[test]
 fn watch_groups_today_by_project_and_shows_more() {
     let repo = Repo::new();
@@ -641,7 +634,7 @@ fn watch_groups_today_by_project_and_shows_more() {
 }
 
 /// Under 80 columns, while a title would be cut below 20 characters, the watch leaves out a trail
-/// line's first column (`spec/02-cli.md`, "Watching").
+/// line's first column.
 #[test]
 fn a_narrow_watch_leaves_out_columns() {
     let repo = Repo::new();
@@ -665,8 +658,7 @@ fn a_narrow_watch_leaves_out_columns() {
     assert!(line(&mut watch).contains('…'), "{}", line(&mut watch));
 }
 
-/// A trail's line holds its steps and its rules in their own columns, each number aligned right
-/// (`spec/02-cli.md`, "Watching").
+/// A trail's line holds its steps and its rules in their own columns, each number aligned right.
 #[test]
 fn watch_aligns_a_trail_lines_steps_and_rules() {
     let repo = Repo::new();
@@ -704,7 +696,7 @@ fn watch_aligns_a_trail_lines_steps_and_rules() {
 }
 
 /// With `--full`, the watch starts each line under a step at its title's column, after its label, and
-/// wraps it at the width (`spec/02-cli.md`, "Watching").
+/// wraps it at the width.
 #[test]
 fn watch_full_aligns_and_wraps_the_lines_under_a_step() {
     let repo = Repo::new();
@@ -743,7 +735,7 @@ fn watch_full_aligns_and_wraps_the_lines_under_a_step() {
 }
 
 /// When `a` takes the selected trail of a past day out of the tree, the watch selects the first line,
-/// and the arrows move on from it (`spec/02-cli.md`, "Watching").
+/// and the arrows move on from it.
 #[test]
 fn watch_keeps_a_selection_when_its_line_leaves() {
     let repo = Repo::new();
@@ -768,8 +760,7 @@ fn watch_keeps_a_selection_when_its_line_leaves() {
     watch.until("▌ ▸ Show more");
 }
 
-/// The key line is cut to the width, so it never wraps and scrolls the screen (`spec/02-cli.md`,
-/// "Watching").
+/// The key line is cut to the width, so it never wraps and scrolls the screen.
 #[test]
 fn watch_cuts_the_key_line_to_the_width() {
     let repo = Repo::new();
@@ -783,8 +774,7 @@ fn watch_cuts_the_key_line_to_the_width() {
     assert!(keys.ends_with('…'), "{keys:?}");
 }
 
-/// A changed done step prints `~` after its mark, and no step prints its place (`spec/02-cli.md`,
-/// "Watching").
+/// A changed done step prints `~` after its mark, and no step prints its place.
 #[test]
 fn watch_marks_a_change_and_prints_no_place() {
     let repo = Repo::new();
@@ -827,7 +817,7 @@ fn watch_marks_a_change_and_prints_no_place() {
 }
 
 /// A revised step prints `↻` after its mark, then `~`, and its working trail keeps the spinner with `↻`
-/// after it (`spec/02-cli.md`, "Watching").
+/// after it.
 #[test]
 fn watch_marks_a_revised_step_and_spins_its_working_trail() {
     let repo = Repo::new();
@@ -875,7 +865,7 @@ fn watch_marks_a_revised_step_and_spins_its_working_trail() {
 }
 
 /// No line of the watch reaches the last column, so clearing to the end of a line never erases its
-/// last character (`spec/02-cli.md`, "Watching").
+/// last character.
 #[test]
 fn watch_leaves_the_last_column_empty() {
     let repo = Repo::new();
@@ -899,7 +889,7 @@ fn watch_leaves_the_last_column_empty() {
 }
 
 /// On a terminal, `tree` prints the tree again within a second after a record lands in a linked folder that is
-/// on (`spec/02-cli.md`, "Watching").
+/// on.
 #[test]
 fn watch_prints_the_tree_again_when_a_record_lands_in_a_linked_folder() {
     let repo = Repo::new();

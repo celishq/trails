@@ -1,7 +1,7 @@
 use super::*;
 
 /// A card is framed at its width, its title in its top line, each row padded or cut to fit, and empty
-/// rows to its height (`spec/02-cli.md`, "Cards").
+/// rows to its height.
 #[test]
 fn a_card_frames_its_rows_at_its_width() {
     let card = Card {
@@ -21,7 +21,7 @@ fn a_card_frames_its_rows_at_its_width() {
     );
 }
 
-/// The picked card is framed in heavy lines (`spec/02-cli.md`, "Cards").
+/// The picked card is framed in heavy lines.
 #[test]
 fn the_picked_card_has_a_heavy_frame() {
     let card = Card {
@@ -35,8 +35,7 @@ fn the_picked_card_has_a_heavy_frame() {
     );
 }
 
-/// Cards print side by side, a space between two, each row of cards as tall as its tallest card
-/// (`spec/02-cli.md`, "Cards").
+/// Cards print side by side, a space between two, each row of cards as tall as its tallest card.
 #[test]
 fn cards_print_side_by_side() {
     let card = |rows: usize| Card {
@@ -59,7 +58,7 @@ fn cards_print_side_by_side() {
     );
 }
 
-/// A divider row draws a line across the card, joined to its frame (`spec/02-cli.md`, "Cards").
+/// A divider row draws a line across the card, joined to its frame.
 #[test]
 fn a_divider_row_crosses_the_card() {
     let card = Card {

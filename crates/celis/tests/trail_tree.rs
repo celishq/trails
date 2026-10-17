@@ -1,4 +1,4 @@
-//! CIP-02, "Tree": `trail tree`, the agent view.
+//! The agent view of `tree`.
 
 mod support;
 
@@ -20,7 +20,7 @@ fn printed(repo: &Repo, args: &[&str]) -> Vec<String> {
 /// `tree <id>` prints the trail as a block: its mark, id and title, then two spaces in its progress and
 /// worked time, its open steps, its rules, then its closed steps, each group newest first and each step
 /// followed by its own two spaces further in, in the same order; `--full` adds the proof and grade of a
-/// done one (`spec/02-cli.md`, "Tree").
+/// done one.
 #[test]
 fn tree_prints_the_trail_its_rules_and_the_steps_under_it() {
     let repo = Repo::new();
@@ -96,7 +96,7 @@ fn tree_prints_the_trail_its_rules_and_the_steps_under_it() {
     );
 }
 
-/// `tree <id>` prints an expired step with the closed steps, after the rules (`spec/02-cli.md`, "Tree").
+/// `tree <id>` prints an expired step with the closed steps, after the rules.
 #[test]
 fn tree_prints_an_expired_step_with_the_closed_ones() {
     let repo = Repo::new();
@@ -128,7 +128,7 @@ fn tree_prints_an_expired_step_with_the_closed_ones() {
     );
 }
 
-/// `tree <id>` of an ask prints its trail's rules on its block (`spec/02-cli.md`, "Tree").
+/// `tree <id>` of an ask prints its trail's rules on its block.
 #[test]
 fn tree_of_an_ask_prints_its_trails_rules() {
     let repo = Repo::new();
@@ -154,7 +154,7 @@ fn tree_of_an_ask_prints_its_trails_rules() {
 }
 
 /// `tree --full` prints a done trail's proof and grade under its title, and no progress with no step
-/// under it (`spec/02-cli.md`, "Tree").
+/// under it.
 #[test]
 fn tree_prints_a_done_trails_proof_and_grade() {
     let repo = Repo::new();
@@ -174,7 +174,7 @@ fn tree_prints_a_done_trails_proof_and_grade() {
 }
 
 /// `tree --json` prints the trail, then one object a step with its links and state, and writes no
-/// record (`spec/02-cli.md`, "Tree").
+/// record.
 #[test]
 fn tree_json_prints_each_step_with_its_under_and_state_and_writes_no_record() {
     let repo = Repo::new();
@@ -202,8 +202,7 @@ fn tree_json_prints_each_step_with_its_under_and_state_and_writes_no_record() {
 
 /// `tree` with no id starts with today's line and its counts, then its active trails with their projects,
 /// then the others by project, the newest project first, each newest first, every one a block;
-/// a dropped one's reason follows it; an id no step has is refused with `no-step` (`spec/02-cli.md`,
-/// "Tree").
+/// a dropped one's reason follows it; an id no step has is refused with `no-step`.
 #[test]
 fn tree_with_no_id_prints_today_by_project() {
     let repo = Repo::new();
@@ -244,7 +243,7 @@ fn tree_with_no_id_prints_today_by_project() {
 }
 
 /// `tree --all` prints every trail in the store, of every project, by day, newest first, one line each
-/// with its progress and worked time (`spec/02-cli.md`, "Tree").
+/// with its progress and worked time.
 #[test]
 fn tree_all_prints_every_trail_of_every_project_by_day() {
     let repo = Repo::new();
@@ -280,7 +279,7 @@ fn tree_all_prints_every_trail_of_every_project_by_day() {
 }
 
 /// The agent view prints a step's place whole, and cuts, wraps and colours nothing, whatever the
-/// width (`spec/02-cli.md`, "Tree").
+/// width.
 #[test]
 fn the_agent_view_prints_whole_lines_with_no_colour() {
     let repo = Repo::new();
@@ -316,8 +315,7 @@ fn the_agent_view_prints_whole_lines_with_no_colour() {
 }
 
 /// `tree` prints a done step's `changed` tag under it as `~ <changed>`, and its flags after the mark: `↻`
-/// on a revised step and its trail, then `~` when changed, which keep their states (`spec/02-cli.md`,
-/// "Tree").
+/// on a revised step and its trail, then `~` when changed, which keep their states.
 #[test]
 fn tree_prints_what_changed_and_marks_a_revised_step() {
     let repo = Repo::new();
@@ -371,8 +369,7 @@ fn tree_prints_what_changed_and_marks_a_revised_step() {
     assert_eq!(step["step"]["state"], "done", "{json:?}");
 }
 
-/// `tree <id>` prints a trail with no record from today, and `tree` with no id only today's
-/// (`spec/02-cli.md`, "Tree").
+/// `tree <id>` prints a trail with no record from today, and `tree` with no id only today's.
 #[test]
 fn tree_with_no_id_shows_only_today_and_tree_with_an_id_prints_any_trail() {
     let repo = Repo::new();
@@ -395,7 +392,7 @@ fn tree_with_no_id_shows_only_today_and_tree_with_an_id_prints_any_trail() {
 }
 
 /// `tree` with no id prints today's trails of every project, in any folder; with none, it names `tree
-/// --all` (`spec/02-cli.md`, "Tree").
+/// --all`.
 #[test]
 fn tree_with_no_id_prints_every_projects_trails_and_names_all_when_empty() {
     let repo = Repo::new();
@@ -413,7 +410,7 @@ fn tree_with_no_id_prints_every_projects_trails_and_names_all_when_empty() {
 }
 
 /// The tree prints a trail's first ask as the trail when their texts match, and the ask's steps one
-/// level up; `--json` prints both (`spec/02-cli.md`, "Tree").
+/// level up; `--json` prints both.
 #[test]
 fn the_tree_folds_a_trails_twin_first_ask() {
     let repo = Repo::new();
@@ -431,7 +428,7 @@ fn the_tree_folds_a_trails_twin_first_ask() {
 
 /// `tree --demo` prints made-up trails of two projects with a step or a trail in each state, a change,
 /// rules and a dropped reason, `--all` a past day too, in a folder it removes, and writes nothing to
-/// the store; with an id it refuses (`spec/02-cli.md`, "Tree").
+/// the store; with an id it refuses.
 #[test]
 fn tree_demo_prints_every_state_and_writes_nothing() {
     let repo = Repo::new();

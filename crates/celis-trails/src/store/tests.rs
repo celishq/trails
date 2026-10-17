@@ -2,7 +2,7 @@ use super::Store;
 use celis_nostr::{Account, Note};
 
 /// A read of what is new gives each record another store wrote since the last read once, and adds it to
-/// the records (`spec/02-cli.md`, "Watching").
+/// the records.
 #[test]
 fn fresh_gives_each_record_written_since_the_last_read_once() {
     let home = tempfile::tempdir().unwrap();

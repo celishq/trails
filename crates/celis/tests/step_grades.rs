@@ -1,4 +1,4 @@
-//! CIP-03, "Grades".
+//! The grade of a done step.
 
 mod support;
 
@@ -82,8 +82,7 @@ fn done_runs_the_check_at_the_top_folder_and_stops_a_slow_one() {
     assert!(started.elapsed().as_secs() < 10, "{:?}", started.elapsed());
 }
 
-/// `tree` prints a done step's grade under its proof: the time it took
-/// (`spec/02-cli.md`, "Tree").
+/// `tree` prints a done step's grade under its proof: the time it took.
 #[test]
 fn tree_prints_the_grade_of_each_done_step() {
     let repo = Repo::new();
@@ -104,7 +103,7 @@ fn tree_prints_the_grade_of_each_done_step() {
     assert!(under(2).ends_with('s'), "{text}");
 }
 
-/// `tree --json` gives a done step its grade (`spec/02-cli.md`, "Tree").
+/// `tree --json` gives a done step its grade.
 #[test]
 fn tree_json_gives_a_done_step_its_grade() {
     let repo = Repo::new();
@@ -123,8 +122,7 @@ fn tree_json_gives_a_done_step_its_grade() {
     assert_eq!(keys, ["took"]);
 }
 
-/// `took` counts from the step's first `start`, and from the step when it has none
-/// (`spec/03-steps.md`, "Grades").
+/// `took` counts from the step's first `start`, and from the step when it has none.
 #[test]
 fn took_counts_from_the_first_start_else_from_the_step() {
     let repo = Repo::new();

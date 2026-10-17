@@ -33,7 +33,7 @@ fn project(id: &str) -> (&str, &str) {
     (id, "repo")
 }
 
-/// A decision prints as `<id, first 8> <scope> <text>` (`spec/02-cli.md`, "Commands").
+/// A decision prints as `<id, first 8> <scope> <text>`.
 #[test]
 fn a_decision_prints_its_id_scope_and_text() {
     let repo = Repo::new();

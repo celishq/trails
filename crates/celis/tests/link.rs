@@ -1,4 +1,4 @@
-//! CIP-01, "Links", and CIP-02, "Link".
+//! CIP-01, "Links".
 
 mod support;
 
@@ -50,7 +50,7 @@ fn strangers_step(repo: &Repo) -> Note {
 }
 
 /// `link` creates `.celis/trails/` and `.celis/trails/README.md`, and copies the project's records out of the
-/// store (`spec/02-cli.md`, "Link").
+/// store.
 #[test]
 fn link_creates_the_folder_and_copies_the_projects_records_out() {
     let repo = Repo::new();
@@ -69,8 +69,7 @@ fn link_creates_the_folder_and_copies_the_projects_records_out() {
     assert_eq!(listed, format!("{}\t.celis/trails\n", repo.project_id()));
 }
 
-/// A second `link` copies nothing, and `--json` prints the folder and both counts
-/// (`spec/02-cli.md`, "Link").
+/// A second `link` copies nothing, and `--json` prints the folder and both counts.
 #[test]
 fn a_second_link_copies_nothing() {
     let repo = Repo::new();
@@ -87,7 +86,7 @@ fn a_second_link_copies_nothing() {
 }
 
 /// A link holds no `me` decision and no record of another project, and holds a status record by the
-/// step it names (`spec/01-decisions.md`, "Links").
+/// step it names (`spec/01-records.md`, "Links").
 #[test]
 fn a_link_holds_only_the_projects_records_and_no_me_decision() {
     let repo = Repo::new();
@@ -123,7 +122,7 @@ fn a_link_holds_only_the_projects_records_and_no_me_decision() {
 }
 
 /// When the link is on, each record the link holds is written to it as well
-/// (`spec/01-decisions.md`, "Links").
+/// (`spec/01-records.md`, "Links").
 #[test]
 fn when_the_link_is_on_a_new_record_is_written_to_it() {
     let repo = Repo::new();
@@ -144,7 +143,7 @@ fn when_the_link_is_on_a_new_record_is_written_to_it() {
 }
 
 /// A link folder that this machine did not turn on is not read, and nothing is copied from it
-/// (`spec/01-decisions.md`, "Links").
+/// (`spec/01-records.md`, "Links").
 #[test]
 fn a_link_that_is_not_on_is_not_read() {
     let repo = Repo::new();
@@ -157,7 +156,7 @@ fn a_link_that_is_not_on_is_not_read() {
 }
 
 /// When the link is on, a reader reads it, and copies into the store each record the store does not
-/// have (`spec/01-decisions.md`, "Links"; `spec/02-cli.md`, "Link").
+/// have (`spec/01-records.md`, "Links").
 #[test]
 fn when_the_link_is_on_its_records_are_read_and_copied_in() {
     let repo = Repo::new();
@@ -175,7 +174,7 @@ fn when_the_link_is_on_its_records_are_read_and_copied_in() {
 }
 
 /// A worktree with no `.celis/trails/` writes no link, though its project is linked
-/// (`spec/01-decisions.md`, "Links").
+/// (`spec/01-records.md`, "Links").
 #[test]
 fn a_checkout_without_the_folder_writes_no_link() {
     let repo = Repo::new();
@@ -188,7 +187,7 @@ fn a_checkout_without_the_folder_writes_no_link() {
 
 /// When the top folder has `.celis/trails/` and the link is not on, `prompt` asks, once a session, to
 /// ask the person whether to link, and names `celis link`; never on the prompt that asks for the past
-/// agent (`spec/02-cli.md`, "Prompt").
+/// agent.
 #[test]
 fn prompt_asks_to_link_a_project_whose_folder_is_not_linked() {
     let repo = Repo::new();
@@ -217,7 +216,7 @@ fn prompt_asks_to_link_a_project_whose_folder_is_not_linked() {
     assert!(!on.contains("celis link"), "{on}");
 }
 
-/// Without `.celis/trails/`, `prompt` does not ask to link (`spec/02-cli.md`, "Prompt").
+/// Without `.celis/trails/`, `prompt` does not ask to link.
 #[test]
 fn prompt_does_not_ask_to_link_a_project_with_no_folder() {
     let repo = Repo::new();
@@ -228,7 +227,7 @@ fn prompt_does_not_ask_to_link_a_project_with_no_folder() {
 }
 
 /// `unlink` takes the link out of `$CELIS_HOME/links` and keeps the folder; then nothing is
-/// written to the folder or read from it (`spec/02-cli.md`, "Link").
+/// written to the folder or read from it.
 #[test]
 fn unlink_stops_the_sync_and_keeps_the_folder() {
     let repo = Repo::new();
@@ -252,8 +251,7 @@ fn unlink_stops_the_sync_and_keeps_the_folder() {
     assert!(!ids(&repo.store().join("shared")).contains(&note.id));
 }
 
-/// With no store, `prompt` still asks to link a project whose link is not on, and creates no store
-/// (`spec/02-cli.md`, "Prompt").
+/// With no store, `prompt` still asks to link a project whose link is not on, and creates no store.
 #[test]
 fn prompt_with_no_store_asks_to_link() {
     let repo = Repo::new();
@@ -264,7 +262,7 @@ fn prompt_with_no_store_asks_to_link() {
     assert!(!repo.store().exists());
 }
 
-/// The README of `.celis/` says how to install celis (`spec/02-cli.md`, "Link").
+/// The README of `.celis/` says how to install celis.
 #[test]
 fn the_readme_says_how_to_install_celis() {
     let repo = Repo::new();
@@ -274,7 +272,7 @@ fn the_readme_says_how_to_install_celis() {
 }
 
 /// `link <folder>` links a folder outside the repo by its full path; records go to it and come from it,
-/// and `unlink <folder>` takes it out (`spec/01-decisions.md`, "Links"; `spec/02-cli.md`, "Link").
+/// and `unlink <folder>` takes it out (`spec/01-records.md`, "Links").
 #[test]
 fn a_folder_outside_the_repo_links_by_its_full_path() {
     let repo = Repo::new();

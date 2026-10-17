@@ -311,7 +311,7 @@ fn grep_says_when_no_line_matches_and_passes_on_a_failure() {
     assert!(!err(&o).contains("celis:"), "{}", err(&o));
 }
 
-/// `celis grep --help` prints the command page (`spec/02-cli.md`, "Grep").
+/// `celis grep --help` prints the command page.
 #[test]
 fn grep_help_prints_the_command_page() {
     let repo = Repo::new();
@@ -337,8 +337,8 @@ fn grep_prints_numbered_lines_under_their_trail() {
     );
 }
 
-/// `past` writes nothing and prints that it is gone and that the plugin's `past.md` searches with `grep`
-/// (`spec/02-cli.md`, "Grep").
+/// `past` writes nothing and prints that it is gone and that the plugin's `past.md` searches with
+/// `grep`.
 #[test]
 fn past_says_it_is_gone() {
     let repo = Repo::new();
@@ -356,7 +356,7 @@ fn past_says_it_is_gone() {
     assert!(!repo.store().exists());
 }
 
-/// With `-q`, a match prints nothing, and no match still says so (`spec/02-cli.md`, "Grep").
+/// With `-q`, a match prints nothing, and no match still says so.
 #[test]
 fn grep_q_prints_nothing_on_a_match() {
     let repo = Repo::new();

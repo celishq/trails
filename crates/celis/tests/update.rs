@@ -175,8 +175,7 @@ fn update_installs_the_latest_release_over_the_resolved_file() {
     assert!(link.is_symlink());
 }
 
-/// When the latest version is installed, `update` downloads nothing and says so
-/// (`spec/02-cli.md`, "Update").
+/// When the latest version is installed, `update` downloads nothing and says so.
 #[test]
 fn update_downloads_nothing_when_the_latest_is_installed() {
     let install = Install::new();
@@ -187,8 +186,7 @@ fn update_downloads_nothing_when_the_latest_is_installed() {
 }
 
 /// With a version, `update` installs that version, though it is not the latest; a leading `v` does
-/// not count
-/// (`spec/02-cli.md`, "Update").
+/// not count.
 #[test]
 fn update_installs_a_named_version() {
     let install = Install::new();
@@ -201,7 +199,7 @@ fn update_installs_a_named_version() {
 }
 
 /// When the archive does not match its checksum, `update` fails with the error of `install.sh` alone
-/// and leaves the installed file as it was (`spec/02-cli.md`, "Update").
+/// and leaves the installed file as it was.
 #[test]
 fn update_fails_on_a_wrong_checksum_and_keeps_the_file() {
     let install = Install::new();

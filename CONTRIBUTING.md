@@ -18,19 +18,15 @@ Thank you for your help. This guide tells you how to make a change that we can m
 
 ## Change the spec first
 
-A change of behaviour starts in `spec/`. Read [`spec/README.md`](spec/README.md) for
-how a CIP works. In short:
-
-- A CIP adds. It never changes another CIP. A new meaning for a name is a new CIP, with the next number.
-- A final CIP is frozen. A draft CIP can change.
-- A rule states what a program does, never how.
+A change of behaviour starts in `spec/`. Follow the rules of
+[`spec/README.md`](spec/README.md), "How a CIP works".
 
 ## Write the code
 
 The conventions are in [`AGENTS.md`](AGENTS.md). They apply to people and agents alike. The most important:
 
 - Write a failing test first, then make it pass.
-- A test proves behaviour through the public surface, and cites the spec section it proves:
+- A test proves behaviour through the public surface. A test of a spec rule cites its section:
   ``(`spec/03-steps.md`, "Closing")``.
 - A name is a noun for what a thing is. One primary type per file.
 - Docstrings on types and members only. No inline comments.

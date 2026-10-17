@@ -1,4 +1,4 @@
-//! CIP-05, "The report".
+//! The Markdown `report` prints.
 
 mod support;
 
@@ -55,7 +55,7 @@ fn rows(text: &str) -> Vec<String> {
 
 /// `report` prints the trail's title as a heading, a table of its id, state, time, counts and project,
 /// a table of the steps under it with their marks, times and proofs, then their texts, places and checks,
-/// and its rules, each in a details block (`spec/02-cli.md`, "Report").
+/// and its rules, each in a details block.
 #[test]
 fn report_prints_the_trail_its_rules_and_its_steps_as_markdown() {
     let repo = Repo::new();
@@ -154,7 +154,7 @@ fn report_prints_the_trail_its_rules_and_its_steps_as_markdown() {
 }
 
 /// `report` prints the trail of each id once, in the order of the ids, with a blank line between two
-/// trails (`spec/02-cli.md`, "Report").
+/// trails.
 #[test]
 fn report_prints_each_trail_once_in_the_order_of_the_ids() {
     let repo = Repo::new();
@@ -167,8 +167,7 @@ fn report_prints_each_trail_once_in_the_order_of_the_ids() {
     assert!(shown.contains("\n\n## first task\n"), "{shown}");
 }
 
-/// When a trail's first ask has its text, `report` leaves the ask out and prints its steps first
-/// (`spec/05-reports.md`, "The report").
+/// When a trail's first ask has its text, `report` leaves the ask out and prints its steps first.
 #[test]
 fn report_leaves_out_the_ask_with_the_trails_text() {
     let repo = Repo::new();
@@ -189,8 +188,7 @@ fn report_leaves_out_the_ask_with_the_trails_text() {
     assert_eq!(rows(&shown), ["| ○ | the badge colour | — |  |"], "{shown}");
 }
 
-/// `report` refuses an id no step has with `no-step`, and no id as a usage error
-/// (`spec/02-cli.md`, "Report").
+/// `report` refuses an id no step has with `no-step`, and no id as a usage error.
 #[test]
 fn report_refuses_an_unknown_id_and_no_id() {
     let repo = Repo::new();
@@ -199,8 +197,7 @@ fn report_refuses_an_unknown_id_and_no_id() {
     refusal(&cli(&repo, &["report", "--json"]), 2, "usage");
 }
 
-/// With `--json`, `report` prints its text as one object, and it writes no record
-/// (`spec/02-cli.md`, "Report").
+/// With `--json`, `report` prints its text as one object, and it writes no record.
 #[test]
 fn report_with_json_prints_the_text_and_writes_no_record() {
     let repo = Repo::new();
@@ -226,7 +223,7 @@ fn shown_with(watch: &mut Watch, text: &str) -> String {
 }
 
 /// On a terminal, `report` prints a card a trail: its id, project and title, its time and counts, a
-/// line a step under it, its rules, and the keys it reads (`spec/02-cli.md`, "Report").
+/// line a step under it, its rules, and the keys it reads.
 #[test]
 fn report_on_a_terminal_prints_a_card() {
     let repo = Repo::new();
@@ -269,7 +266,7 @@ fn report_on_a_terminal_prints_a_card() {
 }
 
 /// On a terminal, `m` copies the report's Markdown and says so, and another key leaves; each clears the
-/// key line and ends (`spec/02-cli.md`, "Report").
+/// key line and ends.
 #[test]
 fn report_on_a_terminal_copies_its_markdown_with_m() {
     let repo = Repo::new();
@@ -295,7 +292,7 @@ fn report_on_a_terminal_copies_its_markdown_with_m() {
 }
 
 /// `report --demo` prints a made-up trail with its rules and steps from a folder it removes, writes
-/// nothing to the store, and refuses an id (`spec/02-cli.md`, "Report").
+/// nothing to the store, and refuses an id.
 #[test]
 fn report_demo_prints_a_made_up_trail_and_writes_nothing() {
     let repo = Repo::new();
