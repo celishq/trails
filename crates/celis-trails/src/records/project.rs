@@ -1,7 +1,7 @@
 //! A code project: its folder, id and name.
 
 use crate::Anchor;
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 /// A code project: its folder, the id every clone and worktree of it shares, and its name.
@@ -89,38 +89,6 @@ impl Project {
                 id: format!("web:{host}"),
                 name: host,
             },
-        }
-    }
-
-    /// The place `place`, given in the folder `cwd`, as a path from the project's top folder with its
-    /// `:<line>` kept; a URL, or a path outside the top folder, as given.
-    pub fn place(&self, place: &str, cwd: &Path) -> String {
-        if place.contains("://") {
-            return place.to_string();
-        }
-        let path = crate::decision::decisions::path(place);
-        let line = &place[path.len()..];
-        let cwd = cwd.canonicalize().unwrap_or_else(|_| cwd.to_path_buf());
-        let top = self
-            .folder
-            .canonicalize()
-            .unwrap_or_else(|_| self.folder.clone());
-        let joined = cwd.join(path);
-        let joined = joined.canonicalize().unwrap_or(joined);
-        let mut full = PathBuf::new();
-        for part in joined.components() {
-            match part {
-                Component::CurDir => {}
-                Component::ParentDir => {
-                    full.pop();
-                }
-                part => full.push(part),
-            }
-        }
-        match full.strip_prefix(&top) {
-            Ok(inner) if inner.as_os_str().is_empty() => format!(".{line}"),
-            Ok(inner) => format!("{}{line}", inner.display()),
-            Err(_) => place.to_string(),
         }
     }
 

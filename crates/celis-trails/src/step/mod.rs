@@ -1,20 +1,17 @@
-//! A step: what it says, the marks agents leave on it, and how it stands.
+//! CIP-03: a step, what it says, the marks agents leave on it, and how it stands.
 
 pub mod check;
-pub mod flags;
-pub mod grade;
 pub mod mark;
 pub mod state;
 pub mod step_record;
 pub mod steps;
-pub mod tally;
 
 use crate::step::steps::{Close, Entry, LIFE};
-use crate::{Flags, Grade, Mark, State, StepId, StepRecord, Steps, Trail};
+use crate::{Mark, State, StepId, StepRecord, Steps, Trail};
 use celis_nostr::Note;
 
-/// One step of a store as it stands: its record with its edits, where it sits in its trail, how its
-/// marks left it, and how its work went. A step under no other is a trail.
+/// One step of a store as it stands: its record with its edits, where it sits in its trail, and how its
+/// marks left it. A step under no other is a trail.
 #[derive(Clone, Copy)]
 pub struct Step<'a> {
     steps: &'a Steps<'a>,
@@ -165,17 +162,6 @@ impl<'a> Step<'a> {
         work.done()?.tag("changed")
     }
 
-    pub fn flags(self) -> Flags {
-        let revised = match self.is_trail() {
-            true => !self.reworked().is_empty(),
-            false => !self.revised().is_empty(),
-        };
-        Flags {
-            changed: self.changed().is_some(),
-            revised,
-        }
-    }
-
     /// Where it stands at the time of its store.
     pub fn state(self) -> State {
         if self.is_trail() {
@@ -188,15 +174,6 @@ impl<'a> Step<'a> {
             None if self.start().is_some() => State::Working,
             None => State::Open,
         }
-    }
-
-    /// How its work went; `None` while it is not done.
-    pub fn grade(self) -> Option<Grade> {
-        let done = self.done()?;
-        let from = self.start().unwrap_or(self.note()).created_at;
-        Some(Grade {
-            took: done.created_at.saturating_sub(from),
-        })
     }
 
     /// The time of the newest record of its tree: its steps, and the marks that name them.

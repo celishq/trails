@@ -1,8 +1,9 @@
 //! `--demo` of `tree`, `stats` and `report`: made-up trails in every state, with four weeks of history,
 //! in a folder of their own.
 
-use super::{Args, Command};
-use celis_trails::{Anchor, Decision, Draft, Failure, Scope, Store, Trails};
+use crate::command::{Args, Command};
+use crate::failure::Failure;
+use celis_trails::{Anchor, Decision, Draft, Scope, Store, Trails};
 use std::cell::{RefCell, RefMut};
 use std::io::Write;
 use std::path::PathBuf;
@@ -10,11 +11,11 @@ use std::path::PathBuf;
 impl Command {
     /// Runs the command `args` names, `tree`, `stats` or `report`, on made-up trails written to a folder
     /// of their own, and removes the folder at the end; `report` reports the trail with every state.
-    pub(super) fn demo(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
+    pub(crate) fn demo(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let home = std::env::temp_dir().join(format!("celis-demo-{}", std::process::id()));
         let demo = Demo {
             home: home.clone(),
-            now: super::now(),
+            now: crate::command::now(),
             trails: RefCell::new(None),
         };
         let shown = demo.write().and_then(|tier| {

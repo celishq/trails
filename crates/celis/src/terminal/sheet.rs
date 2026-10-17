@@ -1,16 +1,17 @@
 //! One card of stats: the face it shows among the cards, and the table it opens to.
 
-use super::clock::{day, midnight, saved, took};
 use super::glyph::{bar, columns, strip};
 use super::ink::Ink;
-use super::line::plural;
 use super::table::{Row, Table};
-use super::tree::{cut, look, visible};
-use celis_trails::{Period, Reuse, State, Step, Tally, Trails};
+use crate::command::tree::{cut, look, visible};
+use crate::progress::{Grade, Period, Reuse, Tally};
+use crate::text::clock::{day, midnight, saved, took};
+use crate::text::line::plural;
+use celis_trails::{State, Step, Trails};
 use std::collections::BTreeMap;
 
 /// A card of stats: its title, the rows of its face, and the table it opens to.
-pub(super) struct Sheet {
+pub(crate) struct Sheet {
     pub title: String,
     pub face: Vec<String>,
     pub table: Table,
@@ -20,19 +21,19 @@ pub(super) struct Sheet {
 const DAYS: u64 = 14;
 
 /// The seconds of one period a card compares.
-pub(super) const SPAN: u64 = DAYS * DAY;
+pub(crate) const SPAN: u64 = DAYS * DAY;
 
 const DAY: u64 = 86_400;
 
 /// The count of cards: effect, reuse, rules used, work, time, outcome and projects.
-pub(super) const CARDS: usize = 7;
+pub(crate) const CARDS: usize = 7;
 
 /// The fewest records a number of the effect counts before it shows a change.
 const FEW: usize = 10;
 
 /// The cards of `trails` at its time: the effect `full` characters wide inside, the others `inside`;
 /// their numbers plain text when `plain`.
-pub(super) fn sheets(
+pub(crate) fn sheets(
     trails: &Trails,
     full: usize,
     inside: usize,
@@ -423,7 +424,7 @@ fn leaves<'a>(period: &Period<'a>) -> Vec<Step<'a>> {
 fn time(last: &Period, inside: usize, ink: Ink) -> Sheet {
     let mut done: Vec<(u64, Step)> = leaves(last)
         .into_iter()
-        .filter_map(|s| Some((s.grade()?.took, s)))
+        .filter_map(|s| Some((Grade::of(s)?.took, s)))
         .collect();
     done.sort_by_key(|(t, _)| std::cmp::Reverse(*t));
     let spans: [(&str, u64); 5] = [
@@ -525,7 +526,7 @@ fn projects(last: &Period, inside: usize, ink: Ink) -> Sheet {
     let mut spent: BTreeMap<String, (u64, usize)> = BTreeMap::new();
     for step in leaves(last) {
         let entry = spent.entry(step.record().anchor.name.clone()).or_default();
-        entry.0 += step.grade().map_or(0, |g| g.took);
+        entry.0 += Grade::of(step).map_or(0, |g| g.took);
         entry.1 += 1;
     }
     let mut spent: Vec<(String, (u64, usize))> = spent.into_iter().collect();

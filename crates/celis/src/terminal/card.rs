@@ -1,13 +1,13 @@
 //! A framed card of rows, as stats and report draw it.
 
-use super::tree::{cut, visible};
+use crate::command::tree::{cut, visible};
 
 /// The row that draws a line across a card.
-pub(super) const RULE: &str = "\u{1}";
+pub(crate) const RULE: &str = "\u{1}";
 
 /// A card: its title in its top line, its rows inside its frame, and whether it is picked, which frames
 /// it in heavy lines.
-pub(super) struct Card {
+pub(crate) struct Card {
     pub title: String,
     pub rows: Vec<String>,
     pub picked: bool,
@@ -48,7 +48,7 @@ impl Card {
 
 /// `cards` side by side, `per_row` a row and a space between two, each `width` wide and each row of
 /// cards as tall as its tallest card.
-pub(super) fn grid(cards: &[Card], per_row: usize, width: usize, colour: bool) -> Vec<String> {
+pub(crate) fn grid(cards: &[Card], per_row: usize, width: usize, colour: bool) -> Vec<String> {
     let mut lines = vec![];
     for row in cards.chunks(per_row.max(1)) {
         let height = row.iter().map(|c| c.rows.len()).max().unwrap_or(0) + 2;
@@ -62,7 +62,7 @@ pub(super) fn grid(cards: &[Card], per_row: usize, width: usize, colour: bool) -
 }
 
 /// `text` in the colour `code` when `colour`; else `text`.
-pub(super) fn paint(colour: bool, code: &str, text: &str) -> String {
+pub(crate) fn paint(colour: bool, code: &str, text: &str) -> String {
     match colour && !code.is_empty() {
         true => format!("\x1b[{code}m{text}\x1b[0m"),
         false => text.to_string(),

@@ -1,7 +1,8 @@
 use super::*;
-use crate::step::steps::LIFE;
-use crate::{Anchor, Mark, Reuse, StepId, StepRecord, Steps};
+use crate::progress::Reuse;
 use celis_nostr::{Account, Note};
+use celis_trails::step::steps::LIFE;
+use celis_trails::{Anchor, Mark, StepId, StepRecord, Steps};
 
 fn account() -> Account {
     Account::new(&[1u8; 32]).unwrap()

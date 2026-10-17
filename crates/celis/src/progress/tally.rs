@@ -1,6 +1,6 @@
 //! How a set of steps ended.
 
-use crate::{State, Step};
+use celis_trails::{State, Step};
 
 /// How many of a set of steps are done, dropped and expired, and how many a later step revised.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

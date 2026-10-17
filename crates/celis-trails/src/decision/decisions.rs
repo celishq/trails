@@ -1,6 +1,6 @@
 //! The decisions of a store.
 
-use crate::{Decision, Failure, Scope};
+use crate::{Decision, Place, Refusal, Scope};
 use celis_nostr::Note;
 use std::collections::HashMap;
 
@@ -52,22 +52,18 @@ impl<'a> Decisions<'a> {
 
     /// The live decision in scope in `project` whose id is `id`, or the only one whose id starts with `id`
     /// when `id` is 4 or more characters.
-    pub fn find(&self, project: &str, id: &str) -> Result<&'a Note, Failure> {
+    pub fn find(&self, project: &str, id: &str) -> Result<&'a Note, Refusal> {
         let live: Vec<&'a Note> = self.live(project).into_iter().map(|(n, _)| n).collect();
-        crate::id::find(live, id).ok_or_else(|| Failure::no_decision(id))
+        crate::records::id::find(live, id).ok_or_else(|| Refusal::NoDecision(id.to_string()))
     }
 
     /// The live decisions of `project` at `place`: those whose place, without its `:<line>`, is `place`,
     /// lies under it, or is a folder that holds it.
     pub fn at(&self, project: &str, place: &str) -> Vec<(&'a Note, Decision)> {
-        let place = path(place).trim_end_matches('/');
         self.live(project)
             .into_iter()
             .filter(|(_, d)| match &d.scope {
-                Scope::At(at) => {
-                    let path = path(at);
-                    path == place || under(path, place) || under(place, path)
-                }
+                Scope::At(at) => Place::new(at).meets(Place::new(place)),
                 _ => false,
             })
             .collect()
@@ -83,19 +79,4 @@ impl<'a> Decisions<'a> {
         rules.sort_by(|(a, _), (b, _)| (a.created_at, &a.id).cmp(&(b.created_at, &b.id)));
         rules
     }
-}
-
-/// The file or folder of the place `at`, without a trailing `:<line>`.
-pub(crate) fn path(at: &str) -> &str {
-    match at.rsplit_once(':') {
-        Some((path, line)) if !line.is_empty() && line.bytes().all(|b| b.is_ascii_digit()) => path,
-        _ => at,
-    }
-}
-
-/// Whether the path `inner` lies in the folder `outer`.
-fn under(inner: &str, outer: &str) -> bool {
-    inner
-        .strip_prefix(outer)
-        .is_some_and(|rest| rest.starts_with('/'))
 }

@@ -2,16 +2,18 @@
 //! time a record lands in the store or a linked folder.
 
 use super::card::{grid, paint, Card};
-use super::clock::{saved, took, weekday};
 use super::ink::Ink;
 use super::screen::{clipboard, Screen};
 use super::sheet::{sheets, Sheet, CARDS};
 use super::table::{Row, Table};
-use super::tree::{cut, look, visible};
 use super::wake::{Key, Wake};
-use super::{Args, Command};
-use celis_trails::id::short;
-use celis_trails::{Failure, Reuse, Step, Trail, Trails};
+use crate::command::tree::{cut, look, visible};
+use crate::command::{Args, Command};
+use crate::failure::Failure;
+use crate::progress::{Grade, Reuse};
+use crate::text::clock::{saved, took, weekday};
+use celis_trails::records::id::short;
+use celis_trails::{Step, Trail, Trails};
 use std::io::Write;
 use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender};
 use std::time::Duration;
@@ -21,7 +23,7 @@ impl Command {
     /// again when a record lands, a key is read, a minute passes or the terminal's size changes. With
     /// no store, it writes nothing and waits for one. On an interrupt or `q`, leaves the alternate
     /// screen with nothing printed, and ends.
-    pub(super) fn board(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
+    pub(crate) fn board(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let view = match args.words.get(1) {
             Some(id) if !self.held()? => return Err(Failure::no_step(id)),
             Some(id) => View::Route(
@@ -48,14 +50,14 @@ impl Command {
     ) -> Result<(), Failure> {
         let mut screen = Screen::default();
         let width = || self.columns().map_or(WIDTH, |c| c.saturating_sub(1));
-        let page = empty(&weekday(super::now()), width(), self.colour());
+        let page = empty(&weekday(crate::command::now()), width(), self.colour());
         if !self.waited(&mut screen, out, (&page.text, &page.legend), &events)? {
             return Ok(());
         }
         let mut trails = self.trails()?;
         let _watcher = self.listen(send)?;
         loop {
-            trails.now = super::now();
+            trails.now = crate::command::now();
             let page = board.page(&trails, width(), self.colour());
             screen.draw(out, &page.text, page.line, &page.legend)?;
             let mut wake = events.recv_timeout(Duration::from_secs(60));
@@ -245,9 +247,7 @@ impl Board {
         let mut item =
             |lines: &mut Vec<String>, kind: &str, at: Step, depth: usize, gain: Option<i64>| {
                 let look = look(at.state());
-                let time = at
-                    .grade()
-                    .map_or(at.state().text().to_string(), |g| took(g.took));
+                let time = Grade::of(at).map_or(at.state().text().to_string(), |g| took(g.took));
                 let gain_text = gain.map_or(String::new(), |g| format!("  saved {}", saved(g)));
                 let tail = format!("{time}{gain_text}");
                 let lead = "  ".repeat(depth.saturating_sub(1));
@@ -274,7 +274,7 @@ impl Board {
                         kind.to_string(),
                         at.title().to_string(),
                         at.record().anchor.name.clone(),
-                        at.grade().map_or("—".into(), |g| took(g.took)),
+                        Grade::of(at).map_or("—".into(), |g| took(g.took)),
                         gain.map_or("—".into(), saved),
                     ],
                 });
@@ -290,7 +290,7 @@ impl Board {
             plain: width < NARROW,
             colour,
         };
-        let time = step.grade().map_or("—".into(), |g| took(g.took));
+        let time = Grade::of(step).map_or("—".into(), |g| took(g.took));
         let side = [
             ink.dim("took"),
             ink.dim(&format!("revised {}", step.revised().len())),

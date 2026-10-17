@@ -1,10 +1,10 @@
 //! `celis tree` on a terminal: the tree, drawn again each time the store or a linked folder changes.
 
 use super::screen::{clipboard, spin, until, Screen, TURN};
-use super::tree::{Item, View, EMPTY, MORE};
 use super::wake::{Key, Wake};
-use super::{Args, Command};
-use celis_trails::Failure;
+use crate::command::tree::{Item, View, EMPTY, MORE};
+use crate::command::{Args, Command};
+use crate::failure::Failure;
 use std::io::Write;
 use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender};
 use std::time::Duration;
@@ -14,7 +14,7 @@ impl Command {
     /// or a linked folder, a time it shows changes, the spinner turns, a key is read, or the terminal's
     /// size changes, and sleeps between. With no store, it writes nothing and waits for one. On an
     /// interrupt or `q`, leaves the alternate screen with nothing printed, and ends.
-    pub(super) fn watch(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
+    pub(crate) fn watch(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         if let (false, Some(id)) = (self.held()?, args.words.get(1)) {
             return Err(Failure::no_step(id));
         }
@@ -45,7 +45,7 @@ impl Command {
         };
         let mut known: Vec<Item> = vec![];
         loop {
-            trails.now = super::now();
+            trails.now = crate::command::now();
             view.spin = Some(spin());
             let width = self.columns().map(|c| c.saturating_sub(1));
             let frame = self.frame(&trails, args, width, &view)?;
@@ -84,7 +84,7 @@ impl Command {
                                 Some(clipboard(id, &format!("copied {id}")))
                             }
                             (Key::Markdown, _, Some(id)) => {
-                                let markdown = super::report::part(&trails, id)?;
+                                let markdown = crate::command::report::part(&trails, id)?;
                                 Some(clipboard(&markdown, "copied markdown"))
                             }
                             _ => None,

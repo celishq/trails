@@ -13,7 +13,7 @@ const README: &str = include_str!("link.md");
 /// or anywhere else, such as a synced drive. It is on when `$CELIS_HOME/links` names it and it exists.
 pub struct Link {
     pub folder: PathBuf,
-    pub place: String,
+    pub path: String,
     project: String,
 }
 
@@ -25,7 +25,7 @@ impl Link {
     pub fn new(project: &Project, place: &str) -> Link {
         Link {
             folder: project.folder.join(place),
-            place: place.to_string(),
+            path: place.to_string(),
             project: project.id.clone(),
         }
     }
@@ -87,7 +87,7 @@ impl Link {
     }
 
     fn entry(&self) -> (String, String) {
-        (self.project.clone(), self.place.clone())
+        (self.project.clone(), self.path.clone())
     }
 
     /// The project id and place of each line of `$CELIS_HOME/links`.

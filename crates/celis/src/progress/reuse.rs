@@ -1,7 +1,8 @@
 //! What later work reused of the steps and decisions of a store.
 
-use crate::{Decision, Decisions, Step, Steps};
+use super::Grade;
 use celis_nostr::Note;
+use celis_trails::{Decision, Decisions, Step, Steps};
 use std::cmp::Reverse;
 use std::collections::{HashMap, HashSet};
 
@@ -16,7 +17,7 @@ pub struct Reuse<'a> {
 
 /// One follow: `step` follows `source`, `depth` follows away from the step a walk starts at.
 #[derive(Clone, Copy)]
-pub struct Link<'a> {
+pub struct Follow<'a> {
     pub step: Step<'a>,
     pub source: Step<'a>,
     pub depth: usize,
@@ -57,22 +58,22 @@ impl<'a> Reuse<'a> {
     }
 
     /// Each step that `step` follows at any depth, depth first and once.
-    pub fn up(&self, step: Step<'a>) -> Vec<Link<'a>> {
+    pub fn up(&self, step: Step<'a>) -> Vec<Follow<'a>> {
         let mut found = Vec::new();
         self.walk(step, 1, true, &mut HashSet::new(), &mut found);
         found
     }
 
     /// Each step that follows `step` at any depth, depth first and once.
-    pub fn down(&self, step: Step<'a>) -> Vec<Link<'a>> {
+    pub fn down(&self, step: Step<'a>) -> Vec<Follow<'a>> {
         let mut found = Vec::new();
         self.walk(step, 1, false, &mut HashSet::new(), &mut found);
         found
     }
 
     /// The seconds the step of `link` saved against its source; `None` unless both are done.
-    pub fn saving(&self, link: &Link<'a>) -> Option<i64> {
-        let took = |s: Step| s.grade().map(|g| g.took as i64);
+    pub fn saving(&self, link: &Follow<'a>) -> Option<i64> {
+        let took = |s: Step| Grade::of(s).map(|g| g.took as i64);
         Some(took(link.source)? - took(link.step)?)
     }
 
@@ -83,23 +84,23 @@ impl<'a> Reuse<'a> {
 
     /// The count of follows in the store, and the seconds they saved, each against its source.
     pub fn total(&self) -> (usize, Option<i64>) {
-        let links: Vec<Link<'a>> = self
+        let follows: Vec<Follow<'a>> = self
             .followers
             .values()
             .flatten()
             .flat_map(|&step| {
                 let sources = self.sources(step).into_iter();
-                sources.map(move |source| Link {
+                sources.map(move |source| Follow {
                     step,
                     source,
                     depth: 1,
                 })
             })
             .collect();
-        let mut links = links;
-        links.sort_by_key(|l| (l.step.id(), l.source.id()));
-        links.dedup_by_key(|l| (l.step.id(), l.source.id()));
-        (links.len(), sum(links.iter().map(|l| self.saving(l))))
+        let mut follows = follows;
+        follows.sort_by_key(|l| (l.step.id(), l.source.id()));
+        follows.dedup_by_key(|l| (l.step.id(), l.source.id()));
+        (follows.len(), sum(follows.iter().map(|l| self.saving(l))))
     }
 
     /// Each step that a step follows, most followed at any depth first, then newest first, then by id.
@@ -123,14 +124,14 @@ impl<'a> Reuse<'a> {
     }
 
     /// Adds each link from `from` at `depth`, toward its sources when `up` and else toward its followers,
-    /// then the links from each step it reaches, each step once.
+    /// then the follows from each step it reaches, each step once.
     fn walk(
         &self,
         from: Step<'a>,
         depth: usize,
         up: bool,
         seen: &mut HashSet<&'a str>,
-        found: &mut Vec<Link<'a>>,
+        found: &mut Vec<Follow<'a>>,
     ) {
         let next = match up {
             true => self.sources.get(from.id()),
@@ -141,7 +142,7 @@ impl<'a> Reuse<'a> {
                 continue;
             }
             let (step, source) = if up { (from, to) } else { (to, from) };
-            found.push(Link {
+            found.push(Follow {
                 step,
                 source,
                 depth,

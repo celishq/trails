@@ -1,6 +1,6 @@
 //! A step's check: a shell command whose exit says whether the work holds.
 
-use crate::Failure;
+use crate::Refusal;
 use std::os::unix::process::CommandExt;
 use std::path::Path;
 use std::time::{Duration, Instant};
@@ -23,8 +23,8 @@ impl<'a> Check<'a> {
 
     /// Runs the command; `check-failed` with the last 20 lines of its output when it fails, or when it
     /// runs past the limit.
-    pub fn run(&self) -> Result<(), Failure> {
-        let failed = |e: std::io::Error| Failure::check_failed(&e.to_string());
+    pub fn run(&self) -> Result<(), Refusal> {
+        let failed = |e: std::io::Error| Refusal::CheckFailed(e.to_string());
         let log = std::env::temp_dir().join(format!("celis-check-{}", std::process::id()));
         let file = std::fs::File::create(&log).map_err(failed)?;
         let mut child = std::process::Command::new("sh")
@@ -54,8 +54,8 @@ impl<'a> Check<'a> {
         let end = lines[lines.len().saturating_sub(20)..].join("\n");
         match status {
             Some(status) if status.success() => Ok(()),
-            Some(_) => Err(Failure::check_failed(&end)),
-            None => Err(Failure::check_failed(&format!(
+            Some(_) => Err(Refusal::CheckFailed(end)),
+            None => Err(Refusal::CheckFailed(format!(
                 "{end}\nthe check ran past {} seconds",
                 self.limit
             ))),

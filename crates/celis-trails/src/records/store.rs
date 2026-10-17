@@ -1,14 +1,8 @@
 //! The records of every project on this machine.
 
-pub mod anchor;
-pub mod link;
-pub mod phrase;
-pub mod project;
-
-use crate::{Failure, Phrase};
+use crate::{Link, Phrase, Refusal};
 use anyhow::{Context, Result};
 use celis_nostr::{Account, Note};
-use link::Link;
 use std::cell::{OnceCell, RefCell};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -32,7 +26,7 @@ impl Store {
     }
 
     /// The store in `home`, created when it is missing.
-    pub fn open(home: &Path) -> Result<Store, Failure> {
+    pub fn open(home: &Path) -> Result<Store, Refusal> {
         let root = Store::root(home);
         std::fs::create_dir_all(root.join("shared")).context("create the store")?;
         Ok(Store {

@@ -1,9 +1,10 @@
 //! `celis issue`: what went wrong, with the facts of this machine, as Markdown for the celis team.
 
 use super::report::markdown;
-use super::{Args, Command};
-use celis_trails::id::short;
-use celis_trails::{Failure, Phrase, Steps, Store};
+use crate::command::{Args, Command};
+use crate::failure::Failure;
+use celis_trails::records::id::short;
+use celis_trails::{Phrase, Steps, Store};
 use serde_json::json;
 use std::io::Write;
 
@@ -13,7 +14,7 @@ const LOG: usize = 50;
 impl Command {
     /// Prints the text `args` gives, the facts, the end of the log and the trails its ids name. Writes no
     /// record.
-    pub(super) fn issue(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
+    pub(crate) fn issue(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let home = self.home()?;
         let text = args.text.clone().unwrap_or_default();
         let mut lines = text.trim().lines();

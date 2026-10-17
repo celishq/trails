@@ -63,7 +63,7 @@ fn a_prefix_two_steps_share_finds_neither() {
     let records = vec![a.clone(), b];
     let steps = Steps::new(&records, 0);
     let refused = steps.find("abcdefgh").unwrap_err();
-    assert_eq!((refused.name.as_str(), refused.code), ("no-step", 1));
+    assert!(matches!(refused, Refusal::NoStep(id) if id == "abcdefgh"));
     assert_eq!(steps.find(&a.id).unwrap().id(), a.id);
 }
 

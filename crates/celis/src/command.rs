@@ -2,35 +2,23 @@
 
 mod args;
 mod auth;
-mod board;
-mod card;
-mod clock;
 mod decision;
-mod demo;
-mod glyph;
 mod grep;
-mod ink;
 mod issue;
-mod json;
-mod line;
 mod link;
 mod prompt;
-mod report;
+pub(crate) mod report;
 mod review;
-mod screen;
-mod sheet;
 mod stats;
 mod step;
-mod table;
-mod tree;
+pub(crate) mod tree;
 mod update;
-mod wake;
-mod watch;
 
+use crate::failure::Failure;
 use crate::help::{self, VERBS};
-use args::Args;
+pub(crate) use args::Args;
 use celis_nostr::Note;
-use celis_trails::{Failure, Link, Project, Store, Trails};
+use celis_trails::{Link, Project, Store, Trails};
 use serde_json::json;
 use std::collections::HashMap;
 use std::io::{IsTerminal, Write};
@@ -113,8 +101,8 @@ impl Command {
         let at = now();
         let line = format!(
             "{} {} {} {} · {}\n",
-            clock::date(at),
-            clock::clock(at, at),
+            crate::text::clock::date(at),
+            crate::text::clock::clock(at, at),
             failure.code,
             ["celis".to_string()]
                 .iter()
@@ -139,12 +127,12 @@ impl Command {
     }
 
     /// Whether a watch prints in colour: unless `NO_COLOR` is set.
-    fn colour(&self) -> bool {
+    pub(crate) fn colour(&self) -> bool {
         self.env.get("NO_COLOR").is_none_or(|v| v.is_empty())
     }
 
     /// The width of the terminal stdout is, else `COLUMNS`; none when neither is known.
-    fn columns(&self) -> Option<usize> {
+    pub(crate) fn columns(&self) -> Option<usize> {
         match size().map(|s| s.ws_col).filter(|&c| c > 0) {
             Some(columns) => Some(usize::from(columns)),
             None => self.env.get("COLUMNS").and_then(|c| c.parse().ok()),
@@ -166,7 +154,7 @@ impl Command {
     }
 
     /// Whether the store exists.
-    fn held(&self) -> Result<bool, Failure> {
+    pub(crate) fn held(&self) -> Result<bool, Failure> {
         Ok(Store::exists(&self.home()?))
     }
 
@@ -182,7 +170,7 @@ impl Command {
 
     /// The trails of the store, with the working folder's linked folders that are on, opened now; a check
     /// runs for `CELIS_CHECK_SECONDS`, 600 when not set.
-    fn trails(&self) -> Result<Trails, Failure> {
+    pub(crate) fn trails(&self) -> Result<Trails, Failure> {
         let limit = self
             .env
             .get("CELIS_CHECK_SECONDS")
@@ -194,7 +182,7 @@ impl Command {
         Ok(Trails::open(store, now(), limit))
     }
 
-    fn id(&self, out: &mut dyn Write, args: &Args, note: &Note) -> Result<(), Failure> {
+    pub(crate) fn id(&self, out: &mut dyn Write, args: &Args, note: &Note) -> Result<(), Failure> {
         show(out, args.json, "id", json!(note.id), &note.id)
     }
 }
@@ -232,7 +220,7 @@ pub(crate) fn now() -> u64 {
 }
 
 /// The size of the terminal stdout is; none off a terminal.
-pub(super) fn size() -> Option<libc::winsize> {
+pub(crate) fn size() -> Option<libc::winsize> {
     if !std::io::stdout().is_terminal() {
         return None;
     }

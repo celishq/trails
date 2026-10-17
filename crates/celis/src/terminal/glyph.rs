@@ -25,7 +25,7 @@ const SHADES: [&str; 4] = ["█", "▓", "▒", "░"];
 
 /// `text` three rows high: each digit big with a space before it, any other character on the last row
 /// with a space before it after a digit, or on the middle row when `text` has no digit.
-pub(super) fn digits(text: &str) -> [String; 3] {
+pub(crate) fn digits(text: &str) -> [String; 3] {
     let low = match text.chars().any(|c| c.is_ascii_digit()) {
         true => 2,
         false => 1,
@@ -50,7 +50,7 @@ pub(super) fn digits(text: &str) -> [String; 3] {
 }
 
 /// A bar `width` wide that fills the share of `n` to `most`, in eighths of a character.
-pub(super) fn bar(n: usize, most: usize, width: usize) -> String {
+pub(crate) fn bar(n: usize, most: usize, width: usize) -> String {
     let eighths = (n * width * 8).checked_div(most).unwrap_or(0);
     let mut bar = "█".repeat(eighths / 8);
     if eighths / 8 < width {
@@ -62,7 +62,7 @@ pub(super) fn bar(n: usize, most: usize, width: usize) -> String {
 /// `rows` lines of columns, a value a column and a space between two, the largest value the full height,
 /// in eighths of a row, any other value at least an eighth, and a zero `zero` on the last line; the top
 /// line first.
-pub(super) fn columns(values: &[usize], rows: usize, zero: &str) -> Vec<String> {
+pub(crate) fn columns(values: &[usize], rows: usize, zero: &str) -> Vec<String> {
     let most = values.iter().copied().max().unwrap_or(0);
     let heights: Vec<usize> = values
         .iter()
@@ -85,7 +85,7 @@ pub(super) fn columns(values: &[usize], rows: usize, zero: &str) -> Vec<String> 
 
 /// A strip `width` wide that each of `parts` fills in its share, a shade a part; blank when all are
 /// zero.
-pub(super) fn strip(parts: &[usize], width: usize) -> String {
+pub(crate) fn strip(parts: &[usize], width: usize) -> String {
     let filled: String = shares(parts, width)
         .iter()
         .enumerate()

@@ -1,14 +1,15 @@
 //! The review `celis step done` prints when a step closes.
 
 use super::Command;
-use celis_trails::id::short;
-use celis_trails::{Failure, Review};
+use crate::failure::Failure;
+use crate::progress::Review;
+use celis_trails::records::id::short;
 use std::io::Write;
 
 impl Command {
     /// Prints `review` on `err`: the step's plan against what it did, the open steps beside it, then the
     /// next move.
-    pub(super) fn review(&self, review: &Review, err: &mut dyn Write) -> Result<(), Failure> {
+    pub(crate) fn review(&self, review: &Review, err: &mut dyn Write) -> Result<(), Failure> {
         let mut lines = vec![format!(
             "celis: {} is done; compare the result with its plan:",
             short(&review.step)

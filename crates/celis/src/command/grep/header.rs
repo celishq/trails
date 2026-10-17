@@ -1,7 +1,7 @@
 //! The header of a trail's lines in the output.
 
-use crate::command::clock::date;
-use celis_trails::id::short;
+use crate::text::clock::date;
+use celis_trails::records::id::short;
 use celis_trails::Step;
 
 /// The header of the lines of no trail.

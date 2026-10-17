@@ -6,7 +6,7 @@ use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::mpsc::Sender;
 
 /// What wakes the watch before its next tick: a record, in a linked folder or not.
-pub(super) enum Wake {
+pub(crate) enum Wake {
     Record(bool),
     Resize,
     Key(Key),
@@ -18,7 +18,7 @@ static SIGNALLED: AtomicI32 = AtomicI32::new(-1);
 
 /// Sends a `Resize` to `send` each time the terminal's size changes, and a `Quit` on an interrupt or a
 /// stop, the moment the signal arrives.
-pub(super) fn signals(send: Sender<Wake>) {
+pub(crate) fn signals(send: Sender<Wake>) {
     let mut fds = [0; 2];
     if unsafe { libc::pipe(fds.as_mut_ptr()) } != 0 {
         return;
@@ -51,7 +51,7 @@ extern "C" fn signalled(signal: libc::c_int) {
 }
 
 /// A key a watch reads.
-pub(super) enum Key {
+pub(crate) enum Key {
     Up,
     Down,
     Enter,
@@ -70,7 +70,7 @@ pub(super) enum Key {
 
 /// When stdin is a terminal, turns its echo and line mode off and sends each key it reads to `send`,
 /// `q` as a `Quit`; the terminal's settings before, to set back.
-pub(super) fn keys(send: Sender<Wake>) -> Option<libc::termios> {
+pub(crate) fn keys(send: Sender<Wake>) -> Option<libc::termios> {
     let mut before: libc::termios = unsafe { std::mem::zeroed() };
     if unsafe { libc::tcgetattr(libc::STDIN_FILENO, &mut before) } != 0 {
         return None;

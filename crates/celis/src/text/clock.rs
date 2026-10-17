@@ -5,7 +5,7 @@ const MONTHS: [&str; 12] = [
 ];
 
 /// The time `at` as `14:02` on the local day of `now`, else as `Oct 9`.
-pub(super) fn clock(at: u64, now: u64) -> String {
+pub(crate) fn clock(at: u64, now: u64) -> String {
     let (then, today) = (local(at), local(now));
     match (then.tm_year, then.tm_yday) == (today.tm_year, today.tm_yday) {
         true => format!("{:02}:{:02}", then.tm_hour, then.tm_min),
@@ -18,20 +18,20 @@ pub(super) fn clock(at: u64, now: u64) -> String {
 }
 
 /// The local day of `at` with its weekday, as `Tue, Oct 14`.
-pub(super) fn weekday(at: u64) -> String {
+pub(crate) fn weekday(at: u64) -> String {
     const DAYS: [&str; 7] = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     let tm = local(at);
     format!("{}, {}", DAYS[tm.tm_wday.clamp(0, 6) as usize], day(at))
 }
 
 /// The local day of `at`, as `Oct 9`.
-pub(super) fn day(at: u64) -> String {
+pub(crate) fn day(at: u64) -> String {
     let tm = local(at);
     format!("{} {}", MONTHS[tm.tm_mon.clamp(0, 11) as usize], tm.tm_mday)
 }
 
 /// The time of the local midnight that starts the day of `now`.
-pub(super) fn midnight(now: u64) -> u64 {
+pub(crate) fn midnight(now: u64) -> u64 {
     let tm = local(now);
     let since = tm.tm_hour * 3_600 + tm.tm_min * 60 + tm.tm_sec;
     now.saturating_sub(u64::try_from(since).unwrap_or(0))
@@ -46,7 +46,7 @@ fn local(at: u64) -> libc::tm {
 }
 
 /// The local day of `at`, as `2026-10-12`.
-pub(super) fn date(at: u64) -> String {
+pub(crate) fn date(at: u64) -> String {
     let tm = local(at);
     format!(
         "{}-{:02}-{:02}",
@@ -57,7 +57,7 @@ pub(super) fn date(at: u64) -> String {
 }
 
 /// `seconds` in its two largest units.
-pub(super) fn took(seconds: u64) -> String {
+pub(crate) fn took(seconds: u64) -> String {
     match seconds {
         s if s < 60 => format!("{s}s"),
         s if s < 3_600 => format!("{}m {}s", s / 60, s % 60),
@@ -67,13 +67,13 @@ pub(super) fn took(seconds: u64) -> String {
 }
 
 /// `seconds` as `took` gives it, with a `-` when below zero.
-pub(super) fn saved(seconds: i64) -> String {
+pub(crate) fn saved(seconds: i64) -> String {
     let sign = if seconds < 0 { "-" } else { "" };
     format!("{sign}{}", took(seconds.unsigned_abs()))
 }
 
 /// The seconds until `took` shows another value for `seconds`.
-pub(super) fn stride(seconds: u64) -> u64 {
+pub(crate) fn stride(seconds: u64) -> u64 {
     match seconds {
         s if s < 3_600 => 1,
         s if s < 86_400 => 60 - s % 60,

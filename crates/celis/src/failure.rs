@@ -1,5 +1,7 @@
 //! Why a command did not finish.
 
+use celis_trails::Refusal;
+
 /// A command that did not finish: the name `--json` prints, the message a person reads, and the exit code.
 #[derive(Debug)]
 pub struct Failure {
@@ -59,7 +61,7 @@ impl Failure {
             1,
             format!(
                 "the step {id} has an open step under it; see it with `celis tree {}`",
-                crate::id::short(id)
+                celis_trails::records::id::short(id)
             ),
         )
     }
@@ -83,6 +85,21 @@ impl Failure {
             name: name.into(),
             message,
             code,
+        }
+    }
+}
+
+impl From<Refusal> for Failure {
+    fn from(refusal: Refusal) -> Self {
+        match refusal {
+            Refusal::Usage(message) => Self::usage(message),
+            Refusal::NoStep(id) => Self::no_step(&id),
+            Refusal::NoDecision(id) => Self::no_decision(&id),
+            Refusal::NoTrail(id) => Self::no_trail(&id),
+            Refusal::Closed(id) => Self::closed(&id),
+            Refusal::OpenSteps(id) => Self::open_steps(&id),
+            Refusal::CheckFailed(output) => Self::check_failed(&output),
+            Refusal::Error(error) => Self::from(error),
         }
     }
 }

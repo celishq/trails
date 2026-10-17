@@ -1,6 +1,6 @@
 //! The steps of a store, as they stand at one moment.
 
-use crate::{Failure, Mark, Step, StepRecord};
+use crate::{Mark, Refusal, Step, StepRecord};
 use celis_nostr::Note;
 use std::collections::HashMap;
 
@@ -32,20 +32,20 @@ impl<'a> Steps<'a> {
 
     /// The step whose id is `id`, or the only step whose id starts with `id` when `id` is 4 or more
     /// characters.
-    pub fn find(&'a self, id: &str) -> Result<Step<'a>, Failure> {
+    pub fn find(&'a self, id: &str) -> Result<Step<'a>, Refusal> {
         let note = match self.index.entries.get(id) {
             Some(entry) => Some(entry.note),
-            None => crate::id::find(self.index.all.iter().copied(), id),
+            None => crate::records::id::find(self.index.all.iter().copied(), id),
         };
         note.and_then(|n| self.get(&n.id))
-            .ok_or_else(|| Failure::no_step(id))
+            .ok_or_else(|| Refusal::NoStep(id.to_string()))
     }
 
     /// The step `find` gives for `id`; `closed` when a done or a drop names it.
-    pub fn find_open(&'a self, id: &str) -> Result<Step<'a>, Failure> {
+    pub fn find_open(&'a self, id: &str) -> Result<Step<'a>, Refusal> {
         let step = self.find(id)?;
         match step.closed() {
-            Some(_) => Err(Failure::closed(step.id())),
+            Some(_) => Err(Refusal::Closed(step.id().to_string())),
             None => Ok(step),
         }
     }

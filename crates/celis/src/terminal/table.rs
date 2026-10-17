@@ -1,18 +1,18 @@
 //! The rows behind a card of stats, as an opened card shows them and as Markdown.
 
 use super::card::paint;
-use super::tree::{cut, visible};
+use crate::command::tree::{cut, visible};
 
 /// A table: the name of each column, each row with the id of the record it shows when it shows one, and
 /// the column that takes the width the others leave.
-pub(super) struct Table {
+pub(crate) struct Table {
     pub head: Vec<&'static str>,
     pub rows: Vec<Row>,
     pub wide: usize,
 }
 
 /// One row of a table: the id of the record it shows, when it shows one, and its cells.
-pub(super) struct Row {
+pub(crate) struct Row {
     pub id: Option<String>,
     pub cells: Vec<String>,
 }

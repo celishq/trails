@@ -2,11 +2,11 @@
 
 use super::card::paint;
 use super::glyph::digits;
-use super::tree::visible;
+use crate::command::tree::visible;
 
 /// How a card prints: its numbers as plain text, and in colour.
 #[derive(Clone, Copy)]
-pub(super) struct Ink {
+pub(crate) struct Ink {
     pub plain: bool,
     pub colour: bool,
 }

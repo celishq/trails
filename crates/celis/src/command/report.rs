@@ -1,19 +1,21 @@
 //! `celis report`: the trails that ids name, as Markdown for a pull request.
 
-use super::card::{paint, Card, RULE};
-use super::clock::took;
-use super::ink::Ink;
 use super::tree::{look, visible};
-use super::{Args, Command};
-use celis_trails::id::short;
-use celis_trails::{Failure, Mark, State, Step, Steps, Tally, Trail, Trails};
+use crate::command::{Args, Command};
+use crate::failure::Failure;
+use crate::progress::{Flags, Grade, Tally};
+use crate::terminal::card::{paint, Card, RULE};
+use crate::terminal::ink::Ink;
+use crate::text::clock::took;
+use celis_trails::records::id::short;
+use celis_trails::{Mark, State, Step, Steps, Trail, Trails};
 use serde_json::json;
 use std::io::{IsTerminal, Read, Write};
 
 impl Command {
     /// Prints what `markdown` gives for the ids `args` names; on a terminal with no `--json`, a card a
     /// trail, then reads one key: `m` copies the Markdown. Writes no record.
-    pub(super) fn report(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
+    pub(crate) fn report(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let ids = &args.words[1..];
         if args.demo && !ids.is_empty() {
             return Err(Failure::usage("report takes ids or --demo, not both"));
@@ -128,16 +130,14 @@ fn card(trails: &Trails, trail: Step, width: usize, colour: bool) -> Card {
         let inside = width - 4;
         for part in parts {
             let look = look(part.state());
-            let time = part
-                .grade()
-                .map_or(part.state().text().to_string(), |g| took(g.took));
+            let time = Grade::of(part).map_or(part.state().text().to_string(), |g| took(g.took));
             let title = super::tree::cut(part.title(), inside.saturating_sub(time.len() + 4));
             let pad = " ".repeat(inside.saturating_sub(visible(&title) + time.len() + 3));
             let mark = paint(colour, look.text, look.mark);
             rows.push(format!("{mark} {title}{pad} {}", paint(colour, "2", &time)));
         }
     }
-    let lessons = tree.iter().filter(|s| s.flags().changed).count();
+    let lessons = tree.iter().filter(|s| Flags::of(**s).changed).count();
     let mut notes = vec![];
     if rules > 0 {
         notes.push(format!(
@@ -197,14 +197,14 @@ fn leave(out: &mut dyn Write, text: &str, colour: bool) -> Result<(), Failure> {
     unsafe { libc::tcsetattr(libc::STDIN_FILENO, libc::TCSANOW, &before) };
     write(out, "\r\x1b[2K")?;
     if read.is_ok_and(|n| n == 1) && key[0] == b'm' {
-        let said = super::screen::clipboard(text, "copied markdown");
+        let said = crate::terminal::screen::clipboard(text, "copied markdown");
         write(out, &format!("{}\n", paint(colour, "2", &said)))?;
     }
     Ok(())
 }
 
 /// The trail of the step each of `ids` names, once, in their order, as Markdown.
-pub(super) fn markdown(trails: &Trails, ids: &[String]) -> Result<String, Failure> {
+pub(crate) fn markdown(trails: &Trails, ids: &[String]) -> Result<String, Failure> {
     let steps = trails.steps();
     let decisions = trails.decisions();
     let mut parts = Vec::new();
@@ -256,7 +256,7 @@ pub(super) fn markdown(trails: &Trails, ids: &[String]) -> Result<String, Failur
 
 /// The trail, step or rule `id` as Markdown: a trail as `markdown` gives it, a step as the table of it and
 /// the steps under it, a rule as `- <text>`.
-pub(super) fn part(trails: &Trails, id: &str) -> Result<String, Failure> {
+pub(crate) fn part(trails: &Trails, id: &str) -> Result<String, Failure> {
     if let Some((_, decision)) = trails.decisions().get(id) {
         return Ok(format!("- {}\n", decision.content));
     }
@@ -284,7 +284,7 @@ fn table(steps: Vec<Step>) -> Vec<String> {
             0 => String::new(),
             n => format!("{}└ ", "\u{a0}\u{a0}".repeat(n)),
         };
-        let time = at.grade().map_or("—".to_string(), |g| took(g.took));
+        let time = Grade::of(at).map_or("—".to_string(), |g| took(g.took));
         let proof: Vec<String> = match at.close() {
             Some((_, Mark::Done { proof, changed })) => {
                 let changed = changed.map(|c| format!("~ changed: {c}"));

@@ -3,9 +3,9 @@
 use super::header::Header;
 use super::kind::Kind;
 use super::row::Row;
-use crate::command::clock::date;
+use crate::text::clock::date;
 use celis_nostr::Note;
-use celis_trails::id::short;
+use celis_trails::records::id::short;
 use celis_trails::{Decision, Mark, Scope, Step, Trails};
 use std::collections::HashMap;
 use std::hash::{DefaultHasher, Hash, Hasher};

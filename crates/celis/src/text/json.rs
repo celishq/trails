@@ -5,7 +5,7 @@ use celis_trails::{Decision, StepRecord};
 use serde_json::{json, Value};
 
 /// The object of the step `record` that `note` holds.
-pub(super) fn step(note: &Note, record: &StepRecord) -> Value {
+pub(crate) fn step(note: &Note, record: &StepRecord) -> Value {
     json!({
         "id": note.id,
         "created_at": note.created_at,
@@ -18,7 +18,7 @@ pub(super) fn step(note: &Note, record: &StepRecord) -> Value {
 }
 
 /// The links of the step `record`: its `under`, `replaces` and each `uses`, in that order.
-pub(super) fn links(record: &StepRecord) -> Value {
+pub(crate) fn links(record: &StepRecord) -> Value {
     let one = [("under", &record.under), ("replaces", &record.replaces)];
     let one = one
         .into_iter()
@@ -31,7 +31,7 @@ pub(super) fn links(record: &StepRecord) -> Value {
 }
 
 /// The object of the decision that `note` holds.
-pub(super) fn decision(note: &Note, decision: &Decision) -> Value {
+pub(crate) fn decision(note: &Note, decision: &Decision) -> Value {
     json!({
         "id": note.id,
         "created_at": note.created_at,

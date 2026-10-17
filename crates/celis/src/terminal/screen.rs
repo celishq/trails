@@ -1,9 +1,10 @@
 //! What a watch draws on the terminal, and what it reads from it.
 
-use super::tree::cut;
 use super::wake::{keys, signals, Key, Wake};
-use super::Command;
-use celis_trails::{Failure, Link};
+use crate::command::tree::cut;
+use crate::command::Command;
+use crate::failure::Failure;
+use celis_trails::Link;
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use std::io::Write;
 use std::process::Stdio;
@@ -13,7 +14,7 @@ use std::time::Duration;
 impl Command {
     /// Runs `body` on the alternate screen, with the keys and signals it reads sent to the channel it
     /// gets; then sets the terminal back and leaves the alternate screen with nothing printed.
-    pub(super) fn screen(
+    pub(crate) fn screen(
         &self,
         out: &mut dyn Write,
         body: impl FnOnce(&mut dyn Write, (Sender<Wake>, Receiver<Wake>)) -> Result<(), Failure>,
@@ -34,7 +35,7 @@ impl Command {
 
     /// With no store, draws `text` and `keys` on `screen` and writes nothing until a store is made;
     /// whether to go on, false on an interrupt or `q`.
-    pub(super) fn waited(
+    pub(crate) fn waited(
         &self,
         screen: &mut Screen,
         out: &mut dyn Write,
@@ -55,7 +56,7 @@ impl Command {
 
     /// Sends a `Record` to `send` each time a record lands in the store or a linked folder, saying
     /// whether in a linked folder; the watcher that does it, kept while it should.
-    pub(super) fn listen(&self, send: Sender<Wake>) -> Result<RecommendedWatcher, Failure> {
+    pub(crate) fn listen(&self, send: Sender<Wake>) -> Result<RecommendedWatcher, Failure> {
         let home = self.home()?;
         let shared = home.join("trails/shared");
         let links = Link::all(&home, &self.folder).into_iter().map(|l| l.folder);
@@ -87,7 +88,7 @@ impl Command {
 /// line on the next draw, the lines a page holds, the text on the screen, and what the last key did
 /// when it has something to say.
 #[derive(Default)]
-pub(super) struct Screen {
+pub(crate) struct Screen {
     pub top: usize,
     pub follow: bool,
     pub page: usize,
@@ -106,7 +107,7 @@ impl Screen {
         picked: Option<usize>,
         keys: &str,
     ) -> Result<(), Failure> {
-        let size = super::size();
+        let size = crate::command::size();
         let width = size.map(|s| usize::from(s.ws_col)).filter(|&w| w > 1);
         let width = width.map(|w| w - 1);
         let rows = size.map(|s| usize::from(s.ws_row)).filter(|&r| r > 0);
@@ -193,7 +194,7 @@ impl Screen {
 
 /// Copies `text` with the first of `pbcopy`, `wl-copy` and `xclip` that runs; `said` when one did, else
 /// that none could.
-pub(super) fn clipboard(text: &str, said: &str) -> String {
+pub(crate) fn clipboard(text: &str, said: &str) -> String {
     let commands: [(&str, &[&str]); 3] = [
         ("pbcopy", &[]),
         ("wl-copy", &[]),
@@ -219,16 +220,16 @@ pub(super) fn clipboard(text: &str, said: &str) -> String {
 }
 
 /// The time between two frames of the spinner.
-pub(super) const TURN: Duration = Duration::from_millis(100);
+pub(crate) const TURN: Duration = Duration::from_millis(100);
 
 /// The spinner's frame at this moment.
-pub(super) fn spin() -> usize {
+pub(crate) fn spin() -> usize {
     let since = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH);
     since.map_or(0, |d| (d.as_millis() / TURN.as_millis()) as usize)
 }
 
 /// The time from now until the second `at` since the epoch starts.
-pub(super) fn until(at: u64) -> Duration {
+pub(crate) fn until(at: u64) -> Duration {
     (std::time::UNIX_EPOCH + Duration::from_secs(at))
         .duration_since(std::time::SystemTime::now())
         .unwrap_or_default()

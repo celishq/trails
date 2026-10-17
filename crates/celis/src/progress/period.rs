@@ -1,7 +1,7 @@
 //! The work of a store in one span of time.
 
-use crate::reuse::Link;
-use crate::{Reuse, Step, Steps, Tally};
+use super::{Flags, Follow, Reuse, Tally};
+use celis_trails::{Step, Steps};
 
 /// The work of a store from `from` up to `to`: the steps done, added and closed in that time, and the
 /// follows they made. A trail counts as none of them.
@@ -26,7 +26,7 @@ impl<'a> Period<'a> {
     /// How many of its done steps went as planned: done with no `changed`.
     pub fn planned(&self) -> usize {
         let done = self.done().into_iter();
-        done.filter(|s| !s.flags().changed).count()
+        done.filter(|s| !Flags::of(*s).changed).count()
     }
 
     /// How many of its done steps a later step revised.
@@ -61,20 +61,20 @@ impl<'a> Period<'a> {
     /// The count of follows whose step was done in it, and the seconds they saved, each against its
     /// source.
     pub fn follows(&self, reuse: &Reuse<'a>) -> (usize, Option<i64>) {
-        let links: Vec<Link<'a>> = self
+        let follows: Vec<Follow<'a>> = self
             .done()
             .into_iter()
             .flat_map(|step| {
                 let sources = reuse.sources(step).into_iter();
-                sources.map(move |source| Link {
+                sources.map(move |source| Follow {
                     step,
                     source,
                     depth: 1,
                 })
             })
             .collect();
-        let saved = links.iter().filter_map(|l| reuse.saving(l));
-        (links.len(), saved.reduce(|a, b| a + b))
+        let saved = follows.iter().filter_map(|l| reuse.saving(l));
+        (follows.len(), saved.reduce(|a, b| a + b))
     }
 
     /// Every step of the store that is not a trail, oldest first.
