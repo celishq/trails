@@ -710,7 +710,7 @@ impl Tree<'_> {
         }
     }
 
-    /// Adds `note` as one line: `▸`, its mark and title, then its steps, rules and worked time.
+    /// Adds `note` as one row: `▸`, its mark and wrapped title, then its steps, rules and worked time.
     fn line(&self, note: Step, lines: &mut Vec<Line>) {
         let step = note.record();
         let state = note.state();
@@ -723,8 +723,10 @@ impl Tree<'_> {
         };
         let rules = summary.rules.len();
         let first = lines.len();
+        let lead = format!("{} {} ", self.paint(DIM, "▸"), self.marked(note));
+        let rest = " ".repeat(visible(&lead));
         lines.push(Line::Row {
-            lead: format!("{} {} ", self.paint(DIM, "▸"), self.marked(note)),
+            lead,
             title: step.title().to_string(),
             tone: self.tone(look(state).title, note.newest()),
             cells: [
@@ -734,14 +736,14 @@ impl Tree<'_> {
                 summary.worked.map(took),
                 None,
             ],
-            rest: None,
+            rest: Some(rest),
         });
         self.pick(self.item(note, false, &summary.rules), lines, first);
     }
 
     /// Adds the steps `notes` under the line `above` after `rail`, the last of their level unless `more`,
-    /// each followed by its own one level down; an open one with its title wrapped and the lines `--full`
-    /// prints under it, a closed done one with no time and its steps folded.
+    /// each followed by its own one level down, each with its title wrapped; an open one with the lines
+    /// `--full` prints under it, a closed done one with no time and its steps folded.
     fn steps(&self, notes: Vec<Step>, rail: &str, above: &str, more: bool, lines: &mut Vec<Line>) {
         let all = notes.len();
         for (n, note) in notes.into_iter().enumerate() {
@@ -775,7 +777,7 @@ impl Tree<'_> {
                     },
                     None,
                 ],
-                rest: open.then(|| below.clone()),
+                rest: Some(below.clone()),
             });
             let item = Item {
                 id: note.id().to_string(),
@@ -818,9 +820,10 @@ impl Tree<'_> {
     }
 
     /// Prints `lines`, each row's details in columns at the right edge of the width, or after the widest
-    /// title; in the short tree, a row's title is cut so it fits, and a narrow width leaves out the first
-    /// column, then the time, while a title would be cut below 20 characters. In a watch, the ids are left
-    /// out, and each line starts with the cursor column, a bar on each line of the selected element.
+    /// title; in the short tree, a row's title wraps or is cut so it fits, and a narrow width leaves out
+    /// the first column, then the time, while a title would be cut below 20 characters. In a watch, the
+    /// ids are left out, and each line starts with the cursor column, a bar on each line of the selected
+    /// element.
     fn show(&self, lines: Vec<Line>, out: &mut dyn Write) -> Result<(), Failure> {
         let mut widths = [0; 5];
         for (_, _, cells, _) in lines.iter().filter_map(row) {

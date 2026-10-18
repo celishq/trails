@@ -703,7 +703,43 @@ fn a_narrow_watch_leaves_out_columns() {
     assert!(wide.contains("1 step") && wide.ends_with('s'), "{wide}");
     watch.size(24, 30);
     watch.without("1 step");
-    assert!(line(&mut watch).contains('…'), "{}", line(&mut watch));
+    assert!(!line(&mut watch).contains('…'), "{}", line(&mut watch));
+}
+
+/// The watch wraps a long step title and a long trail line's title whole, cutting neither.
+#[test]
+fn watch_wraps_long_titles_whole() {
+    let repo = Repo::new();
+    let words = "one two three four five six seven eight nine ten eleven twelve";
+    let done = add(&repo, &["--", &format!("done trail {words}")]);
+    let part = add(&repo, &["--under", &done[..8], "--", "its part"]);
+    finish(&repo, &part[..8]);
+    let trail = add(&repo, &["--", "the trail"]);
+    add(
+        &repo,
+        &["--under", &trail[..8], "--", &format!("open step {words}")],
+    );
+    let mut watch = Watch::start(&repo, &["tree"]);
+    watch.size(24, 40);
+    watch.until("open step");
+    let rows = watch.rows();
+    let text = rows.join(" ");
+    assert!(!text.contains('…'), "{rows:?}");
+    assert!(rows.iter().all(|r| r.chars().count() <= 40), "{rows:?}");
+    for title in ["done trail", "open step"] {
+        let at = rows.iter().position(|r| r.contains(title)).unwrap();
+        let end = rows
+            .iter()
+            .skip(at)
+            .position(|r| r.contains("twelve"))
+            .unwrap();
+        let block = rows[at..=at + end].join(" ").replace("1 step", "");
+        let block: Vec<&str> = block.split_whitespace().collect();
+        assert!(
+            block.join(" ").contains(&format!("{title} {words}")),
+            "{rows:?}"
+        );
+    }
 }
 
 /// A trail's line holds its steps and its rules in their own columns, each number aligned right.
