@@ -2,7 +2,7 @@
 
 use super::screen::{clipboard, spin, until, Screen, TURN};
 use super::wake::{Key, Wake};
-use crate::command::tree::{Item, Model, View, EMPTY, MORE};
+use crate::command::tree::{spinner, Item, Model, View, EMPTY, MORE};
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::progress::Reuse;
@@ -42,6 +42,7 @@ impl Command {
         let named = args.words.len() > 1;
         let mut view = View {
             watch: true,
+            spin: true,
             ..View::of(args)
         };
         let mut known: Vec<Item> = vec![];
@@ -56,7 +57,6 @@ impl Command {
             };
             let linked = loop {
                 steps.at(crate::command::now());
-                view.spin = Some(spin());
                 let width = self.columns().map(|c| c.saturating_sub(1));
                 let frame = self.frame(&model, args, width, &view)?;
                 if let Some(id) = view.selected.clone() {
@@ -74,14 +74,19 @@ impl Command {
                     .order
                     .iter()
                     .find(|i| view.selected.as_ref() == Some(&i.id));
-                let copy = selected.and_then(Item::copy);
-                screen.draw(out, &tree, frame.picked, &legend(copy.as_deref()))?;
-                let wait = frame.next.map(until);
-                let wait = match frame.spun {
-                    true => wait.map_or(TURN, |w| w.min(TURN)),
-                    false => wait.unwrap_or(Duration::MAX),
+                let keys = legend(selected.and_then(Item::copy).as_deref());
+                let mut wake = loop {
+                    screen.draw(out, &spinner(&tree, spin()), frame.picked, &keys)?;
+                    let due = frame.next.map(until);
+                    let wait = match frame.spun {
+                        true => due.map_or(TURN, |w| w.min(TURN)),
+                        false => due.unwrap_or(Duration::MAX),
+                    };
+                    match events.recv_timeout(wait) {
+                        Err(RecvTimeoutError::Timeout) if due.is_none_or(|d| d > wait) => {}
+                        wake => break wake,
+                    }
                 };
-                let mut wake = events.recv_timeout(wait);
                 let (mut landed, mut linked, mut laid) = (false, false, false);
                 loop {
                     match wake {

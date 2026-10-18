@@ -112,14 +112,14 @@ pub(crate) struct Model<'a> {
     pub reuse: &'a Reuse<'a>,
 }
 
-/// How a tree shows: in a watch, with a cursor column; full; all with no id; and in a watch, the
-/// spinner's frame, the lines it opened or closed, and the line it selected.
+/// How a tree shows: in a watch, with a cursor column; full; all with no id; and in a watch, with the
+/// spinner, the lines it opened or closed, and the line it selected.
 #[derive(Default)]
 pub(crate) struct View {
     pub watch: bool,
     pub full: bool,
     pub all: bool,
-    pub spin: Option<usize>,
+    pub spin: bool,
     pub flipped: HashSet<String>,
     pub selected: Option<String>,
 }
@@ -492,7 +492,7 @@ impl Tree<'_> {
         if let Some(worked) = summary.worked {
             self.labelled(lines, &hair, "took", &took(worked));
         }
-        if self.view.spin.is_some() && state.active() {
+        if self.view.spin && state.active() {
             let seconds = self.steps.now().saturating_sub(note.newest());
             self.until(self.steps.now() + stride(seconds));
             self.labelled(lines, &hair, "active", &format!("{} ago", took(seconds)));
@@ -957,14 +957,11 @@ impl Tree<'_> {
     /// The mark of a step in `state` in its colour; in a watch, a working one's is the spinner.
     fn mark(&self, state: State) -> String {
         let look = look(state);
-        let mark = match (state, self.view.spin) {
-            (State::Working, Some(frame)) => {
-                self.spun.set(true);
-                return self.paint(SPINNER, SPIN[frame % SPIN.len()]);
-            }
-            _ => look.mark,
-        };
-        self.paint(look.text, mark)
+        if state == State::Working && self.view.spin {
+            self.spun.set(true);
+            return self.paint(SPINNER, SPUN);
+        }
+        self.paint(look.text, look.mark)
     }
 
     /// The colour of a title usually in `usual`: bold for 2 seconds after its newest record at `newest`.
@@ -996,6 +993,8 @@ const DIM: &str = "2";
 const FRESH: u64 = 2;
 /// The frames of the spinner a watch draws for a working step.
 const SPIN: [&str; 10] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+/// What stands for the spinner in a tree's text until a watch draws its frame.
+const SPUN: &str = "\u{E000}";
 /// The colour of the spinner: bright yellow.
 const SPINNER: &str = "93";
 const BOLD: &str = "1";
@@ -1043,6 +1042,11 @@ pub(crate) fn signs(flags: Flags) -> Vec<(&'static str, &'static str)> {
         .filter(|(on, ..)| *on)
         .map(|(_, sign, code)| (sign, code))
         .collect()
+}
+
+/// `text` with each spinner in it at its frame `frame`.
+pub(crate) fn spinner(text: &str, frame: usize) -> String {
+    text.replace(SPUN, SPIN[frame % SPIN.len()])
 }
 
 /// The characters of `text` a terminal shows; colour codes count none.
