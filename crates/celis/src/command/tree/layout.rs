@@ -1,6 +1,6 @@
 //! The day groups a watch laid out, kept to print again.
 
-use super::{Item, View};
+use super::{Frame, View};
 use std::cell::{Ref, RefCell};
 use std::collections::{HashMap, HashSet};
 
@@ -18,12 +18,7 @@ pub(super) struct Group {
     pub ids: HashSet<String>,
     pub flipped: Vec<String>,
     pub selected: Option<String>,
-    pub next: Option<u64>,
-    pub spun: bool,
-    pub text: Vec<u8>,
-    pub lines: usize,
-    pub order: Vec<Item>,
-    pub picked: Option<usize>,
+    pub part: Frame,
 }
 
 /// What a day group is laid out for: its trails, the width, and whether full and all.
@@ -48,7 +43,7 @@ impl Layout {
         Ref::filter_map(groups, |groups| {
             let group = groups.get(day)?;
             let same = &group.key == key
-                && group.next.is_none_or(|next| now < next)
+                && group.part.next.is_none_or(|next| now < next)
                 && group.flipped == flipped(&group.ids, view)
                 && group.selected == selected(&group.ids, view);
             same.then_some(group)

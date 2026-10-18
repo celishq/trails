@@ -87,13 +87,7 @@ impl Command {
         };
         let mut printed = Vec::new();
         tree.print(&chosen, "trail", args.json, &mut printed)?;
-        Ok(Frame {
-            text: String::from_utf8_lossy(&printed).into_owned(),
-            next: tree.next.get(),
-            spun: tree.spun.get(),
-            order: tree.order.take(),
-            picked: tree.picked.get(),
-        })
+        Ok(tree.frame(&printed))
     }
 }
 
@@ -129,14 +123,16 @@ impl View {
     }
 }
 
-/// A printed tree: its text, the earliest time a time it shows changes, whether it shows the spinner,
-/// the lines a watch selects in the order it prints them, and the line of the selected one.
+/// A printed tree or part of one: its text, the earliest time a time it shows changes, whether it shows
+/// the spinner, the lines a watch selects in the order it prints them, the line of the selected one,
+/// and the count of its lines.
 pub(crate) struct Frame {
     pub text: String,
     pub next: Option<u64>,
     pub spun: bool,
     pub order: Vec<Item>,
     pub picked: Option<usize>,
+    pub lines: usize,
 }
 
 /// A trail, rule or step a watch selects: its id, whether it is open, the trail or step it is under,
@@ -287,29 +283,15 @@ impl Tree<'_> {
             all: self.view.all,
         };
         if let Some(group) = layout.get(&day(at), &key, self.view, self.steps.now()) {
-            out.write_all(&group.text).map_err(anyhow::Error::from)?;
-            self.order.borrow_mut().extend(group.order.iter().cloned());
-            if let (None, Some(picked)) = (self.picked.get(), group.picked) {
-                self.picked.set(Some(self.printed.get() + picked));
-            }
-            self.printed.set(self.printed.get() + group.lines);
-            if let Some(next) = group.next {
-                self.until(next);
-            }
-            self.spun.set(self.spun.get() || group.spun);
-            return Ok(());
+            return self.add(&group.part, out);
         }
-        let (first, printed, picked) = (
-            self.order.borrow().len(),
-            self.printed.get(),
-            self.picked.get(),
-        );
-        let (next, spun) = (self.next.take(), self.spun.take());
+        let blank = self.blank();
         let mut text = Vec::new();
-        self.day(at, trails, &mut text)?;
-        out.write_all(&text).map_err(anyhow::Error::from)?;
-        let order = self.order.borrow()[first..].to_vec();
-        let ids: HashSet<String> = order
+        blank.day(at, trails, &mut text)?;
+        let part = blank.frame(&text);
+        self.add(&part, out)?;
+        let ids: HashSet<String> = part
+            .order
             .iter()
             .flat_map(|i| std::iter::once(&i.id).chain(&i.under))
             .cloned()
@@ -319,23 +301,49 @@ impl Tree<'_> {
             flipped: layout::flipped(&ids, self.view),
             selected: layout::selected(&ids, self.view),
             ids,
+            part,
+        };
+        layout.keep(day(at), group);
+        Ok(())
+    }
+
+    /// A tree like it that has printed nothing.
+    fn blank(&self) -> Tree<'_> {
+        Tree {
+            spun: Cell::default(),
+            order: RefCell::default(),
+            printed: Cell::default(),
+            picked: Cell::default(),
+            next: Cell::default(),
+            ..*self
+        }
+    }
+
+    /// What it printed as `text`.
+    fn frame(self, text: &[u8]) -> Frame {
+        Frame {
+            text: String::from_utf8_lossy(text).into_owned(),
             next: self.next.get(),
             spun: self.spun.get(),
-            text,
-            lines: self.printed.get() - printed,
-            order,
-            picked: self
-                .picked
-                .get()
-                .filter(|_| picked.is_none())
-                .map(|p| p - printed),
-        };
-        self.next.set(next);
-        if let Some(at) = group.next {
-            self.until(at);
+            order: self.order.take(),
+            picked: self.picked.get(),
+            lines: self.printed.get(),
         }
-        self.spun.set(spun || group.spun);
-        layout.keep(day(at), group);
+    }
+
+    /// Prints `part` after what it printed.
+    fn add(&self, part: &Frame, out: &mut dyn Write) -> Result<(), Failure> {
+        out.write_all(part.text.as_bytes())
+            .map_err(anyhow::Error::from)?;
+        self.order.borrow_mut().extend(part.order.iter().cloned());
+        if let (None, Some(picked)) = (self.picked.get(), part.picked) {
+            self.picked.set(Some(self.printed.get() + picked));
+        }
+        self.printed.set(self.printed.get() + part.lines);
+        if let Some(next) = part.next {
+            self.until(next);
+        }
+        self.spun.set(self.spun.get() || part.spun);
         Ok(())
     }
 
