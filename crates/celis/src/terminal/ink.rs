@@ -1,8 +1,9 @@
 //! How a card prints its text: dim, bold, and its numbers big or plain.
 
-use super::card::paint;
+use super::canvas::{paint, width, Styled, BOLD, DIM};
 use super::glyph::digits;
-use crate::command::tree::visible;
+use ratatui::style::Style;
+use ratatui::text::Span;
 
 /// How a card prints: its numbers as plain text, and in colour.
 #[derive(Clone, Copy)]
@@ -12,32 +13,34 @@ pub(crate) struct Ink {
 }
 
 impl Ink {
-    pub fn paint(self, code: &str, text: &str) -> String {
-        paint(self.colour, code, text)
+    pub fn paint(self, style: Style, text: &str) -> Span<'static> {
+        paint(self.colour, style, text)
     }
 
-    pub fn dim(self, text: &str) -> String {
-        self.paint("2", text)
+    pub fn dim(self, text: &str) -> Span<'static> {
+        self.paint(DIM, text)
     }
 
     /// `text` big and bold: three rows of digits, or one row when plain.
-    pub fn big(self, text: &str) -> Vec<String> {
+    pub fn big(self, text: &str) -> Vec<Span<'static>> {
         match self.plain {
-            true => vec![self.paint("1", text)],
-            false => digits(text).iter().map(|r| self.paint("1", r)).collect(),
+            true => vec![self.paint(BOLD, text)],
+            false => digits(text).iter().map(|r| self.paint(BOLD, r)).collect(),
         }
     }
 
     /// `text` big, each of its rows followed by the line of `side` beside it, `gap` spaces after the
     /// widest row.
-    pub fn beside(self, text: &str, side: &[String], gap: usize) -> Vec<String> {
-        let big = self.big(text);
-        let room = big.iter().map(|r| visible(r)).max().unwrap_or(0) + gap;
-        big.iter()
+    pub fn beside(self, text: &str, side: &[Styled], gap: usize) -> Vec<Styled> {
+        let big: Vec<Styled> = self.big(text).into_iter().map(Styled::from).collect();
+        let room = big.iter().map(width).max().unwrap_or(0) + gap;
+        big.into_iter()
             .enumerate()
             .map(|(i, r)| {
-                let pad = " ".repeat(room - visible(r));
-                format!("{r}{pad}{}", side.get(i).map_or("", String::as_str))
+                let mut row = super::canvas::pad(r, room);
+                row.spans
+                    .extend(side.get(i).map_or(vec![], |s| s.spans.clone()));
+                row
             })
             .collect()
     }

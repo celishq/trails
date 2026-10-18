@@ -182,7 +182,21 @@ fn press(key: Key, view: &mut View, order: &[Item], named: bool) {
             }
         }
         (Key::Up | Key::Enter | Key::Right | Key::Left | Key::Star, None) => {}
-        (Key::PageUp | Key::PageDown | Key::Top | Key::End | Key::Copy | Key::Markdown, _) => {}
+        (
+            Key::PageUp
+            | Key::PageDown
+            | Key::Space
+            | Key::Tab
+            | Key::BackTab
+            | Key::Back
+            | Key::Forth
+            | Key::Escape
+            | Key::Top
+            | Key::End
+            | Key::Copy
+            | Key::Markdown,
+            _,
+        ) => {}
         (Key::Full, _) => view.full = !view.full,
         (Key::All, _) => view.all = !view.all && !named,
     }

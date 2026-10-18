@@ -1,31 +1,34 @@
 //! A line of a tree, and how a row and the notes under it lay out.
 
-use super::{visible, BOLD, DIM};
+use super::visible;
+use crate::terminal::canvas::{width as chars, Styled, BOLD, DIM};
+use ratatui::style::Style;
+use ratatui::text::Span;
 
-/// A line of the tree: text as it is; a row, its title in the colour `tone` after `lead` and its
+/// A line of the tree: text as it is; a row, its title in the look `tone` after `lead` and its
 /// `marks`, wrapped with its next lines after `rest`; a note under a row, after `rail` and `label`, in
-/// the colour `tone`; or the start of a selected element's lines, or of lines no element holds.
+/// the look `tone`; or the start of a selected element's lines, or of lines no element holds.
 pub(super) enum Line {
-    Text(String),
+    Text(Styled),
     Row {
-        lead: String,
-        marks: String,
+        lead: Styled,
+        marks: Styled,
         title: String,
-        tone: &'static str,
-        rest: String,
+        tone: Style,
+        rest: Styled,
     },
     Note {
-        rail: String,
+        rail: Styled,
         label: &'static str,
         text: String,
-        tone: &'static str,
+        tone: Style,
     },
     Mark(bool, Box<Line>),
 }
 
 impl Line {
     /// Its marks when it is a row, also when it is selected.
-    pub fn marks(&self) -> Option<&str> {
+    pub fn marks(&self) -> Option<&Styled> {
         match self {
             Line::Row { marks, .. } => Some(marks),
             Line::Mark(_, line) => line.marks(),
@@ -40,9 +43,13 @@ impl Line {
         slot: usize,
         width: Option<usize>,
         picked: bool,
-        paint: &dyn Fn(&str, &str) -> String,
-    ) -> Vec<String> {
-        let under = |rail: &str| format!("{rail}{}", " ".repeat(slot.saturating_sub(1)));
+        paint: &dyn Fn(Style, &str) -> Span<'static>,
+    ) -> Vec<Styled> {
+        let under = |rail: Styled, pad: usize| {
+            let mut rail = rail;
+            rail.push_span(" ".repeat(slot.saturating_sub(1) + pad));
+            rail
+        };
         let (first, next, text, tone) = match self {
             Line::Text(text) => return vec![text],
             Line::Mark(_, line) => return line.lines(slot, width, picked, paint),
@@ -53,12 +60,15 @@ impl Line {
                 tone,
                 rest,
             } => {
-                let pad = " ".repeat(slot.saturating_sub(visible(&marks)));
+                let pad = " ".repeat(slot.saturating_sub(chars(&marks)));
                 let tone = match picked && tone != DIM {
                     true => BOLD,
                     false => tone,
                 };
-                (format!("{lead}{marks}{pad} "), under(&rest), title, tone)
+                let mut first = lead;
+                first.spans.extend(marks.spans);
+                first.push_span(format!("{pad} "));
+                (first, under(rest, 0), title, tone)
             }
             Line::Note {
                 rail,
@@ -66,17 +76,16 @@ impl Line {
                 text,
                 tone,
             } => match label {
-                "" => (under(&rail), under(&rail), text, tone),
-                _ => (
-                    format!("{}{}", under(&rail), paint(DIM, &format!("{label:<9}"))),
-                    format!("{}{}", under(&rail), " ".repeat(9)),
-                    text,
-                    tone,
-                ),
+                "" => (under(rail.clone(), 0), under(rail, 0), text, tone),
+                _ => {
+                    let mut first = under(rail.clone(), 0);
+                    first.push_span(paint(DIM, &format!("{label:<9}")));
+                    (first, under(rail, 9), text, tone)
+                }
             },
         };
         let mut parts = match width {
-            Some(width) => wrap(&text, width.saturating_sub(visible(&first))),
+            Some(width) => wrap(&text, width.saturating_sub(chars(&first))),
             None => vec![text],
         };
         if parts.is_empty() {
@@ -84,14 +93,17 @@ impl Line {
         }
         let lead = std::iter::once(first).chain(std::iter::repeat(next));
         lead.zip(parts)
-            .map(|(lead, part)| format!("{lead}{}", paint(tone, &part)))
+            .map(|(mut lead, part)| {
+                lead.push_span(paint(tone, &part));
+                lead
+            })
             .collect()
     }
 }
 
 /// `text` in lines of at most `width` characters, at least one, broken between words; a longer word is
 /// broken across lines.
-fn wrap(text: &str, width: usize) -> Vec<String> {
+pub(crate) fn wrap(text: &str, width: usize) -> Vec<String> {
     let width = width.max(1);
     let mut lines: Vec<String> = vec![];
     for word in text.split_whitespace() {

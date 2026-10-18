@@ -1,7 +1,8 @@
 //! `celis stats` on a terminal: its cards, an opened card, or the route of a step, drawn again each
 //! time a record lands in the store or a linked folder.
 
-use super::card::{grid, paint, Card};
+use super::canvas::{line as text, paint, Styled, BOLD, DIM};
+use super::card::{grid, Card};
 use super::ink::Ink;
 use super::live::Live;
 use super::screen::{clipboard, Screen};
@@ -17,6 +18,7 @@ use crate::text::line::time;
 use celis_nostr::Note;
 use celis_trails::records::id::short;
 use celis_trails::{Step, Steps, Trail};
+use ratatui::text::Span;
 use std::io::Write;
 use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender};
 use std::time::Duration;
@@ -282,19 +284,20 @@ impl Board<'_> {
             let room = width.saturating_sub(visible(&tail) + lead.len() + 8);
             let name = cut(at.title(), room);
             let pad = " ".repeat(room.saturating_sub(visible(&name)));
-            let text = format!(
-                "{lead}{} {name}{pad}  {}",
-                paint(colour, look.text, look.mark),
-                paint(colour, "2", &tail)
-            );
             let picked = rows.len() == self.row;
             if picked {
                 line = Some(lines.len());
             }
-            lines.push(match picked {
-                true => format!("▌ {text}"),
-                false => format!("  {text}"),
-            });
+            let spans = vec![
+                Span::raw(match picked {
+                    true => format!("▌ {lead}"),
+                    false => format!("  {lead}"),
+                }),
+                paint(colour, look.text, look.mark),
+                Span::raw(format!(" {name}{pad}  ")),
+                paint(colour, DIM, &tail),
+            ];
+            lines.push(text(&Styled::from(spans), colour));
             rows.push(Some(at.id().to_string()));
             table.push(Row {
                 id: Some(at.id().to_string()),
@@ -307,7 +310,7 @@ impl Board<'_> {
             });
         };
         if !up.is_empty() {
-            lines.push(paint(colour, "2", "  FOLLOWS"));
+            lines.push(text(&paint(colour, DIM, "  FOLLOWS").into(), colour));
             for link in &up {
                 item(&mut lines, "follows", link.source, link.depth);
             }
@@ -319,8 +322,8 @@ impl Board<'_> {
         };
         let took = time(step).unwrap_or("—".into());
         let side = [
-            ink.dim("took"),
-            ink.dim(&format!("revised {}", step.revised().len())),
+            ink.dim("took").into(),
+            ink.dim(&format!("revised {}", step.revised().len())).into(),
         ];
         let face = ink.beside(&took, &side, 3);
         let look = look(step.state());
@@ -331,7 +334,8 @@ impl Board<'_> {
         };
         lines.extend(card.lines(width, card.rows.len() + 2, colour));
         if !down.is_empty() {
-            lines.extend([String::new(), paint(colour, "2", "  FOLLOWED BY")]);
+            let followed = text(&paint(colour, DIM, "  FOLLOWED BY").into(), colour);
+            lines.extend([String::new(), followed]);
             for link in &down {
                 item(&mut lines, "followed by", link.step, link.depth);
             }
@@ -339,7 +343,10 @@ impl Board<'_> {
         if count == 0 {
             lines.extend([
                 String::new(),
-                paint(colour, "2", "  it follows no step, and no step follows it"),
+                text(
+                    &paint(colour, DIM, "  it follows no step, and no step follows it").into(),
+                    colour,
+                ),
             ]);
         }
         let copy = rows.get(self.row).cloned().flatten();
@@ -411,10 +418,11 @@ fn empty(right: &str, width: usize, colour: bool) -> Page {
         title: "NO STATS YET".into(),
         rows: vec![
             "Stats show when your agent finishes its first step.".into(),
-            format!(
-                "Run {} to see sample data.",
-                paint(colour, "1", "celis stats --demo")
-            ),
+            Styled::from(vec![
+                "Run ".into(),
+                paint(colour, BOLD, "celis stats --demo"),
+                " to see sample data.".into(),
+            ]),
         ],
         picked: false,
     };
@@ -445,13 +453,12 @@ fn status(steps: &Steps) -> String {
 fn head(place: Option<&str>, right: &str, width: usize, colour: bool) -> Vec<String> {
     let left = place.map_or(" CELIS STATS".into(), |p| format!(" CELIS STATS › {p}"));
     let pad = width.saturating_sub(visible(&left) + visible(right) + 1);
-    let line = format!(
-        "{}{}{}",
-        paint(colour, "1", &left),
-        " ".repeat(pad),
-        paint(colour, "2", right)
-    );
-    vec![line, String::new()]
+    let line = Styled::from(vec![
+        paint(colour, BOLD, &left),
+        " ".repeat(pad).into(),
+        paint(colour, DIM, right),
+    ]);
+    vec![text(&line, colour), String::new()]
 }
 
 /// The key line: `keys`, then `c copy <id>` for the id `copy` names, then the copy and quit keys.

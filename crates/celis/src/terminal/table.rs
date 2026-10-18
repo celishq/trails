@@ -1,7 +1,8 @@
 //! The rows behind a card of stats, as an opened card shows them and as Markdown.
 
-use super::card::paint;
+use super::canvas::{line as text, paint, Styled, BOLD, DIM};
 use crate::command::tree::{cut, visible};
+use ratatui::text::Span;
 
 /// A table: the name of each column, each row with the id of the record it shows when it shows one, and
 /// the column that takes the width the others leave.
@@ -42,10 +43,13 @@ impl Table {
             cells.collect::<Vec<_>>().join("  ").trim_end().to_string()
         };
         let head: Vec<String> = self.head.iter().map(|h| h.to_string()).collect();
-        let mut lines = vec![format!("  {}", paint(colour, "2", &line(&head)))];
+        let styled = |lead: &'static str, span: Span<'static>| {
+            text(&Styled::from(vec![lead.into(), span]), colour)
+        };
+        let mut lines = vec![styled("  ", paint(colour, DIM, &line(&head)))];
         for (i, row) in self.rows.iter().enumerate() {
             lines.push(match Some(i) == selected {
-                true => format!("▌ {}", paint(colour, "1", &line(&row.cells))),
+                true => styled("▌ ", paint(colour, BOLD, &line(&row.cells))),
                 false => format!("  {}", line(&row.cells)),
             });
         }

@@ -1,19 +1,21 @@
 //! One card of stats: the face it shows among the cards, and the table it opens to.
 
+use super::canvas::{cut, join, pad, Styled, BOLD, DIM, GREEN, RED};
 use super::glyph::{bar, columns, strip};
 use super::ink::Ink;
 use super::table::{Row, Table};
-use crate::command::tree::{cut, look, visible};
+use crate::command::tree::{cut as text_cut, look, visible};
 use crate::progress::{Grade, Model, Period, Reuse, Tally};
 use crate::text::clock::{day, midnight, took};
 use crate::text::line::plural;
 use celis_trails::{Decisions, State, Step};
+use ratatui::text::Span;
 use std::collections::BTreeMap;
 
 /// A card of stats: its title, the rows of its face, and the table it opens to.
 pub(crate) struct Sheet {
     pub title: String,
-    pub face: Vec<String>,
+    pub face: Vec<Styled>,
     pub table: Table,
 }
 
@@ -102,7 +104,7 @@ impl Measure {
     /// The change from the period before, coloured green when better and red when worse, dim when it
     /// moved little; none when the period before counts none, `· few records` when a period counts
     /// fewer than `FEW`.
-    fn change(&self, ink: Ink) -> Option<String> {
+    fn change(&self, ink: Ink) -> Option<Span<'static>> {
         if self.before.base == 0 {
             return None;
         }
@@ -120,9 +122,9 @@ impl Measure {
         };
         let text = format!("{before}% → {last}%  {by}");
         let tone = match (moved.abs() < 3, (moved > 0) == self.up) {
-            (true, _) => "2",
-            (false, true) => "32",
-            (false, false) => "31",
+            (true, _) => DIM,
+            (false, true) => GREEN,
+            (false, false) => RED,
         };
         Some(ink.paint(tone, &text))
     }
@@ -155,35 +157,24 @@ fn effect(last: &Period, before: &Period, inside: usize, ink: Ink) -> Sheet {
         },
     ];
     let column = (inside / measures.len()).max(1);
-    let cell = |text: String| {
-        let text = cut(&text, column - 1);
-        let pad = column.saturating_sub(visible(&text));
-        format!("{text}{}", " ".repeat(pad))
-    };
-    let mut face = vec![measures
-        .iter()
-        .map(|m| cell(ink.dim(m.label)))
-        .collect::<String>()];
-    let bigs: Vec<Vec<String>> = measures.iter().map(|m| ink.big(&m.last.text())).collect();
+    let cell = |text: Span<'static>| pad(cut(&Styled::from(text), column - 1), column);
+    let mut face = vec![join(measures.iter().map(|m| cell(ink.dim(m.label))))];
+    let bigs: Vec<Vec<Span>> = measures.iter().map(|m| ink.big(&m.last.text())).collect();
     for r in 0..bigs[0].len() {
-        face.push(bigs.iter().map(|b| cell(b[r].clone())).collect());
+        face.push(join(bigs.iter().map(|b| cell(b[r].clone()))));
     }
-    let changes: Vec<Option<String>> = measures.iter().map(|m| m.change(ink)).collect();
+    let changes: Vec<Option<Span>> = measures.iter().map(|m| m.change(ink)).collect();
     let compared = changes.iter().any(Option::is_some);
     if compared {
-        face.push(
-            changes
-                .into_iter()
-                .map(|c| cell(c.unwrap_or_default()))
-                .collect(),
-        );
+        face.push(join(
+            changes.into_iter().map(|c| cell(c.unwrap_or_default())),
+        ));
     }
-    face.push(
+    face.push(join(
         measures
             .iter()
-            .map(|m| cell(ink.dim(&plural(m.last.base, m.unit))))
-            .collect(),
-    );
+            .map(|m| cell(ink.dim(&plural(m.last.base, m.unit)))),
+    ));
     let rows = measures
         .iter()
         .map(|m| Row {
@@ -212,18 +203,18 @@ fn effect(last: &Period, before: &Period, inside: usize, ink: Ink) -> Sheet {
 
 /// The reuse: the follows, and the steps followed most.
 fn followed(reuse: &Reuse, inside: usize, ink: Ink) -> Sheet {
-    let side = [ink.dim("follows")];
+    let side = [Styled::from(ink.dim("follows"))];
     let mut face = ink.beside(&reuse.total().to_string(), &side, 2);
-    face.push(String::new());
+    face.push(Styled::default());
     let steps = reuse.followed();
     if steps.is_empty() {
-        face.push(ink.dim("no step followed another yet"));
+        face.push(ink.dim("no step followed another yet").into());
     }
     for &step in steps.iter().take(3) {
         let tail = format!(" ──▶ {:>3}", reuse.followers(step));
-        let title = cut(step.title(), inside.saturating_sub(visible(&tail) + 1));
+        let title = text_cut(step.title(), inside.saturating_sub(visible(&tail) + 1));
         let pad = " ".repeat(inside.saturating_sub(visible(&title) + visible(&tail)));
-        face.push(format!("{title}{pad}{tail}"));
+        face.push(format!("{title}{pad}{tail}").into());
     }
     let rows = steps
         .iter()
@@ -253,18 +244,18 @@ fn rules(decisions: &Decisions, reuse: &Reuse, inside: usize, ink: Ink) -> Sheet
     let most = used.first().map_or(0, |(_, _, n)| *n);
     let label = 18.min(inside / 2);
     let width = inside.saturating_sub(label + 5);
-    let mut face: Vec<String> = used
+    let mut face: Vec<Styled> = used
         .iter()
         .take(5)
         .map(|(_, d, n)| {
-            let name = cut(d.brief().trim_start_matches("When "), label);
+            let name = text_cut(d.brief().trim_start_matches("When "), label);
             let pad = " ".repeat(label - visible(&name));
-            format!("{name}{pad} {} {n:>2}", bar(*n, most, width))
+            format!("{name}{pad} {} {n:>2}", bar(*n, most, width)).into()
         })
         .collect();
     let total: usize = used.iter().map(|(_, _, n)| n).sum();
     match used.len() {
-        0 => face.push(ink.dim("no rule used yet")),
+        0 => face.push(ink.dim("no rule used yet").into()),
         n => {
             let more = match n.saturating_sub(5) {
                 0 => String::new(),
@@ -272,7 +263,10 @@ fn rules(decisions: &Decisions, reuse: &Reuse, inside: usize, ink: Ink) -> Sheet
             };
             let uses = format!("{total} uses");
             let pad = " ".repeat(inside.saturating_sub(visible(&more) + uses.len()));
-            face.extend([String::new(), ink.dim(&format!("{more}{pad}{uses}"))]);
+            face.extend([
+                Styled::default(),
+                ink.dim(&format!("{more}{pad}{uses}")).into(),
+            ]);
         }
     }
     let rows = used
@@ -312,22 +306,22 @@ fn work(steps: &celis_trails::Steps, before: &Period, now: u64, inside: usize, i
         (_, true) => Some(format!("▲ {} vs {DAYS} days before", total - earlier)),
         (_, false) => Some(format!("▼ {} vs {DAYS} days before", earlier - total)),
     };
-    let moved = moved.map(|m| ink.dim(&m));
-    let side: Vec<String> = std::iter::once(ink.dim("steps done"))
+    let moved = moved.map(|m| Styled::from(ink.dim(&m)));
+    let side: Vec<Styled> = std::iter::once(ink.dim("steps done").into())
         .chain(moved.clone())
         .collect();
     let mut face = ink.beside(&total.to_string(), &side, 2);
     if ink.plain {
         face.extend(moved);
     }
-    face.push(String::new());
+    face.push(Styled::default());
     if total == 0 {
-        face.push(ink.dim(&nothing("done")));
+        face.push(ink.dim(&nothing("done")).into());
     } else {
-        face.extend(columns(&counts, 2, &ink.dim("·")));
+        face.extend(columns(&counts, 2, ZERO).iter().map(|row| dotted(row, ink)));
         let first = day(starts[0]);
         let pad = " ".repeat(27usize.min(inside).saturating_sub(first.len() + 5));
-        face.push(ink.dim(&format!("{first}{pad}today")));
+        face.push(ink.dim(&format!("{first}{pad}today")).into());
     }
     let rows = starts
         .iter()
@@ -380,14 +374,16 @@ fn time(last: &Period, inside: usize, ink: Ink) -> Sheet {
     let most = counts.iter().copied().max().unwrap_or(0);
     let width = inside.saturating_sub(13);
     let face = match done.get(done.len() / 2) {
-        None => vec![ink.dim(&nothing("done"))],
+        None => vec![ink.dim(&nothing("done")).into()],
         Some((median, _)) => {
-            let mut face = vec![
-                format!("{} {}", ink.dim("median"), ink.paint("1", &took(*median))),
-                String::new(),
+            let median = vec![
+                ink.dim("median"),
+                " ".into(),
+                ink.paint(BOLD, &took(*median)),
             ];
+            let mut face = vec![Styled::from(median), Styled::default()];
             for ((label, _), n) in spans.iter().zip(counts) {
-                face.push(format!("{label:<7} {} {n:>3}", bar(n, most, width)));
+                face.push(format!("{label:<7} {} {n:>3}", bar(n, most, width)).into());
             }
             face
         }
@@ -419,19 +415,19 @@ fn outcome(last: &Period, inside: usize, ink: Ink) -> Sheet {
     let counts: Vec<usize> = states.iter().map(|&st| tally.count(st)).collect();
     let total: usize = counts.iter().sum();
     let face = match total {
-        0 => vec![ink.dim(&nothing("closed"))],
+        0 => vec![ink.dim(&nothing("closed")).into()],
         _ => {
-            let mut face = vec![strip(&counts, inside.saturating_sub(4)), String::new()];
+            let strip = strip(&counts, inside.saturating_sub(4));
+            let mut face = vec![Styled::from(strip), Styled::default()];
             for (&state, &n) in states.iter().zip(&counts) {
                 let look = look(state);
                 let share = n * 100 / total;
-                let mut line = format!(
-                    "{} {:<10}{n:>4} {share:>5}%",
+                let mut line = Styled::from(vec![
                     ink.paint(look.text, look.mark),
-                    state.text()
-                );
+                    format!(" {:<10}{n:>4} {share:>5}%", state.text()).into(),
+                ]);
                 if state == State::Done && tally.revised > 0 {
-                    line.push_str(&format!(" · {} revised", tally.revised));
+                    line.push_span(format!(" · {} revised", tally.revised));
                 }
                 face.push(line);
             }
@@ -472,22 +468,18 @@ fn projects(last: &Period, inside: usize, ink: Ink) -> Sheet {
     let most = spent.first().map_or(0, |(_, (t, _))| *t as usize);
     let label = 14.min(inside / 2);
     let width = inside.saturating_sub(label + 9);
-    let mut face: Vec<String> = spent
+    let mut face: Vec<Styled> = spent
         .iter()
         .take(4)
         .map(|(name, (t, _))| {
-            let name = cut(name, label);
+            let name = text_cut(name, label);
             let pad = " ".repeat(label - visible(&name));
-            format!(
-                "{}{pad} {} {:>6}",
-                ink.paint("1", &name),
-                bar(*t as usize, most, width),
-                took(*t)
-            )
+            let rest = format!("{pad} {} {:>6}", bar(*t as usize, most, width), took(*t));
+            Styled::from(vec![ink.paint(BOLD, &name), rest.into()])
         })
         .collect();
     if face.is_empty() {
-        face.push(ink.dim(&nothing("done")));
+        face.push(ink.dim(&nothing("done")).into());
     }
     let rows = spent
         .iter()
@@ -505,6 +497,23 @@ fn projects(last: &Period, inside: usize, ink: Ink) -> Sheet {
             wide: 0,
         },
     }
+}
+
+/// What a column of the work card shows for a day with no step done.
+const ZERO: &str = "·";
+
+/// `row` of the columns of the work card, each `ZERO` in it dim.
+fn dotted(row: &str, ink: Ink) -> Styled {
+    let mut spans: Vec<Span<'static>> = Vec::new();
+    for (n, part) in row.split(ZERO).enumerate() {
+        if n > 0 {
+            spans.push(ink.dim(ZERO));
+        }
+        if !part.is_empty() {
+            spans.push(part.to_string().into());
+        }
+    }
+    Styled::from(spans)
 }
 
 /// `label` in sentence case, as `As planned`.

@@ -192,7 +192,7 @@ impl Screen {
         let page = self.page.max(1);
         match key {
             Key::PageUp => self.top = self.top.saturating_sub(page),
-            Key::PageDown => self.top += page,
+            Key::PageDown | Key::Space => self.top += page,
             Key::Top => self.top = 0,
             Key::End => self.top = usize::MAX / 2,
             _ => return,

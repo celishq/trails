@@ -468,3 +468,51 @@ fn tree_demo_prints_every_state_and_writes_nothing() {
     );
     refusal(&o, 2, "usage");
 }
+
+/// `tree <id> --graph` prints the trail as a graph: its title, project and done steps, then each step
+/// right under it as a card in a chain from left to right in the order they were added, its own steps
+/// as cards below it with theirs inside, and the trail's rules; no time.
+#[test]
+fn tree_graph_prints_the_trail_as_a_chain_of_cards() {
+    let repo = Repo::new();
+    let by = support::account();
+    let at = support::now() - 600;
+    let trail = support::step_note(&repo, &by, None, "build the CRM", at);
+    let scope = format!("trail:{}", trail.id);
+    let project = (repo.project_id(), "repo");
+    support::decision(
+        &repo,
+        (&project.0, project.1),
+        &by,
+        (Some(&scope), None),
+        "colours are tokens",
+        at,
+    );
+    let colours = support::step_note(&repo, &by, Some(&trail), "colours", at);
+    support::done_note(&repo, &by, &colours, at + 90);
+    let page = support::step_note(&repo, &by, Some(&trail), "customers page", at + 1);
+    let badge = support::step_note(&repo, &by, Some(&page), "badge", at + 2);
+    support::step_note(&repo, &by, Some(&badge), "badge icon", at + 3);
+    let seal = support::step_note(&repo, &by, Some(&page), "seal", at + 4);
+    support::done_note(&repo, &by, &seal, at + 33);
+    support::step_note(&repo, &by, Some(&trail), "footer", at + 6);
+    let printed = printed(&repo, &[short(&trail.id), "--graph"]);
+    let graph = [
+        "◆ build the CRM                                                                     repo · 2/6",
+        "",
+        "╭──────────────────────────╮     ┌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┐     ┌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┐",
+        "│ ✓ colours                │     ╎ ○ customers page         ╎     ╎ ○ footer                 ╎",
+        "│                          │┄┄┄┄▶╎ ▰▰▰▱▱▱▱▱▱▱ 1/3           ╎┄┄┄┄▶╎                          ╎",
+        "╰──────────────────────────╯     └┬╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┘     └╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┘",
+        "                                  │ ┌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┐",
+        "                                  ├─╎ ○ badge               ╎",
+        "                                  │ ╎ ○ badge icon          ╎",
+        "                                  │ └╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┘",
+        "                                  │ ╭───────────────────────╮",
+        "                                  └─│ ✓ seal                │",
+        "                                    ╰───────────────────────╯",
+        "",
+        "§ colours are tokens",
+    ];
+    assert_eq!(printed, graph);
+}

@@ -7,7 +7,7 @@ celis step start <id>
 celis step done <id> [--changed "<what differs>"] [--as-planned] [--pitfall "<what went wrong>"] -- "<proof>"
 celis step drop <id> -- "<why>"
 celis step edit <id> [--at <place>]... [--check <command>] [-- "<new title>"]
-celis tree [<id>] [--full] [--all] [--demo]
+celis tree [<id>] [--graph] [--full] [--all] [--demo]
 ```
 
 1. When celis asks for the `celis:past` agent, run it as celis says, even for a simple ask. With no such

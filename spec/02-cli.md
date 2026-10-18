@@ -16,7 +16,8 @@ read. What a command shows a person is not part of it.
 ```
 celis decide [--scope <scope>] [--replaces <id>] -- <text>
                                                        a decision, in its scope
-celis tree [<id>] [--full] [--all] [--demo]           a trail and its steps; again on each change
+celis tree [<id>] [--graph] [--full] [--all] [--demo]
+                                                       a trail and its steps; again on each change
 celis grep <grep option>... <pattern>                 every trail, through the system grep
 celis stats [<id>] [--demo]                           what later work reused
 celis report <id>... [--demo]                         the trails as Markdown, for a pull request

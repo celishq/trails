@@ -66,6 +66,12 @@ pub(crate) enum Key {
     Star,
     PageUp,
     PageDown,
+    Space,
+    Tab,
+    BackTab,
+    Back,
+    Forth,
+    Escape,
     Top,
     End,
     Full,
@@ -85,7 +91,8 @@ impl Key {
 }
 
 /// When stdin is a terminal, turns its echo and line mode off and sends each key it reads to `send`,
-/// `q` as a `Quit`; the terminal's settings before, to set back.
+/// `q` as a `Quit` and an escape that comes alone as an `Escape`; the terminal's settings before, to
+/// set back.
 pub(crate) fn keys(send: Sender<Wake>) -> Option<libc::termios> {
     let mut before: libc::termios = unsafe { std::mem::zeroed() };
     if unsafe { libc::tcgetattr(libc::STDIN_FILENO, &mut before) } != 0 {
@@ -97,35 +104,45 @@ pub(crate) fn keys(send: Sender<Wake>) -> Option<libc::termios> {
     raw.c_cc[libc::VTIME] = 0;
     unsafe { libc::tcsetattr(libc::STDIN_FILENO, libc::TCSANOW, &raw) };
     std::thread::spawn(move || {
+        let mut stdin = std::io::stdin().lock();
+        let mut chunk = [0u8; 64];
         let mut typed = Vec::new();
-        for byte in std::io::stdin().lock().bytes() {
-            let Ok(byte) = byte else { break };
-            typed.push(byte);
-            let wake = match typed.as_slice() {
-                [0x1b] | [0x1b, b'['] | [0x1b, b'[', b'5' | b'6'] => continue,
-                [0x1b, b'[', b'5', b'~'] => Wake::Key(Key::PageUp),
-                [0x1b, b'[', b'6', b'~'] | [b' '] => Wake::Key(Key::PageDown),
-                [b'g'] => Wake::Key(Key::Top),
-                [b'G'] => Wake::Key(Key::End),
-                [0x1b, b'[', b'A'] => Wake::Key(Key::Up),
-                [0x1b, b'[', b'B'] => Wake::Key(Key::Down),
-                [0x1b, b'[', b'C'] => Wake::Key(Key::Right),
-                [0x1b, b'[', b'D'] => Wake::Key(Key::Left),
-                [b'*'] => Wake::Key(Key::Star),
-                [b'\r'] | [b'\n'] => Wake::Key(Key::Enter),
-                [b'f'] => Wake::Key(Key::Full),
-                [b'a'] => Wake::Key(Key::All),
-                [b'c'] => Wake::Key(Key::Copy),
-                [b'm'] => Wake::Key(Key::Markdown),
-                [b'q'] => Wake::Quit,
-                _ => {
-                    typed.clear();
-                    continue;
+        while let Ok(read @ 1..) = stdin.read(&mut chunk) {
+            for (n, byte) in chunk[..read].iter().enumerate() {
+                typed.push(*byte);
+                let alone = n + 1 == read;
+                let wake = match typed.as_slice() {
+                    [0x1b] if alone => Wake::Key(Key::Escape),
+                    [0x1b] | [0x1b, b'['] | [0x1b, b'[', b'5' | b'6'] => continue,
+                    [0x1b, b'[', b'5', b'~'] => Wake::Key(Key::PageUp),
+                    [0x1b, b'[', b'6', b'~'] => Wake::Key(Key::PageDown),
+                    [0x1b, b'[', b'Z'] => Wake::Key(Key::BackTab),
+                    [b'\t'] => Wake::Key(Key::Tab),
+                    [b' '] => Wake::Key(Key::Space),
+                    [b'['] => Wake::Key(Key::Back),
+                    [b']'] => Wake::Key(Key::Forth),
+                    [b'g'] => Wake::Key(Key::Top),
+                    [b'G'] => Wake::Key(Key::End),
+                    [0x1b, b'[', b'A'] => Wake::Key(Key::Up),
+                    [0x1b, b'[', b'B'] => Wake::Key(Key::Down),
+                    [0x1b, b'[', b'C'] => Wake::Key(Key::Right),
+                    [0x1b, b'[', b'D'] => Wake::Key(Key::Left),
+                    [b'*'] => Wake::Key(Key::Star),
+                    [b'\r'] | [b'\n'] => Wake::Key(Key::Enter),
+                    [b'f'] => Wake::Key(Key::Full),
+                    [b'a'] => Wake::Key(Key::All),
+                    [b'c'] => Wake::Key(Key::Copy),
+                    [b'm'] => Wake::Key(Key::Markdown),
+                    [b'q'] => Wake::Quit,
+                    _ => {
+                        typed.clear();
+                        continue;
+                    }
+                };
+                typed.clear();
+                if send.send(wake).is_err() {
+                    return;
                 }
-            };
-            typed.clear();
-            if send.send(wake).is_err() {
-                break;
             }
         }
     });

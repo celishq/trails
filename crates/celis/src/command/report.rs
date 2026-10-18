@@ -4,12 +4,14 @@ use super::tree::{look, visible};
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::progress::{Flags, Tally};
-use crate::terminal::card::{paint, Card, RULE};
+use crate::terminal::canvas::{join, line as styled, paint, Styled, BOLD, DIM, MAGENTA, YELLOW};
+use crate::terminal::card::{Card, RULE};
 use crate::terminal::ink::Ink;
 use crate::text::clock::took;
 use crate::text::line::time;
 use celis_trails::records::id::short;
 use celis_trails::{Decisions, Mark, State, Step, Steps, Trail, Trails};
+use ratatui::text::Span;
 use serde_json::json;
 use std::io::{IsTerminal, Read, Write};
 
@@ -80,11 +82,11 @@ fn card(trails: &Trails, trail: Step, width: usize, colour: bool) -> Card {
     let ran = took(trail.newest().saturating_sub(trail.note().created_at));
     let state = trail.state();
     let mark = paint(colour, look(state).text, look(state).mark);
-    let labels = format!(
-        "{}{mark} {}",
-        paint(colour, "2", "STEPS   RULES   REVISED   DROPPED   "),
-        state.text().to_uppercase()
-    );
+    let labels = Styled::from(vec![
+        paint(colour, DIM, "STEPS   RULES   REVISED   DROPPED   "),
+        mark,
+        format!(" {}", state.text().to_uppercase()).into(),
+    ]);
     let values = format!(
         "{:<8}{:<8}{:<10}{}",
         tree.len(),
@@ -92,19 +94,23 @@ fn card(trails: &Trails, trail: Step, width: usize, colour: bool) -> Card {
         tally.revised,
         tally.dropped
     );
-    let mut rows = vec![paint(colour, "1", step.title()), RULE.to_string()];
+    let mut rows = vec![Styled::from(paint(colour, BOLD, step.title())), RULE.into()];
     match width < NARROW {
-        true => rows.extend([format!("took {}", paint(colour, "1", &ran)), labels, values]),
+        true => rows.extend([
+            Styled::from(vec!["took ".into(), paint(colour, BOLD, &ran)]),
+            labels,
+            values.into(),
+        ]),
         false => {
             let ink = Ink {
                 plain: false,
                 colour,
             };
-            rows.extend(ink.beside(&ran, &[labels, values], 3));
+            rows.extend(ink.beside(&ran, &[labels, values.into()], 3));
         }
     }
     if !tree.is_empty() {
-        let cells: String = tree
+        let mut cells: Vec<Span> = tree
             .iter()
             .map(|s| paint(colour, look(s.state()).text, "▮"))
             .collect();
@@ -117,14 +123,12 @@ fn card(trails: &Trails, trail: Step, width: usize, colour: bool) -> Card {
         .filter(|(n, _)| *n > 0)
         .map(|(n, s)| format!("{n} {s}"))
         .collect();
-        rows.extend([
-            String::new(),
-            format!("{cells}   {}", paint(colour, "2", &counts.join(" · "))),
-        ]);
+        cells.extend(["   ".into(), paint(colour, DIM, &counts.join(" · "))]);
+        rows.extend([Styled::default(), Styled::from(cells)]);
     }
     let parts = Trail::new(trail).parts();
     if !parts.is_empty() {
-        rows.push(RULE.to_string());
+        rows.push(RULE.into());
         let inside = width - 4;
         for part in parts {
             let look = look(part.state());
@@ -132,27 +136,33 @@ fn card(trails: &Trails, trail: Step, width: usize, colour: bool) -> Card {
             let title = super::tree::cut(part.title(), inside.saturating_sub(time.len() + 4));
             let pad = " ".repeat(inside.saturating_sub(visible(&title) + time.len() + 3));
             let mark = paint(colour, look.text, look.mark);
-            rows.push(format!("{mark} {title}{pad} {}", paint(colour, "2", &time)));
+            rows.push(Styled::from(vec![
+                mark,
+                format!(" {title}{pad} ").into(),
+                paint(colour, DIM, &time),
+            ]));
         }
     }
     let lessons = tree.iter().filter(|s| Flags::of(**s).changed).count();
-    let mut notes = vec![];
+    let mut notes: Vec<Styled> = vec![];
     if rules > 0 {
-        notes.push(format!(
-            "{} {}",
-            paint(colour, "35", "§"),
-            count(rules, "rule")
-        ));
+        let rule = format!(" {}", count(rules, "rule"));
+        notes.push(Styled::from(vec![paint(colour, MAGENTA, "§"), rule.into()]));
     }
     if lessons > 0 {
-        notes.push(format!(
-            "{} {}",
-            paint(colour, "33", "~"),
-            count(lessons, "lesson")
-        ));
+        let lesson = format!(" {}", count(lessons, "lesson"));
+        notes.push(Styled::from(vec![
+            paint(colour, YELLOW, "~"),
+            lesson.into(),
+        ]));
     }
     if !notes.is_empty() {
-        rows.extend([String::new(), notes.join("   ")]);
+        let gap = || Styled::from("   ");
+        let notes = notes.into_iter().enumerate().flat_map(|(n, note)| match n {
+            0 => vec![note],
+            _ => vec![gap(), note],
+        });
+        rows.extend([Styled::default(), join(notes)]);
     }
     Card {
         title: format!("REPORT · {} · {}", short(trail.id()), step.anchor.name),
@@ -181,10 +191,8 @@ fn leave(out: &mut dyn Write, text: &str, colour: bool) -> Result<(), Failure> {
     if unsafe { libc::tcgetattr(libc::STDIN_FILENO, &mut before) } != 0 {
         return Ok(());
     }
-    write(
-        out,
-        &paint(colour, "2", "m copy markdown · any key to leave"),
-    )?;
+    let keys = paint(colour, DIM, "m copy markdown · any key to leave");
+    write(out, &styled(&keys.into(), colour))?;
     let mut raw = before;
     raw.c_lflag &= !(libc::ICANON | libc::ECHO | libc::ISIG);
     raw.c_cc[libc::VMIN] = 1;
@@ -196,7 +204,10 @@ fn leave(out: &mut dyn Write, text: &str, colour: bool) -> Result<(), Failure> {
     write(out, "\r\x1b[2K")?;
     if read.is_ok_and(|n| n == 1) && key[0] == b'm' {
         let said = crate::terminal::screen::clipboard(text, "copied markdown");
-        write(out, &format!("{}\n", paint(colour, "2", &said)))?;
+        write(
+            out,
+            &format!("{}\n", styled(&paint(colour, DIM, &said).into(), colour)),
+        )?;
     }
     Ok(())
 }

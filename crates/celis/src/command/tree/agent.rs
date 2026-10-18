@@ -1,6 +1,6 @@
 //! The agent view of `celis tree`: every trail, rule and step with its id, plain and whole.
 
-use super::{signs, Level, Line, Summary, Tree};
+use super::{signs, Level, Line, Styled, Summary, Tree};
 use crate::progress::Flags;
 use crate::text::clock::took;
 use celis_trails::records::id::short;
@@ -16,17 +16,17 @@ impl Tree<'_> {
             true => format!("{} · {}", self.heading(note), note.record().anchor.name),
             false => self.heading(note),
         };
-        lines.push(Line::Text(heading));
+        lines.push(Line::Text(heading.into()));
         let progress = progress(&summary);
         if !progress.is_empty() {
-            lines.push(Line::Text(format!("  {progress}")));
+            lines.push(Line::Text(format!("  {progress}").into()));
         }
         self.below(work, "  ", lines);
         let level = Level::of(Trail::new(note).parts());
         self.agent_steps(level.active, "  ", lines);
         for (rule, decision) in &summary.rules {
             let line = format!("  § {} {}", short(&rule.id), decision.content);
-            lines.push(Line::Text(line));
+            lines.push(Line::Text(line.into()));
         }
         self.agent_steps(level.ended, "  ", lines);
     }
@@ -38,7 +38,7 @@ impl Tree<'_> {
             progress if progress.is_empty() => self.heading(note),
             progress => format!("{} · {progress}", self.heading(note)),
         };
-        lines.push(Line::Text(line));
+        lines.push(Line::Text(line.into()));
     }
 
     /// Adds the steps `notes` after `indent`, each as its mark, id and title, its first place and
@@ -52,7 +52,7 @@ impl Tree<'_> {
             if let Some(worked) = self.worked(&note.tree()) {
                 line.push_str(&format!(" · {}", took(worked)));
             }
-            lines.push(Line::Text(line));
+            lines.push(Line::Text(line.into()));
             let under = format!("{indent}  ");
             self.below(note, &under, lines);
             let level = Level::of(note.children());
@@ -65,15 +65,18 @@ impl Tree<'_> {
     /// when done, or why when dropped.
     fn below(&self, note: Step, indent: &str, lines: &mut Vec<Line>) {
         if self.view.full {
-            self.closing(note, indent, true, lines);
-            self.followed(note, indent, lines);
+            let indent = Styled::from(indent.to_string());
+            self.closing(note, &indent, true, lines);
+            self.followed(note, &indent, lines);
             return;
         }
         if let Some(changed) = note.changed() {
-            lines.push(Line::Text(format!("{indent}~ {changed}")));
+            lines.push(Line::Text(format!("{indent}~ {changed}").into()));
         }
         if let Some(reason) = note.dropped() {
-            lines.push(Line::Text(format!("{indent}dropped {}", reason.content)));
+            lines.push(Line::Text(
+                format!("{indent}dropped {}", reason.content).into(),
+            ));
         }
     }
 
@@ -83,7 +86,7 @@ impl Tree<'_> {
         let flags: String = signs(Flags::of(note)).into_iter().map(|(s, _)| s).collect();
         format!(
             "{}{flags} {} {title}",
-            self.mark(note.state()),
+            self.mark(note.state()).content,
             short(note.id())
         )
     }

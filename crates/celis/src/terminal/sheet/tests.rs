@@ -49,7 +49,8 @@ fn cards(trails: &Trails) -> [Sheet; CARDS] {
 fn face(trails: &Trails, title: &str) -> String {
     let sheets = cards(trails);
     let sheet = sheets.iter().find(|s| s.title.starts_with(title));
-    sheet.expect(title).face.join("\n")
+    let face = sheet.expect(title).face.iter().map(|r| r.to_string());
+    face.collect::<Vec<_>>().join("\n")
 }
 
 /// With no record in the 14 days before, the effect prints no change row and no `vs 14 BEFORE`, and the
@@ -59,7 +60,8 @@ fn a_card_with_no_data_before_shows_no_change() {
     let (_home, trails) = worked(3_600);
     let sheets = cards(&trails);
     assert_eq!(sheets[0].title, "00 EFFECT · LAST 14 DAYS");
-    let effect = sheets[0].face.join("\n");
+    let effect: Vec<String> = sheets[0].face.iter().map(|r| r.to_string()).collect();
+    let effect = effect.join("\n");
     assert_eq!(sheets[0].face.len(), 5, "{effect}");
     assert!(!effect.contains("no data before"), "{effect}");
     assert!(!effect.contains("few records"), "{effect}");
