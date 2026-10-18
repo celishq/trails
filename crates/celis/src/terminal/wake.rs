@@ -68,6 +68,16 @@ pub(crate) enum Key {
     Markdown,
 }
 
+impl Key {
+    /// Whether it opens or closes lines, so the keys after it need the tree laid out again.
+    pub(crate) fn lays_out(&self) -> bool {
+        matches!(
+            self,
+            Key::Enter | Key::Right | Key::Left | Key::Star | Key::Full | Key::All
+        )
+    }
+}
+
 /// When stdin is a terminal, turns its echo and line mode off and sends each key it reads to `send`,
 /// `q` as a `Quit`; the terminal's settings before, to set back.
 pub(crate) fn keys(send: Sender<Wake>) -> Option<libc::termios> {

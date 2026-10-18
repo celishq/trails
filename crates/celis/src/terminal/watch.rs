@@ -65,7 +65,6 @@ impl Command {
                 .iter()
                 .find(|i| view.selected.as_ref() == Some(&i.id));
             let copy = selected.and_then(Item::copy);
-            let chosen = selected.filter(|_| copy.is_some()).map(|i| i.id.clone());
             screen.draw(out, &tree, frame.picked, &legend(copy.as_deref()))?;
             let wait = frame.next.map(until);
             let wait = match frame.spun {
@@ -73,12 +72,19 @@ impl Command {
                 false => wait.unwrap_or(Duration::MAX),
             };
             let mut wake = events.recv_timeout(wait);
-            let (mut landed, mut linked) = (false, false);
+            let (mut landed, mut linked, mut laid) = (false, false, false);
             loop {
                 match wake {
                     Ok(Wake::Record(from)) => (landed, linked) = (true, linked || from),
                     Ok(Wake::Resize) => screen.shown.clear(),
                     Ok(Wake::Key(key)) => {
+                        let selected = frame
+                            .order
+                            .iter()
+                            .find(|i| view.selected.as_ref() == Some(&i.id));
+                        let copy = selected.and_then(Item::copy);
+                        let chosen = selected.filter(|_| copy.is_some()).map(|i| i.id.clone());
+                        laid = key.lays_out();
                         screen.said = match (&key, &copy, &chosen) {
                             (Key::Copy, Some(id), _) => {
                                 Some(clipboard(id, &format!("copied {id}")))
@@ -97,10 +103,11 @@ impl Command {
                     Ok(Wake::Quit) | Err(RecvTimeoutError::Disconnected) => return Ok(()),
                     Err(RecvTimeoutError::Timeout) => break,
                 }
-                if !landed {
-                    break;
-                }
-                wake = events.recv_timeout(Duration::from_millis(50));
+                wake = match (landed, laid) {
+                    (true, _) => events.recv_timeout(Duration::from_millis(50)),
+                    (false, false) => events.recv_timeout(Duration::ZERO),
+                    (false, true) => break,
+                };
             }
             match (landed, linked) {
                 (_, true) => trails = self.trails()?,

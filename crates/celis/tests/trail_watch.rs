@@ -275,6 +275,28 @@ fn watch_selects_a_trail_and_opens_it_with_enter() {
     watch.without("1 closed step");
 }
 
+/// A run of `↓` typed at once moves the selection by each key, and draws one tree for the run, not one
+/// for each key.
+#[test]
+fn watch_draws_a_run_of_keys_as_one_tree() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    for n in 1..=12 {
+        add(
+            &repo,
+            &["--under", &trail[..8], "--", &format!("step {n:02}")],
+        );
+    }
+    let mut watch = Watch::start(&repo, &["tree", &trail[..8]]);
+    watch.until("step 01");
+    let before = watch.trees(Duration::from_millis(300)).len();
+    let tenth = watch.rows()[11].clone();
+    watch.press(&"\x1b[B".repeat(10));
+    watch.until(&format!("▌{}", &tenth[1..]));
+    let drawn = watch.trees(Duration::from_millis(300)).len() - before;
+    assert!(drawn < 4, "{drawn} trees for 10 keys");
+}
+
 /// The raw bytes a watch printed so far.
 fn watch_raw(watch: &mut Watch) -> Vec<u8> {
     watch.shown(Duration::ZERO);
