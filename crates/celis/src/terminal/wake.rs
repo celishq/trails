@@ -1,13 +1,19 @@
-//! What wakes a watch: a record that lands, a key, a new size, or an interrupt.
+//! What wakes a watch: a record that lands, the store read again, a key, a new size, or an interrupt.
 
+use crate::failure::Failure;
+use celis_trails::Trails;
 use std::io::Read;
 use std::os::fd::FromRawFd;
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::mpsc::Sender;
 
-/// What wakes the watch before its next tick: a record, in a linked folder or not.
+/// What wakes the watch before its next tick: the files of records that landed, a change it must read
+/// the whole store for, or the store read again.
 pub(crate) enum Wake {
-    Record(bool),
+    Record(Vec<PathBuf>),
+    Rescan,
+    Store(Box<Result<Trails, Failure>>),
     Resize,
     Key(Key),
     Quit,
@@ -66,6 +72,16 @@ pub(crate) enum Key {
     All,
     Copy,
     Markdown,
+}
+
+impl Key {
+    /// Whether it opens or closes lines, so the keys after it need the tree laid out again.
+    pub(crate) fn lays_out(&self) -> bool {
+        matches!(
+            self,
+            Key::Enter | Key::Right | Key::Left | Key::Star | Key::Full | Key::All
+        )
+    }
 }
 
 /// When stdin is a terminal, turns its echo and line mode off and sends each key it reads to `send`,

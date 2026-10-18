@@ -4,10 +4,10 @@ use super::glyph::{bar, columns, strip};
 use super::ink::Ink;
 use super::table::{Row, Table};
 use crate::command::tree::{cut, look, visible};
-use crate::progress::{Grade, Period, Reuse, Tally};
+use crate::progress::{Grade, Model, Period, Reuse, Tally};
 use crate::text::clock::{day, midnight, took};
 use crate::text::line::plural;
-use celis_trails::{State, Step, Trails};
+use celis_trails::{Decisions, State, Step};
 use std::collections::BTreeMap;
 
 /// A card of stats: its title, the rows of its face, and the table it opens to.
@@ -31,30 +31,29 @@ pub(crate) const CARDS: usize = 7;
 /// The fewest records a number of the effect counts before it shows a change.
 const FEW: usize = 10;
 
-/// The cards of `trails` at its time: the effect `full` characters wide inside, the others `inside`;
+/// The cards of `model` at its time: the effect `full` characters wide inside, the others `inside`;
 /// their numbers plain text when `plain`.
 pub(crate) fn sheets(
-    trails: &Trails,
+    model: &Model,
     full: usize,
     inside: usize,
     plain: bool,
     colour: bool,
 ) -> [Sheet; CARDS] {
-    let steps = trails.steps();
-    let reuse = Reuse::new(&steps);
-    let now = trails.now;
-    let last = Period::new(&steps, now.saturating_sub(SPAN), now + 1);
+    let (steps, reuse) = (model.steps, model.reuse);
+    let now = steps.now();
+    let last = Period::new(steps, now.saturating_sub(SPAN), now + 1);
     let before = Period::new(
-        &steps,
+        steps,
         now.saturating_sub(2 * SPAN),
         now.saturating_sub(SPAN),
     );
     let ink = Ink { plain, colour };
     [
         effect(&last, &before, full, ink),
-        followed(&reuse, inside, ink),
-        rules(trails, &reuse, inside, ink),
-        work(&steps, &before, now, inside, ink),
+        followed(reuse, inside, ink),
+        rules(model.decisions, reuse, inside, ink),
+        work(steps, &before, now, inside, ink),
         time(&last, inside, ink),
         outcome(&last, inside, ink),
         projects(&last, inside, ink),
@@ -249,8 +248,8 @@ fn followed(reuse: &Reuse, inside: usize, ink: Ink) -> Sheet {
 }
 
 /// The rules used: the decisions later steps used, most used first, as bars.
-fn rules(trails: &Trails, reuse: &Reuse, inside: usize, ink: Ink) -> Sheet {
-    let used = reuse.used(&trails.decisions());
+fn rules(decisions: &Decisions, reuse: &Reuse, inside: usize, ink: Ink) -> Sheet {
+    let used = reuse.used(decisions);
     let most = used.first().map_or(0, |(_, _, n)| *n);
     let label = 18.min(inside / 2);
     let width = inside.saturating_sub(label + 5);

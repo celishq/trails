@@ -10,12 +10,12 @@ use crate::{
     StepRecord, Steps, Store, Trail, Written,
 };
 use celis_nostr::{Account, Note};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 /// The records of a store at the time `now`, and the account's writes on them, each signed now. A
-/// step's check runs for `limit` seconds at most.
+/// step's check runs for `limit` seconds at most. Readers take the time from its steps.
 pub struct Trails {
-    pub now: u64,
+    now: u64,
     store: Store,
     records: Vec<Note>,
     limit: u64,
@@ -38,13 +38,14 @@ impl Trails {
         self.records = self.store.records();
     }
 
-    /// Adds the records written to the store since the last read; whether there were any.
-    pub fn fresh(&mut self) -> bool {
-        let fresh = self.store.fresh();
-        self.records.extend(fresh.iter().cloned());
+    /// Adds the records of the files `paths` names that it lacks, as `Store::take` reads them; those
+    /// records.
+    pub fn take(&mut self, paths: &[PathBuf]) -> Vec<Note> {
+        let taken = self.store.take(paths);
+        self.records.extend(taken.iter().cloned());
         self.records
             .sort_by(|a, b| (a.created_at, &a.id).cmp(&(b.created_at, &b.id)));
-        !fresh.is_empty()
+        taken
     }
 
     /// Whether the store holds no record.

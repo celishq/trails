@@ -35,7 +35,9 @@ impl Command {
             if !self.held()? {
                 return Err(Failure::no_step(&ids[0]));
             }
-            parts.push(markdown(&self.trails()?, ids)?.trim_end().to_string());
+            let trails = self.trails()?;
+            let text = markdown(&trails.steps(), &trails.decisions(), ids)?;
+            parts.push(text.trim_end().to_string());
         }
         let text = parts.join("\n\n");
         super::show(out, args.json, "issue", json!(text), &text)

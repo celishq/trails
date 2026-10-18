@@ -1,5 +1,5 @@
 use super::*;
-use celis_trails::{Anchor, Draft, Store};
+use celis_trails::{Anchor, Draft, Store, Trails};
 use tempfile::TempDir;
 
 /// The second a store's one step closed.
@@ -40,9 +40,14 @@ fn worked(later: u64) -> (TempDir, Trails) {
     (home, trails)
 }
 
+/// The cards of `trails`, 92 and 43 characters wide inside.
+fn cards(trails: &Trails) -> [Sheet; CARDS] {
+    Model::of(trails, |model| sheets(model, 92, 43, false, false))
+}
+
 /// The face of the card of `trails` whose title starts with `title`, its rows joined by new lines.
 fn face(trails: &Trails, title: &str) -> String {
-    let sheets = sheets(trails, 92, 43, false, false);
+    let sheets = cards(trails);
     let sheet = sheets.iter().find(|s| s.title.starts_with(title));
     sheet.expect(title).face.join("\n")
 }
@@ -52,7 +57,7 @@ fn face(trails: &Trails, title: &str) -> String {
 #[test]
 fn a_card_with_no_data_before_shows_no_change() {
     let (_home, trails) = worked(3_600);
-    let sheets = sheets(&trails, 92, 43, false, false);
+    let sheets = cards(&trails);
     assert_eq!(sheets[0].title, "00 EFFECT · LAST 14 DAYS");
     let effect = sheets[0].face.join("\n");
     assert_eq!(sheets[0].face.len(), 5, "{effect}");

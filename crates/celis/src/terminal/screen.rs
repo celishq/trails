@@ -54,25 +54,20 @@ impl Command {
         Ok(true)
     }
 
-    /// Sends a `Record` to `send` each time a record lands in the store or a linked folder, saying
-    /// whether in a linked folder; the watcher that does it, kept while it should.
+    /// Sends to `send` a `Record` with the files each time records land in the store or a linked folder,
+    /// or a `Rescan` when the system lost track of them; the watcher that does it, kept while it should.
     pub(crate) fn listen(&self, send: Sender<Wake>) -> Result<RecommendedWatcher, Failure> {
         let home = self.home()?;
         let shared = home.join("trails/shared");
         let links = Link::all(&home, &self.folder).into_iter().map(|l| l.folder);
-        let ours = [
-            shared.clone(),
-            std::fs::canonicalize(&shared).unwrap_or_default(),
-        ];
         let landed = move |event: notify::Result<notify::Event>| {
             let Ok(event) = event else { return };
-            if !event.kind.is_access() {
-                let linked = event
-                    .paths
-                    .iter()
-                    .any(|p| !ours.iter().any(|o| p.starts_with(o)));
-                let _ = send.send(Wake::Record(linked));
-            }
+            let wake = match event.need_rescan() {
+                true => Wake::Rescan,
+                false if event.kind.is_access() => return,
+                false => Wake::Record(event.paths),
+            };
+            let _ = send.send(wake);
         };
         let mut watcher = notify::recommended_watcher(landed).map_err(anyhow::Error::from)?;
         for folder in std::iter::once(shared).chain(links) {
@@ -85,21 +80,22 @@ impl Command {
 }
 
 /// What a watch shows of its tree: the first line in view, whether the view moves to the selected
-/// line on the next draw, the lines a page holds, the text on the screen, and what the last key did
+/// line on the next draw, the lines a page holds, the rows on the screen, and what the last key did
 /// when it has something to say.
 #[derive(Default)]
 pub(crate) struct Screen {
     pub top: usize,
     pub follow: bool,
     pub page: usize,
-    pub shown: String,
+    pub shown: Vec<String>,
     pub said: Option<String>,
 }
 
 impl Screen {
-    /// Draws `tree` over the screen from the top left, when it changed: each line cut short of the last
-    /// column and cleared to its end, the rows above the last scrolled to show its `picked` line when the
-    /// selection moved, `keys` or what the last key did on the last row, dim, and the rest cleared.
+    /// Draws `tree` over the screen from the top left, each row only when it changed: each line cut short
+    /// of the last column and cleared to its end, the rows above the last scrolled to show its `picked`
+    /// line when the selection moved, `keys` or what the last key did on the last row, dim, and the rest
+    /// cleared.
     pub fn draw(
         &mut self,
         out: &mut dyn Write,
@@ -111,10 +107,7 @@ impl Screen {
         let width = size.map(|s| usize::from(s.ws_col)).filter(|&w| w > 1);
         let width = width.map(|w| w - 1);
         let rows = size.map(|s| usize::from(s.ws_row)).filter(|&r| r > 0);
-        let lines: Vec<String> = tree
-            .lines()
-            .map(|l| width.map_or(l.to_string(), |w| cut(l, w)))
-            .collect();
+        let lines: Vec<&str> = tree.lines().collect();
         let lines = match rows
             .map(|r| r - 1)
             .filter(|&body| body >= 3 && lines.len() > body)
@@ -122,34 +115,46 @@ impl Screen {
             Some(body) => self.window(lines, body, picked),
             None => {
                 self.top = 0;
-                lines
+                lines.into_iter().map(str::to_string).collect()
             }
         };
+        let lines: Vec<String> = lines
+            .into_iter()
+            .map(|l| match width {
+                Some(w) => cut(&l, w),
+                None => l,
+            })
+            .collect();
         let said = self.said.as_deref().unwrap_or(keys);
         let said = width.map_or(said.to_string(), |w| cut(said, w));
-        let said = format!("\x1b[2m{said}\x1b[0m");
-        let keys = match rows {
-            Some(rows) => format!("\x1b[J\x1b[{rows};1H{said}"),
-            None => format!("\n{said}"),
-        };
-        let text = format!(
-            "\x1b[?2026h\x1b[H{}\x1b[K{keys}\x1b[K\x1b[J\x1b[?2026l",
-            lines.join("\x1b[K\n")
-        );
-        if text == self.shown {
+        let mut screen = lines;
+        let last = rows.map(|r| r - 1).filter(|&k| k >= screen.len());
+        screen.resize(last.unwrap_or(screen.len()), String::new());
+        screen.push(format!("\x1b[2m{said}\x1b[0m"));
+        if screen == self.shown {
             return Ok(());
         }
+        let mut text = String::from("\x1b[?2026h");
+        for (n, row) in screen.iter().enumerate() {
+            if self.shown.get(n) != Some(row) {
+                text += &format!("\x1b[{};1H{row}\x1b[K", n + 1);
+            }
+        }
+        if rows.is_none() && (self.shown.is_empty() || screen.len() < self.shown.len()) {
+            text += &format!("\x1b[{};1H\x1b[J", screen.len() + 1);
+        }
+        text += "\x1b[?2026l";
         write!(out, "{text}")
             .and_then(|_| out.flush())
             .map_err(anyhow::Error::from)?;
-        self.shown = text;
+        self.shown = screen;
         Ok(())
     }
 
     /// The `body` rows of `lines` in view from `top`: a first row for the lines above it and a last
     /// row for the lines below it, when there are any; the `picked` line in view when the selection
     /// moved.
-    fn window(&mut self, lines: Vec<String>, body: usize, picked: Option<usize>) -> Vec<String> {
+    fn window(&mut self, lines: Vec<&str>, body: usize, picked: Option<usize>) -> Vec<String> {
         let len = lines.len();
         let fit = |top: usize| {
             let up = usize::from(top > 0);
@@ -171,7 +176,11 @@ impl Screen {
         if self.top > 0 {
             view.push(format!("  \x1b[2m↑ {} more\x1b[0m", self.top));
         }
-        view.extend(lines[self.top..self.top + shown].iter().cloned());
+        view.extend(
+            lines[self.top..self.top + shown]
+                .iter()
+                .map(|l| l.to_string()),
+        );
         if self.top + shown < len {
             view.push(format!("  \x1b[2m↓ {} more\x1b[0m", len - self.top - shown));
         }

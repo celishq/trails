@@ -1,21 +1,20 @@
 //! A `celis` command that runs on a terminal, and what it prints there.
 
 use super::Repo;
+use std::cell::Cell;
 use std::io::Read;
 use std::os::fd::FromRawFd;
 use std::process::{Child, Command, Stdio};
 use std::sync::mpsc::{channel, Receiver};
 use std::time::{Duration, Instant};
 
-/// What starts each tree: a frame drawn from the top left.
-pub const FRAME: &str = "\x1b[?2026h\x1b[H";
-
-/// A running `celis tree` on a terminal, and the text it printed so far.
+/// A running `celis tree` on a terminal, the text it printed so far, and the terminal's rows once set.
 pub struct Watch {
     pub child: Child,
     lead: i32,
     bytes: Receiver<Vec<u8>>,
     pub seen: Vec<u8>,
+    height: Cell<Option<u16>>,
 }
 
 impl Watch {
@@ -61,6 +60,7 @@ impl Watch {
             lead,
             bytes,
             seen: Vec::new(),
+            height: Cell::new(None),
         }
     }
 
@@ -79,15 +79,88 @@ impl Watch {
     /// The trees printed so far, one string each with no line or frame codes, after a wait of `wait`
     /// for more.
     pub fn trees(&mut self, wait: Duration) -> Vec<String> {
-        self.shown(wait)
-            .split(FRAME)
-            .skip(1)
-            .map(|t| {
-                t.replace("\x1b[K", "")
-                    .replace("\x1b[J", "")
-                    .replace("\x1b[?2026l", "")
-            })
-            .collect()
+        self.screens(wait).iter().map(|t| plain(t)).collect()
+    }
+
+    /// The screen after each frame printed so far, with its colour codes: its rows above the last joined
+    /// by `\r\n`, then the last after `\r\n`, or after a move to it once the terminal's rows are set.
+    fn screens(&mut self, wait: Duration) -> Vec<String> {
+        self.shown(wait);
+        let text = String::from_utf8_lossy(&self.seen).into_owned();
+        let (mut rows, mut at, mut screens) = (Vec::<String>::new(), 0, Vec::new());
+        let mut chars = text.chars().peekable();
+        while let Some(c) = chars.next() {
+            let row = |rows: &mut Vec<String>, at: usize| {
+                if rows.len() <= at {
+                    rows.resize(at + 1, String::new());
+                }
+            };
+            match c {
+                '\x1b' if chars.peek() == Some(&'[') => {
+                    chars.next();
+                    let mut code = String::new();
+                    while let Some(&c) = chars.peek() {
+                        chars.next();
+                        code.push(c);
+                        if c.is_ascii_alphabetic() {
+                            break;
+                        }
+                    }
+                    match code.chars().last() {
+                        Some('H') => {
+                            at = code
+                                .split(';')
+                                .next()
+                                .and_then(|r| r.parse().ok())
+                                .unwrap_or(1)
+                                - 1;
+                            row(&mut rows, at);
+                            rows[at].clear();
+                        }
+                        Some('J') => rows.truncate(at),
+                        Some('m') => {
+                            row(&mut rows, at);
+                            rows[at].push_str(&format!("\x1b[{code}"));
+                        }
+                        _ if code == "?2026l" => screens.push(self.screen(&rows)),
+                        _ => {}
+                    }
+                }
+                '\r' => {}
+                '\n' => {
+                    at += 1;
+                    row(&mut rows, at);
+                    rows[at].clear();
+                }
+                c => {
+                    row(&mut rows, at);
+                    rows[at].push(c);
+                }
+            }
+        }
+        screens
+    }
+
+    /// The screen `rows` show, as `screens` gives it, cut to the terminal's rows once set.
+    fn screen(&self, rows: &[String]) -> String {
+        let shown = self
+            .height
+            .get()
+            .map_or(rows.len(), |h| rows.len().min(h.into()));
+        let rows = &rows[..shown];
+        let Some((last, body)) = rows.split_last() else {
+            return String::new();
+        };
+        match self.height.get() {
+            Some(height) if rows.len() == usize::from(height) => {
+                let end = body
+                    .iter()
+                    .rposition(|r| !r.is_empty())
+                    .map_or(0, |n| n + 1);
+                format!("{}\x1b[{height};1H{last}", body[..end].join("\r\n"))
+            }
+            _ => format!("{}\r\n{last}", body.join("\r\n")),
+        }
     }
 
     /// Waits until the newest tree holds `text`; the time it took.
@@ -107,9 +180,7 @@ impl Watch {
 
     /// The newest tree with its colour codes, after a wait of `wait` for more.
     pub fn coloured(&mut self, wait: Duration) -> String {
-        self.shown(wait);
-        let text = String::from_utf8_lossy(&self.seen).into_owned();
-        text.rsplit(FRAME).next().unwrap_or("").to_string()
+        self.screens(wait).pop().unwrap_or_default()
     }
 
     /// The lines of the newest tree, each with no codes, above the key line.
@@ -147,6 +218,7 @@ impl Watch {
 
     /// Turns the terminal `rows` high and `columns` wide, and signals it.
     pub fn size(&self, rows: u16, columns: u16) {
+        self.height.set(Some(rows));
         let size = libc::winsize {
             ws_row: rows,
             ws_col: columns,

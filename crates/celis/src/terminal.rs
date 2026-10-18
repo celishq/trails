@@ -4,6 +4,7 @@ pub mod board;
 pub mod card;
 pub mod glyph;
 pub mod ink;
+pub mod live;
 pub mod screen;
 pub mod sheet;
 pub mod table;

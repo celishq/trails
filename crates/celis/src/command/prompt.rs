@@ -97,7 +97,7 @@ impl Command {
     /// agent.
     fn recall(&self, trails: &Trails, err: &mut dyn Write, asked: &Path) -> Result<bool, Failure> {
         if asked.exists() || trails.is_empty() {
-            if !today(&trails.steps(), trails.now).is_empty() {
+            if !today(&trails.steps()).is_empty() {
                 super::put(err, &joins(None))?;
             }
             return Ok(false);

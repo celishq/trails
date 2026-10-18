@@ -263,7 +263,7 @@ fn watch_selects_a_trail_and_opens_it_with_enter() {
     watch.until("an ended trail");
     watch.press("\x1b[B\x1b[B");
     std::thread::sleep(Duration::from_millis(300));
-    let raw = String::from_utf8_lossy(&watch_raw(&mut watch)).into_owned();
+    let raw = watch.coloured(Duration::ZERO);
     assert!(raw.contains("\r\n▌ \x1b[2m▸\x1b[0m"), "{raw:?}");
     assert!(raw.contains("\x1b[1man ended trail"), "{raw:?}");
     let last = watch.trees(Duration::ZERO).pop().unwrap();
@@ -273,6 +273,54 @@ fn watch_selects_a_trail_and_opens_it_with_enter() {
     watch.until("▸ ✓ 1 closed step");
     watch.press("\r");
     watch.without("1 closed step");
+}
+
+/// A run of `↓` typed at once moves the selection by each key, and draws one tree for the run, not one
+/// for each key.
+#[test]
+fn watch_draws_a_run_of_keys_as_one_tree() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    for n in 1..=12 {
+        add(
+            &repo,
+            &["--under", &trail[..8], "--", &format!("step {n:02}")],
+        );
+    }
+    let mut watch = Watch::start(&repo, &["tree", &trail[..8]]);
+    watch.until("step 01");
+    let before = watch.trees(Duration::from_millis(300)).len();
+    let tenth = watch.rows()[11].clone();
+    watch.press(&"\x1b[B".repeat(10));
+    watch.until(&format!("▌{}", &tenth[1..]));
+    let drawn = watch.trees(Duration::from_millis(300)).len() - before;
+    assert!(drawn < 4, "{drawn} trees for 10 keys");
+}
+
+/// A spinner tick rewrites only the rows that changed, not the whole tree.
+#[test]
+fn watch_rewrites_only_the_rows_a_tick_changes() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    for n in 1..=8 {
+        add(&repo, &["--under", &trail[..8], "--", &format!("step {n}")]);
+    }
+    let step = add(&repo, &["--under", &trail[..8], "--", "the step"]);
+    let o = cli(&repo, &["step", "start", &step[..8]]);
+    assert!(o.status.success(), "{}", err(&o));
+    let mut watch = Watch::start(&repo, &["tree", &trail[..8]]);
+    watch.until("the step");
+    let raw = String::from_utf8_lossy(&watch_raw(&mut watch)).into_owned();
+    let first = raw.matches("\x1b[?2026h").count();
+    std::thread::sleep(Duration::from_millis(600));
+    let raw = String::from_utf8_lossy(&watch_raw(&mut watch)).into_owned();
+    let frames: Vec<&str> = raw.split("\x1b[?2026h").skip(1).collect();
+    let whole = frames[0].len();
+    let ticks = &frames[first..];
+    assert!(ticks.len() >= 3, "{frames:?}");
+    for tick in ticks {
+        assert!(tick.len() * 3 < whole, "{tick:?} of {whole} bytes");
+    }
 }
 
 /// The raw bytes a watch printed so far.

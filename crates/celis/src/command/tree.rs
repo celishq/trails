@@ -2,12 +2,14 @@
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use crate::progress::{Flags, Grade, Reuse, Tally};
+use crate::progress::{Flags, Grade, Model, Reuse, Tally};
 use crate::text::clock::{day, midnight, weekday};
 use crate::text::clock::{stride, took};
 use celis_trails::records::id::short;
 use celis_trails::step::steps::LIFE;
-use celis_trails::{Decisions, State, Step, Steps, Trail, Trails};
+use celis_trails::{Decisions, State, Step, Steps, Trail};
+pub(crate) use layout::Layout;
+use layout::{Group, Key};
 use level::{ids, Level};
 use serde_json::json;
 use std::cell::{Cell, RefCell};
@@ -34,8 +36,11 @@ impl Command {
         }
         let tree = match (self.held()?, id) {
             (true, _) => {
-                let view = View::of(args);
-                self.frame(&self.trails()?, args, None, &view)?.text
+                let trails = self.trails()?;
+                Model::of(&trails, |model| {
+                    self.frame(model, None, args, None, &View::of(args))
+                })?
+                .text
             }
             (false, Some(id)) => return Err(Failure::no_step(id)),
             (false, None) => String::new(),
@@ -48,27 +53,28 @@ impl Command {
         Ok(())
     }
 
-    /// The tree of `trails` that `args` names, `width` wide, as `view` shows it.
+    /// The tree of `model` that `args` names, `width` wide, as `view` shows it, from the day groups
+    /// `layout` kept.
     pub(crate) fn frame(
         &self,
-        trails: &Trails,
+        model: &Model,
+        layout: Option<&Layout>,
         args: &Args,
         width: Option<usize>,
         view: &View,
     ) -> Result<Frame, Failure> {
         let id = args.words.get(1);
-        let steps = trails.steps();
-        let decisions = trails.decisions();
-        let reuse = Reuse::new(&steps);
+        let steps = model.steps;
         let chosen: Vec<Step> = match (id, view.all) {
             (Some(id), _) => vec![steps.find(id)?],
             (None, true) => steps.roots().into_iter().rev().collect(),
-            (None, false) => today(&steps, trails.now),
+            (None, false) => today(steps),
         };
         let tree = Tree {
-            steps: &steps,
-            decisions: &decisions,
-            reuse: &reuse,
+            steps,
+            decisions: model.decisions,
+            reuse: model.reuse,
+            layout,
             colour: view.watch && self.colour(),
             grouped: id.is_none(),
             width: width.map(|w| w.saturating_sub(2 * usize::from(view.watch))),
@@ -81,33 +87,27 @@ impl Command {
         };
         let mut printed = Vec::new();
         tree.print(&chosen, "trail", args.json, &mut printed)?;
-        Ok(Frame {
-            text: String::from_utf8_lossy(&printed).into_owned(),
-            next: tree.next.get(),
-            spun: tree.spun.get(),
-            order: tree.order.take(),
-            picked: tree.picked.get(),
-        })
+        Ok(tree.frame(&printed))
     }
 }
 
-/// Each trail of every project that is active or has a record from the day of `now`, newest first.
-pub(crate) fn today<'a>(steps: &'a Steps<'a>, now: u64) -> Vec<Step<'a>> {
-    let midnight = midnight(now);
+/// Each trail of every project that is active or has a record from the day of `steps`, newest first.
+pub(crate) fn today<'a>(steps: &'a Steps<'a>) -> Vec<Step<'a>> {
+    let midnight = midnight(steps.now());
     let roots = steps.roots().into_iter().rev();
     roots
         .filter(|s| s.state().active() || s.newest() >= midnight)
         .collect()
 }
 
-/// How a tree shows: in a watch, with a cursor column; full; all with no id; and in a watch, the
-/// spinner's frame, the lines it opened or closed, and the line it selected.
+/// How a tree shows: in a watch, with a cursor column; full; all with no id; and in a watch, with the
+/// spinner, the lines it opened or closed, and the line it selected.
 #[derive(Default)]
 pub(crate) struct View {
     pub watch: bool,
     pub full: bool,
     pub all: bool,
-    pub spin: Option<usize>,
+    pub spin: bool,
     pub flipped: HashSet<String>,
     pub selected: Option<String>,
 }
@@ -123,18 +123,21 @@ impl View {
     }
 }
 
-/// A printed tree: its text, the earliest time a time it shows changes, whether it shows the spinner,
-/// the lines a watch selects in the order it prints them, and the line of the selected one.
+/// A printed tree or part of one: its text, the earliest time a time it shows changes, whether it shows
+/// the spinner, the lines a watch selects in the order it prints them, the line of the selected one,
+/// and the count of its lines.
 pub(crate) struct Frame {
     pub text: String,
     pub next: Option<u64>,
     pub spun: bool,
     pub order: Vec<Item>,
     pub picked: Option<usize>,
+    pub lines: usize,
 }
 
 /// A trail, rule or step a watch selects: its id, whether it is open, the trail or step it is under,
 /// and every rule and step under it.
+#[derive(Clone)]
 pub(crate) struct Item {
     pub id: String,
     pub open: bool,
@@ -153,14 +156,15 @@ impl Item {
 /// What `tree` with no id prints while it has no trail to print.
 pub(crate) const EMPTY: &str = "No active trails. Run `celis tree --all` to see every trail.";
 
-/// The steps and decisions a tree is printed from, and how: in colour; grouped by day and project; each
-/// line cut to `width`; as `view` shows it, off a watch as the agent view. `next` holds the earliest time a time it printed
+/// The steps and decisions a tree is printed from, the day groups it keeps, and how: in colour; grouped by
+/// day and project; each line cut to `width`; as `view` shows it, off a watch as the agent view. `next` holds the earliest time a time it printed
 /// changes, `spun` whether it printed the spinner, `order` the lines a watch selects, `printed` the count of
 /// its lines, and `picked` the line of the selected trail.
 pub(crate) struct Tree<'a> {
     pub steps: &'a Steps<'a>,
     pub decisions: &'a Decisions<'a>,
     pub reuse: &'a Reuse<'a>,
+    pub layout: Option<&'a Layout>,
     pub colour: bool,
     pub grouped: bool,
     pub width: Option<usize>,
@@ -224,61 +228,23 @@ impl Tree<'_> {
             }
             return self.show(lines, out);
         }
-        let mut days: Vec<(u64, Vec<Step>)> = vec![];
+        let mut days: Vec<(u64, String, Vec<Step>)> = vec![];
         for &note in notes {
             let at = match self.view.all {
                 true => note.note().created_at,
-                false => self.steps.now,
+                false => self.steps.now(),
             };
+            let name = day(at);
             match days.last_mut() {
-                Some((first, trails)) if day(*first) == day(at) => trails.push(note),
-                _ => days.push((at, vec![note])),
+                Some((_, last, trails)) if *last == name => trails.push(note),
+                _ => days.push((at, name, vec![note])),
             }
         }
-        for (n, (at, trails)) in days.into_iter().enumerate() {
+        for (n, (at, name, trails)) in days.into_iter().enumerate() {
             if n > 0 {
                 self.put(out, "")?;
             }
-            let active = trails.iter().filter(|s| s.state().active()).count();
-            let counts = format!(" · {active} active · {} done", trails.len() - active);
-            let head = format!(
-                "{}{}",
-                self.paint(BOLD, &weekday(at)),
-                self.paint(DIM, &counts)
-            );
-            let mut lines = vec![Line::Mark(false, Box::new(Line::Text(head)))];
-            let (active, rest): (Vec<Step>, Vec<Step>) =
-                trails.into_iter().partition(|s| s.state().active());
-            let mut last = None;
-            if !active.is_empty() {
-                lines.push(self.gap());
-            }
-            for note in active {
-                let block = self.view.full || !self.view.all;
-                self.trail(note, block, &mut last, &mut lines);
-            }
-            let mut projects: Vec<(&str, Vec<Step>)> = vec![];
-            for note in rest {
-                let project = note.record().anchor.project.as_str();
-                match projects.iter_mut().find(|(p, _)| *p == project) {
-                    Some((_, trails)) => trails.push(note),
-                    None => projects.push((project, vec![note])),
-                }
-            }
-            for (_, trails) in projects {
-                let name = &trails[0].record().anchor.name;
-                lines.push(self.gap());
-                lines.push(Line::Mark(
-                    false,
-                    Box::new(Line::Text(self.paint(PROJECT, name))),
-                ));
-                let mut last = None;
-                for note in trails {
-                    let block = self.view.full || (!self.view.all && !self.view.watch);
-                    self.trail(note, block, &mut last, &mut lines);
-                }
-            }
-            self.show(lines, out)?;
+            self.group((at, name), trails, out)?;
         }
         if self.view.watch && !notes.is_empty() {
             self.put(out, "")?;
@@ -303,6 +269,143 @@ impl Tree<'_> {
             self.show(lines, out)?;
         }
         Ok(())
+    }
+
+    /// Prints the day group of `trails` from the day `name` of `at` as `day` does, or as it last did
+    /// when its layout kept it and nothing it shows changed.
+    fn group(
+        &self,
+        (at, name): (u64, String),
+        trails: Vec<Step>,
+        out: &mut dyn Write,
+    ) -> Result<(), Failure> {
+        let Some(layout) = self.layout else {
+            return self.day(at, trails, out);
+        };
+        let key = Key {
+            trails: trails.iter().map(|s| s.id().to_string()).collect(),
+            width: self.width,
+            full: self.view.full,
+            all: self.view.all,
+        };
+        if let Some(group) = layout.get(&name, &key, self.view, self.steps.now()) {
+            if cfg!(debug_assertions) {
+                let blank = self.blank();
+                let mut text = Vec::new();
+                blank.day(at, trails, &mut text)?;
+                assert_eq!(
+                    blank.frame(&text).text,
+                    group.part.text,
+                    "a kept group is old"
+                );
+            }
+            return self.add(&group.part, out);
+        }
+        let blank = self.blank();
+        let mut text = Vec::new();
+        blank.day(at, trails, &mut text)?;
+        let part = blank.frame(&text);
+        self.add(&part, out)?;
+        let ids: HashSet<String> = part
+            .order
+            .iter()
+            .flat_map(|i| std::iter::once(&i.id).chain(&i.under))
+            .cloned()
+            .collect();
+        let group = Group {
+            key,
+            flipped: layout::flipped(&ids, self.view),
+            selected: layout::selected(&ids, self.view),
+            ids,
+            part,
+        };
+        layout.keep(name, group);
+        Ok(())
+    }
+
+    /// A tree like it that has printed nothing.
+    fn blank(&self) -> Tree<'_> {
+        Tree {
+            spun: Cell::default(),
+            order: RefCell::default(),
+            printed: Cell::default(),
+            picked: Cell::default(),
+            next: Cell::default(),
+            ..*self
+        }
+    }
+
+    /// What it printed as `text`.
+    fn frame(self, text: &[u8]) -> Frame {
+        Frame {
+            text: String::from_utf8_lossy(text).into_owned(),
+            next: self.next.get(),
+            spun: self.spun.get(),
+            order: self.order.take(),
+            picked: self.picked.get(),
+            lines: self.printed.get(),
+        }
+    }
+
+    /// Prints `part` after what it printed.
+    fn add(&self, part: &Frame, out: &mut dyn Write) -> Result<(), Failure> {
+        out.write_all(part.text.as_bytes())
+            .map_err(anyhow::Error::from)?;
+        self.order.borrow_mut().extend(part.order.iter().cloned());
+        if let (None, Some(picked)) = (self.picked.get(), part.picked) {
+            self.picked.set(Some(self.printed.get() + picked));
+        }
+        self.printed.set(self.printed.get() + part.lines);
+        if let Some(next) = part.next {
+            self.until(next);
+        }
+        self.spun.set(self.spun.get() || part.spun);
+        Ok(())
+    }
+
+    /// Prints the day group of `trails` from the day of `at`: a line with the day and its counts, then
+    /// its active trails, then the rest by project.
+    fn day(&self, at: u64, trails: Vec<Step>, out: &mut dyn Write) -> Result<(), Failure> {
+        let active = trails.iter().filter(|s| s.state().active()).count();
+        let counts = format!(" · {active} active · {} done", trails.len() - active);
+        let head = format!(
+            "{}{}",
+            self.paint(BOLD, &weekday(at)),
+            self.paint(DIM, &counts)
+        );
+        let mut lines = vec![Line::Mark(false, Box::new(Line::Text(head)))];
+        let (active, rest): (Vec<Step>, Vec<Step>) =
+            trails.into_iter().partition(|s| s.state().active());
+        let mut last = None;
+        if !active.is_empty() {
+            lines.push(self.gap());
+        }
+        for note in active {
+            let block = self.view.full || !self.view.all;
+            self.trail(note, block, &mut last, &mut lines);
+        }
+        let mut projects: Vec<(&str, Vec<Step>)> = vec![];
+        for note in rest {
+            let project = note.record().anchor.project.as_str();
+            match projects.iter_mut().find(|(p, _)| *p == project) {
+                Some((_, trails)) => trails.push(note),
+                None => projects.push((project, vec![note])),
+            }
+        }
+        for (_, trails) in projects {
+            let name = &trails[0].record().anchor.name;
+            lines.push(self.gap());
+            lines.push(Line::Mark(
+                false,
+                Box::new(Line::Text(self.paint(PROJECT, name))),
+            ));
+            let mut last = None;
+            for note in trails {
+                let block = self.view.full || (!self.view.all && !self.view.watch);
+                self.trail(note, block, &mut last, &mut lines);
+            }
+        }
+        self.show(lines, out)
     }
 
     /// A blank line, which no element holds.
@@ -480,9 +583,9 @@ impl Tree<'_> {
         if let Some(worked) = summary.worked {
             self.labelled(lines, &hair, "took", &took(worked));
         }
-        if self.view.spin.is_some() && state.active() {
-            let seconds = self.steps.now.saturating_sub(note.newest());
-            self.until(self.steps.now + stride(seconds));
+        if self.view.spin && state.active() {
+            let seconds = self.steps.now().saturating_sub(note.newest());
+            self.until(self.steps.now() + stride(seconds));
             self.labelled(lines, &hair, "active", &format!("{} ago", took(seconds)));
         }
         if !self.grouped {
@@ -629,7 +732,7 @@ impl Tree<'_> {
                 steps,
                 (rules > 0).then(|| column(rules, "rule")),
                 summary.worked.map(took),
-                Some(self.id(note)),
+                None,
             ],
             rest: None,
         });
@@ -670,7 +773,7 @@ impl Tree<'_> {
                         true => None,
                         false => self.worked(&note.tree()).map(took),
                     },
-                    Some(self.id(note)),
+                    None,
                 ],
                 rest: open.then(|| below.clone()),
             });
@@ -694,7 +797,7 @@ impl Tree<'_> {
     /// The time the steps of `tree` with no step under them worked: what a done one took, and the time
     /// since a working one started; `None` when none worked. A working one lowers `next`.
     fn worked(&self, tree: &[Step]) -> Option<u64> {
-        let now = self.steps.now;
+        let now = self.steps.now();
         let leaves = tree.iter().filter(|s| s.children().is_empty());
         let (mut total, mut any, mut running) = (0, false, false);
         for leaf in leaves {
@@ -898,24 +1001,6 @@ impl Tree<'_> {
         }
     }
 
-    /// The first 8 characters of the id of `note`, its shortest start that no other step's id has
-    /// underlined.
-    fn id(&self, note: Step) -> String {
-        let id = short(note.id());
-        let all = self.steps.all();
-        let unique = (4..id.len())
-            .find(|&n| {
-                all.iter()
-                    .all(|other| other.id() == note.id() || !other.id().starts_with(&id[..n]))
-            })
-            .unwrap_or(id.len());
-        format!(
-            "{}{}",
-            self.paint(UNDERLINE, &id[..unique]),
-            self.paint(DIM, &id[unique..])
-        )
-    }
-
     /// Adds `text` wrapped, dim, after `rail` and `label` padded to 8 characters, or after `rail` alone
     /// with no label.
     fn labelled(&self, lines: &mut Vec<Line>, rail: &str, label: &str, text: &str) {
@@ -963,19 +1048,16 @@ impl Tree<'_> {
     /// The mark of a step in `state` in its colour; in a watch, a working one's is the spinner.
     fn mark(&self, state: State) -> String {
         let look = look(state);
-        let mark = match (state, self.view.spin) {
-            (State::Working, Some(frame)) => {
-                self.spun.set(true);
-                return self.paint(SPINNER, SPIN[frame % SPIN.len()]);
-            }
-            _ => look.mark,
-        };
-        self.paint(look.text, mark)
+        if state == State::Working && self.view.spin {
+            self.spun.set(true);
+            return self.paint(SPINNER, SPUN);
+        }
+        self.paint(look.text, look.mark)
     }
 
     /// The colour of a title usually in `usual`: bold for 2 seconds after its newest record at `newest`.
     fn tone(&self, usual: &'static str, newest: u64) -> &'static str {
-        if newest + FRESH <= self.steps.now {
+        if newest + FRESH <= self.steps.now() {
             return usual;
         }
         self.until(newest + FRESH);
@@ -1002,6 +1084,8 @@ const DIM: &str = "2";
 const FRESH: u64 = 2;
 /// The frames of the spinner a watch draws for a working step.
 const SPIN: [&str; 10] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+/// What stands for the spinner in a tree's text until a watch draws its frame.
+const SPUN: &str = "\u{E000}";
 /// The colour of the spinner: bright yellow.
 const SPINNER: &str = "93";
 const BOLD: &str = "1";
@@ -1016,7 +1100,6 @@ pub(crate) const MORE: &str = "+more";
 const CLOSED: &str = "✓";
 /// The colour of a project's name.
 const PROJECT: &str = BOLD;
-const UNDERLINE: &str = "4;34";
 /// The lead, title and details of `line` when it is a row, also when it is selected, and whether its
 /// title wraps.
 fn row(line: &Line) -> Option<(&String, &String, &[Option<String>; 5], bool)> {
@@ -1050,6 +1133,11 @@ pub(crate) fn signs(flags: Flags) -> Vec<(&'static str, &'static str)> {
         .filter(|(on, ..)| *on)
         .map(|(_, sign, code)| (sign, code))
         .collect()
+}
+
+/// `text` with each spinner in it at its frame `frame`.
+pub(crate) fn spinner(text: &str, frame: usize) -> String {
+    text.replace(SPUN, SPIN[frame % SPIN.len()])
 }
 
 /// The characters of `text` a terminal shows; colour codes count none.
@@ -1137,6 +1225,7 @@ fn column(n: usize, what: &str) -> String {
 }
 
 mod agent;
+mod layout;
 mod level;
 #[cfg(test)]
 mod tests;

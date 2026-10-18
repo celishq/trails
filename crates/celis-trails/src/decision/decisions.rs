@@ -5,9 +5,10 @@ use celis_nostr::Note;
 use std::collections::{HashMap, HashSet};
 
 /// The decisions of a store, read once, newest first, then by id; each with the decision that replaces
-/// it, if one does. A decision no other replaces is live.
+/// it, if one does. A decision no other replaces is live. `trails` holds the live rules of each trail.
 pub struct Decisions<'a> {
     every: Vec<(&'a Note, Decision, Option<&'a Note>)>,
+    trails: HashMap<String, Vec<usize>>,
 }
 
 impl<'a> Decisions<'a> {
@@ -25,7 +26,13 @@ impl<'a> Decisions<'a> {
             .map(|(n, d)| (*n, d.clone(), by.get(n.id.as_str()).copied()))
             .collect();
         every.sort_by(|(a, ..), (b, ..)| (b.created_at, &a.id).cmp(&(a.created_at, &b.id)));
-        Decisions { every }
+        let mut trails: HashMap<String, Vec<usize>> = HashMap::new();
+        for (n, (_, decision, by)) in every.iter().enumerate() {
+            if let (Scope::Trail(trail), None) = (&decision.scope, by) {
+                trails.entry(trail.clone()).or_default().push(n);
+            }
+        }
+        Decisions { every, trails }
     }
 
     /// Every decision of every project, live or replaced.
@@ -71,11 +78,12 @@ impl<'a> Decisions<'a> {
 
     /// The live rules of `trail`, oldest first.
     pub fn rules(&self, trail: Step) -> Vec<(&'a Note, Decision)> {
-        let scope = Scope::Trail(trail.id().to_string());
-        let mut rules: Vec<(&'a Note, Decision)> = self
-            .live(&trail.record().anchor.project)
-            .into_iter()
-            .filter(|(_, d)| d.scope == scope)
+        let project = &trail.record().anchor.project;
+        let rules = self.trails.get(trail.id()).into_iter().flatten();
+        let mut rules: Vec<(&'a Note, Decision)> = rules
+            .map(|&n| &self.every[n])
+            .filter(|(_, d, _)| &d.anchor.project == project)
+            .map(|(n, d, _)| (*n, d.clone()))
             .collect();
         rules.sort_by(|(a, _), (b, _)| (a.created_at, &a.id).cmp(&(b.created_at, &b.id)));
         rules
