@@ -9,7 +9,7 @@ use crate::terminal::ink::Ink;
 use crate::text::clock::took;
 use crate::text::line::time;
 use celis_trails::records::id::short;
-use celis_trails::{Mark, State, Step, Steps, Trail, Trails};
+use celis_trails::{Decisions, Mark, State, Step, Steps, Trail, Trails};
 use serde_json::json;
 use std::io::{IsTerminal, Read, Write};
 
@@ -31,7 +31,7 @@ impl Command {
             return Err(Failure::no_step(&ids[0]));
         }
         let trails = self.trails()?;
-        let text = markdown(&trails, ids)?;
+        let text = markdown(&trails.steps(), &trails.decisions(), ids)?;
         if !std::io::stdout().is_terminal() || args.json {
             return super::show(out, args.json, "report", json!(text), text.trim_end());
         }
@@ -201,12 +201,14 @@ fn leave(out: &mut dyn Write, text: &str, colour: bool) -> Result<(), Failure> {
     Ok(())
 }
 
-/// The trail of the step each of `ids` names, once, in their order, as Markdown.
-pub(crate) fn markdown(trails: &Trails, ids: &[String]) -> Result<String, Failure> {
-    let steps = trails.steps();
-    let decisions = trails.decisions();
+/// The trail of the step each of `ids` names in `steps`, once, in their order, as Markdown.
+pub(crate) fn markdown(
+    steps: &Steps,
+    decisions: &Decisions,
+    ids: &[String],
+) -> Result<String, Failure> {
     let mut parts = Vec::new();
-    for trail in chosen(&steps, ids)? {
+    for trail in chosen(steps, ids)? {
         let step = trail.record();
         let tree = &trail.tree()[1..];
         let tally = Tally::of(tree);
@@ -254,14 +256,13 @@ pub(crate) fn markdown(trails: &Trails, ids: &[String]) -> Result<String, Failur
 
 /// The trail, step or rule `id` as Markdown: a trail as `markdown` gives it, a step as the table of it and
 /// the steps under it, a rule as `- <text>`.
-pub(crate) fn part(trails: &Trails, id: &str) -> Result<String, Failure> {
-    if let Some((_, decision)) = trails.decisions().get(id) {
+pub(crate) fn part(steps: &Steps, decisions: &Decisions, id: &str) -> Result<String, Failure> {
+    if let Some((_, decision)) = decisions.get(id) {
         return Ok(format!("- {}\n", decision.content));
     }
-    let steps = trails.steps();
     let step = steps.find(id)?;
     if step.is_trail() {
-        return markdown(trails, &[id.to_string()]);
+        return markdown(steps, decisions, &[id.to_string()]);
     }
     let lines = table(vec![step]);
     Ok(lines[1..].join("\n") + "\n")

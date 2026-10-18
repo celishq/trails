@@ -7,7 +7,7 @@ use crate::text::clock::{day, midnight, weekday};
 use crate::text::clock::{stride, took};
 use celis_trails::records::id::short;
 use celis_trails::step::steps::LIFE;
-use celis_trails::{Decisions, State, Step, Steps, Trail, Trails};
+use celis_trails::{Decisions, State, Step, Steps, Trail};
 use level::{ids, Level};
 use serde_json::json;
 use std::cell::{Cell, RefCell};
@@ -34,8 +34,15 @@ impl Command {
         }
         let tree = match (self.held()?, id) {
             (true, _) => {
-                let view = View::of(args);
-                self.frame(&self.trails()?, args, None, &view)?.text
+                let trails = self.trails()?;
+                let (steps, decisions) = (trails.steps(), trails.decisions());
+                let reuse = Reuse::new(&steps);
+                let model = Model {
+                    steps: &steps,
+                    decisions: &decisions,
+                    reuse: &reuse,
+                };
+                self.frame(&model, args, None, &View::of(args))?.text
             }
             (false, Some(id)) => return Err(Failure::no_step(id)),
             (false, None) => String::new(),
@@ -48,27 +55,25 @@ impl Command {
         Ok(())
     }
 
-    /// The tree of `trails` that `args` names, `width` wide, as `view` shows it.
+    /// The tree of `model` that `args` names, `width` wide, as `view` shows it.
     pub(crate) fn frame(
         &self,
-        trails: &Trails,
+        model: &Model,
         args: &Args,
         width: Option<usize>,
         view: &View,
     ) -> Result<Frame, Failure> {
         let id = args.words.get(1);
-        let steps = trails.steps();
-        let decisions = trails.decisions();
-        let reuse = Reuse::new(&steps);
+        let steps = model.steps;
         let chosen: Vec<Step> = match (id, view.all) {
             (Some(id), _) => vec![steps.find(id)?],
             (None, true) => steps.roots().into_iter().rev().collect(),
-            (None, false) => today(&steps, trails.now),
+            (None, false) => today(steps, steps.now()),
         };
         let tree = Tree {
-            steps: &steps,
-            decisions: &decisions,
-            reuse: &reuse,
+            steps,
+            decisions: model.decisions,
+            reuse: model.reuse,
             colour: view.watch && self.colour(),
             grouped: id.is_none(),
             width: width.map(|w| w.saturating_sub(2 * usize::from(view.watch))),
@@ -98,6 +103,13 @@ pub(crate) fn today<'a>(steps: &'a Steps<'a>, now: u64) -> Vec<Step<'a>> {
     roots
         .filter(|s| s.state().active() || s.newest() >= midnight)
         .collect()
+}
+
+/// What a tree is drawn from: the steps, decisions and reuse of a store.
+pub(crate) struct Model<'a> {
+    pub steps: &'a Steps<'a>,
+    pub decisions: &'a Decisions<'a>,
+    pub reuse: &'a Reuse<'a>,
 }
 
 /// How a tree shows: in a watch, with a cursor column; full; all with no id; and in a watch, the
@@ -228,7 +240,7 @@ impl Tree<'_> {
         for &note in notes {
             let at = match self.view.all {
                 true => note.note().created_at,
-                false => self.steps.now,
+                false => self.steps.now(),
             };
             match days.last_mut() {
                 Some((first, trails)) if day(*first) == day(at) => trails.push(note),
@@ -481,8 +493,8 @@ impl Tree<'_> {
             self.labelled(lines, &hair, "took", &took(worked));
         }
         if self.view.spin.is_some() && state.active() {
-            let seconds = self.steps.now.saturating_sub(note.newest());
-            self.until(self.steps.now + stride(seconds));
+            let seconds = self.steps.now().saturating_sub(note.newest());
+            self.until(self.steps.now() + stride(seconds));
             self.labelled(lines, &hair, "active", &format!("{} ago", took(seconds)));
         }
         if !self.grouped {
@@ -694,7 +706,7 @@ impl Tree<'_> {
     /// The time the steps of `tree` with no step under them worked: what a done one took, and the time
     /// since a working one started; `None` when none worked. A working one lowers `next`.
     fn worked(&self, tree: &[Step]) -> Option<u64> {
-        let now = self.steps.now;
+        let now = self.steps.now();
         let leaves = tree.iter().filter(|s| s.children().is_empty());
         let (mut total, mut any, mut running) = (0, false, false);
         for leaf in leaves {
@@ -957,7 +969,7 @@ impl Tree<'_> {
 
     /// The colour of a title usually in `usual`: bold for 2 seconds after its newest record at `newest`.
     fn tone(&self, usual: &'static str, newest: u64) -> &'static str {
-        if newest + FRESH <= self.steps.now {
+        if newest + FRESH <= self.steps.now() {
             return usual;
         }
         self.until(newest + FRESH);

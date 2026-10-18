@@ -2,21 +2,31 @@
 
 use crate::{Decision, Mark, Refusal, Step, StepRecord};
 use celis_nostr::Note;
+use std::cell::Cell;
 use std::collections::{HashMap, HashSet};
 
 /// The step records and marks of a store at the time `now`: which steps are open, how they nest, and how
 /// each went.
 pub struct Steps<'a> {
-    pub now: u64,
+    now: Cell<u64>,
     index: Index<'a>,
 }
 
 impl<'a> Steps<'a> {
     pub fn new(records: &'a [Note], now: u64) -> Steps<'a> {
         Steps {
-            now,
+            now: Cell::new(now),
             index: Index::of(records),
         }
+    }
+
+    pub fn now(&self) -> u64 {
+        self.now.get()
+    }
+
+    /// Moves it to the time `now`, with the same records.
+    pub fn at(&self, now: u64) {
+        self.now.set(now);
     }
 
     /// Every step, oldest first.

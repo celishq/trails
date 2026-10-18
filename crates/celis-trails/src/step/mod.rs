@@ -207,7 +207,7 @@ impl<'a> Step<'a> {
             return false;
         }
         let idle = !self.entry.children.is_empty() && !self.entry.loose;
-        idle || self.steps.now.saturating_sub(self.newest()) >= LIFE
+        idle || self.steps.now().saturating_sub(self.newest()) >= LIFE
     }
 
     /// Where it stands as a trail: working while open and a step of it works, else open; expired when
