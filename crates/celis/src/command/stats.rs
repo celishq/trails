@@ -115,3 +115,7 @@ fn head(step: Step) -> String {
 fn took(step: Step) -> String {
     crate::text::line::grade(step).map_or(String::new(), |g| format!(" · {g}"))
 }
+
+mod board;
+pub(crate) mod sheet;
+mod table;

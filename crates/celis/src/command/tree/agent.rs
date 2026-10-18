@@ -1,7 +1,8 @@
 //! The agent view of `celis tree`: every trail, rule and step with its id, plain and whole.
 
-use super::{signs, Level, Line, Styled, Summary, Tree};
+use super::{Level, Row, Styled, Summary, Tree};
 use crate::progress::Flags;
+use crate::terminal::look::signs;
 use crate::text::clock::took;
 use celis_trails::records::id::short;
 use celis_trails::{Step, Trail};
@@ -9,41 +10,41 @@ use celis_trails::{Step, Trail};
 impl Tree<'_> {
     /// Adds `note` as a block: its mark, id and title, then two spaces in its progress and worked time,
     /// its own lines, its active steps, its rules, then its other steps.
-    pub(super) fn agent_block(&self, note: Step, lines: &mut Vec<Line>) {
+    pub(super) fn agent_block(&self, note: Step, lines: &mut Vec<Row>) {
         let work = self.work(note);
         let summary = self.summary(note, work);
         let heading = match self.grouped && note.state().active() {
             true => format!("{} · {}", self.heading(note), note.record().anchor.name),
             false => self.heading(note),
         };
-        lines.push(Line::Text(heading.into()));
+        lines.push(Row::Text(heading.into()));
         let progress = progress(&summary);
         if !progress.is_empty() {
-            lines.push(Line::Text(format!("  {progress}").into()));
+            lines.push(Row::Text(format!("  {progress}").into()));
         }
         self.below(work, "  ", lines);
         let level = Level::of(Trail::new(note).parts());
         self.agent_steps(level.active, "  ", lines);
         for (rule, decision) in &summary.rules {
             let line = format!("  § {} {}", short(&rule.id), decision.content);
-            lines.push(Line::Text(line.into()));
+            lines.push(Row::Text(line.into()));
         }
         self.agent_steps(level.ended, "  ", lines);
     }
 
     /// Adds `note` as one line: its mark, id and title, then its progress and worked time.
-    pub(super) fn agent_line(&self, note: Step, lines: &mut Vec<Line>) {
+    pub(super) fn agent_line(&self, note: Step, lines: &mut Vec<Row>) {
         let summary = self.summary(note, self.work(note));
         let line = match progress(&summary) {
             progress if progress.is_empty() => self.heading(note),
             progress => format!("{} · {progress}", self.heading(note)),
         };
-        lines.push(Line::Text(line.into()));
+        lines.push(Row::Text(line.into()));
     }
 
     /// Adds the steps `notes` after `indent`, each as its mark, id and title, its first place and
     /// worked time, then its lines and its level two spaces further in.
-    fn agent_steps(&self, notes: Vec<Step>, indent: &str, lines: &mut Vec<Line>) {
+    fn agent_steps(&self, notes: Vec<Step>, indent: &str, lines: &mut Vec<Row>) {
         for note in notes {
             let mut line = format!("{indent}{}", self.heading(note));
             if let Some(at) = note.record().at() {
@@ -52,7 +53,7 @@ impl Tree<'_> {
             if let Some(worked) = self.worked(&note.tree()) {
                 line.push_str(&format!(" · {}", took(worked)));
             }
-            lines.push(Line::Text(line.into()));
+            lines.push(Row::Text(line.into()));
             let under = format!("{indent}  ");
             self.below(note, &under, lines);
             let level = Level::of(note.children());
@@ -63,7 +64,7 @@ impl Tree<'_> {
 
     /// Adds after `indent` the lines of `note`: with `--full` all `--full` prints, else what changed
     /// when done, or why when dropped.
-    fn below(&self, note: Step, indent: &str, lines: &mut Vec<Line>) {
+    fn below(&self, note: Step, indent: &str, lines: &mut Vec<Row>) {
         if self.view.full {
             let indent = Styled::from(indent.to_string());
             self.closing(note, &indent, true, lines);
@@ -71,10 +72,10 @@ impl Tree<'_> {
             return;
         }
         if let Some(changed) = note.changed() {
-            lines.push(Line::Text(format!("{indent}~ {changed}").into()));
+            lines.push(Row::Text(format!("{indent}~ {changed}").into()));
         }
         if let Some(reason) = note.dropped() {
-            lines.push(Line::Text(
+            lines.push(Row::Text(
                 format!("{indent}dropped {}", reason.content).into(),
             ));
         }

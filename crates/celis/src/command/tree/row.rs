@@ -1,16 +1,15 @@
-//! A line of a tree, and how a row and the notes under it lay out.
+//! A row of a tree, and how a titled row and the notes under it lay out.
 
 use super::visible;
-use crate::terminal::canvas::{width as chars, Styled, BOLD, DIM};
+use crate::terminal::canvas::{paint, width as chars, Styled, BOLD, DIM};
 use ratatui::style::Style;
-use ratatui::text::Span;
 
-/// A line of the tree: text as it is; a row, its title in the look `tone` after `lead` and its
+/// A row of the tree: text as it is; a titled row, its title in the look `tone` after `lead` and its
 /// `marks`, wrapped with its next lines after `rest`; a note under a row, after `rail` and `label`, in
 /// the look `tone`; or the start of a selected element's lines, or of lines no element holds.
-pub(super) enum Line {
+pub(super) enum Row {
     Text(Styled),
-    Row {
+    Titled {
         lead: Styled,
         marks: Styled,
         title: String,
@@ -23,37 +22,31 @@ pub(super) enum Line {
         text: String,
         tone: Style,
     },
-    Mark(bool, Box<Line>),
+    Mark(bool, Box<Row>),
 }
 
-impl Line {
+impl Row {
     /// Its marks when it is a row, also when it is selected.
     pub fn marks(&self) -> Option<&Styled> {
         match self {
-            Line::Row { marks, .. } => Some(marks),
-            Line::Mark(_, line) => line.marks(),
+            Row::Titled { marks, .. } => Some(marks),
+            Row::Mark(_, line) => line.marks(),
             _ => None,
         }
     }
 
     /// Its printed lines, its marks padded to `slot` and wrapped at `width`: a row's title bold when
     /// `picked` unless dim; a note's text after its label padded to 8 characters.
-    pub fn lines(
-        self,
-        slot: usize,
-        width: Option<usize>,
-        picked: bool,
-        paint: &dyn Fn(Style, &str) -> Span<'static>,
-    ) -> Vec<Styled> {
+    pub fn lines(self, slot: usize, width: Option<usize>, picked: bool) -> Vec<Styled> {
         let under = |rail: Styled, pad: usize| {
             let mut rail = rail;
             rail.push_span(" ".repeat(slot.saturating_sub(1) + pad));
             rail
         };
         let (first, next, text, tone) = match self {
-            Line::Text(text) => return vec![text],
-            Line::Mark(_, line) => return line.lines(slot, width, picked, paint),
-            Line::Row {
+            Row::Text(text) => return vec![text],
+            Row::Mark(_, line) => return line.lines(slot, width, picked),
+            Row::Titled {
                 lead,
                 marks,
                 title,
@@ -70,7 +63,7 @@ impl Line {
                 first.push_span(format!("{pad} "));
                 (first, under(rest, 0), title, tone)
             }
-            Line::Note {
+            Row::Note {
                 rail,
                 label,
                 text,

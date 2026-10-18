@@ -1,5 +1,10 @@
 use super::*;
 
+/// The text of `lines`.
+fn text(lines: Vec<Styled>) -> Vec<String> {
+    lines.iter().map(|l| l.to_string()).collect()
+}
+
 /// A card is framed at its width, its title in its top line, each row padded or cut to fit, and empty
 /// rows to its height.
 #[test]
@@ -10,7 +15,7 @@ fn a_card_frames_its_rows_at_its_width() {
         picked: false,
     };
     assert_eq!(
-        card.lines(16, 5, false),
+        text(card.lines(16, 5)),
         [
             "┌─ 01 REUSE ───┐",
             "│ one          │",
@@ -29,10 +34,7 @@ fn the_picked_card_has_a_heavy_frame() {
         rows: vec![],
         picked: true,
     };
-    assert_eq!(
-        card.lines(8, 3, false),
-        ["┏━ 02 ━┓", "┃      ┃", "┗━━━━━━┛"]
-    );
+    assert_eq!(text(card.lines(8, 3)), ["┏━ 02 ━┓", "┃      ┃", "┗━━━━━━┛"]);
 }
 
 /// Cards print side by side, a space between two, each row of cards as tall as its tallest card.
@@ -43,7 +45,7 @@ fn cards_print_side_by_side() {
         rows: vec!["x".into(); rows],
         picked: false,
     };
-    let lines = grid(&[card(1), card(2), card(1)], 2, 7, false);
+    let lines = text(grid(&[card(1), card(2), card(1)], 2, 7));
     assert_eq!(
         lines,
         [
@@ -67,7 +69,7 @@ fn a_divider_row_crosses_the_card() {
         picked: false,
     };
     assert_eq!(
-        card.lines(7, 5, false),
+        text(card.lines(7, 5)),
         ["┌─ c ─┐", "│ a   │", "├─────┤", "│ b   │", "└─────┘"]
     );
 }

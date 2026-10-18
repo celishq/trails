@@ -1,11 +1,8 @@
-//! How a view drawn with ratatui prints: its looks, its lines of text, and its buffer or one line as
-//! text.
+//! How a view drawn with ratatui prints: its looks, its lines of text, and a line as text.
 
 use ratatui::buffer::Buffer;
-use ratatui::layout::Rect;
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::Widget;
 use unicode_width::UnicodeWidthStr;
 
 /// A line of text with its looks.
@@ -18,12 +15,43 @@ pub(crate) const YELLOW: Style = Style::new().fg(Color::Yellow);
 pub(crate) const MAGENTA: Style = Style::new().fg(Color::Magenta);
 pub(crate) const RED: Style = Style::new().fg(Color::Red);
 
-/// `text` in the look `style` when `colour`; else plain.
-pub(crate) fn paint(colour: bool, style: Style, text: &str) -> Span<'static> {
-    match colour {
-        true => Span::styled(text.to_string(), style),
-        false => Span::raw(text.to_string()),
+/// `text` in the look `style`.
+pub(crate) fn paint(style: Style, text: &str) -> Span<'static> {
+    Span::styled(text.to_string(), style)
+}
+
+/// The characters of `text` a terminal shows; colour codes count none.
+pub(crate) fn visible(text: &str) -> usize {
+    let mut count = 0;
+    let mut code = false;
+    for c in text.chars() {
+        match (code, c) {
+            (false, '\x1b') => code = true,
+            (true, 'm') => code = false,
+            (false, _) => count += 1,
+            _ => {}
+        }
     }
+    count
+}
+
+/// `text` cut to `width` visible characters, its last one `…`, when it is wider.
+pub(crate) fn cut(text: &str, width: usize) -> String {
+    if width < 2 || visible(text) <= width {
+        return text.to_string();
+    }
+    let mut kept = String::new();
+    for c in text.chars() {
+        kept.push(c);
+        if visible(&kept) == width - 1 {
+            break;
+        }
+    }
+    kept.push('…');
+    if text.contains('\x1b') {
+        kept.push_str("\x1b[0m");
+    }
+    kept
 }
 
 /// The characters of `line`.
@@ -32,7 +60,7 @@ pub(crate) fn width(line: &Styled) -> usize {
 }
 
 /// `line` cut to `width` characters, its last one `…` in the look before it, when it is wider.
-pub(crate) fn cut(line: &Styled, width: usize) -> Styled {
+pub(crate) fn clip(line: &Styled, width: usize) -> Styled {
     if width < 2 || self::width(line) <= width {
         return line.clone();
     }
@@ -67,11 +95,11 @@ pub(crate) fn join(lines: impl IntoIterator<Item = Styled>) -> Styled {
     Styled::from(lines.into_iter().flat_map(|l| l.spans).collect::<Vec<_>>())
 }
 
-/// The rows of `buf` as text; when `colour`, each run of one look in its escape code and a reset after.
-pub(crate) fn rows(buf: &Buffer, colour: bool) -> Vec<String> {
+/// The rows of `buf` as lines, a span for each run of one look.
+pub(crate) fn lines(buf: &Buffer) -> Vec<Styled> {
     let area = buf.area;
     let row = |y| {
-        let mut runs: Vec<(Style, String)> = Vec::new();
+        let mut spans: Vec<Span<'static>> = Vec::new();
         let mut skip = 0;
         for x in area.left()..area.right() {
             if skip > 0 {
@@ -84,32 +112,31 @@ pub(crate) fn rows(buf: &Buffer, colour: bool) -> Vec<String> {
                 .fg(cell.fg)
                 .bg(cell.bg)
                 .add_modifier(cell.modifier);
-            match runs.last_mut() {
-                Some((last, text)) if *last == style => *text += cell.symbol(),
-                _ => runs.push((style, cell.symbol().to_string())),
+            match spans.last_mut() {
+                Some(last) if last.style == style => last.content.to_mut().push_str(cell.symbol()),
+                _ => spans.push(Span::styled(cell.symbol().to_string(), style)),
             }
         }
-        let run = |(style, text): (Style, String)| match (colour, codes(style)) {
-            (true, Some(codes)) => format!("\x1b[{codes}m{text}\x1b[0m"),
-            _ => text,
-        };
-        runs.into_iter().map(run).collect()
+        Styled::from(spans)
     };
     (area.top()..area.bottom()).map(row).collect()
 }
 
-/// `line` as text, as wide as it is; with no `colour`, its text as it is.
-pub(crate) fn line(line: &Line, colour: bool) -> String {
-    if !colour {
-        return line.spans.iter().map(|s| s.content.as_ref()).collect();
+/// `line` as text; when `colour`, each run of one look in its escape code and a reset after.
+pub(crate) fn line(line: &Styled, colour: bool) -> String {
+    let mut runs: Vec<(Option<String>, String)> = Vec::new();
+    for span in &line.spans {
+        let codes = colour.then(|| codes(span.style)).flatten();
+        match runs.last_mut() {
+            Some((last, text)) if *last == codes => *text += &span.content,
+            _ => runs.push((codes, span.content.to_string())),
+        }
     }
-    let width = u16::try_from(line.width()).unwrap_or(u16::MAX);
-    if width == 0 {
-        return String::new();
-    }
-    let mut buf = Buffer::empty(Rect::new(0, 0, width, 1));
-    line.render(buf.area, &mut buf);
-    rows(&buf, colour).remove(0)
+    let run = |(codes, text): (Option<String>, String)| match codes {
+        Some(codes) => format!("\x1b[{codes}m{text}\x1b[0m"),
+        None => text,
+    };
+    runs.into_iter().map(run).collect()
 }
 
 /// The escape codes of `style`, its looks then its colours; `None` for the plain look.

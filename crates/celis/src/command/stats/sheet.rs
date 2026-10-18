@@ -1,11 +1,13 @@
 //! One card of stats: the face it shows among the cards, and the table it opens to.
 
-use super::canvas::{cut, join, pad, Styled, BOLD, DIM, GREEN, RED};
-use super::glyph::{bar, columns, strip};
-use super::ink::Ink;
 use super::table::{Row, Table};
-use crate::command::tree::{cut as text_cut, look, visible};
 use crate::progress::{Grade, Model, Period, Reuse, Tally};
+use crate::terminal::canvas::{
+    clip, cut as text_cut, join, pad, visible, Styled, BOLD, DIM, GREEN, RED,
+};
+use crate::terminal::glyph::{bar, columns, strip};
+use crate::terminal::ink::Ink;
+use crate::terminal::look::look;
 use crate::text::clock::{day, midnight, took};
 use crate::text::line::plural;
 use celis_trails::{Decisions, State, Step};
@@ -35,13 +37,7 @@ const FEW: usize = 10;
 
 /// The cards of `model` at its time: the effect `full` characters wide inside, the others `inside`;
 /// their numbers plain text when `plain`.
-pub(crate) fn sheets(
-    model: &Model,
-    full: usize,
-    inside: usize,
-    plain: bool,
-    colour: bool,
-) -> [Sheet; CARDS] {
+pub(crate) fn sheets(model: &Model, full: usize, inside: usize, plain: bool) -> [Sheet; CARDS] {
     let (steps, reuse) = (model.steps, model.reuse);
     let now = steps.now();
     let last = Period::new(steps, now.saturating_sub(SPAN), now + 1);
@@ -50,7 +46,7 @@ pub(crate) fn sheets(
         now.saturating_sub(2 * SPAN),
         now.saturating_sub(SPAN),
     );
-    let ink = Ink { plain, colour };
+    let ink = Ink { plain };
     [
         effect(&last, &before, full, ink),
         followed(reuse, inside, ink),
@@ -157,7 +153,7 @@ fn effect(last: &Period, before: &Period, inside: usize, ink: Ink) -> Sheet {
         },
     ];
     let column = (inside / measures.len()).max(1);
-    let cell = |text: Span<'static>| pad(cut(&Styled::from(text), column - 1), column);
+    let cell = |text: Span<'static>| pad(clip(&Styled::from(text), column - 1), column);
     let mut face = vec![join(measures.iter().map(|m| cell(ink.dim(m.label))))];
     let bigs: Vec<Vec<Span>> = measures.iter().map(|m| ink.big(&m.last.text())).collect();
     for r in 0..bigs[0].len() {

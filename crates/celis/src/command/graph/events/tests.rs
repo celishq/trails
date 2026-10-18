@@ -28,7 +28,7 @@ fn mark(mark: Mark, step: &Note, at: u64) -> Note {
     mark.record(&account(), &step.id, at).unwrap()
 }
 
-/// A history holds each step added, started and closed and each rule of its trail, by the second, then
+/// A events holds each step added, started and closed and each rule of its trail, by the second, then
 /// added before started before closed, then by the order of the steps; it tells where a step stands.
 #[test]
 fn a_history_holds_the_events_of_a_trail_in_the_order_they_happened() {
@@ -66,14 +66,14 @@ fn a_history_holds_the_events_of_a_trail_in_the_order_they_happened() {
     let records = [trail.clone(), page, logo, started, done, dropped, rule];
     let steps = Steps::new(&records, now);
     let decisions = Decisions::new(&records);
-    let history = History::of(steps.get(&trail.id).unwrap(), &decisions);
-    let events: Vec<(Kind, &str)> = history
-        .events
+    let events = Events::of(steps.get(&trail.id).unwrap(), &decisions);
+    let happened: Vec<(Kind, &str)> = events
+        .all
         .iter()
         .map(|e| (e.kind, e.text.as_str()))
         .collect();
     assert_eq!(
-        events,
+        happened,
         [
             (Kind::Added, "page"),
             (Kind::Started, "page"),
@@ -83,9 +83,9 @@ fn a_history_holds_the_events_of_a_trail_in_the_order_they_happened() {
             (Kind::Dropped, "logo"),
         ]
     );
-    let page = &history.events[0].id;
-    assert_eq!(history.state(page, 0), None);
-    assert_eq!(history.state(page, 1), Some(State::Open));
-    assert_eq!(history.state(page, 2), Some(State::Working));
-    assert_eq!(history.state(page, 6), Some(State::Done));
+    let page = &events.all[0].id;
+    assert_eq!(events.state(page, 0), None);
+    assert_eq!(events.state(page, 1), Some(State::Open));
+    assert_eq!(events.state(page, 2), Some(State::Working));
+    assert_eq!(events.state(page, 6), Some(State::Done));
 }

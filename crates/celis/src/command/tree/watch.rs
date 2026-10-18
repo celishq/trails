@@ -1,16 +1,15 @@
 //! `celis tree` on a terminal: the tree, drawn again each time the store or a linked folder changes.
 
-use super::live::Live;
-use super::screen::{clipboard, spin, until, Screen, TURN};
-use super::wake::{Key, Wake};
-use crate::command::tree::{spinner, Frame, Item, Layout, View, EMPTY, MORE};
+use crate::command::tree::{Frame, Item, Layout, View, EMPTY, MORE};
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::progress::Model;
+use crate::terminal::canvas::Styled;
+use crate::terminal::live::{Live, Page};
+use crate::terminal::screen::{until, Screen};
+use crate::terminal::wake::Key;
 use celis_nostr::Note;
 use std::io::Write;
-use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender};
-use std::time::Duration;
 
 impl Command {
     /// Draws the tree `args` names on the alternate screen, then again when a record lands in the store
@@ -21,39 +20,30 @@ impl Command {
         if let (false, Some(id)) = (self.held()?, args.words.get(1)) {
             return Err(Failure::no_step(id));
         }
-        self.screen(out, |out, wakes| self.watched(args, out, wakes))
-    }
-
-    /// The watch's loop: draws each tree it reads from the store, until an interrupt.
-    fn watched(
-        &self,
-        args: &Args,
-        out: &mut dyn Write,
-        wakes: (Sender<Wake>, Receiver<Wake>),
-    ) -> Result<(), Failure> {
-        let mut screen = Screen::default();
-        let empty = format!("{EMPTY}\n");
-        if !self.waited(&mut screen, out, (&empty, &legend(None)), &wakes.1)? {
-            return Ok(());
-        }
-        let trails = self.trails()?;
-        if let Some(id) = args.words.get(1) {
-            trails.steps().find(id)?;
-        }
-        let mut watch = Watch {
-            command: self,
-            args,
-            named: args.words.len() > 1,
-            empty,
-            view: View {
-                watch: true,
-                spin: true,
-                ..View::of(args)
-            },
-            layout: Layout::default(),
-            frame: None,
+        let empty = vec![Styled::from(EMPTY)];
+        let waiting = Page {
+            lines: empty.clone(),
+            keys: legend(None),
+            ..Page::default()
         };
-        self.live(&mut watch, trails, &mut screen, out, wakes)
+        self.live(out, waiting, |trails| {
+            if let Some(id) = args.words.get(1) {
+                trails.steps().find(id)?;
+            }
+            Ok(Watch {
+                command: self,
+                args,
+                named: args.words.len() > 1,
+                empty,
+                view: View {
+                    watch: true,
+                    spin: true,
+                    ..View::of(args)
+                },
+                layout: Layout::default(),
+                frame: None,
+            })
+        })
     }
 }
 
@@ -63,7 +53,7 @@ struct Watch<'a> {
     command: &'a Command,
     args: &'a Args,
     named: bool,
-    empty: String,
+    empty: Vec<Styled>,
     view: View,
     layout: Layout,
     frame: Option<Frame>,
@@ -74,15 +64,9 @@ impl Live for Watch<'_> {
         self.layout.renew(model, landed);
     }
 
-    /// Draws the tree of `model`, and again each time the spinner turns, until a wake comes or a time
-    /// it shows changes; the selection moves to the nearest line still shown when its line left.
-    fn wait(
-        &mut self,
-        model: &Model,
-        screen: &mut Screen,
-        out: &mut dyn Write,
-        events: &Receiver<Wake>,
-    ) -> Result<Result<Wake, RecvTimeoutError>, Failure> {
+    /// The tree of `model`, its spinner turning, drawn again when a time it shows changes; the
+    /// selection moves to the nearest line still shown when its line left.
+    fn page(&mut self, model: &Model, screen: &mut Screen) -> Result<Page, Failure> {
         let width = self.command.columns().map(|c| c.saturating_sub(1));
         let mut frame =
             self.command
@@ -92,10 +76,10 @@ impl Live for Watch<'_> {
                 let known = self.frame.as_ref().map_or(&[][..], |f| &f.order);
                 self.view.selected = kept(known, &frame.order, &id);
                 screen.follow = true;
-                return self.wait(model, screen, out, events);
+                return self.page(model, screen);
             }
         }
-        let tree = match frame.text.is_empty() && !self.named {
+        let lines = match frame.text.is_empty() && !self.named {
             true => self.empty.clone(),
             false => std::mem::take(&mut frame.text),
         };
@@ -103,39 +87,28 @@ impl Live for Watch<'_> {
             .order
             .iter()
             .find(|i| self.view.selected.as_ref() == Some(&i.id));
-        let keys = legend(selected.and_then(Item::copy).as_deref());
-        let wake = loop {
-            screen.draw(out, &spinner(&tree, spin()), frame.picked, &keys)?;
-            let due = frame.next.map(until);
-            let wait = match frame.spun {
-                true => due.map_or(TURN, |w| w.min(TURN)),
-                false => due.unwrap_or(Duration::MAX),
-            };
-            match events.recv_timeout(wait) {
-                Err(RecvTimeoutError::Timeout) if due.is_none_or(|d| d > wait) => {}
-                wake => break wake,
-            }
+        let copy = selected.and_then(Item::copy);
+        let part =
+            |item: &Item| crate::command::report::part(model.steps, model.decisions, &item.id);
+        let markdown = selected
+            .filter(|_| copy.is_some())
+            .and_then(|item| part(item).ok());
+        let page = Page {
+            lines,
+            picked: frame.picked,
+            keys: legend(copy.as_deref()),
+            copy,
+            markdown,
+            spun: frame.spun,
+            again: frame.next.map(until),
         };
         self.frame = Some(frame);
-        Ok(wake)
+        Ok(page)
     }
 
-    /// Copies the selected id or its Markdown, or moves the selection or opens or closes lines.
-    fn press(&mut self, key: Key, model: &Model, screen: &mut Screen) -> Result<(), Failure> {
+    /// Moves the selection, or opens or closes lines.
+    fn press(&mut self, key: Key, _: &Model, screen: &mut Screen) -> Result<(), Failure> {
         let order = self.frame.as_ref().map_or(&[][..], |f| &f.order);
-        let selected = order
-            .iter()
-            .find(|i| self.view.selected.as_ref() == Some(&i.id));
-        let copy = selected.and_then(Item::copy);
-        let chosen = selected.filter(|_| copy.is_some()).map(|i| i.id.clone());
-        screen.said = match (&key, &copy, &chosen) {
-            (Key::Copy, Some(id), _) => Some(clipboard(id, &format!("copied {id}"))),
-            (Key::Markdown, _, Some(id)) => {
-                let markdown = crate::command::report::part(model.steps, model.decisions, id)?;
-                Some(clipboard(&markdown, "copied markdown"))
-            }
-            _ => None,
-        };
         let before = self.view.selected.clone();
         press(key, &mut self.view, order, self.named);
         screen.follow |= self.view.selected != before;

@@ -1,17 +1,18 @@
 //! `celis tree --graph`: the node view, one trail as a graph, live or played back event by event.
 
-use super::canvas::rows;
-use super::flow::Flow;
-use super::history::{Event, History, Kind};
-use super::live::Live;
-use super::screen::{spin, Screen, TURN};
-use super::wake::{Key, Wake};
 use crate::command::tree::{cut, today, EMPTY};
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::progress::Model;
+use crate::terminal::canvas::{lines, Styled};
+use crate::terminal::live::{Live, Page};
+use crate::terminal::look::{spin, TURN};
+use crate::terminal::screen::Screen;
+use crate::terminal::wake::Key;
 use celis_nostr::Note;
 use celis_trails::{Mark, State, Step};
+use diagram::Diagram;
+use events::{Event, Events, Kind};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::{Color, Modifier, Style};
@@ -20,7 +21,6 @@ use ratatui::widgets::{Block, BorderType, Clear, Paragraph, Widget, Wrap};
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::io::{IsTerminal, Write};
-use std::sync::mpsc::{Receiver, RecvTimeoutError};
 use std::time::{Duration, Instant};
 use tachyonfx::{fx, Effect, Interpolation, Motion};
 
@@ -38,24 +38,17 @@ impl Command {
     /// Draws the trail of the step `args` names, else the newest trail of today, as a graph: on a
     /// terminal live on the alternate screen and moved through its events by keys, else printed once
     /// as it stands.
-    pub(crate) fn nodes(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
+    pub(crate) fn graph(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let id = args.words.get(1);
         if let (false, Some(id)) = (self.held()?, id) {
             return Err(Failure::no_step(id));
         }
         if std::io::stdout().is_terminal() && !args.json {
-            return self.screen(out, |out, wakes| {
-                let mut screen = Screen::default();
-                let empty = format!("{EMPTY}\n");
-                if !self.waited(&mut screen, out, (&empty, KEYS), &wakes.1)? {
-                    return Ok(());
-                }
-                let trails = self.trails()?;
+            return self.live(out, empty(), |trails| {
                 if let Some(id) = id {
                     trails.steps().find(id)?;
                 }
-                let mut nodes = Nodes::new(self, id.cloned());
-                self.live(&mut nodes, trails, &mut screen, out, wakes)
+                Ok(Replay::new(self, id.cloned()))
             });
         }
         let text = match self.held()? {
@@ -77,25 +70,28 @@ fn printed(model: &Model, id: Option<&String>) -> Result<String, Failure> {
             None => return Ok(format!("{EMPTY}\n")),
         },
     };
-    let history = History::of(head, model.decisions);
-    let flow = Flow {
+    let events = Events::of(head, model.decisions);
+    let diagram = Diagram {
         head,
-        history: &history,
-        shown: history.events.len(),
+        events: &events,
+        shown: events.all.len(),
         selected: None,
         spin: None,
     };
-    let (width, height) = flow.size();
+    let (width, height) = diagram.size();
     let mut buf = Buffer::empty(Rect::new(0, 0, width.max(80), height));
-    flow.render(buf.area, &mut buf, &Cell::new(0));
-    let rows = rows(&buf, false);
-    Ok(rows.iter().map(|r| format!("{}\n", r.trim_end())).collect())
+    diagram.render(buf.area, &mut buf, &Cell::new(0));
+    let rows = lines(&buf);
+    Ok(rows
+        .iter()
+        .map(|r| format!("{}\n", r.to_string().trim_end()))
+        .collect())
 }
 
 /// A node view: the trail it shows, the events shown, the step selected and whether its details are
 /// open, whether it follows new events, whether it plays and when its next beat is, the effects that
 /// play and the events still to start one, the graph's offset, and when it drew last.
-struct Nodes<'a> {
+struct Replay<'a> {
     command: &'a Command,
     trail: Option<String>,
     shown: usize,
@@ -109,10 +105,10 @@ struct Nodes<'a> {
     drawn: Instant,
 }
 
-impl<'a> Nodes<'a> {
+impl<'a> Replay<'a> {
     /// A live node view of the trail of the step `id`, else of the newest trail of today.
-    fn new(command: &'a Command, id: Option<String>) -> Nodes<'a> {
-        Nodes {
+    fn new(command: &'a Command, id: Option<String>) -> Replay<'a> {
+        Replay {
             command,
             trail: id,
             shown: usize::MAX,
@@ -138,10 +134,10 @@ impl<'a> Nodes<'a> {
         Some(head)
     }
 
-    /// Moves to the event `to` of `history`, with an effect for each event it passes on the way
+    /// Moves to the event `to` of `events`, with an effect for each event it passes on the way
     /// forward and none left on the way back.
-    fn go(&mut self, to: usize, history: &History) {
-        let to = to.min(history.events.len());
+    fn go(&mut self, to: usize, events: &Events) {
+        let to = to.min(events.all.len());
         match to > self.shown {
             true => self.fresh.extend(self.shown..to),
             false => {
@@ -150,13 +146,13 @@ impl<'a> Nodes<'a> {
             }
         }
         self.shown = to;
-        self.live = to == history.events.len();
+        self.live = to == events.all.len();
     }
 
     /// The bottom two rows of `area` on `buf`: whether it plays, follows or stands at an event, with the
     /// newest event shown, then a bar of the events shown.
-    fn timeline(&self, history: &History, area: Rect, buf: &mut Buffer) {
-        let all = history.events.len();
+    fn timeline(&self, events: &Events, area: Rect, buf: &mut Buffer) {
+        let all = events.all.len();
         let (status, colour) = match (self.beat.is_some(), self.live) {
             (true, _) => (format!("▶ {}/{all}", self.shown), Color::Cyan),
             (false, true) => ("● live".to_string(), Color::Green),
@@ -165,7 +161,7 @@ impl<'a> Nodes<'a> {
         let style = Style::new().fg(colour).add_modifier(Modifier::BOLD);
         let width = usize::from(area.width);
         buf.set_string(area.x, area.y, &status, style);
-        if let Some(event) = history.events[..self.shown].last() {
+        if let Some(event) = events.all[..self.shown].last() {
             let said = format!("{} {}", word(event.kind), event.text);
             let room = width.saturating_sub(status.chars().count() + 3);
             let x = area.x + status.chars().count() as u16 + 3;
@@ -186,101 +182,91 @@ impl<'a> Nodes<'a> {
     }
 }
 
-impl Live for Nodes<'_> {
+impl Live for Replay<'_> {
     fn renew(&mut self, _: &Model, _: Option<&[Note]>) {}
 
-    /// Draws the trail of `model` as it stood after the events shown, then again each frame while an
-    /// effect plays, each beat while it plays, and each turn of the spinner, until a wake comes; a
-    /// live view first moves to the newest event.
-    fn wait(
-        &mut self,
-        model: &Model,
-        screen: &mut Screen,
-        out: &mut dyn Write,
-        events: &Receiver<Wake>,
-    ) -> Result<Result<Wake, RecvTimeoutError>, Failure> {
-        loop {
-            let Some(head) = self.head(model) else {
-                screen.draw(out, &format!("{EMPTY}\n"), None, KEYS)?;
-                return Ok(events.recv_timeout(Duration::MAX));
+    /// The trail of `model` as it stood after the events shown, drawn again each frame while an effect
+    /// plays, each beat while it plays, and each turn of the spinner; a live view first moves to the
+    /// newest event.
+    fn page(&mut self, model: &Model, _: &mut Screen) -> Result<Page, Failure> {
+        let Some(head) = self.head(model) else {
+            return Ok(empty());
+        };
+        let events = Events::of(head, model.decisions);
+        let all = events.all.len();
+        match self.shown == usize::MAX {
+            true => self.shown = all,
+            false if self.live => self.go(all, &events),
+            false => self.shown = self.shown.min(all),
+        }
+        let now = Instant::now();
+        if let Some(beat) = self.beat.filter(|b| now >= *b) {
+            self.go(self.shown + 1, &events);
+            self.beat = (!self.live).then_some(beat + BEAT);
+        }
+        let size = crate::command::size();
+        let width = size.map_or(80, |s| s.ws_col.saturating_sub(1)).max(20);
+        let height = size.map_or(24, |s| s.ws_row.saturating_sub(1)).max(6);
+        let mut buf = Buffer::empty(Rect::new(0, 0, width, height));
+        let diagram = Diagram {
+            head,
+            events: &events,
+            shown: self.shown,
+            selected: None,
+            spin: Some(spin()),
+        };
+        let columns = diagram.columns();
+        if !columns
+            .iter()
+            .flatten()
+            .any(|id| Some(id) == self.selected.as_ref())
+        {
+            (self.selected, self.details) = (None, false);
+        }
+        let diagram = Diagram {
+            selected: self.selected.as_deref(),
+            ..diagram
+        };
+        let graph = Rect::new(0, 0, width, height - 3);
+        let areas = diagram.render(graph, &mut buf, &self.offset);
+        self.timeline(&events, Rect::new(0, height - 2, width, 2), &mut buf);
+        let colour = self.command.colour();
+        let passed = now.duration_since(self.drawn);
+        self.drawn = now;
+        for effect in &mut self.effects {
+            effect.process(passed.into(), &mut buf, graph);
+        }
+        for n in std::mem::take(&mut self.fresh) {
+            let Some(mut effect) = effect(&events.all[n], &areas) else {
+                continue;
             };
-            let history = History::of(head, model.decisions);
-            let all = history.events.len();
-            match self.shown == usize::MAX {
-                true => self.shown = all,
-                false if self.live => self.go(all, &history),
-                false => self.shown = self.shown.min(all),
-            }
-            let now = Instant::now();
-            if let Some(beat) = self.beat.filter(|b| now >= *b) {
-                self.go(self.shown + 1, &history);
-                self.beat = (!self.live).then_some(beat + BEAT);
-            }
-            let size = crate::command::size();
-            let width = size.map_or(80, |s| s.ws_col.saturating_sub(1)).max(20);
-            let height = size.map_or(24, |s| s.ws_row.saturating_sub(1)).max(6);
-            let mut buf = Buffer::empty(Rect::new(0, 0, width, height));
-            let flow = Flow {
-                head,
-                history: &history,
-                shown: self.shown,
-                selected: None,
-                spin: Some(spin()),
-            };
-            let columns = flow.columns();
-            if !columns
-                .iter()
-                .flatten()
-                .any(|id| Some(id) == self.selected.as_ref())
-            {
-                (self.selected, self.details) = (None, false);
-            }
-            let flow = Flow {
-                selected: self.selected.as_deref(),
-                ..flow
-            };
-            let graph = Rect::new(0, 0, width, height - 3);
-            let areas = flow.render(graph, &mut buf, &self.offset);
-            self.timeline(&history, Rect::new(0, height - 2, width, 2), &mut buf);
-            let colour = self.command.colour();
-            let passed = now.duration_since(self.drawn);
-            self.drawn = now;
-            for effect in &mut self.effects {
-                effect.process(passed.into(), &mut buf, graph);
-            }
-            for n in std::mem::take(&mut self.fresh) {
-                let Some(mut effect) = effect(&history.events[n], &areas) else {
-                    continue;
-                };
-                effect.process(Duration::ZERO.into(), &mut buf, graph);
-                self.effects.push(effect);
-            }
-            self.effects.retain(|e| e.running() && colour);
-            if let Some(step) = self.selected.as_ref().filter(|_| self.details) {
-                let step = model.steps.find(step).ok();
-                let state = step.and_then(|s| history.state(s.id(), self.shown));
-                if let (Some(step), Some(state)) = (step, state) {
-                    details(step, state, graph, &mut buf);
-                }
-            }
-            let text = rows(&buf, colour).join("\n");
-            screen.draw(out, &text, None, KEYS)?;
-            let working = (0..self.shown).any(|n| {
-                let event = &history.events[n];
-                history.state(&event.id, self.shown) == Some(State::Working)
-            });
-            let waits = [
-                (!self.effects.is_empty()).then_some(FRAME),
-                self.beat
-                    .map(|b| b.saturating_duration_since(Instant::now())),
-                working.then_some(TURN),
-            ];
-            let wait = waits.into_iter().flatten().min().unwrap_or(Duration::MAX);
-            match events.recv_timeout(wait) {
-                Err(RecvTimeoutError::Timeout) => {}
-                wake => return Ok(wake),
+            effect.process(Duration::ZERO.into(), &mut buf, graph);
+            self.effects.push(effect);
+        }
+        self.effects.retain(|e| e.running() && colour);
+        if let Some(step) = self.selected.as_ref().filter(|_| self.details) {
+            let step = model.steps.find(step).ok();
+            let state = step.and_then(|s| events.state(s.id(), self.shown));
+            if let (Some(step), Some(state)) = (step, state) {
+                details(step, state, graph, &mut buf);
             }
         }
+        let working = (0..self.shown).any(|n| {
+            let event = &events.all[n];
+            events.state(&event.id, self.shown) == Some(State::Working)
+        });
+        let waits = [
+            (!self.effects.is_empty()).then_some(FRAME),
+            self.beat
+                .map(|b| b.saturating_duration_since(Instant::now())),
+            working.then_some(TURN),
+        ];
+        Ok(Page {
+            lines: lines(&buf),
+            keys: KEYS.into(),
+            again: waits.into_iter().flatten().min(),
+            ..Page::default()
+        })
     }
 
     /// Selects the card or row next to the selected one, opens or closes its details, moves an event
@@ -290,43 +276,43 @@ impl Live for Nodes<'_> {
         let Some(head) = self.head(model) else {
             return Ok(());
         };
-        let history = History::of(head, model.decisions);
-        let all = history.events.len();
+        let events = Events::of(head, model.decisions);
+        let all = events.all.len();
         match key {
             Key::Up | Key::Down | Key::Left | Key::Right => {
-                let flow = Flow {
+                let diagram = Diagram {
                     head,
-                    history: &history,
+                    events: &events,
                     shown: self.shown.min(all),
                     selected: None,
                     spin: None,
                 };
-                let newest = history.events[..self.shown.min(all)].last();
+                let newest = events.all[..self.shown.min(all)].last();
                 let from = self.selected.clone().or(newest.map(|e| e.id.clone()));
-                self.selected = next(&flow.columns(), from.as_deref(), key);
+                self.selected = next(&diagram.columns(), from.as_deref(), key);
             }
             Key::Enter => self.details = !self.details && self.selected.is_some(),
             Key::Escape => self.details = false,
             Key::Back => {
                 self.beat = None;
-                self.go(self.shown.saturating_sub(1), &history);
+                self.go(self.shown.saturating_sub(1), &events);
             }
             Key::Forth => {
                 self.beat = None;
-                self.go(self.shown + 1, &history);
+                self.go(self.shown + 1, &events);
             }
             Key::Top => {
                 self.beat = None;
-                self.go(0, &history);
+                self.go(0, &events);
             }
             Key::End => {
                 self.beat = None;
-                self.go(all, &history);
+                self.go(all, &events);
             }
             Key::Space if self.beat.is_some() => self.beat = None,
             Key::Space => {
                 if self.shown == all {
-                    self.go(0, &history);
+                    self.go(0, &events);
                 }
                 self.live = false;
                 self.beat = Some(Instant::now() + BEAT);
@@ -401,14 +387,18 @@ fn details(step: Step, state: State, area: Rect, buf: &mut Buffer) {
         })
         .collect();
     lines.push(Line::raw(""));
-    let (said, colour) = match state {
-        State::Open => ("open", Color::DarkGray),
-        State::Working => ("working", Color::Cyan),
-        State::Done => ("done", Color::Green),
-        State::Dropped => ("dropped", Color::Red),
-        State::Expired => ("expired", Color::Yellow),
+    let colour = match state {
+        State::Open => Color::DarkGray,
+        State::Working => Color::Cyan,
+        State::Done => Color::Green,
+        State::Dropped => Color::Red,
+        State::Expired => Color::Yellow,
     };
-    lines.push(field("state", said.to_string(), Style::new().fg(colour)));
+    lines.push(field(
+        "state",
+        state.text().to_string(),
+        Style::new().fg(colour),
+    ));
     if !record.places.is_empty() {
         lines.push(field("at", record.places.join(", "), Style::new()));
     }
@@ -445,6 +435,15 @@ fn details(step: Step, state: State, area: Rect, buf: &mut Buffer) {
         .block(block)
         .wrap(Wrap { trim: false })
         .render(area, buf);
+}
+
+/// The page of no trail.
+fn empty() -> Page {
+    Page {
+        lines: vec![Styled::from(EMPTY)],
+        keys: KEYS.into(),
+        ..Page::default()
+    }
 }
 
 /// The effect of `event` on the area it drew in `areas`: a step added comes together, a started one
@@ -493,5 +492,7 @@ fn word(kind: Kind) -> &'static str {
     }
 }
 
+mod diagram;
+mod events;
 #[cfg(test)]
 mod tests;

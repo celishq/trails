@@ -46,7 +46,6 @@ fn print(records: &[Note], layout: &Layout) {
         decisions: &decisions,
         reuse: &reuse,
         layout: Some(layout),
-        colour: false,
         grouped: true,
         width: Some(80),
         view: &view,

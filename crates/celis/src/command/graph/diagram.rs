@@ -1,8 +1,10 @@
 //! The graph of one trail in the node view: the steps right under it as cards in a chain from left to
 //! right, and each one's own steps as cards below it.
 
-use super::history::{History, Kind};
-use crate::command::tree::{cut, wrap};
+use super::events::{Events, Kind};
+use crate::command::tree::wrap;
+use crate::terminal::canvas::cut;
+use crate::terminal::look::{frame, look as mark};
 use celis_trails::{State, Step, Trail};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
@@ -26,22 +28,20 @@ const ROWS: usize = 4;
 /// The most rules shown, the newest.
 const RULES: usize = 3;
 
-/// The frames of a working step's mark.
-const SPINNER: [&str; 10] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
-
-/// The trail `head` after the first `shown` events of `history`, with the step `selected` lit; a
+/// The trail `head` after the first `shown` events of `events`, with the step `selected` lit; a
 /// working step's mark at the spinner's frame `spin`, else still.
-pub(crate) struct Flow<'a> {
+pub(crate) struct Diagram<'a> {
     pub head: Step<'a>,
-    pub history: &'a History,
+    pub events: &'a Events,
     pub shown: usize,
     pub selected: Option<&'a str>,
     pub spin: Option<usize>,
 }
 
-/// A step as a card: where it stands, whether a later step replaces it, its place, its title rows, its
-/// own steps as rows with the count left out, and the done and all steps under it.
-struct Card<'a> {
+/// A step as a node of the graph, drawn as a card: where it stands, whether a later step replaces it,
+/// its place, its title rows, its own steps as rows with the count left out, and the done and all
+/// steps under it.
+struct Node<'a> {
     step: Step<'a>,
     state: State,
     replaced: bool,
@@ -52,7 +52,7 @@ struct Card<'a> {
     progress: Option<(usize, usize)>,
 }
 
-impl<'a> Flow<'a> {
+impl<'a> Diagram<'a> {
     /// The width and height it takes to draw the whole graph.
     pub fn size(&self) -> (u16, u16) {
         let (_, width, height) = self.layout();
@@ -63,13 +63,13 @@ impl<'a> Flow<'a> {
     /// under it followed by its rows.
     pub fn columns(&self) -> Vec<Vec<String>> {
         let (columns, _, _) = self.layout();
-        let ids = |card: &Card| {
+        let ids = |card: &Node| {
             let rows = card.rows.iter().map(|(s, _)| s.id().to_string());
             std::iter::once(card.step.id().to_string())
                 .chain(rows)
                 .collect::<Vec<_>>()
         };
-        let column = |cards: &Vec<Card>| cards.iter().flat_map(ids).collect();
+        let column = |cards: &Vec<Node>| cards.iter().flat_map(ids).collect();
         columns.iter().map(column).collect()
     }
 
@@ -143,7 +143,7 @@ impl<'a> Flow<'a> {
 
     /// The cards of the graph, a column for each step right under the trail with its card first; the
     /// width and height of the graph.
-    fn layout(&self) -> (Vec<Vec<Card<'a>>>, u16, u16) {
+    fn layout(&self) -> (Vec<Vec<Node<'a>>>, u16, u16) {
         let replaced = self.replaced();
         let parts = self.shown(Trail::new(self.head).parts());
         let inner = usize::from(CARD) - 6;
@@ -157,7 +157,7 @@ impl<'a> Flow<'a> {
             .any(|(s, _)| !self.shown(s.children()).is_empty());
         let top = 2 + lines + u16::from(bar);
         let mut height = 0;
-        let columns: Vec<Vec<Card>> = parts
+        let columns: Vec<Vec<Node>> = parts
             .into_iter()
             .zip(titles)
             .enumerate()
@@ -165,7 +165,7 @@ impl<'a> Flow<'a> {
                 let x = n as u16 * (CARD + GAP);
                 let under = self.shown(step.tree().into_iter().skip(1).collect());
                 let done = under.iter().filter(|(_, s)| *s == State::Done).count();
-                let mut column = vec![Card {
+                let mut column = vec![Node {
                     step,
                     state,
                     replaced: replaced.contains(step.id()),
@@ -183,7 +183,7 @@ impl<'a> Flow<'a> {
                     rows.truncate(ROWS);
                     let rows_height = rows.len() + usize::from(more > 0);
                     let tall = 2 + (title.len() + rows_height) as u16;
-                    column.push(Card {
+                    column.push(Node {
                         step: child,
                         state,
                         replaced: replaced.contains(child.id()),
@@ -207,7 +207,7 @@ impl<'a> Flow<'a> {
     /// from its first card to each card under it; adds the area of each step and edge to `drawn`.
     fn column(
         &self,
-        column: &[Card],
+        column: &[Node],
         joined: bool,
         graph: &mut Buffer,
         drawn: &mut HashMap<String, Rect>,
@@ -246,7 +246,7 @@ impl<'a> Flow<'a> {
 
     /// Draws `card` on `graph`: its border, its mark and title, its progress or its rows; adds the area
     /// of its step and of each row's step to `drawn`.
-    fn card(&self, card: &Card, graph: &mut Buffer, drawn: &mut HashMap<String, Rect>) {
+    fn card(&self, card: &Node, graph: &mut Buffer, drawn: &mut HashMap<String, Rect>) {
         let area = card.area;
         let lit = self.selected == Some(card.step.id());
         let (border, colour) = match (card.state, card.replaced) {
@@ -326,9 +326,7 @@ impl<'a> Flow<'a> {
     /// column of the selected step, else of the newest event's step.
     fn first(&self, drawn: &HashMap<String, Rect>, all: u16, fit: u16, offset: u16) -> u16 {
         let mut first = offset.min(all.saturating_sub(fit));
-        let newest = self.history.events[..self.shown]
-            .last()
-            .map(|e| e.id.as_str());
+        let newest = self.events.all[..self.shown].last().map(|e| e.id.as_str());
         if let Some(at) = self.selected.or(newest).and_then(|id| drawn.get(id)) {
             let column = at.x / (CARD + GAP);
             first = first.min(column).max((column + 1).saturating_sub(fit));
@@ -342,17 +340,20 @@ impl<'a> Flow<'a> {
         let gone = dim.add_modifier(Modifier::CROSSED_OUT);
         match (state, replaced) {
             (_, true) => (("↺", dim), gone),
-            (State::Open, _) => (("○", dim), dim),
+            (State::Open, _) => ((mark(state).mark, dim), dim),
             (State::Working, _) => {
-                let mark = self.spin.map_or("◐", |s| SPINNER[s % SPINNER.len()]);
+                let mark = self.spin.map_or(mark(state).mark, frame);
                 let bold = Style::new().add_modifier(Modifier::BOLD);
                 ((mark, Style::new().fg(Color::Cyan)), bold)
             }
-            (State::Done, _) => (("✓", Style::new().fg(Color::Green)), Style::new()),
-            (State::Dropped, _) => (("✗", Style::new().fg(Color::Red)), gone),
+            (State::Done, _) => (
+                (mark(state).mark, Style::new().fg(Color::Green)),
+                Style::new(),
+            ),
+            (State::Dropped, _) => ((mark(state).mark, Style::new().fg(Color::Red)), gone),
             (State::Expired, _) => {
                 let yellow = Style::new().fg(Color::Yellow);
-                (("◌", yellow), yellow)
+                ((mark(state).mark, yellow), yellow)
             }
         }
     }
@@ -368,7 +369,7 @@ impl<'a> Flow<'a> {
 
     /// The id and text of the newest rules shown, oldest first.
     fn rules(&self) -> Vec<(&str, &str)> {
-        let shown = self.history.events[..self.shown].iter();
+        let shown = self.events.all[..self.shown].iter();
         let rules: Vec<(&str, &str)> = shown
             .filter(|e| e.kind == Kind::Rule)
             .map(|e| (e.id.as_str(), e.text.as_str()))
@@ -387,7 +388,7 @@ impl<'a> Flow<'a> {
 
     /// Each of `steps` that is shown, with where it stands.
     fn shown(&self, steps: Vec<Step<'a>>) -> Vec<(Step<'a>, State)> {
-        let state = |s: Step<'a>| Some((s, self.history.state(s.id(), self.shown)?));
+        let state = |s: Step<'a>| Some((s, self.events.state(s.id(), self.shown)?));
         steps.into_iter().filter_map(state).collect()
     }
 }

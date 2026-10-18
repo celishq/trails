@@ -1,6 +1,9 @@
-//! A page drawn live from a store: again each time a record lands, a key is read, or its wait ends.
+//! A page drawn live from a store: again each time a record lands, a key is read, or its time to draw
+//! again comes.
 
-use super::screen::Screen;
+use super::canvas::Styled;
+use super::look::{spin, spinner, TURN};
+use super::screen::{clipboard, Screen};
 use super::wake::{Key, Wake};
 use crate::command::Command;
 use crate::failure::Failure;
@@ -10,7 +13,21 @@ use celis_trails::Trails;
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender};
-use std::time::Duration;
+use std::time::{Duration, Instant};
+
+/// One drawn page: its lines, the line to keep in view, its key line, the id `c` copies, the Markdown
+/// `m` copies, whether its lines hold a spinner that turns, and how long until it is drawn again with
+/// no wake.
+#[derive(Default)]
+pub(crate) struct Page {
+    pub lines: Vec<Styled>,
+    pub picked: Option<usize>,
+    pub keys: String,
+    pub copy: Option<String>,
+    pub markdown: Option<String>,
+    pub spun: bool,
+    pub again: Option<Duration>,
+}
 
 /// A page a live screen draws from the model of a store and moves with keys.
 pub(crate) trait Live {
@@ -18,14 +35,8 @@ pub(crate) trait Live {
     /// it when `landed` is `None`.
     fn renew(&mut self, model: &Model, landed: Option<&[Note]>);
 
-    /// Draws itself from `model` on `screen` until a wake comes or its wait ends; that wake.
-    fn wait(
-        &mut self,
-        model: &Model,
-        screen: &mut Screen,
-        out: &mut dyn Write,
-        events: &Receiver<Wake>,
-    ) -> Result<Result<Wake, RecvTimeoutError>, Failure>;
+    /// The page it shows of `model`; `screen` follows its selected line when that moved.
+    fn page(&mut self, model: &Model, screen: &mut Screen) -> Result<Page, Failure>;
 
     /// Moves as `key` asks on the page it last drew from `model`.
     fn press(&mut self, key: Key, model: &Model, screen: &mut Screen) -> Result<(), Failure>;
@@ -42,10 +53,37 @@ struct Batch {
 }
 
 impl Command {
+    /// Draws the page `start` makes from the store on the alternate screen, live; with no store, draws
+    /// `empty` and writes nothing until one is made. Ends on an interrupt or `q`.
+    pub(crate) fn live<P: Live>(
+        &self,
+        out: &mut dyn Write,
+        empty: Page,
+        start: impl FnOnce(&Trails) -> Result<P, Failure>,
+    ) -> Result<(), Failure> {
+        self.screen(out, |out, wakes| {
+            let mut screen = Screen {
+                colour: self.colour(),
+                ..Screen::default()
+            };
+            if !self.held()? {
+                screen.draw(out, &empty.lines, None, &empty.keys)?;
+                while !self.held()? {
+                    if let Ok(Wake::Quit) = wakes.1.recv_timeout(Duration::from_millis(250)) {
+                        return Ok(());
+                    }
+                }
+            }
+            let trails = self.trails()?;
+            let mut page = start(&trails)?;
+            self.follow(&mut page, trails, &mut screen, out, wakes)
+        })
+    }
+
     /// Draws `page` from the model of `trails`, the store, on `screen`, and again for each run of wakes
     /// from `events`; reads the files of records that land, and the whole store off this thread when it
-    /// must. Ends on an interrupt or `q`.
-    pub(crate) fn live(
+    /// must.
+    fn follow(
         &self,
         page: &mut impl Live,
         mut trails: Trails,
@@ -61,8 +99,9 @@ impl Command {
                 page.renew(model, landed.as_deref());
                 loop {
                     model.steps.at(crate::command::now());
-                    let wake = page.wait(model, screen, out, &events)?;
-                    match drain(wake, &events, page, model, screen)? {
+                    let drawn = page.page(model, screen)?;
+                    let wake = show(&drawn, screen, out, &events)?;
+                    match drain(wake, &events, page, &drawn, model, screen)? {
                         Some(batch) if !batch.landed => {}
                         batch => return Ok::<_, Failure>(batch),
                     }
@@ -85,13 +124,41 @@ impl Command {
     }
 }
 
-/// The run of wakes from `wake` on, with the wakes that wait in `events` up to a key that opens or
-/// closes lines; records wait 50 ms for more. Each key moves `screen` and `page` on `model`. `None` on
-/// an interrupt.
+/// Draws `page` on `screen`, again each turn of its spinner, until a wake comes or its time to draw
+/// again passes; that wake.
+fn show(
+    page: &Page,
+    screen: &mut Screen,
+    out: &mut dyn Write,
+    events: &Receiver<Wake>,
+) -> Result<Result<Wake, RecvTimeoutError>, Failure> {
+    let due = page.again.map(|again| Instant::now() + again);
+    loop {
+        let lines = match page.spun {
+            true => spinner(&page.lines, spin()),
+            false => page.lines.clone(),
+        };
+        screen.draw(out, &lines, page.picked, &page.keys)?;
+        let left = due.map(|due| due.saturating_duration_since(Instant::now()));
+        let wait = match page.spun {
+            true => left.map_or(TURN, |left| left.min(TURN)),
+            false => left.unwrap_or(Duration::MAX),
+        };
+        match events.recv_timeout(wait) {
+            Err(RecvTimeoutError::Timeout) if due.is_none_or(|due| Instant::now() < due) => {}
+            wake => return Ok(wake),
+        }
+    }
+}
+
+/// The run of wakes from `wake` on, with the wakes that wait in `events` up to a key that changes what
+/// a page shows; records wait 50 ms for more. Each key copies from `drawn`, the page last drawn, or
+/// moves `screen` and `page` on `model`. `None` on an interrupt.
 fn drain(
     mut wake: Result<Wake, RecvTimeoutError>,
     events: &Receiver<Wake>,
     page: &mut impl Live,
+    drawn: &Page,
     model: &Model,
     screen: &mut Screen,
 ) -> Result<Option<Batch>, Failure> {
@@ -108,6 +175,11 @@ fn drain(
             Ok(Wake::Resize) => screen.shown.clear(),
             Ok(Wake::Key(key)) => {
                 laid = key.lays_out();
+                screen.said = match (&key, &drawn.copy, &drawn.markdown) {
+                    (Key::Copy, Some(id), _) => Some(clipboard(id, &format!("copied {id}"))),
+                    (Key::Markdown, _, Some(text)) => Some(clipboard(text, "copied markdown")),
+                    _ => None,
+                };
                 screen.press(&key);
                 page.press(key, model, screen)?;
             }

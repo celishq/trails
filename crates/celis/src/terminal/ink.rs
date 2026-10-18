@@ -5,16 +5,15 @@ use super::glyph::digits;
 use ratatui::style::Style;
 use ratatui::text::Span;
 
-/// How a card prints: its numbers as plain text, and in colour.
+/// How a card prints: its numbers as plain text or big.
 #[derive(Clone, Copy)]
 pub(crate) struct Ink {
     pub plain: bool,
-    pub colour: bool,
 }
 
 impl Ink {
     pub fn paint(self, style: Style, text: &str) -> Span<'static> {
-        paint(self.colour, style, text)
+        paint(style, text)
     }
 
     pub fn dim(self, text: &str) -> Span<'static> {

@@ -3,6 +3,7 @@
 mod args;
 mod auth;
 mod decision;
+mod graph;
 mod grep;
 mod issue;
 mod link;

@@ -1,13 +1,15 @@
 //! `celis report`: the trails that ids name, as Markdown for a pull request.
 
-use super::tree::{look, visible};
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::progress::{Flags, Tally};
+use crate::terminal::canvas::visible;
 use crate::terminal::canvas::{join, line as styled, paint, Styled, BOLD, DIM, MAGENTA, YELLOW};
 use crate::terminal::card::{Card, RULE};
 use crate::terminal::ink::Ink;
+use crate::terminal::look::look;
 use crate::text::clock::took;
+use crate::text::line::plural;
 use crate::text::line::time;
 use celis_trails::records::id::short;
 use celis_trails::{Decisions, Mark, State, Step, Steps, Trail, Trails};
@@ -42,12 +44,13 @@ impl Command {
             .map_or(WIDTH, |c| c.saturating_sub(1).min(WIDTH));
         let mut drawn = vec![];
         for trail in chosen(&trails.steps(), ids)? {
-            let card = card(&trails, trail, width, self.colour());
+            let card = card(&trails, trail, width);
             if !drawn.is_empty() {
                 drawn.push(String::new());
             }
             let height = card.rows.len() + 2;
-            drawn.extend(card.lines(width, height, self.colour()));
+            let lines = card.lines(width, height);
+            drawn.extend(lines.iter().map(|l| styled(l, self.colour())));
         }
         super::put(out, &drawn.join("\n"))?;
         leave(out, &text, self.colour())
@@ -74,16 +77,16 @@ fn chosen<'a>(steps: &'a Steps<'a>, ids: &[String]) -> Result<Vec<Step<'a>>, Fai
 
 /// The card of `trail`: its id, project and title, its time and counts, its steps as a strip of their
 /// states, a line a step under it, and its rules and lessons, `width` wide; its time plain when narrow.
-fn card(trails: &Trails, trail: Step, width: usize, colour: bool) -> Card {
+fn card(trails: &Trails, trail: Step, width: usize) -> Card {
     let step = trail.record();
     let tree = &trail.tree()[1..];
     let tally = Tally::of(tree);
     let rules = trails.decisions().rules(trail).len();
     let ran = took(trail.newest().saturating_sub(trail.note().created_at));
     let state = trail.state();
-    let mark = paint(colour, look(state).text, look(state).mark);
+    let mark = paint(look(state).text, look(state).mark);
     let labels = Styled::from(vec![
-        paint(colour, DIM, "STEPS   RULES   REVISED   DROPPED   "),
+        paint(DIM, "STEPS   RULES   REVISED   DROPPED   "),
         mark,
         format!(" {}", state.text().to_uppercase()).into(),
     ]);
@@ -94,25 +97,22 @@ fn card(trails: &Trails, trail: Step, width: usize, colour: bool) -> Card {
         tally.revised,
         tally.dropped
     );
-    let mut rows = vec![Styled::from(paint(colour, BOLD, step.title())), RULE.into()];
+    let mut rows = vec![Styled::from(paint(BOLD, step.title())), RULE.into()];
     match width < NARROW {
         true => rows.extend([
-            Styled::from(vec!["took ".into(), paint(colour, BOLD, &ran)]),
+            Styled::from(vec!["took ".into(), paint(BOLD, &ran)]),
             labels,
             values.into(),
         ]),
         false => {
-            let ink = Ink {
-                plain: false,
-                colour,
-            };
+            let ink = Ink { plain: false };
             rows.extend(ink.beside(&ran, &[labels, values.into()], 3));
         }
     }
     if !tree.is_empty() {
         let mut cells: Vec<Span> = tree
             .iter()
-            .map(|s| paint(colour, look(s.state()).text, "▮"))
+            .map(|s| paint(look(s.state()).text, "▮"))
             .collect();
         let counts: Vec<String> = [
             (tally.done, "done"),
@@ -123,7 +123,7 @@ fn card(trails: &Trails, trail: Step, width: usize, colour: bool) -> Card {
         .filter(|(n, _)| *n > 0)
         .map(|(n, s)| format!("{n} {s}"))
         .collect();
-        cells.extend(["   ".into(), paint(colour, DIM, &counts.join(" · "))]);
+        cells.extend(["   ".into(), paint(DIM, &counts.join(" · "))]);
         rows.extend([Styled::default(), Styled::from(cells)]);
     }
     let parts = Trail::new(trail).parts();
@@ -133,28 +133,26 @@ fn card(trails: &Trails, trail: Step, width: usize, colour: bool) -> Card {
         for part in parts {
             let look = look(part.state());
             let time = time(part).unwrap_or_else(|| part.state().text().to_string());
-            let title = super::tree::cut(part.title(), inside.saturating_sub(time.len() + 4));
+            let title =
+                crate::terminal::canvas::cut(part.title(), inside.saturating_sub(time.len() + 4));
             let pad = " ".repeat(inside.saturating_sub(visible(&title) + time.len() + 3));
-            let mark = paint(colour, look.text, look.mark);
+            let mark = paint(look.text, look.mark);
             rows.push(Styled::from(vec![
                 mark,
                 format!(" {title}{pad} ").into(),
-                paint(colour, DIM, &time),
+                paint(DIM, &time),
             ]));
         }
     }
     let lessons = tree.iter().filter(|s| Flags::of(**s).changed).count();
     let mut notes: Vec<Styled> = vec![];
     if rules > 0 {
-        let rule = format!(" {}", count(rules, "rule"));
-        notes.push(Styled::from(vec![paint(colour, MAGENTA, "§"), rule.into()]));
+        let rule = format!(" {}", plural(rules, "rule"));
+        notes.push(Styled::from(vec![paint(MAGENTA, "§"), rule.into()]));
     }
     if lessons > 0 {
-        let lesson = format!(" {}", count(lessons, "lesson"));
-        notes.push(Styled::from(vec![
-            paint(colour, YELLOW, "~"),
-            lesson.into(),
-        ]));
+        let lesson = format!(" {}", plural(lessons, "lesson"));
+        notes.push(Styled::from(vec![paint(YELLOW, "~"), lesson.into()]));
     }
     if !notes.is_empty() {
         let gap = || Styled::from("   ");
@@ -171,14 +169,6 @@ fn card(trails: &Trails, trail: Step, width: usize, colour: bool) -> Card {
     }
 }
 
-/// `n` of `what`, as `1 rule` or `3 rules`.
-fn count(n: usize, what: &str) -> String {
-    match n {
-        1 => format!("1 {what}"),
-        n => format!("{n} {what}s"),
-    }
-}
-
 /// Prints the keys it reads and reads one key when stdin is a terminal: `m` copies `text` and says so,
 /// and any other key leaves; either clears the key line.
 fn leave(out: &mut dyn Write, text: &str, colour: bool) -> Result<(), Failure> {
@@ -191,7 +181,7 @@ fn leave(out: &mut dyn Write, text: &str, colour: bool) -> Result<(), Failure> {
     if unsafe { libc::tcgetattr(libc::STDIN_FILENO, &mut before) } != 0 {
         return Ok(());
     }
-    let keys = paint(colour, DIM, "m copy markdown · any key to leave");
+    let keys = paint(DIM, "m copy markdown · any key to leave");
     write(out, &styled(&keys.into(), colour))?;
     let mut raw = before;
     raw.c_lflag &= !(libc::ICANON | libc::ECHO | libc::ISIG);
@@ -206,7 +196,7 @@ fn leave(out: &mut dyn Write, text: &str, colour: bool) -> Result<(), Failure> {
         let said = crate::terminal::screen::clipboard(text, "copied markdown");
         write(
             out,
-            &format!("{}\n", styled(&paint(colour, DIM, &said).into(), colour)),
+            &format!("{}\n", styled(&paint(DIM, &said).into(), colour)),
         )?;
     }
     Ok(())

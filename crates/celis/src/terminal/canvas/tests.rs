@@ -33,9 +33,9 @@ fn a_line_keeps_a_private_character() {
 #[test]
 fn a_cut_line_keeps_its_looks() {
     let line = Styled::from(vec![Span::styled("ab", BOLD), Span::raw("cdef")]);
-    let cut = cut(&line, 4);
+    let cut = clip(&line, 4);
     assert_eq!(cut.to_string(), "abc…");
     assert_eq!(cut.spans[1].style, Style::new());
-    assert_eq!(super::cut(&line, 2).spans, [Span::styled("a…", BOLD)]);
-    assert_eq!(super::cut(&line, 6), line);
+    assert_eq!(clip(&line, 2).spans, [Span::styled("a…", BOLD)]);
+    assert_eq!(clip(&line, 6), line);
 }

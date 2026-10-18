@@ -1,6 +1,6 @@
 //! A framed card of rows, as stats and report draw it.
 
-use super::canvas::{cut, rows, Styled, BOLD, DIM};
+use super::canvas::{clip, cut, lines, Styled, BOLD, DIM};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::Style;
@@ -19,11 +19,11 @@ pub(crate) struct Card {
 
 impl Card {
     /// Its `height` lines, `width` wide: each row padded or cut to fit, and empty rows after them; the
-    /// frame dim, or bold when picked, and a `RULE` row a line across it, in colour when `colour`.
-    pub fn lines(&self, width: usize, height: usize, colour: bool) -> Vec<String> {
+    /// frame dim, or bold when picked, and a `RULE` row a line across it.
+    pub fn lines(&self, width: usize, height: usize) -> Vec<Styled> {
         let mut buf = Buffer::empty(Rect::new(0, 0, size(width), size(height)));
         self.render(buf.area, &mut buf);
-        rows(&buf, colour)
+        lines(&buf)
     }
 
     /// Draws it over `area` of `buf`.
@@ -37,7 +37,7 @@ impl Card {
             .border_style(frame)
             .render(area, buf);
         let width = usize::from(area.width);
-        let title = crate::command::tree::cut(&self.title, width.saturating_sub(6));
+        let title = cut(&self.title, width.saturating_sub(6));
         buf.set_string(area.x + 2, area.y, " ", Style::reset());
         buf.set_string(area.x + 3, area.y, &title, BOLD);
         let x = area.x + 3 + title.chars().count() as u16;
@@ -54,7 +54,7 @@ impl Card {
                     buf.set_string(area.x, y, line, frame);
                 }
                 false => {
-                    buf.set_line(area.x + 2, y, &cut(row, inside), size(inside));
+                    buf.set_line(area.x + 2, y, &clip(row, inside), size(inside));
                 }
             }
         }
@@ -63,8 +63,8 @@ impl Card {
 
 /// `cards` side by side, `per_row` a row and a space between two, each `width` wide and each row of
 /// cards as tall as its tallest card.
-pub(crate) fn grid(cards: &[Card], per_row: usize, width: usize, colour: bool) -> Vec<String> {
-    let mut lines = vec![];
+pub(crate) fn grid(cards: &[Card], per_row: usize, width: usize) -> Vec<Styled> {
+    let mut drawn = vec![];
     for row in cards.chunks(per_row.max(1)) {
         let height = row.iter().map(|c| c.rows.len()).max().unwrap_or(0) + 2;
         let all = row.len() * (width + 1) - 1;
@@ -73,9 +73,9 @@ pub(crate) fn grid(cards: &[Card], per_row: usize, width: usize, colour: bool) -
             let x = size(n * (width + 1));
             card.render(Rect::new(x, 0, size(width), size(height)), &mut buf);
         }
-        lines.extend(rows(&buf, colour));
+        drawn.extend(lines(&buf));
     }
-    lines
+    drawn
 }
 
 /// `n` as a size on the screen.

@@ -81,7 +81,7 @@ pub(crate) enum Key {
 }
 
 impl Key {
-    /// Whether it opens or closes lines, so the keys after it need the tree laid out again.
+    /// Whether it changes what a page shows, so the keys after it wait for the page drawn again.
     pub(crate) fn lays_out(&self) -> bool {
         matches!(
             self,

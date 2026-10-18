@@ -622,7 +622,7 @@ fn watch_prints_open_steps_then_rules_then_closed_steps() {
     }
 }
 
-/// The closed line holds a trail's expired steps too, and marks them `!` after `✓` and `✗`.
+/// The closed line holds a trail's expired steps too, and marks them `◌` after `✓` and `✗`.
 #[test]
 fn watch_holds_expired_steps_in_the_closed_line() {
     let repo = Repo::new();
@@ -637,7 +637,7 @@ fn watch_holds_expired_steps_in_the_closed_line() {
     watch.until("2 closed steps");
     let rows = watch.rows();
     assert!(
-        rows.iter().any(|r| r.ends_with("└▸ ✓! 2 closed steps")),
+        rows.iter().any(|r| r.ends_with("└▸ ✓◌ 2 closed steps")),
         "{rows:?}"
     );
     assert!(!rows.join("\n").contains("left part"), "{rows:?}");

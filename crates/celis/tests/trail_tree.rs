@@ -121,7 +121,7 @@ fn tree_prints_an_expired_step_with_the_closed_ones() {
         lines[2..],
         [
             format!("  § {} a rule", short(&rule.id)),
-            format!("  ! {} left part", short(&left.id)),
+            format!("  ◌ {} left part", short(&left.id)),
             format!("  ✓ {} done part · 30s", short(&done.id)),
         ],
         "{lines:?}"
@@ -440,7 +440,7 @@ fn tree_demo_prints_every_state_and_writes_nothing() {
     let text = out(&o);
     let working = text.lines().filter(|l| l.starts_with("◐ ")).count();
     assert!(working >= 2, "{text}");
-    for mark in ["○ ", "◐ ", "✓ ", "✓↻ ", "✗ ", "! "] {
+    for mark in ["○ ", "◐ ", "✓ ", "✓↻ ", "✗ ", "◌ "] {
         assert!(
             text.lines().any(|l| l.trim_start().starts_with(mark)),
             "{mark}: {text}"

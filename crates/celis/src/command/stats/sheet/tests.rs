@@ -42,7 +42,7 @@ fn worked(later: u64) -> (TempDir, Trails) {
 
 /// The cards of `trails`, 92 and 43 characters wide inside.
 fn cards(trails: &Trails) -> [Sheet; CARDS] {
-    Model::of(trails, |model| sheets(model, 92, 43, false, false))
+    Model::of(trails, |model| sheets(model, 92, 43, false))
 }
 
 /// The face of the card of `trails` whose title starts with `title`, its rows joined by new lines.
