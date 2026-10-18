@@ -228,22 +228,23 @@ impl Tree<'_> {
             }
             return self.show(lines, out);
         }
-        let mut days: Vec<(u64, Vec<Step>)> = vec![];
+        let mut days: Vec<(u64, String, Vec<Step>)> = vec![];
         for &note in notes {
             let at = match self.view.all {
                 true => note.note().created_at,
                 false => self.steps.now(),
             };
+            let name = day(at);
             match days.last_mut() {
-                Some((first, trails)) if day(*first) == day(at) => trails.push(note),
-                _ => days.push((at, vec![note])),
+                Some((_, last, trails)) if *last == name => trails.push(note),
+                _ => days.push((at, name, vec![note])),
             }
         }
-        for (n, (at, trails)) in days.into_iter().enumerate() {
+        for (n, (at, name, trails)) in days.into_iter().enumerate() {
             if n > 0 {
                 self.put(out, "")?;
             }
-            self.group(at, trails, out)?;
+            self.group((at, name), trails, out)?;
         }
         if self.view.watch && !notes.is_empty() {
             self.put(out, "")?;
@@ -270,9 +271,14 @@ impl Tree<'_> {
         Ok(())
     }
 
-    /// Prints the day group of `trails` from the day of `at` as `day` does, or as it last did when its
-    /// layout kept it and nothing it shows changed.
-    fn group(&self, at: u64, trails: Vec<Step>, out: &mut dyn Write) -> Result<(), Failure> {
+    /// Prints the day group of `trails` from the day `name` of `at` as `day` does, or as it last did
+    /// when its layout kept it and nothing it shows changed.
+    fn group(
+        &self,
+        (at, name): (u64, String),
+        trails: Vec<Step>,
+        out: &mut dyn Write,
+    ) -> Result<(), Failure> {
         let Some(layout) = self.layout else {
             return self.day(at, trails, out);
         };
@@ -282,7 +288,7 @@ impl Tree<'_> {
             full: self.view.full,
             all: self.view.all,
         };
-        if let Some(group) = layout.get(&day(at), &key, self.view, self.steps.now()) {
+        if let Some(group) = layout.get(&name, &key, self.view, self.steps.now()) {
             if cfg!(debug_assertions) {
                 let blank = self.blank();
                 let mut text = Vec::new();
@@ -313,7 +319,7 @@ impl Tree<'_> {
             ids,
             part,
         };
-        layout.keep(day(at), group);
+        layout.keep(name, group);
         Ok(())
     }
 

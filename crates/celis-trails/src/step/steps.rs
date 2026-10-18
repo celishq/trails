@@ -82,7 +82,8 @@ impl<'a> Steps<'a> {
 
     /// Every trail of every project, oldest first.
     pub fn roots(&'a self) -> Vec<Step<'a>> {
-        self.all().into_iter().filter(|s| s.is_trail()).collect()
+        let roots = self.index.roots.iter();
+        roots.filter_map(|n| self.get(&n.id)).collect()
     }
 
     /// The open trail of the session `session` in the project `project`: the trail of its newest step,
@@ -103,6 +104,7 @@ pub const LIFE: u64 = 30 * 60;
 /// The step records, oldest first, and what the marks say of each step.
 pub(crate) struct Index<'a> {
     all: Vec<&'a Note>,
+    roots: Vec<&'a Note>,
     entries: HashMap<&'a str, Entry<'a>>,
     decisions: HashSet<&'a str>,
 }
@@ -177,9 +179,12 @@ impl<'a> Index<'a> {
             entry.mark(note, mark);
         }
         sum(&mut entries);
+        let roots = all.iter().copied();
+        let roots = roots.filter(|n| entries[n.id.as_str()].step.under.is_none());
         let decisions = sorted.iter().filter(|n| Decision::read(n).is_some());
         let decisions = decisions.map(|n| n.id.as_str()).collect();
         Index {
+            roots: roots.collect(),
             all,
             entries,
             decisions,
