@@ -61,7 +61,7 @@ impl Demo {
         self.history(&shop, &crm)?;
         let day = 2 * 24 * 3600;
         let set = self.add(day, &shop, None, "Set up the shop", &[])?;
-        let till = self.add(day - 60, &shop, Some(&set), "Open the till", &[])?;
+        let till = self.add(day - 60, &shop, Some(&set), "The till opens", &[])?;
         self.close(day - 600, &till, "the till opens", None)?;
 
         let cart = self.add(3 * 3600, &shop, None, "Fix the cart total", &[])?;
@@ -69,7 +69,7 @@ impl Demo {
             3 * 3600 - 60,
             &shop,
             Some(&cart),
-            "Sum the cart in floats",
+            "The cart total adds up",
             &["shelf/cart.py"],
         )?;
         self.close(3 * 3600 - 400, &floats, "the total adds up", None)?;
@@ -77,7 +77,7 @@ impl Demo {
             3 * 3600 - 500,
             &shop,
             &cart,
-            "Sum the cart in cents",
+            "The cart total is correct to the cent",
             &floats,
         )?;
         self.close(
@@ -92,7 +92,7 @@ impl Demo {
             2 * 3600 - 60,
             &crm,
             Some(&import),
-            "Read the CSV export",
+            "The CSV export is read",
             &[],
         )?;
         self.close(2 * 3600 - 300, &csv, "1,204 contacts read", None)?;
@@ -100,7 +100,7 @@ impl Demo {
             2 * 3600 - 320,
             &crm,
             Some(&import),
-            "Merge the duplicates",
+            "No contact is in the list twice",
             &[],
         )?;
         let sync = self.add(5000, &crm, None, "Sync with the old CRM", &[])?;
@@ -113,9 +113,15 @@ impl Demo {
             "Merge the old leads into the contacts",
             &[],
         )?;
-        let email = self.add(890, &crm, Some(&leads), "Match the leads by email", &[])?;
+        let email = self.add(890, &crm, Some(&leads), "Each lead has its contact", &[])?;
         self.trails(120)?.start(&email)?;
-        self.add(880, &crm, Some(&leads), "Move the notes over", &[])?;
+        self.add(
+            880,
+            &crm,
+            Some(&leads),
+            "The notes of each lead are on its contact",
+            &[],
+        )?;
 
         let tier = self.add(
             1500,
@@ -144,25 +150,25 @@ impl Demo {
             "the price test passes",
             Some("rounded down, not to the nearest cent"),
         )?;
-        let receipt = self.add(
-            1290,
-            &shop,
-            Some(&tier),
-            "Show the tier on the receipt",
-            &[],
-        )?;
+        let receipt = self.add(1290, &shop, Some(&tier), "The receipt shows the tier", &[])?;
         let line = self.add(
             1280,
             &shop,
             Some(&receipt),
-            "Add the tier's line",
+            "The receipt has the tier's line",
             &["till/receipt.py"],
         )?;
         self.close(1100, &line, "the receipt shows Senior -20%", None)?;
-        let badge = self.add(1090, &shop, Some(&receipt), "Print the badge", &[])?;
+        let badge = self.add(1090, &shop, Some(&receipt), "The badge prints", &[])?;
         self.close(1000, &badge, "the badge prints", None)?;
         self.close(990, &receipt, "the receipt shows the tier", None)?;
-        let banner = self.add(980, &shop, Some(&tier), "Keep the old discount banner", &[])?;
+        let banner = self.add(
+            980,
+            &shop,
+            Some(&tier),
+            "The old discount banner stays",
+            &[],
+        )?;
         self.trails(970)?
             .drop(&banner, "the tier replaces the banner")?;
         let frame = self.add(
@@ -172,9 +178,9 @@ impl Demo {
             "The frame shows the tier",
             &["web/frame.tsx"],
         )?;
-        let label = self.add(950, &shop, Some(&frame), "Add the badge to the frame", &[])?;
+        let label = self.add(950, &shop, Some(&frame), "The frame has the badge", &[])?;
         self.trails(300)?.start(&label)?;
-        self.add(940, &shop, Some(&tier), "Round the price down", &[])?;
+        self.add(940, &shop, Some(&tier), "The price is rounded down", &[])?;
         Ok(tier)
     }
 
@@ -228,7 +234,7 @@ impl Demo {
             )?;
             let ago = days.len().checked_sub(7).map(|w| days[w].clone());
             let mut ids = vec![(a, took)];
-            for (k, title) in [(1, third), (2, "Check it on the staging shop")] {
+            for (k, title) in [(1, third), (2, "The staging shop works with it")] {
                 let uses: Vec<String> = ago.iter().map(|w| w[k].0.clone()).collect();
                 let id = self.write_step(
                     at - 180 - took,
@@ -256,7 +262,7 @@ impl Demo {
                     at - 3_900,
                     anchor,
                     Some(&trail),
-                    "Fix the last change",
+                    "The last change is fixed",
                     &[],
                     Some(&last[2].0),
                     &[],
@@ -388,33 +394,33 @@ const DAY: u64 = 24 * 3600;
 const TASKS: [[&str; 3]; 6] = [
     [
         "Add gift cards",
-        "Store the card balance",
-        "Take a card at the till",
+        "The card balance is kept",
+        "The till takes a card",
     ],
     [
         "Clean up old contacts",
-        "Find the contacts with no email",
-        "Archive them",
+        "The contacts with no email are known",
+        "Those contacts are archived",
     ],
     [
         "Show stock on the shelf page",
-        "Read the stock count",
-        "Print it by the price",
+        "The stock count is read",
+        "The page shows it by the price",
     ],
     [
         "Add a birthday field",
-        "Add the field to the form",
-        "Show it on the contact card",
+        "The form has the field",
+        "The contact card shows it",
     ],
     [
         "Speed up the checkout",
-        "Cache the cart total",
-        "Drop the second price lookup",
+        "The cart total is worked out once",
+        "Each price is looked up once",
     ],
     [
         "Tag the leads by source",
-        "Read the source from the form",
-        "Filter the list by tag",
+        "Each lead has its source",
+        "The list filters by tag",
     ],
 ];
 

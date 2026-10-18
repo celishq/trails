@@ -363,7 +363,7 @@ pub const VERBS: &[Verb] = &[
             ("<id>", "A step id, or its first 4 or more characters"),
             ("--changed", "How the work differs from the step's title"),
             ("--as-planned", "The work matches the title. Use this or --changed"),
-            ("--pitfall", "What cost time, saved as a decision at the step's place"),
+            ("--pitfall", "What went wrong, saved as a decision at the step's place"),
             ("<proof>", "The check that failed before and passes now"),
         ],
         examples: &[
