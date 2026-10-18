@@ -111,10 +111,7 @@ impl Screen {
         let width = size.map(|s| usize::from(s.ws_col)).filter(|&w| w > 1);
         let width = width.map(|w| w - 1);
         let rows = size.map(|s| usize::from(s.ws_row)).filter(|&r| r > 0);
-        let lines: Vec<String> = tree
-            .lines()
-            .map(|l| width.map_or(l.to_string(), |w| cut(l, w)))
-            .collect();
+        let lines: Vec<&str> = tree.lines().collect();
         let lines = match rows
             .map(|r| r - 1)
             .filter(|&body| body >= 3 && lines.len() > body)
@@ -122,9 +119,16 @@ impl Screen {
             Some(body) => self.window(lines, body, picked),
             None => {
                 self.top = 0;
-                lines
+                lines.into_iter().map(str::to_string).collect()
             }
         };
+        let lines: Vec<String> = lines
+            .into_iter()
+            .map(|l| match width {
+                Some(w) => cut(&l, w),
+                None => l,
+            })
+            .collect();
         let said = self.said.as_deref().unwrap_or(keys);
         let said = width.map_or(said.to_string(), |w| cut(said, w));
         let said = format!("\x1b[2m{said}\x1b[0m");
@@ -149,7 +153,7 @@ impl Screen {
     /// The `body` rows of `lines` in view from `top`: a first row for the lines above it and a last
     /// row for the lines below it, when there are any; the `picked` line in view when the selection
     /// moved.
-    fn window(&mut self, lines: Vec<String>, body: usize, picked: Option<usize>) -> Vec<String> {
+    fn window(&mut self, lines: Vec<&str>, body: usize, picked: Option<usize>) -> Vec<String> {
         let len = lines.len();
         let fit = |top: usize| {
             let up = usize::from(top > 0);
@@ -171,7 +175,11 @@ impl Screen {
         if self.top > 0 {
             view.push(format!("  \x1b[2m↑ {} more\x1b[0m", self.top));
         }
-        view.extend(lines[self.top..self.top + shown].iter().cloned());
+        view.extend(
+            lines[self.top..self.top + shown]
+                .iter()
+                .map(|l| l.to_string()),
+        );
         if self.top + shown < len {
             view.push(format!("  \x1b[2m↓ {} more\x1b[0m", len - self.top - shown));
         }
