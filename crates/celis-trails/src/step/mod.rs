@@ -197,10 +197,7 @@ impl<'a> Step<'a> {
 
     /// The time of the newest record of its tree: its steps, and the marks that name them.
     pub fn newest(self) -> u64 {
-        let tree = self.tree().into_iter();
-        tree.map(|s| s.entry.newest)
-            .max()
-            .unwrap_or(self.note().created_at)
+        self.entry.newest
     }
 
     /// Whether, as a trail, it is open and ended: steps sit under it and none is open, or 30 minutes passed
@@ -209,26 +206,20 @@ impl<'a> Step<'a> {
         if self.closed().is_some() {
             return false;
         }
-        let tree = self.tree();
-        let idle = tree.len() > 1 && tree[1..].iter().all(|s| s.closed().is_some());
+        let idle = !self.entry.children.is_empty() && !self.entry.loose;
         idle || self.steps.now.saturating_sub(self.newest()) >= LIFE
     }
 
     /// Where it stands as a trail: working while open and a step of it works, else open; expired when
     /// it ended with a step open; dropped; else done.
     fn trail_state(self) -> State {
-        let tree = self.tree();
-        let parts = &tree[1..];
         match self.entry.close {
             Some((_, Close::Dropped)) => State::Dropped,
-            None if !self.ended() => {
-                let works = |s: &Step| s.start().is_some() && s.closed().is_none();
-                match works(&self) || parts.iter().any(works) {
-                    true => State::Working,
-                    false => State::Open,
-                }
-            }
-            None if parts.iter().any(|s| s.closed().is_none()) => State::Expired,
+            None if !self.ended() => match self.entry.busy {
+                true => State::Working,
+                false => State::Open,
+            },
+            None if self.entry.loose => State::Expired,
             _ => State::Done,
         }
     }

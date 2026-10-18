@@ -98,7 +98,7 @@ pub(crate) struct Index<'a> {
 }
 
 /// One step: its record, its text with its edits, its links, the steps that replace it, and how its marks
-/// left it.
+/// left it; of its tree, the newest record, whether a step works, and whether a step under it is open.
 pub(crate) struct Entry<'a> {
     pub(crate) note: &'a Note,
     pub(crate) step: StepRecord,
@@ -106,7 +106,10 @@ pub(crate) struct Entry<'a> {
     pub(crate) replaced: Vec<&'a Note>,
     pub(crate) start: Option<&'a Note>,
     pub(crate) close: Option<(&'a Note, Close)>,
+    pub(crate) touched: u64,
     pub(crate) newest: u64,
+    pub(crate) busy: bool,
+    pub(crate) loose: bool,
 }
 
 /// How a step was closed.
@@ -135,7 +138,10 @@ impl<'a> Index<'a> {
                         replaced: Vec::new(),
                         start: None,
                         close: None,
-                        newest: note.created_at,
+                        touched: note.created_at,
+                        newest: 0,
+                        busy: false,
+                        loose: false,
                     },
                 );
             }
@@ -157,15 +163,50 @@ impl<'a> Index<'a> {
             let Some(entry) = entries.get_mut(&*id) else {
                 continue;
             };
-            entry.newest = entry.newest.max(note.created_at);
+            entry.touched = entry.touched.max(note.created_at);
             entry.mark(note, mark);
         }
+        sum(&mut entries);
         let decisions = sorted.iter().filter(|n| Decision::read(n).is_some());
         let decisions = decisions.map(|n| n.id.as_str()).collect();
         Index {
             all,
             entries,
             decisions,
+        }
+    }
+}
+
+/// Sets on each entry of `entries` what its tree holds, each step's tree after the trees under it.
+fn sum<'a>(entries: &mut HashMap<&'a str, Entry<'a>>) {
+    let mut order: Vec<&'a str> = entries
+        .iter()
+        .filter(|(_, e)| {
+            e.step
+                .under
+                .as_deref()
+                .is_none_or(|u| !entries.contains_key(u))
+        })
+        .map(|(id, _)| *id)
+        .collect();
+    let mut i = 0;
+    while i < order.len() {
+        order.extend(entries[order[i]].children.iter().map(|n| n.id.as_str()));
+        i += 1;
+    }
+    for id in order.into_iter().rev() {
+        let entry = &entries[id];
+        let mut newest = entry.touched;
+        let mut busy = entry.start.is_some() && entry.close.is_none();
+        let mut loose = false;
+        for child in &entry.children {
+            let child = &entries[child.id.as_str()];
+            newest = newest.max(child.newest);
+            busy |= child.busy;
+            loose |= child.loose || child.close.is_none();
+        }
+        if let Some(entry) = entries.get_mut(id) {
+            (entry.newest, entry.busy, entry.loose) = (newest, busy, loose);
         }
     }
 }
