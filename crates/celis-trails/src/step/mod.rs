@@ -5,10 +5,12 @@ pub mod mark;
 pub mod state;
 pub mod step_record;
 pub mod steps;
+pub mod used;
 
 use crate::step::steps::{Close, Entry, LIFE};
-use crate::{Mark, State, StepId, StepRecord, Steps, Trail};
+use crate::{Mark, State, StepId, StepRecord, Steps, Trail, Used};
 use celis_nostr::Note;
+use std::collections::HashSet;
 
 /// One step of a store as it stands: its record with its edits, where it sits in its trail, and how its
 /// marks left it. A step under no other is a trail.
@@ -52,6 +54,22 @@ impl<'a> Step<'a> {
     /// The step it is a part of; `None` for a trail.
     pub fn under(self) -> Option<Step<'a>> {
         self.steps.get(self.entry.step.under.as_deref()?)
+    }
+
+    /// What each of its `uses` names, once each, in the order it names them.
+    pub fn uses(self) -> Vec<Used<'a>> {
+        let mut seen = HashSet::new();
+        let ids = self
+            .entry
+            .step
+            .uses
+            .iter()
+            .filter(|id| seen.insert(id.as_str()));
+        ids.map(|id| match self.steps.get(id) {
+            Some(step) => Used::Follow(step),
+            None => Used::Decision(id),
+        })
+        .collect()
     }
 
     /// The steps directly under it, oldest first.

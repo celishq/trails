@@ -28,7 +28,8 @@ impl Store {
     /// The store in `home`, created when it is missing.
     pub fn open(home: &Path) -> Result<Store, Refusal> {
         let root = Store::root(home);
-        std::fs::create_dir_all(root.join("shared")).context("create the store")?;
+        std::fs::create_dir_all(root.join("shared"))
+            .with_context(|| format!("create the store in {}", root.display()))?;
         Ok(Store {
             root,
             phrase: Phrase::at(home),
@@ -157,8 +158,10 @@ fn put(folder: &Path, record: &Note) -> Result<(PathBuf, bool)> {
         return Ok((path, false));
     }
     let temp = folder.join(format!(".{name}.{}", std::process::id()));
-    std::fs::write(&temp, serde_json::to_string(record)?)?;
-    std::fs::rename(&temp, &path)?;
+    let written = std::fs::write(&temp, serde_json::to_string(record)?);
+    written
+        .and_then(|()| std::fs::rename(&temp, &path))
+        .with_context(|| format!("write in {}", folder.display()))?;
     Ok((path, true))
 }
 

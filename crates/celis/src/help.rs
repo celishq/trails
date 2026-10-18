@@ -351,7 +351,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "step start",
         usage: &["celis step start <id>"],
-        summary: "Start a step and show the decisions at its places. The step stays in progress until it's done.",
+        summary: "Start a step and show the rules it must keep: the decisions at its places, its trail's rules, and the rules its ask uses. The step stays in progress until it's done.",
         args: &[("<id>", "A step id, or its first 4 or more characters")],
         examples: &["celis step start 4c1d22e0"],
     },

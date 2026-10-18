@@ -1,7 +1,7 @@
 //! What later work reused of the steps and decisions of a store.
 
 use celis_nostr::Note;
-use celis_trails::{Decision, Decisions, Step, Steps};
+use celis_trails::{Decision, Decisions, Step, Steps, Used};
 use std::cmp::Reverse;
 use std::collections::{HashMap, HashSet};
 
@@ -32,14 +32,13 @@ impl<'a> Reuse<'a> {
             uses: HashMap::new(),
         };
         for step in steps.all() {
-            let mut seen = HashSet::new();
-            for id in step.record().uses.iter().filter(|id| seen.insert(*id)) {
-                match steps.get(id) {
-                    Some(source) => {
+            for used in step.uses() {
+                match used {
+                    Used::Follow(source) => {
                         reuse.sources.entry(step.id()).or_default().push(source);
                         reuse.followers.entry(source.id()).or_default().push(step);
                     }
-                    None => *reuse.uses.entry(id.as_str()).or_default() += 1,
+                    Used::Decision(id) => *reuse.uses.entry(id).or_default() += 1,
                 }
             }
         }

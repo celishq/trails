@@ -4,14 +4,16 @@ use super::tree::today;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use celis_trails::{Link, Project, State, Trails};
-use std::io::{Read, Write};
+use hook::{Hook, Prompt};
+use std::io::Write;
 use std::path::Path;
 
+mod hook;
+
 impl Command {
-    /// Writes a hook's prompt on the session's open trail, signed now; prints its id, names the oldest
-    /// working step and every done step on `err`, then how a new ask joins a trail. With no open trail, writes nothing, and names the agent that brings past work on `err`, once
-    /// a session. For a harness message, does neither. A compaction's `SessionStart` lets the session name
-    /// the agent again.
+    /// Acts on a hook: a prompt goes on its session's open trail, with notes on `err` about the work;
+    /// with no open trail, it names the past agent, once a session, unless the prompt is a task. A
+    /// compaction lets the session name the past agent again.
     pub(crate) fn prompt(
         &self,
         args: &Args,
@@ -19,53 +21,48 @@ impl Command {
         err: &mut dyn Write,
         project: &Project,
     ) -> Result<(), Failure> {
-        let hook = hook()?;
-        let session = hook["conversation_id"]
-            .as_str()
-            .or(hook["session_id"].as_str())
-            .unwrap_or("");
-        let asked = self
-            .home()?
-            .join("asked")
-            .join(session.replace(['/', '.'], "_"));
-        if !session.is_empty() && hook["source"] == "compact" {
-            let _ = std::fs::remove_file(&asked);
-            return Ok(());
+        match Hook::read()? {
+            Hook::Compaction { session } => {
+                let _ = std::fs::remove_file(self.asked(&session)?);
+                Ok(())
+            }
+            Hook::Prompt(prompt) => self.ask(args, out, err, project, prompt),
+            Hook::Nothing => Ok(()),
         }
-        let text: String = hook["prompt"]
-            .as_str()
-            .unwrap_or("")
-            .lines()
-            .next()
-            .unwrap_or("")
-            .trim()
-            .chars()
-            .take(200)
-            .collect();
-        let notified = ["<task-notification>", "<agent-message"]
-            .iter()
-            .any(|t| text.starts_with(t));
-        if session.is_empty() || text.is_empty() || notified {
-            return Ok(());
-        }
+    }
+
+    /// Writes `prompt` on its session's open trail, signed now; prints its id, then names on `err` the
+    /// oldest working step, every done step, and how a new ask joins a trail.
+    fn ask(
+        &self,
+        args: &Args,
+        out: &mut dyn Write,
+        err: &mut dyn Write,
+        project: &Project,
+        prompt: Prompt,
+    ) -> Result<(), Failure> {
+        let asked = self.asked(&prompt.session)?;
         if !self.held()? {
             return self.offer(err, project, &asked);
         }
         let trails = self.trails()?;
         let steps = trails.steps();
-        let Some(trail) = steps.session(&project.id, session) else {
-            if !self.recall(&trails, err, &asked)? {
+        let Some(trail) = steps.session(&project.id, &prompt.session) else {
+            if !prompt.task && !self.recall(&trails, err, &asked)? {
                 self.offer(err, project, &asked)?;
             }
             return Ok(());
         };
-        let record = trails.prompt(trail, text)?;
+        let record = trails.prompt(trail, prompt.text)?;
         self.id(out, args, &record)?;
         let working = trail.tree().into_iter().skip(1);
         if let Some(on) = working.into_iter().find(|s| s.state() == State::Working) {
             let line = format!(
                 "celis: you work on {} \"{}\"; when the next work does not fit it, add a step under it \
-                 first, or replace it with step add --replaces.",
+                 first, or replace it with step add --replaces. When you hand work to a subagent or \
+                 another agent, add a step for it, and put this line in its task: celis step <id>: run \
+                 celis step start <id> before you work, add your steps --under <id>, and close <id> \
+                 with celis step done.",
                 celis_trails::records::id::short(on.id()),
                 on.title()
             );
@@ -117,6 +114,14 @@ impl Command {
         Ok(true)
     }
 
+    /// The file that marks that `session` named the past agent.
+    fn asked(&self, session: &str) -> Result<std::path::PathBuf, Failure> {
+        Ok(self
+            .home()?
+            .join("asked")
+            .join(session.replace(['/', '.'], "_")))
+    }
+
     /// Asks, once in the session `asked` names, to link `project` to its `.celis/trails` when that folder
     /// exists and is not linked.
     fn offer(&self, err: &mut dyn Write, project: &Project, asked: &Path) -> Result<(), Failure> {
@@ -162,12 +167,3 @@ fn joins(open: Option<&str>) -> String {
 /// The sentence of a new ask's line that asks to write the rules the prompt states.
 const RULES: &str = "Write each rule this prompt states (review feedback, a convention, a \
                      correction) with celis decide before you change a file.";
-
-/// The hook's JSON on stdin; a usage error when it is no JSON.
-fn hook() -> Result<serde_json::Value, Failure> {
-    let mut input = String::new();
-    std::io::stdin()
-        .read_to_string(&mut input)
-        .map_err(anyhow::Error::from)?;
-    serde_json::from_str(&input).map_err(|_| Failure::usage("expected a hook's JSON on stdin"))
-}

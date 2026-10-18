@@ -1,6 +1,7 @@
 //! Why a command did not finish.
 
 use celis_trails::Refusal;
+use std::io::ErrorKind;
 
 /// A command that did not finish: the name `--json` prints, the message a person reads, and the exit code.
 #[derive(Debug)]
@@ -105,8 +106,25 @@ impl From<Refusal> for Failure {
 }
 
 impl From<anyhow::Error> for Failure {
+    /// The error, and when the system refused a write, how to let an agent's sandbox write.
     fn from(error: anyhow::Error) -> Self {
-        Self::new("error", 1, format!("{error:#}"))
+        let refused = error
+            .chain()
+            .filter_map(|e| e.downcast_ref::<std::io::Error>())
+            .any(|e| {
+                matches!(
+                    e.kind(),
+                    ErrorKind::ReadOnlyFilesystem | ErrorKind::PermissionDenied
+                )
+            });
+        let hint = match refused {
+            true => {
+                "; in a sandbox, let the agent write that folder (Codex: add it to \
+                     sandbox_workspace_write.writable_roots)"
+            }
+            false => "",
+        };
+        Self::new("error", 1, format!("{error:#}{hint}"))
     }
 }
 

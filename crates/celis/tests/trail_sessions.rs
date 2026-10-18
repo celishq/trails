@@ -223,8 +223,8 @@ fn a_sessions_open_trail_is_the_trail_of_its_newest_step() {
     assert_eq!(own.len(), 2, "{own:?}");
 }
 
-/// `prompt` names the working step of the session's trail on stderr, and asks for a step under it when
-/// the next work does not fit; with no working step, it names none; either way it ends with the hint to
+/// `prompt` names the working step of the session's trail on stderr, asks for a step under it when the
+/// next work does not fit, and gives the line a task for another agent carries; with no working step, it names none; either way it ends with the hint to
 /// join a trail.
 #[test]
 fn the_prompt_hook_names_the_working_step() {
@@ -247,7 +247,10 @@ fn the_prompt_hook_names_the_working_step() {
         [
             format!(
                 "celis: you work on {} \"Cache the price list\"; when the next work does not fit it, \
-                 add a step under it first, or replace it with step add --replaces.",
+                 add a step under it first, or replace it with step add --replaces. When you hand work \
+                 to a subagent or another agent, add a step for it, and put this line in its task: \
+                 celis step <id>: run celis step start <id> before you work, add your steps --under \
+                 <id>, and close <id> with celis step done.",
                 &step[..8]
             ),
             joins(Some(&trail)),
@@ -505,4 +508,18 @@ fn a_sessions_first_ask_names_its_ids() {
         "",
     );
     assert!(!err(&o).contains("is the ask"), "{}", err(&o));
+}
+
+/// A session's first prompt that names a step, as a worker gets it, writes nothing and does not ask for
+/// the past agent (`spec/02-cli.md`, "Prompt").
+#[test]
+fn a_first_prompt_that_names_its_step_skips_the_past_agent() {
+    let repo = Repo::new();
+    let ask = add(&repo, Some("s1"), "the trail");
+    let said = format!("Fix it. celis step {}", &ask[..8]);
+    let json = serde_json::json!({"session_id": "w1", "prompt": said});
+    let o = repo.run(&repo.path(), &["prompt"], &[], &json.to_string());
+    assert!(o.status.success(), "{}", err(&o));
+    assert_eq!(out(&o), "");
+    assert!(!err(&o).contains("celis:past"), "{}", err(&o));
 }

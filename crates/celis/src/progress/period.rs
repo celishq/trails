@@ -1,7 +1,7 @@
 //! The work of a store in one span of time.
 
 use super::{Flags, Tally};
-use celis_trails::{Step, Steps};
+use celis_trails::{Step, Steps, Used};
 
 /// The work of a store from `from` up to `to`: the steps done, added and closed in that time, and the
 /// follows they made. A trail counts as none of them.
@@ -43,11 +43,9 @@ impl<'a> Period<'a> {
 
     /// How many of the steps added in it use a decision.
     pub fn ruled(&self) -> usize {
+        let decision = |u: &Used| matches!(u, Used::Decision(_));
         let added = self.added().into_iter();
-        let decision = |id: &String| self.steps.get(id).is_none();
-        added
-            .filter(|s| s.record().uses.iter().any(decision))
-            .count()
+        added.filter(|s| s.uses().iter().any(decision)).count()
     }
 
     /// The steps done or dropped in it, and those expired with a trail whose newest record is in it,

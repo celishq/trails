@@ -145,8 +145,8 @@ impl Trails {
         })
     }
 
-    /// Starts the open step `id`, or gives back the first start of a working step; then the live
-    /// decisions at the step's places.
+    /// Starts the open step `id`, or gives back the first start of a working step; then the decisions
+    /// the step must keep.
     pub fn start(&self, id: &str) -> Result<Written, Refusal> {
         let steps = self.steps();
         let step = steps.find_open(id)?;
@@ -157,15 +157,10 @@ impl Trails {
                 .records
                 .push(self.sign(|account, now| Mark::Start.record(account, step.id(), now))?),
         }
-        let step = step.record();
-        let decisions = self.decisions();
-        for place in &step.places {
-            for (said, decision) in decisions.at(&step.anchor.project, place) {
-                if !written.decisions.iter().any(|(n, _)| n.id == said.id) {
-                    written.decisions.push((said.clone(), decision));
-                }
-            }
-        }
+        let kept = self.decisions().kept(step).into_iter();
+        written.decisions = kept
+            .map(|(said, decision)| (said.clone(), decision))
+            .collect();
         Ok(written)
     }
 

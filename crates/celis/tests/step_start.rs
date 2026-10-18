@@ -125,3 +125,52 @@ fn start_does_not_run_the_steps_check() {
     assert_eq!(err(&o), "");
     assert!(!repo.path().join("ran").exists());
 }
+
+/// `start` prints the live rules of the step's trail, each decision its ask uses, and the rules of the
+/// trail of each step its ask uses; not a rule none of them names.
+#[test]
+fn start_prints_the_trails_rules_and_the_rules_its_ask_uses() {
+    let repo = Repo::new();
+    let decide = |args: &[&str]| {
+        let o = cli(&repo, &[&["decide"], args].concat());
+        assert!(o.status.success(), "{}", err(&o));
+        out(&o).lines().next().unwrap().to_string()
+    };
+    let past = add(&repo, &["--", "past work"]);
+    decide(&[
+        "--scope",
+        &format!("trail:{}", &past[..8]),
+        "--",
+        "past keeps tabs",
+    ]);
+    let used = decide(&["--", "use the shared Badge"]);
+    decide(&["--", "never deploy on friday"]);
+    let trail = add(&repo, &["--", "the trail"]);
+    decide(&[
+        "--scope",
+        &format!("trail:{}", &trail[..8]),
+        "--",
+        "this trail rule",
+    ]);
+    let ask = add(
+        &repo,
+        &[
+            "--under",
+            &trail[..8],
+            "--uses",
+            &used[..8],
+            "--uses",
+            &past[..8],
+            "--",
+            "the ask",
+        ],
+    );
+    let step = add(&repo, &["--under", &ask[..8], "--", "s"]);
+    let o = cli(&repo, &["step", "start", &step[..8]]);
+    assert!(o.status.success(), "{}", err(&o));
+    let text = out(&o);
+    for said in ["this trail rule", "use the shared Badge", "past keeps tabs"] {
+        assert!(text.contains(said), "{text}");
+    }
+    assert!(!text.contains("never deploy on friday"), "{text}");
+}
