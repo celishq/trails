@@ -18,10 +18,11 @@ pub struct Verified {
 type Stamp = (u64, u128);
 
 impl Verified {
-    /// The files `file` lists; none when it is missing.
+    /// The files `file` lists; none when it is missing. A list with more lines than files is written
+    /// again with one line a file.
     pub fn open(file: PathBuf) -> Verified {
         let text = std::fs::read_to_string(&file).unwrap_or_default();
-        let known = text
+        let known: HashMap<String, Stamp> = text
             .lines()
             .filter_map(|line| {
                 let mut parts = line.split(' ');
@@ -32,6 +33,10 @@ impl Verified {
                 ))
             })
             .collect();
+        if text.lines().count() > known.len() {
+            let lines: String = known.iter().map(|(n, s)| line(n, s)).collect();
+            let _ = std::fs::write(&file, lines);
+        }
         Verified {
             file,
             known,
@@ -68,7 +73,7 @@ impl Verified {
         }
         let lines: String = added
             .drain(..)
-            .map(|(name, (size, time))| format!("{name} {size} {time}\n"))
+            .map(|(name, stamp)| line(&name, &stamp))
             .collect();
         if let Some(folder) = self.file.parent() {
             let _ = std::fs::create_dir_all(folder);
@@ -81,9 +86,17 @@ impl Verified {
     }
 }
 
+/// The line of the file `name` with its `stamp`.
+fn line(name: &str, (size, time): &Stamp) -> String {
+    format!("{name} {size} {time}\n")
+}
+
 /// The stamp of the file at `path`.
 fn stamp(path: &Path) -> Option<Stamp> {
     let meta = std::fs::metadata(path).ok()?;
     let time = meta.modified().ok()?.duration_since(UNIX_EPOCH).ok()?;
     Some((meta.len(), time.as_nanos()))
 }
+
+#[cfg(test)]
+mod tests;
