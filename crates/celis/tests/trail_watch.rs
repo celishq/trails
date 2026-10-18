@@ -297,30 +297,59 @@ fn watch_draws_a_run_of_keys_as_one_tree() {
     assert!(drawn < 4, "{drawn} trees for 10 keys");
 }
 
-/// A spinner tick rewrites only the rows that changed, not the whole tree.
+/// A spinner tick rewrites only the rows that changed: no row of a step that stands still.
 #[test]
 fn watch_rewrites_only_the_rows_a_tick_changes() {
     let repo = Repo::new();
-    let trail = add(&repo, &["--", "the trail"]);
+    let by = support::account();
+    let at = support::now() - 10;
+    let trail = support::step_note(&repo, &by, None, "the trail", at);
     for n in 1..=8 {
-        add(&repo, &["--under", &trail[..8], "--", &format!("step {n}")]);
+        support::step_note(&repo, &by, Some(&trail), &format!("step {n}"), at);
     }
-    let step = add(&repo, &["--under", &trail[..8], "--", "the step"]);
-    let o = cli(&repo, &["step", "start", &step[..8]]);
-    assert!(o.status.success(), "{}", err(&o));
-    let mut watch = Watch::start(&repo, &["tree", &trail[..8]]);
+    let step = support::step_note(&repo, &by, Some(&trail), "the step", at);
+    support::put(
+        &repo,
+        &celis_trails::Mark::Start.record(&by, &step.id, at).unwrap(),
+    );
+    let mut watch = Watch::start(&repo, &["tree", &trail.id[..8]]);
     watch.until("the step");
     let raw = String::from_utf8_lossy(&watch_raw(&mut watch)).into_owned();
     let first = raw.matches("\x1b[?2026h").count();
     std::thread::sleep(Duration::from_millis(600));
     let raw = String::from_utf8_lossy(&watch_raw(&mut watch)).into_owned();
     let frames: Vec<&str> = raw.split("\x1b[?2026h").skip(1).collect();
-    let whole = frames[0].len();
     let ticks = &frames[first..];
     assert!(ticks.len() >= 3, "{frames:?}");
     for tick in ticks {
-        assert!(tick.len() * 3 < whole, "{tick:?} of {whole} bytes");
+        assert!(!tick.contains("step "), "{tick:?}");
     }
+}
+
+/// A row many levels deep wraps its title within the width.
+#[test]
+fn watch_wraps_a_deep_row_within_the_width() {
+    let repo = Repo::new();
+    let mut under = add(&repo, &["--", "the trail"]);
+    for n in 1..=8 {
+        under = add(
+            &repo,
+            &["--under", &under[..8], "--", &format!("level {n}")],
+        );
+    }
+    let words = "alpha bravo charlie delta echo foxtrot golf hotel";
+    add(
+        &repo,
+        &["--under", &under[..8], "--", &format!("deep {words}")],
+    );
+    let mut watch = Watch::start(&repo, &["tree"]);
+    watch.size(40, 40);
+    watch.until("deep");
+    let rows = watch.rows();
+    assert!(rows.iter().all(|r| r.chars().count() <= 40), "{rows:?}");
+    let text: String = rows.concat().split_whitespace().collect();
+    let words: String = format!("deep {words}").split_whitespace().collect();
+    assert!(text.contains(&words), "{rows:?}");
 }
 
 /// The raw bytes a watch printed so far.
@@ -470,7 +499,7 @@ fn watch_opens_and_closes_with_arrows_and_star() {
 }
 
 /// The watch draws a block with its lines under its title, its tree lines, its rules folded to one
-/// line, its details in columns and no ids, in colour: § magenta, places blue, the project bold.
+/// line, each step's details on a line under its title and no ids, in colour: § magenta, places blue, the project bold.
 #[test]
 fn watch_draws_a_block_with_tree_lines_and_colour_anchors() {
     let repo = Repo::new();
@@ -516,13 +545,14 @@ fn watch_draws_a_block_with_tree_lines_and_colour_anchors() {
     );
     assert_eq!(rows[3], "    │ repo", "{rows:?}");
     assert!(rows[4] == "    ├─ ○ the fix", "{rows:?}");
-    assert!(rows[5].starts_with("    ├─ ○ done part  "), "{rows:?}");
-    assert!(rows[6].starts_with("    │  └─ "), "{rows:?}");
+    assert_eq!(rows[5], "    ├─ ○ done part", "{rows:?}");
     assert!(
-        !rows[5].contains("prices.py") && rows[5].ends_with('s'),
+        rows[6].starts_with("    │  │ ") && rows[6].ends_with('s'),
         "{rows:?}"
     );
-    assert_eq!(rows[7], "    └▸ § 1 rule", "{rows:?}");
+    assert!(rows[7].starts_with("    │  └─ "), "{rows:?}");
+    assert!(!rows.join("\n").contains("prices.py"), "{rows:?}");
+    assert_eq!(rows[9], "    └▸ § 1 rule", "{rows:?}");
     assert!(!rows.join("\n").contains(&trail[..8]), "{rows:?}");
     let raw = watch.coloured(Duration::ZERO);
     for anchor in ["\x1b[35m§", "\x1b[1mrepo"] {
@@ -580,6 +610,7 @@ fn watch_prints_open_steps_then_rules_then_closed_steps() {
     let starts = [
         "    ├─ ○ newest",
         "    ├─ ○ parent",
+        "    │  │ ",
         "    │  ├─ ○ new child",
         "    │  └▸ ✓ 1 closed step",
         "    ├▸ § 1 rule",
@@ -641,13 +672,13 @@ fn watch_folds_closed_steps_and_done_branches() {
     watch.press("\x1b[B\x1b[B\x1b[B\x1b[C");
     watch.until("parent");
     let rows = watch.rows();
-    let line = rows.iter().find(|r| r.contains("parent")).unwrap();
-    assert!(line.ends_with("1 step "), "{rows:?}");
+    let at = rows.iter().position(|r| r.contains("parent")).unwrap();
+    assert_eq!(rows[at + 1].trim(), "1 step", "{rows:?}");
     assert!(!rows.join("\n").contains("child") && !rows.join("\n").contains("not needed"));
     watch.press("\x1b[B\x1b[B\x1b[C");
-    watch.until("✓ 1 closed step");
+    watch.until("✓  1 closed step");
     watch.press("\x1b[B\x1b[C");
-    watch.until("✓ child");
+    watch.until("✓  child");
 }
 
 /// With no id, the watch starts with today's line and its counts, groups the trails by project, and
@@ -669,10 +700,8 @@ fn watch_groups_today_by_project_and_shows_more() {
     let rows = watch.rows();
     assert!(rows[0].ends_with(" · 1 active · 0 done"), "{rows:?}");
     assert!(rows[1].trim().is_empty(), "{rows:?}");
-    assert!(
-        rows[2].starts_with("  ▾ ○ the trail") && rows[2].ends_with(" repo"),
-        "{rows:?}"
-    );
+    assert_eq!(rows[2], "  ▾ ○ the trail", "{rows:?}");
+    assert!(rows.contains(&"    │ repo".to_string()), "{rows:?}");
     assert!(!rows.join("\n").contains("an old trail"), "{rows:?}");
     watch.press("\x1b[B\x1b[B");
     watch.until("▌ ▸ Show more");
@@ -681,34 +710,46 @@ fn watch_groups_today_by_project_and_shows_more() {
     watch.until("an old trail");
 }
 
-/// Under 80 columns, while a title would be cut below 20 characters, the watch leaves out a trail
-/// line's first column.
+/// The watch wraps a long step title and a long trail line's title whole, cutting neither.
 #[test]
-fn a_narrow_watch_leaves_out_columns() {
+fn watch_wraps_long_titles_whole() {
     let repo = Repo::new();
-    let trail = add(&repo, &["--", "a trail with a long title of many words"]);
-    let part = add(&repo, &["--under", &trail[..8], "--", "its part"]);
+    let words = "one two three four five six seven eight nine ten eleven twelve";
+    let done = add(&repo, &["--", &format!("done trail {words}")]);
+    let part = add(&repo, &["--under", &done[..8], "--", "its part"]);
     finish(&repo, &part[..8]);
+    let trail = add(&repo, &["--", "the trail"]);
+    add(
+        &repo,
+        &["--under", &trail[..8], "--", &format!("open step {words}")],
+    );
     let mut watch = Watch::start(&repo, &["tree"]);
-    watch.size(24, 100);
-    watch.until("a trail with");
-    let line = |watch: &mut Watch| {
-        let rows = watch.rows();
-        rows.iter()
-            .find(|r| r.contains("✓ a trail"))
-            .unwrap()
-            .clone()
-    };
-    let wide = line(&mut watch);
-    assert!(wide.contains("1 step") && wide.ends_with('s'), "{wide}");
-    watch.size(24, 30);
-    watch.without("1 step");
-    assert!(line(&mut watch).contains('…'), "{}", line(&mut watch));
+    watch.size(24, 40);
+    watch.until("open step");
+    let rows = watch.rows();
+    let text = rows.join(" ");
+    assert!(!text.contains('…'), "{rows:?}");
+    assert!(rows.iter().all(|r| r.chars().count() <= 40), "{rows:?}");
+    for title in ["done trail", "open step"] {
+        let at = rows.iter().position(|r| r.contains(title)).unwrap();
+        let end = rows
+            .iter()
+            .skip(at)
+            .position(|r| r.contains("twelve"))
+            .unwrap();
+        let block = rows[at..=at + end].join(" ").replace("1 step", "");
+        let block: Vec<&str> = block.split_whitespace().collect();
+        assert!(
+            block.join(" ").contains(&format!("{title} {words}")),
+            "{rows:?}"
+        );
+    }
 }
 
-/// A trail's line holds its steps and its rules in their own columns, each number aligned right.
+/// A trail's line prints its steps and worked time on a dim line under its title, and no count of its
+/// rules.
 #[test]
-fn watch_aligns_a_trail_lines_steps_and_rules() {
+fn watch_prints_a_trail_lines_details_under_its_title() {
     let repo = Repo::new();
     let by = support::account();
     let at = support::now() - 4_000;
@@ -736,11 +777,26 @@ fn watch_aligns_a_trail_lines_steps_and_rules() {
     watch.size(24, 100);
     watch.until("second");
     let rows = watch.rows();
-    let line = |what: &str| rows.iter().find(|l| l.contains(what)).unwrap().clone();
-    let (one, many) = (line("first"), line("second"));
-    assert!(one.contains("   1 step   10 rules"), "{rows:?}");
-    assert!(many.contains("  12 steps          "), "{rows:?}");
-    assert_eq!(one.find(" step"), many.find(" step"), "{rows:?}");
+    let under = |what: &str| {
+        let at = rows.iter().position(|l| l.contains(what)).unwrap();
+        (
+            rows[at].trim_end().to_string(),
+            rows[at + 1].trim().to_string(),
+        )
+    };
+    assert_eq!(
+        under("first"),
+        ("  ▸ ✓ first".into(), "1 step · 5s".into()),
+        "{rows:?}"
+    );
+    assert_eq!(
+        under("second"),
+        ("  ▸ ✓ second".into(), "12 steps · 2m 0s".into()),
+        "{rows:?}"
+    );
+    assert!(!rows.join("\n").contains("rule"), "{rows:?}");
+    let colour = watch.coloured(Duration::ZERO);
+    assert!(colour.contains("\x1b[2m1 step · 5s"), "{colour:?}");
 }
 
 /// With `--full`, the watch starts each line under a step at its title's column, after its label, and
@@ -780,6 +836,38 @@ fn watch_full_aligns_and_wraps_the_lines_under_a_step() {
         }
     }
     assert_eq!(text, long, "{rows:?}");
+}
+
+/// Every title of a day starts at one column, whatever the count of marks before it.
+#[test]
+fn watch_starts_each_title_at_one_column() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    let changed = add(&repo, &["--under", &trail[..8], "--", "changed part"]);
+    let o = cli(
+        &repo,
+        &[
+            "step",
+            "done",
+            &changed[..8],
+            "--changed",
+            "more",
+            "--",
+            "ok",
+        ],
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let plain = add(&repo, &["--under", &trail[..8], "--", "plain part"]);
+    finish(&repo, &plain[..8]);
+    let mut watch = Watch::start(&repo, &["tree", &trail[..8], "--full"]);
+    watch.size(40, 80);
+    watch.until("plain part");
+    let rows = watch.rows();
+    let at = |what: &str| {
+        let row = rows.iter().find(|l| l.contains(what)).unwrap();
+        row[..row.find(what).unwrap()].chars().count()
+    };
+    assert_eq!(at("changed part"), at("plain part"), "{rows:?}");
 }
 
 /// When `a` takes the selected trail of a past day out of the tree, the watch selects the first line,
@@ -932,8 +1020,11 @@ fn watch_leaves_the_last_column_empty() {
         assert!(row.chars().count() < 40, "{row:?}");
     }
     let rows = watch.rows();
-    let line = rows.iter().find(|r| r.contains("a working step")).unwrap();
-    assert!(line.ends_with('s'), "{rows:?}");
+    let at = rows
+        .iter()
+        .position(|r| r.contains("a working step"))
+        .unwrap();
+    assert!(rows[at + 1].ends_with('s'), "{rows:?}");
 }
 
 /// On a terminal, `tree` prints the tree again within a second after a record lands in a linked folder that is
