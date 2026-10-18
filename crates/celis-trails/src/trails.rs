@@ -13,9 +13,9 @@ use celis_nostr::{Account, Note};
 use std::path::{Path, PathBuf};
 
 /// The records of a store at the time `now`, and the account's writes on them, each signed now. A
-/// step's check runs for `limit` seconds at most.
+/// step's check runs for `limit` seconds at most. Readers take the time from its steps.
 pub struct Trails {
-    pub now: u64,
+    now: u64,
     store: Store,
     records: Vec<Note>,
     limit: u64,

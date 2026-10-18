@@ -68,7 +68,7 @@ impl Command {
         let chosen: Vec<Step> = match (id, view.all) {
             (Some(id), _) => vec![steps.find(id)?],
             (None, true) => steps.roots().into_iter().rev().collect(),
-            (None, false) => today(steps, steps.now()),
+            (None, false) => today(steps),
         };
         let tree = Tree {
             steps,
@@ -91,9 +91,9 @@ impl Command {
     }
 }
 
-/// Each trail of every project that is active or has a record from the day of `now`, newest first.
-pub(crate) fn today<'a>(steps: &'a Steps<'a>, now: u64) -> Vec<Step<'a>> {
-    let midnight = midnight(now);
+/// Each trail of every project that is active or has a record from the day of `steps`, newest first.
+pub(crate) fn today<'a>(steps: &'a Steps<'a>) -> Vec<Step<'a>> {
+    let midnight = midnight(steps.now());
     let roots = steps.roots().into_iter().rev();
     roots
         .filter(|s| s.state().active() || s.newest() >= midnight)
