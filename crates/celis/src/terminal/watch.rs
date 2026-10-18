@@ -2,10 +2,10 @@
 
 use super::screen::{clipboard, spin, until, Screen, TURN};
 use super::wake::{Key, Wake};
-use crate::command::tree::{spinner, Item, Layout, Model, View, EMPTY, MORE};
+use crate::command::tree::{spinner, Item, Layout, View, EMPTY, MORE};
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use crate::progress::Reuse;
+use crate::progress::{Model, Reuse};
 use std::io::Write;
 use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender};
 use std::time::Duration;
@@ -55,12 +55,12 @@ impl Command {
                 steps: &steps,
                 decisions: &decisions,
                 reuse: &reuse,
-                layout: Layout::default(),
             };
+            let layout = Layout::default();
             let (linked, store, paths) = loop {
                 steps.at(crate::command::now());
                 let width = self.columns().map(|c| c.saturating_sub(1));
-                let frame = self.frame(&model, args, width, &view)?;
+                let frame = self.frame(&model, Some(&layout), args, width, &view)?;
                 if let Some(id) = view.selected.clone() {
                     if !frame.order.iter().any(|i| i.id == id) {
                         view.selected = kept(&known, &frame.order, &id);

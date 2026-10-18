@@ -3,8 +3,8 @@
 use super::glyph::{bar, columns, strip};
 use super::ink::Ink;
 use super::table::{Row, Table};
-use crate::command::tree::{cut, look, visible, Model};
-use crate::progress::{Grade, Period, Reuse, Tally};
+use crate::command::tree::{cut, look, visible};
+use crate::progress::{Grade, Model, Period, Reuse, Tally};
 use crate::text::clock::{day, midnight, took};
 use crate::text::line::plural;
 use celis_trails::{Decisions, State, Step};

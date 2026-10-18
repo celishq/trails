@@ -2,7 +2,7 @@
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use crate::progress::{Flags, Grade, Reuse, Tally};
+use crate::progress::{Flags, Grade, Model, Reuse, Tally};
 use crate::text::clock::{day, midnight, weekday};
 use crate::text::clock::{stride, took};
 use celis_trails::records::id::short;
@@ -37,15 +37,10 @@ impl Command {
         let tree = match (self.held()?, id) {
             (true, _) => {
                 let trails = self.trails()?;
-                let (steps, decisions) = (trails.steps(), trails.decisions());
-                let reuse = Reuse::new(&steps);
-                let model = Model {
-                    steps: &steps,
-                    decisions: &decisions,
-                    reuse: &reuse,
-                    layout: Layout::default(),
-                };
-                self.frame(&model, args, None, &View::of(args))?.text
+                Model::of(&trails, |model| {
+                    self.frame(model, None, args, None, &View::of(args))
+                })?
+                .text
             }
             (false, Some(id)) => return Err(Failure::no_step(id)),
             (false, None) => String::new(),
@@ -58,10 +53,12 @@ impl Command {
         Ok(())
     }
 
-    /// The tree of `model` that `args` names, `width` wide, as `view` shows it.
+    /// The tree of `model` that `args` names, `width` wide, as `view` shows it, from the day groups
+    /// `layout` kept.
     pub(crate) fn frame(
         &self,
         model: &Model,
+        layout: Option<&Layout>,
         args: &Args,
         width: Option<usize>,
         view: &View,
@@ -77,7 +74,7 @@ impl Command {
             steps,
             decisions: model.decisions,
             reuse: model.reuse,
-            layout: view.watch.then_some(&model.layout),
+            layout,
             colour: view.watch && self.colour(),
             grouped: id.is_none(),
             width: width.map(|w| w.saturating_sub(2 * usize::from(view.watch))),
@@ -107,15 +104,6 @@ pub(crate) fn today<'a>(steps: &'a Steps<'a>, now: u64) -> Vec<Step<'a>> {
     roots
         .filter(|s| s.state().active() || s.newest() >= midnight)
         .collect()
-}
-
-/// What a tree is drawn from: the steps, decisions and reuse of a store, and in a watch the day groups
-/// it laid out from them.
-pub(crate) struct Model<'a> {
-    pub steps: &'a Steps<'a>,
-    pub decisions: &'a Decisions<'a>,
-    pub reuse: &'a Reuse<'a>,
-    pub layout: Layout,
 }
 
 /// How a tree shows: in a watch, with a cursor column; full; all with no id; and in a watch, with the

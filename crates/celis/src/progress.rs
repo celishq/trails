@@ -2,6 +2,7 @@
 
 pub mod flags;
 pub mod grade;
+pub mod model;
 pub mod period;
 pub mod reuse;
 pub mod review;
@@ -9,6 +10,7 @@ pub mod tally;
 
 pub use flags::Flags;
 pub use grade::Grade;
+pub use model::Model;
 pub use period::Period;
 pub use reuse::Reuse;
 pub use review::Review;

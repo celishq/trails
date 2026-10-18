@@ -7,10 +7,10 @@ use super::screen::{clipboard, Screen};
 use super::sheet::{sheets, Sheet, CARDS};
 use super::table::{Row, Table};
 use super::wake::{Key, Wake};
-use crate::command::tree::{cut, look, visible, Layout, Model};
+use crate::command::tree::{cut, look, visible};
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use crate::progress::Reuse;
+use crate::progress::{Model, Reuse};
 use crate::text::clock::weekday;
 use crate::text::line::time;
 use celis_trails::records::id::short;
@@ -66,7 +66,6 @@ impl Command {
                 steps: &steps,
                 decisions: &decisions,
                 reuse: &reuse,
-                layout: Layout::default(),
             };
             (board.kept, board.head) = (None, None);
             let (linked, store, paths) = loop {
