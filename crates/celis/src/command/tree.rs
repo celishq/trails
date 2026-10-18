@@ -8,11 +8,10 @@ use crate::text::clock::{stride, took};
 use celis_trails::records::id::short;
 use celis_trails::step::steps::LIFE;
 use celis_trails::{Decisions, State, Step, Steps, Trail};
-use cells::{Cells, COLUMNS, ID, TIME};
 pub(crate) use layout::Layout;
 use layout::{Group, Key};
 use level::{ids, Level};
-use line::{room, wrap, Line};
+use line::Line;
 use serde_json::json;
 use std::cell::{Cell, RefCell};
 use std::collections::HashSet;
@@ -240,10 +239,10 @@ impl Tree<'_> {
                 false => ("▸", "Show more"),
             };
             let mut lines = vec![Line::Row {
-                lead: format!("{} ", self.paint(DIM, chevron)),
+                lead: String::new(),
+                marks: self.paint(DIM, chevron),
                 title: label.to_string(),
                 tone: "",
-                cells: Default::default(),
                 rest: "  ".to_string(),
             }];
             let item = Item {
@@ -548,25 +547,20 @@ impl Tree<'_> {
     }
 
     /// Adds `note` as a block: `▾`, its mark and title, then its lines: its worked time, its last change
-    /// while active, its project with no grouping, and the lines `--full` prints but its grade; then its
-    /// tree: its active steps, its rules, then its closed steps.
+    /// and its project while active, its project with no grouping, and the lines `--full` prints but its
+    /// grade; then its tree: its active steps, its rules, then its closed steps.
     fn block(&self, note: Step, lines: &mut Vec<Line>) {
         let step = note.record();
         let state = note.state();
         let work = self.work(note);
         let summary = self.summary(note, work);
         let hair = format!("  {}", self.paint(DIM, "│ "));
-        let project =
-            (self.grouped && state.active()).then(|| self.paint(PROJECT, &step.anchor.name));
         let first = lines.len();
         lines.push(Line::Row {
-            lead: format!("{} {} ", self.paint(DIM, "▾"), self.marked(note)),
+            lead: format!("{} ", self.paint(DIM, "▾")),
+            marks: self.marked(note),
             title: step.title().to_string(),
             tone: self.tone(BOLD, note.newest()),
-            cells: Cells {
-                project,
-                ..Cells::default()
-            },
             rest: hair.clone(),
         });
         self.pick(self.item(note, true, &summary.rules), lines, first);
@@ -578,9 +572,13 @@ impl Tree<'_> {
             self.until(self.steps.now() + stride(seconds));
             self.labelled(lines, &hair, "active", &format!("{} ago", took(seconds)));
         }
-        if !self.grouped {
-            let project = self.paint(PROJECT, &step.anchor.name);
-            lines.push(Line::Text(format!("{hair}{project}")));
+        if !self.grouped || state.active() {
+            lines.push(Line::Note {
+                rail: hair.clone(),
+                label: "",
+                text: step.anchor.name.clone(),
+                tone: PROJECT,
+            });
         }
         self.closing(work, &hair, false, lines);
         self.followed(work, &hair, lines);
@@ -624,10 +622,10 @@ impl Tree<'_> {
         let mark = self.paint(MAGENTA, "§");
         let first = lines.len();
         lines.push(Line::Row {
-            lead: format!("{lead}{mark} "),
+            lead,
+            marks: mark.clone(),
             title: count(rules.len(), "rule"),
             tone: "",
-            cells: Default::default(),
             rest: format!("{rail}  "),
         });
         let item = Item {
@@ -645,13 +643,10 @@ impl Tree<'_> {
             let (lead, below) = self.branch(&rail, n + 1 == all, None);
             let first = lines.len();
             lines.push(Line::Row {
-                lead: format!("{lead}{mark} "),
+                lead,
+                marks: mark.clone(),
                 title: decision.content.clone(),
                 tone: "",
-                cells: Cells {
-                    id: Some(self.paint(DIM, &short(&rule.id))),
-                    ..Cells::default()
-                },
                 rest: format!("{below}  "),
             });
             let item = Item {
@@ -679,11 +674,11 @@ impl Tree<'_> {
             .collect();
         let first = lines.len();
         lines.push(Line::Row {
-            lead: format!("{lead}{marks} "),
+            lead,
+            marks,
             title: count(steps.len(), "closed step"),
             tone: "",
-            cells: Default::default(),
-            rest: format!("{rail}{}", " ".repeat(visible(&marks) + 1)),
+            rest: format!("{rail}  "),
         });
         let item = Item {
             id: id.clone(),
@@ -697,7 +692,8 @@ impl Tree<'_> {
         }
     }
 
-    /// Adds `note` as one row: `▸`, its mark and wrapped title, then its steps, rules and worked time.
+    /// Adds `note` as one row: `▸`, its mark and wrapped title, then its details: its steps and worked
+    /// time.
     fn line(&self, note: Step, lines: &mut Vec<Line>) {
         let step = note.record();
         let state = note.state();
@@ -705,31 +701,39 @@ impl Tree<'_> {
         let summary = self.summary(note, work);
         let steps = match (summary.all, summary.done) {
             (0, _) => None,
-            (all, done) if all == done => Some(column(all, "step")),
-            (all, done) => Some(format!("{done} of {all}")),
+            (all, done) if all == done => Some(count(all, "step")),
+            (all, done) => Some(format!("{done} of {all} steps")),
         };
-        let rules = summary.rules.len();
         let first = lines.len();
-        let lead = format!("{} {} ", self.paint(DIM, "▸"), self.marked(note));
-        let rest = " ".repeat(visible(&lead));
+        let rest = "    ".to_string();
         lines.push(Line::Row {
-            lead,
+            lead: format!("{} ", self.paint(DIM, "▸")),
+            marks: self.marked(note),
             title: step.title().to_string(),
             tone: self.tone(look(state).title, note.newest()),
-            cells: Cells {
-                steps,
-                rules: (rules > 0).then(|| column(rules, "rule")),
-                time: summary.worked.map(took),
-                ..Cells::default()
-            },
-            rest,
+            rest: rest.clone(),
         });
+        self.details(&rest, [steps, summary.worked.map(took)], lines);
         self.pick(self.item(note, false, &summary.rules), lines, first);
     }
 
+    /// Adds `details` after `rail` as one dim line, `·` between two; none when all are empty.
+    fn details(&self, rail: &str, details: [Option<String>; 2], lines: &mut Vec<Line>) {
+        let shown: Vec<String> = details.into_iter().flatten().collect();
+        if !shown.is_empty() {
+            lines.push(Line::Note {
+                rail: rail.to_string(),
+                label: "",
+                text: shown.join(" · "),
+                tone: DIM,
+            });
+        }
+    }
+
     /// Adds the steps `notes` under the line `above` after `rail`, the last of their level unless `more`,
-    /// each followed by its own one level down, each with its title wrapped; an open one with the lines
-    /// `--full` prints under it, a closed done one with no time and its steps folded.
+    /// each followed by its own one level down, each with its title wrapped and its details under it; an
+    /// open one with the lines `--full` prints under it, a closed done one with no time and its steps
+    /// folded.
     fn steps(&self, notes: Vec<Step>, rail: &str, above: &str, more: bool, lines: &mut Vec<Line>) {
         let all = notes.len();
         for (n, note) in notes.into_iter().enumerate() {
@@ -750,19 +754,17 @@ impl Tree<'_> {
             };
             let first = lines.len();
             lines.push(Line::Row {
-                lead: format!("{lead}{} ", self.marked(note)),
+                lead,
+                marks: self.marked(note),
                 title: step.title().to_string(),
                 tone: self.tone(look(state).title, note.newest()),
-                cells: Cells {
-                    steps: folded.then(|| column(size, "step")),
-                    time: match state.closed() {
-                        true => None,
-                        false => self.worked(&note.tree()).map(took),
-                    },
-                    ..Cells::default()
-                },
                 rest: below.clone(),
             });
+            let time = match state.closed() {
+                true => None,
+                false => self.worked(&note.tree()).map(took),
+            };
+            self.details(&below, [folded.then(|| count(size, "step")), time], lines);
             let item = Item {
                 id: note.id().to_string(),
                 open,
@@ -803,49 +805,12 @@ impl Tree<'_> {
         any.then_some(total)
     }
 
-    /// Prints `lines`, each row's details in columns at the right edge of the width, or after the widest
-    /// title; a row's title wraps at the width, and in the short tree a narrow width leaves out the first
-    /// column, then the time, while a title would wrap narrower than `NARROWEST`. In a watch, the ids are
-    /// left out, and each line starts with the cursor column, a bar on each line of the selected element.
+    /// Prints `lines`, each row's marks padded to the widest of them, so every title starts at one
+    /// column, and wrapped at the width. In a watch, each line starts with the cursor column, a bar on
+    /// each line of the selected element.
     fn show(&self, lines: Vec<Line>, out: &mut dyn Write) -> Result<(), Failure> {
-        let mut widths = [0; COLUMNS];
-        for (_, _, cells) in lines.iter().filter_map(Line::row) {
-            for (width, cell) in widths.iter_mut().zip(cells.columns()) {
-                *width = (*width).max(cell.map_or(0, visible));
-            }
-        }
-        if self.view.watch {
-            widths[ID] = 0;
-        }
-        if let (false, Some(width)) = (self.view.full, self.width) {
-            let first = widths.iter().position(|w| *w > 0).unwrap_or(0);
-            for column in [first, TIME] {
-                let short = lines.iter().filter_map(Line::row).any(|(lead, title, _)| {
-                    width.saturating_sub(visible(lead) + room(&widths))
-                        < visible(title).min(NARROWEST)
-                });
-                if short {
-                    widths[column] = 0;
-                }
-            }
-        }
-        let room = room(&widths);
-        let edge = match (self.view.full, self.width) {
-            (false, Some(width)) => width,
-            (_, width) => lines
-                .iter()
-                .filter_map(Line::row)
-                .map(|(lead, title, _)| {
-                    let title = match width {
-                        Some(w) => visible(title).min(w.saturating_sub(visible(lead) + room)),
-                        None => visible(title),
-                    };
-                    visible(lead) + title + room
-                })
-                .chain(width)
-                .max()
-                .unwrap_or(0),
-        };
+        let slot = lines.iter().filter_map(Line::marks).map(visible).max();
+        let slot = slot.unwrap_or(0);
         let mut picked = false;
         for line in lines {
             let line = match line {
@@ -859,7 +824,7 @@ impl Tree<'_> {
                 line => line,
             };
             let paint = |code: &str, text: &str| self.paint(code, text);
-            for text in line.lines(&widths, (self.width, edge), picked, &paint) {
+            for text in line.lines(slot, self.width, picked, &paint) {
                 let text = match (self.view.watch, picked) {
                     (false, _) => text,
                     (true, false) => format!("  {text}"),
@@ -911,23 +876,14 @@ impl Tree<'_> {
     }
 
     /// Adds `text` dim after `rail` and `label` padded to 8 characters, or after `rail` alone with no
-    /// label; wrapped at the width, each line at the same column.
-    fn labelled(&self, lines: &mut Vec<Line>, rail: &str, label: &str, text: &str) {
-        let (first, rest) = match label {
-            "" => (rail.to_string(), rail.to_string()),
-            _ => (
-                format!("{rail}{}", self.paint(DIM, &format!("{label:<9}"))),
-                format!("{rail}{}", " ".repeat(9)),
-            ),
-        };
-        let parts = match self.width {
-            Some(width) => wrap(text, width.saturating_sub(visible(&first))),
-            None => vec![text.to_string()],
-        };
-        for (n, part) in parts.iter().enumerate() {
-            let lead = if n == 0 { &first } else { &rest };
-            lines.push(Line::Text(format!("{lead}{}", self.paint(DIM, part))));
-        }
+    /// label.
+    fn labelled(&self, lines: &mut Vec<Line>, rail: &str, label: &'static str, text: &str) {
+        lines.push(Line::Note {
+            rail: rail.to_string(),
+            label,
+            text: text.to_string(),
+            tone: DIM,
+        });
     }
 
     /// The mark of `note` with its flags after it, each in its colour.
@@ -972,8 +928,6 @@ impl Tree<'_> {
 }
 
 const DIM: &str = "2";
-/// The fewest characters a title's line takes before a narrow tree leaves out a column.
-const NARROWEST: usize = 20;
 /// The seconds a step's title prints bold after its newest record.
 const FRESH: u64 = 2;
 /// The frames of the spinner a watch draws for a working step.
@@ -1069,16 +1023,7 @@ fn count(n: usize, what: &str) -> String {
     }
 }
 
-/// `n` of `what` for a column whose numbers align right, as `1 step ` or `3 steps`.
-fn column(n: usize, what: &str) -> String {
-    match n {
-        1 => format!("1 {what} "),
-        n => format!("{n} {what}s"),
-    }
-}
-
 mod agent;
-mod cells;
 mod layout;
 mod level;
 mod line;

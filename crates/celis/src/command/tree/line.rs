@@ -1,120 +1,97 @@
-//! A line of a tree, and how a row lays out its title and details.
+//! A line of a tree, and how a row and the notes under it lay out.
 
-use super::cells::{Cells, COLUMNS, STEPS, TIME};
 use super::{visible, BOLD, DIM};
 
-/// A line of the tree: text as it is, or a row whose details line up with the other rows' of its day,
-/// its title in the colour `tone`, wrapped with its next lines after `rest`; or the start of a selected
-/// element's lines, or of lines no element holds.
+/// A line of the tree: text as it is; a row, its title in the colour `tone` after `lead` and its
+/// `marks`, wrapped with its next lines after `rest`; a note under a row, after `rail` and `label`, in
+/// the colour `tone`; or the start of a selected element's lines, or of lines no element holds.
 pub(super) enum Line {
     Text(String),
     Row {
         lead: String,
+        marks: String,
         title: String,
         tone: &'static str,
-        cells: Cells,
         rest: String,
+    },
+    Note {
+        rail: String,
+        label: &'static str,
+        text: String,
+        tone: &'static str,
     },
     Mark(bool, Box<Line>),
 }
 
 impl Line {
-    /// Its lead, title and details when it is a row, also when it is selected.
-    pub fn row(&self) -> Option<(&String, &String, &Cells)> {
+    /// Its marks when it is a row, also when it is selected.
+    pub fn marks(&self) -> Option<&str> {
         match self {
-            Line::Row {
-                lead, title, cells, ..
-            } => Some((lead, title, cells)),
-            Line::Mark(_, line) => line.row(),
-            Line::Text(_) => None,
+            Line::Row { marks, .. } => Some(marks),
+            Line::Mark(_, line) => line.marks(),
+            _ => None,
         }
     }
 
-    /// Its printed lines: a row's title, bold when `picked` unless dim, wrapped at `width`, then its
-    /// details in the columns of `widths` up to its last one, each dim unless it has its own colour,
-    /// ending at `edge`.
+    /// Its printed lines, its marks padded to `slot` and wrapped at `width`: a row's title bold when
+    /// `picked` unless dim; a note's text after its label padded to 8 characters.
     pub fn lines(
         self,
-        widths: &[usize; COLUMNS],
-        (width, edge): (Option<usize>, usize),
+        slot: usize,
+        width: Option<usize>,
         picked: bool,
         paint: &dyn Fn(&str, &str) -> String,
     ) -> Vec<String> {
-        let (lead, title, tone, cells, rest) = match self {
+        let under = |rail: &str| format!("{rail}{}", " ".repeat(slot.saturating_sub(1)));
+        let (first, next, text, tone) = match self {
+            Line::Text(text) => return vec![text],
+            Line::Mark(_, line) => return line.lines(slot, width, picked, paint),
             Line::Row {
                 lead,
+                marks,
                 title,
                 tone,
-                cells,
                 rest,
-            } => (lead, title, tone, cells, rest),
-            Line::Text(text) => return vec![text],
-            Line::Mark(_, line) => return line.lines(widths, (width, edge), picked, paint),
-        };
-        let tone = match picked && tone != DIM {
-            true => BOLD,
-            false => tone,
-        };
-        let cells = cells.columns();
-        let filled = |n: &usize| cells[*n].is_some() && widths[*n] > 0;
-        let (from, to) = ((0..COLUMNS).find(filled), (0..COLUMNS).rev().find(filled));
-        let mut widths = *widths;
-        widths[..from.unwrap_or(COLUMNS)].fill(0);
-        widths[to.map_or(0, |to| to + 1)..].fill(0);
-        let room = room(&widths);
-        let mut titles = match width {
-            Some(width) => wrap(&title, width.saturating_sub(visible(&lead) + room)),
-            None => vec![title],
-        };
-        if titles.is_empty() {
-            titles.push(String::new());
-        }
-        let block: Vec<String> = cells
-            .iter()
-            .zip(widths)
-            .enumerate()
-            .filter(|(_, (_, width))| *width > 0)
-            .map(|(n, (cell, width))| {
-                let cell = cell.unwrap_or("");
-                let pad = " ".repeat(width - visible(cell));
-                let cell = match cell.contains('\x1b') {
-                    true => cell.to_string(),
-                    false => paint(DIM, cell),
+            } => {
+                let pad = " ".repeat(slot.saturating_sub(visible(&marks)));
+                let tone = match picked && tone != DIM {
+                    true => BOLD,
+                    false => tone,
                 };
-                match n {
-                    STEPS..=TIME => format!("{pad}{cell}"),
-                    n if Some(n) == to => format!("{pad}{cell}"),
-                    _ => format!("{cell}{pad}"),
-                }
-            })
-            .collect();
-        let block = block.join("  ");
-        let first = &titles[0];
-        let gap = edge.saturating_sub(visible(&lead) + visible(first) + room.saturating_sub(2));
-        let first = match block.trim_end() {
-            "" => format!("{lead}{}", paint(tone, first)),
-            block => format!("{lead}{}{}{block}", paint(tone, first), " ".repeat(gap)),
+                (format!("{lead}{marks}{pad} "), under(&rest), title, tone)
+            }
+            Line::Note {
+                rail,
+                label,
+                text,
+                tone,
+            } => match label {
+                "" => (under(&rail), under(&rail), text, tone),
+                _ => (
+                    format!("{}{}", under(&rail), paint(DIM, &format!("{label:<9}"))),
+                    format!("{}{}", under(&rail), " ".repeat(9)),
+                    text,
+                    tone,
+                ),
+            },
         };
-        let next = titles[1..]
-            .iter()
-            .map(|t| format!("{rest}{}", paint(tone, t)));
-        std::iter::once(first).chain(next).collect()
-    }
-}
-
-/// The characters the detail columns of `widths` take with the two spaces before them; none when all are
-/// empty.
-pub(super) fn room(widths: &[usize; COLUMNS]) -> usize {
-    let shown = widths.iter().filter(|w| **w > 0).count();
-    match shown {
-        0 => 0,
-        n => widths.iter().sum::<usize>() + 2 * n,
+        let mut parts = match width {
+            Some(width) => wrap(&text, width.saturating_sub(visible(&first))),
+            None => vec![text],
+        };
+        if parts.is_empty() {
+            parts.push(String::new());
+        }
+        let lead = std::iter::once(first).chain(std::iter::repeat(next));
+        lead.zip(parts)
+            .map(|(lead, part)| format!("{lead}{}", paint(tone, &part)))
+            .collect()
     }
 }
 
 /// `text` in lines of at most `width` characters, at least one, broken between words; a longer word is
 /// broken across lines.
-pub(super) fn wrap(text: &str, width: usize) -> Vec<String> {
+fn wrap(text: &str, width: usize) -> Vec<String> {
     let width = width.max(1);
     let mut lines: Vec<String> = vec![];
     for word in text.split_whitespace() {
