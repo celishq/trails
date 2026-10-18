@@ -85,21 +85,22 @@ impl Command {
 }
 
 /// What a watch shows of its tree: the first line in view, whether the view moves to the selected
-/// line on the next draw, the lines a page holds, the text on the screen, and what the last key did
+/// line on the next draw, the lines a page holds, the rows on the screen, and what the last key did
 /// when it has something to say.
 #[derive(Default)]
 pub(crate) struct Screen {
     pub top: usize,
     pub follow: bool,
     pub page: usize,
-    pub shown: String,
+    pub shown: Vec<String>,
     pub said: Option<String>,
 }
 
 impl Screen {
-    /// Draws `tree` over the screen from the top left, when it changed: each line cut short of the last
-    /// column and cleared to its end, the rows above the last scrolled to show its `picked` line when the
-    /// selection moved, `keys` or what the last key did on the last row, dim, and the rest cleared.
+    /// Draws `tree` over the screen from the top left, each row only when it changed: each line cut short
+    /// of the last column and cleared to its end, the rows above the last scrolled to show its `picked`
+    /// line when the selection moved, `keys` or what the last key did on the last row, dim, and the rest
+    /// cleared.
     pub fn draw(
         &mut self,
         out: &mut dyn Write,
@@ -131,22 +132,27 @@ impl Screen {
             .collect();
         let said = self.said.as_deref().unwrap_or(keys);
         let said = width.map_or(said.to_string(), |w| cut(said, w));
-        let said = format!("\x1b[2m{said}\x1b[0m");
-        let keys = match rows {
-            Some(rows) => format!("\x1b[J\x1b[{rows};1H{said}"),
-            None => format!("\n{said}"),
-        };
-        let text = format!(
-            "\x1b[?2026h\x1b[H{}\x1b[K{keys}\x1b[K\x1b[J\x1b[?2026l",
-            lines.join("\x1b[K\n")
-        );
-        if text == self.shown {
+        let mut screen = lines;
+        let last = rows.map(|r| r - 1).filter(|&k| k >= screen.len());
+        screen.resize(last.unwrap_or(screen.len()), String::new());
+        screen.push(format!("\x1b[2m{said}\x1b[0m"));
+        if screen == self.shown {
             return Ok(());
         }
+        let mut text = String::from("\x1b[?2026h");
+        for (n, row) in screen.iter().enumerate() {
+            if self.shown.get(n) != Some(row) {
+                text += &format!("\x1b[{};1H{row}\x1b[K", n + 1);
+            }
+        }
+        if rows.is_none() && (self.shown.is_empty() || screen.len() < self.shown.len()) {
+            text += &format!("\x1b[{};1H\x1b[J", screen.len() + 1);
+        }
+        text += "\x1b[?2026l";
         write!(out, "{text}")
             .and_then(|_| out.flush())
             .map_err(anyhow::Error::from)?;
-        self.shown = text;
+        self.shown = screen;
         Ok(())
     }
 
