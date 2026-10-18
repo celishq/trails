@@ -79,7 +79,8 @@ impl Command {
                 let loads = loads.clone();
                 scope.spawn(move || loads.send(Wake::Store(Box::new(self.trails()))));
             }
-            landed = Some(trails.take(&batch.paths)).filter(|_| !read);
+            let taken = trails.take(&batch.paths);
+            landed = (!read).then_some(taken);
         })
     }
 }
