@@ -33,6 +33,7 @@ fn next(records: &[Note], now: u64) -> Option<u64> {
         steps: &steps,
         decisions: &decisions,
         reuse: &reuse,
+        layout: None,
         colour: false,
         grouped: false,
         width: None,

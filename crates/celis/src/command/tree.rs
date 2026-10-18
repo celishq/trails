@@ -8,6 +8,8 @@ use crate::text::clock::{stride, took};
 use celis_trails::records::id::short;
 use celis_trails::step::steps::LIFE;
 use celis_trails::{Decisions, State, Step, Steps, Trail};
+pub(crate) use layout::Layout;
+use layout::{Group, Key};
 use level::{ids, Level};
 use serde_json::json;
 use std::cell::{Cell, RefCell};
@@ -41,6 +43,7 @@ impl Command {
                     steps: &steps,
                     decisions: &decisions,
                     reuse: &reuse,
+                    layout: Layout::default(),
                 };
                 self.frame(&model, args, None, &View::of(args))?.text
             }
@@ -74,6 +77,7 @@ impl Command {
             steps,
             decisions: model.decisions,
             reuse: model.reuse,
+            layout: view.watch.then_some(&model.layout),
             colour: view.watch && self.colour(),
             grouped: id.is_none(),
             width: width.map(|w| w.saturating_sub(2 * usize::from(view.watch))),
@@ -105,11 +109,13 @@ pub(crate) fn today<'a>(steps: &'a Steps<'a>, now: u64) -> Vec<Step<'a>> {
         .collect()
 }
 
-/// What a tree is drawn from: the steps, decisions and reuse of a store.
+/// What a tree is drawn from: the steps, decisions and reuse of a store, and in a watch the day groups
+/// it laid out from them.
 pub(crate) struct Model<'a> {
     pub steps: &'a Steps<'a>,
     pub decisions: &'a Decisions<'a>,
     pub reuse: &'a Reuse<'a>,
+    pub layout: Layout,
 }
 
 /// How a tree shows: in a watch, with a cursor column; full; all with no id; and in a watch, with the
@@ -147,6 +153,7 @@ pub(crate) struct Frame {
 
 /// A trail, rule or step a watch selects: its id, whether it is open, the trail or step it is under,
 /// and every rule and step under it.
+#[derive(Clone)]
 pub(crate) struct Item {
     pub id: String,
     pub open: bool,
@@ -165,14 +172,15 @@ impl Item {
 /// What `tree` with no id prints while it has no trail to print.
 pub(crate) const EMPTY: &str = "No active trails. Run `celis tree --all` to see every trail.";
 
-/// The steps and decisions a tree is printed from, and how: in colour; grouped by day and project; each
-/// line cut to `width`; as `view` shows it, off a watch as the agent view. `next` holds the earliest time a time it printed
+/// The steps and decisions a tree is printed from, the day groups it keeps, and how: in colour; grouped by
+/// day and project; each line cut to `width`; as `view` shows it, off a watch as the agent view. `next` holds the earliest time a time it printed
 /// changes, `spun` whether it printed the spinner, `order` the lines a watch selects, `printed` the count of
 /// its lines, and `picked` the line of the selected trail.
 pub(crate) struct Tree<'a> {
     pub steps: &'a Steps<'a>,
     pub decisions: &'a Decisions<'a>,
     pub reuse: &'a Reuse<'a>,
+    pub layout: Option<&'a Layout>,
     pub colour: bool,
     pub grouped: bool,
     pub width: Option<usize>,
@@ -251,46 +259,7 @@ impl Tree<'_> {
             if n > 0 {
                 self.put(out, "")?;
             }
-            let active = trails.iter().filter(|s| s.state().active()).count();
-            let counts = format!(" · {active} active · {} done", trails.len() - active);
-            let head = format!(
-                "{}{}",
-                self.paint(BOLD, &weekday(at)),
-                self.paint(DIM, &counts)
-            );
-            let mut lines = vec![Line::Mark(false, Box::new(Line::Text(head)))];
-            let (active, rest): (Vec<Step>, Vec<Step>) =
-                trails.into_iter().partition(|s| s.state().active());
-            let mut last = None;
-            if !active.is_empty() {
-                lines.push(self.gap());
-            }
-            for note in active {
-                let block = self.view.full || !self.view.all;
-                self.trail(note, block, &mut last, &mut lines);
-            }
-            let mut projects: Vec<(&str, Vec<Step>)> = vec![];
-            for note in rest {
-                let project = note.record().anchor.project.as_str();
-                match projects.iter_mut().find(|(p, _)| *p == project) {
-                    Some((_, trails)) => trails.push(note),
-                    None => projects.push((project, vec![note])),
-                }
-            }
-            for (_, trails) in projects {
-                let name = &trails[0].record().anchor.name;
-                lines.push(self.gap());
-                lines.push(Line::Mark(
-                    false,
-                    Box::new(Line::Text(self.paint(PROJECT, name))),
-                ));
-                let mut last = None;
-                for note in trails {
-                    let block = self.view.full || (!self.view.all && !self.view.watch);
-                    self.trail(note, block, &mut last, &mut lines);
-                }
-            }
-            self.show(lines, out)?;
+            self.group(at, trails, out)?;
         }
         if self.view.watch && !notes.is_empty() {
             self.put(out, "")?;
@@ -315,6 +284,116 @@ impl Tree<'_> {
             self.show(lines, out)?;
         }
         Ok(())
+    }
+
+    /// Prints the day group of `trails` from the day of `at` as `day` does, or as it last did when its
+    /// layout kept it and nothing it shows changed.
+    fn group(&self, at: u64, trails: Vec<Step>, out: &mut dyn Write) -> Result<(), Failure> {
+        let Some(layout) = self.layout else {
+            return self.day(at, trails, out);
+        };
+        let key = Key {
+            trails: trails.iter().map(|s| s.id().to_string()).collect(),
+            width: self.width,
+            full: self.view.full,
+            all: self.view.all,
+        };
+        if let Some(group) = layout.get(&day(at), &key, self.view, self.steps.now()) {
+            out.write_all(&group.text).map_err(anyhow::Error::from)?;
+            self.order.borrow_mut().extend(group.order.iter().cloned());
+            if let (None, Some(picked)) = (self.picked.get(), group.picked) {
+                self.picked.set(Some(self.printed.get() + picked));
+            }
+            self.printed.set(self.printed.get() + group.lines);
+            if let Some(next) = group.next {
+                self.until(next);
+            }
+            self.spun.set(self.spun.get() || group.spun);
+            return Ok(());
+        }
+        let (first, printed, picked) = (
+            self.order.borrow().len(),
+            self.printed.get(),
+            self.picked.get(),
+        );
+        let (next, spun) = (self.next.take(), self.spun.take());
+        let mut text = Vec::new();
+        self.day(at, trails, &mut text)?;
+        out.write_all(&text).map_err(anyhow::Error::from)?;
+        let order = self.order.borrow()[first..].to_vec();
+        let ids: HashSet<String> = order
+            .iter()
+            .flat_map(|i| std::iter::once(&i.id).chain(&i.under))
+            .cloned()
+            .collect();
+        let group = Group {
+            key,
+            flipped: layout::flipped(&ids, self.view),
+            selected: layout::selected(&ids, self.view),
+            ids,
+            next: self.next.get(),
+            spun: self.spun.get(),
+            text,
+            lines: self.printed.get() - printed,
+            order,
+            picked: self
+                .picked
+                .get()
+                .filter(|_| picked.is_none())
+                .map(|p| p - printed),
+        };
+        self.next.set(next);
+        if let Some(at) = group.next {
+            self.until(at);
+        }
+        self.spun.set(spun || group.spun);
+        layout.keep(day(at), group);
+        Ok(())
+    }
+
+    /// Prints the day group of `trails` from the day of `at`: a line with the day and its counts, then
+    /// its active trails, then the rest by project.
+    fn day(&self, at: u64, trails: Vec<Step>, out: &mut dyn Write) -> Result<(), Failure> {
+        let active = trails.iter().filter(|s| s.state().active()).count();
+        let counts = format!(" · {active} active · {} done", trails.len() - active);
+        let head = format!(
+            "{}{}",
+            self.paint(BOLD, &weekday(at)),
+            self.paint(DIM, &counts)
+        );
+        let mut lines = vec![Line::Mark(false, Box::new(Line::Text(head)))];
+        let (active, rest): (Vec<Step>, Vec<Step>) =
+            trails.into_iter().partition(|s| s.state().active());
+        let mut last = None;
+        if !active.is_empty() {
+            lines.push(self.gap());
+        }
+        for note in active {
+            let block = self.view.full || !self.view.all;
+            self.trail(note, block, &mut last, &mut lines);
+        }
+        let mut projects: Vec<(&str, Vec<Step>)> = vec![];
+        for note in rest {
+            let project = note.record().anchor.project.as_str();
+            match projects.iter_mut().find(|(p, _)| *p == project) {
+                Some((_, trails)) => trails.push(note),
+                None => projects.push((project, vec![note])),
+            }
+        }
+        for (_, trails) in projects {
+            let name = &trails[0].record().anchor.name;
+            lines.push(self.gap());
+            lines.push(Line::Mark(
+                false,
+                Box::new(Line::Text(self.paint(PROJECT, name))),
+            ));
+            let mut last = None;
+            for note in trails {
+                let block = self.view.full || (!self.view.all && !self.view.watch);
+                self.trail(note, block, &mut last, &mut lines);
+            }
+        }
+        self.show(lines, out)
     }
 
     /// A blank line, which no element holds.
@@ -1134,6 +1213,7 @@ fn column(n: usize, what: &str) -> String {
 }
 
 mod agent;
+mod layout;
 mod level;
 #[cfg(test)]
 mod tests;

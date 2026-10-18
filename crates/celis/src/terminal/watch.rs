@@ -2,7 +2,7 @@
 
 use super::screen::{clipboard, spin, until, Screen, TURN};
 use super::wake::{Key, Wake};
-use crate::command::tree::{spinner, Item, Model, View, EMPTY, MORE};
+use crate::command::tree::{spinner, Item, Layout, Model, View, EMPTY, MORE};
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::progress::Reuse;
@@ -55,6 +55,7 @@ impl Command {
                 steps: &steps,
                 decisions: &decisions,
                 reuse: &reuse,
+                layout: Layout::default(),
             };
             let (linked, store) = loop {
                 steps.at(crate::command::now());
