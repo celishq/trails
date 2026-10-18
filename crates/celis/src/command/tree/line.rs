@@ -1,7 +1,7 @@
 //! A line of a tree, and how a row lays out its title and details.
 
 use super::cells::{Cells, COLUMNS, STEPS, TIME};
-use super::{visible, BOLD, DIM, NARROWEST};
+use super::{visible, BOLD, DIM};
 
 /// A line of the tree: text as it is, or a row whose details line up with the other rows' of its day,
 /// its title in the colour `tone`, wrapped with its next lines after `rest`; or the start of a selected
@@ -63,10 +63,7 @@ impl Line {
         widths[to.map_or(0, |to| to + 1)..].fill(0);
         let room = room(&widths);
         let mut titles = match width {
-            Some(width) => wrap(
-                &title,
-                width.saturating_sub(visible(&lead) + room).max(NARROWEST),
-            ),
+            Some(width) => wrap(&title, width.saturating_sub(visible(&lead) + room)),
             None => vec![title],
         };
         if titles.is_empty() {
@@ -115,16 +112,21 @@ pub(super) fn room(widths: &[usize; COLUMNS]) -> usize {
     }
 }
 
-/// `text` in lines of at most `width` characters, broken between words; a longer word stands alone.
+/// `text` in lines of at most `width` characters, at least one, broken between words; a longer word is
+/// broken across lines.
 pub(super) fn wrap(text: &str, width: usize) -> Vec<String> {
+    let width = width.max(1);
     let mut lines: Vec<String> = vec![];
     for word in text.split_whitespace() {
-        match lines.last_mut() {
-            Some(line) if visible(line) + 1 + visible(word) <= width => {
-                line.push(' ');
-                line.push_str(word);
+        let chars: Vec<char> = word.chars().collect();
+        for part in chars.chunks(width).map(String::from_iter) {
+            match lines.last_mut() {
+                Some(line) if visible(line) + 1 + visible(&part) <= width => {
+                    line.push(' ');
+                    line.push_str(&part);
+                }
+                _ => lines.push(part),
             }
-            _ => lines.push(word.to_string()),
         }
     }
     lines

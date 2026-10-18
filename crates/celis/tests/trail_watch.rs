@@ -297,30 +297,59 @@ fn watch_draws_a_run_of_keys_as_one_tree() {
     assert!(drawn < 4, "{drawn} trees for 10 keys");
 }
 
-/// A spinner tick rewrites only the rows that changed, not the whole tree.
+/// A spinner tick rewrites only the rows that changed: no row of a step that stands still.
 #[test]
 fn watch_rewrites_only_the_rows_a_tick_changes() {
     let repo = Repo::new();
-    let trail = add(&repo, &["--", "the trail"]);
+    let by = support::account();
+    let at = support::now() - 10;
+    let trail = support::step_note(&repo, &by, None, "the trail", at);
     for n in 1..=8 {
-        add(&repo, &["--under", &trail[..8], "--", &format!("step {n}")]);
+        support::step_note(&repo, &by, Some(&trail), &format!("step {n}"), at);
     }
-    let step = add(&repo, &["--under", &trail[..8], "--", "the step"]);
-    let o = cli(&repo, &["step", "start", &step[..8]]);
-    assert!(o.status.success(), "{}", err(&o));
-    let mut watch = Watch::start(&repo, &["tree", &trail[..8]]);
+    let step = support::step_note(&repo, &by, Some(&trail), "the step", at);
+    support::put(
+        &repo,
+        &celis_trails::Mark::Start.record(&by, &step.id, at).unwrap(),
+    );
+    let mut watch = Watch::start(&repo, &["tree", &trail.id[..8]]);
     watch.until("the step");
     let raw = String::from_utf8_lossy(&watch_raw(&mut watch)).into_owned();
     let first = raw.matches("\x1b[?2026h").count();
     std::thread::sleep(Duration::from_millis(600));
     let raw = String::from_utf8_lossy(&watch_raw(&mut watch)).into_owned();
     let frames: Vec<&str> = raw.split("\x1b[?2026h").skip(1).collect();
-    let whole = frames[0].len();
     let ticks = &frames[first..];
     assert!(ticks.len() >= 3, "{frames:?}");
     for tick in ticks {
-        assert!(tick.len() * 3 < whole, "{tick:?} of {whole} bytes");
+        assert!(!tick.contains("step "), "{tick:?}");
     }
+}
+
+/// A row many levels deep wraps its title within the width.
+#[test]
+fn watch_wraps_a_deep_row_within_the_width() {
+    let repo = Repo::new();
+    let mut under = add(&repo, &["--", "the trail"]);
+    for n in 1..=8 {
+        under = add(
+            &repo,
+            &["--under", &under[..8], "--", &format!("level {n}")],
+        );
+    }
+    let words = "alpha bravo charlie delta echo foxtrot golf hotel";
+    add(
+        &repo,
+        &["--under", &under[..8], "--", &format!("deep {words}")],
+    );
+    let mut watch = Watch::start(&repo, &["tree"]);
+    watch.size(40, 40);
+    watch.until("deep");
+    let rows = watch.rows();
+    assert!(rows.iter().all(|r| r.chars().count() <= 40), "{rows:?}");
+    let text: String = rows.concat().split_whitespace().collect();
+    let words: String = format!("deep {words}").split_whitespace().collect();
+    assert!(text.contains(&words), "{rows:?}");
 }
 
 /// The raw bytes a watch printed so far.

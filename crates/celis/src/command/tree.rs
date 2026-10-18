@@ -921,7 +921,7 @@ impl Tree<'_> {
             ),
         };
         let parts = match self.width {
-            Some(width) => wrap(text, width.saturating_sub(visible(&first)).max(NARROWEST)),
+            Some(width) => wrap(text, width.saturating_sub(visible(&first))),
             None => vec![text.to_string()],
         };
         for (n, part) in parts.iter().enumerate() {
@@ -972,7 +972,7 @@ impl Tree<'_> {
 }
 
 const DIM: &str = "2";
-/// The fewest characters a line of a title or a text wraps at.
+/// The fewest characters a title's line takes before a narrow tree leaves out a column.
 const NARROWEST: usize = 20;
 /// The seconds a step's title prints bold after its newest record.
 const FRESH: u64 = 2;
