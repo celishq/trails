@@ -629,7 +629,7 @@ impl Tree<'_> {
                 steps,
                 (rules > 0).then(|| column(rules, "rule")),
                 summary.worked.map(took),
-                Some(self.id(note)),
+                None,
             ],
             rest: None,
         });
@@ -670,7 +670,7 @@ impl Tree<'_> {
                         true => None,
                         false => self.worked(&note.tree()).map(took),
                     },
-                    Some(self.id(note)),
+                    None,
                 ],
                 rest: open.then(|| below.clone()),
             });
@@ -898,24 +898,6 @@ impl Tree<'_> {
         }
     }
 
-    /// The first 8 characters of the id of `note`, its shortest start that no other step's id has
-    /// underlined.
-    fn id(&self, note: Step) -> String {
-        let id = short(note.id());
-        let all = self.steps.all();
-        let unique = (4..id.len())
-            .find(|&n| {
-                all.iter()
-                    .all(|other| other.id() == note.id() || !other.id().starts_with(&id[..n]))
-            })
-            .unwrap_or(id.len());
-        format!(
-            "{}{}",
-            self.paint(UNDERLINE, &id[..unique]),
-            self.paint(DIM, &id[unique..])
-        )
-    }
-
     /// Adds `text` wrapped, dim, after `rail` and `label` padded to 8 characters, or after `rail` alone
     /// with no label.
     fn labelled(&self, lines: &mut Vec<Line>, rail: &str, label: &str, text: &str) {
@@ -1016,7 +998,6 @@ pub(crate) const MORE: &str = "+more";
 const CLOSED: &str = "✓";
 /// The colour of a project's name.
 const PROJECT: &str = BOLD;
-const UNDERLINE: &str = "4;34";
 /// The lead, title and details of `line` when it is a row, also when it is selected, and whether its
 /// title wraps.
 fn row(line: &Line) -> Option<(&String, &String, &[Option<String>; 5], bool)> {
