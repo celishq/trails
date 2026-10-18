@@ -55,3 +55,35 @@ fn take_gives_each_record_of_the_named_files_once() {
         .join(file.file_name().unwrap())
         .exists());
 }
+
+/// A store keeps the files whose records it verified in `$CELIS_HOME/cache/verified`, and the next store
+/// verifies a file again only when its size or time changed.
+#[test]
+fn a_read_verifies_again_only_files_that_changed() {
+    let home = tempfile::tempdir().unwrap();
+    let account = Account::generate().unwrap();
+    let note =
+        |text: &str| Note::write(&account, 1u16, 1, Vec::<Vec<String>>::new(), text).unwrap();
+    let first = Store::open(home.path()).unwrap();
+    let kept = first.write(&note("kept")).unwrap();
+    let changed = first.write(&note("changed")).unwrap();
+    assert_eq!(Store::open(home.path()).unwrap().records().len(), 2);
+    let cache = std::fs::read_to_string(home.path().join("cache/verified")).unwrap();
+    assert_eq!(cache.lines().count(), 2, "{cache}");
+    let tamper = |path: &std::path::Path, from: &str, to: &str| {
+        let time = std::fs::metadata(path).unwrap().modified().unwrap();
+        let text = std::fs::read_to_string(path).unwrap().replace(from, to);
+        std::fs::write(path, text).unwrap();
+        let file = std::fs::File::options().write(true).open(path).unwrap();
+        file.set_modified(time).unwrap();
+    };
+    tamper(&kept, "\"kept\"", "\"kelp\"");
+    tamper(&changed, "\"changed\"", "\"changes!\"");
+    let texts: Vec<String> = Store::open(home.path())
+        .unwrap()
+        .records()
+        .into_iter()
+        .map(|n| n.content)
+        .collect();
+    assert_eq!(texts, ["kelp"]);
+}

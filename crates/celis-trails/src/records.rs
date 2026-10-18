@@ -8,3 +8,4 @@ pub mod phrase;
 pub mod place;
 pub mod project;
 pub mod store;
+pub mod verified;

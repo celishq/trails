@@ -1,5 +1,6 @@
 //! The records of every project on this machine.
 
+use crate::records::verified::Verified;
 use crate::{Link, Phrase, Refusal};
 use anyhow::Result;
 use celis_nostr::{Account, Note};
@@ -18,6 +19,7 @@ pub struct Store {
     account: OnceCell<Account>,
     read: RefCell<Option<Vec<Note>>>,
     seen: RefCell<HashSet<String>>,
+    verified: Verified,
 }
 
 impl Store {
@@ -37,6 +39,7 @@ impl Store {
             account: OnceCell::new(),
             read: RefCell::new(None),
             seen: RefCell::default(),
+            verified: Verified::open(home.join("cache/verified")),
         })
     }
 
@@ -82,7 +85,7 @@ impl Store {
     /// Copies each record a linked folder holds and lacks into it, and each record of a linked folder
     /// the store lacks into `shared/`. Returns the counts copied out and in.
     pub fn sync(&self) -> Result<(usize, usize)> {
-        let mut kept = read(&self.root.join("shared"), |_| true);
+        let mut kept = read(&self.root.join("shared"), |_| true, &self.verified);
         let came = self.take_in(&mut kept)?;
         let all: HashMap<&str, &Note> = kept.iter().map(|r| (r.id.as_str(), r)).collect();
         let mut went = 0;
@@ -134,7 +137,9 @@ impl Store {
             if seen.contains(file) {
                 continue;
             }
-            let Some(record) = note(path) else { continue };
+            let Some(record) = note(path, &self.verified) else {
+                continue;
+            };
             if !seen.insert(name(&record)) {
                 continue;
             }
@@ -142,6 +147,7 @@ impl Store {
             taken.push(record);
         }
         read.extend(taken.iter().cloned());
+        self.verified.save();
         taken
     }
 
@@ -155,7 +161,11 @@ impl Store {
     /// Every record in `shared/` of a file not read before, that parses and verifies.
     fn unseen(&self) -> Vec<Note> {
         let mut seen = self.seen.borrow_mut();
-        let fresh = read(&self.root.join("shared"), |file| !seen.contains(file));
+        let fresh = read(
+            &self.root.join("shared"),
+            |file| !seen.contains(file),
+            &self.verified,
+        );
         seen.extend(fresh.iter().map(name));
         fresh
     }
@@ -164,7 +174,8 @@ impl Store {
     /// count.
     fn take_in(&self, all: &mut Vec<Note>) -> Result<usize> {
         let mut came = 0;
-        for record in self.links.iter().flat_map(|l| read(&l.folder, |_| true)) {
+        let linked = self.links.iter();
+        for record in linked.flat_map(|l| read(&l.folder, |_| true, &self.verified)) {
             if put(&self.root.join("shared"), &record)?.1 {
                 self.seen.borrow_mut().insert(name(&record));
                 all.push(record);
@@ -209,31 +220,45 @@ fn name(record: &Note) -> String {
     format!("{}-{}.json", record.created_at, record.id)
 }
 
-/// Every record in `folder` of a file `wanted` names, that parses and verifies.
-fn read(folder: &Path, wanted: impl Fn(&str) -> bool) -> Vec<Note> {
-    std::fs::read_dir(folder)
+/// Every record in `folder` of a file `wanted` names, that parses and verifies, read on as many threads
+/// as the machine runs; a file `verified` holds is not checked again.
+fn read(folder: &Path, wanted: impl Fn(&str) -> bool, verified: &Verified) -> Vec<Note> {
+    let paths: Vec<PathBuf> = std::fs::read_dir(folder)
         .into_iter()
         .flatten()
-        .filter_map(|entry| {
-            let path = entry.ok()?.path();
-            let file = path.file_name()?.to_str()?;
-            if !wanted(file) {
-                return None;
-            }
-            note(&path)
+        .filter_map(|entry| Some(entry.ok()?.path()))
+        .filter(|path| {
+            path.file_name()
+                .and_then(|f| f.to_str())
+                .is_some_and(&wanted)
         })
-        .collect()
+        .collect();
+    let threads = std::thread::available_parallelism().map_or(1, |n| n.get());
+    let size = paths.len().div_ceil(threads).max(1);
+    let notes = std::thread::scope(|scope| {
+        let parts: Vec<_> = paths
+            .chunks(size)
+            .map(|part| {
+                scope.spawn(move || part.iter().filter_map(|p| note(p, verified)).collect())
+            })
+            .collect();
+        let parts = parts
+            .into_iter()
+            .map(|part| part.join().unwrap_or_default());
+        parts.flat_map(|part: Vec<Note>| part).collect()
+    });
+    verified.save();
+    notes
 }
 
-/// The record of the `.json` file at `path`, when it parses and verifies.
-fn note(path: &Path) -> Option<Note> {
+/// The record of the `.json` file at `path`, when it parses and verifies or `verified` holds it.
+fn note(path: &Path, verified: &Verified) -> Option<Note> {
     if path.extension().is_none_or(|x| x != "json") {
         return None;
     }
     let text = std::fs::read_to_string(path).ok()?;
-    serde_json::from_str::<Note>(&text)
-        .ok()
-        .filter(Note::verifies)
+    let note = serde_json::from_str::<Note>(&text).ok()?;
+    verified.holds(path, || note.verifies()).then_some(note)
 }
 
 #[cfg(test)]
