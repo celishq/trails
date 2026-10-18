@@ -3,6 +3,7 @@
 
 use super::card::{grid, paint, Card};
 use super::ink::Ink;
+use super::live::Live;
 use super::screen::{clipboard, Screen};
 use super::sheet::{sheets, Sheet, CARDS};
 use super::table::{Row, Table};
@@ -10,7 +11,7 @@ use super::wake::{Key, Wake};
 use crate::command::tree::{cut, look, visible};
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use crate::progress::{Model, Reuse};
+use crate::progress::Model;
 use crate::text::clock::weekday;
 use crate::text::line::time;
 use celis_trails::records::id::short;
@@ -35,95 +36,82 @@ impl Command {
             ),
             None => View::Cards,
         };
-        let board = Board {
-            view,
-            ..Board::default()
-        };
-        self.screen(out, |out, wakes| self.boarded(board, out, wakes))
+        self.screen(out, |out, wakes| self.boarded(view, out, wakes))
     }
 
     /// The board's loop: draws each page it reads from the store, until an interrupt.
     fn boarded(
         &self,
-        mut board: Board,
+        view: View,
         out: &mut dyn Write,
-        (send, events): (Sender<Wake>, Receiver<Wake>),
+        wakes: (Sender<Wake>, Receiver<Wake>),
     ) -> Result<(), Failure> {
         let mut screen = Screen::default();
-        let width = || self.columns().map_or(WIDTH, |c| c.saturating_sub(1));
-        let page = empty(&weekday(crate::command::now()), width(), self.colour());
-        if !self.waited(&mut screen, out, (&page.text, &page.legend), &events)? {
+        let width = self.columns().map_or(WIDTH, |c| c.saturating_sub(1));
+        let page = empty(&weekday(crate::command::now()), width, self.colour());
+        if !self.waited(&mut screen, out, (&page.text, &page.legend), &wakes.1)? {
             return Ok(());
         }
-        let mut trails = self.trails()?;
-        let loads = send.clone();
-        let _watcher = self.listen(send)?;
-        std::thread::scope(|scope| loop {
-            let steps = trails.steps();
-            let decisions = trails.decisions();
-            let reuse = Reuse::new(&steps);
-            let model = Model {
-                steps: &steps,
-                decisions: &decisions,
-                reuse: &reuse,
-            };
-            (board.kept, board.head) = (None, None);
-            let (linked, store, paths) = loop {
-                steps.at(crate::command::now());
-                let page = board.page(&model, width(), self.colour());
-                screen.draw(out, &page.text, page.line, &page.legend)?;
-                let mut wake = events.recv_timeout(Duration::from_secs(60));
-                if let Err(RecvTimeoutError::Timeout) = wake {
-                    (board.kept, board.head) = (None, None);
-                }
-                let (mut landed, mut linked, mut laid, mut store) = (false, false, false, None);
-                let mut paths = Vec::new();
-                loop {
-                    match wake {
-                        Ok(Wake::Record(files)) => {
-                            landed = true;
-                            paths.extend(files);
-                        }
-                        Ok(Wake::Rescan) => (landed, linked) = (true, true),
-                        Ok(Wake::Store(read)) => (landed, store) = (true, Some(read)),
-                        Ok(Wake::Resize) => screen.shown.clear(),
-                        Ok(Wake::Key(key)) => {
-                            laid = key.lays_out();
-                            screen.said = match (&key, &page.copy, &page.markdown) {
-                                (Key::Copy, Some(id), _) => {
-                                    Some(clipboard(&short(id), &format!("copied {}", short(id))))
-                                }
-                                (Key::Markdown, _, Some(text)) => {
-                                    Some(clipboard(text, "copied markdown"))
-                                }
-                                _ => None,
-                            };
-                            screen.press(&key);
-                            board.press(key, &page);
-                            screen.follow = true;
-                        }
-                        Ok(Wake::Quit) | Err(RecvTimeoutError::Disconnected) => return Ok(()),
-                        Err(RecvTimeoutError::Timeout) => break,
-                    }
-                    wake = match (landed, laid) {
-                        (true, _) => events.recv_timeout(Duration::from_millis(50)),
-                        (false, false) => events.recv_timeout(Duration::ZERO),
-                        (false, true) => break,
-                    };
-                }
-                if landed {
-                    break (linked, store, paths);
-                }
-            };
-            if let Some(read) = store {
-                trails = (*read)?;
+        let mut board = Board {
+            command: self,
+            view,
+            picked: 0,
+            row: 0,
+            back: vec![],
+            per_row: 0,
+            kept: None,
+            head: None,
+            page: None,
+        };
+        let trails = self.trails()?;
+        self.live(&mut board, trails, &mut screen, out, wakes)
+    }
+}
+
+impl Live for Board<'_> {
+    fn renew(&mut self) {
+        (self.kept, self.head) = (None, None);
+    }
+
+    /// Draws its page of `model`, then waits a minute for a wake; when none comes, it forgets its cards
+    /// and status.
+    fn wait(
+        &mut self,
+        model: &Model,
+        screen: &mut Screen,
+        out: &mut dyn Write,
+        events: &Receiver<Wake>,
+    ) -> Result<Result<Wake, RecvTimeoutError>, Failure> {
+        let width = self
+            .command
+            .columns()
+            .map_or(WIDTH, |c| c.saturating_sub(1));
+        let page = self.page(model, width, self.command.colour());
+        screen.draw(out, &page.text, page.line, &page.legend)?;
+        self.page = Some(page);
+        let wake = events.recv_timeout(Duration::from_secs(60));
+        if let Err(RecvTimeoutError::Timeout) = wake {
+            self.renew();
+        }
+        Ok(wake)
+    }
+
+    /// Copies the selected id or the Markdown of the page, or moves on it.
+    fn press(&mut self, key: Key, _: &Model, screen: &mut Screen) -> Result<(), Failure> {
+        let Some(page) = self.page.take() else {
+            return Ok(());
+        };
+        screen.said = match (&key, &page.copy, &page.markdown) {
+            (Key::Copy, Some(id), _) => {
+                Some(clipboard(&short(id), &format!("copied {}", short(id))))
             }
-            if linked {
-                let loads = loads.clone();
-                scope.spawn(move || loads.send(Wake::Store(Box::new(self.trails()))));
-            }
-            trails.take(&paths);
-        })
+            (Key::Markdown, _, Some(text)) => Some(clipboard(text, "copied markdown")),
+            _ => None,
+        };
+        self.go(key, &page);
+        self.page = Some(page);
+        screen.follow = true;
+        Ok(())
     }
 }
 
@@ -134,10 +122,10 @@ const WIDTH: usize = 80;
 const NARROW: usize = 60;
 
 /// Where a board stands: what it shows, the picked card, the selected row, the routes it came from,
-/// the cards a row it last drew, the cards it last made with the sizes it made them for, and whether a
-/// step closed with its status line.
-#[derive(Default)]
-struct Board {
+/// the cards a row it last drew, the cards it last made with the sizes it made them for, whether a step
+/// closed with its status line, and the page it last drew.
+struct Board<'a> {
+    command: &'a Command,
     view: View,
     picked: usize,
     row: usize,
@@ -145,15 +133,14 @@ struct Board {
     per_row: usize,
     kept: Option<((usize, usize, bool), [Sheet; CARDS])>,
     head: Option<(bool, String)>,
+    page: Option<Page>,
 }
 
 /// What a board shows.
-#[derive(Default)]
 enum View {
     /// The empty card of a store with no closed step.
     Empty,
     /// Every card, the picked one framed.
-    #[default]
     Cards,
     /// The picked card opened to its table.
     Card,
@@ -172,7 +159,7 @@ struct Page {
     rows: Vec<Option<String>>,
 }
 
-impl Board {
+impl Board<'_> {
     /// The page of `model` it shows, `width` wide, from the cards and status it kept when their sizes
     /// are the same.
     fn page(&mut self, model: &Model, width: usize, colour: bool) -> Page {
@@ -372,7 +359,7 @@ impl Board {
     }
 
     /// Moves as `key` asks on `page`: among the cards, the rows of an opened card, or along a route.
-    fn press(&mut self, key: Key, page: &Page) {
+    fn go(&mut self, key: Key, page: &Page) {
         let last = page.rows.len().saturating_sub(1);
         match (&self.view, key) {
             (View::Empty, _) => {}

@@ -1,11 +1,12 @@
 //! `celis tree` on a terminal: the tree, drawn again each time the store or a linked folder changes.
 
+use super::live::Live;
 use super::screen::{clipboard, spin, until, Screen, TURN};
 use super::wake::{Key, Wake};
-use crate::command::tree::{spinner, Item, Layout, View, EMPTY, MORE};
+use crate::command::tree::{spinner, Frame, Item, Layout, View, EMPTY, MORE};
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use crate::progress::{Model, Reuse};
+use crate::progress::Model;
 use std::io::Write;
 use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender};
 use std::time::Duration;
@@ -27,126 +28,117 @@ impl Command {
         &self,
         args: &Args,
         out: &mut dyn Write,
-        (send, events): (Sender<Wake>, Receiver<Wake>),
+        wakes: (Sender<Wake>, Receiver<Wake>),
     ) -> Result<(), Failure> {
         let mut screen = Screen::default();
         let empty = format!("{EMPTY}\n");
-        if !self.waited(&mut screen, out, (&empty, &legend(None)), &events)? {
+        if !self.waited(&mut screen, out, (&empty, &legend(None)), &wakes.1)? {
             return Ok(());
         }
-        let mut trails = self.trails()?;
+        let trails = self.trails()?;
         if let Some(id) = args.words.get(1) {
             trails.steps().find(id)?;
         }
-        let loads = send.clone();
-        let _watcher = self.listen(send)?;
-        let named = args.words.len() > 1;
-        let mut view = View {
-            watch: true,
-            spin: true,
-            ..View::of(args)
+        let mut watch = Watch {
+            command: self,
+            args,
+            named: args.words.len() > 1,
+            empty,
+            view: View {
+                watch: true,
+                spin: true,
+                ..View::of(args)
+            },
+            layout: Layout::default(),
+            frame: None,
         };
-        let mut known: Vec<Item> = vec![];
-        std::thread::scope(|scope| loop {
-            let steps = trails.steps();
-            let decisions = trails.decisions();
-            let reuse = Reuse::new(&steps);
-            let model = Model {
-                steps: &steps,
-                decisions: &decisions,
-                reuse: &reuse,
-            };
-            let layout = Layout::default();
-            let (linked, store, paths) = loop {
-                steps.at(crate::command::now());
-                let width = self.columns().map(|c| c.saturating_sub(1));
-                let frame = self.frame(&model, Some(&layout), args, width, &view)?;
-                if let Some(id) = view.selected.clone() {
-                    if !frame.order.iter().any(|i| i.id == id) {
-                        view.selected = kept(&known, &frame.order, &id);
-                        screen.follow = true;
-                        continue;
-                    }
-                }
-                let tree = match frame.text.is_empty() && !named {
-                    true => empty.clone(),
-                    false => frame.text,
-                };
-                let selected = frame
-                    .order
-                    .iter()
-                    .find(|i| view.selected.as_ref() == Some(&i.id));
-                let keys = legend(selected.and_then(Item::copy).as_deref());
-                let mut wake = loop {
-                    screen.draw(out, &spinner(&tree, spin()), frame.picked, &keys)?;
-                    let due = frame.next.map(until);
-                    let wait = match frame.spun {
-                        true => due.map_or(TURN, |w| w.min(TURN)),
-                        false => due.unwrap_or(Duration::MAX),
-                    };
-                    match events.recv_timeout(wait) {
-                        Err(RecvTimeoutError::Timeout) if due.is_none_or(|d| d > wait) => {}
-                        wake => break wake,
-                    }
-                };
-                let (mut landed, mut linked, mut laid, mut store) = (false, false, false, None);
-                let mut paths = Vec::new();
-                loop {
-                    match wake {
-                        Ok(Wake::Record(files)) => {
-                            landed = true;
-                            paths.extend(files);
-                        }
-                        Ok(Wake::Rescan) => (landed, linked) = (true, true),
-                        Ok(Wake::Store(read)) => (landed, store) = (true, Some(read)),
-                        Ok(Wake::Resize) => screen.shown.clear(),
-                        Ok(Wake::Key(key)) => {
-                            let selected = frame
-                                .order
-                                .iter()
-                                .find(|i| view.selected.as_ref() == Some(&i.id));
-                            let copy = selected.and_then(Item::copy);
-                            let chosen = selected.filter(|_| copy.is_some()).map(|i| i.id.clone());
-                            laid = key.lays_out();
-                            screen.said = match (&key, &copy, &chosen) {
-                                (Key::Copy, Some(id), _) => {
-                                    Some(clipboard(id, &format!("copied {id}")))
-                                }
-                                (Key::Markdown, _, Some(id)) => {
-                                    let markdown =
-                                        crate::command::report::part(&steps, &decisions, id)?;
-                                    Some(clipboard(&markdown, "copied markdown"))
-                                }
-                                _ => None,
-                            };
-                            let selected = view.selected.clone();
-                            screen.press(&key);
-                            press(key, &mut view, &frame.order, named);
-                            screen.follow |= view.selected != selected;
-                        }
-                        Ok(Wake::Quit) | Err(RecvTimeoutError::Disconnected) => return Ok(()),
-                        Err(RecvTimeoutError::Timeout) => break,
-                    }
-                    wake = match (landed, laid) {
-                        (true, _) => events.recv_timeout(Duration::from_millis(50)),
-                        (false, false) => events.recv_timeout(Duration::ZERO),
-                        (false, true) => break,
-                    };
-                }
-                known = frame.order;
-                if landed {
-                    break (linked, store, paths);
-                }
-            };
-            if let Some(read) = store {
-                trails = (*read)?;
+        self.live(&mut watch, trails, &mut screen, out, wakes)
+    }
+}
+
+/// A watch of the tree `args` names: whether it names an id, what it prints with no trail, how it shows
+/// the tree, the day groups it laid out, and the frame it last drew.
+struct Watch<'a> {
+    command: &'a Command,
+    args: &'a Args,
+    named: bool,
+    empty: String,
+    view: View,
+    layout: Layout,
+    frame: Option<Frame>,
+}
+
+impl Live for Watch<'_> {
+    fn renew(&mut self) {
+        self.layout = Layout::default();
+    }
+
+    /// Draws the tree of `model`, and again each time the spinner turns, until a wake comes or a time
+    /// it shows changes; the selection moves to the nearest line still shown when its line left.
+    fn wait(
+        &mut self,
+        model: &Model,
+        screen: &mut Screen,
+        out: &mut dyn Write,
+        events: &Receiver<Wake>,
+    ) -> Result<Result<Wake, RecvTimeoutError>, Failure> {
+        let width = self.command.columns().map(|c| c.saturating_sub(1));
+        let mut frame =
+            self.command
+                .frame(model, Some(&self.layout), self.args, width, &self.view)?;
+        if let Some(id) = self.view.selected.clone() {
+            if !frame.order.iter().any(|i| i.id == id) {
+                let known = self.frame.as_ref().map_or(&[][..], |f| &f.order);
+                self.view.selected = kept(known, &frame.order, &id);
+                screen.follow = true;
+                return self.wait(model, screen, out, events);
             }
-            if linked {
-                let loads = loads.clone();
-                scope.spawn(move || loads.send(Wake::Store(Box::new(self.trails()))));
+        }
+        let tree = match frame.text.is_empty() && !self.named {
+            true => self.empty.clone(),
+            false => std::mem::take(&mut frame.text),
+        };
+        let selected = frame
+            .order
+            .iter()
+            .find(|i| self.view.selected.as_ref() == Some(&i.id));
+        let keys = legend(selected.and_then(Item::copy).as_deref());
+        let wake = loop {
+            screen.draw(out, &spinner(&tree, spin()), frame.picked, &keys)?;
+            let due = frame.next.map(until);
+            let wait = match frame.spun {
+                true => due.map_or(TURN, |w| w.min(TURN)),
+                false => due.unwrap_or(Duration::MAX),
+            };
+            match events.recv_timeout(wait) {
+                Err(RecvTimeoutError::Timeout) if due.is_none_or(|d| d > wait) => {}
+                wake => break wake,
             }
-            trails.take(&paths);
-        })
+        };
+        self.frame = Some(frame);
+        Ok(wake)
+    }
+
+    /// Copies the selected id or its Markdown, or moves the selection or opens or closes lines.
+    fn press(&mut self, key: Key, model: &Model, screen: &mut Screen) -> Result<(), Failure> {
+        let order = self.frame.as_ref().map_or(&[][..], |f| &f.order);
+        let selected = order
+            .iter()
+            .find(|i| self.view.selected.as_ref() == Some(&i.id));
+        let copy = selected.and_then(Item::copy);
+        let chosen = selected.filter(|_| copy.is_some()).map(|i| i.id.clone());
+        screen.said = match (&key, &copy, &chosen) {
+            (Key::Copy, Some(id), _) => Some(clipboard(id, &format!("copied {id}"))),
+            (Key::Markdown, _, Some(id)) => {
+                let markdown = crate::command::report::part(model.steps, model.decisions, id)?;
+                Some(clipboard(&markdown, "copied markdown"))
+            }
+            _ => None,
+        };
+        let before = self.view.selected.clone();
+        press(key, &mut self.view, order, self.named);
+        screen.follow |= self.view.selected != before;
+        Ok(())
     }
 }
 
