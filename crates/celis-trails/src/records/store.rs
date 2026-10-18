@@ -119,6 +119,32 @@ impl Store {
         fresh
     }
 
+    /// The records of the files `paths` names that it lacks, in `shared/` or a linked folder, that parse and
+    /// verify; each is copied into `shared/` when it is not there, and they join the records. None before
+    /// the first read.
+    pub fn take(&self, paths: &[PathBuf]) -> Vec<Note> {
+        let mut read = self.read.borrow_mut();
+        let Some(read) = read.as_mut() else {
+            return Vec::new();
+        };
+        let mut seen = self.seen.borrow_mut();
+        let mut taken = Vec::new();
+        for path in paths {
+            let file = path.file_name().and_then(|f| f.to_str()).unwrap_or("");
+            if seen.contains(file) {
+                continue;
+            }
+            let Some(record) = note(path) else { continue };
+            if !seen.insert(name(&record)) {
+                continue;
+            }
+            let _ = put(&self.root.join("shared"), &record);
+            taken.push(record);
+        }
+        read.extend(taken.iter().cloned());
+        taken
+    }
+
     /// Every record in `shared/` and in the linked folders that parses and verifies.
     fn files(&self) -> Vec<Note> {
         let mut all = self.unseen();
@@ -190,16 +216,24 @@ fn read(folder: &Path, wanted: impl Fn(&str) -> bool) -> Vec<Note> {
         .flatten()
         .filter_map(|entry| {
             let path = entry.ok()?.path();
-            let named = path.extension().is_some_and(|x| x == "json");
             let file = path.file_name()?.to_str()?;
-            if !named || !wanted(file) {
+            if !wanted(file) {
                 return None;
             }
-            let text = std::fs::read_to_string(&path).ok()?;
-            serde_json::from_str::<Note>(&text).ok()
+            note(&path)
         })
-        .filter(Note::verifies)
         .collect()
+}
+
+/// The record of the `.json` file at `path`, when it parses and verifies.
+fn note(path: &Path) -> Option<Note> {
+    if path.extension().is_none_or(|x| x != "json") {
+        return None;
+    }
+    let text = std::fs::read_to_string(path).ok()?;
+    serde_json::from_str::<Note>(&text)
+        .ok()
+        .filter(Note::verifies)
 }
 
 #[cfg(test)]

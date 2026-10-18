@@ -4,13 +4,15 @@ use crate::failure::Failure;
 use celis_trails::Trails;
 use std::io::Read;
 use std::os::fd::FromRawFd;
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::mpsc::Sender;
 
-/// What wakes the watch before its next tick: a record, in a linked folder or not, or the store read
-/// again.
+/// What wakes the watch before its next tick: the files of records that landed, a change it must read
+/// the whole store for, or the store read again.
 pub(crate) enum Wake {
-    Record(bool),
+    Record(Vec<PathBuf>),
+    Rescan,
     Store(Box<Result<Trails, Failure>>),
     Resize,
     Key(Key),

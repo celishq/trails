@@ -57,7 +57,7 @@ impl Command {
                 reuse: &reuse,
                 layout: Layout::default(),
             };
-            let (linked, store) = loop {
+            let (linked, store, paths) = loop {
                 steps.at(crate::command::now());
                 let width = self.columns().map(|c| c.saturating_sub(1));
                 let frame = self.frame(&model, args, width, &view)?;
@@ -90,9 +90,14 @@ impl Command {
                     }
                 };
                 let (mut landed, mut linked, mut laid, mut store) = (false, false, false, None);
+                let mut paths = Vec::new();
                 loop {
                     match wake {
-                        Ok(Wake::Record(from)) => (landed, linked) = (true, linked || from),
+                        Ok(Wake::Record(files)) => {
+                            landed = true;
+                            paths.extend(files);
+                        }
+                        Ok(Wake::Rescan) => (landed, linked) = (true, true),
                         Ok(Wake::Store(read)) => (landed, store) = (true, Some(read)),
                         Ok(Wake::Resize) => screen.shown.clear(),
                         Ok(Wake::Key(key)) => {
@@ -130,7 +135,7 @@ impl Command {
                 }
                 known = frame.order;
                 if landed {
-                    break (linked, store);
+                    break (linked, store, paths);
                 }
             };
             if let Some(read) = store {
@@ -140,7 +145,7 @@ impl Command {
                 let loads = loads.clone();
                 scope.spawn(move || loads.send(Wake::Store(Box::new(self.trails()))));
             }
-            _ = trails.fresh();
+            trails.take(&paths);
         })
     }
 }

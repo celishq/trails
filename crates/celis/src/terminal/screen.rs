@@ -54,25 +54,20 @@ impl Command {
         Ok(true)
     }
 
-    /// Sends a `Record` to `send` each time a record lands in the store or a linked folder, saying
-    /// whether in a linked folder; the watcher that does it, kept while it should.
+    /// Sends to `send` a `Record` with the files each time records land in the store or a linked folder,
+    /// or a `Rescan` when the system lost track of them; the watcher that does it, kept while it should.
     pub(crate) fn listen(&self, send: Sender<Wake>) -> Result<RecommendedWatcher, Failure> {
         let home = self.home()?;
         let shared = home.join("trails/shared");
         let links = Link::all(&home, &self.folder).into_iter().map(|l| l.folder);
-        let ours = [
-            shared.clone(),
-            std::fs::canonicalize(&shared).unwrap_or_default(),
-        ];
         let landed = move |event: notify::Result<notify::Event>| {
             let Ok(event) = event else { return };
-            if !event.kind.is_access() {
-                let linked = event
-                    .paths
-                    .iter()
-                    .any(|p| !ours.iter().any(|o| p.starts_with(o)));
-                let _ = send.send(Wake::Record(linked));
-            }
+            let wake = match event.need_rescan() {
+                true => Wake::Rescan,
+                false if event.kind.is_access() => return,
+                false => Wake::Record(event.paths),
+            };
+            let _ = send.send(wake);
         };
         let mut watcher = notify::recommended_watcher(landed).map_err(anyhow::Error::from)?;
         for folder in std::iter::once(shared).chain(links) {

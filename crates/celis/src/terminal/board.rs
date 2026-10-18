@@ -65,7 +65,8 @@ impl Command {
             let (mut landed, mut linked) = (false, false);
             loop {
                 match wake {
-                    Ok(Wake::Record(from)) => (landed, linked) = (true, linked || from),
+                    Ok(Wake::Record(_)) => landed = true,
+                    Ok(Wake::Rescan) => linked = true,
                     Ok(Wake::Resize) => screen.shown.clear(),
                     Ok(Wake::Store(_)) => {}
                     Ok(Wake::Key(key)) => {

@@ -10,7 +10,7 @@ use crate::{
     StepRecord, Steps, Store, Trail, Written,
 };
 use celis_nostr::{Account, Note};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 /// The records of a store at the time `now`, and the account's writes on them, each signed now. A
 /// step's check runs for `limit` seconds at most.
@@ -45,6 +45,16 @@ impl Trails {
         self.records
             .sort_by(|a, b| (a.created_at, &a.id).cmp(&(b.created_at, &b.id)));
         !fresh.is_empty()
+    }
+
+    /// Adds the records of the files `paths` names that it lacks, as `Store::take` reads them; whether
+    /// there were any.
+    pub fn take(&mut self, paths: &[PathBuf]) -> bool {
+        let taken = self.store.take(paths);
+        self.records.extend(taken.iter().cloned());
+        self.records
+            .sort_by(|a, b| (a.created_at, &a.id).cmp(&(b.created_at, &b.id)));
+        !taken.is_empty()
     }
 
     /// Whether the store holds no record.
