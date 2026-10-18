@@ -59,10 +59,9 @@ impl Command {
         if let Some(on) = working.into_iter().find(|s| s.state() == State::Working) {
             let line = format!(
                 "celis: you work on {} \"{}\"; when the next work does not fit it, add a step under it \
-                 first, or replace it with step add --replaces. When you hand work to a subagent or \
-                 another agent, add a step for it, and put this line in its task: celis step <id>: run \
-                 celis step start <id> before you work, add your steps --under <id>, and close <id> \
-                 with celis step done.",
+                 first, or replace it with step add --replaces. To hand work to another agent, add a \
+                 step for it, and put in its task: celis step <id>: run celis step start <id> first and \
+                 celis step done <id> last.",
                 celis_trails::records::id::short(on.id()),
                 on.title()
             );

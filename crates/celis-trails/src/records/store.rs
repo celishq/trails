@@ -1,10 +1,11 @@
 //! The records of every project on this machine.
 
 use crate::{Link, Phrase, Refusal};
-use anyhow::{Context, Result};
+use anyhow::Result;
 use celis_nostr::{Account, Note};
 use std::cell::{OnceCell, RefCell};
 use std::collections::{HashMap, HashSet};
+use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
 /// The records in `$CELIS_HOME/trails/`, and the account of `$CELIS_HOME/phrase` that signs new ones. It
@@ -28,8 +29,7 @@ impl Store {
     /// The store in `home`, created when it is missing.
     pub fn open(home: &Path) -> Result<Store, Refusal> {
         let root = Store::root(home);
-        std::fs::create_dir_all(root.join("shared"))
-            .with_context(|| format!("create the store in {}", root.display()))?;
+        std::fs::create_dir_all(root.join("shared")).map_err(|e| unwritten(&root, e))?;
         Ok(Store {
             root,
             phrase: Phrase::at(home),
@@ -161,8 +161,21 @@ fn put(folder: &Path, record: &Note) -> Result<(PathBuf, bool)> {
     let written = std::fs::write(&temp, serde_json::to_string(record)?);
     written
         .and_then(|()| std::fs::rename(&temp, &path))
-        .with_context(|| format!("write in {}", folder.display()))?;
+        .map_err(|e| unwritten(folder, e))?;
     Ok((path, true))
+}
+
+/// A failed write in `folder`: it names the folder, and when the system refused the write, how to let an
+/// agent's sandbox write it.
+fn unwritten(folder: &Path, error: std::io::Error) -> anyhow::Error {
+    let hint = match error.kind() {
+        ErrorKind::ReadOnlyFilesystem | ErrorKind::PermissionDenied => {
+            " (in a sandbox, let the agent write it; Codex: add it to \
+             sandbox_workspace_write.writable_roots)"
+        }
+        _ => "",
+    };
+    anyhow::Error::new(error).context(format!("cannot write {}{hint}", folder.display()))
 }
 
 /// The name of the file of `record`: `<created_at>-<id>.json`.

@@ -247,10 +247,9 @@ fn the_prompt_hook_names_the_working_step() {
         [
             format!(
                 "celis: you work on {} \"Cache the price list\"; when the next work does not fit it, \
-                 add a step under it first, or replace it with step add --replaces. When you hand work \
-                 to a subagent or another agent, add a step for it, and put this line in its task: \
-                 celis step <id>: run celis step start <id> before you work, add your steps --under \
-                 <id>, and close <id> with celis step done.",
+                 add a step under it first, or replace it with step add --replaces. To hand work to \
+                 another agent, add a step for it, and put in its task: celis step <id>: run celis \
+                 step start <id> first and celis step done <id> last.",
                 &step[..8]
             ),
             joins(Some(&trail)),
