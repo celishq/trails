@@ -14,6 +14,7 @@ use crate::failure::Failure;
 use crate::progress::Model;
 use crate::text::clock::weekday;
 use crate::text::line::time;
+use celis_nostr::Note;
 use celis_trails::records::id::short;
 use celis_trails::{Step, Steps, Trail};
 use std::io::Write;
@@ -69,7 +70,7 @@ impl Command {
 }
 
 impl Live for Board<'_> {
-    fn renew(&mut self) {
+    fn renew(&mut self, _: &Model, _: Option<&[Note]>) {
         (self.kept, self.head) = (None, None);
     }
 
@@ -91,7 +92,7 @@ impl Live for Board<'_> {
         self.page = Some(page);
         let wake = events.recv_timeout(Duration::from_secs(60));
         if let Err(RecvTimeoutError::Timeout) = wake {
-            self.renew();
+            (self.kept, self.head) = (None, None);
         }
         Ok(wake)
     }

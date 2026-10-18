@@ -5,6 +5,7 @@ use super::wake::{Key, Wake};
 use crate::command::Command;
 use crate::failure::Failure;
 use crate::progress::Model;
+use celis_nostr::Note;
 use celis_trails::Trails;
 use std::io::Write;
 use std::path::PathBuf;
@@ -13,8 +14,9 @@ use std::time::Duration;
 
 /// A page a live screen draws from the model of a store and moves with keys.
 pub(crate) trait Live {
-    /// Forgets what it kept from the model before.
-    fn renew(&mut self);
+    /// Forgets what it kept from the model before that the records `landed` change in `model`; all of
+    /// it when `landed` is `None`.
+    fn renew(&mut self, model: &Model, landed: Option<&[Note]>);
 
     /// Draws itself from `model` on `screen` until a wake comes or its wait ends; that wake.
     fn wait(
@@ -53,9 +55,10 @@ impl Command {
     ) -> Result<(), Failure> {
         let loads = send.clone();
         let _watcher = self.listen(send)?;
+        let mut landed = None;
         std::thread::scope(|scope| loop {
             let batch = Model::of(&trails, |model| {
-                page.renew();
+                page.renew(model, landed.as_deref());
                 loop {
                     model.steps.at(crate::command::now());
                     let wake = page.wait(model, screen, out, &events)?;
@@ -68,14 +71,15 @@ impl Command {
             let Some(batch) = batch else {
                 return Ok(());
             };
-            if let Some(read) = batch.store {
-                trails = (*read)?;
+            let read = batch.store.is_some();
+            if let Some(store) = batch.store {
+                trails = (*store)?;
             }
             if batch.linked {
                 let loads = loads.clone();
                 scope.spawn(move || loads.send(Wake::Store(Box::new(self.trails()))));
             }
-            trails.take(&batch.paths);
+            landed = Some(trails.take(&batch.paths)).filter(|_| !read);
         })
     }
 }

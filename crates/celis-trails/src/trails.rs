@@ -38,14 +38,14 @@ impl Trails {
         self.records = self.store.records();
     }
 
-    /// Adds the records of the files `paths` names that it lacks, as `Store::take` reads them; whether
-    /// there were any.
-    pub fn take(&mut self, paths: &[PathBuf]) -> bool {
+    /// Adds the records of the files `paths` names that it lacks, as `Store::take` reads them; those
+    /// records.
+    pub fn take(&mut self, paths: &[PathBuf]) -> Vec<Note> {
         let taken = self.store.take(paths);
         self.records.extend(taken.iter().cloned());
         self.records
             .sort_by(|a, b| (a.created_at, &a.id).cmp(&(b.created_at, &b.id)));
-        !taken.is_empty()
+        taken
     }
 
     /// Whether the store holds no record.

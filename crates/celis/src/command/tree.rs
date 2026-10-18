@@ -283,6 +283,16 @@ impl Tree<'_> {
             all: self.view.all,
         };
         if let Some(group) = layout.get(&day(at), &key, self.view, self.steps.now()) {
+            if cfg!(debug_assertions) {
+                let blank = self.blank();
+                let mut text = Vec::new();
+                blank.day(at, trails, &mut text)?;
+                assert_eq!(
+                    blank.frame(&text).text,
+                    group.part.text,
+                    "a kept group is old"
+                );
+            }
             return self.add(&group.part, out);
         }
         let blank = self.blank();

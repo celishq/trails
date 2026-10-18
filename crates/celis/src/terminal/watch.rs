@@ -7,6 +7,7 @@ use crate::command::tree::{spinner, Frame, Item, Layout, View, EMPTY, MORE};
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::progress::Model;
+use celis_nostr::Note;
 use std::io::Write;
 use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender};
 use std::time::Duration;
@@ -69,8 +70,8 @@ struct Watch<'a> {
 }
 
 impl Live for Watch<'_> {
-    fn renew(&mut self) {
-        self.layout = Layout::default();
+    fn renew(&mut self, model: &Model, landed: Option<&[Note]>) {
+        self.layout.renew(model, landed);
     }
 
     /// Draws the tree of `model`, and again each time the spinner turns, until a wake comes or a time
