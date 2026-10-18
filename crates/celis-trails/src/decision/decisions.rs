@@ -1,8 +1,8 @@
 //! The decisions of a store.
 
-use crate::{Decision, Place, Refusal, Scope};
+use crate::{Decision, Place, Refusal, Scope, Step, Used};
 use celis_nostr::Note;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 /// The decisions of a store, read once, newest first, then by id; each with the decision that replaces
 /// it, if one does. A decision no other replaces is live.
@@ -69,14 +69,36 @@ impl<'a> Decisions<'a> {
             .collect()
     }
 
-    /// The live rules of the trail `id` of `project`, oldest first.
-    pub fn rules(&self, project: &str, id: &str) -> Vec<(&'a Note, Decision)> {
+    /// The live rules of `trail`, oldest first.
+    pub fn rules(&self, trail: Step) -> Vec<(&'a Note, Decision)> {
+        let scope = Scope::Trail(trail.id().to_string());
         let mut rules: Vec<(&'a Note, Decision)> = self
-            .live(project)
+            .live(&trail.record().anchor.project)
             .into_iter()
-            .filter(|(_, d)| d.scope == Scope::Trail(id.to_string()))
+            .filter(|(_, d)| d.scope == scope)
             .collect();
         rules.sort_by(|(a, _), (b, _)| (a.created_at, &a.id).cmp(&(b.created_at, &b.id)));
         rules
+    }
+
+    /// The live decisions `step` must keep, each once: those at its places, its trail's rules, each
+    /// decision a step on its `under` chain uses, and the rules of the trail of each step one follows.
+    pub fn kept(&self, step: Step) -> Vec<(&'a Note, Decision)> {
+        let record = step.record();
+        let places = record.places.iter();
+        let mut found: Vec<_> = places
+            .flat_map(|place| self.at(&record.anchor.project, place))
+            .collect();
+        found.extend(self.rules(step.trail()));
+        let chain = std::iter::successors(Some(step), |s| s.under());
+        for used in chain.flat_map(Step::uses) {
+            match used {
+                Used::Follow(other) => found.extend(self.rules(other.trail())),
+                Used::Decision(id) => found.extend(self.get(id)),
+            }
+        }
+        let mut seen = HashSet::new();
+        found.retain(|(note, _)| seen.insert(note.id.clone()));
+        found
     }
 }

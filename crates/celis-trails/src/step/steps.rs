@@ -1,8 +1,8 @@
 //! The steps of a store, as they stand at one moment.
 
-use crate::{Mark, Refusal, Step, StepRecord};
+use crate::{Decision, Mark, Refusal, Step, StepRecord};
 use celis_nostr::Note;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 /// The step records and marks of a store at the time `now`: which steps are open, how they nest, and how
 /// each went.
@@ -23,6 +23,11 @@ impl<'a> Steps<'a> {
     pub fn all(&'a self) -> Vec<Step<'a>> {
         let all = self.index.all.iter();
         all.filter_map(|n| self.get(&n.id)).collect()
+    }
+
+    /// Whether a decision record has the id `id`.
+    pub(crate) fn holds_decision(&self, id: &str) -> bool {
+        self.index.decisions.contains(id)
     }
 
     /// The step whose id is `id`.
@@ -89,6 +94,7 @@ pub const LIFE: u64 = 30 * 60;
 pub(crate) struct Index<'a> {
     all: Vec<&'a Note>,
     entries: HashMap<&'a str, Entry<'a>>,
+    decisions: HashSet<&'a str>,
 }
 
 /// One step: its record, its text with its edits, its links, the steps that replace it, and how its marks
@@ -154,7 +160,13 @@ impl<'a> Index<'a> {
             entry.newest = entry.newest.max(note.created_at);
             entry.mark(note, mark);
         }
-        Index { all, entries }
+        let decisions = sorted.iter().filter(|n| Decision::read(n).is_some());
+        let decisions = decisions.map(|n| n.id.as_str()).collect();
+        Index {
+            all,
+            entries,
+            decisions,
+        }
     }
 }
 

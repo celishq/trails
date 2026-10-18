@@ -75,16 +75,18 @@ To update it later, run `celis update`.
 
 **2. Add the plugin to your agent:**
 
-| Agent       | Install                                                                         | Then                                                                              |
-| ----------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| Claude Code | `/plugin marketplace add celishq/trails`<br>`/plugin install celis@celis`       | —                                                                                 |
-| Codex       | `codex plugin marketplace add celishq/trails`<br>`codex plugin add celis@celis` | Trust its hooks with `/hooks`.                                                    |
-| Cursor      | `cursor-agent plugin marketplace add https://github.com/celishq/trails`         | Install `celis` from `/plugins`. Cursor doesn't remind the agent on each message. |
-| Gemini CLI  | `gemini extensions install https://github.com/celishq/trails`                   | —                                                                                 |
-| Antigravity | `agy plugin install https://github.com/celishq/trails`                          | Antigravity has no prompt hook, so celis doesn't write your prompts on the trail. |
+| Agent       | Install                                                                         | Then                                                                                       |
+| ----------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Claude Code | `/plugin marketplace add celishq/trails`<br>`/plugin install celis@celis`       | —                                                                                          |
+| Codex       | `codex plugin marketplace add celishq/trails`<br>`codex plugin add celis@celis` | Trust its hooks with `/hooks`. In a sandbox, let it write the folder celis keeps notes in. |
+| Cursor      | `cursor-agent plugin marketplace add https://github.com/celishq/trails`         | Install `celis` from `/plugins`. Cursor doesn't remind the agent on each message.          |
+| Gemini CLI  | `gemini extensions install https://github.com/celishq/trails`                   | —                                                                                          |
+| Antigravity | `agy plugin install https://github.com/celishq/trails`                          | Antigravity has no prompt hook, so celis doesn't write your prompts on the trail.          |
 
 **3. Give your agent a task.** When the task changes files, the agent keeps its steps in celis. Run
-`celis tree` in a second terminal to watch them as the agent works.
+`celis tree` in a second terminal to watch them as the agent works. When the agent hands work to a
+subagent or to another agent, it names the step in the task, and that agent gets the step's rules from
+celis.
 
 celis keeps your notes and your key in `~/Library/Application Support/Celis` on macOS, and in
 `~/.local/share/celis` on Linux. To keep them in another folder, for a test or a

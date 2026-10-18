@@ -19,7 +19,7 @@ pub struct Watch {
 }
 
 impl Watch {
-    /// Runs `celis <args>` on a new terminal in the main checkout of `repo`.
+    /// Runs `celis <args>` on a new terminal in the main checkout of `repo`, at about noon.
     pub fn start(repo: &Repo, args: &[&str]) -> Watch {
         let (mut lead, mut follow) = (0, 0);
         let opened = unsafe {
@@ -39,6 +39,7 @@ impl Watch {
             .env_clear()
             .env("PATH", path(repo))
             .env("CELIS_HOME", repo.home())
+            .env("TZ", super::noon())
             .stdin(side(follow))
             .stdout(side(follow))
             .stderr(side(follow))

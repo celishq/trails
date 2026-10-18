@@ -1,7 +1,7 @@
 use super::*;
 use celis_nostr::{Account, Note};
 use celis_trails::step::steps::LIFE;
-use celis_trails::{Anchor, Mark, StepId, StepRecord, Steps};
+use celis_trails::{Anchor, Decision, Mark, Scope, StepId, StepRecord, Steps};
 
 fn account() -> Account {
     Account::new(&[1u8; 32]).unwrap()
@@ -72,18 +72,31 @@ fn a_period_counts_its_done_steps_as_planned_and_reworked() {
     assert_eq!(period.reworked(), 1);
 }
 
-/// A period counts the steps added in it that use a decision, and not those that use only a step.
+/// A period counts the steps added in it that use a decision, and not those that use only a step or an
+/// id that names no record (`spec/06-reuse.md`, "Uses").
 #[test]
 fn a_period_counts_its_added_steps_that_use_a_decision() {
+    let rule = Decision {
+        anchor: Anchor {
+            project: "p".into(),
+            name: "repo".into(),
+        },
+        scope: Scope::Project,
+        replaces: None,
+        content: "keep cents".into(),
+    }
+    .record(&account(), 5)
+    .unwrap();
     let trail = step("trail", 10, None, &[], None);
     let source = step("source", 11, Some(&trail), &[], None);
-    let ruled = step("ruled", 21, Some(&trail), &["ab12cd34"], None);
+    let ruled = step("ruled", 21, Some(&trail), &[&rule.id], None);
     let follows = step("follows", 22, Some(&trail), &[&source.id], None);
-    let late = step("late", 45, Some(&trail), &["ab12cd34"], None);
-    let records = vec![trail, source, ruled, follows, late];
+    let dangling = step("dangling", 23, Some(&trail), &["ab12cd34"], None);
+    let late = step("late", 45, Some(&trail), &[&rule.id], None);
+    let records = vec![rule, trail, source, ruled, follows, dangling, late];
     let steps = Steps::new(&records, 50);
     let period = Period::new(&steps, 20, 40);
-    assert_eq!(titles(period.added()), ["ruled", "follows"]);
+    assert_eq!(titles(period.added()), ["ruled", "follows", "dangling"]);
     assert_eq!(period.ruled(), 1);
 }
 

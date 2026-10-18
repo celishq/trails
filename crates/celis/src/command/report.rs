@@ -76,10 +76,7 @@ fn card(trails: &Trails, trail: Step, width: usize, colour: bool) -> Card {
     let step = trail.record();
     let tree = &trail.tree()[1..];
     let tally = Tally::of(tree);
-    let rules = trails
-        .decisions()
-        .rules(&step.anchor.project, trail.id())
-        .len();
+    let rules = trails.decisions().rules(trail).len();
     let ran = took(trail.newest().saturating_sub(trail.note().created_at));
     let state = trail.state();
     let mark = paint(colour, look(state).text, look(state).mark);
@@ -214,7 +211,7 @@ pub(crate) fn markdown(trails: &Trails, ids: &[String]) -> Result<String, Failur
         let tree = &trail.tree()[1..];
         let tally = Tally::of(tree);
         let ran = took(trail.newest().saturating_sub(trail.note().created_at));
-        let rules = decisions.rules(&step.anchor.project, trail.id());
+        let rules = decisions.rules(trail);
         let mut lines = vec![
             format!("## {}", step.title()),
             String::new(),

@@ -541,3 +541,26 @@ fn a_closed_reader_stops_a_command_with_no_message() {
     let o = child.wait_with_output().unwrap();
     assert_eq!(String::from_utf8_lossy(&o.stderr), "");
 }
+
+/// A write to a folder celis may not write, as in an agent's sandbox, fails as `error` with a message
+/// that names the folder celis keeps its notes in.
+#[test]
+fn a_read_only_store_names_the_folder_to_let_the_agent_write() {
+    use std::os::unix::fs::PermissionsExt;
+    let repo = Repo::new();
+    let home = repo.home();
+    std::fs::set_permissions(&home, std::fs::Permissions::from_mode(0o555)).unwrap();
+    let o = repo.run(
+        &repo.path(),
+        &["--json", "decide", "--", "When x: y."],
+        &[],
+        "",
+    );
+    std::fs::set_permissions(&home, std::fs::Permissions::from_mode(0o755)).unwrap();
+    assert_eq!(o.status.code(), Some(1), "{}", err(&o));
+    let object: Value = serde_json::from_str(err(&o).trim()).expect("one JSON object");
+    assert_eq!(object["error"], "error");
+    let message = object["message"].as_str().unwrap();
+    assert!(message.contains(home.to_str().unwrap()), "{message}");
+    assert!(message.contains("sandbox"), "{message}");
+}

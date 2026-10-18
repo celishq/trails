@@ -20,9 +20,10 @@ followed.
 
 ## Subagents and other sessions
 
-When a subagent takes a step, give it the step's id. It runs `start` and `done` on that step, and adds
-its own steps `--under` it. To go on with another session's trail, add your first step `--under <its
-id>`.
+When a subagent or another agent takes work, add a step for it under your working step, and put in its
+task: "celis step <id>: run celis step start <id> first and celis step done <id> last." `start` prints
+the rules it must keep, and the agent adds its own steps `--under <id>`. To go on with another session's
+trail, add your first step `--under <its id>`.
 
 ## Links
 

@@ -27,6 +27,7 @@ pub use step::mark::Mark;
 pub use step::state::State;
 pub use step::step_record::StepRecord;
 pub use step::steps::Steps;
+pub use step::used::Used;
 pub use step::Step;
 pub use trail::Trail;
 pub use trails::draft::Draft;

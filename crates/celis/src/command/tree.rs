@@ -454,8 +454,7 @@ impl Tree<'_> {
             true => note.trail(),
             false => note,
         };
-        self.decisions
-            .rules(&note.record().anchor.project, owner.id())
+        self.decisions.rules(owner)
     }
 
     /// Adds `note` as a block: `▾`, its mark and title, then its lines: its worked time, its last change
