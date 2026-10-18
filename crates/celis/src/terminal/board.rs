@@ -67,6 +67,7 @@ impl Command {
                 match wake {
                     Ok(Wake::Record(from)) => (landed, linked) = (true, linked || from),
                     Ok(Wake::Resize) => screen.shown.clear(),
+                    Ok(Wake::Store(_)) => {}
                     Ok(Wake::Key(key)) => {
                         screen.said = match (&key, &page.copy, &page.markdown) {
                             (Key::Copy, Some(id), _) => {

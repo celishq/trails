@@ -38,6 +38,7 @@ impl Command {
         if let Some(id) = args.words.get(1) {
             trails.steps().find(id)?;
         }
+        let loads = send.clone();
         let _watcher = self.listen(send)?;
         let named = args.words.len() > 1;
         let mut view = View {
@@ -46,7 +47,7 @@ impl Command {
             ..View::of(args)
         };
         let mut known: Vec<Item> = vec![];
-        loop {
+        std::thread::scope(|scope| loop {
             let steps = trails.steps();
             let decisions = trails.decisions();
             let reuse = Reuse::new(&steps);
@@ -55,7 +56,7 @@ impl Command {
                 decisions: &decisions,
                 reuse: &reuse,
             };
-            let linked = loop {
+            let (linked, store) = loop {
                 steps.at(crate::command::now());
                 let width = self.columns().map(|c| c.saturating_sub(1));
                 let frame = self.frame(&model, args, width, &view)?;
@@ -87,10 +88,11 @@ impl Command {
                         wake => break wake,
                     }
                 };
-                let (mut landed, mut linked, mut laid) = (false, false, false);
+                let (mut landed, mut linked, mut laid, mut store) = (false, false, false, None);
                 loop {
                     match wake {
                         Ok(Wake::Record(from)) => (landed, linked) = (true, linked || from),
+                        Ok(Wake::Store(read)) => (landed, store) = (true, Some(read)),
                         Ok(Wake::Resize) => screen.shown.clear(),
                         Ok(Wake::Key(key)) => {
                             let selected = frame
@@ -127,14 +129,18 @@ impl Command {
                 }
                 known = frame.order;
                 if landed {
-                    break linked;
+                    break (linked, store);
                 }
             };
-            match linked {
-                true => trails = self.trails()?,
-                false => _ = trails.fresh(),
+            if let Some(read) = store {
+                trails = (*read)?;
             }
-        }
+            if linked {
+                let loads = loads.clone();
+                scope.spawn(move || loads.send(Wake::Store(Box::new(self.trails()))));
+            }
+            _ = trails.fresh();
+        })
     }
 }
 

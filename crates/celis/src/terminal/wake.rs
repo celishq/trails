@@ -1,13 +1,17 @@
-//! What wakes a watch: a record that lands, a key, a new size, or an interrupt.
+//! What wakes a watch: a record that lands, the store read again, a key, a new size, or an interrupt.
 
+use crate::failure::Failure;
+use celis_trails::Trails;
 use std::io::Read;
 use std::os::fd::FromRawFd;
 use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::mpsc::Sender;
 
-/// What wakes the watch before its next tick: a record, in a linked folder or not.
+/// What wakes the watch before its next tick: a record, in a linked folder or not, or the store read
+/// again.
 pub(crate) enum Wake {
     Record(bool),
+    Store(Box<Result<Trails, Failure>>),
     Resize,
     Key(Key),
     Quit,
