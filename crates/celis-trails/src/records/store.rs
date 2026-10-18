@@ -110,18 +110,6 @@ impl Store {
         all
     }
 
-    /// The records in `shared/` written since the last read, that parse and verify; they join the
-    /// records. None before the first read.
-    pub fn fresh(&self) -> Vec<Note> {
-        let mut read = self.read.borrow_mut();
-        let Some(read) = read.as_mut() else {
-            return Vec::new();
-        };
-        let fresh = self.unseen();
-        read.extend(fresh.iter().cloned());
-        fresh
-    }
-
     /// The records of the files `paths` names that it lacks, in `shared/` or a linked folder, that parse and
     /// verify; each is copied into `shared/` when it is not there, and they join the records. None before
     /// the first read.
