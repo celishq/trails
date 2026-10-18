@@ -1,6 +1,6 @@
 //! `celis tree --graph`: the node view, one trail as a graph, live or played back event by event.
 
-use crate::command::tree::{cut, today, EMPTY};
+use crate::command::tree::{today, EMPTY};
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::progress::Model;
@@ -10,19 +10,18 @@ use crate::terminal::look::{spin, TURN};
 use crate::terminal::screen::Screen;
 use crate::terminal::wake::Key;
 use celis_nostr::Note;
-use celis_trails::{Mark, State, Step};
+use celis_trails::{State, Step};
+use details::details;
 use diagram::Diagram;
-use events::{Event, Events, Kind};
+use effect::effect;
+use events::Events;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
-use ratatui::style::{Color, Modifier, Style};
-use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, BorderType, Clear, Paragraph, Widget, Wrap};
 use std::cell::Cell;
-use std::collections::HashMap;
 use std::io::{IsTerminal, Write};
 use std::time::{Duration, Instant};
-use tachyonfx::{fx, Effect, Interpolation, Motion};
+use tachyonfx::Effect;
+use timeline::timeline;
 
 /// The time between two events as the view plays them.
 const BEAT: Duration = Duration::from_millis(900);
@@ -148,38 +147,6 @@ impl<'a> Replay<'a> {
         self.shown = to;
         self.live = to == events.all.len();
     }
-
-    /// The bottom two rows of `area` on `buf`: whether it plays, follows or stands at an event, with the
-    /// newest event shown, then a bar of the events shown.
-    fn timeline(&self, events: &Events, area: Rect, buf: &mut Buffer) {
-        let all = events.all.len();
-        let (status, colour) = match (self.beat.is_some(), self.live) {
-            (true, _) => (format!("▶ {}/{all}", self.shown), Color::Cyan),
-            (false, true) => ("● live".to_string(), Color::Green),
-            (false, false) => (format!("⏸ {}/{all}", self.shown), Color::Yellow),
-        };
-        let style = Style::new().fg(colour).add_modifier(Modifier::BOLD);
-        let width = usize::from(area.width);
-        buf.set_string(area.x, area.y, &status, style);
-        if let Some(event) = events.all[..self.shown].last() {
-            let said = format!("{} {}", word(event.kind), event.text);
-            let room = width.saturating_sub(status.chars().count() + 3);
-            let x = area.x + status.chars().count() as u16 + 3;
-            buf.set_string(x, area.y, cut(&said, room), Style::new());
-        }
-        let at = match all {
-            0 => 0,
-            all => self.shown * width.saturating_sub(1) / all,
-        };
-        for x in 0..width {
-            let (bar, colour) = match x.cmp(&at) {
-                std::cmp::Ordering::Less => ("━", Color::Cyan),
-                std::cmp::Ordering::Equal => ("●", Color::White),
-                std::cmp::Ordering::Greater => ("─", Color::DarkGray),
-            };
-            buf.set_string(area.x + x as u16, area.y + 1, bar, Style::new().fg(colour));
-        }
-    }
 }
 
 impl Live for Replay<'_> {
@@ -229,7 +196,14 @@ impl Live for Replay<'_> {
         };
         let graph = Rect::new(0, 0, width, height - 3);
         let areas = diagram.render(graph, &mut buf, &self.offset);
-        self.timeline(&events, Rect::new(0, height - 2, width, 2), &mut buf);
+        let playing = (self.beat.is_some(), self.live);
+        timeline(
+            &events,
+            self.shown,
+            playing,
+            Rect::new(0, height - 2, width, 2),
+            &mut buf,
+        );
         let colour = self.command.colour();
         let passed = now.duration_since(self.drawn);
         self.drawn = now;
@@ -359,84 +333,6 @@ fn next(columns: &[Vec<String>], from: Option<&str>, key: Key) -> Option<String>
     column.get(row.min(column.len() - 1)).cloned()
 }
 
-/// Draws the details of `step` as it stands, `state`, over `area` of `buf`: its whole text, where it
-/// works and its check, how many of its steps are done, and its proof or why it was dropped.
-fn details(step: Step, state: State, area: Rect, buf: &mut Buffer) {
-    let area = Rect::new(
-        area.x + 2,
-        area.y + 1,
-        area.width.saturating_sub(4),
-        area.height.saturating_sub(1),
-    );
-    let dim = Style::new().fg(Color::DarkGray);
-    let bold = Style::new().add_modifier(Modifier::BOLD);
-    let field = |name: &str, value: String, style: Style| {
-        Line::from(vec![
-            Span::styled(format!("{name:<8}"), dim),
-            Span::styled(value, style),
-        ])
-    };
-    let record = step.record();
-    let mut lines: Vec<Line> = record
-        .content
-        .lines()
-        .enumerate()
-        .map(|(n, line)| match n {
-            0 => Line::styled(line.to_string(), bold),
-            _ => Line::raw(line.to_string()),
-        })
-        .collect();
-    lines.push(Line::raw(""));
-    let colour = match state {
-        State::Open => Color::DarkGray,
-        State::Working => Color::Cyan,
-        State::Done => Color::Green,
-        State::Dropped => Color::Red,
-        State::Expired => Color::Yellow,
-    };
-    lines.push(field(
-        "state",
-        state.text().to_string(),
-        Style::new().fg(colour),
-    ));
-    if !record.places.is_empty() {
-        lines.push(field("at", record.places.join(", "), Style::new()));
-    }
-    if let Some(check) = &record.check {
-        lines.push(field("check", check.clone(), Style::new()));
-    }
-    let under = step.tree().len() - 1;
-    if under > 0 {
-        let done = step.tree()[1..]
-            .iter()
-            .filter(|s| s.state() == State::Done)
-            .count();
-        lines.push(field("steps", format!("{done}/{under} done"), Style::new()));
-    }
-    match step.close().map(|(_, mark)| mark) {
-        Some(Mark::Done { proof, changed }) if state == State::Done => {
-            lines.push(field("proof", proof, Style::new().fg(Color::Green)));
-            if let Some(changed) = changed {
-                lines.push(field("changed", changed, Style::new().fg(Color::Yellow)));
-            }
-        }
-        Some(Mark::Drop { reason }) if state == State::Dropped => {
-            lines.push(field("why", reason, Style::new().fg(Color::Red)));
-        }
-        _ => {}
-    }
-    let block = Block::bordered()
-        .border_type(BorderType::Rounded)
-        .border_style(Style::new().fg(Color::White))
-        .title(format!(" {} ", &step.id()[..8]))
-        .title_bottom(Line::styled(" enter esc close ", dim).right_aligned());
-    Clear.render(area, buf);
-    Paragraph::new(lines)
-        .block(block)
-        .wrap(Wrap { trim: false })
-        .render(area, buf);
-}
-
 /// The page of no trail.
 fn empty() -> Page {
     Page {
@@ -446,53 +342,10 @@ fn empty() -> Page {
     }
 }
 
-/// The effect of `event` on the area it drew in `areas`: a step added comes together, a started one
-/// sweeps in with its edge, a done one flashes white and a dropped one red, and a rule slides in.
-fn effect(event: &Event, areas: &HashMap<String, Rect>) -> Option<Effect> {
-    let area = *areas.get(&event.id)?;
-    let edge = areas.get(&format!("edge:{}", event.id)).copied();
-    let timer = |ms| (ms, Interpolation::QuadOut);
-    let on = |effect: Effect, at: Rect| effect.with_area(at);
-    let effect = match event.kind {
-        Kind::Added => on(fx::coalesce(timer(500)), area),
-        Kind::Started => {
-            let sweep = |at| {
-                on(
-                    fx::sweep_in(Motion::LeftToRight, 8, 0, Color::Black, timer(600)),
-                    at,
-                )
-            };
-            let mut both = vec![sweep(area)];
-            both.extend(edge.map(sweep));
-            fx::parallel(&both)
-        }
-        Kind::Done => {
-            let flash = |at| on(fx::fade_from_fg(Color::White, timer(900)), at);
-            let mut both = vec![flash(area)];
-            both.extend(edge.map(flash));
-            fx::parallel(&both)
-        }
-        Kind::Dropped => on(fx::fade_from_fg(Color::Red, timer(900)), area),
-        Kind::Rule => on(
-            fx::slide_in(Motion::LeftToRight, 12, 0, Color::Black, timer(700)),
-            area,
-        ),
-    };
-    Some(effect)
-}
-
-/// The word the timeline says for an event of `kind`.
-fn word(kind: Kind) -> &'static str {
-    match kind {
-        Kind::Added => "added",
-        Kind::Rule => "§ rule",
-        Kind::Started => "started",
-        Kind::Done => "done",
-        Kind::Dropped => "dropped",
-    }
-}
-
+mod details;
 mod diagram;
+mod effect;
 mod events;
 #[cfg(test)]
 mod tests;
+mod timeline;

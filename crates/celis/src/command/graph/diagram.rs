@@ -13,6 +13,11 @@ use ratatui::widgets::{Block, BorderType, Widget};
 use std::cell::Cell;
 use std::collections::{HashMap, HashSet};
 
+/// The look of the selected step's mark and title.
+const SELECTED: Style = Style::new()
+    .fg(Color::LightYellow)
+    .add_modifier(Modifier::BOLD);
+
 /// The width of a card in the chain.
 const CARD: u16 = 28;
 
@@ -74,8 +79,8 @@ impl<'a> Diagram<'a> {
     }
 
     /// Draws the header, the whole columns of the graph that fit from the column `offset`, moved just
-    /// enough to show the selected step, else the newest event's step, and the newest rules, over `area` of `buf`; keeps the
-    /// first column in `offset`. The area of each step, edge and rule it drew, by its id.
+    /// enough to show the selected step, else the newest event's step, and the newest rules, over
+    /// `area` of `buf`; keeps the first column in `offset`. The area of each step, edge and rule it drew, by its id.
     pub fn render(
         &self,
         area: Rect,
@@ -248,9 +253,7 @@ impl<'a> Diagram<'a> {
     /// of its step and of each row's step to `drawn`.
     fn card(&self, card: &Node, graph: &mut Buffer, drawn: &mut HashMap<String, Rect>) {
         let area = card.area;
-        let lit = self.selected == Some(card.step.id());
         let (border, colour) = match (card.state, card.replaced) {
-            _ if lit => (BorderType::Double, Color::White),
             (_, true) | (State::Dropped, _) => (BorderType::Rounded, Color::DarkGray),
             (State::Open, _) => (BorderType::LightDoubleDashed, Color::DarkGray),
             (State::Working, _) if self.spin.is_some_and(|s| s / 5 % 2 == 1) => {
@@ -262,27 +265,21 @@ impl<'a> Diagram<'a> {
         };
         Block::bordered()
             .border_type(border)
-            .border_style(Style::new().fg(colour).add_modifier(match lit {
-                true => Modifier::BOLD,
-                false => Modifier::empty(),
-            }))
+            .border_style(Style::new().fg(colour))
             .render(area, graph);
         let x = area.x + 2;
-        let (mark, tone) = self.look(card.state, card.replaced);
+        let ((mark, look), tone) = self.lit(card.step, card.state, card.replaced);
         for (n, line) in card.title.iter().enumerate() {
             let y = area.y + 1 + n as u16;
             if n == 0 {
-                graph.set_string(x, y, mark.0, mark.1);
+                graph.set_string(x, y, mark, look);
             }
             graph.set_string(x + 2, y, line, tone);
         }
         let room = usize::from(area.width.saturating_sub(6));
         let mut y = area.y + 1 + card.title.len() as u16;
         for (step, state) in &card.rows {
-            let (mark, mut tone) = self.look(*state, false);
-            if self.selected == Some(step.id()) {
-                tone = tone.add_modifier(Modifier::REVERSED);
-            }
+            let (mark, tone) = self.lit(*step, *state, false);
             graph.set_string(x, y, mark.0, mark.1);
             graph.set_string(x + 2, y, cut(step.title(), room), tone);
             drawn.insert(step.id().to_string(), Rect::new(x, y, area.width - 4, 1));
@@ -332,6 +329,16 @@ impl<'a> Diagram<'a> {
             first = first.min(column).max((column + 1).saturating_sub(fit));
         }
         first
+    }
+
+    /// The mark of `step` in `state`, `replaced` or not, with its style, and the style of its title;
+    /// both bold bright yellow when it is selected.
+    fn lit(&self, step: Step, state: State, replaced: bool) -> ((&'static str, Style), Style) {
+        let ((mark, look), tone) = self.look(state, replaced);
+        match self.selected == Some(step.id()) {
+            true => ((mark, SELECTED), SELECTED),
+            false => ((mark, look), tone),
+        }
     }
 
     /// The mark of a step in `state`, `replaced` or not, with its style, and the style of its title.
@@ -403,3 +410,6 @@ fn title(text: &str, width: usize, most: usize) -> Vec<String> {
     }
     lines
 }
+
+#[cfg(test)]
+mod tests;
