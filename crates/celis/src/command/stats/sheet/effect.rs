@@ -11,13 +11,13 @@ use ratatui::text::Span;
 /// The fewest records a number of the effect counts before it shows a change.
 const FEW: usize = 10;
 
-/// One number of the effect: its label, its share in each period, the word for the records it
-/// counts, and whether more is better.
+/// One number of the effect: its label, its share in each period, what its part holds of the steps
+/// done, and whether more is better.
 struct Measure {
     label: &'static str,
     last: Share,
     before: Share,
-    unit: &'static str,
+    part: &'static str,
     up: bool,
 }
 
@@ -74,7 +74,8 @@ impl Measure {
     }
 }
 
-/// The effect: as planned, rework and rules reused in the last 14 days, against the 14 days before.
+/// The effect: as planned, rework and rules reused in the last 14 days, against the 14 days before,
+/// each with what its share counts, on two lines when one is too narrow.
 pub(super) fn effect(last: &Period, before: &Period, inside: usize, ink: Ink) -> Sheet {
     let done = |p: &Period| p.done().len();
     let measures = [
@@ -82,21 +83,21 @@ pub(super) fn effect(last: &Period, before: &Period, inside: usize, ink: Ink) ->
             label: "AS PLANNED",
             last: Share::new(last.planned(), done(last)),
             before: Share::new(before.planned(), done(before)),
-            unit: "step",
+            part: "no change",
             up: true,
         },
         Measure {
             label: "REWORK",
             last: Share::new(last.reworked(), done(last)),
             before: Share::new(before.reworked(), done(before)),
-            unit: "step",
+            part: "revised",
             up: false,
         },
         Measure {
             label: "RULES REUSED",
             last: Share::new(last.ruled(), done(last)),
             before: Share::new(before.ruled(), done(before)),
-            unit: "step",
+            part: "used a rule",
             up: true,
         },
     ];
@@ -114,11 +115,18 @@ pub(super) fn effect(last: &Period, before: &Period, inside: usize, ink: Ink) ->
             changes.into_iter().map(|c| cell(c.unwrap_or_default())),
         ));
     }
-    face.push(join(
-        measures
-            .iter()
-            .map(|m| cell(ink.dim(&plural(m.last.base, m.unit)))),
-    ));
+    let counts = |m: &Measure| format!("of {} done, {}", m.last.base, m.part);
+    match measures.iter().all(|m| counts(m).chars().count() < column) {
+        true => face.push(join(measures.iter().map(|m| cell(ink.dim(&counts(m)))))),
+        false => face.extend([
+            join(
+                measures
+                    .iter()
+                    .map(|m| cell(ink.dim(&format!("of {} done,", m.last.base)))),
+            ),
+            join(measures.iter().map(|m| cell(ink.dim(m.part)))),
+        ]),
+    }
     let rows = measures
         .iter()
         .map(|m| Row {
@@ -127,7 +135,7 @@ pub(super) fn effect(last: &Period, before: &Period, inside: usize, ink: Ink) ->
                 title_case(m.label),
                 m.last.text(),
                 m.before.text(),
-                plural(m.last.base, m.unit),
+                plural(m.last.base, "step"),
             ],
         })
         .collect();

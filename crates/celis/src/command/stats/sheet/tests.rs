@@ -87,13 +87,19 @@ fn a_card_with_nothing_in_14_days_says_so() {
     assert!(!outcome.contains("dropped"), "{outcome}");
 }
 
-/// The effect counts its base as `1 step`, and a big share puts its `%` a space after its digits.
+/// The effect says under each share what it counts among the steps done, and a big share puts its `%` a
+/// space after its digits.
 #[test]
-fn the_effect_counts_one_step_and_its_share_whole() {
+fn the_effect_says_what_each_share_counts() {
     let (_home, trails) = worked(3_600);
     let effect = face(&trails, "00 EFFECT");
-    assert!(effect.contains("1 step "), "{effect}");
-    assert!(!effect.contains("1 steps"), "{effect}");
+    for counts in [
+        "of 1 done, no change",
+        "of 1 done, revised",
+        "of 1 done, used a rule",
+    ] {
+        assert!(effect.contains(counts), "{counts:?} in\n{effect}");
+    }
     assert!(effect.contains("▀▀▀ %"), "{effect}");
 }
 
