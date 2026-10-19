@@ -21,7 +21,7 @@ use crate::failure::Failure;
 use crate::help::{self, VERBS};
 pub(crate) use args::Args;
 use celis_nostr::Note;
-use celis_trails::{Link, Name, Project, Store, Trails};
+use celis_trails::{Anchor, Link, Name, Project, Store, Trails};
 use serde_json::json;
 use std::collections::HashMap;
 use std::io::{IsTerminal, Write};
@@ -131,17 +131,34 @@ impl Command {
         Project::at(&self.folder)
     }
 
-    /// The project `--project` names, `skill:<name>`, else the project of the working folder; any other
-    /// id is a usage error.
+    /// The project `--project` names, `skill:<name>` or a project of the store with the name of its
+    /// newest record, else the project of the working folder; any other id is a usage error.
     fn project_of(&self, args: &Args) -> Result<Project, Failure> {
         let project = self.project();
         let Some(id) = &args.project else {
             return Ok(project);
         };
-        let name = id.strip_prefix("skill:").and_then(Name::parse);
-        let name =
-            name.ok_or_else(|| Failure::usage(format!("--project takes skill:<name>, not {id}")))?;
-        Ok(project.skill(&name))
+        if let Some(name) = id.strip_prefix("skill:").and_then(Name::parse) {
+            return Ok(project.skill(&name));
+        }
+        let trails = self.trails()?;
+        let anchor = trails
+            .records()
+            .iter()
+            .filter_map(|n| Some((n.created_at, Anchor::read(n)?)))
+            .filter(|(_, a)| a.project == *id)
+            .max_by_key(|(at, _)| *at)
+            .map(|(_, a)| a);
+        let anchor = anchor.ok_or_else(|| {
+            Failure::usage(format!(
+                "--project takes skill:<name> or a project of the store, not {id}"
+            ))
+        })?;
+        Ok(Project {
+            folder: project.folder,
+            id: anchor.project,
+            name: anchor.name,
+        })
     }
 
     /// Whether a watch prints in colour: unless `NO_COLOR` is set.

@@ -206,13 +206,37 @@ impl Trails {
         Ok(written)
     }
 
-    /// Drops the open step `id`, and each open step under it, with the reason its work is no longer
-    /// wanted; the step's own drop first.
+    /// Drops the open step `id` and each open step under it, the done trail `id`, or the live rule `id`,
+    /// with the reason it is no longer wanted; the step's own drop first.
     pub fn drop(&self, id: &str, reason: &str) -> Result<Written, Refusal> {
-        let steps = self.steps();
-        let step = steps.find_open(id)?;
+        let (steps, rules) = (self.steps(), self.rules());
+        let rule = crate::records::id::find(rules.every().iter().map(|e| e.note), id);
+        let mark = Mark::Drop {
+            reason: reason.to_string(),
+        };
+        let records = match (rule, steps.find(id).ok()) {
+            (Some(_), Some(_)) => {
+                return Err(Refusal::Usage(format!(
+                    "{id} starts the id of a rule and of a step; give more of it"
+                )))
+            }
+            (Some(rule), None) if rules.get(&rule.id).is_some() => {
+                vec![self.sign(|account, now| mark.record(account, &rule.id, now))?]
+            }
+            (Some(rule), None) => return Err(Refusal::Closed(rule.id.clone())),
+            (None, Some(step)) if step.closed().is_none() => self.drop_open(step, reason)?,
+            (None, Some(step))
+                if step.is_trail()
+                    && step.done().is_some()
+                    && step.dropped_after_done().is_none() =>
+            {
+                vec![self.sign(|account, now| mark.record(account, step.id(), now))?]
+            }
+            (None, Some(step)) => return Err(Refusal::Closed(step.id().to_string())),
+            (None, None) => return Err(Refusal::NoStep(id.to_string())),
+        };
         Ok(Written {
-            records: self.drop_open(step, reason)?,
+            records,
             ..Written::default()
         })
     }

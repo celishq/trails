@@ -110,8 +110,35 @@ fn a_name_wins_over_an_id_that_starts_with_it() {
     assert_eq!(uses(&repo, &other, &id), [named]);
 }
 
+/// `--project` writes a rule and a step of another project that a record of the store has, with that
+/// record's project name (`spec/02-cli.md`, "Commands").
+#[test]
+fn project_writes_into_a_project_the_store_has() {
+    let repo = Repo::new();
+    let shop = repo.other("shop");
+    let o = repo.run(&shop, &["step", "add", "--", "Fix the prices"], &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+    let first = std::process::Command::new("git")
+        .args(["rev-list", "--max-parents=0", "HEAD"])
+        .current_dir(&shop)
+        .output()
+        .unwrap();
+    let id = String::from_utf8_lossy(&first.stdout).trim().to_string();
+    let text = "When you change prices: keep them in cents, because floats lose a cent.";
+    let o = cli(&repo, &["decide", "--project", &id, "--", text]);
+    assert!(o.status.success(), "{}", err(&o));
+    let grep = out(&cli(&repo, &["grep", "keep them in cents"]));
+    assert!(grep.contains("[shop] rule "), "{grep}");
+    let trail = add(
+        &repo,
+        &["--project", &id, "--new", "--", "Check the prices"],
+    );
+    let tree = objects(&repo, &["tree", &trail[..8]]);
+    assert_eq!(tree[0]["trail"]["project"], id.as_str(), "{tree:?}");
+}
+
 /// `--project skill:<name>` writes a step and a rule of the project `skill:<name>` from a repo, and
-/// refuses any other id (`spec/02-cli.md`, "Commands"; `spec/07-names.md`, "Skill projects").
+/// refuses an id that no record of the store has (`spec/02-cli.md`, "Commands"; `spec/07-names.md`, "Skill projects").
 #[test]
 fn project_writes_into_a_skill_project() {
     let repo = Repo::new();

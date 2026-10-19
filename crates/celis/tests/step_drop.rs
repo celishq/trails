@@ -2,7 +2,10 @@
 
 mod support;
 
-use support::{add, cli, err, finish, objects, out, refusal, Repo};
+use support::{
+    account, add, cli, done_note, err, finish, live_ids, now, objects, out, refusal, step_note,
+    Repo, DAY,
+};
 
 /// `drop` closes the step and every open step under it, and a reader leaves them out of `read`
 /// (`spec/03-steps.md`, "Dropping").
@@ -60,7 +63,7 @@ fn tree_marks_a_dropped_step_with_its_reason_and_no_grade() {
 fn drop_refuses_an_empty_reason_and_unknown_and_closed_steps() {
     let repo = Repo::new();
     let open = add(&repo, &["--", "open"]);
-    let closed = add(&repo, &["--", "closed"]);
+    let closed = add(&repo, &["--under", &open[..8], "--", "closed"]);
     finish(&repo, &closed[..8]);
     let o = cli(&repo, &["step", "drop", &open[..8], "--", " "]);
     assert_eq!(o.status.code(), Some(2), "{}", err(&o));
@@ -144,4 +147,49 @@ fn a_step_that_replaces_another_drops_it() {
         &["step", "add", "--replaces", &trail[..8], "--", "x"],
     );
     assert_eq!(o.status.code(), Some(2), "{}", err(&o));
+}
+
+/// `drop` takes a done trail, keeps it done, and refuses it once it is dropped
+/// (`spec/02-cli.md`, "Step"; `spec/03-steps.md`, "Dropping").
+#[test]
+fn drop_takes_a_done_trail_once() {
+    let repo = Repo::new();
+    let note = step_note(&repo, &account(), None, "the trail", now() - DAY);
+    done_note(&repo, &account(), &note, now() - DAY + 1);
+    let trail = note.id;
+    let o = cli(&repo, &["step", "drop", &trail[..8], "--", "stale"]);
+    assert!(o.status.success(), "{}", err(&o));
+    assert_eq!(out(&o).lines().count(), 1, "{}", out(&o));
+    let state = &objects(&repo, &["tree", &trail[..8]])[0]["trail"]["state"];
+    assert_eq!(state, "done");
+    refusal(
+        &cli(&repo, &["step", "drop", &trail[..8], "--json", "--", "x"]),
+        1,
+        "closed",
+    );
+}
+
+/// `drop` takes a live rule and ends it, and refuses a rule that is not live
+/// (`spec/02-cli.md`, "Step"; `spec/05-rules.md`, "Rules").
+#[test]
+fn drop_takes_a_live_rule_once() {
+    let repo = Repo::new();
+    let decide = |text: &str| {
+        let o = cli(&repo, &["decide", "--", text]);
+        assert!(o.status.success(), "{}", err(&o));
+        out(&o).trim().to_string()
+    };
+    let kept = decide("When a: do a, because a.");
+    let rule = decide("When b: do b, because b.");
+    let o = cli(&repo, &["step", "drop", &rule[..8], "--", "merged into a"]);
+    assert!(o.status.success(), "{}", err(&o));
+    assert_eq!(
+        live_ids(&repo, &repo.path(), "repo"),
+        [kept[..8].to_string()]
+    );
+    refusal(
+        &cli(&repo, &["step", "drop", &rule[..8], "--json", "--", "x"]),
+        1,
+        "closed",
+    );
 }
