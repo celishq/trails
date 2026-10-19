@@ -6,6 +6,7 @@ mod graph;
 mod grep;
 mod issue;
 mod link;
+mod name;
 mod prompt;
 pub(crate) mod report;
 mod review;
@@ -78,6 +79,7 @@ impl Command {
         match args.words.first().map(String::as_str).unwrap_or("") {
             "step" => self.step(args, out, err, &self.project()),
             "decide" => self.decide(args, out, &self.project()),
+            "name" => self.name(args, out),
             "tree" => self.tree(args, out),
             "grep" => self.grep(&self.args[1..], out),
             "past" => self.past(out),

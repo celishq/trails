@@ -6,8 +6,8 @@ pub mod written;
 
 use crate::records::id::short;
 use crate::{
-    Check, Draft, Mark, Notice, Refusal, Rule, RuleId, Rules, Scope, Step, StepId, StepRecord,
-    Steps, Store, Trail, Written,
+    Check, Draft, Mark, Name, Notice, Refusal, Rule, RuleId, Rules, Scope, Step, StepId,
+    StepRecord, Steps, Store, Trail, Written,
 };
 use celis_nostr::{Account, Note};
 use std::path::{Path, PathBuf};
@@ -235,6 +235,45 @@ impl Trails {
         let edit = self.sign(|account, now| mark.record(account, step.id(), now))?;
         Ok(Written {
             records: vec![edit],
+            ..Written::default()
+        })
+    }
+
+    /// Names the trail `id` `name`, or gives back the name record when the trail already holds it;
+    /// refuses a step that is not a trail, a text that is no name, and a name another trail holds.
+    pub fn name(&self, id: &str, name: &str) -> Result<Written, Refusal> {
+        let steps = self.steps();
+        let trail = steps.find(id)?;
+        if !trail.is_trail() {
+            return Err(Refusal::Usage(format!(
+                "{} is no trail; name its trail {}",
+                short(trail.id()),
+                short(trail.trail().id())
+            )));
+        }
+        let name = Name::parse(name).ok_or_else(|| {
+            Refusal::Usage(format!(
+                "\"{name}\" is no name: a lowercase letter, then lowercase letters, digits and -"
+            ))
+        })?;
+        let record = match steps.named(&name) {
+            Some((held, note)) if held.id() == trail.id() => note.clone(),
+            Some((held, _)) => {
+                return Err(Refusal::Usage(format!(
+                    "the trail {} holds the name {}",
+                    short(held.id()),
+                    name.as_str()
+                )))
+            }
+            None => {
+                let mark = Mark::Name {
+                    name: name.as_str().to_string(),
+                };
+                self.sign(|account, now| mark.record(account, trail.id(), now))?
+            }
+        };
+        Ok(Written {
+            records: vec![record],
             ..Written::default()
         })
     }

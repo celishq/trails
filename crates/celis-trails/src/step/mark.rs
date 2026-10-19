@@ -6,7 +6,7 @@ use celis_nostr::{Account, Note};
 
 /// What an agent does to a step: takes it up, closes it done with its proof and what changed from its
 /// plan, or drops it with the reason its work is no longer wanted. It gives a step a new title or text,
-/// places or check. On a trail, the hook records the person's prompt.
+/// places or check. On a trail, the hook records the person's prompt, and a name makes it a skill.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Mark {
     Start,
@@ -25,6 +25,9 @@ pub enum Mark {
     Prompt {
         text: String,
     },
+    Name {
+        name: String,
+    },
 }
 
 impl Mark {
@@ -36,6 +39,7 @@ impl Mark {
             Mark::Drop { reason } => ("drop", reason.as_str()),
             Mark::Edit { text, .. } => ("edit", text.as_str()),
             Mark::Prompt { text } => ("prompt", text.as_str()),
+            Mark::Name { name } => ("name", name.as_str()),
         };
         let mut tags = vec![
             vec!["L".to_string(), NAMESPACE.to_string()],
@@ -86,6 +90,9 @@ impl Mark {
             },
             "prompt" => Mark::Prompt {
                 text: note.content.clone(),
+            },
+            "name" => Mark::Name {
+                name: note.content.clone(),
             },
             _ => return None,
         };

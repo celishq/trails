@@ -1,6 +1,6 @@
 //! The steps of a store, as they stand at one moment.
 
-use crate::{Mark, Refusal, Rule, Step, StepRecord};
+use crate::{Mark, Name, Refusal, Rule, Step, StepRecord};
 use celis_nostr::Note;
 use std::cell::Cell;
 use std::collections::{HashMap, HashSet};
@@ -86,6 +86,21 @@ impl<'a> Steps<'a> {
         roots.filter_map(|n| self.get(&n.id)).collect()
     }
 
+    /// The step that holds the name `name`, and the name record that gave it.
+    pub fn named(&'a self, name: &Name) -> Option<(Step<'a>, &'a Note)> {
+        let note = *self.index.names.get(name)?;
+        Some((self.get(note.tag("e")?)?, note))
+    }
+
+    /// Each name and the step that holds it, by name.
+    pub fn names(&'a self) -> Vec<(&'a Name, Step<'a>)> {
+        let mut names: Vec<_> = self.index.names.iter().collect();
+        names.sort_by_key(|(name, _)| name.as_str());
+        let held = names.into_iter();
+        held.filter_map(|(name, note)| Some((name, self.get(note.tag("e")?)?)))
+            .collect()
+    }
+
     /// The open trail of the session `session` in the project `project`: the trail of its newest step,
     /// when it is not done or dropped.
     pub fn session(&'a self, project: &str, session: &str) -> Option<Step<'a>> {
@@ -107,6 +122,7 @@ pub(crate) struct Index<'a> {
     roots: Vec<&'a Note>,
     entries: HashMap<&'a str, Entry<'a>>,
     rules: HashSet<&'a str>,
+    names: HashMap<Name, &'a Note>,
 }
 
 /// One step: its record, its text with its edits, its links, the steps that replace it, and how its marks
@@ -168,6 +184,7 @@ impl<'a> Index<'a> {
                 old.replaced.push(note);
             }
         }
+        let mut names = HashMap::new();
         for &note in &sorted {
             let Some((id, mark)) = Mark::read(note) else {
                 continue;
@@ -175,6 +192,11 @@ impl<'a> Index<'a> {
             let Some(entry) = entries.get_mut(&*id) else {
                 continue;
             };
+            if let Mark::Name { name } = &mark {
+                if let Some(name) = Name::parse(name) {
+                    names.entry(name).or_insert(note);
+                }
+            }
             entry.touched = entry.touched.max(note.created_at);
             entry.mark(note, mark);
         }
@@ -188,6 +210,7 @@ impl<'a> Index<'a> {
             all,
             entries,
             rules,
+            names,
         }
     }
 }

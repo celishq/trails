@@ -10,6 +10,7 @@ Your agents use celis through the celis plugin.
 Record work (your agents run these)
   step     Add, start, finish, drop, or edit a step
   decide   Record a rule
+  name     Name a trail, so other work can use it as a skill
 
 Read
   tree     Show a trail and its steps
@@ -279,6 +280,16 @@ pub const VERBS: &[Verb] = &[
             "celis decide --scope at:shelf/prices.py \\",
             "  -- \"When you change prices: keep them in cents.\"",
         ],
+    },
+    Verb {
+        command: "name",
+        usage: &["celis name <trail id> <name>"],
+        summary: "Give a trail a name, so work in any project can use it as a skill: step add --uses <name> keeps its rules. The first trail with a name keeps it.",
+        args: &[
+            ("<trail id>", "A trail id, or its first 4 or more characters"),
+            ("<name>", "A lowercase letter, then lowercase letters, digits, and -"),
+        ],
+        examples: &["celis name 3fa2c1d0 review"],
     },
     Verb {
         command: "tree",
