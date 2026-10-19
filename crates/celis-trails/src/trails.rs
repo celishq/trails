@@ -304,7 +304,7 @@ impl Trails {
             if Anchor::read(found).is_some_and(|a| a.project == project) {
                 let ended = rules.overrides(&found.id).into_iter();
                 notices.extend(ended.map(|(note, old)| Notice::Ended {
-                    rule: note.id.clone(),
+                    rule: RuleId::new(&note.id),
                     project: old.anchor.name,
                 }));
             }

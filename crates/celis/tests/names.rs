@@ -2,35 +2,11 @@
 
 mod support;
 
-use serde_json::Value;
-use support::{add, cli, err, finish, objects, out, refusal, Repo};
+use support::{add, added, cli, err, finish, links, objects, out, refusal, step, Repo};
 
-/// The ids `step add <args>` prints in the session `session`.
-fn ids(repo: &Repo, session: &str, args: &[&str]) -> Vec<String> {
-    let mut all = vec!["step", "add"];
-    all.extend(args);
-    let o = repo.run(
-        &repo.path(),
-        &all,
-        &[("CLAUDE_CODE_SESSION_ID", session)],
-        "",
-    );
-    assert!(o.status.success(), "{}", err(&o));
-    out(&o).lines().map(str::to_string).collect()
-}
-
-/// The ids the step `id` of `trail` uses, as `tree <trail> --json` prints them.
+/// The ids the step `id` of `trail` uses.
 fn uses(repo: &Repo, trail: &str, id: &str) -> Vec<String> {
-    let steps = objects(repo, &["tree", &trail[..8]]).into_iter();
-    let step: Value = steps
-        .filter_map(|v| v.get("step").or(v.get("trail")).cloned())
-        .find(|s| s["id"] == id)
-        .expect("the step");
-    let links = step["links"].as_array().unwrap().iter();
-    links
-        .filter(|l| l["kind"] == "uses")
-        .map(|l| l["to"].as_str().unwrap().to_string())
-        .collect()
+    links(&step(repo, trail, id), "uses")
 }
 
 /// The id `name <trail> <name>` prints.
@@ -88,7 +64,7 @@ fn name_refuses_a_step_a_bad_name_and_a_held_name() {
 #[test]
 fn uses_takes_a_name_as_its_trail() {
     let repo = Repo::new();
-    let named = ids(&repo, "s1", &["--", "Review a pull request"]);
+    let named = added(&repo, "s1", &["--", "Review a pull request"]);
     let (ask, trail) = (&named[0], &named[1]);
     finish(&repo, &ask[..8]);
     name(&repo, trail, "review");
