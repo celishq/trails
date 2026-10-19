@@ -1,6 +1,6 @@
 //! The rules of a store.
 
-use crate::{Mark, Place, Refusal, Rule, RuleEntry, Scope, Step, Steps, Used};
+use crate::{Mark, Place, Refusal, Rule, RuleEnd, RuleEntry, Scope, Step, Steps, Used};
 use celis_nostr::Note;
 use std::collections::{HashMap, HashSet};
 
@@ -38,8 +38,12 @@ impl<'a> Rules<'a> {
                 RuleEntry {
                     note,
                     rule: rule.clone(),
-                    by: by.get(note.id.as_str()).copied().or(ended),
-                    dropped: drops.get(&note.id).copied(),
+                    end: by
+                        .get(note.id.as_str())
+                        .copied()
+                        .or(ended)
+                        .map(RuleEnd::Replaced)
+                        .or(drops.get(&note.id).map(|d| RuleEnd::Dropped(d))),
                     overrides,
                 }
             })

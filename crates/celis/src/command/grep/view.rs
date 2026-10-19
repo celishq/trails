@@ -6,7 +6,7 @@ use super::row::Row;
 use crate::text::clock::date;
 use celis_nostr::Note;
 use celis_trails::records::id::short;
-use celis_trails::{Mark, RuleEntry, Scope, Step, Trails};
+use celis_trails::{Mark, RuleEnd, RuleEntry, Scope, Step, Trails};
 use std::collections::HashMap;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
@@ -132,11 +132,7 @@ fn step(root: Step, step: Step, kind: Kind) -> Row {
 /// names it.
 fn rule(entry: &RuleEntry, trail: Option<String>) -> Vec<Row> {
     let (note, rule) = (entry.note, &entry.rule);
-    let state = match (entry.by, entry.dropped) {
-        (Some(b), _) => format!("replaced-by {}", short(&b.id)),
-        (None, Some(_)) => "dropped".to_string(),
-        (None, None) => "live".to_string(),
-    };
+    let state = entry.end.map_or("live".to_string(), RuleEnd::text);
     let row = |kind: Kind, at: &Note, head: String, text: &str| Row {
         trail: trail.clone(),
         kind,
@@ -147,7 +143,7 @@ fn rule(entry: &RuleEntry, trail: Option<String>) -> Vec<Row> {
     };
     let head = format!("{} {state} {{{}}}", short(&note.id), rule.scope.short());
     let mut rows = vec![row(Kind::Rule, note, head, &rule.content)];
-    if let Some(drop) = entry.dropped {
+    if let Some(RuleEnd::Dropped(drop)) = entry.end {
         rows.push(row(Kind::Dropped, drop, short(&note.id), &drop.content));
     }
     rows
