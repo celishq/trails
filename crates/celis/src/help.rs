@@ -14,6 +14,7 @@ Record work (your agents run these)
 
 Read
   tree     Show a trail and its steps
+  skills   Show the named trails, most used first
   grep     Search every trail with grep
   stats    Show what later work reused
   report   Show trails as Markdown for a pull request
@@ -291,6 +292,13 @@ pub const VERBS: &[Verb] = &[
             ("<name>", "A lowercase letter, then lowercase letters, digits, and -"),
         ],
         examples: &["celis name 3fa2c1d0 review"],
+    },
+    Verb {
+        command: "skills",
+        usage: &["celis skills [--limit <n>]"],
+        summary: "Show each named trail of every project, as its name, id, and title, most used first. Changes nothing.",
+        args: &[("--limit <n>", "Show the first <n> only")],
+        examples: &["celis skills --limit 20"],
     },
     Verb {
         command: "tree",

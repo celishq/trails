@@ -11,6 +11,7 @@ mod prompt;
 pub(crate) mod report;
 mod review;
 mod rule;
+mod skills;
 mod stats;
 mod step;
 pub(crate) mod tree;
@@ -80,6 +81,7 @@ impl Command {
             "step" => self.step(args, out, err, &self.named(args)?),
             "decide" => self.decide(args, out, err, &self.named(args)?),
             "name" => self.name(args, out),
+            "skills" => self.skills(args, out),
             "tree" => self.tree(args, out),
             "grep" => self.grep(&self.args[1..], out),
             "past" => self.past(out),

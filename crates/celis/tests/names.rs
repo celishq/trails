@@ -179,3 +179,50 @@ fn project_writes_into_a_skill_project() {
         );
     }
 }
+
+/// `skills` prints each named trail, most used first, then newest; `--limit` cuts the list, and
+/// `--json` gives the name, id, title and uses (`spec/02-cli.md`, "Skills").
+#[test]
+fn skills_lists_the_named_trails_most_used_first() {
+    let repo = Repo::new();
+    let used = add(&repo, &["--", "Review a pull request"]);
+    let newer = add(&repo, &["--new", "--", "Write a changelog"]);
+    name(&repo, &used, "review");
+    name(&repo, &newer, "changelog");
+    let other = add(&repo, &["--new", "--", "Check the shop's pull request"]);
+    add(
+        &repo,
+        &[
+            "--under",
+            &other[..8],
+            "--uses",
+            "review",
+            "--",
+            "Review it",
+        ],
+    );
+    let o = cli(&repo, &["skills"]);
+    assert!(o.status.success(), "{}", err(&o));
+    let text = out(&o);
+    let lines: Vec<&str> = text.lines().collect();
+    assert_eq!(
+        lines,
+        [
+            format!("review {} Review a pull request", &used[..8]),
+            format!("changelog {} Write a changelog", &newer[..8]),
+        ],
+    );
+    let limited = out(&cli(&repo, &["skills", "--limit", "1"]));
+    assert_eq!(limited.lines().count(), 1, "{limited}");
+    let json = objects(&repo, &["skills"]);
+    assert_eq!(json[0]["name"], "review");
+    assert_eq!(json[0]["id"], used.as_str());
+    assert_eq!(json[0]["title"], "Review a pull request");
+    assert_eq!(json[0]["uses"], 1);
+    assert_eq!(json[1]["uses"], 0);
+    refusal(
+        &cli(&repo, &["skills", "--json", "--limit", "x"]),
+        2,
+        "usage",
+    );
+}

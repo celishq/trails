@@ -66,6 +66,11 @@ impl<'a> Reuse<'a> {
         self.sources.get(step.id()).cloned().unwrap_or_default()
     }
 
+    /// The steps that follow `step`.
+    pub fn users(&self, step: Step<'a>) -> &[Step<'a>] {
+        self.followers.get(step.id()).map_or(&[], Vec::as_slice)
+    }
+
     /// Each step that `step` follows at any depth, depth first and once.
     pub fn up(&self, step: Step<'a>) -> Vec<Follow<'a>> {
         let mut found = Vec::new();
