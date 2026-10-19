@@ -3,6 +3,7 @@
 use crate::{Mark, Name, NamedTrail, Refusal, Rule, Step, StepRecord};
 use celis_nostr::Note;
 use std::cell::Cell;
+use std::collections::hash_map::Entry::Vacant;
 use std::collections::{HashMap, HashSet};
 
 /// The step records and marks of a store at the time `now`: which steps are open, how they nest, and how
@@ -99,9 +100,11 @@ impl<'a> Steps<'a> {
 
     /// `step` with the name it holds first; `None` when it holds none.
     pub(crate) fn named_of(&'a self, step: Step<'a>) -> Option<NamedTrail<'a>> {
-        let held = self.index.names.iter();
-        let held = held.filter(|(_, note)| note.tag("e") == Some(step.id()));
-        let (name, record) = held.min_by_key(|(_, note)| (note.created_at, &note.id))?;
+        let record = self.index.entries.get(step.id())?.name?;
+        let (name, _) = self
+            .index
+            .names
+            .get_key_value(&Name::parse(&record.content)?)?;
         Some(NamedTrail {
             name,
             trail: step,
@@ -143,8 +146,8 @@ pub(crate) struct Index<'a> {
     names: HashMap<Name, &'a Note>,
 }
 
-/// One step: its record, its text with its edits, its links, the steps that replace it, and how its marks
-/// left it; of its tree, the newest record, whether a step works, and whether a step under it is open.
+/// One step: its record, its text with its edits, its links, the steps that replace it, how its marks
+/// left it, and the record of the first name it holds; of its tree, the newest record, whether a step works, and whether a step under it is open.
 pub(crate) struct Entry<'a> {
     pub(crate) note: &'a Note,
     pub(crate) step: StepRecord,
@@ -152,6 +155,7 @@ pub(crate) struct Entry<'a> {
     pub(crate) replaced: Vec<&'a Note>,
     pub(crate) start: Option<&'a Note>,
     pub(crate) close: Option<(&'a Note, Close)>,
+    pub(crate) name: Option<&'a Note>,
     pub(crate) touched: u64,
     pub(crate) newest: u64,
     pub(crate) busy: bool,
@@ -184,6 +188,7 @@ impl<'a> Index<'a> {
                         replaced: Vec::new(),
                         start: None,
                         close: None,
+                        name: None,
                         touched: note.created_at,
                         newest: 0,
                         busy: false,
@@ -210,10 +215,13 @@ impl<'a> Index<'a> {
             let Some(entry) = entries.get_mut(&*id) else {
                 continue;
             };
-            if let Mark::Name { name } = &mark {
-                if let Some(name) = Name::parse(name) {
-                    names.entry(name).or_insert(note);
-                }
+            let name = match &mark {
+                Mark::Name { name } => Name::parse(name),
+                _ => None,
+            };
+            if let Some(Vacant(free)) = name.map(|name| names.entry(name)) {
+                free.insert(note);
+                entry.name.get_or_insert(note);
             }
             entry.touched = entry.touched.max(note.created_at);
             entry.mark(note, mark);
