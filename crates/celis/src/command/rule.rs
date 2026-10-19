@@ -7,11 +7,12 @@ use std::io::Write;
 
 impl Command {
     /// Writes the rule `args` states on `project`, in its scope, signed by the account now, and
-    /// prints its id.
+    /// prints its id, then on `err` each override it ends.
     pub(crate) fn decide(
         &self,
         args: &Args,
         out: &mut dyn Write,
+        err: &mut dyn Write,
         project: &Project,
     ) -> Result<(), Failure> {
         let content = args.required_text("decide needs its text after --")?;
@@ -34,6 +35,6 @@ impl Command {
             content,
         };
         let written = self.trails()?.decide(rule, args.replaces.as_deref())?;
-        self.print(written, args, out, &mut std::io::sink())
+        self.print(written, args, out, err)
     }
 }

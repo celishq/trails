@@ -6,7 +6,7 @@ pub mod written;
 
 use crate::records::id::short;
 use crate::{
-    Check, Draft, Mark, Name, Notice, Refusal, Rule, RuleId, Rules, Scope, Step, StepId,
+    Anchor, Check, Draft, Mark, Name, Notice, Refusal, Rule, RuleId, Rules, Scope, Step, StepId,
     StepRecord, Steps, Store, Trail, Written,
 };
 use celis_nostr::{Account, Note};
@@ -279,7 +279,8 @@ impl Trails {
     }
 
     /// Writes `rule`, its trail scope taken whole from a trail of its project that is not done or
-    /// dropped, replacing the live rule there that `replaces` names.
+    /// dropped, replacing the live rule there, or of a named trail, that `replaces` names; tells each
+    /// override that the new rule ends.
     pub fn decide(&self, mut rule: Rule, replaces: Option<&str>) -> Result<Written, Refusal> {
         let project = rule.anchor.project.clone();
         if let Scope::Trail(id) = &rule.scope {
@@ -295,6 +296,7 @@ impl Trails {
             }
             rule.scope = Scope::Trail(trail.id().to_string());
         }
+        let mut notices = Vec::new();
         if let Some(id) = replaces {
             let rules = self.rules();
             let steps = self.steps();
@@ -303,10 +305,18 @@ impl Trails {
                 .find(&project, id)
                 .or_else(|_| rules.find_of(&named, id))?;
             rule.replaces = Some(RuleId::new(&found.id));
+            if Anchor::read(found).is_some_and(|a| a.project == project) {
+                let ended = rules.overrides(&found.id).into_iter();
+                notices.extend(ended.map(|(note, old)| Notice::Ended {
+                    rule: note.id.clone(),
+                    project: old.anchor.name,
+                }));
+            }
         }
         let written = self.sign(|account, now| rule.record(account, now))?;
         Ok(Written {
             records: vec![written],
+            notices,
             ..Written::default()
         })
     }

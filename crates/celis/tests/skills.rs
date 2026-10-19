@@ -117,3 +117,42 @@ fn an_override_holds_only_in_its_own_project() {
     assert!(there.contains(&base[..8].to_string()), "{there:?}");
     assert!(!there.contains(&mine[..8].to_string()), "{there:?}");
 }
+
+/// An update of a skill's rule ends each override of it, and `decide` names each one it ends; the
+/// project then keeps the new rule (`spec/07-names.md`, "Overrides").
+#[test]
+fn an_update_ends_an_override_and_names_it() {
+    let repo = Repo::new();
+    let (trail, base) = skill(
+        &repo,
+        "base",
+        &[],
+        "When you review: read the tests first, because they state the intent.",
+    );
+    let mine = decide(
+        &repo,
+        "",
+        "project",
+        Some(&base[..8]),
+        "When you review: read the spec first, because this repo tests little.",
+    );
+    let scope = format!("trail:{}", &trail[..8]);
+    let args = [
+        "decide",
+        "--project",
+        "skill:base",
+        "--scope",
+        &scope,
+        "--replaces",
+        &base[..8],
+        "--",
+        "When you review: read the tests and the spec first, because both state the intent.",
+    ];
+    let o = cli(&repo, &args);
+    assert!(o.status.success(), "{}", err(&o));
+    let update = out(&o).trim().to_string();
+    assert!(err(&o).contains(&mine[..8]), "{}", err(&o));
+    let here = read_ids(&repo, &repo.path(), &["--uses", "base"]);
+    assert!(here.contains(&update[..8].to_string()), "{here:?}");
+    assert!(!here.contains(&mine[..8].to_string()), "{here:?}");
+}

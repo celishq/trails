@@ -73,6 +73,15 @@ impl<'a> Rules<'a> {
         Some((*note, rule.clone()))
     }
 
+    /// Each live override of the rule `id`, in any project.
+    pub fn overrides(&self, id: &str) -> Vec<(&'a Note, Rule)> {
+        let hiding = self.hidden.iter().filter(|((_, old), _)| old == id);
+        let hiding = hiding.map(|(_, &n)| &self.every[n]);
+        hiding
+            .map(|(note, rule, _)| (*note, rule.clone()))
+            .collect()
+    }
+
     /// The live rule of a trail of `trails` whose id is `id`, or the only one whose id starts with `id`
     /// when `id` is 4 or more characters.
     pub fn find_of(&self, trails: &[Step], id: &str) -> Result<&'a Note, Refusal> {
