@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img width="1012" alt="celis-trails-demo" src="https://github.com/user-attachments/assets/17c658ae-42f8-4d8e-b1f7-f10982da8a3b" />
+  <video src="https://github.com/user-attachments/assets/7936a324-8ac1-4b7d-8cff-c9fc217ad755" width="1012" controls muted></video>
 </p>
 
 ## Why
