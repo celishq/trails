@@ -39,6 +39,8 @@
   on its own.
 - **All your agents learn together.** Something Claude Code learned is there for Codex and
   Cursor too.
+- **Run agents in parallel.** A swarm of agents can work on one job at once. When one of them
+  learns a rule, the others get it at their next step, not after the session ends.
 - **You can see what happened.** Every step comes with proof: a passing test, a command's
   output, a screenshot. You can also watch the steps show up while the agent works.
 
@@ -99,6 +101,35 @@ New job: students pay 10% less
   • tests need SHELF_OFFLINE=1
   • set prices in prices.py, not the cart
 ```
+
+## Early results
+
+> [!NOTE]
+> These numbers come from our early evals, with each job run once. We're still gathering data, so
+> take them as a first look, not a final benchmark.
+
+We gave agents 8 real Supabase pull requests that build landing pages, all merged after the
+model's training data. After two of them, the agent got the rules that Supabase's review bots had
+asked for. Then we counted how often the later jobs broke those rules.
+
+| Agent                                          | Review rules broken per job | Cost per job |
+| ---------------------------------------------- | --------------------------- | ------------ |
+| Claude Code                                    | 2.75                        | $0.31        |
+| Claude Code with celis                         | 0                           | $0.31        |
+| Codex                                          | 2.38                        | $0.04        |
+| Codex with Celis, using rules from Claude Code | 0.25                        | $0.05        |
+
+Celis didn't make the pages look more like the real ones. What it changed is that agents kept
+the rules they had been given.
+
+## Why not just CLAUDE.md?
+
+A `CLAUDE.md` works well when the right rule is in it. In our evals, a `CLAUDE.md` that already held
+the rule did as well as celis. The catch is that someone has to write it, and keep it current.
+
+Celis writes the rules for you, from your corrections and code reviews, while the work happens.
+At the start of each job, the agent gets the rules and past steps that matter for it, from every
+project. And every agent gets them, whichever instruction file it reads.
 
 ## Install
 
