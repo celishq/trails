@@ -178,6 +178,28 @@ fn each_agents_session_start_gives_the_card_and_its_session() {
     }
 }
 
+/// Each agent's session start lists the skills that `celis skills --limit 20` prints, under the line
+/// that says how to use one; with no skill, it lists none.
+#[test]
+fn each_agents_session_start_lists_the_skills() {
+    let repo = Repo::new();
+    for agent in AGENTS {
+        let stdout = agent.run(&repo, agent.start, &agent.payload("s1", &repo.path(), ""));
+        let context = agent.context(&stdout);
+        assert!(!context.contains("Skills:"), "{}: {context}", agent.name);
+    }
+    let trail = support::add(&repo, &["--", "Review a pull request"]);
+    let o = support::cli(&repo, &["name", &trail[..8], "review"]);
+    assert!(o.status.success(), "{}", err(&o));
+    let line = format!("review {} Review a pull request", &trail[..8]);
+    for agent in AGENTS {
+        let stdout = agent.run(&repo, agent.start, &agent.payload("s2", &repo.path(), ""));
+        let context = agent.context(&stdout);
+        assert!(context.contains("Skills:"), "{}: {context}", agent.name);
+        assert!(context.contains(&line), "{}: {context}", agent.name);
+    }
+}
+
 /// Each agent's prompt hook writes the prompt on its session's trail while a step works, in the person's
 /// project (`spec/04-trails.md`, "Sessions").
 #[test]
