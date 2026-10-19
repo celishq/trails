@@ -252,7 +252,7 @@ fn stats_says_when_nothing_was_reused() {
     refusal(&cli(&repo, &["stats", "--json", "ffffffff"]), 1, "no-step");
 }
 
-/// `stats` prints each followed step, most followed at any depth first, then each used decision, then
+/// `stats` prints each followed step, most followed at any depth first, then each used rule, then
 /// the total.
 #[test]
 fn stats_prints_the_followed_steps_the_used_decisions_and_the_total() {
@@ -266,7 +266,7 @@ fn stats_prints_the_followed_steps_the_used_decisions_and_the_total() {
     assert!(lines[1].starts_with(&b[..8]), "{text}");
     assert!(lines[1].contains(" · followed 1"), "{text}");
     assert!(
-        lines[2].starts_with(&format!("decision {}", &rule[..8])),
+        lines[2].starts_with(&format!("rule {}", &rule[..8])),
         "{text}"
     );
     assert!(lines[2].ends_with(" · used 2"), "{text}");

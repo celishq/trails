@@ -292,7 +292,7 @@ impl Trails {
         let step = match (decision, step) {
             (Some(_), Some(_)) => {
                 return Err(Refusal::Usage(format!(
-                    "{id} starts the id of a decision and of a step; give more of it"
+                    "{id} starts the id of a rule and of a step; give more of it"
                 )))
             }
             (Some(decision), None) => return Ok(decision.id.clone()),

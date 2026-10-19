@@ -42,7 +42,7 @@ and closes it with a proof, or drops it.
 **Readers**
 
 - A reader MUST count a kind 1111 record as a step only with the label `step` in `celis.step`, and never
-  as a decision.
+  as a rule.
 
 ## Starting
 

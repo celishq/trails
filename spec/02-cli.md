@@ -15,7 +15,7 @@ read. What a command shows a person is not part of it.
 
 ```
 celis decide [--scope <scope>] [--replaces <id>] -- <text>
-                                                       a decision, in its scope
+                                                       a rule, in its scope
 celis tree [<id>] [--graph] [--full] [--all] [--demo]
                                                        a trail and its steps; again on each change
 celis grep <grep option>... <pattern>                 every trail, through the system grep
@@ -26,7 +26,7 @@ celis link [<folder>]                                 keep this project's trails
 celis unlink [<folder>]                               stop keeping them in a folder
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>]... [--check <command>] [--new] [--session <id>] -- <text>
                                                        leave a step
-celis step start <id>                                 take up a step, and see its decisions
+celis step start <id>                                 take up a step, and see its rules
 celis step done <id> [--changed <text>] [--as-planned] [--pitfall <text>] -- <proof>
                                                        close a step with its proof
 celis step drop <id> -- <reason>                      close a step whose work is no longer wanted
@@ -50,11 +50,11 @@ decision  json  {"id", "created_at", "project", "scope", "replaces", "content"}
 
 - Off macOS, `$CELIS_HOME` MUST default to `~/.local/share/celis`.
 - A flag no command takes is a usage error.
-- `decide` MUST write a decision of the working folder's project (CIP-05), with `--scope` and
+- `decide` MUST write a rule of the working folder's project (CIP-05), with `--scope` and
   `--replaces` as its tags, and no `scope` tag for `project`.
 - `decide` MUST refuse empty text, and a scope that is not `me`, `project`, `trail:<id>` or `at:<place>`,
   as a usage error; a `trail:<id>` that no open trail of the project has, with `no-trail`; and a
-  `--replaces` that no live decision has, with `no-decision`.
+  `--replaces` that no live rule has, with `no-decision`.
 
 **Examples**
 
@@ -130,15 +130,15 @@ step  json  {"id", "created_at", "project", "links": [{"to", "kind": "under | re
 - `add` of a session's first ask MUST print the ask's id, then the trail's.
 - `add` MUST refuse empty text as a usage error; a closed `--under`, and a `--replaces` of a dropped step,
   with `closed`; a `--replaces` of a trail with no first ask as a usage error; a `--uses` that no live
-  decision and no step has, with `no-step`; and a `--uses` of a step of its own trail, or that starts both
-  a decision's and a step's id, as a usage error.
+  rule and no step has, with `no-step`; and a `--uses` of a step of its own trail, or that starts both
+  a rule's and a step's id, as a usage error.
 - `start`, `done` and `drop` MUST refuse a closed step, with `closed`. `start` of a working step MUST
   write nothing and print the id of its first `start`.
 - `done` MUST take one of `--changed <text>` and `--as-planned`, and a proof, else refuse as a usage
   error. It MUST refuse a step with an open step under it, with `open-steps`.
 - `done` MUST run the step's `check` in the project's top folder, and refuse with `check-failed` when it
   fails or runs past `CELIS_CHECK_SECONDS`, 600 when not set.
-- `done --changed` MUST write its text as `changed`. `done --pitfall` MUST also write a decision, at
+- `done --changed` MUST write its text as `changed`. `done --pitfall` MUST also write a rule, at
   `at:<the step's at>`, else `trail:<the step's trail id>`.
 - `drop` MUST refuse an empty reason, and `edit` one with no text, `--at` or `--check`, as usage errors.
 
@@ -202,7 +202,7 @@ end     project [<project name>]
 **Rules**
 
 - `grep` MUST give each word after it to the system `grep` as it is, with the view on its stdin.
-- The view MUST hold every trail of every project, newest first, and each live or replaced decision of a
+- The view MUST hold every trail of every project, newest first, and each live or replaced rule of a
   scope other than `trail:<id>` by when it was made. A trail MUST print as its line, then its rules,
   newest first, then its steps, each level newest first, each step with its proof, `changed` and drop
   lines, then its own steps.

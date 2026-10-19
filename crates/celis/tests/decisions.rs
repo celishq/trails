@@ -1,4 +1,4 @@
-//! CIP-05, "Decisions".
+//! CIP-05, "Rules".
 
 mod support;
 
@@ -38,8 +38,8 @@ fn a_decision_counts_whatever_account_signed_it() {
     );
 }
 
-/// A decision is live until another decision names it in `replaces` (`spec/05-decisions.md`,
-/// "Decisions").
+/// A rule is live until another rule names it in `replaces` (`spec/05-rules.md`,
+/// "Rules").
 #[test]
 fn a_decision_is_live_until_another_decision_replaces_it() {
     let repo = Repo::plain();

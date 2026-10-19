@@ -48,7 +48,7 @@ A session is one run of an agent; a subagent shares it. Many sessions can work o
 
 ## Rules
 
-A trail's rules are its live decisions with the scope `trail:<id>` (CIP-05, "Scope").
+A trail's rules are its live rules with the scope `trail:<id>` (CIP-05, "Scope").
 
 ## State
 

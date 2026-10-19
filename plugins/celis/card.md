@@ -4,7 +4,7 @@ celis keeps each ask as a trail: its steps, their proofs, and the rules that lat
 celis decide [--scope at:<place> | trail:<id> | me] [--replaces <id>] -- "<rule>"
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>] [--check <command>] [--new] [--session <id>] -- "<title>"
 celis step start <id>
-celis step done <id> [--changed "<what differs>"] [--as-planned] [--pitfall "<what went wrong>"] -- "<proof>"
+celis step done <id> [--changed "<what differs>"] [--as-planned] [--pitfall "<rule>"] -- "<proof>"
 celis step drop <id> -- "<why>"
 celis step edit <id> [--at <place>]... [--check <command>] [-- "<new title>"]
 celis tree [<id>] [--graph] [--full] [--all] [--demo]
@@ -27,8 +27,9 @@ celis tree [<id>] [--graph] [--full] [--all] [--demo]
    is one action: one edit, one command or one read. Only that step gets `--at` and a `--check` that
    proves it. Add the next step after you close this one.
 5. For each step: `start`, and keep the rules it prints. Do the work, then `done` with a proof a
-   person can check: `--as-planned` when the result matches `expect`, else `--changed`. Add `--pitfall`
-   when something went wrong. A wrong step, or a fix to done work, takes `--replaces <id>`.
+   person can check: `--as-planned` when the result matches `expect`, else `--changed`. When something
+   went wrong, add `--pitfall` with the rule that keeps it from happening again. A wrong step, or a fix
+   to done work, takes `--replaces <id>`.
 6. When a step grows past one action, or you try the same thing twice: stop. Write what you learned with
    `decide`, split the step, and take the first part.
 7. Do what celis prints after each command. It names the next move.

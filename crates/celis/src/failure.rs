@@ -30,9 +30,7 @@ impl Failure {
         Self::new(
             "no-decision",
             1,
-            format!(
-                "no live decision has the id {id}; see the live ones with `celis grep \" live \"`"
-            ),
+            format!("no live rule has the id {id}; see the live ones with `celis grep \" live \"`"),
         )
     }
 

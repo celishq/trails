@@ -64,7 +64,7 @@ impl Command {
                     uses += count;
                     let value = json!({"id": note.id, "content": decision.content, "used": count});
                     let line = format!(
-                        "decision {} {} · used {count}",
+                        "rule {} {} · used {count}",
                         short(&note.id),
                         decision.brief()
                     );

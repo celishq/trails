@@ -1,10 +1,10 @@
 celis remembers how your agents do your tasks. Each task you give becomes a
-trail: the steps your agents take and the decisions they make along the way.
+trail: the steps your agents take and the rules they learn along the way.
 Your agents use celis through the celis plugin.
 
 Record work (your agents run these)
   step     Add, start, finish, drop, or edit a step
-  decide   Record a decision
+  decide   Record a rule
 
 Read
   tree     Show a trail and its steps

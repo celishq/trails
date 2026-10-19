@@ -9,7 +9,7 @@ fn short(id: &str) -> String {
 }
 
 /// A reader gives only live decisions of the working folder's project at a place
-/// (`spec/05-decisions.md`, "Reading").
+/// (`spec/05-rules.md`, "Reading").
 #[test]
 fn a_reader_gives_only_live_decisions_of_the_working_folders_project() {
     let repo = Repo::new();
@@ -48,7 +48,7 @@ fn a_reader_gives_only_live_decisions_of_the_working_folders_project() {
 }
 
 /// A decision at a file is at that file whatever line its `at` names, and a folder holds what lies
-/// under it (`spec/05-decisions.md`, "Reading").
+/// under it (`spec/05-rules.md`, "Reading").
 #[test]
 fn a_decision_at_a_file_is_at_that_file_whatever_line_and_a_folder_holds_what_lies_under_it() {
     let repo = Repo::new();
