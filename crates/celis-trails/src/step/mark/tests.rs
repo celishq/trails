@@ -13,6 +13,22 @@ fn a_done_carries_its_proof() {
     assert_eq!(Mark::read(&note), Some(("p".to_string(), done)));
 }
 
+/// A `done` with no proof and a `drop` with no reason read as no mark (`spec/03-steps.md`, "Closing";
+/// "Dropping").
+#[test]
+fn an_empty_done_or_drop_is_no_mark() {
+    let account = Account::new(&[1u8; 32]).unwrap();
+    let done = Mark::Done {
+        proof: " ".into(),
+        changed: None,
+    };
+    let drop = Mark::Drop { reason: "".into() };
+    for mark in [done, drop] {
+        let note = mark.record(&account, "p", 10).unwrap();
+        assert_eq!(Mark::read(&note), None);
+    }
+}
+
 /// A name carries the name on its trail, and reads back the same (`spec/07-names.md`, "Names").
 #[test]
 fn a_name_carries_its_name() {

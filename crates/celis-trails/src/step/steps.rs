@@ -291,10 +291,10 @@ impl<'a> Entry<'a> {
             Mark::Start => {
                 self.start.get_or_insert(note);
             }
-            Mark::Done { proof, .. } if !proof.trim().is_empty() => {
+            Mark::Done { .. } => {
                 self.close.get_or_insert((note, Close::Done));
             }
-            Mark::Drop { reason } if !reason.trim().is_empty() => match self.close {
+            Mark::Drop { .. } => match self.close {
                 Some((_, Close::Done)) if self.step.under.is_none() => {
                     self.after_done.get_or_insert(note);
                 }
