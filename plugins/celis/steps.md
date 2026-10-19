@@ -31,6 +31,11 @@ A step that uses a named trail keeps its rules, and the rules of each named trai
 - When a done trail did work that holds in other projects, and it has no name, give it one with
   `celis name <trail id> <name>`: a short noun in lowercase words joined by `-`, such as `code-review`.
 
+## Cleanup
+
+When the past agent brings rules that say the same thing or say to do different things, or many stale
+trails, tell the person that `/celis:cleanup` cleans them up.
+
 ## Subagents and other sessions
 
 When a subagent or another agent takes work, add a step for it under your working step, and put in its
