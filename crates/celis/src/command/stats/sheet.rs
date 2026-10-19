@@ -41,8 +41,8 @@ pub(crate) fn sheets(model: &Model, full: usize, inside: usize, plain: bool) -> 
     let ink = Ink { plain };
     [
         effect(&last, &before, full, ink),
-        followed(reuse, steps, now, inside, ink),
-        rules(model.rules, reuse, steps, now, inside, ink),
+        followed(reuse, steps, &before, now, inside, ink),
+        rules(model.rules, reuse, steps, &before, now, inside, ink),
         work(steps, &before, now, inside, ink),
         time(&last, inside, ink),
         outcome(&last, inside, ink),

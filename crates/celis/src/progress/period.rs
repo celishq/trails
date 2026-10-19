@@ -41,11 +41,11 @@ impl<'a> Period<'a> {
             .collect()
     }
 
-    /// How many of the steps added in it use a rule.
+    /// How many of its done steps use a rule.
     pub fn ruled(&self) -> usize {
         let rule = |u: &Used| matches!(u, Used::Rule(_));
-        let added = self.added().into_iter();
-        added.filter(|s| s.uses().iter().any(rule)).count()
+        let done = self.done().into_iter();
+        done.filter(|s| s.uses().iter().any(rule)).count()
     }
 
     /// The follows the steps added in it made.

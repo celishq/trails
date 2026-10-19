@@ -133,6 +133,23 @@ fn stats_opens_a_card_and_copies_it() {
     watch.until("06 PROJECTS");
 }
 
+/// An opened card taller than the screen scrolls with its selected row, and going back up to the first
+/// row shows the card's title again.
+#[test]
+fn stats_scrolls_an_opened_card_back_to_its_title() {
+    let (repo, _) = worked();
+    let mut watch = Watch::start(&repo, &["stats"]);
+    watch.size(10, 100);
+    watch.until("00 EFFECT");
+    watch.press("\x1b[B\x1b[B\r");
+    watch.until("CELIS STATS › 03 WORK");
+    watch.press(&"\x1b[B".repeat(13));
+    watch.until("↑ ");
+    watch.without("CELIS STATS › 03 WORK");
+    watch.press(&"\x1b[A".repeat(13));
+    watch.until("CELIS STATS › 03 WORK");
+}
+
 /// On a terminal, `stats <id>` draws the step with the steps it follows and the steps that follow it,
 /// and `enter` goes to the selected one.
 #[test]

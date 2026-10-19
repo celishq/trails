@@ -141,7 +141,7 @@ fn reused(later: u64) -> (TempDir, Trails) {
 }
 
 /// The reuse and rules cards draw the follows and rule uses of each of the last 14 days as columns, a
-/// dot on each day with none.
+/// dot on each day with none, then the steps and rules used most.
 #[test]
 fn the_reuse_cards_draw_each_day_as_a_column() {
     let (_home, trails) = reused(3_600);
@@ -150,8 +150,13 @@ fn the_reuse_cards_draw_each_day_as_a_column() {
         assert!(face.contains("· · ·"), "{face}");
         assert!(face.contains("today"), "{face}");
     }
-    assert!(face(&trails, "01 REUSE").contains("follows a day"));
-    assert!(face(&trails, "02 RULES USED").contains("uses a day"));
+    let reuse = face(&trails, "01 REUSE");
+    assert!(reuse.contains("follows"), "{reuse}");
+    assert!(reuse.ends_with(" 1"), "{reuse}");
+    let rules = face(&trails, "02 RULES USED");
+    assert!(rules.contains("rule uses"), "{rules}");
+    assert!(rules.contains("a rule holds"), "{rules}");
+    assert!(rules.ends_with(" 1"), "{rules}");
 }
 
 /// With no follow and no rule use in the last 14 days, the reuse and rules cards each say so in one line
@@ -165,4 +170,52 @@ fn the_reuse_cards_with_nothing_in_14_days_say_so() {
     let rules = face(&trails, "02 RULES USED");
     assert!(rules.contains("no rule used in 14 days"), "{rules}");
     assert!(!rules.contains("today"), "{rules}");
+}
+
+/// The projects card ends each time at one column, the widest time setting it.
+#[test]
+fn the_projects_card_aligns_its_times() {
+    let (home, mut trails) = worked(3_600);
+    let anchor = Anchor {
+        project: "other".into(),
+        name: "other".into(),
+    };
+    let draft = |content: &str, under: Option<String>| Draft {
+        content: content.into(),
+        anchor: anchor.clone(),
+        places: vec![],
+        check: None,
+        new: under.is_none(),
+        under,
+        replaces: None,
+        uses: vec![],
+        session: None,
+    };
+    let long = AT + 19 * 3_600 + 14 * 60;
+    trails.at(AT);
+    trails.add(draft("the long trail", None)).unwrap();
+    trails.at(AT);
+    let trail = Model::of(&trails, |m| {
+        let all = m.steps.all();
+        let trail = all.iter().find(|s| s.title() == "the long trail");
+        trail.unwrap().id().to_string()
+    });
+    trails.at(AT);
+    let part = trails
+        .add(draft("the long part", Some(trail)))
+        .unwrap()
+        .records[0]
+        .id
+        .clone();
+    trails.at(AT);
+    trails.start(&part).unwrap();
+    trails.at(long);
+    trails
+        .done(&part, "it took long".into(), None, None, home.path())
+        .unwrap();
+    trails.at(long + 60);
+    let face = face(&trails, "06 PROJECTS");
+    let ends: Vec<usize> = face.lines().map(|l| l.chars().count()).collect();
+    assert!(face.contains("19h 14m"), "{face}");
+    assert_eq!(ends[0], ends[1], "{face}");
 }

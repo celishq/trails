@@ -94,8 +94,8 @@ pub(super) fn effect(last: &Period, before: &Period, inside: usize, ink: Ink) ->
         },
         Measure {
             label: "RULES REUSED",
-            last: Share::new(last.ruled(), last.added().len()),
-            before: Share::new(before.ruled(), before.added().len()),
+            last: Share::new(last.ruled(), done(last)),
+            before: Share::new(before.ruled(), done(before)),
             unit: "step",
             up: true,
         },

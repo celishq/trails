@@ -1,8 +1,8 @@
 //! The work cards: the steps done each day, the time a step took, and the time of each project.
 
 use super::super::table::{Row, Table};
-use super::daily::{chart, days};
-use super::{nothing, Sheet, DAY, DAYS};
+use super::daily::Daily;
+use super::{nothing, Sheet, DAYS};
 use crate::progress::{Grade, Period};
 use crate::terminal::canvas::{cut as text_cut, visible, Styled, BOLD};
 use crate::terminal::glyph::bar;
@@ -20,35 +20,12 @@ pub(super) fn work(
     inside: usize,
     ink: Ink,
 ) -> Sheet {
-    let starts = days(now);
-    let counts: Vec<usize> = starts
-        .iter()
-        .map(|&s| Period::new(steps, s, s + DAY).done().len())
-        .collect();
-    let total: usize = counts.iter().sum();
-    let earlier = before.done().len();
-    let moved = match (earlier, total >= earlier) {
-        (0, _) => None,
-        (_, true) => Some(format!("▲ {} vs {DAYS} days before", total - earlier)),
-        (_, false) => Some(format!("▼ {} vs {DAYS} days before", earlier - total)),
-    };
-    let moved = moved.map(|m| Styled::from(ink.dim(&m)));
-    let side: Vec<Styled> = std::iter::once(ink.dim("steps done").into())
-        .chain(moved.clone())
-        .collect();
-    let mut face = ink.beside(&total.to_string(), &side, 2);
-    if ink.plain {
-        face.extend(moved);
-    }
-    face.push(Styled::default());
-    if total == 0 {
-        face.push(ink.dim(&nothing("done")).into());
-    } else {
-        face.extend(chart(&counts, &starts, inside, ink));
-    }
+    let daily = Daily::new(steps, now, before, |p| p.done().len());
+    let face = daily.face("steps done", &nothing("done"), vec![], inside, ink);
+    let (starts, counts) = (&daily.starts, &daily.counts);
     let rows = starts
         .iter()
-        .zip(&counts)
+        .zip(counts)
         .rev()
         .map(|(&s, n)| Row {
             id: None,
@@ -141,14 +118,16 @@ pub(super) fn projects(last: &Period, inside: usize, ink: Ink) -> Sheet {
     spent.sort_by_key(|(name, (t, _))| (std::cmp::Reverse(*t), name.clone()));
     let most = spent.first().map_or(0, |(_, (t, _))| *t as usize);
     let label = 14.min(inside / 2);
-    let width = inside.saturating_sub(label + 9);
-    let mut face: Vec<Styled> = spent
-        .iter()
-        .take(4)
+    let shown = spent.iter().take(4);
+    let time = shown.clone().map(|(_, (t, _))| visible(&took(*t))).max();
+    let time = time.unwrap_or(0).max(6);
+    let width = inside.saturating_sub(label + time + 3);
+    let mut face: Vec<Styled> = shown
         .map(|(name, (t, _))| {
             let name = text_cut(name, label);
             let pad = " ".repeat(label - visible(&name));
-            let rest = format!("{pad} {} {:>6}", bar(*t as usize, most, width), took(*t));
+            let bar = bar(*t as usize, most, width);
+            let rest = format!("{pad} {bar} {:>time$}", took(*t));
             Styled::from(vec![ink.paint(BOLD, &name), rest.into()])
         })
         .collect();

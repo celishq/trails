@@ -53,13 +53,17 @@ impl Board<'_> {
         }
     }
 
-    /// The page of the opened card `sheet`: its table, a row a line.
+    /// The page of the opened card `sheet`: its table, a row a line, with its head in view when the
+    /// first row is selected.
     pub(super) fn opened(&mut self, sheet: &Sheet, width: usize) -> Page {
         let ids: Vec<Option<String>> = sheet.table.rows.iter().map(|r| r.id.clone()).collect();
         self.row = self.row.min(ids.len().saturating_sub(1));
         let mut lines = head(Some(&sheet.title), "", width);
         let (table, first) = sheet.table.lines(width, Some(self.row));
-        let picked = first.get(self.row).map(|f| lines.len() + f);
+        let picked = match self.row {
+            0 => Some(0),
+            row => first.get(row).map(|f| lines.len() + f),
+        };
         lines.extend(table);
         let copy = ids.get(self.row).cloned().flatten();
         self.rows = ids;
