@@ -147,7 +147,7 @@ pub(crate) struct Index<'a> {
 }
 
 /// One step: its record, its text with its edits, its links, the steps that replace it, how its marks
-/// left it, and the record of the first name it holds; of its tree, the newest record, whether a step works, and whether a step under it is open.
+/// left it, the drop that names it after its done as a trail, and the record of the first name it holds; of its tree, the newest record, whether a step works, and whether a step under it is open.
 pub(crate) struct Entry<'a> {
     pub(crate) note: &'a Note,
     pub(crate) step: StepRecord,
@@ -155,6 +155,7 @@ pub(crate) struct Entry<'a> {
     pub(crate) replaced: Vec<&'a Note>,
     pub(crate) start: Option<&'a Note>,
     pub(crate) close: Option<(&'a Note, Close)>,
+    pub(crate) after_done: Option<&'a Note>,
     pub(crate) name: Option<&'a Note>,
     pub(crate) touched: u64,
     pub(crate) newest: u64,
@@ -188,6 +189,7 @@ impl<'a> Index<'a> {
                         replaced: Vec::new(),
                         start: None,
                         close: None,
+                        after_done: None,
                         name: None,
                         touched: note.created_at,
                         newest: 0,
@@ -207,7 +209,7 @@ impl<'a> Index<'a> {
                 old.replaced.push(note);
             }
         }
-        let mut names = HashMap::new();
+        let mut named = Vec::new();
         for &note in &sorted {
             let Some((id, mark)) = Mark::read(note) else {
                 continue;
@@ -215,16 +217,23 @@ impl<'a> Index<'a> {
             let Some(entry) = entries.get_mut(&*id) else {
                 continue;
             };
-            let name = match &mark {
-                Mark::Name { name } => Name::parse(name),
-                _ => None,
-            };
-            if let Some(Vacant(free)) = name.map(|name| names.entry(name)) {
-                free.insert(note);
-                entry.name.get_or_insert(note);
+            if let Mark::Name { name } = &mark {
+                named.extend(Name::parse(name).map(|name| (name, id.clone(), note)));
             }
             entry.touched = entry.touched.max(note.created_at);
             entry.mark(note, mark);
+        }
+        let mut names = HashMap::new();
+        for (name, id, note) in named {
+            let Some(entry) = entries.get_mut(&*id) else {
+                continue;
+            };
+            let dropped =
+                matches!(entry.close, Some((_, Close::Dropped))) || entry.after_done.is_some();
+            if let (false, Vacant(free)) = (dropped, names.entry(name)) {
+                free.insert(note);
+                entry.name.get_or_insert(note);
+            }
         }
         sum(&mut entries);
         let roots = all.iter().copied();
@@ -285,9 +294,14 @@ impl<'a> Entry<'a> {
             Mark::Done { proof, .. } if !proof.trim().is_empty() => {
                 self.close.get_or_insert((note, Close::Done));
             }
-            Mark::Drop { reason } if !reason.trim().is_empty() => {
-                self.close.get_or_insert((note, Close::Dropped));
-            }
+            Mark::Drop { reason } if !reason.trim().is_empty() => match self.close {
+                Some((_, Close::Done)) if self.step.under.is_none() => {
+                    self.after_done.get_or_insert(note);
+                }
+                _ => {
+                    self.close.get_or_insert((note, Close::Dropped));
+                }
+            },
             Mark::Edit {
                 text,
                 places,

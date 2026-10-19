@@ -6,7 +6,7 @@ use super::row::Row;
 use crate::text::clock::date;
 use celis_nostr::Note;
 use celis_trails::records::id::short;
-use celis_trails::{Mark, Rule, Scope, Step, Trails};
+use celis_trails::{Mark, RuleEntry, Scope, Step, Trails};
 use std::collections::HashMap;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
@@ -25,13 +25,13 @@ impl View {
         let mut by_trail: HashMap<&str, Vec<Row>> = HashMap::new();
         let mut blocks: Vec<(u64, &str, Vec<Row>)> = Vec::new();
         for entry in rules.every() {
-            let (note, said, by) = (entry.note, &entry.rule, entry.by);
-            match &said.scope {
+            let note = entry.note;
+            match &entry.rule.scope {
                 Scope::Trail(id) => {
-                    let row = rule(note, said, by, Some(short(id)));
-                    by_trail.entry(id.as_str()).or_default().push(row);
+                    let rows = rule(entry, Some(short(id)));
+                    by_trail.entry(id.as_str()).or_default().extend(rows);
                 }
-                _ => blocks.push((note.created_at, &note.id, vec![rule(note, said, by, None)])),
+                _ => blocks.push((note.created_at, &note.id, rule(entry, None))),
             }
         }
         let mut headers = HashMap::new();
@@ -112,7 +112,11 @@ fn level<'a>(root: Step<'a>, parent: Step<'a>, rows: &mut Vec<Row>) {
 /// The row of the step `step` of the trail `root`, as `kind`.
 fn step(root: Step, step: Step, kind: Kind) -> Row {
     let record = step.record();
-    let mut head = vec![short(step.id()), step.state().text().to_string()];
+    let state = match step.dropped_after_done() {
+        Some(_) => "done-dropped",
+        None => step.state().text(),
+    };
+    let mut head = vec![short(step.id()), state.to_string()];
     let by: Vec<String> = step.revised().iter().map(|s| short(s.id())).collect();
     if !by.is_empty() {
         head.push(format!("revised-by {}", by.join(",")));
@@ -128,19 +132,29 @@ fn step(root: Step, step: Step, kind: Kind) -> Row {
     }
 }
 
-/// The row of the rule `note` holds, as a rule of `trail`, replaced by `by` when given.
-fn rule(note: &Note, rule: &Rule, by: Option<&Note>, trail: Option<String>) -> Row {
-    let state = by.map_or("live".to_string(), |b| {
-        format!("replaced-by {}", short(&b.id))
-    });
-    Row {
-        trail,
-        kind: Kind::Rule,
-        day: date(note.created_at),
+/// The rows of the rule `entry`, as a rule of `trail`: its own, then its drop's reason when a drop
+/// names it.
+fn rule(entry: &RuleEntry, trail: Option<String>) -> Vec<Row> {
+    let (note, rule) = (entry.note, &entry.rule);
+    let state = match (entry.by, entry.dropped) {
+        (Some(b), _) => format!("replaced-by {}", short(&b.id)),
+        (None, Some(_)) => "dropped".to_string(),
+        (None, None) => "live".to_string(),
+    };
+    let row = |kind: Kind, at: &Note, head: String, text: &str| Row {
+        trail: trail.clone(),
+        kind,
+        day: date(at.created_at),
         project: rule.anchor.name.clone(),
-        head: format!("{} {state} {{{}}}", short(&note.id), rule.scope.short()),
-        text: flat(&rule.content),
+        head,
+        text: flat(text),
+    };
+    let head = format!("{} {state} {{{}}}", short(&note.id), rule.scope.short());
+    let mut rows = vec![row(Kind::Rule, note, head, &rule.content)];
+    if let Some(drop) = entry.dropped {
+        rows.push(row(Kind::Dropped, drop, short(&note.id), &drop.content));
     }
+    rows
 }
 
 /// The hash of `line`, by which the view finds its row.

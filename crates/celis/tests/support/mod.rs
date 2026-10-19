@@ -344,6 +344,18 @@ pub fn done_note(repo: &Repo, by: &Account, step: &Note, at: u64) -> Note {
     note
 }
 
+/// A `drop` of the record `id` that `by` signed at `at`, put in the store.
+pub fn drop_note(repo: &Repo, by: &Account, id: &str, at: u64) -> Note {
+    let tags: Vec<Vec<String>> = vec![
+        vec!["L".into(), "celis.step".into()],
+        vec!["l".into(), "drop".into(), "celis.step".into()],
+        vec!["e".into(), id.into()],
+    ];
+    let note = Note::write(by, 1985u16, at, tags, "no longer holds").unwrap();
+    put(repo, &note);
+    note
+}
+
 /// An open step of this repo that `by` signed at `at`, saying `content`, put in the store.
 pub fn step_signed(repo: &Repo, by: &Account, content: &str, at: u64) -> Note {
     let anchor = format!("project:{}", repo.project_id());

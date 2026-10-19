@@ -2,7 +2,9 @@
 
 mod support;
 
-use support::{add, added, cli, err, finish, links, objects, out, refusal, step, Repo};
+use support::{
+    account, add, added, cli, drop_note, err, finish, links, now, objects, out, refusal, step, Repo,
+};
 
 /// The ids the step `id` of `trail` uses.
 fn uses(repo: &Repo, trail: &str, id: &str) -> Vec<String> {
@@ -200,5 +202,31 @@ fn names_lists_the_named_trails_most_used_first() {
         &cli(&repo, &["names", "--json", "--limit", "x"]),
         2,
         "usage",
+    );
+}
+
+/// A drop of a done trail keeps it done and frees its name for another trail (`spec/03-steps.md`,
+/// "Dropping"; `spec/07-names.md`, "Names").
+#[test]
+fn a_dropped_trail_keeps_its_state_and_frees_its_name() {
+    let repo = Repo::new();
+    let old = add(&repo, &["--", "Review a pull request"]);
+    finish(&repo, &old[..8]);
+    name(&repo, &old, "review");
+    drop_note(&repo, &account(), &old, now() + 1);
+    assert_eq!(out(&cli(&repo, &["names"])), "");
+    let state = &objects(&repo, &["tree", &old[..8]])[0]["trail"]["state"];
+    assert_eq!(state, "done");
+    let grep = out(&cli(&repo, &["grep", &old[..8]]));
+    assert!(
+        grep.contains(&format!("trail {} done-dropped", &old[..8])),
+        "{grep}"
+    );
+    let new = add(&repo, &["--new", "--", "Review a design"]);
+    name(&repo, &new, "review");
+    let lines = out(&cli(&repo, &["names"]));
+    assert_eq!(
+        lines.trim(),
+        format!("review {} Review a design", &new[..8])
     );
 }

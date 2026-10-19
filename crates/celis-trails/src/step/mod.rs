@@ -187,6 +187,11 @@ impl<'a> Step<'a> {
         }
     }
 
+    /// The drop that names it after its done, as a trail (CIP-03, "Dropping").
+    pub fn dropped_after_done(self) -> Option<&'a Note> {
+        self.entry.after_done
+    }
+
     /// The steps that replace it after it was done, oldest first.
     pub fn revised(self) -> Vec<Step<'a>> {
         let Some(done) = self.done() else {
