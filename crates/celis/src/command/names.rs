@@ -27,7 +27,7 @@ impl Command {
         let mut named: Vec<_> = steps
             .names()
             .into_iter()
-            .map(|named| (named, reuse.uses_of(named.trail)))
+            .map(|named| (named, reuse.tree_followers(named.trail)))
             .collect();
         named.sort_by_key(|(named, uses)| {
             let trail = named.trail;

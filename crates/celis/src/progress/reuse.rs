@@ -67,7 +67,7 @@ impl<'a> Reuse<'a> {
     }
 
     /// How many steps follow a step of the tree of `trail`.
-    pub fn uses_of(&self, trail: Step<'a>) -> usize {
+    pub fn tree_followers(&self, trail: Step<'a>) -> usize {
         let tree = trail.tree().into_iter();
         tree.map(|s| self.followers.get(s.id()).map_or(0, Vec::len))
             .sum()
