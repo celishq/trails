@@ -39,3 +39,10 @@ fn a_cut_line_keeps_its_looks() {
     assert_eq!(clip(&line, 2).spans, [Span::styled("a…", BOLD)]);
     assert_eq!(clip(&line, 6), line);
 }
+
+/// A line's own look reaches each of its runs.
+#[test]
+fn a_line_prints_its_own_look_on_each_run() {
+    let line = Styled::styled("Usage", BOLD);
+    assert_eq!(super::line(&line, true), "\x1b[1mUsage\x1b[0m");
+}

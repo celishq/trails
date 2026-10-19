@@ -122,11 +122,14 @@ pub(crate) fn lines(buf: &Buffer) -> Vec<Styled> {
     (area.top()..area.bottom()).map(row).collect()
 }
 
-/// `line` as text; when `colour`, each run of one look in its escape code and a reset after.
+/// `line` as text; when `colour`, each run of one look, the line's look under its own, in its escape
+/// code and a reset after.
 pub(crate) fn line(line: &Styled, colour: bool) -> String {
     let mut runs: Vec<(Option<String>, String)> = Vec::new();
     for span in &line.spans {
-        let codes = colour.then(|| codes(span.style)).flatten();
+        let codes = colour
+            .then(|| codes(line.style.patch(span.style)))
+            .flatten();
         match runs.last_mut() {
             Some((last, text)) if *last == codes => *text += &span.content,
             _ => runs.push((codes, span.content.to_string())),

@@ -42,8 +42,9 @@ pub struct Command {
 impl Command {
     /// Runs, writing to `out` and `err`, or prints the help page its words name. Returns the exit code.
     pub fn run(&self, out: &mut dyn Write, err: &mut dyn Write) -> i32 {
+        let colour = std::io::stdout().is_terminal() && self.colour();
         if let Some(page) = help::named(&self.args) {
-            let _ = writeln!(out, "{page}");
+            let _ = writeln!(out, "{}", help::text(&page, colour));
             return 0;
         }
         let json = Args::asks_json(&self.args);

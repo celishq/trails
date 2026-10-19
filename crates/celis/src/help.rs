@@ -1,40 +1,24 @@
 //! The help of `celis`: the page, and the page of each command.
 
 use crate::failure::Failure;
+use crate::terminal::canvas::{line, Styled, BOLD, DIM};
+use ratatui::text::Span;
 
-/// The page: the reference for a person.
-pub const PAGE: &str = r#"celis remembers how your agents do your tasks. Each task you give becomes a
-trail: the steps your agents take and the rules they learn along the way.
-Your agents use celis through the celis plugin.
-
-Record work (your agents run these)
-  step     Add, start, finish, drop, or edit a step
-  decide   Record a rule
-
-Read
-  tree     Show a trail and its steps
-  grep     Search every trail with grep
-  stats    Show what later work reused
-  report   Show trails as Markdown for a pull request
-
-Set up
-  link     Keep this project's trails in a folder, like the repo or a drive
-  unlink   Stop keeping this project's trails in a folder
-  auth     Manage your recovery phrase
-  update   Update celis to the latest version, or to the one you choose
-  issue    Write a problem report for the celis team
-
-celis keeps your recovery phrase and records in $CELIS_HOME.
-
-To learn more about a command, run `celis <command> --help`."#;
+mod page;
 
 /// Whether a command line gives its words to its command as they are: `grep` but `grep --help`.
 pub fn raw(args: &[String]) -> bool {
     args.first().is_some_and(|a| a == "grep") && !args.iter().any(|a| a == "--help")
 }
 
+/// `lines` as text, each run of one look in its escape code when `colour`.
+pub fn text(lines: &[Styled], colour: bool) -> String {
+    let lines: Vec<String> = lines.iter().map(|l| line(l, colour)).collect();
+    lines.join("\n")
+}
+
 /// The page the words of a command line name, before any `--`; none when they run a command.
-pub fn named(args: &[String]) -> Option<String> {
+pub fn named(args: &[String]) -> Option<Vec<Styled>> {
     if raw(args) {
         return None;
     }
@@ -51,12 +35,12 @@ pub fn named(args: &[String]) -> Option<String> {
 }
 
 /// The page of `words`: the command page they name, else the group page, else the page.
-fn page_of(words: &[&str]) -> String {
+fn page_of(words: &[&str]) -> Vec<Styled> {
     let group = GROUPS.iter().find(|(name, ..)| words == [*name]);
     match (Verb::of(words), group) {
-        (Some(verb), _) => verb.page(),
+        (Some(verb), _) => verb.lines(),
         (None, Some(group)) => group_page(group),
-        (None, None) => PAGE.to_string(),
+        (None, None) => page::page(),
     }
 }
 
@@ -127,13 +111,13 @@ pub const GROUPS: &[Group] = &[
         "Add steps to a trail, then start, finish, drop, or edit them.",
         &[
             ("add", "Add a step to a trail, or start a new trail"),
-            ("start", "Start a step and show the rules at its places"),
+            ("start", "Start a step and show the rules it must keep"),
             ("done", "Finish a step with proof that it works"),
+            ("drop", "Drop a step and the open steps under it"),
             (
-                "drop",
-                "Drop a step you no longer need, and the open steps under it",
+                "edit",
+                "Change a step's title, where it works, or its check",
             ),
-            ("edit", "Change a step's title, places, or check"),
         ],
     ),
     (
@@ -148,19 +132,44 @@ pub const GROUPS: &[Group] = &[
 ];
 
 /// The page of a group: its usage, what it holds, and each of its commands with what it does.
-fn group_page((name, summary, commands): &Group) -> String {
-    let mut lines = vec![format!("celis {name} <command>"), String::new()];
-    lines.extend(fill(summary));
-    lines.push(String::new());
-    lines.push("Commands".to_string());
+fn group_page((name, summary, commands): &Group) -> Vec<Styled> {
+    let mut lines = vec![
+        Styled::from(vec![
+            Span::styled(format!("celis {name}"), BOLD),
+            Span::styled(" <command>", DIM),
+        ]),
+        Styled::default(),
+    ];
+    lines.extend(fill(summary).into_iter().map(Styled::raw));
+    lines.push(Styled::default());
+    lines.push(Styled::styled("Commands", BOLD));
     for (command, phrase) in *commands {
-        lines.push(format!("  {command:6}   {phrase}"));
+        lines.push(Styled::from(vec![
+            Span::raw("  "),
+            Span::styled(format!("{command:6}"), BOLD),
+            Span::raw(format!("   {phrase}")),
+        ]));
     }
-    lines.push(String::new());
-    lines.push(format!(
-        "To learn more about a command, run `celis {name} <command> --help`."
+    lines.push(Styled::default());
+    lines.push(Styled::styled(
+        format!("To learn more about a command, run `celis {name} <command> --help`."),
+        DIM,
     ));
-    lines.join("\n")
+    lines
+}
+
+/// `name` with its first word bold and the rest dim, padded to `width` characters.
+fn label(name: &str, width: usize) -> Vec<Span<'static>> {
+    let (first, rest) = name.split_once(' ').unwrap_or((name, ""));
+    let rest = match rest {
+        "" => String::new(),
+        rest => format!(" {rest}"),
+    };
+    let pad = " ".repeat(width.saturating_sub(name.chars().count()));
+    vec![
+        Span::styled(first.to_string(), BOLD),
+        Span::styled(format!("{rest}{pad}"), DIM),
+    ]
 }
 
 /// The help of one command: its usage, what it does, its arguments and its examples.
@@ -184,22 +193,47 @@ impl Verb {
             .max_by_key(|v| v.command.len())
     }
 
-    /// The command page: the usage, the summary, a line for each argument, and the examples.
-    pub fn page(&self) -> String {
+    /// The command page in its looks: the usage, the summary, its arguments and flags under their
+    /// headings, and the examples.
+    pub fn lines(&self) -> Vec<Styled> {
         let width = self.args.iter().map(|(n, _)| n.len()).max().unwrap_or(0);
-        let mut lines: Vec<String> = self.usage.iter().flat_map(|u| wrap(u)).collect();
-        lines.push(String::new());
-        lines.extend(fill(self.summary));
-        if !self.args.is_empty() {
-            lines.push(String::new());
+        let bold = format!("celis {}", self.command);
+        let mut lines: Vec<Styled> = self
+            .usage
+            .iter()
+            .flat_map(|u| wrap(u))
+            .map(|u| match u.strip_prefix(&bold) {
+                Some(rest) => Styled::from(vec![
+                    Span::styled(bold.clone(), BOLD),
+                    Span::styled(rest.to_string(), DIM),
+                ]),
+                None => Styled::styled(u, DIM),
+            })
+            .collect();
+        lines.push(Styled::default());
+        lines.extend(fill(self.summary).into_iter().map(Styled::raw));
+        for (heading, flags) in [("Arguments", false), ("Flags", true)] {
+            let args: Vec<_> = self
+                .args
+                .iter()
+                .filter(|(name, _)| name.starts_with("--") == flags)
+                .collect();
+            if args.is_empty() {
+                continue;
+            }
+            lines.push(Styled::default());
+            lines.push(Styled::styled(heading, BOLD));
+            for (name, summary) in args {
+                let mut row = vec![Span::raw("  ")];
+                row.extend(label(name, width + 4));
+                row.push(Span::raw(*summary));
+                lines.push(Styled::from(row));
+            }
         }
-        for (name, summary) in self.args {
-            lines.push(format!("  {name:width$}    {summary}"));
-        }
-        lines.push(String::new());
-        lines.push("Examples".to_string());
-        lines.extend(self.examples.iter().map(|e| format!("  {e}")));
-        lines.join("\n")
+        lines.push(Styled::default());
+        lines.push(Styled::styled("Examples", BOLD));
+        lines.extend(self.examples.iter().map(|e| Styled::raw(format!("  {e}"))));
+        lines
     }
 }
 
@@ -208,7 +242,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "grep",
         usage: &["celis grep <grep option>... <pattern>"],
-        summary: "Search every trail of every project with the system grep. Each trail, step, proof, change, drop reason, and rule is one line with its day, trail, project, kind, and id. Show the lines found under the header of their trail, the trails with the most lines first, at most 8,000 bytes, then the trails cut. Changes nothing.",
+        summary: "Search every trail of every project with the system grep, one line for each trail, step, proof, change, drop reason, and rule. Show what it finds under each trail's header, the trails with the most lines first, up to 8,000 bytes. Changes nothing.",
         args: &[
             ("<grep option>", "Any option of grep, such as -i, -E, -w, or -A 3"),
             ("<pattern>", "What to find, as grep reads it"),
@@ -225,7 +259,7 @@ pub const VERBS: &[Verb] = &[
         summary: "Show each step that later work reused and how often, then each rule that steps followed, then the total. With an id, show what that step reused and what reused it. On a terminal, show them as cards that update as work lands. Changes nothing.",
         args: &[
             ("<id>", "A step id, or its first 4 or more characters"),
-            ("--demo", "Show sample trails of four weeks"),
+            ("--demo", "Show four weeks of sample trails"),
         ],
         examples: &["celis stats", "celis stats 9b0e11aa", "celis stats --demo"],
     },
@@ -269,9 +303,9 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "decide",
         usage: &["celis decide [--scope <scope>] [--replaces <id>] -- <text>"],
-        summary: "Record a rule that later work must follow, in its scope.",
+        summary: "Record a rule that later work must keep. With no --scope, it holds for the whole project.",
         args: &[
-            ("--scope <scope>", "at:<place>, trail:<id>, project, or me (default: project)"),
+            ("--scope <scope>", "Where it applies: at:<place>, trail:<id>, me, or project"),
             ("--replaces <id>", "The rule this one replaces"),
             ("<text>", "When it applies, what to do, and why"),
         ],
@@ -286,8 +320,8 @@ pub const VERBS: &[Verb] = &[
         summary: "Show a trail with its state, rules, and steps. With no id, show the active trails and today's trails of every project.",
         args: &[
             ("<id>", "A step id, or its first 4 or more characters"),
-            ("--graph", "Show one trail as a graph, live, with keys to play it back"),
-            ("--full", "Also show each step's proof, grade, and reason"),
+            ("--graph", "Show one trail as a live graph you can replay"),
+            ("--full", "Show each step's proof, grade, and reason"),
             ("--all", "Show every trail of every project, by day"),
             ("--demo", "Show sample trails in every state"),
         ],
@@ -338,7 +372,7 @@ pub const VERBS: &[Verb] = &[
             ("--under <id>", "The open step this step is part of"),
             ("--replaces <id>", "A step this one takes over, or a finished step it fixes"),
             ("--uses <id>", "A rule this step follows, or a past step it reuses"),
-            ("--at <place>", "A file:line, a URL, or any text"),
+            ("--at <place>", "Where the work happens: a file:line, a URL, or any text"),
             ("--check <command>", "A command that proves the work"),
             ("--new", "Start a new trail, not a step of the session's trail"),
             ("--session <id>", "The session, when the hook names it"),
@@ -362,9 +396,9 @@ pub const VERBS: &[Verb] = &[
         summary: "Finish a step with its proof and what changed. Finish the steps under it first.",
         args: &[
             ("<id>", "A step id, or its first 4 or more characters"),
-            ("--changed", "How the result differs from expect"),
-            ("--as-planned", "The result matches expect. Use this or --changed"),
-            ("--pitfall", "A rule from what went wrong, saved at the step's place"),
+            ("--changed", "How the result differs from its expect line"),
+            ("--as-planned", "The result matches its expect line; else use --changed"),
+            ("--pitfall", "A rule from what went wrong, kept at the step's places"),
             ("<proof>", "The check that failed before and passes now"),
         ],
         examples: &[
@@ -389,8 +423,8 @@ pub const VERBS: &[Verb] = &[
         summary: "Change a step's title, places, or check. A new title alone keeps the details.",
         args: &[
             ("<id>", "A step id, or its first 4 or more characters"),
-            ("--at <place>", "Places that replace the step's places"),
-            ("--check <command>", "A check that replaces the step's check"),
+            ("--at <place>", "Where the work happens, in place of the old places"),
+            ("--check <command>", "A command that proves the work, in place of the old one"),
             ("<text>", "A new title, or a title and details"),
         ],
         examples: &[
