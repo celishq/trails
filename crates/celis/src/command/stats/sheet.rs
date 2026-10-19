@@ -41,8 +41,8 @@ pub(crate) fn sheets(model: &Model, full: usize, inside: usize, plain: bool) -> 
     let ink = Ink { plain };
     [
         effect(&last, &before, full, ink),
-        followed(reuse, inside, ink),
-        rules(model.rules, reuse, inside, ink),
+        followed(reuse, steps, now, inside, ink),
+        rules(model.rules, reuse, steps, now, inside, ink),
         work(steps, &before, now, inside, ink),
         time(&last, inside, ink),
         outcome(&last, inside, ink),
@@ -55,6 +55,7 @@ fn nothing(what: &str) -> String {
     format!("no step {what} in {DAYS} days")
 }
 
+mod daily;
 mod effect;
 mod outcome;
 mod reuse;

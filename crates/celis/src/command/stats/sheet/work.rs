@@ -1,14 +1,14 @@
 //! The work cards: the steps done each day, the time a step took, and the time of each project.
 
 use super::super::table::{Row, Table};
+use super::daily::{chart, days};
 use super::{nothing, Sheet, DAY, DAYS};
 use crate::progress::{Grade, Period};
 use crate::terminal::canvas::{cut as text_cut, visible, Styled, BOLD};
-use crate::terminal::glyph::{bar, columns};
+use crate::terminal::glyph::bar;
 use crate::terminal::ink::Ink;
-use crate::text::clock::{day, midnight, took};
+use crate::text::clock::{day, took};
 use celis_trails::Step;
-use ratatui::text::Span;
 use std::collections::BTreeMap;
 
 /// The work: the steps done each day of the last 14, as columns, and their total against the 14 days
@@ -20,11 +20,7 @@ pub(super) fn work(
     inside: usize,
     ink: Ink,
 ) -> Sheet {
-    let today = midnight(now);
-    let starts: Vec<u64> = (0..DAYS)
-        .rev()
-        .map(|i| today.saturating_sub(i * DAY))
-        .collect();
+    let starts = days(now);
     let counts: Vec<usize> = starts
         .iter()
         .map(|&s| Period::new(steps, s, s + DAY).done().len())
@@ -48,10 +44,7 @@ pub(super) fn work(
     if total == 0 {
         face.push(ink.dim(&nothing("done")).into());
     } else {
-        face.extend(columns(&counts, 2, ZERO).iter().map(|row| dotted(row, ink)));
-        let first = day(starts[0]);
-        let pad = " ".repeat(27usize.min(inside).saturating_sub(first.len() + 5));
-        face.push(ink.dim(&format!("{first}{pad}today")).into());
+        face.extend(chart(&counts, &starts, inside, ink));
     }
     let rows = starts
         .iter()
@@ -178,21 +171,4 @@ pub(super) fn projects(last: &Period, inside: usize, ink: Ink) -> Sheet {
             wide: 0,
         },
     }
-}
-
-/// What a column of the work card shows for a day with no step done.
-const ZERO: &str = "·";
-
-/// `row` of the columns of the work card, each `ZERO` in it dim.
-fn dotted(row: &str, ink: Ink) -> Styled {
-    let mut spans: Vec<Span<'static>> = Vec::new();
-    for (n, part) in row.split(ZERO).enumerate() {
-        if n > 0 {
-            spans.push(ink.dim(ZERO));
-        }
-        if !part.is_empty() {
-            spans.push(part.to_string().into());
-        }
-    }
-    Styled::from(spans)
 }

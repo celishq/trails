@@ -73,7 +73,7 @@ fn a_period_counts_its_done_steps_as_planned_and_reworked() {
 }
 
 /// A period counts the steps added in it that use a rule, and not those that use only a step or an
-/// id that names no record (`spec/06-reuse.md`, "Uses").
+/// id that names no record, and the follows and rule uses of those steps (`spec/06-reuse.md`, "Uses").
 #[test]
 fn a_period_counts_its_added_steps_that_use_a_rule() {
     let rule = Rule {
@@ -98,6 +98,8 @@ fn a_period_counts_its_added_steps_that_use_a_rule() {
     let period = Period::new(&steps, 20, 40);
     assert_eq!(titles(period.added()), ["ruled", "follows", "dangling"]);
     assert_eq!(period.ruled(), 1);
+    assert_eq!(period.follows(), 1);
+    assert_eq!(period.uses(), 1);
 }
 
 /// A period's closed steps are those done or dropped in it, and those that expired with a trail whose

@@ -48,6 +48,16 @@ impl<'a> Period<'a> {
         added.filter(|s| s.uses().iter().any(rule)).count()
     }
 
+    /// The follows the steps added in it made.
+    pub fn follows(&self) -> usize {
+        self.used(|u| matches!(u, Used::Follow(_)))
+    }
+
+    /// The rule uses of the steps added in it.
+    pub fn uses(&self) -> usize {
+        self.used(|u| matches!(u, Used::Rule(_)))
+    }
+
     /// The steps done or dropped in it, and those expired with a trail whose newest record is in it,
     /// oldest first.
     pub fn closed(&self) -> Vec<Step<'a>> {
@@ -59,6 +69,14 @@ impl<'a> Period<'a> {
     /// Every step of the store that is not a trail, oldest first.
     fn parts(&self) -> impl Iterator<Item = Step<'a>> {
         self.steps.all().into_iter().filter(|s| !s.is_trail())
+    }
+
+    /// The uses of the steps added in it that `kind` holds.
+    fn used(&self, kind: fn(&Used) -> bool) -> usize {
+        let added = self.added().into_iter();
+        added
+            .map(|s| s.uses().iter().filter(|u| kind(u)).count())
+            .sum()
     }
 
     /// Whether the second `at` is in it.

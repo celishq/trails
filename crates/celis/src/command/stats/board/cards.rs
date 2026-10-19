@@ -58,12 +58,14 @@ impl Board<'_> {
         let ids: Vec<Option<String>> = sheet.table.rows.iter().map(|r| r.id.clone()).collect();
         self.row = self.row.min(ids.len().saturating_sub(1));
         let mut lines = head(Some(&sheet.title), "", width);
-        lines.extend(sheet.table.lines(width, Some(self.row)));
+        let (table, first) = sheet.table.lines(width, Some(self.row));
+        let picked = first.get(self.row).map(|f| lines.len() + f);
+        lines.extend(table);
         let copy = ids.get(self.row).cloned().flatten();
         self.rows = ids;
         Page {
             lines,
-            picked: Some(3 + self.row),
+            picked,
             keys: legend("↑↓ select · ← back", copy.as_deref()),
             copy: copy.map(|id| short(&id)),
             markdown: Some(sheet.table.markdown(&sheet.title)),

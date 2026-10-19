@@ -1,5 +1,5 @@
 use super::*;
-use celis_trails::{Anchor, Draft, Store, Trails};
+use celis_trails::{Anchor, Draft, Rule, Scope, Store, Trails};
 use tempfile::TempDir;
 
 /// The second a store's one step closed.
@@ -95,4 +95,74 @@ fn the_effect_counts_one_step_and_its_share_whole() {
     assert!(effect.contains("1 step "), "{effect}");
     assert!(!effect.contains("1 steps"), "{effect}");
     assert!(effect.contains("▀▀▀ %"), "{effect}");
+}
+
+/// `worked`, with a new trail added at `AT` and a step under it that follows the done step and uses a
+/// rule.
+fn reused(later: u64) -> (TempDir, Trails) {
+    let (home, mut trails) = worked(later);
+    let part = Model::of(&trails, |m| m.steps.all()[1].id().to_string());
+    let anchor = Anchor {
+        project: "repo".into(),
+        name: "repo".into(),
+    };
+    let rule = Rule {
+        anchor: anchor.clone(),
+        scope: Scope::Project,
+        replaces: None,
+        content: "When a rule holds: keep it, because it works.".into(),
+    };
+    trails.at(AT);
+    let rule = trails.decide(rule, None).unwrap().records[0].id.clone();
+    trails.at(AT);
+    let draft = |content: &str, under: Option<String>, uses: Vec<String>| Draft {
+        content: content.into(),
+        anchor: anchor.clone(),
+        places: vec![],
+        check: None,
+        new: under.is_none(),
+        under,
+        replaces: None,
+        uses,
+        session: None,
+    };
+    let trail = trails
+        .add(draft("the next trail", None, vec![]))
+        .unwrap()
+        .records[0]
+        .id
+        .clone();
+    trails.at(AT);
+    trails
+        .add(draft("the next", Some(trail), vec![part, rule]))
+        .unwrap();
+    trails.at(AT + later);
+    (home, trails)
+}
+
+/// The reuse and rules cards draw the follows and rule uses of each of the last 14 days as columns, a
+/// dot on each day with none.
+#[test]
+fn the_reuse_cards_draw_each_day_as_a_column() {
+    let (_home, trails) = reused(3_600);
+    for title in ["01 REUSE", "02 RULES USED"] {
+        let face = face(&trails, title);
+        assert!(face.contains("· · ·"), "{face}");
+        assert!(face.contains("today"), "{face}");
+    }
+    assert!(face(&trails, "01 REUSE").contains("follows a day"));
+    assert!(face(&trails, "02 RULES USED").contains("uses a day"));
+}
+
+/// With no follow and no rule use in the last 14 days, the reuse and rules cards each say so in one line
+/// in place of their columns.
+#[test]
+fn the_reuse_cards_with_nothing_in_14_days_say_so() {
+    let (_home, trails) = reused(20 * DAY);
+    let reuse = face(&trails, "01 REUSE");
+    assert!(reuse.contains("no follow in 14 days"), "{reuse}");
+    assert!(!reuse.contains("today"), "{reuse}");
+    let rules = face(&trails, "02 RULES USED");
+    assert!(rules.contains("no rule used in 14 days"), "{rules}");
+    assert!(!rules.contains("today"), "{rules}");
 }
