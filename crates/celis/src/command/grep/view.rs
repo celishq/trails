@@ -6,11 +6,11 @@ use super::row::Row;
 use crate::text::clock::date;
 use celis_nostr::Note;
 use celis_trails::records::id::short;
-use celis_trails::{Decision, Mark, Scope, Step, Trails};
+use celis_trails::{Mark, Rule, Scope, Step, Trails};
 use std::collections::HashMap;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
-/// Every trail of every project with its rules and steps, and each decision with no trail, newest made
+/// Every trail of every project with its rules and steps, and each rule with no trail, newest made
 /// first; with the header of each trail.
 #[derive(Default)]
 pub(super) struct View {
@@ -21,27 +21,23 @@ pub(super) struct View {
 
 impl View {
     pub fn of(trails: &Trails) -> View {
-        let (steps, decisions) = (trails.steps(), trails.decisions());
-        let mut rules: HashMap<&str, Vec<Row>> = HashMap::new();
+        let (steps, rules) = (trails.steps(), trails.rules());
+        let mut by_trail: HashMap<&str, Vec<Row>> = HashMap::new();
         let mut blocks: Vec<(u64, &str, Vec<Row>)> = Vec::new();
-        for (note, decision, by) in decisions.every() {
-            match &decision.scope {
+        for (note, said, by) in rules.every() {
+            match &said.scope {
                 Scope::Trail(id) => {
-                    let row = rule(note, decision, *by, Some(short(id)));
-                    rules.entry(id.as_str()).or_default().push(row);
+                    let row = rule(note, said, *by, Some(short(id)));
+                    by_trail.entry(id.as_str()).or_default().push(row);
                 }
-                _ => blocks.push((
-                    note.created_at,
-                    &note.id,
-                    vec![rule(note, decision, *by, None)],
-                )),
+                _ => blocks.push((note.created_at, &note.id, vec![rule(note, said, *by, None)])),
             }
         }
         let mut headers = HashMap::new();
         for root in steps.roots() {
             headers.insert(short(root.id()), Header::of(root));
             let mut rows = vec![step(root, root, Kind::Trail)];
-            rows.extend(rules.remove(root.id()).unwrap_or_default());
+            rows.extend(by_trail.remove(root.id()).unwrap_or_default());
             level(root, root, &mut rows);
             blocks.push((root.note().created_at, root.id(), rows));
         }
@@ -131,8 +127,8 @@ fn step(root: Step, step: Step, kind: Kind) -> Row {
     }
 }
 
-/// The row of the decision `note` holds, as a rule of `trail`, replaced by `by` when given.
-fn rule(note: &Note, decision: &Decision, by: Option<&Note>, trail: Option<String>) -> Row {
+/// The row of the rule `note` holds, as a rule of `trail`, replaced by `by` when given.
+fn rule(note: &Note, rule: &Rule, by: Option<&Note>, trail: Option<String>) -> Row {
     let state = by.map_or("live".to_string(), |b| {
         format!("replaced-by {}", short(&b.id))
     });
@@ -140,9 +136,9 @@ fn rule(note: &Note, decision: &Decision, by: Option<&Note>, trail: Option<Strin
         trail,
         kind: Kind::Rule,
         day: date(note.created_at),
-        project: decision.anchor.name.clone(),
-        head: format!("{} {state} {{{}}}", short(&note.id), decision.scope.short()),
-        text: flat(&decision.content),
+        project: rule.anchor.name.clone(),
+        head: format!("{} {state} {{{}}}", short(&note.id), rule.scope.short()),
+        text: flat(&rule.content),
     }
 }
 

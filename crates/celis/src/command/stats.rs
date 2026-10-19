@@ -14,7 +14,7 @@ const NOTHING: &str = "Nothing was reused yet.";
 
 impl Command {
     /// Prints the step `args` names with the steps it follows and the steps that follow it, or with no id
-    /// each followed step, each used decision and the total; on a terminal with no `--json`, draws them
+    /// each followed step, each used rule and the total; on a terminal with no `--json`, draws them
     /// as cards. Writes no record.
     pub(crate) fn stats(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let id = args.words.get(1);
@@ -40,8 +40,8 @@ impl Command {
         match id {
             Some(id) => chain(&reuse, Trail::new(steps.find(id)?).work(), args.json, out),
             None => {
-                let decisions = trails.decisions();
-                let used = reuse.used(&decisions);
+                let rules = trails.rules();
+                let used = reuse.used(&rules);
                 if reuse.followed().is_empty() && used.is_empty() {
                     return match args.json {
                         true => Ok(()),
@@ -60,14 +60,10 @@ impl Command {
                     super::show(out, args.json, "followed", value, &line)?;
                 }
                 let mut uses = 0;
-                for (note, decision, count) in &used {
+                for (note, rule, count) in &used {
                     uses += count;
-                    let value = json!({"id": note.id, "content": decision.content, "used": count});
-                    let line = format!(
-                        "decision {} {} · used {count}",
-                        short(&note.id),
-                        decision.brief()
-                    );
+                    let value = json!({"id": note.id, "content": rule.content, "used": count});
+                    let line = format!("rule {} {} · used {count}", short(&note.id), rule.brief());
                     super::show(out, args.json, "used", value, &line)?;
                 }
                 let follows = reuse.total();
@@ -115,3 +111,7 @@ fn head(step: Step) -> String {
 fn took(step: Step) -> String {
     crate::text::line::grade(step).map_or(String::new(), |g| format!(" · {g}"))
 }
+
+mod board;
+pub(crate) mod sheet;
+mod table;

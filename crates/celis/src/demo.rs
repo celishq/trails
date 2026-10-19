@@ -3,7 +3,7 @@
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use celis_trails::{Anchor, Decision, Draft, Scope, Store, Trails};
+use celis_trails::{Anchor, Draft, Rule, Scope, Store, Trails};
 use std::cell::{RefCell, RefMut};
 use std::io::Write;
 use std::path::PathBuf;
@@ -60,16 +60,34 @@ impl Demo {
         let (shop, crm) = (anchor("shop"), anchor("crm"));
         self.history(&shop, &crm)?;
         let day = 2 * 24 * 3600;
-        let set = self.add(day, &shop, None, "Set up the shop", &[])?;
-        let till = self.add(day - 60, &shop, Some(&set), "Open the till", &[])?;
+        let set = self.add(
+            day,
+            &shop,
+            None,
+            "Set up the shop\nexpect: the shop takes its first sale",
+            &[],
+        )?;
+        let till = self.add(
+            day - 60,
+            &shop,
+            Some(&set),
+            "Open the till\nexpect: the till opens",
+            &[],
+        )?;
         self.close(day - 600, &till, "the till opens", None)?;
 
-        let cart = self.add(3 * 3600, &shop, None, "Fix the cart total", &[])?;
+        let cart = self.add(
+            3 * 3600,
+            &shop,
+            None,
+            "Fix the cart total\nexpect: the cart test passes",
+            &[],
+        )?;
         let floats = self.add(
             3 * 3600 - 60,
             &shop,
             Some(&cart),
-            "Sum the cart in floats",
+            "Add up the cart total\nexpect: the total of three items is their sum",
             &["shelf/cart.py"],
         )?;
         self.close(3 * 3600 - 400, &floats, "the total adds up", None)?;
@@ -77,7 +95,7 @@ impl Demo {
             3 * 3600 - 500,
             &shop,
             &cart,
-            "Sum the cart in cents",
+            "Add up the cart total in cents\nexpect: the total is correct to the cent",
             &floats,
         )?;
         self.close(
@@ -87,12 +105,18 @@ impl Demo {
             None,
         )?;
 
-        let import = self.add(2 * 3600, &crm, None, "Import the contacts", &[])?;
+        let import = self.add(
+            2 * 3600,
+            &crm,
+            None,
+            "Import the contacts\nexpect: each contact of the export is in the list once",
+            &[],
+        )?;
         let csv = self.add(
             2 * 3600 - 60,
             &crm,
             Some(&import),
-            "Read the CSV export",
+            "Read the CSV export\nexpect: the count of contacts read is the count of rows",
             &[],
         )?;
         self.close(2 * 3600 - 300, &csv, "1,204 contacts read", None)?;
@@ -100,28 +124,46 @@ impl Demo {
             2 * 3600 - 320,
             &crm,
             Some(&import),
-            "Merge the duplicates",
+            "Remove the duplicate contacts\nexpect: no email is in the list twice",
             &[],
         )?;
-        let sync = self.add(5000, &crm, None, "Sync with the old CRM", &[])?;
+        let sync = self.add(
+            5000,
+            &crm,
+            None,
+            "Sync with the old CRM\nexpect: a change in one shows in the other",
+            &[],
+        )?;
         self.trails(4900)?
             .drop(&sync, "the old CRM shuts down next week")?;
         let leads = self.add(
             900,
             &crm,
             None,
-            "Merge the old leads into the contacts",
+            "Merge the old leads into the contacts\nexpect: each old lead is a contact",
             &[],
         )?;
-        let email = self.add(890, &crm, Some(&leads), "Match the leads by email", &[])?;
+        let email = self.add(
+            890,
+            &crm,
+            Some(&leads),
+            "Link each lead to its contact\nexpect: no lead is without a contact",
+            &[],
+        )?;
         self.trails(120)?.start(&email)?;
-        self.add(880, &crm, Some(&leads), "Move the notes over", &[])?;
+        self.add(
+            880,
+            &crm,
+            Some(&leads),
+            "Move the notes of each lead to its contact\nexpect: each note shows on the contact",
+            &[],
+        )?;
 
         let tier = self.add(
             1500,
             &shop,
             None,
-            "Add a senior tier to the price list",
+            "Add a senior tier to the price list\nexpect: a senior pays 80% on the shelf, the receipt and the frame",
             &[],
         )?;
         self.rule(1490, &shop, &tier, "When you price a senior: pay 80% of the price, rounded down to the cent, because the receipt must match the shelf.")?;
@@ -135,7 +177,7 @@ impl Demo {
             1470,
             &shop,
             Some(&tier),
-            "A senior pays 80%",
+            "Charge a senior 80% of the price\nexpect: the price test passes",
             &["shelf/prices.py:40"],
         )?;
         self.close(
@@ -148,33 +190,57 @@ impl Demo {
             1290,
             &shop,
             Some(&tier),
-            "Show the tier on the receipt",
+            "Show the tier on the receipt\nexpect: the receipt has a Senior line",
             &[],
         )?;
         let line = self.add(
             1280,
             &shop,
             Some(&receipt),
-            "Add the tier's line",
+            "Add the tier's line to the receipt\nexpect: the receipt shows Senior -20%",
             &["till/receipt.py"],
         )?;
         self.close(1100, &line, "the receipt shows Senior -20%", None)?;
-        let badge = self.add(1090, &shop, Some(&receipt), "Print the badge", &[])?;
+        let badge = self.add(
+            1090,
+            &shop,
+            Some(&receipt),
+            "Print the badge\nexpect: the badge prints",
+            &[],
+        )?;
         self.close(1000, &badge, "the badge prints", None)?;
         self.close(990, &receipt, "the receipt shows the tier", None)?;
-        let banner = self.add(980, &shop, Some(&tier), "Keep the old discount banner", &[])?;
+        let banner = self.add(
+            980,
+            &shop,
+            Some(&tier),
+            "Keep the old discount banner\nexpect: the banner shows next to the tier",
+            &[],
+        )?;
         self.trails(970)?
             .drop(&banner, "the tier replaces the banner")?;
         let frame = self.add(
             960,
             &shop,
             Some(&tier),
-            "The frame shows the tier",
+            "Show the tier in the frame\nexpect: the frame shows the senior price",
             &["web/frame.tsx"],
         )?;
-        let label = self.add(950, &shop, Some(&frame), "Add the badge to the frame", &[])?;
+        let label = self.add(
+            950,
+            &shop,
+            Some(&frame),
+            "Add the badge to the frame\nexpect: the badge shows by the price",
+            &[],
+        )?;
         self.trails(300)?.start(&label)?;
-        self.add(940, &shop, Some(&tier), "Round the price down", &[])?;
+        self.add(
+            940,
+            &shop,
+            Some(&tier),
+            "Round the price down\nexpect: no price has a part of a cent",
+            &[],
+        )?;
         Ok(tier)
     }
 
@@ -190,7 +256,7 @@ impl Demo {
             (crm, "When you import contacts: match them by email before by name, because names repeat."),
             (crm, "When you change a contact field: keep the old value in its history, because sales asks for it."),
         ] {
-            rules.push((anchor, self.decision(start, anchor, Scope::Project, text)?));
+            rules.push((anchor, self.write_rule(start, anchor, Scope::Project, text)?));
         }
         let mut days: Vec<[(String, u64); 3]> = vec![];
         for (i, day) in (3..28u64).rev().enumerate() {
@@ -228,7 +294,7 @@ impl Demo {
             )?;
             let ago = days.len().checked_sub(7).map(|w| days[w].clone());
             let mut ids = vec![(a, took)];
-            for (k, title) in [(1, third), (2, "Check it on the staging shop")] {
+            for (k, title) in [(1, third), (2, "Try it on the staging shop")] {
                 let uses: Vec<String> = ago.iter().map(|w| w[k].0.clone()).collect();
                 let id = self.write_step(
                     at - 180 - took,
@@ -358,25 +424,25 @@ impl Demo {
 
     /// Writes the rule `text` of the trail `trail`, `ago` seconds before now.
     fn rule(&self, ago: u64, anchor: &Anchor, trail: &str, text: &str) -> Result<(), Failure> {
-        self.decision(ago, anchor, Scope::Trail(trail.to_string()), text)?;
+        self.write_rule(ago, anchor, Scope::Trail(trail.to_string()), text)?;
         Ok(())
     }
 
-    /// Writes the decision `text` of `anchor` in `scope`, `ago` seconds before now; its id.
-    fn decision(
+    /// Writes the rule `text` of `anchor` in `scope`, `ago` seconds before now; its id.
+    fn write_rule(
         &self,
         ago: u64,
         anchor: &Anchor,
         scope: Scope,
         text: &str,
     ) -> Result<String, Failure> {
-        let decision = Decision {
+        let rule = Rule {
             anchor: anchor.clone(),
             scope,
             replaces: None,
             content: text.to_string(),
         };
-        let written = self.trails(ago)?.decide(decision, None)?;
+        let written = self.trails(ago)?.decide(rule, None)?;
         Ok(written.records[0].id.clone())
     }
 }
@@ -388,18 +454,18 @@ const DAY: u64 = 24 * 3600;
 const TASKS: [[&str; 3]; 6] = [
     [
         "Add gift cards",
-        "Store the card balance",
+        "Keep the card balance",
         "Take a card at the till",
     ],
     [
         "Clean up old contacts",
         "Find the contacts with no email",
-        "Archive them",
+        "Archive those contacts",
     ],
     [
         "Show stock on the shelf page",
         "Read the stock count",
-        "Print it by the price",
+        "Show it by the price",
     ],
     [
         "Add a birthday field",
@@ -408,12 +474,12 @@ const TASKS: [[&str; 3]; 6] = [
     ],
     [
         "Speed up the checkout",
-        "Cache the cart total",
-        "Drop the second price lookup",
+        "Work out the cart total once",
+        "Look up each price once",
     ],
     [
         "Tag the leads by source",
-        "Read the source from the form",
+        "Give each lead its source",
         "Filter the list by tag",
     ],
 ];

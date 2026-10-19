@@ -2,21 +2,21 @@
 
 The cases that the card does not cover, and that no command prints. Do not run `--help`.
 
-## Decisions
+## Rules
 
 A place is a file, a `file:line`, a folder, or a URL. A rule that holds at one place takes the scope
 `at:<place>`.
 
-When you move a file: write each decision at its old place again at the new place, with
+When you move a file: write each rule at its old place again at the new place, with
 `decide --replaces <id> --scope at:<new place>`. Run `celis grep "at:<old place>"` to see them.
 
 ## Past work
 
-When the `celis:past` agent returns past work that went as planned, take the steps right under its ask
-as your shapes, with the `changed` lines in mind. Copy the steps under a shape only when you take that
-shape. Else outline the shapes yourself. A part that several shapes use is its own shape, first. Add
-each step you take from past work with `--uses <its id>`, so later work can see which paths were
-followed.
+When the `celis:past` agent returns past work that did the same thing as your ask and went as planned,
+take the steps right under its ask as yours, with the `changed` lines in mind. Copy the steps under a
+step only when you take that step. A past step that does the same thing in other words is the same
+step. When its title names its own case, write it in words that hold in yours. Add each step you take
+with `--uses <its id>`, so that later work can see which steps were reused.
 
 ## Subagents and other sessions
 

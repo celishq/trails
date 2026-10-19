@@ -1,23 +1,23 @@
-//! CIP-05: a decision, one sentence that holds in its scope until another replaces it.
+//! CIP-05: a rule, one sentence that holds in its scope until another replaces it.
 
-pub mod decisions;
+pub mod rules;
 pub mod scope;
 
-use crate::{Anchor, DecisionId, Scope};
+use crate::{Anchor, RuleId, Scope};
 use anyhow::Result;
 use celis_nostr::{Account, Note};
 
-/// One decision, written on a project, that holds in its scope.
+/// One rule, written on a project, that holds in its scope.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Decision {
+pub struct Rule {
     pub anchor: Anchor,
     pub scope: Scope,
-    pub replaces: Option<DecisionId>,
+    pub replaces: Option<RuleId>,
     pub content: String,
 }
 
-impl Decision {
-    /// This decision as a kind 1111 record that `signer` signs at `at`.
+impl Rule {
+    /// This rule as a kind 1111 record that `signer` signs at `at`.
     pub fn record(&self, signer: &Account, at: u64) -> Result<Note> {
         let mut tags = self.anchor.tags();
         let scope = (self.scope != Scope::Project).then(|| self.scope.text());
@@ -46,8 +46,8 @@ impl Decision {
             .map_or(self.content.as_str(), |(rule, _)| rule)
     }
 
-    /// The decision `note` holds; `None` when it is not a decision, or names a scope no reader knows.
-    pub fn read(note: &Note) -> Option<Decision> {
+    /// The rule `note` holds; `None` when it is not a rule, or names a scope no reader knows.
+    pub fn read(note: &Note) -> Option<Rule> {
         let labelled = note
             .tags
             .iter()
@@ -60,14 +60,14 @@ impl Decision {
             None => Scope::Project,
         };
         let owned = |name: &str| note.tag(name).map(str::to_string);
-        Some(Decision {
+        Some(Rule {
             anchor: Anchor::read(note)?,
             scope,
-            replaces: owned("replaces").map(DecisionId::new),
+            replaces: owned("replaces").map(RuleId::new),
             content: note.content.clone(),
         })
     }
 }
 
-/// The label namespace of a decision.
+/// The label namespace of a rule.
 const NAMESPACE: &str = "celis.decision";

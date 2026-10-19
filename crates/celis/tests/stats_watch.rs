@@ -232,7 +232,7 @@ fn stats_demo_prints_and_writes_nothing() {
     let o = repo.run(&repo.path(), &["stats", "--demo"], &env, "");
     assert!(o.status.success(), "{}", err(&o));
     let text = out(&o);
-    for part in [" · followed ", "decision ", "total "] {
+    for part in [" · followed ", "rule ", "total "] {
         assert!(text.contains(part), "{part:?}: {text}");
     }
     assert_eq!(std::fs::read_dir(temp.path()).unwrap().count(), 0);

@@ -70,10 +70,10 @@ fn start_refuses_unknown_and_closed_steps_and_starts_a_step_once() {
     assert_eq!(files(), before);
 }
 
-/// `start` prints, after its id, the live decisions at the step's places, a folder's decisions holding
+/// `start` prints, after its id, the live rules at the step's places, a folder's rules holding
 /// for each file under it.
 #[test]
-fn start_prints_the_decisions_at_the_steps_places() {
+fn start_prints_the_rules_at_the_steps_places() {
     let repo = Repo::new();
     let decide = |scope: &str, text: &str| {
         let o = cli(&repo, &["decide", "--scope", scope, "--", text]);
@@ -126,7 +126,7 @@ fn start_does_not_run_the_steps_check() {
     assert!(!repo.path().join("ran").exists());
 }
 
-/// `start` prints the live rules of the step's trail, each decision its ask uses, and the rules of the
+/// `start` prints the live rules of the step's trail, each rule its ask uses, and the rules of the
 /// trail of each step its ask uses; not a rule none of them names.
 #[test]
 fn start_prints_the_trails_rules_and_the_rules_its_ask_uses() {

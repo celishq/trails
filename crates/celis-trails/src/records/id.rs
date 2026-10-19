@@ -1,6 +1,6 @@
 //! A record id, whole or by a start of it.
 
-pub mod decision_id;
+pub mod rule_id;
 pub mod step_id;
 
 use celis_nostr::Note;

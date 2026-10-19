@@ -7,6 +7,7 @@ use crate::failure::Failure;
 pub(crate) struct Args {
     pub json: bool,
     pub help: bool,
+    pub graph: bool,
     pub full: bool,
     pub all: bool,
     pub demo: bool,
@@ -53,6 +54,7 @@ impl Args {
                 }
                 "--json" => parsed.json = true,
                 "--help" => parsed.help = true,
+                "--graph" => parsed.graph = true,
                 "--full" => parsed.full = true,
                 "--all" => parsed.all = true,
                 "--demo" => parsed.demo = true,

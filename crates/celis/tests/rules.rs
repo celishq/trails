@@ -1,22 +1,22 @@
-//! CIP-05, "Decisions".
+//! CIP-05, "Rules".
 
 mod support;
 
 use celis_nostr::{Account, Note};
-use support::{account, cairn, decision, live_ids, now, put, rating, Repo, DAY};
+use support::{account, cairn, live_ids, now, put, rating, stored_rule, Repo, DAY};
 
 fn short(id: &str) -> String {
     id[..8].to_string()
 }
 
-/// A reader counts a decision whatever account signed it (`spec/01-records.md`, "The account").
+/// A reader counts a rule whatever account signed it (`spec/01-records.md`, "The account").
 #[test]
-fn a_decision_counts_whatever_account_signed_it() {
+fn a_rule_counts_whatever_account_signed_it() {
     let repo = Repo::plain();
     let id = repo.project_id();
     let project = (id.as_str(), "repo");
     let stranger = Account::new(&[2u8; 32]).unwrap();
-    let signed = decision(
+    let signed = stored_rule(
         &repo,
         project,
         &account(),
@@ -24,7 +24,7 @@ fn a_decision_counts_whatever_account_signed_it() {
         "mine",
         now() - 3 * DAY,
     );
-    let theirs = decision(
+    let theirs = stored_rule(
         &repo,
         project,
         &stranger,
@@ -38,15 +38,15 @@ fn a_decision_counts_whatever_account_signed_it() {
     );
 }
 
-/// A decision is live until another decision names it in `replaces` (`spec/05-decisions.md`,
-/// "Decisions").
+/// A rule is live until another rule names it in `replaces` (`spec/05-rules.md`,
+/// "Rules").
 #[test]
-fn a_decision_is_live_until_another_decision_replaces_it() {
+fn a_rule_is_live_until_another_rule_replaces_it() {
     let repo = Repo::plain();
     let id = repo.project_id();
     let project = (id.as_str(), "repo");
     let stranger = Account::new(&[2u8; 32]).unwrap();
-    let old = decision(
+    let old = stored_rule(
         &repo,
         project,
         &account(),
@@ -54,7 +54,7 @@ fn a_decision_is_live_until_another_decision_replaces_it() {
         "old",
         now() - 4 * DAY,
     );
-    let kept = decision(
+    let kept = stored_rule(
         &repo,
         project,
         &account(),
@@ -62,7 +62,7 @@ fn a_decision_is_live_until_another_decision_replaces_it() {
         "kept",
         now() - 3 * DAY,
     );
-    let gone = decision(
+    let gone = stored_rule(
         &repo,
         project,
         &stranger,
@@ -70,7 +70,7 @@ fn a_decision_is_live_until_another_decision_replaces_it() {
         "no",
         now() - 2 * DAY,
     );
-    let new = decision(
+    let new = stored_rule(
         &repo,
         project,
         &account(),
@@ -92,7 +92,7 @@ fn a_reader_ignores_cairns_ratings_outcomes_source_records_and_splits_from_befor
     let id = repo.project_id();
     let project = (id.as_str(), "repo");
     let by = &account();
-    let kept = decision(
+    let kept = stored_rule(
         &repo,
         project,
         &account(),

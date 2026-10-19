@@ -7,13 +7,13 @@ depends: []
 
 # CIP-01 — Records
 
-Every trail, step and decision is a nostr record in one store on the machine. This CIP defines the
+Every trail, step and rule is a nostr record in one store on the machine. This CIP defines the
 record, the store, the account that signs, the project a record names, its places, and the folders a
 project links.
 
 ## Records
 
-A record is a NIP-01 event. A step or a decision is a NIP-22 comment on its project (kind 1111). A start,
+A record is a NIP-01 event. A step or a rule is a NIP-22 comment on its project (kind 1111). A start,
 done, drop, edit or prompt is a NIP-32 label on a step (kind 1985). Each carries the label namespace of its
 CIP.
 

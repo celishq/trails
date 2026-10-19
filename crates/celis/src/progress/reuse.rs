@@ -1,11 +1,11 @@
-//! What later work reused of the steps and decisions of a store.
+//! What later work reused of the steps and rules of a store.
 
 use celis_nostr::Note;
-use celis_trails::{Decision, Decisions, Step, Steps, Used};
+use celis_trails::{Rule, Rules, Step, Steps, Used};
 use std::cmp::Reverse;
 use std::collections::{HashMap, HashSet};
 
-/// What later work reused of a store: which steps follow which, and how often a step used each decision.
+/// What later work reused of a store: which steps follow which, and how often a step used each rule.
 pub struct Reuse<'a> {
     sources: HashMap<&'a str, Vec<Step<'a>>>,
     followers: HashMap<&'a str, Vec<Step<'a>>>,
@@ -38,7 +38,7 @@ impl<'a> Reuse<'a> {
                         reuse.sources.entry(step.id()).or_default().push(source);
                         reuse.followers.entry(source.id()).or_default().push(step);
                     }
-                    Used::Decision(id) => *reuse.uses.entry(id).or_default() += 1,
+                    Used::Rule(id) => *reuse.uses.entry(id).or_default() += 1,
                 }
             }
         }
@@ -95,15 +95,15 @@ impl<'a> Reuse<'a> {
         &self.followed
     }
 
-    /// Each live decision of `decisions` that a step used, with how often, most used first, then newest
+    /// Each live rule of `rules` that a step used, with how often, most used first, then newest
     /// first, then by id.
-    pub fn used(&self, decisions: &Decisions<'a>) -> Vec<(&'a Note, Decision, usize)> {
-        let mut used: Vec<(&'a Note, Decision, usize)> = self
+    pub fn used(&self, rules: &Rules<'a>) -> Vec<(&'a Note, Rule, usize)> {
+        let mut used: Vec<(&'a Note, Rule, usize)> = self
             .uses
             .iter()
             .filter_map(|(id, count)| {
-                let (note, decision) = decisions.get(id)?;
-                Some((note, decision, *count))
+                let (note, rule) = rules.get(id)?;
+                Some((note, rule, *count))
             })
             .collect();
         used.sort_by_key(|(n, _, count)| (Reverse(*count), Reverse(n.created_at), n.id.clone()));

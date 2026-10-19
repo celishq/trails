@@ -1,7 +1,7 @@
 # CIPs — Trails
 
 These specs hold the contract of the trail, the crates `celis-trails` and `celis`. A trail is one task the
-person gives, broken into steps that agents take and close, with the decisions made on the way. The trails
+person gives, broken into steps that agents take and close, with the rules learned on the way. The trails
 of every project on the machine share one store. Records are nostr notes your account signs.
 
 ## How a CIP works
@@ -39,8 +39,8 @@ Every change of `spec/` MUST keep these rules:
 | 02 | The command line | usage, the records each command writes, errors, and the output the plugin reads | CIP-01 |
 | 03 | Steps | the step, its start, done, drop and edit | CIP-01 |
 | 04 | Trails | the trail, its sessions and prompts, its rules | CIP-01, 03, 05 |
-| 05 | Decisions | the decision and its scope | CIP-01 |
-| 06 | Reuse | the steps and decisions a step uses, revisions | CIP-03, 04, 05 |
+| 05 | Rules | the rule and its scope | CIP-01 |
+| 06 | Reuse | the steps and rules a step uses, revisions | CIP-03, 04, 05 |
 
 ## Names
 
@@ -57,9 +57,9 @@ Every change of `spec/` MUST keep these rules:
 | `changed` | done tag | 03 |
 | `session` | step tag | 04 |
 | 1985 with `prompt` in `celis.step` | kind: a person's prompt, on the trail (NIP-32) | 04 |
-| 1111 with `decision` in `celis.decision` | kind: a decision (NIP-22) | 05 |
-| `scope` · `replaces` | decision tags | 05 |
-| `me` · `project` · `trail:<id>` · `at:<place>` | the scopes of a decision | 05 |
+| 1111 with `decision` in `celis.decision` | kind: a rule (NIP-22) | 05 |
+| `scope` · `replaces` | rule tags | 05 |
+| `me` · `project` · `trail:<id>` · `at:<place>` | the scopes of a rule | 05 |
 | `uses` | step tag | 06 |
 
 **Deprecated.** A reader ignores each of these. Older versions wrote them.
@@ -80,13 +80,12 @@ Every change of `spec/` MUST keep these rules:
 | `record` | one signed nostr note in the store |
 | `account` | the key the phrase gives, that signs every record this machine writes |
 | `project` | the code an agent works on, named by its repo's first commit |
-| `place` | a file, a `file:line`, a folder or a URL that a step or a decision is at |
+| `place` | a file, a `file:line`, a folder or a URL that a step or a rule is at |
 | `step` | one part of the work, at a place |
 | `trail` | one task you give: a step with no `under`, and the steps under it |
 | `ask` | a step right under a trail: one thing you asked for |
 | `session` | one run of an agent |
 | `prompt` | what you wrote to the agent while a trail was open |
-| `decision` | one sentence that holds in its scope until another replaces it |
-| `live` | a decision no other decision replaces |
-| `rule` | a live decision whose scope is a trail |
+| `rule` | one sentence that holds in its scope until another replaces it |
+| `live` | a rule no other rule replaces |
 | `revised` | done work that a later step replaces |

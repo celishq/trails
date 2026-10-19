@@ -4,12 +4,12 @@ use crate::failure::Failure;
 
 /// The page: the reference for a person.
 pub const PAGE: &str = r#"celis remembers how your agents do your tasks. Each task you give becomes a
-trail: the steps your agents take and the decisions they make along the way.
+trail: the steps your agents take and the rules they learn along the way.
 Your agents use celis through the celis plugin.
 
 Record work (your agents run these)
   step     Add, start, finish, drop, or edit a step
-  decide   Record a decision
+  decide   Record a rule
 
 Read
   tree     Show a trail and its steps
@@ -127,7 +127,7 @@ pub const GROUPS: &[Group] = &[
         "Add steps to a trail, then start, finish, drop, or edit them.",
         &[
             ("add", "Add a step to a trail, or start a new trail"),
-            ("start", "Start a step and show the decisions at its places"),
+            ("start", "Start a step and show the rules at its places"),
             ("done", "Finish a step with proof that it works"),
             (
                 "drop",
@@ -222,7 +222,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "stats",
         usage: &["celis stats [<id>] [--demo]"],
-        summary: "Show each step that later work reused and how often, then each decision that steps followed, then the total. With an id, show what that step reused and what reused it. On a terminal, show them as cards that update as work lands. Changes nothing.",
+        summary: "Show each step that later work reused and how often, then each rule that steps followed, then the total. With an id, show what that step reused and what reused it. On a terminal, show them as cards that update as work lands. Changes nothing.",
         args: &[
             ("<id>", "A step id, or its first 4 or more characters"),
             ("--demo", "Show sample trails of four weeks"),
@@ -255,7 +255,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "link",
         usage: &["celis link [<folder>]"],
-        summary: "Keep this project's trails in a folder, and keep the folder in sync with the store. Use .celis/trails/ in the repo to commit them, or any folder, like a synced drive. Decisions with the me scope stay private.",
+        summary: "Keep this project's trails in a folder, and keep the folder in sync with the store. Use .celis/trails/ in the repo to commit them, or any folder, like a synced drive. Rules with the me scope stay private.",
         args: &[("<folder>", "The folder (default: .celis/trails at the repo root)")],
         examples: &["celis link", "celis link ~/Drive/celis/shop"],
     },
@@ -269,10 +269,10 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "decide",
         usage: &["celis decide [--scope <scope>] [--replaces <id>] -- <text>"],
-        summary: "Record a decision that later work must follow, in its scope.",
+        summary: "Record a rule that later work must follow, in its scope.",
         args: &[
             ("--scope <scope>", "at:<place>, trail:<id>, project, or me (default: project)"),
-            ("--replaces <id>", "The decision this one replaces"),
+            ("--replaces <id>", "The rule this one replaces"),
             ("<text>", "When it applies, what to do, and why"),
         ],
         examples: &[
@@ -282,10 +282,11 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "tree",
-        usage: &["celis tree [<id>] [--full] [--all] [--demo]"],
+        usage: &["celis tree [<id>] [--graph] [--full] [--all] [--demo]"],
         summary: "Show a trail with its state, rules, and steps. With no id, show the active trails and today's trails of every project.",
         args: &[
             ("<id>", "A step id, or its first 4 or more characters"),
+            ("--graph", "Show one trail as a graph, live, with keys to play it back"),
             ("--full", "Also show each step's proof, grade, and reason"),
             ("--all", "Show every trail of every project, by day"),
             ("--demo", "Show sample trails in every state"),
@@ -336,22 +337,22 @@ pub const VERBS: &[Verb] = &[
         args: &[
             ("--under <id>", "The open step this step is part of"),
             ("--replaces <id>", "A step this one takes over, or a finished step it fixes"),
-            ("--uses <id>", "A decision this step follows, or a past step it reuses"),
+            ("--uses <id>", "A rule this step follows, or a past step it reuses"),
             ("--at <place>", "A file:line, a URL, or any text"),
             ("--check <command>", "A command that proves the work"),
             ("--new", "Start a new trail, not a step of the session's trail"),
             ("--session <id>", "The session, when the hook names it"),
-            ("<text>", "A short title, then details anyone can follow"),
+            ("<text>", "What the person wants done, then its expect: line"),
         ],
         examples: &[
             "celis step add --under 3fa2c1d0 --check \"python3 -m unittest\" \\",
-            "  -- \"A senior pays 80% of the price.\"",
+            "  -- \"Charge a senior 80% of the price\"",
         ],
     },
     Verb {
         command: "step start",
         usage: &["celis step start <id>"],
-        summary: "Start a step and show the rules it must keep: the decisions at its places, its trail's rules, and the rules its ask uses. The step stays in progress until it's done.",
+        summary: "Start a step and show the rules it must keep: those at its places, its trail's, and the ones its ask uses. The step stays in progress until it's done.",
         args: &[("<id>", "A step id, or its first 4 or more characters")],
         examples: &["celis step start 4c1d22e0"],
     },
@@ -361,13 +362,14 @@ pub const VERBS: &[Verb] = &[
         summary: "Finish a step with its proof and what changed. Finish the steps under it first.",
         args: &[
             ("<id>", "A step id, or its first 4 or more characters"),
-            ("--changed", "How the work differs from the step's title"),
-            ("--as-planned", "The work matches the title. Use this or --changed"),
-            ("--pitfall", "What cost time, saved as a decision at the step's place"),
+            ("--changed", "How the result differs from expect"),
+            ("--as-planned", "The result matches expect. Use this or --changed"),
+            ("--pitfall", "A rule from what went wrong, saved at the step's place"),
             ("<proof>", "The check that failed before and passes now"),
         ],
         examples: &[
-            "celis step done 4c1d22e0 --as-planned --pitfall \"Run make_fixtures --yes.\" \\",
+            "celis step done 4c1d22e0 --as-planned --pitfall \\",
+            "  \"When data is missing: run make_fixtures, because git has none.\" \\",
             "  -- \"python3 -m unittest: test_senior failed before, passes now.\"",
         ],
     },
@@ -392,7 +394,7 @@ pub const VERBS: &[Verb] = &[
             ("<text>", "A new title, or a title and details"),
         ],
         examples: &[
-            "celis step edit 3fa2c1d0 -- \"Orange badges and buttons\"",
+            "celis step edit 3fa2c1d0 -- \"Make the badges and buttons orange\"",
             "celis step edit 4c1d22e0 --check \"cargo test -p shop\"",
         ],
     },

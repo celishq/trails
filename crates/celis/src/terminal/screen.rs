@@ -1,11 +1,12 @@
 //! What a watch draws on the terminal, and what it reads from it.
 
+use super::canvas::{clip, line, Styled, DIM};
 use super::wake::{keys, signals, Key, Wake};
-use crate::command::tree::cut;
 use crate::command::Command;
 use crate::failure::Failure;
 use celis_trails::Link;
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
+use ratatui::text::Span;
 use std::io::Write;
 use std::process::Stdio;
 use std::sync::mpsc::{channel, Receiver, Sender};
@@ -33,27 +34,6 @@ impl Command {
         done
     }
 
-    /// With no store, draws `text` and `keys` on `screen` and writes nothing until a store is made;
-    /// whether to go on, false on an interrupt or `q`.
-    pub(crate) fn waited(
-        &self,
-        screen: &mut Screen,
-        out: &mut dyn Write,
-        (text, keys): (&str, &str),
-        events: &Receiver<Wake>,
-    ) -> Result<bool, Failure> {
-        if self.held()? {
-            return Ok(true);
-        }
-        screen.draw(out, text, None, keys)?;
-        while !self.held()? {
-            if let Ok(Wake::Quit) = events.recv_timeout(Duration::from_millis(250)) {
-                return Ok(false);
-            }
-        }
-        Ok(true)
-    }
-
     /// Sends to `send` a `Record` with the files each time records land in the store or a linked folder,
     /// or a `Rescan` when the system lost track of them; the watcher that does it, kept while it should.
     pub(crate) fn listen(&self, send: Sender<Wake>) -> Result<RecommendedWatcher, Failure> {
@@ -79,11 +59,12 @@ impl Command {
     }
 }
 
-/// What a watch shows of its tree: the first line in view, whether the view moves to the selected
-/// line on the next draw, the lines a page holds, the rows on the screen, and what the last key did
-/// when it has something to say.
+/// What a watch shows of its tree: whether in colour, the first line in view, whether the view moves to
+/// the selected line on the next draw, the lines a page holds, the rows on the screen, and what the last
+/// key did when it has something to say.
 #[derive(Default)]
 pub(crate) struct Screen {
+    pub colour: bool,
     pub top: usize,
     pub follow: bool,
     pub page: usize,
@@ -92,14 +73,14 @@ pub(crate) struct Screen {
 }
 
 impl Screen {
-    /// Draws `tree` over the screen from the top left, each row only when it changed: each line cut short
-    /// of the last column and cleared to its end, the rows above the last scrolled to show its `picked`
-    /// line when the selection moved, `keys` or what the last key did on the last row, dim, and the rest
-    /// cleared.
+    /// Draws `lines` over the screen from the top left, each row only when it changed: each line cut
+    /// short of the last column and cleared to its end, the rows above the last scrolled to show its
+    /// `picked` line when the selection moved, `keys` or what the last key did on the last row, dim, and
+    /// the rest cleared.
     pub fn draw(
         &mut self,
         out: &mut dyn Write,
-        tree: &str,
+        lines: &[Styled],
         picked: Option<usize>,
         keys: &str,
     ) -> Result<(), Failure> {
@@ -107,30 +88,27 @@ impl Screen {
         let width = size.map(|s| usize::from(s.ws_col)).filter(|&w| w > 1);
         let width = width.map(|w| w - 1);
         let rows = size.map(|s| usize::from(s.ws_row)).filter(|&r| r > 0);
-        let lines: Vec<&str> = tree.lines().collect();
-        let lines = match rows
+        let mut screen = match rows
             .map(|r| r - 1)
             .filter(|&body| body >= 3 && lines.len() > body)
         {
             Some(body) => self.window(lines, body, picked),
             None => {
                 self.top = 0;
-                lines.into_iter().map(str::to_string).collect()
+                lines.to_vec()
             }
         };
-        let lines: Vec<String> = lines
-            .into_iter()
+        let said = self.said.as_deref().unwrap_or(keys);
+        let last = rows.map(|r| r - 1).filter(|&k| k >= screen.len());
+        screen.resize(last.unwrap_or(screen.len()), Styled::default());
+        screen.push(Styled::from(Span::styled(said.to_string(), DIM)));
+        let screen: Vec<String> = screen
+            .iter()
             .map(|l| match width {
-                Some(w) => cut(&l, w),
-                None => l,
+                Some(w) => line(&clip(l, w), self.colour),
+                None => line(l, self.colour),
             })
             .collect();
-        let said = self.said.as_deref().unwrap_or(keys);
-        let said = width.map_or(said.to_string(), |w| cut(said, w));
-        let mut screen = lines;
-        let last = rows.map(|r| r - 1).filter(|&k| k >= screen.len());
-        screen.resize(last.unwrap_or(screen.len()), String::new());
-        screen.push(format!("\x1b[2m{said}\x1b[0m"));
         if screen == self.shown {
             return Ok(());
         }
@@ -154,7 +132,7 @@ impl Screen {
     /// The `body` rows of `lines` in view from `top`: a first row for the lines above it and a last
     /// row for the lines below it, when there are any; the `picked` line in view when the selection
     /// moved.
-    fn window(&mut self, lines: Vec<&str>, body: usize, picked: Option<usize>) -> Vec<String> {
+    fn window(&mut self, lines: &[Styled], body: usize, picked: Option<usize>) -> Vec<Styled> {
         let len = lines.len();
         let fit = |top: usize| {
             let up = usize::from(top > 0);
@@ -172,17 +150,14 @@ impl Screen {
         }
         let shown = fit(self.top);
         self.page = shown;
+        let more = |text: String| Styled::from(vec![Span::raw("  "), Span::styled(text, DIM)]);
         let mut view = Vec::new();
         if self.top > 0 {
-            view.push(format!("  \x1b[2m↑ {} more\x1b[0m", self.top));
+            view.push(more(format!("↑ {} more", self.top)));
         }
-        view.extend(
-            lines[self.top..self.top + shown]
-                .iter()
-                .map(|l| l.to_string()),
-        );
+        view.extend_from_slice(&lines[self.top..self.top + shown]);
         if self.top + shown < len {
-            view.push(format!("  \x1b[2m↓ {} more\x1b[0m", len - self.top - shown));
+            view.push(more(format!("↓ {} more", len - self.top - shown)));
         }
         view
     }
@@ -192,7 +167,7 @@ impl Screen {
         let page = self.page.max(1);
         match key {
             Key::PageUp => self.top = self.top.saturating_sub(page),
-            Key::PageDown => self.top += page,
+            Key::PageDown | Key::Space => self.top += page,
             Key::Top => self.top = 0,
             Key::End => self.top = usize::MAX / 2,
             _ => return,
@@ -226,15 +201,6 @@ pub(crate) fn clipboard(text: &str, said: &str) -> String {
         }
     }
     "no pbcopy, wl-copy or xclip to copy with".to_string()
-}
-
-/// The time between two frames of the spinner.
-pub(crate) const TURN: Duration = Duration::from_millis(100);
-
-/// The spinner's frame at this moment.
-pub(crate) fn spin() -> usize {
-    let since = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH);
-    since.map_or(0, |d| (d.as_millis() / TURN.as_millis()) as usize)
 }
 
 /// The time from now until the second `at` since the epoch starts.

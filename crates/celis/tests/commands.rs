@@ -4,7 +4,7 @@ mod support;
 
 use serde_json::Value;
 use std::process::Output;
-use support::{account, decision, done_note, err, labelled, now, out, refusal, step_note, Repo};
+use support::{account, done_note, err, labelled, now, out, refusal, step_note, stored_rule, Repo};
 
 const WORK: &str = "When you change prices: keep them in cents, because floats lost a cent.";
 
@@ -33,9 +33,9 @@ fn project(id: &str) -> (&str, &str) {
     (id, "repo")
 }
 
-/// A decision prints as `<id, first 8> <scope> <text>`.
+/// A rule prints as `<id, first 8> <scope> <text>`.
 #[test]
-fn a_decision_prints_its_id_scope_and_text() {
+fn a_rule_prints_its_id_scope_and_text() {
     let repo = Repo::new();
     let o = repo.run(
         &repo.path(),
@@ -50,13 +50,13 @@ fn a_decision_prints_its_id_scope_and_text() {
     assert_eq!(lines[1..], [format!("{placed} at:a.py one")]);
 }
 
-/// The json form of a decision is one object with the fields the section lists
+/// The json form of a rule is one object with the fields the section lists
 /// (`spec/02-cli.md`, "Commands").
 #[test]
-fn the_json_form_of_a_decision_has_the_listed_fields() {
+fn the_json_form_of_a_rule_has_the_listed_fields() {
     let repo = Repo::new();
     let id = repo.project_id();
-    let note = decision(
+    let note = stored_rule(
         &repo,
         project(&id),
         &account(),
@@ -68,8 +68,8 @@ fn the_json_form_of_a_decision_has_the_listed_fields() {
     let o = repo.run(&repo.path(), &["step", "start", &step, "--json"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     let line: Value = serde_json::from_str(out(&o).lines().nth(1).unwrap()).unwrap();
-    let decision = line["decision"].as_object().unwrap();
-    let mut keys: Vec<&str> = decision.keys().map(String::as_str).collect();
+    let rule = line["decision"].as_object().unwrap();
+    let mut keys: Vec<&str> = rule.keys().map(String::as_str).collect();
     keys.sort();
     assert_eq!(
         keys,
@@ -82,11 +82,11 @@ fn the_json_form_of_a_decision_has_the_listed_fields() {
             "scope"
         ]
     );
-    assert_eq!(decision["id"], note.id.as_str());
-    assert_eq!(decision["scope"], "at:a.py");
+    assert_eq!(rule["id"], note.id.as_str());
+    assert_eq!(rule["scope"], "at:a.py");
 }
 
-/// `decide` writes a decision on the working folder's project with `--scope` and `--replaces` as its
+/// `decide` writes a rule on the working folder's project with `--scope` and `--replaces` as its
 /// tags, the whole id of a trail, and no `scope` tag for the project (`spec/02-cli.md`,
 /// "Commands").
 #[test]
@@ -96,7 +96,7 @@ fn decide_writes_its_scope_and_replaces_as_tags() {
     let trail = out(&run(&repo, &["step", "add", "--", "t"]))
         .trim()
         .to_string();
-    let old = decision(
+    let old = stored_rule(
         &repo,
         project(&id),
         &account(),
@@ -174,13 +174,13 @@ fn decide_refuses_a_trail_the_project_has_not_open() {
     assert!(o.status.success(), "{}", err(&o));
 }
 
-/// `decide` refuses a `--replaces` no live decision has, with `no-decision`
+/// `decide` refuses a `--replaces` no live rule has, with `no-decision`
 /// (`spec/02-cli.md`, "Commands").
 #[test]
-fn decide_refuses_a_replaces_no_live_decision_has() {
+fn decide_refuses_a_replaces_no_live_rule_has() {
     let repo = Repo::new();
     let id = repo.project_id();
-    let old = decision(
+    let old = stored_rule(
         &repo,
         project(&id),
         &account(),
@@ -188,7 +188,7 @@ fn decide_refuses_a_replaces_no_live_decision_has() {
         "old",
         now() - 3 * 60,
     );
-    decision(
+    stored_rule(
         &repo,
         project(&id),
         &account(),

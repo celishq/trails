@@ -4,15 +4,15 @@ use super::clock::took;
 use crate::progress::Grade;
 use celis_nostr::Note;
 use celis_trails::records::id::short;
-use celis_trails::{Decision, Step};
+use celis_trails::{Rule, Step};
 
-/// `<id, first 8> <scope> <text>` of the decision that `note` holds.
-pub(crate) fn decision(note: &Note, decision: &Decision) -> String {
+/// `<id, first 8> <scope> <text>` of the rule that `note` holds.
+pub(crate) fn rule(note: &Note, rule: &Rule) -> String {
     format!(
         "{} {} {}",
         short(&note.id),
-        decision.scope.short(),
-        decision.content
+        rule.scope.short(),
+        rule.content
     )
 }
 

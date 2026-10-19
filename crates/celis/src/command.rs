@@ -2,13 +2,14 @@
 
 mod args;
 mod auth;
-mod decision;
+mod graph;
 mod grep;
 mod issue;
 mod link;
 mod prompt;
 pub(crate) mod report;
 mod review;
+mod rule;
 mod stats;
 mod step;
 pub(crate) mod tree;

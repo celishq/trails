@@ -1,6 +1,6 @@
-//! Where a decision holds.
+//! Where a rule holds.
 
-/// Where a decision holds, narrowest first: at one place of its project, while one trail of it is
+/// Where a rule holds, narrowest first: at one place of its project, while one trail of it is
 /// active, in its project, or in every project.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Scope {

@@ -1,4 +1,4 @@
-//! A place: a file, a `file:line`, a folder or a URL that a step or a decision is at.
+//! A place: a file, a `file:line`, a folder or a URL that a step or a rule is at.
 
 use std::path::{Component, Path, PathBuf};
 

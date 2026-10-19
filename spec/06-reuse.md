@@ -12,7 +12,7 @@ A step names the past work it builds on, and the earlier result it fixes.
 ## Uses
 
 ```
-["uses", "<id of a live decision, or of a step of another trail>"]     a step's tag, zero or more
+["uses", "<id of a live rule, or of a step of another trail>"]     a step's tag, zero or more
 ```
 
 **Writers**
@@ -24,7 +24,7 @@ A step names the past work it builds on, and the earlier result it fixes.
 
 **Readers**
 
-- A `uses` that names a decision is a use of it. One that names a step is a follow of that step.
+- A `uses` that names a rule is a use of it. One that names a step is a follow of that step.
 - A reader MUST ignore a `uses` that names no record it holds.
 
 ## Revisions

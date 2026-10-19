@@ -1,15 +1,19 @@
 //! `celis report`: the trails that ids name, as Markdown for a pull request.
 
-use super::tree::{look, visible};
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::progress::{Flags, Tally};
-use crate::terminal::card::{paint, Card, RULE};
+use crate::terminal::canvas::visible;
+use crate::terminal::canvas::{join, line as styled, paint, Styled, BOLD, DIM, MAGENTA, YELLOW};
+use crate::terminal::card::{Card, RULE};
 use crate::terminal::ink::Ink;
+use crate::terminal::look::look;
 use crate::text::clock::took;
+use crate::text::line::plural;
 use crate::text::line::time;
 use celis_trails::records::id::short;
-use celis_trails::{Decisions, Mark, State, Step, Steps, Trail, Trails};
+use celis_trails::{Mark, Rules, State, Step, Steps, Trail, Trails};
+use ratatui::text::Span;
 use serde_json::json;
 use std::io::{IsTerminal, Read, Write};
 
@@ -31,7 +35,7 @@ impl Command {
             return Err(Failure::no_step(&ids[0]));
         }
         let trails = self.trails()?;
-        let text = markdown(&trails.steps(), &trails.decisions(), ids)?;
+        let text = markdown(&trails.steps(), &trails.rules(), ids)?;
         if !std::io::stdout().is_terminal() || args.json {
             return super::show(out, args.json, "report", json!(text), text.trim_end());
         }
@@ -40,12 +44,13 @@ impl Command {
             .map_or(WIDTH, |c| c.saturating_sub(1).min(WIDTH));
         let mut drawn = vec![];
         for trail in chosen(&trails.steps(), ids)? {
-            let card = card(&trails, trail, width, self.colour());
+            let card = card(&trails, trail, width);
             if !drawn.is_empty() {
                 drawn.push(String::new());
             }
             let height = card.rows.len() + 2;
-            drawn.extend(card.lines(width, height, self.colour()));
+            let lines = card.lines(width, height);
+            drawn.extend(lines.iter().map(|l| styled(l, self.colour())));
         }
         super::put(out, &drawn.join("\n"))?;
         leave(out, &text, self.colour())
@@ -72,19 +77,19 @@ fn chosen<'a>(steps: &'a Steps<'a>, ids: &[String]) -> Result<Vec<Step<'a>>, Fai
 
 /// The card of `trail`: its id, project and title, its time and counts, its steps as a strip of their
 /// states, a line a step under it, and its rules and lessons, `width` wide; its time plain when narrow.
-fn card(trails: &Trails, trail: Step, width: usize, colour: bool) -> Card {
+fn card(trails: &Trails, trail: Step, width: usize) -> Card {
     let step = trail.record();
     let tree = &trail.tree()[1..];
     let tally = Tally::of(tree);
-    let rules = trails.decisions().rules(trail).len();
+    let rules = trails.rules().of(trail).len();
     let ran = took(trail.newest().saturating_sub(trail.note().created_at));
     let state = trail.state();
-    let mark = paint(colour, look(state).text, look(state).mark);
-    let labels = format!(
-        "{}{mark} {}",
-        paint(colour, "2", "STEPS   RULES   REVISED   DROPPED   "),
-        state.text().to_uppercase()
-    );
+    let mark = paint(look(state).text, look(state).mark);
+    let labels = Styled::from(vec![
+        paint(DIM, "STEPS   RULES   REVISED   DROPPED   "),
+        mark,
+        format!(" {}", state.text().to_uppercase()).into(),
+    ]);
     let values = format!(
         "{:<8}{:<8}{:<10}{}",
         tree.len(),
@@ -92,21 +97,22 @@ fn card(trails: &Trails, trail: Step, width: usize, colour: bool) -> Card {
         tally.revised,
         tally.dropped
     );
-    let mut rows = vec![paint(colour, "1", step.title()), RULE.to_string()];
+    let mut rows = vec![Styled::from(paint(BOLD, step.title())), RULE.into()];
     match width < NARROW {
-        true => rows.extend([format!("took {}", paint(colour, "1", &ran)), labels, values]),
+        true => rows.extend([
+            Styled::from(vec!["took ".into(), paint(BOLD, &ran)]),
+            labels,
+            values.into(),
+        ]),
         false => {
-            let ink = Ink {
-                plain: false,
-                colour,
-            };
-            rows.extend(ink.beside(&ran, &[labels, values], 3));
+            let ink = Ink { plain: false };
+            rows.extend(ink.beside(&ran, &[labels, values.into()], 3));
         }
     }
     if !tree.is_empty() {
-        let cells: String = tree
+        let mut cells: Vec<Span> = tree
             .iter()
-            .map(|s| paint(colour, look(s.state()).text, "▮"))
+            .map(|s| paint(look(s.state()).text, "▮"))
             .collect();
         let counts: Vec<String> = [
             (tally.done, "done"),
@@ -117,55 +123,49 @@ fn card(trails: &Trails, trail: Step, width: usize, colour: bool) -> Card {
         .filter(|(n, _)| *n > 0)
         .map(|(n, s)| format!("{n} {s}"))
         .collect();
-        rows.extend([
-            String::new(),
-            format!("{cells}   {}", paint(colour, "2", &counts.join(" · "))),
-        ]);
+        cells.extend(["   ".into(), paint(DIM, &counts.join(" · "))]);
+        rows.extend([Styled::default(), Styled::from(cells)]);
     }
     let parts = Trail::new(trail).parts();
     if !parts.is_empty() {
-        rows.push(RULE.to_string());
+        rows.push(RULE.into());
         let inside = width - 4;
         for part in parts {
             let look = look(part.state());
             let time = time(part).unwrap_or_else(|| part.state().text().to_string());
-            let title = super::tree::cut(part.title(), inside.saturating_sub(time.len() + 4));
+            let title =
+                crate::terminal::canvas::cut(part.title(), inside.saturating_sub(time.len() + 4));
             let pad = " ".repeat(inside.saturating_sub(visible(&title) + time.len() + 3));
-            let mark = paint(colour, look.text, look.mark);
-            rows.push(format!("{mark} {title}{pad} {}", paint(colour, "2", &time)));
+            let mark = paint(look.text, look.mark);
+            rows.push(Styled::from(vec![
+                mark,
+                format!(" {title}{pad} ").into(),
+                paint(DIM, &time),
+            ]));
         }
     }
     let lessons = tree.iter().filter(|s| Flags::of(**s).changed).count();
-    let mut notes = vec![];
+    let mut notes: Vec<Styled> = vec![];
     if rules > 0 {
-        notes.push(format!(
-            "{} {}",
-            paint(colour, "35", "§"),
-            count(rules, "rule")
-        ));
+        let rule = format!(" {}", plural(rules, "rule"));
+        notes.push(Styled::from(vec![paint(MAGENTA, "§"), rule.into()]));
     }
     if lessons > 0 {
-        notes.push(format!(
-            "{} {}",
-            paint(colour, "33", "~"),
-            count(lessons, "lesson")
-        ));
+        let lesson = format!(" {}", plural(lessons, "lesson"));
+        notes.push(Styled::from(vec![paint(YELLOW, "~"), lesson.into()]));
     }
     if !notes.is_empty() {
-        rows.extend([String::new(), notes.join("   ")]);
+        let gap = || Styled::from("   ");
+        let notes = notes.into_iter().enumerate().flat_map(|(n, note)| match n {
+            0 => vec![note],
+            _ => vec![gap(), note],
+        });
+        rows.extend([Styled::default(), join(notes)]);
     }
     Card {
         title: format!("REPORT · {} · {}", short(trail.id()), step.anchor.name),
         rows,
         picked: false,
-    }
-}
-
-/// `n` of `what`, as `1 rule` or `3 rules`.
-fn count(n: usize, what: &str) -> String {
-    match n {
-        1 => format!("1 {what}"),
-        n => format!("{n} {what}s"),
     }
 }
 
@@ -181,10 +181,8 @@ fn leave(out: &mut dyn Write, text: &str, colour: bool) -> Result<(), Failure> {
     if unsafe { libc::tcgetattr(libc::STDIN_FILENO, &mut before) } != 0 {
         return Ok(());
     }
-    write(
-        out,
-        &paint(colour, "2", "m copy markdown · any key to leave"),
-    )?;
+    let keys = paint(DIM, "m copy markdown · any key to leave");
+    write(out, &styled(&keys.into(), colour))?;
     let mut raw = before;
     raw.c_lflag &= !(libc::ICANON | libc::ECHO | libc::ISIG);
     raw.c_cc[libc::VMIN] = 1;
@@ -196,24 +194,23 @@ fn leave(out: &mut dyn Write, text: &str, colour: bool) -> Result<(), Failure> {
     write(out, "\r\x1b[2K")?;
     if read.is_ok_and(|n| n == 1) && key[0] == b'm' {
         let said = crate::terminal::screen::clipboard(text, "copied markdown");
-        write(out, &format!("{}\n", paint(colour, "2", &said)))?;
+        write(
+            out,
+            &format!("{}\n", styled(&paint(DIM, &said).into(), colour)),
+        )?;
     }
     Ok(())
 }
 
 /// The trail of the step each of `ids` names in `steps`, once, in their order, as Markdown.
-pub(crate) fn markdown(
-    steps: &Steps,
-    decisions: &Decisions,
-    ids: &[String],
-) -> Result<String, Failure> {
+pub(crate) fn markdown(steps: &Steps, rules: &Rules, ids: &[String]) -> Result<String, Failure> {
     let mut parts = Vec::new();
     for trail in chosen(steps, ids)? {
         let step = trail.record();
         let tree = &trail.tree()[1..];
         let tally = Tally::of(tree);
         let ran = took(trail.newest().saturating_sub(trail.note().created_at));
-        let rules = decisions.rules(trail);
+        let kept = rules.of(trail);
         let mut lines = vec![
             format!("## {}", step.title()),
             String::new(),
@@ -225,7 +222,7 @@ pub(crate) fn markdown(
                 look(trail.state()).mark,
                 trail.state().text(),
                 tree.len(),
-                rules.len(),
+                kept.len(),
                 tally.revised,
                 tally.dropped,
                 cell(&step.anchor.name)
@@ -241,12 +238,12 @@ pub(crate) fn markdown(
             lines.push(format!("done: {}", done.content));
         }
         lines.extend(table(Trail::new(trail).parts()));
-        if !rules.is_empty() {
-            let count = match rules.len() {
+        if !kept.is_empty() {
+            let count = match kept.len() {
                 1 => "1 rule".to_string(),
                 n => format!("{n} rules"),
             };
-            let items = rules.iter().map(|(_, d)| format!("- {}", d.content));
+            let items = kept.iter().map(|(_, d)| format!("- {}", d.content));
             lines.extend(details(&count, items.collect()));
         }
         parts.push(lines.join("\n"));
@@ -256,13 +253,13 @@ pub(crate) fn markdown(
 
 /// The trail, step or rule `id` as Markdown: a trail as `markdown` gives it, a step as the table of it and
 /// the steps under it, a rule as `- <text>`.
-pub(crate) fn part(steps: &Steps, decisions: &Decisions, id: &str) -> Result<String, Failure> {
-    if let Some((_, decision)) = decisions.get(id) {
-        return Ok(format!("- {}\n", decision.content));
+pub(crate) fn part(steps: &Steps, rules: &Rules, id: &str) -> Result<String, Failure> {
+    if let Some((_, rule)) = rules.get(id) {
+        return Ok(format!("- {}\n", rule.content));
     }
     let step = steps.find(id)?;
     if step.is_trail() {
-        return markdown(steps, decisions, &[id.to_string()]);
+        return markdown(steps, rules, &[id.to_string()]);
     }
     let lines = table(vec![step]);
     Ok(lines[1..].join("\n") + "\n")

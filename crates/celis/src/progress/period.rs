@@ -41,11 +41,11 @@ impl<'a> Period<'a> {
             .collect()
     }
 
-    /// How many of the steps added in it use a decision.
+    /// How many of the steps added in it use a rule.
     pub fn ruled(&self) -> usize {
-        let decision = |u: &Used| matches!(u, Used::Decision(_));
+        let rule = |u: &Used| matches!(u, Used::Rule(_));
         let added = self.added().into_iter();
-        added.filter(|s| s.uses().iter().any(decision)).count()
+        added.filter(|s| s.uses().iter().any(rule)).count()
     }
 
     /// The steps done or dropped in it, and those expired with a trail whose newest record is in it,

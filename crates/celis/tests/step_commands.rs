@@ -260,10 +260,10 @@ fn add_writes_its_places_from_the_projects_top_folder() {
     assert_eq!(at, ["src/a.rs:4", "b.rs"]);
 }
 
-/// `done --pitfall` writes the pitfall as a decision at the step's place, which `read --at` gives in a
+/// `done --pitfall` writes the pitfall as a rule at the step's place, which `read --at` gives in a
 /// later trail; with no place, as a rule of the step's trail (`spec/02-cli.md`, "Step").
 #[test]
-fn done_writes_a_pitfall_as_a_decision_at_the_steps_place() {
+fn done_writes_a_pitfall_as_a_rule_at_the_steps_place() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the trail"]);
     let placed = add(
