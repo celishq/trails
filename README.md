@@ -27,7 +27,7 @@
 </p>
 
 <p align="center">
-  <img width="800" height="891" alt="celis-tree" src="https://github.com/user-attachments/assets/ae938e4a-2388-4891-8f1a-d38a6d46eca8" />
+<img width="164" height="184" alt="celis-trails-demo" src="https://github.com/user-attachments/assets/46ec0ded-39ca-4115-83a2-9ec46fbd1006" />
 </p>
 
 ## Why
