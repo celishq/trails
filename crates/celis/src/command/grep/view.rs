@@ -112,11 +112,7 @@ fn level<'a>(root: Step<'a>, parent: Step<'a>, rows: &mut Vec<Row>) {
 /// The row of the step `step` of the trail `root`, as `kind`.
 fn step(root: Step, step: Step, kind: Kind) -> Row {
     let record = step.record();
-    let state = match step.dropped_after_done() {
-        Some(_) => "done-dropped",
-        None => step.state().text(),
-    };
-    let mut head = vec![short(step.id()), state.to_string()];
+    let mut head = vec![short(step.id()), step.state_word().to_string()];
     let by: Vec<String> = step.revised().iter().map(|s| short(s.id())).collect();
     if !by.is_empty() {
         head.push(format!("revised-by {}", by.join(",")));

@@ -225,11 +225,7 @@ impl Trails {
             }
             (Some(rule), None) => return Err(Refusal::Closed(rule.id.clone())),
             (None, Some(step)) if step.closed().is_none() => self.drop_open(step, reason)?,
-            (None, Some(step))
-                if step.is_trail()
-                    && step.done().is_some()
-                    && step.dropped_after_done().is_none() =>
-            {
+            (None, Some(step)) if step.is_trail() && step.drop_mark().is_none() => {
                 vec![self.sign(|account, now| mark.record(account, step.id(), now))?]
             }
             (None, Some(step)) => return Err(Refusal::Closed(step.id().to_string())),

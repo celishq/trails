@@ -187,9 +187,18 @@ impl<'a> Step<'a> {
         }
     }
 
-    /// The drop that names it after its done, as a trail (CIP-03, "Dropping").
-    pub fn dropped_after_done(self) -> Option<&'a Note> {
-        self.entry.after_done
+    /// The first drop that counts on it: the one that closed it, or, as a trail, one after its done
+    /// (CIP-03, "Dropping").
+    pub fn drop_mark(self) -> Option<&'a Note> {
+        self.entry.drop
+    }
+
+    /// The word for its state that `grep` gives: `done-dropped` for a done trail a drop names.
+    pub fn state_word(self) -> &'static str {
+        match (self.state(), self.drop_mark()) {
+            (State::Done, Some(_)) => "done-dropped",
+            (state, _) => state.text(),
+        }
     }
 
     /// The steps that replace it after it was done, oldest first.
