@@ -96,6 +96,33 @@ fn tree_prints_the_trail_its_rules_and_the_steps_under_it() {
     );
 }
 
+/// `tree <id> --full` prints the expect line of a step in the label column, with its proof and grade.
+#[test]
+fn tree_prints_the_expect_line_in_the_label_column() {
+    let repo = Repo::new();
+    let by = support::account();
+    let at = support::now() - 600;
+    let trail = support::step_note(&repo, &by, None, "build the CRM", at);
+    let logo = support::step_note(
+        &repo,
+        &by,
+        Some(&trail),
+        "logo\nexpect: the logo shows",
+        at + 5,
+    );
+    support::done_note(&repo, &by, &logo, at + 65);
+    let lines = printed(&repo, &[short(&trail.id), "--full"]);
+    let at = lines.iter().position(|l| l.contains("logo")).unwrap();
+    assert_eq!(
+        lines[at + 1..at + 4],
+        [
+            "    expect   the logo shows",
+            "    done     proof",
+            "    took     1m 0s"
+        ]
+    );
+}
+
 /// `tree <id>` prints an expired step with the closed steps, after the rules.
 #[test]
 fn tree_prints_an_expired_step_with_the_closed_ones() {
