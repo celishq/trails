@@ -1,10 +1,10 @@
 //! The work of a store in one span of time.
 
-use super::{Flags, Tally};
+use super::Flags;
 use celis_trails::{Step, Steps, Used};
 
-/// The work of a store from `from` up to `to`: the steps done, added and closed in that time, and the
-/// follows they made. A trail counts as none of them.
+/// The work of a store from `from` up to `to`: the steps done, added and closed in that time. A trail
+/// counts as none of them.
 pub struct Period<'a> {
     steps: &'a Steps<'a>,
     from: u64,
@@ -14,6 +14,11 @@ pub struct Period<'a> {
 impl<'a> Period<'a> {
     pub fn new(steps: &'a Steps<'a>, from: u64, to: u64) -> Period<'a> {
         Period { steps, from, to }
+    }
+
+    /// The second it starts.
+    pub fn from(&self) -> u64 {
+        self.from
     }
 
     /// The steps done in it, oldest first.
@@ -31,7 +36,14 @@ impl<'a> Period<'a> {
 
     /// How many of its done steps a later step revised.
     pub fn reworked(&self) -> usize {
-        Tally::of(&self.done()).revised
+        let done = self.done().into_iter();
+        done.filter(|s| Flags::of(*s).revised).count()
+    }
+
+    /// The steps done in it with no step under them, oldest first.
+    pub fn leaves(&self) -> Vec<Step<'a>> {
+        let done = self.done().into_iter();
+        done.filter(|s| s.children().is_empty()).collect()
     }
 
     /// The steps added in it, oldest first.
@@ -48,16 +60,6 @@ impl<'a> Period<'a> {
         done.filter(|s| s.uses().iter().any(rule)).count()
     }
 
-    /// The follows the steps added in it made.
-    pub fn follows(&self) -> usize {
-        self.used(|u| matches!(u, Used::Follow(_)))
-    }
-
-    /// The rule uses of the steps added in it.
-    pub fn uses(&self) -> usize {
-        self.used(|u| matches!(u, Used::Rule(_)))
-    }
-
     /// The steps done or dropped in it, and those expired with a trail whose newest record is in it,
     /// oldest first.
     pub fn closed(&self) -> Vec<Step<'a>> {
@@ -69,14 +71,6 @@ impl<'a> Period<'a> {
     /// Every step of the store that is not a trail, oldest first.
     fn parts(&self) -> impl Iterator<Item = Step<'a>> {
         self.steps.all().into_iter().filter(|s| !s.is_trail())
-    }
-
-    /// The uses of the steps added in it that `kind` holds.
-    fn used(&self, kind: fn(&Used) -> bool) -> usize {
-        let added = self.added().into_iter();
-        added
-            .map(|s| s.uses().iter().filter(|u| kind(u)).count())
-            .sum()
     }
 
     /// Whether the second `at` is in it.

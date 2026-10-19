@@ -1,4 +1,5 @@
 use super::*;
+use crate::progress::window::DAY;
 use celis_trails::{Anchor, Draft, Rule, Scope, Store, Trails};
 use tempfile::TempDir;
 
@@ -41,15 +42,15 @@ fn worked(later: u64) -> (TempDir, Trails) {
 }
 
 /// The cards of `trails`, 92 and 43 characters wide inside.
-fn cards(trails: &Trails) -> [Sheet; CARDS] {
-    Model::of(trails, |model| sheets(model, 92, 43, false))
+fn drawn(trails: &Trails) -> [Card; CARDS] {
+    Model::of(trails, |model| cards(model, 92, 43, false))
 }
 
 /// The face of the card of `trails` whose title starts with `title`, its rows joined by new lines.
 fn face(trails: &Trails, title: &str) -> String {
-    let sheets = cards(trails);
-    let sheet = sheets.iter().find(|s| s.title.starts_with(title));
-    let face = sheet.expect(title).face.iter().map(|r| r.to_string());
+    let cards = drawn(trails);
+    let card = cards.iter().find(|s| s.title.starts_with(title));
+    let face = card.expect(title).face.iter().map(|r| r.to_string());
     face.collect::<Vec<_>>().join("\n")
 }
 
@@ -58,11 +59,11 @@ fn face(trails: &Trails, title: &str) -> String {
 #[test]
 fn a_card_with_no_data_before_shows_no_change() {
     let (_home, trails) = worked(3_600);
-    let sheets = cards(&trails);
-    assert_eq!(sheets[0].title, "00 EFFECT · LAST 14 DAYS");
-    let effect: Vec<String> = sheets[0].face.iter().map(|r| r.to_string()).collect();
+    let cards = drawn(&trails);
+    assert_eq!(cards[0].title, "00 EFFECT · LAST 14 DAYS");
+    let effect: Vec<String> = cards[0].face.iter().map(|r| r.to_string()).collect();
     let effect = effect.join("\n");
-    assert_eq!(sheets[0].face.len(), 5, "{effect}");
+    assert_eq!(cards[0].face.len(), 5, "{effect}");
     assert!(!effect.contains("no data before"), "{effect}");
     assert!(!effect.contains("few records"), "{effect}");
     let work = face(&trails, "03 WORK");
