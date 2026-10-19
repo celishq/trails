@@ -37,8 +37,8 @@ impl Command {
     ) -> Result<(), Failure> {
         let content = args.required_text("step add needs its text after --")?;
         let anchor = match args.places.first() {
-            Some(at) => project.of_place(at).anchor(),
-            None => project.anchor(),
+            Some(at) if args.project.is_none() => project.of_place(at).anchor(),
+            _ => project.anchor(),
         };
         let draft = Draft {
             content,
@@ -175,6 +175,11 @@ impl Command {
             Notice::NotStarted(step) => format!(
                 "celis: {} has not started; keep one step ahead: take it first, or drop it.",
                 short(step)
+            ),
+            Notice::Ended { rule, project } => format!(
+                "celis: this ends the override {} of [{project}]; tell the person, and write it again \
+                 there with decide --replaces when it still holds.",
+                short(rule)
             ),
         };
         super::put(err, &line)

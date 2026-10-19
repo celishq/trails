@@ -24,6 +24,8 @@ pub(crate) struct Args {
     pub pitfall: Option<String>,
     pub changed: Option<String>,
     pub session: Option<String>,
+    pub project: Option<String>,
+    pub limit: Option<String>,
 }
 
 impl Args {
@@ -69,6 +71,8 @@ impl Args {
                 "--pitfall" => parsed.pitfall = Some(value(arg, rest.next())?),
                 "--changed" => parsed.changed = Some(value(arg, rest.next())?),
                 "--session" => parsed.session = Some(value(arg, rest.next())?),
+                "--project" => parsed.project = Some(value(arg, rest.next())?),
+                "--limit" => parsed.limit = Some(value(arg, rest.next())?),
                 flag if flag.starts_with("--") => {
                     bad.get_or_insert(Failure::usage(format!("{flag} is not a flag")));
                 }

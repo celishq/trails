@@ -12,3 +12,14 @@ fn a_done_carries_its_proof() {
     let note = done.record(&account, "p", 10).unwrap();
     assert_eq!(Mark::read(&note), Some(("p".to_string(), done)));
 }
+
+/// A name carries the name on its trail, and reads back the same (`spec/07-names.md`, "Names").
+#[test]
+fn a_name_carries_its_name() {
+    let account = Account::new(&[1u8; 32]).unwrap();
+    let name = Mark::Name {
+        name: "review".into(),
+    };
+    let note = name.record(&account, "t", 10).unwrap();
+    assert_eq!(Mark::read(&note), Some(("t".to_string(), name)));
+}

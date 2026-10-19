@@ -1,5 +1,6 @@
 //! CIP-05: a rule, one sentence that holds in its scope until another replaces it.
 
+pub mod rule_entry;
 pub mod rules;
 pub mod scope;
 

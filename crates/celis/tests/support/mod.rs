@@ -507,3 +507,37 @@ pub fn ids(text: &str, kind: &str) -> Vec<String> {
         .filter_map(|(_, line)| Some(line.strip_prefix(&kind)?.split(' ').next()?.to_string()))
         .collect()
 }
+
+/// The ids `step add <args>` prints in the session `session`.
+pub fn added(repo: &Repo, session: &str, args: &[&str]) -> Vec<String> {
+    let mut all = vec!["step", "add"];
+    all.extend(args);
+    let o = repo.run(
+        &repo.path(),
+        &all,
+        &[("CLAUDE_CODE_SESSION_ID", session)],
+        "",
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    out(&o).lines().map(str::to_string).collect()
+}
+
+/// The JSON of the step `id` that `tree <trail> --json` prints.
+pub fn step(repo: &Repo, trail: &str, id: &str) -> serde_json::Value {
+    objects(repo, &["tree", &trail[..8]])
+        .into_iter()
+        .filter_map(|v| v.get("step").or(v.get("trail")).cloned())
+        .find(|s| s["id"] == id)
+        .expect("the step")
+}
+
+/// The links of `step` of `kind`.
+pub fn links(step: &serde_json::Value, kind: &str) -> Vec<String> {
+    step["links"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|l| l["kind"] == kind)
+        .map(|l| l["to"].as_str().unwrap().to_string())
+        .collect()
+}

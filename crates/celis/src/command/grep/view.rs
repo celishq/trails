@@ -24,13 +24,14 @@ impl View {
         let (steps, rules) = (trails.steps(), trails.rules());
         let mut by_trail: HashMap<&str, Vec<Row>> = HashMap::new();
         let mut blocks: Vec<(u64, &str, Vec<Row>)> = Vec::new();
-        for (note, said, by) in rules.every() {
+        for entry in rules.every() {
+            let (note, said, by) = (entry.note, &entry.rule, entry.by);
             match &said.scope {
                 Scope::Trail(id) => {
-                    let row = rule(note, said, *by, Some(short(id)));
+                    let row = rule(note, said, by, Some(short(id)));
                     by_trail.entry(id.as_str()).or_default().push(row);
                 }
-                _ => blocks.push((note.created_at, &note.id, vec![rule(note, said, *by, None)])),
+                _ => blocks.push((note.created_at, &note.id, vec![rule(note, said, by, None)])),
             }
         }
         let mut headers = HashMap::new();
