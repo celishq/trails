@@ -311,8 +311,8 @@ impl Trails {
         self.sign(|account, now| mark.record(account, trail.id(), now))
     }
 
-    /// The whole id of the live rule of `project`, or of the step of a trail other than `trail`, that
-    /// `id` names; a trail gives the step that holds its work (`Trail::work`).
+    /// The whole id of the trail named `id`, else of the live rule of `project` or the step of a trail
+    /// other than `trail` that `id` names; a trail gives the step that holds its work (`Trail::work`).
     fn used(
         &self,
         steps: &Steps,
@@ -320,17 +320,19 @@ impl Trails {
         trail: Option<&str>,
         id: &str,
     ) -> Result<String, Refusal> {
+        let named = Name::parse(id).and_then(|name| steps.named(&name));
         let rule = self.rules().find(project, id).ok();
         let step = steps.find(id).ok();
-        let step = match (rule, step) {
-            (Some(_), Some(_)) => {
+        let step = match (named, rule, step) {
+            (Some((named, _)), ..) => Trail::new(named).work(),
+            (None, Some(_), Some(_)) => {
                 return Err(Refusal::Usage(format!(
                     "{id} starts the id of a rule and of a step; give more of it"
                 )))
             }
-            (Some(rule), None) => return Ok(rule.id.clone()),
-            (None, Some(step)) => Trail::new(step).work(),
-            (None, None) => return Err(Refusal::NoStep(id.to_string())),
+            (None, Some(rule), None) => return Ok(rule.id.clone()),
+            (None, None, Some(step)) => Trail::new(step).work(),
+            (None, None, None) => return Err(Refusal::NoStep(id.to_string())),
         };
         if Some(step.trail().id()) == trail {
             return Err(Refusal::Usage(

@@ -2,7 +2,42 @@
 
 mod support;
 
-use support::{add, cli, err, out, refusal, Repo};
+use serde_json::Value;
+use support::{add, cli, err, finish, objects, out, refusal, Repo};
+
+/// The ids `step add <args>` prints in the session `session`.
+fn ids(repo: &Repo, session: &str, args: &[&str]) -> Vec<String> {
+    let mut all = vec!["step", "add"];
+    all.extend(args);
+    let o = repo.run(
+        &repo.path(),
+        &all,
+        &[("CLAUDE_CODE_SESSION_ID", session)],
+        "",
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    out(&o).lines().map(str::to_string).collect()
+}
+
+/// The ids the step `id` of `trail` uses, as `tree <trail> --json` prints them.
+fn uses(repo: &Repo, trail: &str, id: &str) -> Vec<String> {
+    let steps = objects(repo, &["tree", &trail[..8]]).into_iter();
+    let step: Value = steps
+        .filter_map(|v| v.get("step").or(v.get("trail")).cloned())
+        .find(|s| s["id"] == id)
+        .expect("the step");
+    let links = step["links"].as_array().unwrap().iter();
+    links
+        .filter(|l| l["kind"] == "uses")
+        .map(|l| l["to"].as_str().unwrap().to_string())
+        .collect()
+}
+
+/// The id `name <trail> <name>` prints.
+fn name(repo: &Repo, trail: &str, name: &str) {
+    let o = cli(repo, &["name", &trail[..8], name]);
+    assert!(o.status.success(), "{}", err(&o));
+}
 
 /// `name` writes a name on a trail and prints its id; the same name on the same trail again writes
 /// nothing and prints that id (`spec/02-cli.md`, "Name").
@@ -46,4 +81,53 @@ fn name_refuses_a_step_a_bad_name_and_a_held_name() {
         2,
         "usage",
     );
+}
+
+/// `step add --uses <name>` writes the whole id of the named trail's first ask
+/// (`spec/02-cli.md`, "Step"; `spec/06-reuse.md`, "Uses").
+#[test]
+fn uses_takes_a_name_as_its_trail() {
+    let repo = Repo::new();
+    let skill = ids(&repo, "s1", &["--", "Review a pull request"]);
+    let (ask, trail) = (&skill[0], &skill[1]);
+    finish(&repo, &ask[..8]);
+    name(&repo, trail, "review");
+    let other = add(&repo, &["--new", "--", "Check the shop's pull request"]);
+    let id = add(
+        &repo,
+        &[
+            "--under",
+            &other[..8],
+            "--uses",
+            "review",
+            "--",
+            "Review it",
+        ],
+    );
+    assert_eq!(uses(&repo, &other, &id), [ask.as_str()]);
+}
+
+/// A name wins over a step id that starts with the same text (`spec/02-cli.md`, "Step").
+#[test]
+fn a_name_wins_over_an_id_that_starts_with_it() {
+    let repo = Repo::new();
+    let named = add(&repo, &["--", "Review a pull request"]);
+    let other = add(&repo, &["--new", "--", "Check the shop's pull request"]);
+    let lettered = (0..40)
+        .map(|n| add(&repo, &["--new", "--", &format!("Another task {n}")]))
+        .find(|id| id.starts_with(|c: char| c.is_ascii_lowercase()))
+        .expect("an id that starts with a letter");
+    name(&repo, &named, &lettered[..8]);
+    let id = add(
+        &repo,
+        &[
+            "--under",
+            &other[..8],
+            "--uses",
+            &lettered[..8],
+            "--",
+            "Review it",
+        ],
+    );
+    assert_eq!(uses(&repo, &other, &id), [named]);
 }

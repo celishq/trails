@@ -348,7 +348,7 @@ pub const VERBS: &[Verb] = &[
         args: &[
             ("--under <id>", "The open step this step is part of"),
             ("--replaces <id>", "A step this one takes over, or a finished step it fixes"),
-            ("--uses <id>", "A rule this step follows, or a past step it reuses"),
+            ("--uses <id>", "A rule it follows, a past step it reuses, or a skill"),
             ("--at <place>", "A file:line, a URL, or any text"),
             ("--check <command>", "A command that proves the work"),
             ("--new", "Start a new trail, not a step of the session's trail"),
