@@ -28,9 +28,11 @@ learns what later work must keep.
 - `scope`: optional; where the rule holds ("Scope"). With none, it holds in the project.
 - `replaces`: optional; the rule this one takes the place of.
 
+A drop (CIP-03, "Dropping") MAY name a rule, with why it no longer holds.
+
 **Readers**
 
-- A rule is live until another rule names it in `replaces`.
+- A rule is live until another rule names it in `replaces`, or a drop names it.
 
 ## Scope
 

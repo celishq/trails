@@ -29,7 +29,8 @@ Every change of `spec/` MUST keep these rules:
     commit.
 11. **The spec changes first.** A test of a spec rule cites its section: ``(`spec/03-steps.md`,
     "Closing")``. A test of what the spec leaves out cites nothing.
-12. **A CIP adds, and never changes another.** A new meaning for a name is a new CIP. A final CIP is frozen.
+12. **A CIP adds, and never changes another.** A final CIP is frozen. A draft CIP MAY give a name a new
+    meaning only when older readers still read each record right; else the meaning is a new CIP.
 
 ## The CIPs
 
@@ -90,7 +91,7 @@ Every change of `spec/` MUST keep these rules:
 | `session` | one run of an agent |
 | `prompt` | what you wrote to the agent while a trail was open |
 | `rule` | one sentence that holds in its scope until another replaces it |
-| `live` | a rule no other rule replaces |
+| `live` | a rule no other rule replaces and no drop names |
 | `revised` | done work that a later step replaces |
 | `named trail` | a trail that holds a name |
 | `override` | a rule that replaces a trail's rule of another project, in its own project only |

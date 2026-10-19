@@ -26,8 +26,9 @@ project.
 
 **Readers**
 
-- The oldest name record of a name, then the one with the lower id, MUST hold the name. A reader MUST
-  ignore the others, and a name record whose content is no name.
+- The oldest name record of a name on a trail not dropped after done (CIP-03, "Dropping"), then the one
+  with the lower id, MUST hold the name. A reader MUST ignore the others, and a name record whose content
+  is no name.
 - A trail with a name is **named**.
 
 ## Skill projects
