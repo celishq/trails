@@ -1,0 +1,82 @@
+[
+  {
+    "pr": 31771,
+    "extension": "linkpilot",
+    "base": "599fab8ca61340dc2cce3d2fc2406da230b703f3",
+    "merge": "b3b89df7579d1d9bad7e355f160e1feeda6cfac2",
+    "new": true,
+    "prompt": "Add LinkPilot extension\n\nAdds **LinkPilot**, a new extension with two commands:\n\n- **Create Secret Link** \u2014 type a password, API key, token or note, pick how long it lives, and get a link that opens once and then destroys itself. The secret is encrypted with AES-GCM-256 on the user's machine before any request is made, via [`@uselinkpilot/sdk`](https://www.npmjs.com/package/@uselinkpilot/sdk). The decryption key travels only in the link's `#` fragment, which browsers never transmit, so the service stores ciphertext it cannot read.\n- **Shorten Link** \u2014 opens a form pre-filled with the URL on the clipboard when it holds one, otherwise an empty field to type into, and copies the short link.\n\nRequires a LinkPilot API key (free plan included), stored as a `password` preference. Works on macOS and Windows."
+  },
+  {
+    "pr": 30017,
+    "extension": "bitbucket",
+    "base": "6d26104b8f166eadd2437e0531464e7205e56120",
+    "merge": "edb79d3de5c29aad60ce6bb800dd57617a5f548b",
+    "new": false,
+    "prompt": "Update bitbucket extension\n\n- Adds a Search All Open Pull Requests command that lists open PRs across the configured workspace (not only PRs you authored).\n- Fetches workspace repositories, then loads open PRs per repo with bounded concurrency, and presents them in the same searchable list UI as My Open PRs."
+  },
+  {
+    "pr": 30395,
+    "extension": "migadu",
+    "base": "d7b8ee637b370a9ac2fc76efdaa755893e547a16",
+    "merge": "1296554605adc1bc072116f07945aa4e149962ad",
+    "new": false,
+    "prompt": "Update `Migadu` extension - fetch domains via API\n\n- Migadu now allows you to fetch domains via API so the previous workflow of manually entering Domains is not longer needed."
+  },
+  {
+    "pr": 30336,
+    "extension": "digikey",
+    "base": "469cc4162b4ac30ea8ff1591c0711af7db412451",
+    "merge": "ca1a2e95c2904bdd3411e9ea907381e81e6626ce",
+    "new": true,
+    "prompt": "Add `DigiKey` extension - search for products\n\nThis is a simple extension for [DigiKey](https://www.digikey.com/) - _a globally authorized distributor of electronic components and automation products_.\n\nThis extension allows you to search a product and get its details.\n\nThe extension might be difficult to test as it requires you to fill a form for API permission that requires you to justify your use case (I am using it through a project I for a company)."
+  },
+  {
+    "pr": 31801,
+    "extension": "tapo-smart-devices",
+    "base": "1072418e7a26695a1e9d7f3764ddb026280d7101",
+    "merge": "970f8ec3d0b5e35d8e3f580a96ea45a8d4d257a8",
+    "new": false,
+    "prompt": "[Tapo Smart Devices] Up to 95% faster loading and instant on/off toggling\n\nThe \"Manage Devices\" command took 5\u201310s to refresh on every open and after every toggle, and toggling was blocked the whole time, even though cached devices were already on screen.\n\n### Root causes\n1. **Toggles disabled while loading:** actions were guarded by `if (!isLoading)`, and `useCachedPromise` stays loading during background revalidation.\n2. **Full refresh after every toggle:** `.then(revalidate)` re-ran the whole pipeline below.\n3. **Cloud login on every refresh:** two sequential HTTPS calls to `eu-wap.tplinkcloud.com`, with no timeout. One call took 17s in testing.\n4. **Full network scan on every refresh:** `local-devices` probes every IP of every adapter. On Windows with Hyper-V that's ~4,600 hosts and ~1.3s.\n5. **Per-device login with no timeout, inside `Promise.all`:** one unresponsive device could hang the refresh or reject it entirely.\n\n### Changes\n- **Instant toggling:** removed the `isLoading` guard. Toggles use `mutate` with an optimistic update and roll back on failure. They revalidate afterwards only if a refresh was already in flight, so its older result can't overwrite the new state.\n- **Cached device list:** the cloud device list and last known IPs are stored in `Cache`, keyed by account email. The cloud is only called on first run or when the user runs \"Refresh\".\n- **Scan only when needed:** devices are queried at their last known IP first. If any device hasn't answered within 500ms, the network scan starts in parallel, and a device found at a new IP is queried there immediately instead of waiting for the old IP to time out.\n- **MAC verification:** a device is only marked available if the MAC reported at the IP matches its expected MAC. A toggle also checks the MAC before sending the command if the IP hasn't been confirmed in this session, so a stale cached IP can never switch the wrong device.\n- **Timeouts and error isolation:** local device requests time out after 3s. A failing device is marked unavailable instead of failing the whole list.\n- **Session reuse:** device logins are kept per IP for the command's lifetime, with a fresh login if the session has expired.\n- **Toggle errors:** failures now show a failure toast instead of leaving the \"Turning on...\" toast spinning.\n- **Cleanup:** stopped spreading the Tapo client's functions into cached device objects. `normaliseMacAddress` now also strips `-`, since devices report MACs as `AA-BB-CC-...`.\n\n### Notes for reviewers\n- **Menu bar:** `menu-bar.tsx` is intentionally unchanged. It still calls `getDevices()` with `useCache = false`, so it keeps always fetching from the cloud. It does get the shared timeout, error-handling and MAC-verification improvements from `devices.ts`.\n- **Timeouts don't abort requests:** `withTimeout` stops waiting but doesn't abort the underlying request, because `tp-link-tapo-connect` doesn't accept an `AbortSignal`. The timer is cleared in `finally`.\n- **New devices:** a device added in the Tapo app appears after the user runs \"Refresh\". This is the trade-off for skipping the cloud call on every open.\n\n### Results (Windows, 2 devices)\n| Scenario | Before | After |\n|---|---|---|\n| Open command | 5\u201310s, toggles blocked | ~0.3s, toggles available immediately |\n| Toggle | Instant, then 5\u201310s lockout | Instant, no lockout |\n| Device IP changed | 5\u201310s | ~2s |\n| One device unresponsive | Whole refresh could fail | That device marked unavailable after 3s |"
+  },
+  {
+    "pr": 30016,
+    "extension": "youtrack",
+    "base": "ba7b9bd0cf07585cd226d62b1842e9de336a7847",
+    "merge": "b2d3777220b89b54a93fe2e2046ec61c00256404",
+    "new": false,
+    "prompt": "Update YouTrack extension: add live search and autocomplete\n\nAdds live server-side issue search and YouTrack query autocomplete to the Browse Issues command.\n\n- replaces local filtering of the configured issue list with controlled, server-backed search\n- displays YouTrack search-assist suggestions above matching issues and applies the API-provided completion ranges\n- preserves the configured query as the default when the search field is empty\n- keeps autocomplete usable for incomplete queries such as `State: ` without showing the issue endpoint's expected HTTP 400 as a failure toast\n- continues surfacing configured-query, authentication, authorization, network, and server failures\n\nPreviously, Browse Issues always fetched the query saved in preferences, so users could only filter that fixed result set locally. This implements the global search workflow requested in #3156.\n\nThe incomplete-query toast occurred because applying a field suggestion immediately sent the partial query to the issues endpoint. YouTrack correctly rejected that intermediate grammar while the independent search-assist endpoint still returned value suggestions. Interactive issue-query 400s are now treated as an editable empty-result state; other errors are rethrown.\n\n## Validation\n\n- TypeScript `--noEmit`\n- ESLint\n- Prettier on all changed files\n- prescribed `npm run build` distribution build\n- authenticated manual testing of the final Raycast distribution: field suggestions, the incomplete `state: ` flow without a 400 toast, value suggestions, applied state values, and live matching issues\n- `git diff --check`"
+  },
+  {
+    "pr": 31207,
+    "extension": "linqlo",
+    "base": "3b33c8cd12d19ef35c86ddb8d536096d48318196",
+    "merge": "f836b1a9d056f52ecd47c8970eb02bc97b3e6692",
+    "new": true,
+    "prompt": "Add Linqlo extension\n\nAdd Linqlo, a bookmark manager, with Search Bookmarks, Save Clipboard URL, and Open Collection commands. Users connect a workspace API key issued from Linqlo Settings \u2192 Integrations. A free Linqlo account is supported, subject to normal plan limits.\n\nVerified all three commands against the production API in the Raycast distribution build. Saving the clipboard URL created a bookmark that was independently retrieved through the API. Collection navigation opened the corresponding web collection."
+  },
+  {
+    "pr": 31850,
+    "extension": "aktar",
+    "base": "37e8cb42a89d65ac8fcc9ccbb7ae1eb342838a5e",
+    "merge": "25bc1facbe6e589973250547e57819debe257559",
+    "new": false,
+    "prompt": "Update aktar extension: watched folders\n\nBrings the Aktar extension up to [Aktar 0.11.0](https://getaktar.com/changelog/0.11.0/), which adds Watched Folders: files that land in a folder you pick are uploaded on their own.\n\n- **Watched Folders**: lists the folders Aktar watches with their status (watching, paused, off, folder not found, access needed), how many files are waiting, uploading or failed, the destination and the last upload. Actions: enable or disable a folder, Pause Watching (for 1 hour, until tomorrow, until resumed), Resume Watching, Show in Finder, Copy Path, and open Aktar's Watched Folders settings.\n- **Toggle Watching**: a no-view command that pauses watching until resumed, or resumes it, with a HUD.\n- Older Aktar versions that don't have the new routes get a clear \"Update Aktar to use watched folders\" message instead of an error.\n\nNo new permissions or dependencies; the extension still only talks to Aktar's opt-in local API on `127.0.0.1`."
+  },
+  {
+    "pr": 30215,
+    "extension": "zoho-mail",
+    "base": "f4837c9c7f6bb0e6745d78ea7f3895eb593cf1bf",
+    "merge": "06ccfb02e8cc2aafebd276fcfcaf3fa5c3c3410e",
+    "new": true,
+    "prompt": "Add `Zoho Mail` extension\n\nThis is a Raycast extension for [Zoho Mail](https://www.zoho.com/mail/). It allows you to view your accounts, emails and their content, and toggle email read status."
+  },
+  {
+    "pr": 31374,
+    "extension": "dokploy",
+    "base": "8c5f368436557e7c2c792a08897d0d98203529a4",
+    "merge": "9af4b3a3ddaf10a87824545b594c9b73a722dd3e",
+    "new": false,
+    "prompt": "[Dokploy] Add Deploy Service command\n\nAdds a `Deploy Service` command: a searchable list of every service across every configured instance, showing which environment it's in and its current status, with the full set of lifecycle actions (Deploy, Redeploy/Rebuild, Start, Stop, Reload) plus `View Logs` - a shortcut for the common \"I know the name, just act on it\" case without navigating Projects \u2192 Environments \u2192 Services first.\n\n**Cross-instance safety was the driving design constraint here.** The extension supports several Dokploy instances, so an earlier no-view version of this command that auto-matched a typed name and acted on it immediately was replaced with this list-first approach after review: a same-named service in two different instances (or two environments of the same project) must never get silently guessed at. This screen always lists every match - including the environment name whenever it adds information beyond the project name - and nothing happens until you explicitly pick a row and an action. Raycast's own list search does the \"find by name\" part; no custom fuzzy-matching logic was needed.\n\nAlong the way:\n- `services.tsx`'s lifecycle-action logic (`SERVICE_ACTIONS`, the action icon/label maps, `runServiceAction`, the status accessory) is pulled into a shared `src/service-actions.ts` so this command reuses the exact same, already-reviewed behavior (including the `Stop` confirmation) instead of duplicating it. `services.tsx` itself is unchanged behaviorally - this is a pure extraction.\n- Sorts by frecency (`useFrecencySorting` from `@raycast/utils`, not used anywhere in this extension before) so services you actually act on from this list surface first next time.\n- `View Logs` is excluded for Compose stacks, same reason `services.tsx` already excludes it (`compose.readLogs` needs a `containerId` this list doesn't collect).\n- Learned the hard way that a `mode: \"no-view\"` command's default export must be a plain async function, not a React component - Raycast calls it directly rather than mounting a React tree, so hooks like `useLocalStorage`/`useEffect`/`useRef` have no dispatcher and throw. This command ended up as `mode: \"view\"` instead (for the list), so this doesn't apply to what shipped, but it's now written down in `../CLAUDE.md` for the next `no-view` command in this extension.\n\nThis is another small, focused piece following up on #29418, continuing from #31048, #31068, #31114, #31190, #31201, #31221, #31268, #31292, #31344 and #31347."
+  }
+]
