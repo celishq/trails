@@ -1,10 +1,10 @@
 //! The work of a store in one span of time.
 
-use super::{Flags, Tally};
+use super::Flags;
 use celis_trails::{Step, Steps, Used};
 
-/// The work of a store from `from` up to `to`: the steps done, added and closed in that time, and the
-/// follows they made. A trail counts as none of them.
+/// The work of a store from `from` up to `to`: the steps done, added and closed in that time. A trail
+/// counts as none of them.
 pub struct Period<'a> {
     steps: &'a Steps<'a>,
     from: u64,
@@ -14,6 +14,11 @@ pub struct Period<'a> {
 impl<'a> Period<'a> {
     pub fn new(steps: &'a Steps<'a>, from: u64, to: u64) -> Period<'a> {
         Period { steps, from, to }
+    }
+
+    /// The second it starts.
+    pub fn from(&self) -> u64 {
+        self.from
     }
 
     /// The steps done in it, oldest first.
@@ -31,7 +36,14 @@ impl<'a> Period<'a> {
 
     /// How many of its done steps a later step revised.
     pub fn reworked(&self) -> usize {
-        Tally::of(&self.done()).revised
+        let done = self.done().into_iter();
+        done.filter(|s| Flags::of(*s).revised).count()
+    }
+
+    /// The steps done in it with no step under them, oldest first.
+    pub fn leaves(&self) -> Vec<Step<'a>> {
+        let done = self.done().into_iter();
+        done.filter(|s| s.children().is_empty()).collect()
     }
 
     /// The steps added in it, oldest first.
@@ -41,11 +53,11 @@ impl<'a> Period<'a> {
             .collect()
     }
 
-    /// How many of the steps added in it use a rule.
+    /// How many of its done steps use a rule.
     pub fn ruled(&self) -> usize {
         let rule = |u: &Used| matches!(u, Used::Rule(_));
-        let added = self.added().into_iter();
-        added.filter(|s| s.uses().iter().any(rule)).count()
+        let done = self.done().into_iter();
+        done.filter(|s| s.uses().iter().any(rule)).count()
     }
 
     /// The steps done or dropped in it, and those expired with a trail whose newest record is in it,

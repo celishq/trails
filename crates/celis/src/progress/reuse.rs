@@ -5,12 +5,14 @@ use celis_trails::{Rule, Rules, Step, Steps, Used};
 use std::cmp::Reverse;
 use std::collections::{HashMap, HashSet};
 
-/// What later work reused of a store: which steps follow which, and how often a step used each rule.
+/// What later work reused of a store: which steps follow which, which rules each step used, and how
+/// often a step used each rule.
 pub struct Reuse<'a> {
     sources: HashMap<&'a str, Vec<Step<'a>>>,
     followers: HashMap<&'a str, Vec<Step<'a>>>,
     reach: HashMap<&'a str, usize>,
     followed: Vec<Step<'a>>,
+    ruled: HashMap<&'a str, Vec<&'a str>>,
     uses: HashMap<&'a str, usize>,
 }
 
@@ -29,6 +31,7 @@ impl<'a> Reuse<'a> {
             followers: HashMap::new(),
             reach: HashMap::new(),
             followed: Vec::new(),
+            ruled: HashMap::new(),
             uses: HashMap::new(),
         };
         for step in steps.all() {
@@ -38,7 +41,10 @@ impl<'a> Reuse<'a> {
                         reuse.sources.entry(step.id()).or_default().push(source);
                         reuse.followers.entry(source.id()).or_default().push(step);
                     }
-                    Used::Rule(id) => *reuse.uses.entry(id).or_default() += 1,
+                    Used::Rule(id) => {
+                        reuse.ruled.entry(step.id()).or_default().push(id);
+                        *reuse.uses.entry(id).or_default() += 1;
+                    }
                 }
             }
         }
@@ -97,6 +103,17 @@ impl<'a> Reuse<'a> {
         self.sources.values().map(Vec::len).sum()
     }
 
+    /// The follows `steps` made.
+    pub fn follows_of(&self, steps: &[Step<'a>]) -> usize {
+        steps.iter().map(|s| self.sources(*s).len()).sum()
+    }
+
+    /// The uses of a live rule of `rules` that `steps` made.
+    pub fn uses_of(&self, steps: &[Step<'a>], rules: &Rules<'a>) -> usize {
+        let ruled = steps.iter().filter_map(|s| self.ruled.get(s.id()));
+        ruled.flatten().filter(|id| rules.get(id).is_some()).count()
+    }
+
     /// Each step that a step follows, most followed at any depth first, then newest first, then by id.
     pub fn followed(&self) -> &[Step<'a>] {
         &self.followed
@@ -145,3 +162,6 @@ impl<'a> Reuse<'a> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests;

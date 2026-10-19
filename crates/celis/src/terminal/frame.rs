@@ -1,4 +1,4 @@
-//! A framed card of rows, as stats and report draw it.
+//! A frame of rows, as stats and report draw their cards in.
 
 use super::canvas::{clip, cut, lines, Styled, BOLD, DIM};
 use ratatui::buffer::Buffer;
@@ -6,18 +6,18 @@ use ratatui::layout::Rect;
 use ratatui::style::Style;
 use ratatui::widgets::{Block, BorderType, Widget};
 
-/// The row that draws a line across a card.
+/// The row that draws a line across a frame.
 pub(crate) const RULE: &str = "\u{1}";
 
-/// A card: its title in its top line, its rows inside its frame, and whether it is picked, which frames
-/// it in heavy lines.
-pub(crate) struct Card {
+/// A frame: its title in its top line, its rows inside it, and whether it is picked, which draws it in
+/// heavy lines.
+pub(crate) struct Frame {
     pub title: String,
     pub rows: Vec<Styled>,
     pub picked: bool,
 }
 
-impl Card {
+impl Frame {
     /// Its `height` lines, `width` wide: each row padded or cut to fit, and empty rows after them; the
     /// frame dim, or bold when picked, and a `RULE` row a line across it.
     pub fn lines(&self, width: usize, height: usize) -> Vec<Styled> {
@@ -61,11 +61,11 @@ impl Card {
     }
 }
 
-/// `cards` side by side, `per_row` a row and a space between two, each `width` wide and each row of
-/// cards as tall as its tallest card.
-pub(crate) fn grid(cards: &[Card], per_row: usize, width: usize) -> Vec<Styled> {
+/// `frames` side by side, `per_row` a row and a space between two, each `width` wide and each row of
+/// frames as tall as its tallest frame.
+pub(crate) fn grid(frames: &[Frame], per_row: usize, width: usize) -> Vec<Styled> {
     let mut drawn = vec![];
-    for row in cards.chunks(per_row.max(1)) {
+    for row in frames.chunks(per_row.max(1)) {
         let height = row.iter().map(|c| c.rows.len()).max().unwrap_or(0) + 2;
         let all = row.len() * (width + 1) - 1;
         let mut buf = Buffer::empty(Rect::new(0, 0, size(all), size(height)));

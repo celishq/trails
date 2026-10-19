@@ -113,5 +113,5 @@ fn took(step: Step) -> String {
 }
 
 mod board;
-pub(crate) mod sheet;
+pub(crate) mod card;
 mod table;

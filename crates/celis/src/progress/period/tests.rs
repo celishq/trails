@@ -72,10 +72,10 @@ fn a_period_counts_its_done_steps_as_planned_and_reworked() {
     assert_eq!(period.reworked(), 1);
 }
 
-/// A period counts the steps added in it that use a rule, and not those that use only a step or an
-/// id that names no record (`spec/06-reuse.md`, "Uses").
+/// A period counts the steps done in it that use a rule, and not those that use only a step or an id
+/// that names no record (`spec/06-reuse.md`, "Uses").
 #[test]
-fn a_period_counts_its_added_steps_that_use_a_rule() {
+fn a_period_counts_its_done_steps_that_use_a_rule() {
     let rule = Rule {
         anchor: Anchor {
             project: "p".into(),
@@ -93,10 +93,25 @@ fn a_period_counts_its_added_steps_that_use_a_rule() {
     let follows = step("follows", 22, Some(&trail), &[&source.id], None);
     let dangling = step("dangling", 23, Some(&trail), &["ab12cd34"], None);
     let late = step("late", 45, Some(&trail), &[&rule.id], None);
-    let records = vec![rule, trail, source, ruled, follows, dangling, late];
+    let open = step("open", 24, Some(&trail), &[&rule.id], None);
+    let records = vec![
+        rule,
+        trail,
+        source,
+        ruled.clone(),
+        follows.clone(),
+        dangling,
+        open,
+        late,
+        done(&ruled.id, None, 30),
+        done(&follows.id, None, 31),
+    ];
     let steps = Steps::new(&records, 50);
     let period = Period::new(&steps, 20, 40);
-    assert_eq!(titles(period.added()), ["ruled", "follows", "dangling"]);
+    assert_eq!(
+        titles(period.added()),
+        ["ruled", "follows", "dangling", "open"]
+    );
     assert_eq!(period.ruled(), 1);
 }
 
