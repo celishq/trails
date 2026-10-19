@@ -8,7 +8,7 @@
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue"></a>
 </p>
 
-https://github.com/user-attachments/assets/c3177c2c-f3b2-4fb8-8afa-4bf8626da524
+https://github.com/user-attachments/assets/c7e6649c-1b62-4eb1-ba67-6778feeb87b6
 
 ## Why
 
