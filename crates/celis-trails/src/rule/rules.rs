@@ -5,10 +5,13 @@ use celis_nostr::Note;
 use std::collections::{HashMap, HashSet};
 
 /// The rules of a store, read once, newest first, then by id; each with the rule that replaces
-/// it, if one does. A rule no other replaces is live. `trails` holds the live rules of each trail.
+/// it, if one does. A rule no other replaces is live. An override (CIP-07) hides the rule it replaces in
+/// its own project only, and is replaced by the rule that replaces that rule. `trails` holds the live
+/// rules of each trail, and `hidden` each live override by its project and the id it hides.
 pub struct Rules<'a> {
     every: Vec<(&'a Note, Rule, Option<&'a Note>)>,
     trails: HashMap<String, Vec<usize>>,
+    hidden: HashMap<(String, String), usize>,
 }
 
 impl<'a> Rules<'a> {
@@ -17,22 +20,36 @@ impl<'a> Rules<'a> {
             .iter()
             .filter_map(|n| Some((n, Rule::read(n)?)))
             .collect();
+        let rules: HashMap<&str, &Rule> = read.iter().map(|(n, d)| (n.id.as_str(), d)).collect();
+        let overridden = |d: &Rule| overridden(d, &rules).map(str::to_string);
         let by: HashMap<&str, &'a Note> = read
             .iter()
+            .filter(|(_, d)| overridden(d).is_none())
             .filter_map(|(n, d)| Some((&**d.replaces.as_ref()?, *n)))
             .collect();
         let mut every: Vec<_> = read
             .iter()
-            .map(|(n, d)| (*n, d.clone(), by.get(n.id.as_str()).copied()))
+            .map(|(n, d)| {
+                let ended = overridden(d).and_then(|old| by.get(old.as_str()).copied());
+                (*n, d.clone(), by.get(n.id.as_str()).copied().or(ended))
+            })
             .collect();
         every.sort_by(|(a, ..), (b, ..)| (b.created_at, &a.id).cmp(&(a.created_at, &b.id)));
         let mut trails: HashMap<String, Vec<usize>> = HashMap::new();
+        let mut hidden = HashMap::new();
         for (n, (_, rule, by)) in every.iter().enumerate() {
             if let (Scope::Trail(trail), None) = (&rule.scope, by) {
                 trails.entry(trail.clone()).or_default().push(n);
             }
+            if let (Some(old), None) = (overridden(rule), by) {
+                hidden.insert((rule.anchor.project.clone(), old), n);
+            }
         }
-        Rules { every, trails }
+        Rules {
+            every,
+            trails,
+            hidden,
+        }
     }
 
     /// Every rule of every project, live or replaced.
@@ -44,8 +61,23 @@ impl<'a> Rules<'a> {
     pub fn live(&self, project: &str) -> Vec<(&'a Note, Rule)> {
         let live = self.every.iter().filter(|(.., by)| by.is_none());
         live.filter(|(_, d, _)| d.scope == Scope::Me || d.anchor.project == project)
+            .filter(|(n, ..)| self.hiding(project, &n.id).is_none())
             .map(|(n, d, _)| (*n, d.clone()))
             .collect()
+    }
+
+    /// The live override of `project` that hides the rule `id` there.
+    fn hiding(&self, project: &str, id: &str) -> Option<(&'a Note, Rule)> {
+        let n = *self.hidden.get(&(project.to_string(), id.to_string()))?;
+        let (note, rule, _) = &self.every[n];
+        Some((*note, rule.clone()))
+    }
+
+    /// The live rule of a trail of `trails` whose id is `id`, or the only one whose id starts with `id`
+    /// when `id` is 4 or more characters.
+    pub fn find_of(&self, trails: &[Step], id: &str) -> Result<&'a Note, Refusal> {
+        let live = trails.iter().flat_map(|t| self.of(*t)).map(|(n, _)| n);
+        crate::records::id::find(live, id).ok_or_else(|| Refusal::NoRule(id.to_string()))
     }
 
     /// The live rule of any project whose id is `id`.
@@ -109,6 +141,11 @@ impl<'a> Rules<'a> {
         for trail in named(step) {
             found.extend(self.of(trail));
         }
+        let project = &record.anchor.project;
+        let found = found.into_iter();
+        let mut found: Vec<_> = found
+            .map(|(n, d)| self.hiding(project, &n.id).unwrap_or((n, d)))
+            .collect();
         let mut seen = HashSet::new();
         found.retain(|(note, _)| seen.insert(note.id.clone()));
         found
@@ -139,4 +176,13 @@ fn followed(used: Used) -> Option<Step> {
     };
     let trail = step.trail();
     trail.name().map(|_| trail)
+}
+
+/// The id of the rule `rule` overrides: a `trail:<id>` rule of another project of `rules` that it
+/// replaces.
+fn overridden<'r>(rule: &'r Rule, rules: &HashMap<&str, &Rule>) -> Option<&'r str> {
+    let id: &str = rule.replaces.as_deref()?;
+    let old = rules.get(id)?;
+    let trail = matches!(old.scope, Scope::Trail(_));
+    (trail && old.anchor.project != rule.anchor.project).then_some(id)
 }

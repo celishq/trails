@@ -296,7 +296,13 @@ impl Trails {
             rule.scope = Scope::Trail(trail.id().to_string());
         }
         if let Some(id) = replaces {
-            rule.replaces = Some(RuleId::new(&self.rules().find(&project, id)?.id));
+            let rules = self.rules();
+            let steps = self.steps();
+            let named: Vec<Step> = steps.names().into_iter().map(|(_, s)| s).collect();
+            let found = rules
+                .find(&project, id)
+                .or_else(|_| rules.find_of(&named, id))?;
+            rule.replaces = Some(RuleId::new(&found.id));
         }
         let written = self.sign(|account, now| rule.record(account, now))?;
         Ok(Written {

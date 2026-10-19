@@ -90,3 +90,30 @@ fn skills_that_use_each_other_give_each_rule_once() {
     assert!(kept.contains(&rule_a[..8].to_string()), "{kept:?}");
     assert!(kept.contains(&rule_b[..8].to_string()), "{kept:?}");
 }
+
+/// A rule that replaces a skill's rule takes its place only in its own project; another project still
+/// keeps the skill's rule (`spec/07-names.md`, "Overrides").
+#[test]
+fn an_override_holds_only_in_its_own_project() {
+    let repo = Repo::new();
+    let (_, base) = skill(
+        &repo,
+        "base",
+        &[],
+        "When you review: read the tests first, because they state the intent.",
+    );
+    let mine = decide(
+        &repo,
+        "",
+        "project",
+        Some(&base[..8]),
+        "When you review: read the spec first, because this repo tests little.",
+    );
+    let here = read_ids(&repo, &repo.path(), &["--uses", "base"]);
+    assert!(here.contains(&mine[..8].to_string()), "{here:?}");
+    assert!(!here.contains(&base[..8].to_string()), "{here:?}");
+    let shop = repo.other("shop");
+    let there = read_ids(&repo, &shop, &["--uses", "base"]);
+    assert!(there.contains(&base[..8].to_string()), "{there:?}");
+    assert!(!there.contains(&mine[..8].to_string()), "{there:?}");
+}
