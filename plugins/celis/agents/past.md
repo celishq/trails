@@ -34,10 +34,10 @@ Send in one message each call that does not wait on the output of another.
    `project` line gives, `celis grep "\[<name>\] rule [0-9a-f]* live {project} "`.
 2. Search for the ask, without proofs:
    `celis grep -i -E " (trail|step|changed|dropped|rule) [0-9a-f]{8} .*(<word>|<word>|...)"`, with the
-   words of the ask, their synonyms in the language of the lines, and the places of the ask. When too
-   many lines match, narrow the search: add `-w` or more exact words. When no line matches, try other
-   words. Stop when a search brings no new useful line, or after 4 searches.
-3. Choose up to 5 trails whose work is the same kind of task as the ask, or whose rules can apply to it.
+   verb and the words of what the ask wants done, their synonyms in the language of the lines, and the
+   places of the ask. When too many lines match, narrow the search: add `-w` or more exact words. When
+   no line matches, try other words. Stop when a search brings no new useful line, or after 4 searches.
+3. Choose up to 5 trails that did the same thing as the ask, in any words, or whose rules can apply to it.
    Prefer this project, the same places, work that was not revised, and newer days. Get the lines of
    each with its own call, and send the calls in one message:
    `celis grep -E " <id> \[[^]]*\] (trail|rule|step|changed|dropped) "`.

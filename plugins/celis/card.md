@@ -18,16 +18,17 @@ celis tree [<id>] [--graph] [--full] [--all] [--demo]
    report on gets none: answer it, and run no command below.
 3. Add the ask with `step add` where the prompt hook says. With no hint, add it under the session's
    trail, else with `--new`. An ask that corrects done work takes `--replaces <its id>`. Give the ask the
-   project's own check, and `--uses <id>` for each decision or past work it follows.
-4. For a larger ask, add 2 to 5 steps under it with a title only. A title says what is true when the step
-   is done, not how to do it, so that a person can check it: "The cart total is correct", not "Sum the
-   cart in cents". The steps under a step say how. Split first the step with the most doubt, or the step
-   that others need, one level at a time, until a step is one action: one edit, one command or one read.
-   Only that step gets `--at`, a `--check` that proves it, and `expect: <the result>` on the line after
-   its title. Add the next step after you close this one.
-5. For each step: `start`, and keep the decisions it prints. Do the work, then `done` with a proof a
+   project's own check, and `--uses <id>` for each rule or past step it follows.
+4. A step's title names what the person wants done: a verb and what it acts on, such as "Split a long
+   file into its parts". Use words that hold in another project, and name the case only when that helps
+   the next agent. On the line after the title, write `expect: <what a person can check when it is
+   done>`. The steps under a step say how to do it. For a larger ask, add 2 to 5 steps under it. Split
+   first the step with the most doubt, or the step that others need, one level at a time, until a step
+   is one action: one edit, one command or one read. Only that step gets `--at` and a `--check` that
+   proves it. Add the next step after you close this one.
+5. For each step: `start`, and keep the rules it prints. Do the work, then `done` with a proof a
    person can check: `--as-planned` when the result matches `expect`, else `--changed`. Add `--pitfall`
-   when something went wrong on the way. A wrong step, or a fix to done work, takes `--replaces <id>`.
+   when something went wrong. A wrong step, or a fix to done work, takes `--replaces <id>`.
 6. When a step grows past one action, or you try the same thing twice: stop. Write what you learned with
    `decide`, split the step, and take the first part.
 7. Do what celis prints after each command. It names the next move.
@@ -35,8 +36,7 @@ celis tree [<id>] [--graph] [--full] [--all] [--demo]
    rule you wrote.
 
 A rule reads "When <what you see>: <what to do>, because <the reason>." Its scope is `trail:<id>` when it
-holds for this trail, `project` (the default) when it holds for the repo, and `me` when it holds in all the
-person's work. When the person asks you to remember something, or states how the work must be done
+holds for this trail, `project` (the default) for the repo, and `me` for all the person's work. When the person asks you to remember something, or states how the work must be done
 (review feedback, a convention, a correction), write each point as one rule before you do the work.
 Read the `steps.md` the session start names for moved files, past work, subagents, links, and when to
 stop.

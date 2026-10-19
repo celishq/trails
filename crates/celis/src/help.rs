@@ -342,11 +342,11 @@ pub const VERBS: &[Verb] = &[
             ("--check <command>", "A command that proves the work"),
             ("--new", "Start a new trail, not a step of the session's trail"),
             ("--session <id>", "The session, when the hook names it"),
-            ("<text>", "A short title, then details anyone can follow"),
+            ("<text>", "What the person wants done, then its expect: line"),
         ],
         examples: &[
             "celis step add --under 3fa2c1d0 --check \"python3 -m unittest\" \\",
-            "  -- \"A senior pays 80% of the price.\"",
+            "  -- \"Charge a senior 80% of the price\"",
         ],
     },
     Verb {
@@ -362,8 +362,8 @@ pub const VERBS: &[Verb] = &[
         summary: "Finish a step with its proof and what changed. Finish the steps under it first.",
         args: &[
             ("<id>", "A step id, or its first 4 or more characters"),
-            ("--changed", "How the work differs from the step's title"),
-            ("--as-planned", "The work matches the title. Use this or --changed"),
+            ("--changed", "How the result differs from expect"),
+            ("--as-planned", "The result matches expect. Use this or --changed"),
             ("--pitfall", "What went wrong, saved as a decision at the step's place"),
             ("<proof>", "The check that failed before and passes now"),
         ],
@@ -393,7 +393,7 @@ pub const VERBS: &[Verb] = &[
             ("<text>", "A new title, or a title and details"),
         ],
         examples: &[
-            "celis step edit 3fa2c1d0 -- \"Orange badges and buttons\"",
+            "celis step edit 3fa2c1d0 -- \"Make the badges and buttons orange\"",
             "celis step edit 4c1d22e0 --check \"cargo test -p shop\"",
         ],
     },

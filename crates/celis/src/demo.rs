@@ -60,16 +60,34 @@ impl Demo {
         let (shop, crm) = (anchor("shop"), anchor("crm"));
         self.history(&shop, &crm)?;
         let day = 2 * 24 * 3600;
-        let set = self.add(day, &shop, None, "Set up the shop", &[])?;
-        let till = self.add(day - 60, &shop, Some(&set), "The till opens", &[])?;
+        let set = self.add(
+            day,
+            &shop,
+            None,
+            "Set up the shop\nexpect: the shop takes its first sale",
+            &[],
+        )?;
+        let till = self.add(
+            day - 60,
+            &shop,
+            Some(&set),
+            "Open the till\nexpect: the till opens",
+            &[],
+        )?;
         self.close(day - 600, &till, "the till opens", None)?;
 
-        let cart = self.add(3 * 3600, &shop, None, "Fix the cart total", &[])?;
+        let cart = self.add(
+            3 * 3600,
+            &shop,
+            None,
+            "Fix the cart total\nexpect: the cart test passes",
+            &[],
+        )?;
         let floats = self.add(
             3 * 3600 - 60,
             &shop,
             Some(&cart),
-            "The cart total adds up",
+            "Add up the cart total\nexpect: the total of three items is their sum",
             &["shelf/cart.py"],
         )?;
         self.close(3 * 3600 - 400, &floats, "the total adds up", None)?;
@@ -77,7 +95,7 @@ impl Demo {
             3 * 3600 - 500,
             &shop,
             &cart,
-            "The cart total is correct to the cent",
+            "Add up the cart total in cents\nexpect: the total is correct to the cent",
             &floats,
         )?;
         self.close(
@@ -87,12 +105,18 @@ impl Demo {
             None,
         )?;
 
-        let import = self.add(2 * 3600, &crm, None, "Import the contacts", &[])?;
+        let import = self.add(
+            2 * 3600,
+            &crm,
+            None,
+            "Import the contacts\nexpect: each contact of the export is in the list once",
+            &[],
+        )?;
         let csv = self.add(
             2 * 3600 - 60,
             &crm,
             Some(&import),
-            "The CSV export is read",
+            "Read the CSV export\nexpect: the count of contacts read is the count of rows",
             &[],
         )?;
         self.close(2 * 3600 - 300, &csv, "1,204 contacts read", None)?;
@@ -100,26 +124,38 @@ impl Demo {
             2 * 3600 - 320,
             &crm,
             Some(&import),
-            "No contact is in the list twice",
+            "Remove the duplicate contacts\nexpect: no email is in the list twice",
             &[],
         )?;
-        let sync = self.add(5000, &crm, None, "Sync with the old CRM", &[])?;
+        let sync = self.add(
+            5000,
+            &crm,
+            None,
+            "Sync with the old CRM\nexpect: a change in one shows in the other",
+            &[],
+        )?;
         self.trails(4900)?
             .drop(&sync, "the old CRM shuts down next week")?;
         let leads = self.add(
             900,
             &crm,
             None,
-            "Merge the old leads into the contacts",
+            "Merge the old leads into the contacts\nexpect: each old lead is a contact",
             &[],
         )?;
-        let email = self.add(890, &crm, Some(&leads), "Each lead has its contact", &[])?;
+        let email = self.add(
+            890,
+            &crm,
+            Some(&leads),
+            "Link each lead to its contact\nexpect: no lead is without a contact",
+            &[],
+        )?;
         self.trails(120)?.start(&email)?;
         self.add(
             880,
             &crm,
             Some(&leads),
-            "The notes of each lead are on its contact",
+            "Move the notes of each lead to its contact\nexpect: each note shows on the contact",
             &[],
         )?;
 
@@ -127,7 +163,7 @@ impl Demo {
             1500,
             &shop,
             None,
-            "Add a senior tier to the price list",
+            "Add a senior tier to the price list\nexpect: a senior pays 80% on the shelf, the receipt and the frame",
             &[],
         )?;
         self.rule(1490, &shop, &tier, "When you price a senior: pay 80% of the price, rounded down to the cent, because the receipt must match the shelf.")?;
@@ -141,7 +177,7 @@ impl Demo {
             1470,
             &shop,
             Some(&tier),
-            "A senior pays 80%",
+            "Charge a senior 80% of the price\nexpect: the price test passes",
             &["shelf/prices.py:40"],
         )?;
         self.close(
@@ -150,23 +186,35 @@ impl Demo {
             "the price test passes",
             Some("rounded down, not to the nearest cent"),
         )?;
-        let receipt = self.add(1290, &shop, Some(&tier), "The receipt shows the tier", &[])?;
+        let receipt = self.add(
+            1290,
+            &shop,
+            Some(&tier),
+            "Show the tier on the receipt\nexpect: the receipt has a Senior line",
+            &[],
+        )?;
         let line = self.add(
             1280,
             &shop,
             Some(&receipt),
-            "The receipt has the tier's line",
+            "Add the tier's line to the receipt\nexpect: the receipt shows Senior -20%",
             &["till/receipt.py"],
         )?;
         self.close(1100, &line, "the receipt shows Senior -20%", None)?;
-        let badge = self.add(1090, &shop, Some(&receipt), "The badge prints", &[])?;
+        let badge = self.add(
+            1090,
+            &shop,
+            Some(&receipt),
+            "Print the badge\nexpect: the badge prints",
+            &[],
+        )?;
         self.close(1000, &badge, "the badge prints", None)?;
         self.close(990, &receipt, "the receipt shows the tier", None)?;
         let banner = self.add(
             980,
             &shop,
             Some(&tier),
-            "The old discount banner stays",
+            "Keep the old discount banner\nexpect: the banner shows next to the tier",
             &[],
         )?;
         self.trails(970)?
@@ -175,12 +223,24 @@ impl Demo {
             960,
             &shop,
             Some(&tier),
-            "The frame shows the tier",
+            "Show the tier in the frame\nexpect: the frame shows the senior price",
             &["web/frame.tsx"],
         )?;
-        let label = self.add(950, &shop, Some(&frame), "The frame has the badge", &[])?;
+        let label = self.add(
+            950,
+            &shop,
+            Some(&frame),
+            "Add the badge to the frame\nexpect: the badge shows by the price",
+            &[],
+        )?;
         self.trails(300)?.start(&label)?;
-        self.add(940, &shop, Some(&tier), "The price is rounded down", &[])?;
+        self.add(
+            940,
+            &shop,
+            Some(&tier),
+            "Round the price down\nexpect: no price has a part of a cent",
+            &[],
+        )?;
         Ok(tier)
     }
 
@@ -234,7 +294,7 @@ impl Demo {
             )?;
             let ago = days.len().checked_sub(7).map(|w| days[w].clone());
             let mut ids = vec![(a, took)];
-            for (k, title) in [(1, third), (2, "The staging shop works with it")] {
+            for (k, title) in [(1, third), (2, "Try it on the staging shop")] {
                 let uses: Vec<String> = ago.iter().map(|w| w[k].0.clone()).collect();
                 let id = self.write_step(
                     at - 180 - took,
@@ -262,7 +322,7 @@ impl Demo {
                     at - 3_900,
                     anchor,
                     Some(&trail),
-                    "The last change is fixed",
+                    "Fix the last change",
                     &[],
                     Some(&last[2].0),
                     &[],
@@ -394,33 +454,33 @@ const DAY: u64 = 24 * 3600;
 const TASKS: [[&str; 3]; 6] = [
     [
         "Add gift cards",
-        "The card balance is kept",
-        "The till takes a card",
+        "Keep the card balance",
+        "Take a card at the till",
     ],
     [
         "Clean up old contacts",
-        "The contacts with no email are known",
-        "Those contacts are archived",
+        "Find the contacts with no email",
+        "Archive those contacts",
     ],
     [
         "Show stock on the shelf page",
-        "The stock count is read",
-        "The page shows it by the price",
+        "Read the stock count",
+        "Show it by the price",
     ],
     [
         "Add a birthday field",
-        "The form has the field",
-        "The contact card shows it",
+        "Add the field to the form",
+        "Show it on the contact card",
     ],
     [
         "Speed up the checkout",
-        "The cart total is worked out once",
-        "Each price is looked up once",
+        "Work out the cart total once",
+        "Look up each price once",
     ],
     [
         "Tag the leads by source",
-        "Each lead has its source",
-        "The list filters by tag",
+        "Give each lead its source",
+        "Filter the list by tag",
     ],
 ];
 
