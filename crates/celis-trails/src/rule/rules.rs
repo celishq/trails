@@ -1,6 +1,6 @@
 //! The rules of a store.
 
-use crate::{NamedTrail, Place, Refusal, Rule, Scope, Step, Used};
+use crate::{Place, Refusal, Rule, Scope, Step, Used};
 use celis_nostr::Note;
 use std::collections::{HashMap, HashSet};
 
@@ -131,8 +131,7 @@ impl<'a> Rules<'a> {
     }
 
     /// The live rules `step` must keep, each once: those at its places, its trail's rules, each
-    /// rule a step on its `under` chain uses, the rules of the trail of each step one follows, and the
-    /// rules of each named trail on the chain of the named trails it follows.
+    /// rule a step on its `under` chain uses, and the rules of each trail it follows (`Step::followed`).
     pub fn kept(&self, step: Step) -> Vec<(&'a Note, Rule)> {
         let record = step.record();
         let places = record.places.iter();
@@ -142,13 +141,12 @@ impl<'a> Rules<'a> {
         found.extend(self.of(step.trail()));
         let chain = std::iter::successors(Some(step), |s| s.under());
         for used in chain.flat_map(Step::uses) {
-            match used {
-                Used::Follow(other) => found.extend(self.of(other.trail())),
-                Used::Rule(id) => found.extend(self.get(id)),
+            if let Used::Rule(id) = used {
+                found.extend(self.get(id));
             }
         }
-        for named in NamedTrail::followed(step) {
-            found.extend(self.of(named.trail));
+        for trail in step.followed() {
+            found.extend(self.of(trail));
         }
         let project = &record.anchor.project;
         let found = found.into_iter();

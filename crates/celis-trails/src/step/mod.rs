@@ -78,6 +78,32 @@ impl<'a> Step<'a> {
         .collect()
     }
 
+    /// The trails that the steps on its `under` chain follow, then, past each named trail (CIP-07), the
+    /// trails that its steps follow, at any depth; each once.
+    pub fn followed(self) -> Vec<Step<'a>> {
+        let follows = |s: Step<'a>| {
+            let used = s.uses().into_iter();
+            used.filter_map(|u| match u {
+                Used::Follow(step) => Some(step.trail()),
+                Used::Rule(_) => None,
+            })
+        };
+        let chain = std::iter::successors(Some(self), |s| s.under());
+        let mut next: Vec<Step<'a>> = chain.flat_map(follows).collect();
+        next.reverse();
+        let mut found: Vec<Step<'a>> = Vec::new();
+        while let Some(trail) = next.pop() {
+            if found.iter().any(|f| f.id() == trail.id()) {
+                continue;
+            }
+            if trail.named().is_some() {
+                next.extend(trail.tree().into_iter().flat_map(follows));
+            }
+            found.push(trail);
+        }
+        found
+    }
+
     /// The steps directly under it, oldest first.
     pub fn children(self) -> Vec<Step<'a>> {
         let children = self.entry.children.iter();
