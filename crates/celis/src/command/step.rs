@@ -37,8 +37,8 @@ impl Command {
     ) -> Result<(), Failure> {
         let content = args.required_text("step add needs its text after --")?;
         let anchor = match args.places.first() {
-            Some(at) => project.of_place(at).anchor(),
-            None => project.anchor(),
+            Some(at) if args.project.is_none() => project.of_place(at).anchor(),
+            _ => project.anchor(),
         };
         let draft = Draft {
             content,

@@ -269,11 +269,12 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "decide",
-        usage: &["celis decide [--scope <scope>] [--replaces <id>] -- <text>"],
+        usage: &["celis decide [--scope <scope>] [--replaces <id>] [--project <id>] -- <text>"],
         summary: "Record a rule that later work must follow, in its scope.",
         args: &[
             ("--scope <scope>", "at:<place>, trail:<id>, project, or me (default: project)"),
             ("--replaces <id>", "The rule this one replaces"),
+            ("--project <id>", "skill:<name>, to write into a skill"),
             ("<text>", "When it applies, what to do, and why"),
         ],
         examples: &[
@@ -343,7 +344,7 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "step add",
-        usage: &["celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>]... [--check <command>] [--new] [--session <id>] -- <text>"],
+        usage: &["celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>]... [--check <command>] [--new] [--session <id>] [--project <id>] -- <text>"],
         summary: "Add a step. With no --under, it goes under the session's trail, or starts a new trail.",
         args: &[
             ("--under <id>", "The open step this step is part of"),
@@ -353,6 +354,7 @@ pub const VERBS: &[Verb] = &[
             ("--check <command>", "A command that proves the work"),
             ("--new", "Start a new trail, not a step of the session's trail"),
             ("--session <id>", "The session, when the hook names it"),
+            ("--project <id>", "skill:<name>, to write into a skill"),
             ("<text>", "What the person wants done, then its expect: line"),
         ],
         examples: &[

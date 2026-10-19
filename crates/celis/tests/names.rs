@@ -131,3 +131,51 @@ fn a_name_wins_over_an_id_that_starts_with_it() {
     );
     assert_eq!(uses(&repo, &other, &id), [named]);
 }
+
+/// `--project skill:<name>` writes a step and a rule of the project `skill:<name>` from a repo, and
+/// refuses any other id (`spec/02-cli.md`, "Commands"; `spec/07-names.md`, "Skill projects").
+#[test]
+fn project_writes_into_a_skill_project() {
+    let repo = Repo::new();
+    let trail = add(
+        &repo,
+        &["--project", "skill:review", "--", "Review a pull request"],
+    );
+    let o = cli(
+        &repo,
+        &[
+            "decide",
+            "--project",
+            "skill:review",
+            "--scope",
+            &format!("trail:{}", &trail[..8]),
+            "--",
+            "When you review: read the tests first, because they state the intent.",
+        ],
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let tree = objects(&repo, &["tree", &trail[..8]]);
+    assert_eq!(tree[0]["trail"]["project"], "skill:review", "{tree:?}");
+    let step = add(&repo, &["--under", &trail[..8], "--", "Read the tests"]);
+    let start = objects(&repo, &["step", "start", &step[..8]]);
+    let rule = start
+        .iter()
+        .find_map(|v| v.get("decision"))
+        .expect("a rule");
+    assert_eq!(rule["project"], "skill:review", "{start:?}");
+    for bad in ["web:review", "skill:Review", "skill:"] {
+        refusal(
+            &cli(
+                &repo,
+                &["step", "add", "--json", "--project", bad, "--", "x"],
+            ),
+            2,
+            "usage",
+        );
+        refusal(
+            &cli(&repo, &["decide", "--json", "--project", bad, "--", "x"]),
+            2,
+            "usage",
+        );
+    }
+}
