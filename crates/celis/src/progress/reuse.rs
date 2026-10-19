@@ -66,9 +66,11 @@ impl<'a> Reuse<'a> {
         self.sources.get(step.id()).cloned().unwrap_or_default()
     }
 
-    /// The steps that follow `step`.
-    pub fn users(&self, step: Step<'a>) -> &[Step<'a>] {
-        self.followers.get(step.id()).map_or(&[], Vec::as_slice)
+    /// How many steps follow a step of the tree of `trail`.
+    pub fn uses_of(&self, trail: Step<'a>) -> usize {
+        let tree = trail.tree().into_iter();
+        tree.map(|s| self.followers.get(s.id()).map_or(0, Vec::len))
+            .sum()
     }
 
     /// Each step that `step` follows at any depth, depth first and once.
