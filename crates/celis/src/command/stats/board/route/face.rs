@@ -1,7 +1,7 @@
 //! The step of a route as its card: its time big, and how often it was revised.
 
 use crate::terminal::canvas::Styled;
-use crate::terminal::card::Card;
+use crate::terminal::frame::Frame;
 use crate::terminal::ink::Ink;
 use crate::terminal::look::look;
 use crate::text::line::time;
@@ -16,7 +16,7 @@ pub(super) fn face(step: Step, width: usize, plain: bool) -> Vec<Styled> {
         ink.dim(&format!("revised {}", step.revised().len())).into(),
     ];
     let look = look(step.state());
-    let card = Card {
+    let card = Frame {
         title: format!("{} {}", look.mark, step.title()),
         rows: ink.beside(&took, &side, 3),
         picked: true,

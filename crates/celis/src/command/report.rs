@@ -5,7 +5,7 @@ use crate::failure::Failure;
 use crate::progress::{Flags, Tally};
 use crate::terminal::canvas::visible;
 use crate::terminal::canvas::{join, line as styled, paint, Styled, BOLD, DIM, MAGENTA, YELLOW};
-use crate::terminal::card::{Card, RULE};
+use crate::terminal::frame::{Frame, RULE};
 use crate::terminal::ink::Ink;
 use crate::terminal::look::look;
 use crate::text::clock::took;
@@ -77,7 +77,7 @@ fn chosen<'a>(steps: &'a Steps<'a>, ids: &[String]) -> Result<Vec<Step<'a>>, Fai
 
 /// The card of `trail`: its id, project and title, its time and counts, its steps as a strip of their
 /// states, a line a step under it, and its rules and lessons, `width` wide; its time plain when narrow.
-fn card(trails: &Trails, trail: Step, width: usize) -> Card {
+fn card(trails: &Trails, trail: Step, width: usize) -> Frame {
     let step = trail.record();
     let tree = &trail.tree()[1..];
     let tally = Tally::of(tree);
@@ -162,7 +162,7 @@ fn card(trails: &Trails, trail: Step, width: usize) -> Card {
         });
         rows.extend([Styled::default(), join(notes)]);
     }
-    Card {
+    Frame {
         title: format!("REPORT · {} · {}", short(trail.id()), step.anchor.name),
         rows,
         picked: false,

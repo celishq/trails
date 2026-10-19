@@ -1,8 +1,9 @@
 //! The effect card: as planned, rework and rules reused, against the 14 days before.
 
 use super::super::table::{Row, Table};
-use super::{Sheet, DAYS};
-use crate::progress::Period;
+use super::change::Change;
+use super::{Card, DAYS};
+use crate::progress::{Period, Window};
 use crate::terminal::canvas::{clip, join, pad, Styled, DIM, GREEN, RED};
 use crate::terminal::ink::Ink;
 use crate::text::line::plural;
@@ -11,13 +12,13 @@ use ratatui::text::Span;
 /// The fewest records a number of the effect counts before it shows a change.
 const FEW: usize = 10;
 
-/// One number of the effect: its label, its share in each period, the word for the records it
-/// counts, and whether more is better.
+/// One number of the effect: its label, its share in each period, what its part holds of the steps
+/// done, and whether more is better.
 struct Measure {
     label: &'static str,
     last: Share,
     before: Share,
-    unit: &'static str,
+    part: &'static str,
     up: bool,
 }
 
@@ -45,6 +46,24 @@ impl Share {
 }
 
 impl Measure {
+    /// The measure `label` of `window`: the share of the steps done in each span that `count` counts.
+    fn new<'a>(
+        label: &'static str,
+        count: fn(&Period<'a>) -> usize,
+        window: &Window<'a>,
+        part: &'static str,
+        up: bool,
+    ) -> Measure {
+        let share = |p: &Period<'a>| Share::new(count(p), p.done().len());
+        Measure {
+            label,
+            last: share(&window.last),
+            before: share(&window.before),
+            part,
+            up,
+        }
+    }
+
     /// The change from the period before, coloured green when better and red when worse, dim when it
     /// moved little; none when the period before counts none, `· few records` when a period counts
     /// fewer than `FEW`.
@@ -59,12 +78,7 @@ impl Measure {
             return Some(ink.dim("· few records"));
         }
         let moved = last - before;
-        let by = match moved.signum() {
-            0 => "=".to_string(),
-            1 => format!("▲ {moved}"),
-            _ => format!("▼ {}", -moved),
-        };
-        let text = format!("{before}% → {last}%  {by}");
+        let text = format!("{before}% → {last}%  {}", Change { before, last }.arrow());
         let tone = match (moved.abs() < 3, (moved > 0) == self.up) {
             (true, _) => DIM,
             (false, true) => GREEN,
@@ -74,31 +88,13 @@ impl Measure {
     }
 }
 
-/// The effect: as planned, rework and rules reused in the last 14 days, against the 14 days before.
-pub(super) fn effect(last: &Period, before: &Period, inside: usize, ink: Ink) -> Sheet {
-    let done = |p: &Period| p.done().len();
+/// The effect: as planned, rework and rules reused in the last 14 days, against the 14 days before,
+/// each with what its share counts, on two lines when one is too narrow.
+pub(super) fn effect(window: &Window, inside: usize, ink: Ink) -> Card {
     let measures = [
-        Measure {
-            label: "AS PLANNED",
-            last: Share::new(last.planned(), done(last)),
-            before: Share::new(before.planned(), done(before)),
-            unit: "step",
-            up: true,
-        },
-        Measure {
-            label: "REWORK",
-            last: Share::new(last.reworked(), done(last)),
-            before: Share::new(before.reworked(), done(before)),
-            unit: "step",
-            up: false,
-        },
-        Measure {
-            label: "RULES REUSED",
-            last: Share::new(last.ruled(), last.added().len()),
-            before: Share::new(before.ruled(), before.added().len()),
-            unit: "step",
-            up: true,
-        },
+        Measure::new("AS PLANNED", Period::planned, window, "no change", true),
+        Measure::new("REWORK", Period::reworked, window, "revised", false),
+        Measure::new("RULES REUSED", Period::ruled, window, "used a rule", true),
     ];
     let column = (inside / measures.len()).max(1);
     let cell = |text: Span<'static>| pad(clip(&Styled::from(text), column - 1), column);
@@ -114,11 +110,18 @@ pub(super) fn effect(last: &Period, before: &Period, inside: usize, ink: Ink) ->
             changes.into_iter().map(|c| cell(c.unwrap_or_default())),
         ));
     }
-    face.push(join(
-        measures
-            .iter()
-            .map(|m| cell(ink.dim(&plural(m.last.base, m.unit)))),
-    ));
+    let counts = |m: &Measure| format!("of {} done, {}", m.last.base, m.part);
+    match measures.iter().all(|m| counts(m).chars().count() < column) {
+        true => face.push(join(measures.iter().map(|m| cell(ink.dim(&counts(m)))))),
+        false => face.extend([
+            join(
+                measures
+                    .iter()
+                    .map(|m| cell(ink.dim(&format!("of {} done,", m.last.base)))),
+            ),
+            join(measures.iter().map(|m| cell(ink.dim(m.part)))),
+        ]),
+    }
     let rows = measures
         .iter()
         .map(|m| Row {
@@ -127,11 +130,11 @@ pub(super) fn effect(last: &Period, before: &Period, inside: usize, ink: Ink) ->
                 title_case(m.label),
                 m.last.text(),
                 m.before.text(),
-                plural(m.last.base, m.unit),
+                plural(m.last.base, "step"),
             ],
         })
         .collect();
-    Sheet {
+    Card {
         title: match compared {
             true => format!("00 EFFECT · LAST {DAYS} DAYS vs {DAYS} BEFORE"),
             false => format!("00 EFFECT · LAST {DAYS} DAYS"),

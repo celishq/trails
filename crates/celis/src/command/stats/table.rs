@@ -1,5 +1,6 @@
 //! The rows behind a card of stats, as an opened card shows them and as Markdown.
 
+use crate::command::tree::wrap;
 use crate::terminal::canvas::{cut, paint, visible, Styled, BOLD, DIM};
 use ratatui::text::Span;
 
@@ -18,9 +19,10 @@ pub(crate) struct Row {
 }
 
 impl Table {
-    /// Its lines `width` wide: the names dim, then a row a line, each cell cut to its column, the
-    /// `selected` row marked `▌` and bold.
-    pub fn lines(&self, width: usize, selected: Option<usize>) -> Vec<Styled> {
+    /// Its lines `width` wide, and the first line of each row: the names dim, then each row with its wide
+    /// cell wrapped whole and the others cut to their column, each line of the `selected` row marked `▌`
+    /// and bold.
+    pub fn lines(&self, width: usize, selected: Option<usize>) -> (Vec<Styled>, Vec<usize>) {
         let mut widths: Vec<usize> = self.head.iter().map(|h| visible(h)).collect();
         for row in &self.rows {
             for (w, cell) in widths.iter_mut().zip(&row.cells) {
@@ -45,13 +47,26 @@ impl Table {
         let styled =
             |lead: &'static str, span: Span<'static>| Styled::from(vec![lead.into(), span]);
         let mut lines = vec![styled("  ", paint(DIM, &line(&head)))];
+        let mut first = vec![];
         for (i, row) in self.rows.iter().enumerate() {
-            lines.push(match Some(i) == selected {
-                true => styled("▌ ", paint(BOLD, &line(&row.cells))),
-                false => Styled::from(format!("  {}", line(&row.cells))),
-            });
+            first.push(lines.len());
+            let mut parts = wrap(&row.cells[self.wide], widths[self.wide]);
+            if parts.is_empty() {
+                parts.push(String::new());
+            }
+            for (n, part) in parts.into_iter().enumerate() {
+                let mut cells = match n {
+                    0 => row.cells.clone(),
+                    _ => vec![String::new(); row.cells.len()],
+                };
+                cells[self.wide] = part;
+                lines.push(match Some(i) == selected {
+                    true => styled("▌ ", paint(BOLD, &line(&cells))),
+                    false => Styled::from(format!("  {}", line(&cells))),
+                });
+            }
         }
-        lines
+        (lines, first)
     }
 
     /// It as a Markdown table under the heading `title`.
@@ -69,3 +84,6 @@ impl Table {
         lines.join("\n") + "\n"
     }
 }
+
+#[cfg(test)]
+mod tests;
