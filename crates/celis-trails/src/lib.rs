@@ -22,6 +22,7 @@ pub use records::place::Place;
 pub use records::project::Project;
 pub use records::store::Store;
 pub use refusal::Refusal;
+pub use rule::rule_entry::RuleEntry;
 pub use rule::rules::Rules;
 pub use rule::scope::Scope;
 pub use rule::Rule;

@@ -1,15 +1,13 @@
 //! The rules of a store.
 
-use crate::{Place, Refusal, Rule, Scope, Step, Used};
+use crate::{Place, Refusal, Rule, RuleEntry, Scope, Step, Used};
 use celis_nostr::Note;
 use std::collections::{HashMap, HashSet};
 
-/// The rules of a store, read once, newest first, then by id; each with the rule that replaces
-/// it, if one does. A rule no other replaces is live. An override (CIP-07) hides the rule it replaces in
-/// its own project only, and is replaced by the rule that replaces that rule. `trails` holds the live
-/// rules of each trail, and `hidden` each live override by its project and the id it hides.
+/// The rules of a store, read once, newest first, then by id. `trails` holds the live rules of each
+/// trail, and `hidden` each live override by its project and the id it hides.
 pub struct Rules<'a> {
-    every: Vec<(&'a Note, Rule, Option<&'a Note>)>,
+    every: Vec<RuleEntry<'a>>,
     trails: HashMap<String, Vec<usize>>,
     hidden: HashMap<(String, String), usize>,
 }
@@ -21,28 +19,38 @@ impl<'a> Rules<'a> {
             .filter_map(|n| Some((n, Rule::read(n)?)))
             .collect();
         let rules: HashMap<&str, &Rule> = read.iter().map(|(n, d)| (n.id.as_str(), d)).collect();
-        let overridden = |d: &Rule| overridden(d, &rules).map(str::to_string);
+        let overrides: Vec<Option<String>> = read
+            .iter()
+            .map(|(_, d)| overridden(d, &rules).map(str::to_string))
+            .collect();
         let by: HashMap<&str, &'a Note> = read
             .iter()
-            .filter(|(_, d)| overridden(d).is_none())
-            .filter_map(|(n, d)| Some((&**d.replaces.as_ref()?, *n)))
+            .zip(&overrides)
+            .filter(|(_, overrides)| overrides.is_none())
+            .filter_map(|((n, d), _)| Some((&**d.replaces.as_ref()?, *n)))
             .collect();
-        let mut every: Vec<_> = read
+        let mut every: Vec<RuleEntry<'a>> = read
             .iter()
-            .map(|(n, d)| {
-                let ended = overridden(d).and_then(|old| by.get(old.as_str()).copied());
-                (*n, d.clone(), by.get(n.id.as_str()).copied().or(ended))
+            .zip(overrides)
+            .map(|((note, rule), overrides)| {
+                let ended = overrides.as_deref().and_then(|old| by.get(old).copied());
+                RuleEntry {
+                    note,
+                    rule: rule.clone(),
+                    by: by.get(note.id.as_str()).copied().or(ended),
+                    overrides,
+                }
             })
             .collect();
-        every.sort_by(|(a, ..), (b, ..)| (b.created_at, &a.id).cmp(&(a.created_at, &b.id)));
+        every.sort_by(|a, b| (b.note.created_at, &a.note.id).cmp(&(a.note.created_at, &b.note.id)));
         let mut trails: HashMap<String, Vec<usize>> = HashMap::new();
         let mut hidden = HashMap::new();
-        for (n, (_, rule, by)) in every.iter().enumerate() {
-            if let (Scope::Trail(trail), None) = (&rule.scope, by) {
+        for (n, entry) in every.iter().enumerate().filter(|(_, e)| e.is_live()) {
+            if let Scope::Trail(trail) = &entry.rule.scope {
                 trails.entry(trail.clone()).or_default().push(n);
             }
-            if let (Some(old), None) = (overridden(rule), by) {
-                hidden.insert((rule.anchor.project.clone(), old), n);
+            if let Some(old) = &entry.overrides {
+                hidden.insert((entry.rule.anchor.project.clone(), old.clone()), n);
             }
         }
         Rules {
@@ -53,33 +61,29 @@ impl<'a> Rules<'a> {
     }
 
     /// Every rule of every project, live or replaced.
-    pub fn every(&self) -> &[(&'a Note, Rule, Option<&'a Note>)] {
+    pub fn every(&self) -> &[RuleEntry<'a>] {
         &self.every
     }
 
     /// The live rules in scope in the project `project`.
     pub fn live(&self, project: &str) -> Vec<(&'a Note, Rule)> {
-        let live = self.every.iter().filter(|(.., by)| by.is_none());
-        live.filter(|(_, d, _)| d.scope == Scope::Me || d.anchor.project == project)
-            .filter(|(n, ..)| self.hiding(project, &n.id).is_none())
-            .map(|(n, d, _)| (*n, d.clone()))
+        let live = self.every.iter().filter(|e| e.is_live());
+        live.filter(|e| e.rule.scope == Scope::Me || e.rule.anchor.project == project)
+            .filter(|e| self.hiding(project, &e.note.id).is_none())
+            .map(RuleEntry::said)
             .collect()
     }
 
     /// The live override of `project` that hides the rule `id` there.
     fn hiding(&self, project: &str, id: &str) -> Option<(&'a Note, Rule)> {
         let n = *self.hidden.get(&(project.to_string(), id.to_string()))?;
-        let (note, rule, _) = &self.every[n];
-        Some((*note, rule.clone()))
+        Some(self.every[n].said())
     }
 
     /// Each live override of the rule `id`, in any project.
     pub fn overrides(&self, id: &str) -> Vec<(&'a Note, Rule)> {
         let hiding = self.hidden.iter().filter(|((_, old), _)| old == id);
-        let hiding = hiding.map(|(_, &n)| &self.every[n]);
-        hiding
-            .map(|(note, rule, _)| (*note, rule.clone()))
-            .collect()
+        hiding.map(|(_, &n)| self.every[n].said()).collect()
     }
 
     /// The live rule of a trail of `trails` whose id is `id`, or the only one whose id starts with `id`
@@ -91,11 +95,8 @@ impl<'a> Rules<'a> {
 
     /// The live rule of any project whose id is `id`.
     pub fn get(&self, id: &str) -> Option<(&'a Note, Rule)> {
-        let live = self
-            .every
-            .iter()
-            .find(|(n, _, by)| by.is_none() && n.id == id);
-        live.map(|(n, d, _)| (*n, d.clone()))
+        let live = self.every.iter().find(|e| e.is_live() && e.note.id == id);
+        live.map(RuleEntry::said)
     }
 
     /// The live rule in scope in `project` whose id is `id`, or the only one whose id starts with `id`
@@ -123,8 +124,8 @@ impl<'a> Rules<'a> {
         let rules = self.trails.get(trail.id()).into_iter().flatten();
         let mut rules: Vec<(&'a Note, Rule)> = rules
             .map(|&n| &self.every[n])
-            .filter(|(_, d, _)| &d.anchor.project == project)
-            .map(|(n, d, _)| (*n, d.clone()))
+            .filter(|e| &e.rule.anchor.project == project)
+            .map(RuleEntry::said)
             .collect();
         rules.sort_by(|(a, _), (b, _)| (a.created_at, &a.id).cmp(&(b.created_at, &b.id)));
         rules
