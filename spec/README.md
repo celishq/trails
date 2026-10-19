@@ -41,6 +41,7 @@ Every change of `spec/` MUST keep these rules:
 | 04 | Trails | the trail, its sessions and prompts, its rules | CIP-01, 03, 05 |
 | 05 | Rules | the rule and its scope | CIP-01 |
 | 06 | Reuse | the steps and rules a step uses, revisions | CIP-03, 04, 05 |
+| 07 | Names | the name of a trail, skill projects, the rules of a name, overrides | CIP-01, 03, 04, 05, 06 |
 
 ## Names
 
@@ -48,6 +49,7 @@ Every change of `spec/` MUST keep these rules:
 |---|---|---|
 | `project:<id>` · `project` | anchor of a project, its `K`, and its name tag | 01 |
 | `figma:<key>` · `web:<host>` | the project id of a record outside git | 01 |
+| `skill:<name>` | the project id of a skill | 07 |
 | `$CELIS_HOME` · `$CELIS_HOME/trails/` · `$CELIS_HOME/phrase` · `$CELIS_HOME/links` | the home, the store, the phrase, the links | 01, 02 |
 | `celis` and its commands and flags | the command line | 02 |
 | `usage` · `no-decision` · `no-trail` · `no-step` · `closed` · `open-steps` · `check-failed` · `error` | errors | 02 |
@@ -61,6 +63,7 @@ Every change of `spec/` MUST keep these rules:
 | `scope` · `replaces` | rule tags | 05 |
 | `me` · `project` · `trail:<id>` · `at:<place>` | the scopes of a rule | 05 |
 | `uses` | step tag | 06 |
+| 1985 with `name` in `celis.step` | kind: the name of a trail (NIP-32) | 07 |
 
 **Deprecated.** A reader ignores each of these. Older versions wrote them.
 
@@ -89,3 +92,5 @@ Every change of `spec/` MUST keep these rules:
 | `rule` | one sentence that holds in its scope until another replaces it |
 | `live` | a rule no other rule replaces |
 | `revised` | done work that a later step replaces |
+| `named` | a trail that holds a name; a skill |
+| `override` | a rule that replaces a trail's rule of another project, in its own project only |
