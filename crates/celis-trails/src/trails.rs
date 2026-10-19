@@ -299,11 +299,7 @@ impl Trails {
         let mut notices = Vec::new();
         if let Some(id) = replaces {
             let rules = self.rules();
-            let steps = self.steps();
-            let named: Vec<Step> = steps.names().into_iter().map(|n| n.trail).collect();
-            let found = rules
-                .find(&project, id)
-                .or_else(|_| rules.find_of(&named, id))?;
+            let found = rules.replaceable(&self.steps(), &project, id)?;
             rule.replaces = Some(RuleId::new(&found.id));
             if Anchor::read(found).is_some_and(|a| a.project == project) {
                 let ended = rules.overrides(&found.id).into_iter();

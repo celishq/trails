@@ -1,6 +1,6 @@
 //! The rules of a store.
 
-use crate::{Place, Refusal, Rule, RuleEntry, Scope, Step, Used};
+use crate::{Place, Refusal, Rule, RuleEntry, Scope, Step, Steps, Used};
 use celis_nostr::Note;
 use std::collections::{HashMap, HashSet};
 
@@ -86,11 +86,15 @@ impl<'a> Rules<'a> {
         hiding.map(|(_, &n)| self.every[n].said()).collect()
     }
 
-    /// The live rule of a trail of `trails` whose id is `id`, or the only one whose id starts with `id`
-    /// when `id` is 4 or more characters.
-    pub fn find_of(&self, trails: &[Step], id: &str) -> Result<&'a Note, Refusal> {
-        let live = trails.iter().flat_map(|t| self.of(*t)).map(|(n, _)| n);
-        crate::records::id::find(live, id).ok_or_else(|| Refusal::NoRule(id.to_string()))
+    /// The live rule that a rule of `project` may replace: one in scope there, else one of a named trail
+    /// of `steps`; whose id is `id`, or the only one whose id starts with `id` when `id` is 4 or more
+    /// characters.
+    pub fn replaceable(&self, steps: &Steps, project: &str, id: &str) -> Result<&'a Note, Refusal> {
+        self.find(project, id).or_else(|refusal| {
+            let named = steps.names().into_iter();
+            let live = named.flat_map(|n| self.of(n.trail)).map(|(note, _)| note);
+            crate::records::id::find(live, id).ok_or(refusal)
+        })
     }
 
     /// The live rule of any project whose id is `id`.
