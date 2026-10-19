@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <video src="https://github.com/user-attachments/assets/7936a324-8ac1-4b7d-8cff-c9fc217ad755" width="1012" controls muted></video>
+  <video src="https://github.com/user-attachments/assets/7936a324-8ac1-4b7d-8cff-c9fc217ad755" width="1012"></video>
 </p>
 
 ## Why
