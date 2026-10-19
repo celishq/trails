@@ -26,7 +26,9 @@
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue"></a>
 </p>
 
-<!-- video: drop the mp4 here in the GitHub editor -->
+<p align="center">
+  <img width="800" height="891" alt="celis-tree" src="https://github.com/user-attachments/assets/ae938e4a-2388-4891-8f1a-d38a6d46eca8" />
+</p>
 
 ## Why
 
