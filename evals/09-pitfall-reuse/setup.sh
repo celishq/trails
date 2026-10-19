@@ -1,5 +1,6 @@
 #!/bin/sh
 set -e
+export GIT_CEILING_DIRECTORIES="$(dirname "$PWD")"
 cat > catalog.py <<'EOF'
 import json
 import os
