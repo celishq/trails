@@ -6,7 +6,7 @@ use crate::progress::Reuse;
 use crate::terminal::canvas::{cut as text_cut, visible, Styled};
 use crate::terminal::glyph::bar;
 use crate::terminal::ink::Ink;
-use celis_trails::Decisions;
+use celis_trails::Rules;
 
 /// The reuse: the follows, and the steps followed most.
 pub(super) fn followed(reuse: &Reuse, inside: usize, ink: Ink) -> Sheet {
@@ -45,9 +45,9 @@ pub(super) fn followed(reuse: &Reuse, inside: usize, ink: Ink) -> Sheet {
     }
 }
 
-/// The rules used: the decisions later steps used, most used first, as bars.
-pub(super) fn rules(decisions: &Decisions, reuse: &Reuse, inside: usize, ink: Ink) -> Sheet {
-    let used = reuse.used(decisions);
+/// The rules used: the rules later steps used, most used first, as bars.
+pub(super) fn rules(rules: &Rules, reuse: &Reuse, inside: usize, ink: Ink) -> Sheet {
+    let used = reuse.used(rules);
     let most = used.first().map_or(0, |(_, _, n)| *n);
     let label = 18.min(inside / 2);
     let width = inside.saturating_sub(label + 5);

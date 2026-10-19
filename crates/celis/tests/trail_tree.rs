@@ -29,7 +29,7 @@ fn tree_prints_the_trail_its_rules_and_the_steps_under_it() {
     let trail = support::step_note(&repo, &by, None, "build the CRM", at);
     let scope = format!("trail:{}", trail.id);
     let project = (repo.project_id(), "repo");
-    let rule = support::decision(
+    let rule = support::stored_rule(
         &repo,
         (&project.0, project.1),
         &by,
@@ -105,7 +105,7 @@ fn tree_prints_an_expired_step_with_the_closed_ones() {
     let trail = support::step_note(&repo, &by, None, "the trail", at);
     let scope = format!("trail:{}", trail.id);
     let project = (repo.project_id(), "repo");
-    let rule = support::decision(
+    let rule = support::stored_rule(
         &repo,
         (&project.0, project.1),
         &by,
@@ -480,7 +480,7 @@ fn tree_graph_prints_the_trail_as_a_chain_of_cards() {
     let trail = support::step_note(&repo, &by, None, "build the CRM", at);
     let scope = format!("trail:{}", trail.id);
     let project = (repo.project_id(), "repo");
-    support::decision(
+    support::stored_rule(
         &repo,
         (&project.0, project.1),
         &by,

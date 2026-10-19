@@ -114,10 +114,10 @@ fn grep_prints_proofs_changes_and_drop_reasons() {
     );
 }
 
-/// A decision prints as a `rule`: live or replaced, then its scope; one of a trail prints under the trail,
-/// one of the project under `- rules of no trail` with its project (`spec/02-cli.md`, "Grep").
+/// A rule prints with the kind `rule`: live or replaced, then its scope; one of a trail prints under
+/// the trail, one of the project under `- rules of no trail` with its project (`spec/02-cli.md`, "Grep").
 #[test]
-fn grep_prints_decisions_as_rules_live_or_replaced() {
+fn grep_prints_rules_live_or_replaced() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "Build the Vendors page"]);
     let decide = |args: &[&str]| {
@@ -373,7 +373,7 @@ fn grep_q_prints_nothing_on_a_match() {
 #[test]
 fn the_view_and_the_past_agents_first_searches_match_the_fixture() {
     use celis_trails::{Anchor, Mark, StepId, StepRecord};
-    use support::{account, decision, put};
+    use support::{account, put, stored_rule};
     let fixture: serde_json::Value =
         serde_json::from_str(include_str!("../../../spec/fixtures/grep-view.json")).unwrap();
     let past = include_str!("../../../plugins/celis/agents/past.md");
@@ -416,7 +416,7 @@ fn the_view_and_the_past_agents_first_searches_match_the_fixture() {
     );
     let project = (id.as_str(), "repo");
     let scope = format!("trail:{}", trail.id);
-    let rule = decision(
+    let rule = stored_rule(
         &repo,
         project,
         &by,
@@ -424,7 +424,7 @@ fn the_view_and_the_past_agents_first_searches_match_the_fixture() {
         "When a vendor has no logo: show its initials.",
         t + 5,
     );
-    let old = decision(
+    let old = stored_rule(
         &repo,
         project,
         &by,
@@ -432,7 +432,7 @@ fn the_view_and_the_past_agents_first_searches_match_the_fixture() {
         "When a price prints: use floats.",
         t + 6,
     );
-    let new = decision(
+    let new = stored_rule(
         &repo,
         project,
         &by,
@@ -440,7 +440,7 @@ fn the_view_and_the_past_agents_first_searches_match_the_fixture() {
         "When a price prints: use cents.",
         t + 7,
     );
-    let me = decision(
+    let me = stored_rule(
         &repo,
         project,
         &by,

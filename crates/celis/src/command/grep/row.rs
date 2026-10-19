@@ -2,7 +2,7 @@
 
 use super::kind::Kind;
 
-/// One line of the view: the day of its record, its trail, `None` for a decision with no trail, its
+/// One line of the view: the day of its record, its trail, `None` for a rule with no trail, its
 /// project, its kind, then its id with its fields, and its text.
 pub(super) struct Row {
     pub trail: Option<String>,

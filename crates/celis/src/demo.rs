@@ -3,7 +3,7 @@
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use celis_trails::{Anchor, Decision, Draft, Scope, Store, Trails};
+use celis_trails::{Anchor, Draft, Rule, Scope, Store, Trails};
 use std::cell::{RefCell, RefMut};
 use std::io::Write;
 use std::path::PathBuf;
@@ -256,7 +256,7 @@ impl Demo {
             (crm, "When you import contacts: match them by email before by name, because names repeat."),
             (crm, "When you change a contact field: keep the old value in its history, because sales asks for it."),
         ] {
-            rules.push((anchor, self.decision(start, anchor, Scope::Project, text)?));
+            rules.push((anchor, self.write_rule(start, anchor, Scope::Project, text)?));
         }
         let mut days: Vec<[(String, u64); 3]> = vec![];
         for (i, day) in (3..28u64).rev().enumerate() {
@@ -424,25 +424,25 @@ impl Demo {
 
     /// Writes the rule `text` of the trail `trail`, `ago` seconds before now.
     fn rule(&self, ago: u64, anchor: &Anchor, trail: &str, text: &str) -> Result<(), Failure> {
-        self.decision(ago, anchor, Scope::Trail(trail.to_string()), text)?;
+        self.write_rule(ago, anchor, Scope::Trail(trail.to_string()), text)?;
         Ok(())
     }
 
-    /// Writes the decision `text` of `anchor` in `scope`, `ago` seconds before now; its id.
-    fn decision(
+    /// Writes the rule `text` of `anchor` in `scope`, `ago` seconds before now; its id.
+    fn write_rule(
         &self,
         ago: u64,
         anchor: &Anchor,
         scope: Scope,
         text: &str,
     ) -> Result<String, Failure> {
-        let decision = Decision {
+        let rule = Rule {
             anchor: anchor.clone(),
             scope,
             replaces: None,
             content: text.to_string(),
         };
-        let written = self.trails(ago)?.decide(decision, None)?;
+        let written = self.trails(ago)?.decide(rule, None)?;
         Ok(written.records[0].id.clone())
     }
 }

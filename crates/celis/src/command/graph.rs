@@ -69,7 +69,7 @@ fn printed(model: &Model, id: Option<&String>) -> Result<String, Failure> {
             None => return Ok(format!("{EMPTY}\n")),
         },
     };
-    let events = Events::of(head, model.decisions);
+    let events = Events::of(head, model.rules);
     let diagram = Diagram {
         head,
         events: &events,
@@ -159,7 +159,7 @@ impl Live for Replay<'_> {
         let Some(head) = self.head(model) else {
             return Ok(empty());
         };
-        let events = Events::of(head, model.decisions);
+        let events = Events::of(head, model.rules);
         let all = events.all.len();
         match self.shown == usize::MAX {
             true => self.shown = all,
@@ -250,7 +250,7 @@ impl Live for Replay<'_> {
         let Some(head) = self.head(model) else {
             return Ok(());
         };
-        let events = Events::of(head, model.decisions);
+        let events = Events::of(head, model.rules);
         let all = events.all.len();
         match key {
             Key::Up | Key::Down | Key::Left | Key::Right => {

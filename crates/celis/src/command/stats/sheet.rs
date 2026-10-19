@@ -42,7 +42,7 @@ pub(crate) fn sheets(model: &Model, full: usize, inside: usize, plain: bool) -> 
     [
         effect(&last, &before, full, ink),
         followed(reuse, inside, ink),
-        rules(model.decisions, reuse, inside, ink),
+        rules(model.rules, reuse, inside, ink),
         work(steps, &before, now, inside, ink),
         time(&last, inside, ink),
         outcome(&last, inside, ink),

@@ -46,10 +46,10 @@ fn links(step: &Value, kind: &str) -> Vec<String> {
         .collect()
 }
 
-/// `step add --uses` takes a live decision and a step of another trail, writes each whole id, and gives
+/// `step add --uses` takes a live rule and a step of another trail, writes each whole id, and gives
 /// a trail id as its first ask (`spec/06-reuse.md`, "Uses").
 #[test]
-fn uses_takes_a_decision_and_a_step_of_another_trail() {
+fn uses_takes_a_rule_and_a_step_of_another_trail() {
     let repo = Repo::new();
     let rule = decide(
         &repo,
@@ -77,7 +77,7 @@ fn uses_takes_a_decision_and_a_step_of_another_trail() {
     assert_eq!(links(&json, "under"), [trail], "{json}");
 }
 
-/// `step add --uses` refuses an id no decision or step has with `no-step`, and a step of its own trail
+/// `step add --uses` refuses an id no rule or step has with `no-step`, and a step of its own trail
 /// as a usage error (`spec/06-reuse.md`, "Uses").
 #[test]
 fn uses_refuses_an_unknown_id_and_a_step_of_the_same_trail() {
@@ -204,8 +204,8 @@ fn replaces_refuses_a_dropped_step() {
     refusal(&o, 1, "closed");
 }
 
-/// A chain of follows: the ask `a` of one trail, `b` of a second that uses `a` and the decision, and
-/// `c` of a third that uses `b` and the decision; each done. Gives `(a, b, c, decision)`.
+/// A chain of follows: the ask `a` of one trail, `b` of a second that uses `a` and the rule, and
+/// `c` of a third that uses `b` and the rule; each done. Gives `(a, b, c, rule)`.
 fn chain(repo: &Repo) -> (String, String, String, String) {
     let rule = decide(repo, "When a price rounds: round down to the cent.");
     let a = ids(repo, "s1", &["--", "a senior pays 80%"]).remove(0);
@@ -255,7 +255,7 @@ fn stats_says_when_nothing_was_reused() {
 /// `stats` prints each followed step, most followed at any depth first, then each used rule, then
 /// the total.
 #[test]
-fn stats_prints_the_followed_steps_the_used_decisions_and_the_total() {
+fn stats_prints_the_followed_steps_the_used_rules_and_the_total() {
     let repo = Repo::new();
     let (a, b, _, rule) = chain(&repo);
     let text = out(&cli(&repo, &["stats"]));

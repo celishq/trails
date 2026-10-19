@@ -12,7 +12,7 @@ use crate::text::clock::took;
 use crate::text::line::plural;
 use crate::text::line::time;
 use celis_trails::records::id::short;
-use celis_trails::{Decisions, Mark, State, Step, Steps, Trail, Trails};
+use celis_trails::{Mark, Rules, State, Step, Steps, Trail, Trails};
 use ratatui::text::Span;
 use serde_json::json;
 use std::io::{IsTerminal, Read, Write};
@@ -35,7 +35,7 @@ impl Command {
             return Err(Failure::no_step(&ids[0]));
         }
         let trails = self.trails()?;
-        let text = markdown(&trails.steps(), &trails.decisions(), ids)?;
+        let text = markdown(&trails.steps(), &trails.rules(), ids)?;
         if !std::io::stdout().is_terminal() || args.json {
             return super::show(out, args.json, "report", json!(text), text.trim_end());
         }
@@ -81,7 +81,7 @@ fn card(trails: &Trails, trail: Step, width: usize) -> Card {
     let step = trail.record();
     let tree = &trail.tree()[1..];
     let tally = Tally::of(tree);
-    let rules = trails.decisions().rules(trail).len();
+    let rules = trails.rules().of(trail).len();
     let ran = took(trail.newest().saturating_sub(trail.note().created_at));
     let state = trail.state();
     let mark = paint(look(state).text, look(state).mark);
@@ -203,18 +203,14 @@ fn leave(out: &mut dyn Write, text: &str, colour: bool) -> Result<(), Failure> {
 }
 
 /// The trail of the step each of `ids` names in `steps`, once, in their order, as Markdown.
-pub(crate) fn markdown(
-    steps: &Steps,
-    decisions: &Decisions,
-    ids: &[String],
-) -> Result<String, Failure> {
+pub(crate) fn markdown(steps: &Steps, rules: &Rules, ids: &[String]) -> Result<String, Failure> {
     let mut parts = Vec::new();
     for trail in chosen(steps, ids)? {
         let step = trail.record();
         let tree = &trail.tree()[1..];
         let tally = Tally::of(tree);
         let ran = took(trail.newest().saturating_sub(trail.note().created_at));
-        let rules = decisions.rules(trail);
+        let kept = rules.of(trail);
         let mut lines = vec![
             format!("## {}", step.title()),
             String::new(),
@@ -226,7 +222,7 @@ pub(crate) fn markdown(
                 look(trail.state()).mark,
                 trail.state().text(),
                 tree.len(),
-                rules.len(),
+                kept.len(),
                 tally.revised,
                 tally.dropped,
                 cell(&step.anchor.name)
@@ -242,12 +238,12 @@ pub(crate) fn markdown(
             lines.push(format!("done: {}", done.content));
         }
         lines.extend(table(Trail::new(trail).parts()));
-        if !rules.is_empty() {
-            let count = match rules.len() {
+        if !kept.is_empty() {
+            let count = match kept.len() {
                 1 => "1 rule".to_string(),
                 n => format!("{n} rules"),
             };
-            let items = rules.iter().map(|(_, d)| format!("- {}", d.content));
+            let items = kept.iter().map(|(_, d)| format!("- {}", d.content));
             lines.extend(details(&count, items.collect()));
         }
         parts.push(lines.join("\n"));
@@ -257,13 +253,13 @@ pub(crate) fn markdown(
 
 /// The trail, step or rule `id` as Markdown: a trail as `markdown` gives it, a step as the table of it and
 /// the steps under it, a rule as `- <text>`.
-pub(crate) fn part(steps: &Steps, decisions: &Decisions, id: &str) -> Result<String, Failure> {
-    if let Some((_, decision)) = decisions.get(id) {
-        return Ok(format!("- {}\n", decision.content));
+pub(crate) fn part(steps: &Steps, rules: &Rules, id: &str) -> Result<String, Failure> {
+    if let Some((_, rule)) = rules.get(id) {
+        return Ok(format!("- {}\n", rule.content));
     }
     let step = steps.find(id)?;
     if step.is_trail() {
-        return markdown(steps, decisions, &[id.to_string()]);
+        return markdown(steps, rules, &[id.to_string()]);
     }
     let lines = table(vec![step]);
     Ok(lines[1..].join("\n") + "\n")

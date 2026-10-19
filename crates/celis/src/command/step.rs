@@ -59,7 +59,7 @@ impl Command {
         self.print(written, args, out, err)
     }
 
-    /// Starts the open step `args` names, and prints the id of its start, then the decisions at its
+    /// Starts the open step `args` names, and prints the id of its start, then the rules at its
     /// places.
     fn step_start(
         &self,
@@ -73,7 +73,7 @@ impl Command {
     }
 
     /// Closes the open step `args` names, done with its proof and what changed from its plan, and prints
-    /// the id of the done record, then of its pitfall's decision, and its review.
+    /// the id of the done record, then of its pitfall's rule, and its review.
     fn step_close(
         &self,
         args: &Args,
@@ -133,7 +133,7 @@ impl Command {
         self.print(written, args, out, &mut std::io::sink())
     }
 
-    /// Prints the id of each record of `written` and each of its decisions on `out`, and its notices on
+    /// Prints the id of each record of `written` and each of its rules on `out`, and its notices on
     /// `err`.
     pub(crate) fn print(
         &self,
@@ -145,13 +145,13 @@ impl Command {
         for record in &written.records {
             self.id(out, args, record)?;
         }
-        for (said, decision) in &written.decisions {
-            let line = crate::text::line::decision(said, decision);
+        for (said, rule) in &written.rules {
+            let line = crate::text::line::rule(said, rule);
             super::show(
                 out,
                 args.json,
                 "decision",
-                crate::text::json::decision(said, decision),
+                crate::text::json::rule(said, rule),
                 &line,
             )?;
         }

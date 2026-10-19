@@ -11,7 +11,7 @@ use crate::text::clock::stride;
 use crate::text::clock::{day, midnight};
 use celis_trails::records::id::short;
 use celis_trails::step::steps::LIFE;
-use celis_trails::{Decisions, State, Step, Steps, Trail};
+use celis_trails::{Rules, State, Step, Steps, Trail};
 pub(crate) use layout::Layout;
 use level::Level;
 use ratatui::style::Style;
@@ -82,7 +82,7 @@ impl Command {
         };
         let tree = Tree {
             steps,
-            decisions: model.decisions,
+            rules: model.rules,
             reuse: model.reuse,
             layout,
             grouped: id.is_none(),
@@ -164,13 +164,13 @@ impl Item {
 /// What `tree` with no id prints while it has no trail to print.
 pub(crate) const EMPTY: &str = "No active trails. Run `celis tree --all` to see every trail.";
 
-/// The steps and decisions a tree is printed from, the day groups it keeps, and how: grouped by
+/// The steps and rules a tree is printed from, the day groups it keeps, and how: grouped by
 /// day and project; `width` wide; as `view` shows it, off a watch as the agent view. `next` holds the
 /// earliest time a time it printed changes, `spun` whether it printed the spinner, `order` the lines a
 /// watch selects, `printed` the count of its lines, and `picked` the line of the selected trail.
 pub(crate) struct Tree<'a> {
     pub steps: &'a Steps<'a>,
-    pub decisions: &'a Decisions<'a>,
+    pub rules: &'a Rules<'a>,
     pub reuse: &'a Reuse<'a>,
     pub layout: Option<&'a Layout>,
     pub grouped: bool,
@@ -183,8 +183,8 @@ pub(crate) struct Tree<'a> {
     pub next: Cell<Option<u64>>,
 }
 
-/// A live rule: its record and its decision.
-type Rule<'a> = (&'a celis_nostr::Note, celis_trails::Decision);
+/// A live rule: its record and its rule.
+type RuleNote<'a> = (&'a celis_nostr::Note, celis_trails::Rule);
 
 /// What the tree says of a trail: the steps it prints under it, the done ones, the time they worked,
 /// and its rules.
@@ -192,7 +192,7 @@ struct Summary<'a> {
     all: usize,
     done: usize,
     worked: Option<u64>,
-    rules: Vec<Rule<'a>>,
+    rules: Vec<RuleNote<'a>>,
 }
 
 impl Tree<'_> {
@@ -292,12 +292,12 @@ impl Tree<'_> {
     }
 
     /// The live rules of the trail of `note`: its own, or its trail's when it is an ask.
-    fn rules(&self, note: Step) -> Vec<Rule<'_>> {
+    fn rules(&self, note: Step) -> Vec<RuleNote<'_>> {
         let owner = match note.is_ask() {
             true => note.trail(),
             false => note,
         };
-        self.decisions.rules(owner)
+        self.rules.of(owner)
     }
 
     /// The time the steps of `tree` with no step under them worked: what a done one took, and the time

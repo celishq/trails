@@ -92,7 +92,7 @@ impl Project {
         }
     }
 
-    /// What a decision, trail or step written in this project is on.
+    /// What a rule, trail or step written in this project is on.
     pub fn anchor(&self) -> Anchor {
         Anchor {
             project: self.id.clone(),

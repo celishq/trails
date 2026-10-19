@@ -291,9 +291,9 @@ pub fn refusal(o: &Output, code: i32, name: &str) {
     assert_eq!(object["error"], name, "{}", err(o));
 }
 
-/// A decision of `by` on `project` (id, name) saying `content`, with the tags `scope` and `replaces`
+/// A rule of `by` on `project` (id, name) saying `content`, with the tags `scope` and `replaces`
 /// when given, written at `created`, put in the store.
-pub fn decision(
+pub fn stored_rule(
     repo: &Repo,
     project: (&str, &str),
     by: &Account,
@@ -379,15 +379,15 @@ pub fn sharing_a_start_with(by: &Account, at: u64, tags: &[Vec<String>]) -> (Not
 
 /// The tags of a step on `project` (id, name).
 pub fn step_tags(project: (&str, &str)) -> Vec<Vec<String>> {
-    let mut tags = decision_tags(project);
+    let mut tags = rule_tags(project);
     tags.truncate(5);
     tags.push(vec!["L".into(), "celis.step".into()]);
     tags.push(vec!["l".into(), "step".into(), "celis.step".into()]);
     tags
 }
 
-/// The tags of a decision on `project` (id, name).
-pub fn decision_tags(project: (&str, &str)) -> Vec<Vec<String>> {
+/// The tags of a rule on `project` (id, name).
+pub fn rule_tags(project: (&str, &str)) -> Vec<Vec<String>> {
     let anchor = format!("project:{}", project.0);
     vec![
         vec!["I".into(), anchor.clone()],
@@ -442,7 +442,7 @@ pub fn objects(repo: &Repo, args: &[&str]) -> Vec<serde_json::Value> {
         .collect()
 }
 
-/// The ids, first 8 characters, of the decisions `step start` prints in `folder` for a new step that
+/// The ids, first 8 characters, of the rules `step start` prints in `folder` for a new step that
 /// `step add --new <args>` adds, in order.
 pub fn read_ids(repo: &Repo, folder: &Path, args: &[&str]) -> Vec<String> {
     let text = format!("a step that reads {}", args.join(" "));

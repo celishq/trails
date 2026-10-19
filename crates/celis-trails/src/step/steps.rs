@@ -1,6 +1,6 @@
 //! The steps of a store, as they stand at one moment.
 
-use crate::{Decision, Mark, Refusal, Step, StepRecord};
+use crate::{Mark, Refusal, Rule, Step, StepRecord};
 use celis_nostr::Note;
 use std::cell::Cell;
 use std::collections::{HashMap, HashSet};
@@ -35,9 +35,9 @@ impl<'a> Steps<'a> {
         all.filter_map(|n| self.get(&n.id)).collect()
     }
 
-    /// Whether a decision record has the id `id`.
-    pub(crate) fn holds_decision(&self, id: &str) -> bool {
-        self.index.decisions.contains(id)
+    /// Whether a rule record has the id `id`.
+    pub(crate) fn holds_rule(&self, id: &str) -> bool {
+        self.index.rules.contains(id)
     }
 
     /// The step whose id is `id`.
@@ -106,7 +106,7 @@ pub(crate) struct Index<'a> {
     all: Vec<&'a Note>,
     roots: Vec<&'a Note>,
     entries: HashMap<&'a str, Entry<'a>>,
-    decisions: HashSet<&'a str>,
+    rules: HashSet<&'a str>,
 }
 
 /// One step: its record, its text with its edits, its links, the steps that replace it, and how its marks
@@ -181,13 +181,13 @@ impl<'a> Index<'a> {
         sum(&mut entries);
         let roots = all.iter().copied();
         let roots = roots.filter(|n| entries[n.id.as_str()].step.under.is_none());
-        let decisions = sorted.iter().filter(|n| Decision::read(n).is_some());
-        let decisions = decisions.map(|n| n.id.as_str()).collect();
+        let rules = sorted.iter().filter(|n| Rule::read(n).is_some());
+        let rules = rules.map(|n| n.id.as_str()).collect();
         Index {
             roots: roots.collect(),
             all,
             entries,
-            decisions,
+            rules,
         }
     }
 }

@@ -1,6 +1,6 @@
 use super::*;
 use celis_nostr::{Account, Note};
-use celis_trails::{Anchor, Decisions, StepId, StepRecord, Steps};
+use celis_trails::{Anchor, Rules, StepId, StepRecord, Steps};
 
 fn step(under: Option<&Note>, at: u64, content: &str) -> Note {
     StepRecord {
@@ -29,8 +29,8 @@ fn a_selected_card_shows_in_bold_bright_yellow_text() {
     let page = step(Some(&trail), now - 80, "page");
     let records = [trail.clone(), first, page.clone()];
     let steps = Steps::new(&records, now);
-    let decisions = Decisions::new(&records);
-    let events = Events::of(steps.get(&trail.id).unwrap(), &decisions);
+    let rules = Rules::new(&records);
+    let events = Events::of(steps.get(&trail.id).unwrap(), &rules);
     let diagram = Diagram {
         head: steps.get(&trail.id).unwrap(),
         events: &events,

@@ -1,4 +1,4 @@
-//! The trails and decisions of a store at one moment, and what the account writes on them.
+//! The trails and rules of a store at one moment, and what the account writes on them.
 
 pub mod draft;
 pub mod notice;
@@ -6,8 +6,8 @@ pub mod written;
 
 use crate::records::id::short;
 use crate::{
-    Check, Decision, DecisionId, Decisions, Draft, Mark, Notice, Refusal, Scope, Step, StepId,
-    StepRecord, Steps, Store, Trail, Written,
+    Check, Draft, Mark, Notice, Refusal, Rule, RuleId, Rules, Scope, Step, StepId, StepRecord,
+    Steps, Store, Trail, Written,
 };
 use celis_nostr::{Account, Note};
 use std::path::{Path, PathBuf};
@@ -61,8 +61,8 @@ impl Trails {
         Steps::new(&self.records, self.now)
     }
 
-    pub fn decisions(&self) -> Decisions<'_> {
-        Decisions::new(&self.records)
+    pub fn rules(&self) -> Rules<'_> {
+        Rules::new(&self.records)
     }
 
     /// Writes the step `draft` states, where `parent` puts it; a session's new trail holds its first ask,
@@ -146,7 +146,7 @@ impl Trails {
         })
     }
 
-    /// Starts the open step `id`, or gives back the first start of a working step; then the decisions
+    /// Starts the open step `id`, or gives back the first start of a working step; then the rules
     /// the step must keep.
     pub fn start(&self, id: &str) -> Result<Written, Refusal> {
         let steps = self.steps();
@@ -158,15 +158,13 @@ impl Trails {
                 .records
                 .push(self.sign(|account, now| Mark::Start.record(account, step.id(), now))?),
         }
-        let kept = self.decisions().kept(step).into_iter();
-        written.decisions = kept
-            .map(|(said, decision)| (said.clone(), decision))
-            .collect();
+        let kept = self.rules().kept(step).into_iter();
+        written.rules = kept.map(|(said, rule)| (said.clone(), rule)).collect();
         Ok(written)
     }
 
     /// Closes the open step `id` done, with its proof and what changed from its plan, once nothing under
-    /// it is open and its check passes in `folder`; a pitfall becomes a decision at its place, else on its
+    /// it is open and its check passes in `folder`; a pitfall becomes a rule at its place, else on its
     /// trail.
     pub fn done(
         &self,
@@ -195,7 +193,7 @@ impl Trails {
                 Some(at) => Scope::At(at.to_string()),
                 None => Scope::Trail(note.trail().id().to_string()),
             };
-            let decision = Decision {
+            let rule = Rule {
                 anchor: step.anchor.clone(),
                 scope,
                 replaces: None,
@@ -203,7 +201,7 @@ impl Trails {
             };
             written
                 .records
-                .push(self.sign(|account, now| decision.record(account, now))?);
+                .push(self.sign(|account, now| rule.record(account, now))?);
         }
         Ok(written)
     }
@@ -241,15 +239,11 @@ impl Trails {
         })
     }
 
-    /// Writes `decision`, its trail scope taken whole from a trail of its project that is not done or
-    /// dropped, replacing the live decision there that `replaces` names.
-    pub fn decide(
-        &self,
-        mut decision: Decision,
-        replaces: Option<&str>,
-    ) -> Result<Written, Refusal> {
-        let project = decision.anchor.project.clone();
-        if let Scope::Trail(id) = &decision.scope {
+    /// Writes `rule`, its trail scope taken whole from a trail of its project that is not done or
+    /// dropped, replacing the live rule there that `replaces` names.
+    pub fn decide(&self, mut rule: Rule, replaces: Option<&str>) -> Result<Written, Refusal> {
+        let project = rule.anchor.project.clone();
+        if let Scope::Trail(id) = &rule.scope {
             let steps = self.steps();
             let trail = steps
                 .find(id)
@@ -260,12 +254,12 @@ impl Trails {
             if !open {
                 return Err(Refusal::NoTrail(id.to_string()));
             }
-            decision.scope = Scope::Trail(trail.id().to_string());
+            rule.scope = Scope::Trail(trail.id().to_string());
         }
         if let Some(id) = replaces {
-            decision.replaces = Some(DecisionId::new(&self.decisions().find(&project, id)?.id));
+            rule.replaces = Some(RuleId::new(&self.rules().find(&project, id)?.id));
         }
-        let written = self.sign(|account, now| decision.record(account, now))?;
+        let written = self.sign(|account, now| rule.record(account, now))?;
         Ok(Written {
             records: vec![written],
             ..Written::default()
@@ -278,7 +272,7 @@ impl Trails {
         self.sign(|account, now| mark.record(account, trail.id(), now))
     }
 
-    /// The whole id of the live decision of `project`, or of the step of a trail other than `trail`, that
+    /// The whole id of the live rule of `project`, or of the step of a trail other than `trail`, that
     /// `id` names; a trail gives the step that holds its work (`Trail::work`).
     fn used(
         &self,
@@ -287,15 +281,15 @@ impl Trails {
         trail: Option<&str>,
         id: &str,
     ) -> Result<String, Refusal> {
-        let decision = self.decisions().find(project, id).ok();
+        let rule = self.rules().find(project, id).ok();
         let step = steps.find(id).ok();
-        let step = match (decision, step) {
+        let step = match (rule, step) {
             (Some(_), Some(_)) => {
                 return Err(Refusal::Usage(format!(
                     "{id} starts the id of a rule and of a step; give more of it"
                 )))
             }
-            (Some(decision), None) => return Ok(decision.id.clone()),
+            (Some(rule), None) => return Ok(rule.id.clone()),
             (None, Some(step)) => Trail::new(step).work(),
             (None, None) => return Err(Refusal::NoStep(id.to_string())),
         };

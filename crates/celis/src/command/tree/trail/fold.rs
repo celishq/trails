@@ -2,7 +2,7 @@
 
 use crate::command::tree::level::ids;
 use crate::command::tree::row::Row;
-use crate::command::tree::{after, Item, Rule, Tree, CLOSED, RULES};
+use crate::command::tree::{after, Item, RuleNote, Tree, CLOSED, RULES};
 use crate::progress::Tally;
 use crate::terminal::canvas::{paint, Styled, MAGENTA};
 use crate::terminal::look::look;
@@ -16,7 +16,7 @@ impl Tree<'_> {
     /// open, a line under it for each of `rules`: `§ <text>`, wrapped, its id at the end.
     pub(super) fn rules_line(
         &self,
-        rules: Vec<Rule>,
+        rules: Vec<RuleNote>,
         rail: &Styled,
         last: bool,
         trail: &str,
@@ -38,25 +38,25 @@ impl Tree<'_> {
             id: id.clone(),
             open,
             parent: Some(trail.to_string()),
-            under: rules.iter().map(|(rule, _)| rule.id.clone()).collect(),
+            under: rules.iter().map(|(record, _)| record.id.clone()).collect(),
         };
         self.pick(item, lines, first);
         if !open {
             return;
         }
         let all = rules.len();
-        for (n, (rule, decision)) in rules.into_iter().enumerate() {
+        for (n, (record, rule)) in rules.into_iter().enumerate() {
             let (lead, below) = self.branch(&rail, n + 1 == all, None);
             let first = lines.len();
             lines.push(Row::Titled {
                 lead,
                 marks: Styled::from(mark.clone()),
-                title: decision.content.clone(),
+                title: rule.content.clone(),
                 tone: Style::new(),
                 rest: after(&below, Span::raw("  ")),
             });
             let item = Item {
-                id: rule.id.clone(),
+                id: record.id.clone(),
                 open: false,
                 parent: Some(id.clone()),
                 under: vec![],

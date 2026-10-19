@@ -88,8 +88,7 @@ impl Live for Watch<'_> {
             .iter()
             .find(|i| self.view.selected.as_ref() == Some(&i.id));
         let copy = selected.and_then(Item::copy);
-        let part =
-            |item: &Item| crate::command::report::part(model.steps, model.decisions, &item.id);
+        let part = |item: &Item| crate::command::report::part(model.steps, model.rules, &item.id);
         let markdown = selected
             .filter(|_| copy.is_some())
             .and_then(|item| part(item).ok());

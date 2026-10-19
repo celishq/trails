@@ -590,7 +590,7 @@ fn watch_prints_open_steps_then_rules_then_closed_steps() {
     let scope = format!("trail:{}", trail.id);
     let project = (repo.project_id(), "repo");
     let rule = (Some(scope.as_str()), None);
-    support::decision(&repo, (&project.0, project.1), &by, rule, "a rule", at);
+    support::stored_rule(&repo, (&project.0, project.1), &by, rule, "a rule", at);
     let finished = support::step_note(&repo, &by, Some(&trail), "finished", at + 1);
     support::done_note(&repo, &by, &finished, at + 2);
     let parent = support::step_note(&repo, &by, Some(&trail), "parent", at + 3);
@@ -764,7 +764,7 @@ fn watch_prints_a_trail_lines_details_under_its_title() {
     let project = repo.project_id();
     for n in 0..10 {
         let scope = format!("trail:{}", one.id);
-        support::decision(
+        support::stored_rule(
             &repo,
             (&project, "repo"),
             &by,

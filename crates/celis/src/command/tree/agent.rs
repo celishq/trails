@@ -25,8 +25,8 @@ impl Tree<'_> {
         self.below(work, "  ", lines);
         let level = Level::of(Trail::new(note).parts());
         self.agent_steps(level.active, "  ", lines);
-        for (rule, decision) in &summary.rules {
-            let line = format!("  § {} {}", short(&rule.id), decision.content);
+        for (record, rule) in &summary.rules {
+            let line = format!("  § {} {}", short(&record.id), rule.content);
             lines.push(Row::Text(line.into()));
         }
         self.agent_steps(level.ended, "  ", lines);

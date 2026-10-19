@@ -7,7 +7,7 @@ use std::process::Output;
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 use support::{
-    account, decision_tags, err, out, put, sharing_a_start, sharing_a_start_with, step_tags, Repo,
+    account, err, out, put, rule_tags, sharing_a_start, sharing_a_start_with, step_tags, Repo,
 };
 
 fn objects(text: &str) -> Vec<Value> {
@@ -170,7 +170,7 @@ fn a_command_takes_an_id_whole_or_as_a_start_of_4_or_more_characters() {
     }
 }
 
-/// `decide --replaces` takes the first 8 characters of a decision's id
+/// `decide --replaces` takes the first 8 characters of a rule's id
 /// (`spec/02-cli.md`, "Output and errors").
 #[test]
 fn decide_replaces_takes_the_first_8_characters_of_an_id() {
@@ -254,10 +254,10 @@ fn decide_prints_its_id() {
     assert!(is_id(lines[0]["id"].as_str().unwrap()));
 }
 
-/// With `--json`, a `--replaces` no live decision has is named `no-decision`
+/// With `--json`, a `--replaces` no live rule has is named `no-decision`
 /// (`spec/02-cli.md`, "Output and errors").
 #[test]
-fn a_replaces_no_live_decision_has_is_named_no_decision_under_json() {
+fn a_replaces_no_live_rule_has_is_named_no_rule_under_json() {
     let repo = Repo::new();
     let none = "0".repeat(64);
     let args = ["decide", "--json", "--replaces", &none, "--", "x"];
@@ -383,9 +383,9 @@ fn a_command_refuses_an_8_character_start_two_steps_share() {
 }
 
 /// A command refuses an 8-character start two steps share with `no-step`, or `no-trail` as a scope, and
-/// two decisions share with `no-decision`, under `--json` (`spec/02-cli.md`, "Output and errors").
+/// two rules share with `no-decision`, under `--json` (`spec/02-cli.md`, "Output and errors").
 #[test]
-fn a_command_refuses_an_8_character_start_two_trails_decisions_or_steps_share() {
+fn a_command_refuses_an_8_character_start_two_trails_rules_or_steps_share() {
     let repo = Repo::plain();
     let project = (repo.project_id(), "repo".to_string());
     let project = (project.0.as_str(), project.1.as_str());
@@ -410,7 +410,7 @@ fn a_command_refuses_an_8_character_start_two_trails_decisions_or_steps_share() 
     let o = repo.run(&repo.path(), &["tree", &g2.id], &[], "");
     assert!(o.status.success(), "{}", err(&o));
 
-    let (d1, d2) = sharing_a_start_with(&account(), at, &decision_tags(project));
+    let (d1, d2) = sharing_a_start_with(&account(), at, &rule_tags(project));
     put(&repo, &d1);
     put(&repo, &d2);
     assert_eq!(d1.id[..8], d2.id[..8]);

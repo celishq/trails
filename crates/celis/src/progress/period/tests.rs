@@ -1,7 +1,7 @@
 use super::*;
 use celis_nostr::{Account, Note};
 use celis_trails::step::steps::LIFE;
-use celis_trails::{Anchor, Decision, Mark, Scope, StepId, StepRecord, Steps};
+use celis_trails::{Anchor, Mark, Rule, Scope, StepId, StepRecord, Steps};
 
 fn account() -> Account {
     Account::new(&[1u8; 32]).unwrap()
@@ -72,11 +72,11 @@ fn a_period_counts_its_done_steps_as_planned_and_reworked() {
     assert_eq!(period.reworked(), 1);
 }
 
-/// A period counts the steps added in it that use a decision, and not those that use only a step or an
+/// A period counts the steps added in it that use a rule, and not those that use only a step or an
 /// id that names no record (`spec/06-reuse.md`, "Uses").
 #[test]
-fn a_period_counts_its_added_steps_that_use_a_decision() {
-    let rule = Decision {
+fn a_period_counts_its_added_steps_that_use_a_rule() {
+    let rule = Rule {
         anchor: Anchor {
             project: "p".into(),
             name: "repo".into(),

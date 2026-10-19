@@ -2,7 +2,7 @@
 
 use super::level::Level;
 use super::row::Row;
-use super::{Item, Rule, Tree, PROJECT, RULES};
+use super::{Item, RuleNote, Tree, PROJECT, RULES};
 use crate::terminal::canvas::{paint, Styled, BOLD, DIM};
 use crate::terminal::look::look;
 use crate::text::clock::{stride, took};
@@ -45,7 +45,7 @@ impl Tree<'_> {
 
     /// The trail `note` as a line a watch selects, `open` when it prints as a block: with every rule of
     /// `rules` and every step it prints under it.
-    pub(super) fn item(&self, note: Step, open: bool, rules: &[Rule]) -> Item {
+    pub(super) fn item(&self, note: Step, open: bool, rules: &[RuleNote]) -> Item {
         let folded = (!rules.is_empty()).then(|| format!("{RULES}{}", note.id()));
         let rules = rules.iter().map(|(rule, _)| rule.id.clone());
         let steps = Level::of(Trail::new(note).parts()).ids(note.id());

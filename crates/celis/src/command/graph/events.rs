@@ -1,6 +1,6 @@
 //! What happened on one trail, in the order it happened.
 
-use celis_trails::{Decisions, State, Step, Trail};
+use celis_trails::{Rules, State, Step, Trail};
 
 /// The events of one trail in the order they happened: each step added, started and closed, and each
 /// rule written for it.
@@ -26,9 +26,9 @@ pub(crate) enum Kind {
 }
 
 impl Events {
-    /// The events of the trail `head` and of the rules `decisions` holds for it, by the second each
+    /// The events of the trail `head` and of the rules `rules` holds for it, by the second each
     /// happened, then by kind, then by the order of its steps.
-    pub fn of(head: Step, decisions: &Decisions) -> Events {
+    pub fn of(head: Step, rules: &Rules) -> Events {
         let first = Trail::new(head).first().map(|s| s.id());
         let mut timed = Vec::new();
         let steps = head.tree().into_iter().skip(1);
@@ -49,11 +49,11 @@ impl Events {
                 timed.push((dropped.created_at, n, event(Kind::Dropped)));
             }
         }
-        for (note, decision) in decisions.rules(head) {
+        for (note, rule) in rules.of(head) {
             let event = Event {
                 kind: Kind::Rule,
                 id: note.id.clone(),
-                text: decision.brief().to_string(),
+                text: rule.brief().to_string(),
             };
             timed.push((note.created_at, usize::MAX, event));
         }

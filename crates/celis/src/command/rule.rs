@@ -1,12 +1,12 @@
-//! `celis decide`: write a decision.
+//! `celis decide`: write a rule.
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use celis_trails::{Decision, Place, Project, Scope};
+use celis_trails::{Place, Project, Rule, Scope};
 use std::io::Write;
 
 impl Command {
-    /// Writes the decision `args` states on `project`, in its scope, signed by the account now, and
+    /// Writes the rule `args` states on `project`, in its scope, signed by the account now, and
     /// prints its id.
     pub(crate) fn decide(
         &self,
@@ -27,13 +27,13 @@ impl Command {
             Scope::At(place) => Scope::At(Place::resolve(&place, &project.folder, &self.folder)),
             scope => scope,
         };
-        let decision = Decision {
+        let rule = Rule {
             anchor: project.anchor(),
             scope,
             replaces: None,
             content,
         };
-        let written = self.trails()?.decide(decision, args.replaces.as_deref())?;
+        let written = self.trails()?.decide(rule, args.replaces.as_deref())?;
         self.print(written, args, out, &mut std::io::sink())
     }
 }

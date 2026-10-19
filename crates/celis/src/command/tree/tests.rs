@@ -27,11 +27,11 @@ fn step(under: Option<&Note>, at: u64, content: &str) -> Note {
 /// The time the tree of `records` at `now` changes next.
 fn next(records: &[Note], now: u64) -> Option<u64> {
     let steps = Steps::new(records, now);
-    let decisions = Decisions::new(records);
+    let rules = Rules::new(records);
     let reuse = Reuse::new(&steps);
     let tree = Tree {
         steps: &steps,
-        decisions: &decisions,
+        rules: &rules,
         reuse: &reuse,
         layout: None,
         grouped: false,

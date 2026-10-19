@@ -1,6 +1,6 @@
 use super::*;
 use celis_nostr::{Account, Note};
-use celis_trails::{Anchor, Decision, Mark, Scope, StepId, StepRecord, Steps};
+use celis_trails::{Anchor, Mark, Rule, Scope, StepId, StepRecord, Steps};
 
 fn account() -> Account {
     Account::new(&[1u8; 32]).unwrap()
@@ -52,7 +52,7 @@ fn a_history_holds_the_events_of_a_trail_in_the_order_they_happened() {
         &logo,
         now - 50,
     );
-    let rule = Decision {
+    let rule = Rule {
         anchor: Anchor {
             project: "p".into(),
             name: "repo".into(),
@@ -65,8 +65,8 @@ fn a_history_holds_the_events_of_a_trail_in_the_order_they_happened() {
     .unwrap();
     let records = [trail.clone(), page, logo, started, done, dropped, rule];
     let steps = Steps::new(&records, now);
-    let decisions = Decisions::new(&records);
-    let events = Events::of(steps.get(&trail.id).unwrap(), &decisions);
+    let rules = Rules::new(&records);
+    let events = Events::of(steps.get(&trail.id).unwrap(), &rules);
     let happened: Vec<(Kind, &str)> = events
         .all
         .iter()

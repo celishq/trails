@@ -2,21 +2,21 @@
 
 mod support;
 
-use support::{account, decision, now, read_ids, Repo, DAY};
+use support::{account, now, read_ids, stored_rule, Repo, DAY};
 
 fn short(id: &str) -> String {
     id[..8].to_string()
 }
 
-/// A reader gives only live decisions of the working folder's project at a place
+/// A reader gives only live rules of the working folder's project at a place
 /// (`spec/05-rules.md`, "Reading").
 #[test]
-fn a_reader_gives_only_live_decisions_of_the_working_folders_project() {
+fn a_reader_gives_only_live_rules_of_the_working_folders_project() {
     let repo = Repo::new();
     let id = repo.project_id();
     let project = (id.as_str(), "repo");
     let shop = repo.other("shop");
-    let old = decision(
+    let old = stored_rule(
         &repo,
         project,
         &account(),
@@ -24,7 +24,7 @@ fn a_reader_gives_only_live_decisions_of_the_working_folders_project() {
         "old",
         now() - 4 * DAY,
     );
-    let new = decision(
+    let new = stored_rule(
         &repo,
         project,
         &account(),
@@ -32,7 +32,7 @@ fn a_reader_gives_only_live_decisions_of_the_working_folders_project() {
         "new",
         now() - 3 * DAY,
     );
-    let foreign = decision(
+    let foreign = stored_rule(
         &repo,
         ("elsewhere", "shop"),
         &account(),
@@ -47,10 +47,10 @@ fn a_reader_gives_only_live_decisions_of_the_working_folders_project() {
     assert!(!in_shop.contains(&short(&foreign.id)), "{in_shop:?}");
 }
 
-/// A decision at a file is at that file whatever line its `at` names, and a folder holds what lies
+/// A rule at a file is at that file whatever line its `at` names, and a folder holds what lies
 /// under it (`spec/05-rules.md`, "Reading").
 #[test]
-fn a_decision_at_a_file_is_at_that_file_whatever_line_and_a_folder_holds_what_lies_under_it() {
+fn a_rule_at_a_file_is_at_that_file_whatever_line_and_a_folder_holds_what_lies_under_it() {
     let repo = Repo::new();
     let id = repo.project_id();
     let project = (id.as_str(), "repo");
@@ -64,7 +64,7 @@ fn a_decision_at_a_file_is_at_that_file_whatever_line_and_a_folder_holds_what_li
     }
     let at = |place: &str, n: u64| {
         short(
-            &decision(
+            &stored_rule(
                 &repo,
                 project,
                 &account(),
@@ -93,15 +93,15 @@ fn a_decision_at_a_file_is_at_that_file_whatever_line_and_a_folder_holds_what_li
     assert_eq!(read_ids(&repo, &folder, &["--at", "src/xy"]), [sibling]);
 }
 
-/// A reader orders the decisions at a place newest first, then by id.
+/// A reader orders the rules at a place newest first, then by id.
 #[test]
-fn a_reader_orders_decisions_newest_first_then_by_id() {
+fn a_reader_orders_rules_newest_first_then_by_id() {
     let repo = Repo::new();
     let id = repo.project_id();
     let project = (id.as_str(), "repo");
     let make = |text: &str, at: u64| {
         let scope = Some("at:src/a.rs");
-        short(&decision(&repo, project, &account(), (scope, None), text, at).id)
+        short(&stored_rule(&repo, project, &account(), (scope, None), text, at).id)
     };
     let same = now() - 3 * DAY;
     let mut tied: Vec<String> = ["a", "b", "c"].iter().map(|t| make(t, same)).collect();

@@ -57,7 +57,7 @@ impl<'a> Step<'a> {
     }
 
     /// What each of its `uses` names, once each, in the order it names them; an id that names no step
-    /// and no decision is left out.
+    /// and no rule is left out.
     pub fn uses(self) -> Vec<Used<'a>> {
         let mut seen = HashSet::new();
         let ids = self
@@ -68,7 +68,7 @@ impl<'a> Step<'a> {
             .filter(|id| seen.insert(id.as_str()));
         ids.filter_map(|id| match self.steps.get(id) {
             Some(step) => Some(Used::Follow(step)),
-            None => self.steps.holds_decision(id).then_some(Used::Decision(id)),
+            None => self.steps.holds_rule(id).then_some(Used::Rule(id)),
         })
         .collect()
     }
