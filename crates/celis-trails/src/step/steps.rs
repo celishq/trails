@@ -92,6 +92,14 @@ impl<'a> Steps<'a> {
         Some((self.get(note.tag("e")?)?, note))
     }
 
+    /// The name the step `id` holds first; `None` when it holds none.
+    pub(crate) fn name_of(&self, id: &str) -> Option<&Name> {
+        let held = self.index.names.iter();
+        let held = held.filter(|(_, note)| note.tag("e") == Some(id));
+        let first = held.min_by_key(|(_, note)| (note.created_at, &note.id));
+        first.map(|(name, _)| name)
+    }
+
     /// Each name and the step that holds it, by name.
     pub fn names(&'a self) -> Vec<(&'a Name, Step<'a>)> {
         let mut names: Vec<_> = self.index.names.iter().collect();

@@ -9,7 +9,7 @@ pub mod steps;
 pub mod used;
 
 use crate::step::steps::{Close, Entry, LIFE};
-use crate::{Mark, State, StepId, StepRecord, Steps, Trail, Used};
+use crate::{Mark, Name, State, StepId, StepRecord, Steps, Trail, Used};
 use celis_nostr::Note;
 use std::collections::HashSet;
 
@@ -46,6 +46,11 @@ impl<'a> Step<'a> {
 
     pub fn title(self) -> &'a str {
         self.entry.step.title()
+    }
+
+    /// The name it holds (CIP-07); `None` when it holds none.
+    pub fn name(self) -> Option<&'a Name> {
+        self.steps.name_of(self.id())
     }
 
     pub fn is_trail(self) -> bool {

@@ -90,7 +90,8 @@ impl<'a> Rules<'a> {
     }
 
     /// The live rules `step` must keep, each once: those at its places, its trail's rules, each
-    /// rule a step on its `under` chain uses, and the rules of the trail of each step one follows.
+    /// rule a step on its `under` chain uses, the rules of the trail of each step one follows, and the
+    /// rules of each named trail on the chain of the named trails it follows.
     pub fn kept(&self, step: Step) -> Vec<(&'a Note, Rule)> {
         let record = step.record();
         let places = record.places.iter();
@@ -105,8 +106,37 @@ impl<'a> Rules<'a> {
                 Used::Rule(id) => found.extend(self.get(id)),
             }
         }
+        for trail in named(step) {
+            found.extend(self.of(trail));
+        }
         let mut seen = HashSet::new();
         found.retain(|(note, _)| seen.insert(note.id.clone()));
         found
     }
+}
+
+/// Each named trail that a step on the `under` chain of `step` follows, and each named trail that a step
+/// of a named trail found follows, at any depth, each once.
+fn named(step: Step) -> Vec<Step> {
+    let chain = std::iter::successors(Some(step), |s| s.under());
+    let mut found: Vec<Step> = Vec::new();
+    let mut next: Vec<Step> = chain.flat_map(Step::uses).filter_map(followed).collect();
+    while let Some(trail) = next.pop() {
+        if found.iter().any(|f| f.id() == trail.id()) {
+            continue;
+        }
+        let tree = trail.tree().into_iter();
+        next.extend(tree.flat_map(Step::uses).filter_map(followed));
+        found.push(trail);
+    }
+    found
+}
+
+/// The trail of the step `used` follows, when the trail is named.
+fn followed(used: Used) -> Option<Step> {
+    let Used::Follow(step) = used else {
+        return None;
+    };
+    let trail = step.trail();
+    trail.name().map(|_| trail)
 }
