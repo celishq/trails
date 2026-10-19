@@ -2,6 +2,7 @@
 
 pub mod draft;
 pub mod notice;
+mod target;
 pub mod written;
 
 use crate::records::id::short;
@@ -11,6 +12,7 @@ use crate::{
 };
 use celis_nostr::{Account, Note};
 use std::path::{Path, PathBuf};
+use target::Target;
 
 /// The records of a store at the time `now`, and the account's writes on them, each signed now. A
 /// step's check runs for `limit` seconds at most. Readers take the time from its steps.
@@ -214,22 +216,16 @@ impl Trails {
         let mark = Mark::Drop {
             reason: reason.to_string(),
         };
-        let records = match (rule, steps.find(id).ok()) {
-            (Some(_), Some(_)) => {
-                return Err(Refusal::Usage(format!(
-                    "{id} starts the id of a rule and of a step; give more of it"
-                )))
-            }
-            (Some(rule), None) if rules.get(&rule.id).is_some() => {
+        let records = match Target::of(id, rule, steps.find(id).ok())? {
+            Target::Rule(rule) if rules.get(&rule.id).is_some() => {
                 vec![self.sign(|account, now| mark.record(account, &rule.id, now))?]
             }
-            (Some(rule), None) => return Err(Refusal::Closed(rule.id.clone())),
-            (None, Some(step)) if step.closed().is_none() => self.drop_open(step, reason)?,
-            (None, Some(step)) if step.is_trail() && step.drop_mark().is_none() => {
+            Target::Rule(rule) => return Err(Refusal::Closed(rule.id.clone())),
+            Target::Step(step) if step.closed().is_none() => self.drop_open(step, reason)?,
+            Target::Step(step) if step.is_trail() && step.drop_mark().is_none() => {
                 vec![self.sign(|account, now| mark.record(account, step.id(), now))?]
             }
-            (None, Some(step)) => return Err(Refusal::Closed(step.id().to_string())),
-            (None, None) => return Err(Refusal::NoStep(id.to_string())),
+            Target::Step(step) => return Err(Refusal::Closed(step.id().to_string())),
         };
         Ok(Written {
             records,
@@ -352,20 +348,17 @@ impl Trails {
         trail: Option<&str>,
         id: &str,
     ) -> Result<String, Refusal> {
-        let named = Name::parse(id).and_then(|name| steps.named(&name));
-        let rule = self.rules().find(project, id).ok();
-        let step = steps.find(id).ok();
-        let step = match (named, rule, step) {
-            (Some(named), ..) => Trail::new(named.trail).work(),
-            (None, Some(_), Some(_)) => {
-                return Err(Refusal::Usage(format!(
-                    "{id} starts the id of a rule and of a step; give more of it"
-                )))
+        let step = match Name::parse(id).and_then(|name| steps.named(&name)) {
+            Some(named) => named.trail,
+            None => {
+                let rules = self.rules();
+                match Target::of(id, rules.find(project, id).ok(), steps.find(id).ok())? {
+                    Target::Rule(rule) => return Ok(rule.id.clone()),
+                    Target::Step(step) => step,
+                }
             }
-            (None, Some(rule), None) => return Ok(rule.id.clone()),
-            (None, None, Some(step)) => Trail::new(step).work(),
-            (None, None, None) => return Err(Refusal::NoStep(id.to_string())),
         };
+        let step = Trail::new(step).work();
         if Some(step.trail().id()) == trail {
             return Err(Refusal::Usage(
                 "step add --uses takes a step of another trail".into(),
