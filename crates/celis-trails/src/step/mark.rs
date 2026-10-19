@@ -6,7 +6,7 @@ use celis_nostr::{Account, Note};
 
 /// What an agent does to a step: takes it up, closes it done with its proof and what changed from its
 /// plan, or drops it with the reason its work is no longer wanted. It gives a step a new title or text,
-/// places or check. On a trail, the hook records the person's prompt, and a name makes it a skill.
+/// places or check. On a trail, the hook records the person's prompt, and a name lets other work use it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Mark {
     Start,

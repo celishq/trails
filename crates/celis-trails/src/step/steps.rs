@@ -1,6 +1,6 @@
 //! The steps of a store, as they stand at one moment.
 
-use crate::{Mark, Name, Refusal, Rule, Step, StepRecord};
+use crate::{Mark, Name, NamedTrail, Refusal, Rule, Step, StepRecord};
 use celis_nostr::Note;
 use std::cell::Cell;
 use std::collections::{HashMap, HashSet};
@@ -86,26 +86,36 @@ impl<'a> Steps<'a> {
         roots.filter_map(|n| self.get(&n.id)).collect()
     }
 
-    /// The step that holds the name `name`, and the name record that gave it.
-    pub fn named(&'a self, name: &Name) -> Option<(Step<'a>, &'a Note)> {
-        let note = *self.index.names.get(name)?;
-        Some((self.get(note.tag("e")?)?, note))
+    /// The trail that holds the name `name`.
+    pub fn named(&'a self, name: &Name) -> Option<NamedTrail<'a>> {
+        let (name, record) = self.index.names.get_key_value(name)?;
+        let trail = self.get(record.tag("e")?)?;
+        Some(NamedTrail {
+            name,
+            trail,
+            record,
+        })
     }
 
-    /// The name the step `id` holds first; `None` when it holds none.
-    pub(crate) fn name_of(&self, id: &str) -> Option<&Name> {
+    /// `step` with the name it holds first; `None` when it holds none.
+    pub(crate) fn named_of(&'a self, step: Step<'a>) -> Option<NamedTrail<'a>> {
         let held = self.index.names.iter();
-        let held = held.filter(|(_, note)| note.tag("e") == Some(id));
-        let first = held.min_by_key(|(_, note)| (note.created_at, &note.id));
-        first.map(|(name, _)| name)
+        let held = held.filter(|(_, note)| note.tag("e") == Some(step.id()));
+        let (name, record) = held.min_by_key(|(_, note)| (note.created_at, &note.id))?;
+        Some(NamedTrail {
+            name,
+            trail: step,
+            record,
+        })
     }
 
-    /// Each name and the step that holds it, by name.
-    pub fn names(&'a self) -> Vec<(&'a Name, Step<'a>)> {
-        let mut names: Vec<_> = self.index.names.iter().collect();
-        names.sort_by_key(|(name, _)| name.as_str());
-        let held = names.into_iter();
-        held.filter_map(|(name, note)| Some((name, self.get(note.tag("e")?)?)))
+    /// Each named trail, by name.
+    pub fn names(&'a self) -> Vec<NamedTrail<'a>> {
+        let mut names: Vec<&Name> = self.index.names.keys().collect();
+        names.sort_by_key(|name| name.as_str());
+        names
+            .into_iter()
+            .filter_map(|name| self.named(name))
             .collect()
     }
 

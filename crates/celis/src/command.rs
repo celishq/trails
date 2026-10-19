@@ -7,11 +7,11 @@ mod grep;
 mod issue;
 mod link;
 mod name;
+mod names;
 mod prompt;
 pub(crate) mod report;
 mod review;
 mod rule;
-mod skills;
 mod stats;
 mod step;
 pub(crate) mod tree;
@@ -78,10 +78,10 @@ impl Command {
 
     fn go(&self, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> Result<(), Failure> {
         match args.words.first().map(String::as_str).unwrap_or("") {
-            "step" => self.step(args, out, err, &self.named(args)?),
-            "decide" => self.decide(args, out, err, &self.named(args)?),
+            "step" => self.step(args, out, err, &self.project_of(args)?),
+            "decide" => self.decide(args, out, err, &self.project_of(args)?),
             "name" => self.name(args, out),
-            "skills" => self.skills(args, out),
+            "names" => self.names(args, out),
             "tree" => self.tree(args, out),
             "grep" => self.grep(&self.args[1..], out),
             "past" => self.past(out),
@@ -131,9 +131,9 @@ impl Command {
         Project::at(&self.folder)
     }
 
-    /// The skill project `--project` names, else the project of the working folder; an id that is not
-    /// `skill:<name>` is a usage error.
-    fn named(&self, args: &Args) -> Result<Project, Failure> {
+    /// The project `--project` names, `skill:<name>`, else the project of the working folder; any other
+    /// id is a usage error.
+    fn project_of(&self, args: &Args) -> Result<Project, Failure> {
         let project = self.project();
         let Some(id) = &args.project else {
             return Ok(project);
@@ -141,11 +141,7 @@ impl Command {
         let name = id.strip_prefix("skill:").and_then(Name::parse);
         let name =
             name.ok_or_else(|| Failure::usage(format!("--project takes skill:<name>, not {id}")))?;
-        Ok(Project {
-            id: id.clone(),
-            name: name.as_str().to_string(),
-            ..project
-        })
+        Ok(project.skill(&name))
     }
 
     /// Whether a watch prints in colour: unless `NO_COLOR` is set.

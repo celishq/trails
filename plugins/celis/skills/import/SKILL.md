@@ -1,14 +1,14 @@
 ---
 name: import
-description: Imports a skill file, such as a SKILL.md, into celis as a skill that work in every project can use by its name. Use when the person runs /celis:import <file or URL>, or asks to add a skill to celis.
+description: Imports a skill file, such as a SKILL.md, into celis as a named trail that work in every project can use by its name. Use when the person runs /celis:import <file or URL>, or asks to add a skill to celis.
 ---
 
-You turn a skill file into a skill: a trail with a name, in the project `skill:<name>`. Its rules hold
-for each ask that uses it. The import is the ask: add no other ask for it.
+You turn a skill file into a named trail in the project `skill:<name>`. Its rules hold for each ask
+that uses it. The import is the ask: add no other ask for it.
 
 1. Read the file the person gives, a path or a URL. Its name is the `name` of its frontmatter, else a
    short noun: a lowercase letter, then lowercase letters, digits and `-`.
-2. Run `celis skills`. When another trail holds the name, read it with `celis tree <its id> --full`. When
+2. Run `celis names`. When another trail holds the name, read it with `celis tree <its id> --full`. When
    it came from this file, go to step 6. Else ask the person for another name.
 3. Split the file into rules and steps:
    - A rule for each thing the work must keep or avoid: "When <what you see>: <what to do>, because
@@ -16,7 +16,7 @@ for each ask that uses it. The import is the ask: add no other ask for it.
      file gives.
    - A step for each part of the procedure, in order: a verb and what it acts on.
 4. Show the person the name, each rule and each step. Write nothing before they say yes.
-5. Write the skill:
+5. Write the named trail:
    - `celis step add --project skill:<name> --new -- "<what the skill does>"`. Its ask and its trail
      print.
    - For each step: `celis step add --project skill:<name> --under <ask id> -- "<title>"`, then

@@ -49,7 +49,7 @@ Every change of `spec/` MUST keep these rules:
 |---|---|---|
 | `project:<id>` · `project` | anchor of a project, its `K`, and its name tag | 01 |
 | `figma:<key>` · `web:<host>` | the project id of a record outside git | 01 |
-| `skill:<name>` | the project id of a skill | 07 |
+| `skill:<name>` | the project id of a trail from a skill file | 07 |
 | `$CELIS_HOME` · `$CELIS_HOME/trails/` · `$CELIS_HOME/phrase` · `$CELIS_HOME/links` | the home, the store, the phrase, the links | 01, 02 |
 | `celis` and its commands and flags | the command line | 02 |
 | `usage` · `no-decision` · `no-trail` · `no-step` · `closed` · `open-steps` · `check-failed` · `error` | errors | 02 |
@@ -92,5 +92,5 @@ Every change of `spec/` MUST keep these rules:
 | `rule` | one sentence that holds in its scope until another replaces it |
 | `live` | a rule no other rule replaces |
 | `revised` | done work that a later step replaces |
-| `named` | a trail that holds a name; a skill |
+| `named trail` | a trail that holds a name |
 | `override` | a rule that replaces a trail's rule of another project, in its own project only |

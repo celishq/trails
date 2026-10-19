@@ -19,8 +19,8 @@ celis tree [<id>] [--graph] [--full] [--all] [--demo]
    report on gets none: answer it, and run no command below.
 3. Add the ask with `step add` where the prompt hook says. With no hint, add it under the session's
    trail, else with `--new`. An ask that corrects done work takes `--replaces <its id>`. Give the ask the
-   project's own check, and `--uses <id>` for each rule, past step or skill it follows. A skill is a trail
-   with a name, and `--uses` takes its name.
+   project's own check, and `--uses <id>` for each rule, past step or named trail it follows. `--uses`
+   takes a trail's name.
 4. A step's title names what the person wants done: a verb and what it acts on, such as "Split a long
    file into its parts". Use words that hold in another project, and name the case only when that helps
    the next agent. On the line after the title, write `expect: <what a person can check when it is
@@ -41,5 +41,5 @@ celis tree [<id>] [--graph] [--full] [--all] [--demo]
 A rule reads "When <what you see>: <what to do>, because <the reason>." Its scope is `trail:<id>` when it
 holds for this trail, `project` (the default) for the repo, and `me` for all the person's work. When the person asks you to remember something, or states how the work must be done
 (review feedback, a convention, a correction), write each point as one rule before you do the work.
-Read the `steps.md` the session start names for moved files, past work, skills, subagents, links, and
+Read the `steps.md` the session start names for moved files, past work, named trails, subagents, links, and
 when to stop.

@@ -7,8 +7,8 @@ depends: [CIP-01, CIP-03, CIP-04, CIP-05, CIP-06]
 
 # CIP-07 — Names
 
-A name makes a trail a skill: work in any project can use it by its name, keep its rules, and override
-them in its own project.
+A name lets work in any project use a trail by its name, keep its rules, and override them in its own
+project.
 
 ## Names
 
@@ -38,8 +38,8 @@ skill:<name>     the project id of a trail written from a skill file, outside an
 
 **Writers**
 
-- A writer MUST write the skill `<name>` into the project `skill:<name>`, with `<name>` as its project
-  name.
+- A writer MUST write the trail of the skill file `<name>` into the project `skill:<name>`, with
+  `<name>` as its project name.
 
 ## Rules of a name
 

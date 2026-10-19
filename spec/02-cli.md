@@ -17,7 +17,7 @@ read. What a command shows a person is not part of it.
 celis decide [--scope <scope>] [--replaces <id>] [--project <id>] -- <text>
                                                        a rule, in its scope
 celis name <trail id> <name>                          give a trail a name
-celis skills [--limit <n>]                            the named trails, most used first
+celis names [--limit <n>]                             the named trails, most used first
 celis tree [<id>] [--graph] [--full] [--all] [--demo]
                                                        a trail and its steps; again on each change
 celis grep <grep option>... <pattern>                 every trail, through the system grep
@@ -175,7 +175,7 @@ celis step drop 3fa2c1d0 -- "The person chose the shared price table instead."
 celis name 9b0e11aa review
 ```
 
-## Skills
+## Names
 
 ```
 line    <name> <trail id8> <the trail's title>
@@ -186,13 +186,13 @@ json    {"name", "id", "title", "uses"}
 
 **Rules**
 
-- `skills` MUST print one line for each named trail of every project, most `uses` first, then newest.
+- `names` MUST print one line for each named trail of every project, most `uses` first, then newest.
 - `--limit <n>` MUST print the first `<n>` lines only.
 
 **Examples**
 
 ```
-celis skills --limit 20
+celis names --limit 20
 ```
 
 ## Prompt

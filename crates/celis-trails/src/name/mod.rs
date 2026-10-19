@@ -1,4 +1,6 @@
-//! CIP-07, "Names": the name of a trail.
+//! CIP-07: the name of a trail, and the trail that holds it.
+
+pub mod named_trail;
 
 /// A name a trail goes by: a lowercase letter, then lowercase letters, digits and `-`.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

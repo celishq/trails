@@ -257,11 +257,11 @@ impl Trails {
             ))
         })?;
         let record = match steps.named(&name) {
-            Some((held, note)) if held.id() == trail.id() => note.clone(),
-            Some((held, _)) => {
+            Some(held) if held.trail.id() == trail.id() => held.record.clone(),
+            Some(held) => {
                 return Err(Refusal::Usage(format!(
                     "the trail {} holds the name {}",
-                    short(held.id()),
+                    short(held.trail.id()),
                     name.as_str()
                 )))
             }
@@ -300,7 +300,7 @@ impl Trails {
         if let Some(id) = replaces {
             let rules = self.rules();
             let steps = self.steps();
-            let named: Vec<Step> = steps.names().into_iter().map(|(_, s)| s).collect();
+            let named: Vec<Step> = steps.names().into_iter().map(|n| n.trail).collect();
             let found = rules
                 .find(&project, id)
                 .or_else(|_| rules.find_of(&named, id))?;
@@ -340,7 +340,7 @@ impl Trails {
         let rule = self.rules().find(project, id).ok();
         let step = steps.find(id).ok();
         let step = match (named, rule, step) {
-            (Some((named, _)), ..) => Trail::new(named).work(),
+            (Some(named), ..) => Trail::new(named.trail).work(),
             (None, Some(_), Some(_)) => {
                 return Err(Refusal::Usage(format!(
                     "{id} starts the id of a rule and of a step; give more of it"

@@ -88,8 +88,8 @@ fn name_refuses_a_step_a_bad_name_and_a_held_name() {
 #[test]
 fn uses_takes_a_name_as_its_trail() {
     let repo = Repo::new();
-    let skill = ids(&repo, "s1", &["--", "Review a pull request"]);
-    let (ask, trail) = (&skill[0], &skill[1]);
+    let named = ids(&repo, "s1", &["--", "Review a pull request"]);
+    let (ask, trail) = (&named[0], &named[1]);
     finish(&repo, &ask[..8]);
     name(&repo, trail, "review");
     let other = add(&repo, &["--new", "--", "Check the shop's pull request"]);
@@ -180,10 +180,10 @@ fn project_writes_into_a_skill_project() {
     }
 }
 
-/// `skills` prints each named trail, most used first, then newest; `--limit` cuts the list, and
-/// `--json` gives the name, id, title and uses (`spec/02-cli.md`, "Skills").
+/// `names` prints each named trail, most used first, then newest; `--limit` cuts the list, and
+/// `--json` gives the name, id, title and uses (`spec/02-cli.md`, "Names").
 #[test]
-fn skills_lists_the_named_trails_most_used_first() {
+fn names_lists_the_named_trails_most_used_first() {
     let repo = Repo::new();
     let used = add(&repo, &["--", "Review a pull request"]);
     let newer = add(&repo, &["--new", "--", "Write a changelog"]);
@@ -201,7 +201,7 @@ fn skills_lists_the_named_trails_most_used_first() {
             "Review it",
         ],
     );
-    let o = cli(&repo, &["skills"]);
+    let o = cli(&repo, &["names"]);
     assert!(o.status.success(), "{}", err(&o));
     let text = out(&o);
     let lines: Vec<&str> = text.lines().collect();
@@ -212,16 +212,16 @@ fn skills_lists_the_named_trails_most_used_first() {
             format!("changelog {} Write a changelog", &newer[..8]),
         ],
     );
-    let limited = out(&cli(&repo, &["skills", "--limit", "1"]));
+    let limited = out(&cli(&repo, &["names", "--limit", "1"]));
     assert_eq!(limited.lines().count(), 1, "{limited}");
-    let json = objects(&repo, &["skills"]);
+    let json = objects(&repo, &["names"]);
     assert_eq!(json[0]["name"], "review");
     assert_eq!(json[0]["id"], used.as_str());
     assert_eq!(json[0]["title"], "Review a pull request");
     assert_eq!(json[0]["uses"], 1);
     assert_eq!(json[1]["uses"], 0);
     refusal(
-        &cli(&repo, &["skills", "--json", "--limit", "x"]),
+        &cli(&repo, &["names", "--json", "--limit", "x"]),
         2,
         "usage",
     );

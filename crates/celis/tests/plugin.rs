@@ -178,15 +178,19 @@ fn each_agents_session_start_gives_the_card_and_its_session() {
     }
 }
 
-/// Each agent's session start lists the skills that `celis skills --limit 20` prints, under the line
-/// that says how to use one; with no skill, it lists none.
+/// Each agent's session start lists the named trails that `celis names --limit 20` prints, under the
+/// line that says how to use one; with none, it lists none.
 #[test]
-fn each_agents_session_start_lists_the_skills() {
+fn each_agents_session_start_lists_the_named_trails() {
     let repo = Repo::new();
     for agent in AGENTS {
         let stdout = agent.run(&repo, agent.start, &agent.payload("s1", &repo.path(), ""));
         let context = agent.context(&stdout);
-        assert!(!context.contains("Skills:"), "{}: {context}", agent.name);
+        assert!(
+            !context.contains("Named trails:"),
+            "{}: {context}",
+            agent.name
+        );
     }
     let trail = support::add(&repo, &["--", "Review a pull request"]);
     let o = support::cli(&repo, &["name", &trail[..8], "review"]);
@@ -195,7 +199,11 @@ fn each_agents_session_start_lists_the_skills() {
     for agent in AGENTS {
         let stdout = agent.run(&repo, agent.start, &agent.payload("s2", &repo.path(), ""));
         let context = agent.context(&stdout);
-        assert!(context.contains("Skills:"), "{}: {context}", agent.name);
+        assert!(
+            context.contains("Named trails:"),
+            "{}: {context}",
+            agent.name
+        );
         assert!(context.contains(&line), "{}: {context}", agent.name);
     }
 }

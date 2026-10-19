@@ -1,4 +1,4 @@
-//! `celis skills`: the named trails, most used first.
+//! `celis names`: the named trails, most used first.
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
@@ -11,7 +11,7 @@ use std::io::Write;
 impl Command {
     /// Prints each named trail of every project, most used first, then newest, up to `--limit`.
     /// Writes no record.
-    pub(crate) fn skills(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
+    pub(crate) fn names(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let limit = match &args.limit {
             Some(text) => text
                 .parse()
@@ -27,20 +27,17 @@ impl Command {
         let mut named: Vec<_> = steps
             .names()
             .into_iter()
-            .map(|(name, trail)| {
-                let tree = trail.tree().into_iter();
-                (
-                    name,
-                    trail,
-                    tree.map(|s| reuse.users(s).len()).sum::<usize>(),
-                )
+            .map(|named| {
+                let tree = named.trail.tree().into_iter();
+                (named, tree.map(|s| reuse.users(s).len()).sum::<usize>())
             })
             .collect();
-        named.sort_by_key(|(_, trail, uses)| {
+        named.sort_by_key(|(named, uses)| {
+            let trail = named.trail;
             (Reverse(*uses), Reverse(trail.note().created_at), trail.id())
         });
-        for (name, trail, uses) in named.into_iter().take(limit) {
-            let name = name.as_str();
+        for (named, uses) in named.into_iter().take(limit) {
+            let (name, trail) = (named.name.as_str(), named.trail);
             match args.json {
                 true => {
                     let object = json!({"name": name, "id": trail.id(), "title": trail.title(), "uses": uses});
