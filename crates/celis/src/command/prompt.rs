@@ -43,6 +43,9 @@ impl Command {
     ) -> Result<(), Failure> {
         let asked = self.asked(&prompt.session)?;
         if !self.held()? {
+            if !prompt.task {
+                super::put(err, &fresh())?;
+            }
             return self.offer(err, project, &asked);
         }
         let trails = self.trails()?;
@@ -93,13 +96,16 @@ impl Command {
     }
 
     /// Names the past agent, when the store holds any record and `asked` does not exist; then writes
-    /// `asked`. Else, with a trail of today, says how a new ask joins it. Returns whether it named the
-    /// agent.
+    /// `asked`. Else says how a new ask joins a trail of today, or starts one. Returns whether it named
+    /// the agent.
     fn recall(&self, trails: &Trails, err: &mut dyn Write, asked: &Path) -> Result<bool, Failure> {
         if asked.exists() || trails.is_empty() {
-            if !today(&trails.steps()).is_empty() {
-                super::put(err, &joins(None))?;
-            }
+            let line = if today(&trails.steps()).is_empty() {
+                fresh()
+            } else {
+                joins(None)
+            };
+            super::put(err, &line)?;
             return Ok(false);
         }
         let line = format!(
@@ -163,6 +169,12 @@ fn joins(open: Option<&str>) -> String {
     }
 }
 
+/// How a new ask starts a trail when there is none to join.
+fn fresh() -> String {
+    format!("celis: when this prompt is a new ask, add it with --new. {RULES}")
+}
+
 /// The sentence of a new ask's line that asks to write the rules the prompt states.
-const RULES: &str = "Write each rule this prompt states (review feedback, a convention, a \
-                     correction) with celis decide before you change a file.";
+const RULES: &str = "When this prompt states how the work must be done (review feedback, a \
+                     convention, a correction), write each point as a rule with celis decide before you \
+                     change a file; give it --scope me when it holds for that kind of work in any project.";
