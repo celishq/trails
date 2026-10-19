@@ -1,20 +1,7 @@
-```
-                   /\                                 /\
-          /\      /::\         /\        /\          /::\
-         /::\    /::::\       /::\      /::\    /\  /::::\
-        /::::\  /::::::\     /::::\    /::::\  /::\/::::::\      |>
-  _____/::::::\/::::::::\___/::::::\__/::::::\/:::/::::::::\     |
-                                                              .--+--.
-         ______   ______                                     /+++++++\
-        /  x   | |  |>  \                                   /+++++++++\
-        \______| |______/                                  /+++++++++++\
-      dead end | | next step                            .-'+++++++++++++'-.
-               |/|/                                     /+++++++++++++++++\
-   x_x                                                          //
-  |RIP|  x_x                       •_•|>                       //
- .......|RIP|.......................O.|.......................//...............
- ,      ,      ,      ,      ,      ,      ,      ,      ,      ,      ,      ,
-```
+
+<p align="center">
+  <img width="1012" alt="celis-trails-demo" src="https://github.com/user-attachments/assets/17c658ae-42f8-4d8e-b1f7-f10982da8a3b" />
+</p>
 
 <h1 align="center">Celis</h1>
 
@@ -24,10 +11,6 @@
   <a href="https://github.com/celishq/trails/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/celishq/trails"></a>
   <a href="https://github.com/celishq/trails/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/celishq/trails/actions/workflows/ci.yml/badge.svg?event=pull_request"></a>
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue"></a>
-</p>
-
-<p align="center">
-<img width="1012" alt="trails-demo" src="https://github.com/user-attachments/assets/5c87f6c7-a847-4273-9630-17ef2636cfe9" />
 </p>
 
 ## Why
