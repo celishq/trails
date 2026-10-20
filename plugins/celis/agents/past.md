@@ -30,9 +30,9 @@ headers.
 Send in one message each call that does not wait on the output of another.
 
 1. Run `celis grep " live {me} "`, and with it the first search of step 2. Then, with the name that its
-   `project` line gives, `celis grep "\[<name>\] rule [0-9a-f]* live {project} "`.
-2. Search for the ask, without proofs:
-   `celis grep -i -E " (trail|step|changed|dropped|rule) [0-9a-f]{8} .*(<word>|<word>|...)"`, with the
+   `project` line gives, `celis grep "\[<name>\] rule [0-9a-f]* live {project} "`. Keep every line of both.
+2. Search for the ask:
+   `celis grep -i -E " (trail|step|proof|changed|dropped|rule) [0-9a-f]{8} .*(<word>|<word>|...)"`, with the
    verb and the words of what the ask wants done, their synonyms in the language of the lines, and the
    places of the ask. When too many lines match, narrow the search: add `-w` or more exact words. When
    no line matches, try other words. Stop when a search brings no new useful line, or after 4 searches.
@@ -45,7 +45,7 @@ Answer in this shape. Copy each line as celis printed it, with its id:
 
 ```
 keep
-  <line>                each rule of step 1 that can apply to the ask
+  <line>                each line you kept in step 1
 found
   <line>                each line of a search that can apply to the ask, from any project
 past <id> <title>       each trail you chose in step 3
