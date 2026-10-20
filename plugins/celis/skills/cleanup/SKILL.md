@@ -56,16 +56,10 @@ named trails and trails dropped after done.
 - When `celis names` shows a named trail that does this work, add to it: add an ask under its trail with
   `--project <its project id>`, write each new rule, write each changed rule with `--replaces <its id>`,
   and close the ask.
-- Else write a named trail, as `/celis:import` does from a file:
-  - `celis step add --project skill:<name> --new --uses <id of each trail of the group> -- "<what the work does>"`.
-    Its ask and its trail print.
-  - For each step that the trails share, in words that hold in any project:
-    `celis step add --project skill:<name> --under <ask id> -- "<title>"`, then
-    `celis step done <its id> --as-planned -- "From <the id8 of each trail>."`
-  - For each rule that holds for this work in any project:
-    `celis decide --project skill:<name> --scope trail:<trail id> -- "<rule>"`.
-  - `celis step done <ask id> --as-planned -- "Made from <n> trails."`, then
-    `celis name <trail id> <name>`.
+- Else write a named trail as `steps.md` says, under "Named trails". Give the ask `--uses` with the id
+  of each trail of the group. Write the steps that the trails share and the rules that hold for this
+  work, in words that hold in any project. Each step's proof is "From <the id8 of each trail>.", and the
+  ask's proof is "Made from <n> trails."
 - Then offer to drop each `trail:` rule of the group that the named trail now holds, with
   `-- "held by <name>"`.
 

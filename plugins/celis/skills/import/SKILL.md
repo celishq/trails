@@ -16,14 +16,8 @@ that uses it. The import is the ask: add no other ask for it.
      file gives.
    - A step for each part of the procedure, in order: a verb and what it acts on.
 4. Show the person the name, each rule and each step. Write nothing before they say yes.
-5. Write the named trail:
-   - `celis step add --project skill:<name> --new -- "<what the skill does>"`. Its ask and its trail
-     print.
-   - For each step: `celis step add --project skill:<name> --under <ask id> -- "<title>"`, then
-     `celis step done <its id> --as-planned -- "From <file>, <section>."`
-   - For each rule: `celis decide --project skill:<name> --scope trail:<trail id> -- "<rule>"`.
-   - `celis step done <ask id> --as-planned -- "Imported <n> rules and <n> steps from <file>."`, then
-     `celis name <trail id> <name>`.
+5. Write the named trail as `steps.md` says, under "Named trails". Each step's proof is
+   "From <file>, <section>.", and the ask's proof is "Imported <n> rules and <n> steps from <file>."
 6. To import the file again, add a new ask under the same trail with
    `celis step add --project skill:<name> --under <trail id> -- "Update <name> from <file>"`. Compare each
    section with the rule that names it. Write a changed rule with `--replaces <its id>`, and a new one

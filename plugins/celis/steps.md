@@ -31,6 +31,16 @@ A step that uses a named trail keeps its rules, and the rules of each named trai
 - When a done trail did work that holds in other projects, and it has no name, give it one with
   `celis name <trail id> <name>`: a short noun in lowercase words joined by `-`, such as `code-review`.
 
+To write a named trail `<name>` that work in every project can use:
+
+1. `celis step add --project skill:<name> --new [--uses <id>]... -- "<what the work does>"`. Its ask and
+   its trail print.
+2. For each step, in order: `celis step add --project skill:<name> --under <ask id> -- "<title>"`, then
+   `celis step done <its id> --as-planned -- "<where it comes from>"`.
+3. For each rule: `celis decide --project skill:<name> --scope trail:<trail id> -- "<rule>"`.
+4. `celis step done <ask id> --as-planned -- "<what it was made from>"`, then
+   `celis name <trail id> <name>`.
+
 ## Cleanup
 
 When the past agent brings rules that say the same thing or say to do different things, or many stale
