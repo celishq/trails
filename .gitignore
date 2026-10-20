@@ -2,3 +2,11 @@ crates/target/
 .claude/worktrees/
 .DS_Store
 evals/results/
+.celis
+evals/raycast/cache/
+evals/raycast/results/**/transcripts/
+evals/drift/results/**/transcripts/
+evals/landing/cache/
+evals/landing/results/transcripts/
+evals/landing/checks/node_modules/
+__pycache__

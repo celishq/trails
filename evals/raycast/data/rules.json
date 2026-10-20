@@ -1,0 +1,42 @@
+[
+  {
+    "id": "changelog",
+    "from": 31771,
+    "review": "Each change needs a new entry at the top of CHANGELOG.md, and its heading uses the merge placeholder, not a fixed date: `## [Fix] - {PR_MERGE_DATE}`.",
+    "rule": "Each change adds a CHANGELOG.md entry at the top whose heading ends with {PR_MERGE_DATE}, not a date.",
+    "check": "CHANGELOG.md gains a heading `## [...] - {PR_MERGE_DATE}` and no heading with a fixed date",
+    "standing": "When a Raycast extension changes: add a CHANGELOG.md entry at the top whose heading ends with {PR_MERGE_DATE}, not a date, because the Store bot fills in the date at merge."
+  },
+  {
+    "id": "failure-toast",
+    "from": 31771,
+    "review": "Use `showFailureToast` from `@raycast/utils` for errors instead of building a failure toast by hand with `showToast({ style: Toast.Style.Failure })`.",
+    "rule": "Errors are shown with showFailureToast from @raycast/utils, never with showToast and Toast.Style.Failure.",
+    "check": "no added line holds Toast.Style.Failure",
+    "standing": "When a Raycast extension shows an error: use showFailureToast from @raycast/utils, never showToast with Toast.Style.Failure, because it builds the error toast for you."
+  },
+  {
+    "id": "console",
+    "from": 31771,
+    "review": "Remove the leftover debug `console.log` calls before it goes to the Store.",
+    "rule": "No console.log is left in the extension's source.",
+    "check": "no added line under src/ calls console.log",
+    "standing": "When a Raycast extension's source changes: leave no console.log in it, because the Store review asks to remove debug output."
+  },
+  {
+    "id": "data-hooks",
+    "from": 30017,
+    "review": "Load data with `useFetch`, `usePromise` or `useCachedPromise` from `@raycast/utils` instead of `useEffect` with `useState`; they handle loading, errors and caching for you.",
+    "rule": "Data is loaded with useFetch, usePromise or useCachedPromise from @raycast/utils, not with useEffect and useState.",
+    "check": "no added useEffect body awaits, fetches or calls .then",
+    "standing": "When a Raycast extension loads data: use useFetch, usePromise or useCachedPromise from @raycast/utils, not useEffect with useState, because they handle loading, errors and caching."
+  },
+  {
+    "id": "no-tests",
+    "from": 30017,
+    "review": "Keep test material out of the extension: remove the test files and the `test` script; the Store build does not run them.",
+    "rule": "The extension ships no test files and no test script.",
+    "check": "no test file or tests folder is added, and package.json gains no test script",
+    "standing": "When a Raycast extension changes: add no test files and no test script, because the Store build does not run them."
+  }
+]

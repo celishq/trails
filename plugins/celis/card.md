@@ -38,8 +38,12 @@ celis tree [<id>] [--graph] [--full] [--all] [--demo]
 8. Close the ask, never the trail. Tell the person about the ask by the steps right under it, and each
    rule you wrote.
 
-A rule reads "When <what you see>: <what to do>, because <the reason>." Its scope is `trail:<id>` when it
-holds for this trail, `project` (the default) for the repo, and `me` for all the person's work. When the person asks you to remember something, or states how the work must be done
-(review feedback, a convention, a correction), write each point as one rule before you do the work.
+A rule reads "When <what you see>: <what to do>, because <the reason>." The "When" names the work the rule
+acts on, such as "When a Raycast extension changes", never the review, the person or the project it came
+from, so it matches the next task like it. Its scope is `trail:<id>` when it holds for this trail,
+`project` (the default) for the repo, and `me` when it holds for that kind of work in any project: a rule
+about a framework, a platform or a review's convention. When the person
+asks you to remember something, or states how the work must be done (review feedback, a convention, a
+correction), write each point as one rule before you do the work.
 Read the `steps.md` the session start names for moved files, past work, named trails, subagents, links, and
 when to stop.

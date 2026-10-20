@@ -245,58 +245,37 @@ fn grep_drops_its_group_separators() {
     );
 }
 
-/// Past 6,500 bytes of lines, `grep` cuts them, counts what it cut and lists each trail it cut with its
-/// title cut at 80 characters, and stays within 8,000 bytes (`spec/02-cli.md`, "Grep").
-#[test]
-fn grep_cuts_long_output_and_lists_the_trails_it_cut() {
-    let repo = Repo::new();
-    let long = "a long title that says the same thing again and again ".repeat(4);
-    for n in 0..40 {
-        let trail = add(&repo, &["--new", "--", &format!("Trail {n} {long}")]);
-        for m in 0..3 {
-            add(
-                &repo,
-                &["--under", &trail[..8], "--", &format!("Step {m} {long}")],
-            );
-        }
-    }
-    let text = grep(&repo, &["long title"]);
-    assert!(text.len() <= 8_000, "{}", text.len());
-    let cut = line(&text, "celis: ");
-    assert!(
-        cut.contains(" more lines in ") && cut.contains(" trails match;"),
-        "{cut}"
-    );
-    assert!(
-        cut.ends_with("search one trail with celis grep \" <id> \\[\""),
-        "{cut}"
-    );
-    let index = line(&text, " · 1 trail, 3 steps");
-    let title = index.split(" · ").next().unwrap();
-    assert!(
-        title.ends_with('…') && title.chars().count() <= 98,
-        "{index}"
-    );
-    assert!(text.trim_end().ends_with("project [repo]"), "{text}");
-}
-
-/// The cut lines with no trail count as `- rules of no trail`, the name of their header
+/// `grep` prints every line it found, however long the output, and adds no line about a cut
 /// (`spec/02-cli.md`, "Grep").
 #[test]
-fn grep_names_the_cut_rules_of_no_trail_as_their_header() {
+fn grep_prints_every_line_however_long() {
     let repo = Repo::new();
     let long = "the same long rule text again and again ".repeat(5);
-    for n in 0..40 {
+    let long = long.trim();
+    for n in 0..60 {
         let o = cli(&repo, &["decide", "--", &format!("When {n}: {long}")]);
         assert!(o.status.success(), "{}", err(&o));
     }
     let text = grep(&repo, &[" rule "]);
-    assert!(text.starts_with("- rules of no trail\n"), "{text}");
-    assert!(
-        text.lines()
-            .any(|l| l.starts_with("- rules of no trail · ") && l.ends_with(" rules")),
+    assert!(text.len() > 8_000, "{}", text.len());
+    assert_eq!(
+        text.lines().filter(|l| l.contains(long)).count(),
+        60,
         "{text}"
     );
+    assert!(!text.contains("celis: "), "{text}");
+    assert!(text.trim_end().ends_with("project [repo]"), "{text}");
+}
+
+/// The last line `grep` finds prints even when its text ends in a space (`spec/02-cli.md`, "Grep").
+#[test]
+fn grep_prints_a_last_line_that_ends_in_a_space() {
+    let repo = Repo::new();
+    let o = cli(&repo, &["decide", "--", "When a page loads: keep it fast "]);
+    assert!(o.status.success(), "{}", err(&o));
+    let text = grep(&repo, &["keep it fast"]);
+    assert!(text.starts_with("- rules of no trail\n"), "{text}");
+    assert!(text.contains("When a page loads: keep it fast"), "{text}");
 }
 
 /// With no line that matches, `grep` says so and exits 0; when `grep` fails, it exits 2
@@ -492,7 +471,7 @@ fn the_view_and_the_past_agents_first_searches_match_the_fixture() {
         .next()
         .unwrap();
     let mut kept = Vec::new();
-    for search in step_one.split("`celis grep \"").skip(1) {
+    for search in step_one.split("`celis grep -c \"").skip(1) {
         let pattern = search
             .split("\"`")
             .next()

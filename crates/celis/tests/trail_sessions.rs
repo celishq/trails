@@ -307,12 +307,19 @@ fn joins(open: Option<&str>) -> String {
     }
 }
 
+/// The line of a prompt with no trail to join: an empty store, or no trail of today.
+const NEW: &str = "celis: when this prompt is a new ask, add it with --new. When this prompt states how the \
+                   work must be done (review feedback, a convention, a correction), write each point as a \
+                   rule with celis decide before you change a file; give it --scope me when it holds for that \
+                   kind of work in any project.";
+
 /// The sentence of a new ask's line that asks to write the rules the prompt states.
-const RULES: &str = "Write each rule this prompt states (review feedback, a convention, a \
-                     correction) with celis decide before you change a file.";
+const RULES: &str = "When this prompt states how the work must be done (review feedback, a \
+                     convention, a correction), write each point as a rule with celis decide before you \
+                     change a file; give it --scope me when it holds for that kind of work in any project.";
 
 /// After the past agent was asked for, a later prompt with no open trail gives the hint to join a trail
-/// of today, of any project; with no trail of today, it gives none.
+/// of today, of any project; with no trail of today, it asks for a new trail.
 #[test]
 fn a_later_prompt_with_no_open_trail_hints_at_todays_trails() {
     let repo = Repo::new();
@@ -322,7 +329,7 @@ fn a_later_prompt_with_no_open_trail_hints_at_todays_trails() {
         assert!(o.status.success(), "{}", err(&o));
         err(&o)
     };
-    assert_eq!(hook("s9"), "");
+    assert_eq!(hook("s9"), format!("{NEW}\n"));
     let shop = repo.other("shop");
     let o = repo.run(&shop, &["step", "add", "--", "a shop trail"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
@@ -359,7 +366,7 @@ fn prompt_skips_a_harness_message() {
 }
 
 /// With no open trail in the session, `prompt` writes nothing, and prints on stderr one line that asks for
-/// the past agent, once the store holds any record.
+/// the past agent once the store holds any record, and for a new trail before.
 #[test]
 fn a_prompt_with_no_open_trail_asks_for_the_past_agent() {
     let repo = Repo::new();
@@ -370,7 +377,7 @@ fn a_prompt_with_no_open_trail_asks_for_the_past_agent() {
         assert_eq!(out(&o), "");
         err(&o)
     };
-    assert_eq!(hook("Build a Vendors table"), "");
+    assert_eq!(hook("Build a Vendors table"), format!("{NEW}\n"));
     let o = repo.run(
         &repo.path(),
         &["decide", "--", "When you test: set SHELF_OFFLINE=1."],
@@ -412,14 +419,14 @@ fn a_session_asks_for_the_past_agent_once_until_a_compaction() {
     };
     let ask = serde_json::json!({"session_id": "s9", "prompt": "Build a Vendors table"});
     assert!(hook(ask.clone()).contains("celis:past agent"));
-    assert_eq!(hook(ask.clone()), "");
+    assert_eq!(hook(ask.clone()), format!("{NEW}\n"));
     let other = serde_json::json!({"session_id": "s8", "prompt": "Build a Vendors table"});
     assert!(hook(other).contains("celis:past agent"));
     assert_eq!(
         hook(serde_json::json!({"session_id": "s9", "source": "startup"})),
         ""
     );
-    assert_eq!(hook(ask.clone()), "");
+    assert_eq!(hook(ask.clone()), format!("{NEW}\n"));
     assert_eq!(
         hook(serde_json::json!({"session_id": "s9", "source": "compact"})),
         ""

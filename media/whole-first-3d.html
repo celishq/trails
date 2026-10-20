@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Whole-first in 3D</title>
+<style>
+/* A Peter Tarka-style toy scene: two soft clay boards on a lilac-to-peach ground, chunky rounded primitives,
+   soft top light and shadows. Periwinkle replaces black; peach, mint and butter are the toys; cherry and mint-green judge. */
+:root {
+  --sky: #dcd6ff;
+  --dawn: #ffe3d6;
+  --ink: #4b4790;
+  --chip: #f7f4ff;
+  --focus: #7b61ff;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--sky); color: var(--ink); }
+body { font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; padding-inline: 16px; padding-block: 24px; display: grid; justify-items: center; gap: 18px; }
+.stage { position: relative; width: min(100%, 720px); aspect-ratio: 1 / 1; border-radius: 14px; overflow: hidden; background: radial-gradient(120% 100% at 30% 0%, #ece8ff, var(--sky) 45%, var(--dawn)); }
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.controls { display: flex; gap: 10px; }
+.controls button { font: 600 13px ui-monospace, Menlo, monospace; color: var(--ink); background: var(--chip); border: 0; border-radius: 99px; padding: 9px 18px; cursor: pointer; box-shadow: 0 1px 2px rgb(60 50 120 / 0.18), inset 0 1px 0 #fff; }
+.controls button:hover { color: var(--focus); }
+.controls button:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage"></div>
+<div class="controls">
+  <button id="replay" type="button">Replay</button>
+  <button id="pause" type="button">Pause</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const C = {
+  board: 0xfbf8ff, tile: 0xffffff, ink: 0x6f6af8, soft: 0xdcd6fb, peach: 0xff9f80, mint: 0x86dfc4,
+  butter: 0xffd36e, lilac: 0xb7a4ff, mass: 0xbfb3f4, focus: 0x7b61ff, red: 0xff5466, green: 0x2ecf8f,
+};
+const END = 10.6, HOLD = 2.5;
+const clamp = (x) => Math.max(0, Math.min(1, x));
+const ramp = (t, a, b) => { const x = clamp((t - a) / (b - a)); return x * x * (3 - 2 * x); };
+const lin = (t, a, b) => clamp((t - a) / (b - a));
+const back = (x) => 1 + 2.4 * Math.pow(x - 1, 3) + 1.4 * Math.pow(x - 1, 2);
+
+const stage = document.getElementById("stage");
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+stage.append(renderer.domElement);
+
+const scene = new THREE.Scene();
+const VIEW = 8.4;
+const camera = new THREE.OrthographicCamera(-VIEW, VIEW, VIEW, -VIEW, 0.1, 100);
+camera.position.set(3.2, 12, 9.5);
+camera.lookAt(0, 0, 0.4);
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0xc9c2ff, 0.75));
+const sun = new THREE.DirectionalLight(0xffffff, 0.75);
+sun.position.set(-5, 12, 6);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12 });
+sun.shadow.radius = 6;
+scene.add(sun);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.ShadowMaterial({ opacity: 0.16 }));
+ground.rotation.x = -Math.PI / 2;
+ground.position.y = -0.45;
+ground.receiveShadow = true;
+scene.add(ground);
+
+const mat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.55, metalness: 0, ...o });
+function rrect(w, d, r) {
+  const s = new THREE.Shape(), x = -w / 2, y = -d / 2;
+  s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r);
+  s.lineTo(x + w, y + d - r); s.quadraticCurveTo(x + w, y + d, x + w - r, y + d);
+  s.lineTo(x + r, y + d); s.quadraticCurveTo(x, y + d, x, y + d - r);
+  s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y);
+  return s;
+}
+function rbox(w, h, d, r, m) {
+  const b = Math.min(0.07, h / 3, w / 4, d / 4);
+  const rr = Math.max(Math.min(r, (w - 2 * b) / 2, (d - 2 * b) / 2) - 0.0001, 0.001);
+  const g = new THREE.ExtrudeGeometry(rrect(w - 2 * b, d - 2 * b, rr), { depth: Math.max(h - 2 * b, 0.001), bevelEnabled: true, bevelThickness: b, bevelSize: b, bevelSegments: 3, curveSegments: 10 });
+  g.rotateX(-Math.PI / 2);
+  g.center();
+  return shade(new THREE.Mesh(g, m));
+}
+function shade(mesh) { mesh.castShadow = true; mesh.receiveShadow = true; return mesh; }
+const sphere = (r, m) => shade(new THREE.Mesh(new THREE.SphereGeometry(r, 40, 24), m));
+const cyl = (r, h, m) => shade(new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 40), m));
+const cone = (r, h, m) => shade(new THREE.Mesh(new THREE.ConeGeometry(r, h, 40), m));
+
+function piece(mesh, x, z, lift = 0) {
+  const h = new THREE.Box3().setFromObject(mesh).getSize(new THREE.Vector3()).y;
+  mesh.position.set(x, lift + h / 2, z);
+  mesh.userData.y = mesh.position.y;
+  return mesh;
+}
+function place(mesh, v, drop) {
+  mesh.visible = v > 0.001;
+  mesh.scale.setScalar(Math.max(0.001, back(v)));
+  mesh.position.y = mesh.userData.y + drop * (1 - clamp(v * 1.4));
+}
+
+const SECTIONS = {
+  nav: { z: -3.7, d: 0.55, h: 0.25 },
+  hero: { z: -1.95, d: 2.1, h: 0.5 },
+  features: { z: 0.3, d: 1.35, h: 0.35 },
+  pricing: { z: 2.15, d: 1.6, h: 0.45 },
+  footer: { z: 3.65, d: 0.5, h: 0.15 },
+};
+
+function pricingSet(n, m) {
+  const out = [], w = n === 3 ? 1.5 : 2.4, xs = n === 3 ? [-1.7, 0, 1.7] : [-1.25, 1.25];
+  xs.forEach((x, i) => {
+    out.push(piece(rbox(w, 0.16, 1.5, 0.22, m.tile), x, 2.15));
+    out.push(piece(rbox(w * 0.45, 0.42, 0.42, 0.12, m.block), x - w * 0.2, 1.85, 0.16));
+    out.push(piece(rbox(w * 0.8, 0.14, 0.32, 0.16, n === 2 && i === 1 ? m.hot : m.pill), x, 2.55, 0.16));
+  });
+  return out;
+}
+
+function board(cx) {
+  const g = new THREE.Group();
+  g.position.x = cx;
+  scene.add(g);
+  const base = rbox(6, 0.45, 9, 0.6, mat(C.board, { roughness: 0.7 }));
+  base.position.y = -0.225;
+  g.add(base);
+
+  const m = { tile: mat(C.tile), block: mat(C.ink), pill: mat(C.soft), hot: mat(C.peach) };
+  const P = {};
+  P.nav = [
+    piece(sphere(0.24, mat(C.peach)), -2.2, -3.7),
+    piece(rbox(0.8, 0.1, 0.18, 0.09, mat(C.soft)), -1.3, -3.7),
+    piece(rbox(0.5, 0.1, 0.18, 0.09, mat(C.soft)), -0.55, -3.7),
+    piece(rbox(0.5, 0.1, 0.18, 0.09, mat(C.soft)), 0.05, -3.7),
+    piece(rbox(1.1, 0.3, 0.4, 0.2, mat(C.ink)), 2.0, -3.7),
+  ];
+  P.hero = [
+    piece(rbox(2.5, 0.3, 0.38, 0.1, mat(C.ink)), -1.2, -2.65),
+    piece(rbox(1.8, 0.3, 0.38, 0.1, mat(C.ink)), -1.55, -2.12),
+    piece(rbox(2.3, 0.1, 0.16, 0.08, mat(C.soft)), -1.3, -1.68),
+    piece(rbox(1.6, 0.1, 0.16, 0.08, mat(C.soft)), -1.65, -1.38),
+    piece(rbox(1.3, 0.3, 0.42, 0.21, mat(C.peach)), -1.8, -1.0),
+    piece(cyl(0.95, 0.3, mat(C.mint)), 1.4, -1.85),
+    piece(sphere(0.7, mat(C.peach, { roughness: 0.35 })), 1.4, -1.85, 0.3),
+  ];
+  const prim = [sphere(0.26, mat(C.butter)), rbox(0.48, 0.48, 0.48, 0.1, mat(C.lilac)), cone(0.3, 0.6, mat(C.mint))];
+  P.features = [];
+  [-1.7, 0, 1.7].forEach((x, i) => {
+    P.features.push(piece(rbox(1.5, 0.16, 1.3, 0.22, mat(C.tile)), x, 0.3));
+    P.features.push(piece(prim[i], x, 0.1, 0.16));
+    P.features.push(piece(rbox(0.9, 0.08, 0.14, 0.07, mat(C.soft)), x, 0.7, 0.16));
+  });
+  const wm = { tile: mat(C.tile), block: mat(C.ink), pill: mat(C.soft), hot: mat(C.peach) };
+  P.wrong = pricingSet(3, wm);
+  P.right = pricingSet(2, m);
+  P.footer = [
+    piece(rbox(5.2, 0.05, 0.06, 0.03, mat(C.soft)), 0, 3.4),
+    piece(sphere(0.14, mat(C.peach)), -2.4, 3.72),
+    piece(rbox(1.1, 0.08, 0.14, 0.07, mat(C.soft)), -1.5, 3.72),
+    piece(rbox(0.6, 0.08, 0.14, 0.07, mat(C.soft)), 1.5, 3.72),
+    piece(rbox(0.6, 0.08, 0.14, 0.07, mat(C.soft)), 2.3, 3.72),
+  ];
+  Object.values(P).flat().forEach((p) => { g.add(p); p.visible = false; });
+
+  const massMat = () => mat(C.mass, { transparent: true, opacity: 0.92, roughness: 0.8 });
+  const M = {};
+  for (const [k, s] of Object.entries(SECTIONS)) M[k] = piece(rbox(5.2, s.h, s.d, 0.25, massMat()), 0, s.z);
+  M.split = [-1.7, 0, 1.7].map((x) => piece(rbox(1.5, 0.35, 1.3, 0.22, massMat()), x, 0.3));
+  [...Object.values(M).flat()].forEach((p) => { g.add(p); p.visible = false; });
+
+  const frameMat = mat(C.focus, { emissive: C.focus, emissiveIntensity: 0.35 });
+  const frame = new THREE.Group();
+  const bars = [0, 1, 2, 3].map(() => { const b = new THREE.Mesh(new THREE.BoxGeometry(1, 0.08, 0.08), frameMat); frame.add(b); return b; });
+  frame.visible = false;
+  g.add(frame);
+  function focusOn(k) {
+    const s = SECTIONS[k], w = 5.7, d = s.d + 0.45, y = 0.9;
+    bars[0].scale.x = bars[1].scale.x = w;
+    bars[2].scale.x = bars[3].scale.x = d;
+    bars[0].position.set(0, y, s.z - d / 2); bars[1].position.set(0, y, s.z + d / 2);
+    bars[2].position.set(-w / 2, y, s.z); bars[3].position.set(w / 2, y, s.z);
+    bars[2].rotation.y = bars[3].rotation.y = Math.PI / 2;
+  }
+
+  return { g, P, M, wm, frame, frameMat, focusOn, mark: marker(false, g, 2.15, 1.2), verdict: null };
+}
+
+function marker(ok, parent, z, y, size = 1) {
+  const grp = new THREE.Group();
+  const disc = shade(new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.2, 48), mat(ok ? C.green : C.red, { roughness: 0.35 })));
+  disc.rotation.x = Math.PI / 2;
+  grp.add(disc);
+  const white = mat(0xffffff, { roughness: 0.4 });
+  const stroke = (len, x, y2, rot) => { const b = new THREE.Mesh(new THREE.BoxGeometry(len, 0.13, 0.08), white); b.position.set(x, y2, 0.12); b.rotation.z = rot; grp.add(b); };
+  if (ok) { stroke(0.32, -0.15, -0.04, -Math.PI / 4); stroke(0.6, 0.12, 0.06, Math.PI / 4); }
+  else { stroke(0.6, 0, 0, Math.PI / 4); stroke(0.6, 0, 0, -Math.PI / 4); }
+  grp.position.set(0, y, z);
+  grp.userData.y = y;
+  grp.userData.size = size;
+  grp.visible = false;
+  parent.add(grp);
+  return grp;
+}
+function pop(m, v) {
+  m.visible = v > 0.001;
+  m.scale.setScalar(Math.max(0.001, back(v)) * m.userData.size);
+}
+
+camera.updateMatrixWorld();
+const across = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0).setY(0).normalize();
+const L = board(-3.6), R = board(3.6);
+L.g.position.copy(across).multiplyScalar(-3.6);
+R.g.position.copy(across).multiplyScalar(3.6);
+L.verdict = marker(false, L.g, 5.4, 0.7, 1.5);
+R.verdict = marker(true, R.g, 5.4, 0.7, 1.5);
+
+const leftParts = ["nav", "hero", "features", "wrong", "footer"].flatMap((k) => L.P[k]);
+const BUILD = [0.4, 7.6], STEP = (BUILD[1] - BUILD[0]) / leftParts.length;
+const turnRed = (set, on) => set.forEach((mm) => mm.color.setHex(on ? C.red : mm.userData.base));
+for (const b of [L, R]) {
+  Object.values(b.wm).forEach((mm) => { mm.userData.base = mm.color.getHex(); });
+  b.wm.tile.userData.base = C.tile;
+}
+const redTile = (b, on) => { turnRed([b.wm.block, b.wm.pill, b.wm.hot], on); b.wm.tile.color.setHex(on ? 0xffd9dd : C.tile); };
+const shakeX = (t, a) => (t >= a && t < a + 0.5 ? Math.sin((t - a) * 55) * 0.18 * (1 - lin(t, a, a + 0.5)) : 0);
+
+function paintLeft(t) {
+  leftParts.forEach((p, i) => place(p, lin(t, BUILD[0] + i * STEP, BUILD[0] + i * STEP + 0.35), 1.6));
+  const flag = 8.8;
+  redTile(L, t >= flag);
+  L.P.wrong.forEach((p) => { p.position.x = (p.userData.x ??= p.position.x) + shakeX(t, flag + 0.1); });
+  L.frame.visible = t >= flag;
+  if (L.frame.visible) { L.focusOn("pricing"); L.frameMat.color.setHex(C.red); L.frameMat.emissive.setHex(C.red); }
+  pop(L.mark, lin(t, flag + 0.25, flag + 0.6));
+  pop(L.verdict, lin(t, flag + 0.6, flag + 0.95));
+}
+
+function paintRight(t) {
+  const det = { nav: ramp(t, 6.9, 7.4), hero: ramp(t, 1.2, 1.9), features: ramp(t, 2.9, 3.5), right: ramp(t, 6.2, 6.8), footer: ramp(t, 7.5, 8.0) };
+  const keys = ["nav", "hero", "features", "pricing", "footer"];
+  keys.forEach((k, i) => {
+    const v = ramp(t, 0.3 + i * 0.1, 0.7 + i * 0.1);
+    const gone = k === "pricing" ? Math.max(ramp(t, 3.8, 4.3) * (1 - ramp(t, 5.9, 6.2)), det.right) : k === "features" ? ramp(t, 2.3, 2.6) : det[k];
+    const m = R.M[k];
+    m.visible = v > 0.001 && gone < 0.999;
+    m.scale.set(1, Math.max(0.001, v * (1 - gone)), 1);
+    m.material.opacity = 0.92 * (1 - gone);
+  });
+  const split = ramp(t, 2.3, 2.6);
+  R.M.split.forEach((m) => {
+    m.visible = split > 0.001 && det.features < 0.999;
+    m.scale.set(1, Math.max(0.001, split * (1 - det.features)), 1);
+  });
+  for (const k of ["nav", "hero", "features", "footer"]) R.P[k].forEach((p, i) => place(p, lin(t, (k === "nav" ? 6.9 : k === "hero" ? 1.2 : k === "features" ? 2.9 : 7.5) + i * 0.05, (k === "nav" ? 7.3 : k === "hero" ? 1.7 : k === "features" ? 3.4 : 7.9) + i * 0.05), 0.6));
+
+  const wrongIn = lin(t, 3.8, 4.3), wrongOut = ramp(t, 5.9, 6.2);
+  R.P.wrong.forEach((p, i) => {
+    place(p, wrongIn * (1 - wrongOut), 0.6);
+    p.position.x = (p.userData.x ??= p.position.x) + shakeX(t, 4.9);
+  });
+  redTile(R, t >= 4.8 && t < 6.2);
+  R.P.right.forEach((p, i) => place(p, lin(t, 6.2 + i * 0.05, 6.6 + i * 0.05), 0.6));
+  const mk = lin(t, 4.95, 5.3) * (1 - ramp(t, 5.8, 6.0));
+  pop(R.mark, mk);
+
+  const focus = [["hero", 1.0, 2.2], ["features", 2.2, 3.6], ["pricing", 3.6, 6.85], ["nav", 6.85, 7.45], ["footer", 7.45, 8.1]];
+  const cur = focus.find(([, a, z]) => t >= a && t < z);
+  R.frame.visible = !!cur;
+  if (cur) {
+    R.focusOn(cur[0]);
+    const bad = cur[0] === "pricing" && t >= 4.8 && t < 5.9;
+    R.frameMat.color.setHex(bad ? C.red : C.focus);
+    R.frameMat.emissive.setHex(bad ? C.red : C.focus);
+  }
+  pop(R.verdict, lin(t, 8.3, 8.65));
+}
+
+function resize() {
+  const s = stage.clientWidth;
+  renderer.setSize(s, s, false);
+}
+addEventListener("resize", resize);
+resize();
+
+function paint(t) {
+  const c = Math.min(t, END);
+  paintLeft(c);
+  paintRight(c);
+  for (const m of [L.mark, R.mark, L.verdict, R.verdict]) {
+    m.quaternion.copy(camera.quaternion);
+    m.position.y = m.userData.y + Math.sin(t * 3) * 0.06;
+  }
+  renderer.render(scene, camera);
+}
+
+const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let t0 = performance.now(), paused = still, at = still ? END : 0;
+function frame(now) {
+  if (!paused) {
+    at = (now - t0) / 1000;
+    if (at > END + HOLD) { t0 = now; at = 0; }
+  }
+  paint(at);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+const pauseBtn = document.getElementById("pause");
+document.getElementById("replay").onclick = () => { t0 = performance.now(); at = 0; paused = false; pauseBtn.textContent = "Pause"; };
+pauseBtn.onclick = () => {
+  paused = !paused;
+  if (!paused) t0 = performance.now() - at * 1000;
+  pauseBtn.textContent = paused ? "Play" : "Pause";
+};
+</script>
+</body>
+</html>

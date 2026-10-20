@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="330" font-family="sans-serif" font-size="12"><rect width="100%" height="100%" fill="white"/>
+<text x="220.0" y="20" text-anchor="middle" font-weight="bold">Rules broken</text>
+<line x1="50" y1="250" x2="390" y2="250" stroke="#999"/>
+<line x1="50" y1="50" x2="50" y2="250" stroke="#999"/>
+<text x="44" y="54" text-anchor="end">70%</text>
+<text x="50.0" y="266" text-anchor="middle">40</text>
+<text x="134.45351839561374" y="266" text-anchor="middle">100</text>
+<text x="262.2267591978068" y="266" text-anchor="middle">400</text>
+<text x="346.68027759342056" y="266" text-anchor="middle">1000</text>
+<text x="390.0" y="266" text-anchor="middle">1600</text>
+<polyline points="50.0,173.4 134.5,156.4 262.2,73.2 346.7,51.0" fill="none" stroke="#2a9d8f" stroke-width="2"/>
+<polyline points="50.0,168.2 134.5,169.5 262.2,145.7 346.7,112.8 390.0,50.0" fill="none" stroke="#e76f51" stroke-width="2"/>
+<polyline points="50.0,104.1 134.5,86.1 262.2,155.7 346.7,128.2" fill="none" stroke="#8ac926" stroke-width="2"/>
+<text x="660.0" y="20" text-anchor="middle" font-weight="bold">Replaced rules kept in the old version</text>
+<line x1="490" y1="250" x2="830" y2="250" stroke="#999"/>
+<line x1="490" y1="50" x2="490" y2="250" stroke="#999"/>
+<text x="484" y="54" text-anchor="end">100%</text>
+<text x="490.0" y="266" text-anchor="middle">40</text>
+<text x="574.4535183956137" y="266" text-anchor="middle">100</text>
+<text x="702.2267591978068" y="266" text-anchor="middle">400</text>
+<text x="786.6802775934206" y="266" text-anchor="middle">1000</text>
+<text x="830.0" y="266" text-anchor="middle">1600</text>
+<polyline points="490.0,229.3 574.5,200.0 702.2,175.9 786.7,116.7" fill="none" stroke="#2a9d8f" stroke-width="2"/>
+<polyline points="490.0,128.6 574.5,107.1 702.2,84.5 786.7,92.9 830.0,50.0" fill="none" stroke="#e76f51" stroke-width="2"/>
+<polyline points="490.0,131.5 574.5,161.1 702.2,192.9 786.7,177.3" fill="none" stroke="#8ac926" stroke-width="2"/>
+<text x="1100.0" y="20" text-anchor="middle" font-weight="bold">Input tokens a task (k)</text>
+<line x1="930" y1="250" x2="1270" y2="250" stroke="#999"/>
+<line x1="930" y1="50" x2="930" y2="250" stroke="#999"/>
+<text x="924" y="54" text-anchor="end">740k</text>
+<text x="930.0" y="266" text-anchor="middle">40</text>
+<text x="1014.4535183956137" y="266" text-anchor="middle">100</text>
+<text x="1142.2267591978068" y="266" text-anchor="middle">400</text>
+<text x="1226.6802775934207" y="266" text-anchor="middle">1000</text>
+<text x="1270.0" y="266" text-anchor="middle">1600</text>
+<polyline points="930.0,144.5 1014.5,136.4 1142.2,122.8 1226.7,127.2" fill="none" stroke="#2a9d8f" stroke-width="2"/>
+<polyline points="930.0,211.6 1014.5,201.7 1142.2,151.0 1226.7,85.4 1270.0,50.0" fill="none" stroke="#e76f51" stroke-width="2"/>
+<polyline points="930.0,133.3 1014.5,115.0 1142.2,61.6 1226.7,128.3" fill="none" stroke="#8ac926" stroke-width="2"/>
+<text x="50" y="310" fill="#2a9d8f">celis</text>
+<text x="210" y="310" fill="#e76f51">CLAUDE.md</text>
+<text x="370" y="310" fill="#8ac926">pickers</text>
+</svg>
