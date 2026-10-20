@@ -1,0 +1,419 @@
+[
+  {
+    "id": "log-args",
+    "check": "log_args",
+    "text": "Log calls pass values as %s arguments, never as f-strings: `_LOGGER.info('added %s', sku)`.",
+    "good": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nimport logging\n_LOGGER = logging.getLogger(__name__)\n_LOGGER.info('x %s', 1)\n"
+    },
+    "bad": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nimport logging\n_LOGGER = logging.getLogger(__name__)\n_LOGGER.info(f'x {1}')\n"
+    },
+    "place": "stock"
+  },
+  {
+    "id": "logger-name",
+    "check": "logger_name",
+    "text": "A module that logs names its logger `_LOGGER = logging.getLogger(__name__)`.",
+    "good": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nimport logging\n_LOGGER = logging.getLogger(__name__)\n"
+    },
+    "bad": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nimport logging\nlog = logging.getLogger(__name__)\n"
+    },
+    "old": "A module that logs names its logger `log = logging.getLogger(__name__)`.",
+    "bad_state": "old",
+    "place": "stock"
+  },
+  {
+    "id": "own-errors",
+    "check": "own_errors",
+    "text": "Raise only the errors of `stock/errors.py` (subclasses of `StockError`); never raise ValueError, KeyError, RuntimeError, OSError or Exception.",
+    "good": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nfrom stock.errors import StockError\n\ndef f() -> None:\n    raise StockError('f: no')\n"
+    },
+    "bad": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\ndef f() -> None:\n    raise ValueError('f: no')\n"
+    },
+    "place": "stock"
+  },
+  {
+    "id": "error-text",
+    "check": "error_text",
+    "text": "An error message starts with the operation in lower case and a colon: `StockError('export: no items')`.",
+    "good": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nfrom stock.errors import StockError\n\ndef f() -> None:\n    raise StockError('export: no items')\n"
+    },
+    "bad": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nfrom stock.errors import StockError\n\ndef f() -> None:\n    raise StockError('No items to export')\n"
+    },
+    "place": "stock"
+  },
+  {
+    "id": "raise-from",
+    "check": "raise_from",
+    "text": "Inside an `except` block, raise the new error `from err`.",
+    "good": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nfrom stock.errors import StockError\n\ndef f() -> None:\n    try:\n        g()\n    except KeyError as err:\n        raise StockError('f: x') from err\n"
+    },
+    "bad": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nfrom stock.errors import StockError\n\ndef f() -> None:\n    try:\n        g()\n    except KeyError:\n        raise StockError('f: x')\n"
+    },
+    "place": "stock"
+  },
+  {
+    "id": "broad-except",
+    "check": "broad_except",
+    "text": "Never catch `Exception` and never write a bare `except:`; catch the errors you expect.",
+    "good": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\ndef f() -> None:\n    try:\n        g()\n    except KeyError:\n        pass\n"
+    },
+    "bad": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\ndef f() -> None:\n    try:\n        g()\n    except Exception:\n        pass\n"
+    },
+    "place": "stock"
+  },
+  {
+    "id": "all-names",
+    "check": "all_names",
+    "text": "Each new module defines `__all__` with its public names.",
+    "good": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\n__all__ = ['f']\n"
+    },
+    "bad": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nx = 1\n"
+    },
+    "place": "stock"
+  },
+  {
+    "id": "constants",
+    "check": "constants",
+    "text": "Module-level constants (UPPER_CASE names) live only in `stock/const.py`.",
+    "good": {
+      "stock/const.py": "\nLIMIT = 3\n"
+    },
+    "bad": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nLIMIT = 3\n"
+    },
+    "place": "stock"
+  },
+  {
+    "id": "flag-kebab",
+    "check": "flag_kebab",
+    "text": "Every CLI option has a long form in kebab-case, such as `--out-file`; no short-only options and no underscores.",
+    "good": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\ndef f(p) -> None:\n    p.add_argument('--out-file')\n"
+    },
+    "bad": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\ndef f(p) -> None:\n    p.add_argument('--out_file')\n"
+    },
+    "place": "stock"
+  },
+  {
+    "id": "help-text",
+    "check": "help_text",
+    "text": "Help texts of commands and options start in lower case and do not end with a period: `help='write the items to a file'`.",
+    "good": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\ndef f(p) -> None:\n    p.add_argument('--x', help='do x')\n"
+    },
+    "bad": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\ndef f(p) -> None:\n    p.add_argument('--x', help='Do x.')\n"
+    },
+    "place": "stock"
+  },
+  {
+    "id": "command-names",
+    "check": "command_names",
+    "text": "Public functions in `stock/commands/` are named `cmd_<command>`; helpers there start with `_`.",
+    "good": {
+      "stock/commands/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\ndef cmd_extra(store, args) -> int:\n    return _go()\n"
+    },
+    "bad": {
+      "stock/commands/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\ndef extra(store, args) -> int:\n    return 0\n"
+    },
+    "place": "stock/commands"
+  },
+  {
+    "id": "no-print",
+    "check": "no_print",
+    "text": "Only `stock/cli.py` writes to the terminal, through `out()`; never call `print()` anywhere else.",
+    "good": {
+      "stock/commands/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nfrom stock.cli import out\nout('x')\n"
+    },
+    "bad": {
+      "stock/commands/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nprint('x')\n"
+    },
+    "place": "stock/commands"
+  },
+  {
+    "id": "pathlib",
+    "check": "pathlib_only",
+    "text": "Work with paths through `pathlib.Path`; never use `os.path`.",
+    "good": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nfrom pathlib import Path\np = Path('x')\n"
+    },
+    "bad": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nimport os\np = os.path.join('a', 'b')\n"
+    },
+    "place": "stock"
+  },
+  {
+    "id": "encoding",
+    "check": "encoding",
+    "text": "Every `open()`, `Path.read_text()` and `Path.write_text()` of text passes `encoding='utf-8'`.",
+    "good": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\ndef f(p) -> str:\n    return p.read_text(encoding='utf-8')\n"
+    },
+    "bad": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\ndef f(p) -> str:\n    return open(p).read()\n"
+    },
+    "place": "stock"
+  },
+  {
+    "id": "test-files",
+    "check": "test_files",
+    "text": "Test files are named `<module>_test.py` in `tests/`.",
+    "good": {
+      "tests/extra_test.py": "import unittest\n"
+    },
+    "bad": {
+      "tests/test_extra.py": "import unittest\n"
+    },
+    "old": "Test files are named `test_<module>.py` in `tests/`.",
+    "bad_state": "old",
+    "place": "tests"
+  },
+  {
+    "id": "test-classes",
+    "check": "test_classes",
+    "text": "Test classes are named `<Thing>Tests` and subclass `unittest.TestCase`.",
+    "good": {
+      "tests/extra_test.py": "import unittest\n\nclass ExtraTests(unittest.TestCase):\n    pass\n"
+    },
+    "bad": {
+      "tests/extra_test.py": "import unittest\n\nclass TestExtra(unittest.TestCase):\n    pass\n"
+    },
+    "place": "tests"
+  },
+  {
+    "id": "frozen",
+    "check": "frozen",
+    "text": "Dataclasses are declared `@dataclass(frozen=True, slots=True)`.",
+    "good": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nfrom dataclasses import dataclass\n\n@dataclass(frozen=True, slots=True)\nclass A:\n    x: int\n"
+    },
+    "bad": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nfrom dataclasses import dataclass\n\n@dataclass\nclass A:\n    x: int\n"
+    },
+    "place": "stock"
+  },
+  {
+    "id": "utc",
+    "check": "utc",
+    "text": "Times are aware and in UTC: `datetime.now(tz=UTC)`; never `datetime.now()` without a zone, `utcnow()` or `today()`.",
+    "good": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nfrom datetime import UTC, datetime\nn = datetime.now(tz=UTC)\n"
+    },
+    "bad": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nfrom datetime import datetime\nn = datetime.now()\n"
+    },
+    "place": "stock"
+  },
+  {
+    "id": "json-format",
+    "check": "json_format",
+    "text": "`json.dump` and `json.dumps` always pass `indent=2, sort_keys=True`.",
+    "good": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nimport json\ns = json.dumps({}, indent=2, sort_keys=True)\n"
+    },
+    "bad": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nimport json\ns = json.dumps({})\n"
+    },
+    "place": "stock"
+  },
+  {
+    "id": "future",
+    "check": "future",
+    "text": "Each new module starts with `from __future__ import annotations` after its docstring.",
+    "good": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\n"
+    },
+    "bad": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nx = 1\n"
+    },
+    "place": "stock"
+  },
+  {
+    "id": "absolute-imports",
+    "check": "absolute",
+    "text": "Import with absolute paths, such as `from stock.storage.base import Store`; no relative imports.",
+    "good": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nfrom stock.errors import StockError\n"
+    },
+    "bad": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nfrom .errors import StockError\n"
+    },
+    "place": "stock"
+  },
+  {
+    "id": "settings",
+    "check": "settings",
+    "text": "Read environment variables only through `stock.config.setting(name)`; never use `os.environ` or `os.getenv` outside `stock/config.py`.",
+    "good": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nfrom stock.config import setting\nd = setting('dir')\n"
+    },
+    "bad": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nimport os\nd = os.environ.get('STOCK_DIR')\n"
+    },
+    "place": "stock"
+  },
+  {
+    "id": "subprocess",
+    "check": "processes",
+    "text": "Run programs with `subprocess.run([...], check=True)`: the command as a list, `check=True`, never `shell=True`.",
+    "good": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nimport subprocess\nsubprocess.run(['git', 'status'], check=True)\n"
+    },
+    "bad": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nimport subprocess\nsubprocess.run('git status', shell=True)\n"
+    },
+    "place": "stock"
+  },
+  {
+    "id": "keyword-bools",
+    "check": "keyword_bools",
+    "text": "Boolean parameters are keyword-only: `def export(items, *, include_empty: bool = False)`.",
+    "good": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\ndef f(a: int, *, b: bool = False) -> None:\n    pass\n"
+    },
+    "bad": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\ndef f(a: int, b: bool = False) -> None:\n    pass\n"
+    },
+    "place": "stock"
+  },
+  {
+    "id": "no-assert",
+    "check": "no_assert",
+    "text": "No `assert` outside tests; raise an error of `stock/errors.py` instead.",
+    "good": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\ndef f(a: int) -> None:\n    pass\n"
+    },
+    "bad": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\ndef f(a: int) -> None:\n    assert a\n"
+    },
+    "place": "stock"
+  },
+  {
+    "id": "line-length",
+    "check": "line_length",
+    "text": "Lines of Python stay within 79 characters.",
+    "good": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nx = 1\n"
+    },
+    "bad": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nx = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'\n"
+    },
+    "old": "Lines of Python stay within 100 characters.",
+    "bad_state": "old",
+    "place": "stock"
+  },
+  {
+    "id": "quotes",
+    "check": "quotes",
+    "text": "Strings use single quotes; use double quotes only for a string that holds a single quote, and for docstrings.",
+    "good": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nx = 'a'\n"
+    },
+    "bad": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nx = \"a\"\n"
+    },
+    "place": "stock"
+  },
+  {
+    "id": "changelog",
+    "check": "changelog",
+    "text": "Each change adds a line under `## Unreleased` in CHANGELOG.md: `- Added: <what>`, with Added, Changed or Fixed.",
+    "good": {
+      "CHANGELOG.md": "- Added: the extra command\n"
+    },
+    "bad": {
+      "CHANGELOG.md": "- [added] the extra command\n"
+    },
+    "old": "Each change adds a line under `## Unreleased` in CHANGELOG.md: `- [added] <what>`, with added, changed or fixed.",
+    "bad_state": "old",
+    "place": "CHANGELOG.md"
+  },
+  {
+    "id": "module-docstring",
+    "check": "module_docstring",
+    "text": "Each new module starts with a one-line docstring.",
+    "good": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\n"
+    },
+    "bad": {
+      "stock/extra.py": "from __future__ import annotations\n\nx = 1\n"
+    },
+    "place": "stock"
+  },
+  {
+    "id": "store-names",
+    "check": "store_names",
+    "text": "A storage backend subclasses `stock.storage.base.Store` and is named `<Kind>Store`, such as `SqliteStore`.",
+    "good": {
+      "stock/storage/sql.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nfrom stock.storage.base import Store\n\nclass SqliteStore(Store):\n    pass\n"
+    },
+    "bad": {
+      "stock/storage/sql.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nfrom stock.storage.base import Store\n\nclass SqliteBackend(Store):\n    pass\n"
+    },
+    "place": "stock/storage"
+  },
+  {
+    "id": "type-hints",
+    "check": "type_hints",
+    "text": "Each new function annotates every parameter and its return type.",
+    "good": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\ndef f(a: int) -> int:\n    return a\n"
+    },
+    "bad": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\ndef f(a):\n    return a\n"
+    },
+    "place": "stock"
+  },
+  {
+    "id": "readme-commands",
+    "check": "readme_commands",
+    "text": "Each new command gets a row in the README table under `## Commands`.",
+    "good": {
+      "stock/commands/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\ndef cmd_extra(store, args) -> int:\n    return 0\n",
+      "README.md": "| `stock extra` | Does extra |\n"
+    },
+    "bad": {
+      "stock/commands/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\ndef cmd_extra(store, args) -> int:\n    return 0\n"
+    },
+    "place": "README.md"
+  },
+  {
+    "id": "exit-codes",
+    "check": "exit_codes",
+    "text": "Commands return an exit code from `stock.const` (`EXIT_OK`, `EXIT_USAGE`, `EXIT_FAILURE`), never a bare number.",
+    "good": {
+      "stock/commands/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nfrom stock.const import EXIT_OK\n\ndef cmd_extra(store, args) -> int:\n    return EXIT_OK\n"
+    },
+    "bad": {
+      "stock/commands/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\ndef cmd_extra(store, args) -> int:\n    return 0\n"
+    },
+    "place": "stock/commands"
+  },
+  {
+    "id": "builtin-generics",
+    "check": "builtin_generics",
+    "text": "Write types with built-in generics: `list[str]`, `dict[str, int]`, `X | None`; never import `List`, `Dict`, `Optional` or `Union` from typing.",
+    "good": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\ndef f(a: list[str]) -> int | None:\n    return None\n"
+    },
+    "bad": {
+      "stock/extra.py": "\"\"\"A module.\"\"\"\n\nfrom __future__ import annotations\n\nfrom typing import List\n\ndef f(a: List[str]) -> None:\n    pass\n"
+    },
+    "place": "stock"
+  }
+]

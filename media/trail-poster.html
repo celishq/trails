@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One Step Poster</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=JetBrains+Mono:wght@400;600;700&display=swap">
+<style>
+/* A square technical poster on grey paper: two brutalist landing pages built side by side, each with a cover whose route climbs
+   as the page is built, and a time bar under each. Ink for work, orange-red for errors and lost time. */
+:root {
+  --paper: #e9e8e3;
+  --ink: #1f1f1d;
+  --mute: #8a8984;
+  --grey: var(--line);
+  --hot: #ff4f1a;
+  --line: #b9b8b2;
+  --soft: #55554f;
+  --ok: #16a05a;
+  --err: #d0262b;
+  --hair: 0.15cqw;
+  --stroke: 0.3cqw;
+  --bold: 0.45cqw;
+  --display: "Archivo", "Arial Narrow", "Helvetica Neue", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #2a2a28; color: var(--ink); }
+body { font: 15px/1.5 var(--mono); padding-inline: 16px; padding-block: 24px; display: grid; justify-items: center; gap: 18px; }
+
+.poster { position: relative; width: min(100%, 640px); aspect-ratio: 1 / 1; container-type: inline-size; overflow: hidden; background: var(--paper);
+  display: flex; flex-direction: column; justify-content: space-between; padding: 3.2cqw 3.2cqw 2.8cqw; }
+.poster::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.09; mix-blend-mode: multiply; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+.label { font: 600 1.9cqw/1.25 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; }
+.deco { display: flex; align-items: center; gap: 1.6cqw; height: 2.6cqw; }
+.plus { position: relative; width: 2.4cqw; height: 2.4cqw; flex: none; }
+.plus::before, .plus::after { content: ""; position: absolute; background: var(--ink); }
+.plus::before { left: 50%; top: 0; bottom: 0; width: 0.3cqw; margin-left: -0.15cqw; }
+.plus::after { top: 50%; left: 0; right: 0; height: 0.3cqw; margin-top: -0.15cqw; }
+.rule { flex: 1; height: 0.3cqw; background: var(--ink); }
+.ticks { width: 22cqw; height: 1.6cqw; background: repeating-linear-gradient(90deg, var(--ink) 0 1px, transparent 1px 1.1cqw); }
+.blocks { display: flex; gap: 0.5cqw; }
+.blocks i { width: 1.4cqw; height: 1.4cqw; background: var(--ink); }
+.blocks i:last-child { background: var(--hot); }
+.code { width: 11cqw; height: 2cqw; background: repeating-linear-gradient(90deg, var(--ink) 0 0.25cqw, transparent 0.25cqw 0.45cqw, var(--ink) 0.45cqw 0.55cqw, transparent 0.55cqw 0.9cqw, var(--ink) 0.9cqw 1.35cqw, transparent 1.35cqw 1.6cqw); }
+.foot { display: flex; justify-content: flex-end; align-items: center; gap: 3cqw; }
+.foot .site { color: var(--mute); }
+
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 2.4cqw; }
+.col { display: flex; flex-direction: column; gap: 2.4cqw; min-width: 0; }
+
+.page { position: relative; border: var(--stroke) solid var(--ink); background: var(--paper); }
+.screen { position: relative; display: flex; flex-direction: column; gap: 2.2cqw; padding: 2.2cqw; }
+.caret { position: absolute; left: -1.2cqw; right: -1.2cqw; height: 0.4cqw; margin-top: -0.2cqw; background: var(--ink); opacity: 0; z-index: 3; }
+.caret::before, .caret::after { content: ""; position: absolute; top: 50%; margin-top: -0.9cqw; border: 0.9cqw solid transparent; }
+.caret::before { left: -0.6cqw; border-left-color: var(--ink); }
+.caret::after { right: -0.6cqw; border-right-color: var(--ink); }
+
+.sec { position: relative; }
+.sec.nav { height: 3.6cqw; }
+.sec.hero { height: 25cqw; }
+.sec.features { height: 10.5cqw; }
+.sec.pricing { height: 12cqw; }
+.sec > * { position: absolute; inset: 0; }
+.blk, .mid span { border: var(--hair) solid var(--ink); }
+.blk { background: repeating-linear-gradient(-45deg, var(--ink) 0 1px, transparent 1px 1.1cqw); }
+.mid span { background: repeating-linear-gradient(-45deg, var(--ink) 0 1px, transparent 1px 0.55cqw); }
+.mid { display: flex; gap: 1.2cqw; }
+.mid.rows { flex-direction: column; gap: 0.8cqw; }
+.mid.red span { border-color: var(--err); background: repeating-linear-gradient(-45deg, var(--err) 0 1px, transparent 1px 0.55cqw); }
+.blk, .mid, .det { opacity: 0; }
+
+.sel { inset: -0.9cqw; border: var(--bold) solid var(--ink); opacity: 0; z-index: 2; pointer-events: none; }
+.sel b { position: absolute; right: -0.35cqw; bottom: 100%; display: flex; align-items: center; gap: 0.8cqw; padding: 0.5cqw 1cqw; background: var(--ink); color: var(--paper);
+  font: 700 1.6cqw/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
+.sel b i { width: 1cqw; height: 1cqw; border-radius: 50%; background: var(--paper); animation: blink 0.6s steps(2) infinite; }
+.sel.on { opacity: 1; }
+.sel.bad { border-color: var(--err); }
+.sel.bad b { background: var(--err); }
+.sel .ok, .sel.bad .work { display: none; }
+.sel.bad .ok { display: inline; }
+
+.ln { height: 0.6cqw; background: var(--grey); }
+.mark { width: 2.4cqw; height: 2.4cqw; background: var(--ink); flex: none; }
+.pill { height: 2.4cqw; width: 6cqw; border-radius: 99px; background: var(--ink); }
+.cells, .nav .mid { display: grid; grid-template-columns: 1.7fr 1fr 1fr 3.6cqw; }
+.cells { border: var(--hair) solid var(--ink); }
+.cell { display: flex; align-items: center; gap: 0.8cqw; padding-inline: 1cqw; border-left: var(--hair) solid var(--ink); }
+.cell:first-child { border-left: 0; }
+.cell:last-child { justify-content: center; padding: 0; }
+.cell .mark { width: 1.8cqw; height: 1.8cqw; }
+.cell .ln { flex: 1; }
+.cell .ln.on { background: var(--ink); }
+.dot { width: 1.4cqw; height: 1.4cqw; border-radius: 50%; background: var(--ink); }
+.nav .mid { gap: 0; }
+
+.hero .det { overflow: hidden; background: var(--paper); }
+.cover { position: absolute; right: 0; top: 0; bottom: 0; width: 62%; background: var(--ink); overflow: hidden; }
+.cover canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.title { position: absolute; left: 0; top: -0.4cqw; z-index: 1; margin: 0; color: var(--paper); mix-blend-mode: difference;
+  font: 900 9.6cqw/0.82 var(--display); font-variation-settings: "wdth" 62; text-transform: uppercase; letter-spacing: -0.01em; }
+.copy { position: absolute; left: 0; bottom: 0; width: 34%; display: flex; flex-direction: column; gap: 0.9cqw; }
+.copy .tag { width: 7cqw; height: 1.4cqw; background: var(--ink); }
+.copy .go { display: flex; align-items: center; justify-content: space-between; height: 2.6cqw; margin-top: 0.6cqw; padding-inline: 1cqw; border: var(--hair) solid var(--ink); }
+.copy .go::after { content: ""; width: 1cqw; height: 1cqw; border-top: var(--hair) solid var(--ink); border-right: var(--hair) solid var(--ink); transform: rotate(45deg); }
+.copy .go i { width: 50%; height: 0.6cqw; background: var(--ink); }
+.cover { background: var(--paper); }
+.cover svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 1px #e9e8e3) drop-shadow(0 0 1px #e9e8e3); }
+.cover path { fill: none; stroke: var(--ink); stroke-linecap: round; stroke-linejoin: round; }
+.cover .walk { stroke-width: 2.2; }
+.cover .bad, .cover .lost { stroke: var(--err); }
+.cover .x { opacity: 0; }
+.cover .x rect { fill: var(--err); }
+.cover .x path { stroke: var(--paper); stroke-width: 1.4; }
+.cover .flag { opacity: 0; }
+.cover .flag line { stroke: var(--ink); stroke-width: 1.2; }
+.cover .flag path { fill: var(--ink); stroke: none; }
+
+.list { display: flex; flex-direction: column; }
+.item { flex: 1; display: grid; grid-template-columns: 3.4cqw 1fr 2.2cqw; align-items: center; gap: 1.2cqw; border-top: var(--hair) solid var(--ink); }
+.item:last-child { border-bottom: var(--hair) solid var(--ink); }
+.item em { font: 700 1.6cqw var(--mono); font-style: normal; }
+.item .add { width: 2cqw; height: 2cqw; border: var(--hair) solid var(--ink); border-radius: 50%; background: linear-gradient(var(--ink), var(--ink)) center / 1cqw 1px no-repeat, linear-gradient(var(--ink), var(--ink)) center / 1px 1cqw no-repeat; }
+
+.cards { display: grid; gap: 1.2cqw; height: 100%; }
+.cards.three { grid-template-columns: repeat(3, 1fr); }
+.cards.two { grid-template-columns: repeat(2, 1fr); }
+.card { border: var(--hair) solid var(--ink); padding: 1cqw; display: flex; flex-direction: column; gap: 0.7cqw; background: var(--paper); }
+.card.dark { background: var(--ink); color: var(--paper); }
+.card.dark .ln { background: var(--soft); }
+.card.dark .pill { background: var(--paper); }
+.big { font: 900 5.4cqw/0.85 var(--display); font-variation-settings: "wdth" 62; }
+.card .pill { width: 100%; height: 2cqw; margin-top: auto; }
+.red .card { border-color: var(--err); color: var(--err); background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--err) 30%, transparent) 0 1px, transparent 1px 0.8cqw), var(--paper); }
+.red .ln, .red .pill { background: var(--err); }
+
+
+
+.read { display: grid; grid-template-columns: 1fr; align-items: end; column-gap: 2cqw; row-gap: 1cqw; }
+.read .label, .cost { text-align: center; }
+.cost { opacity: 0; }
+.cost.on { opacity: 1; }
+#L .cost { color: var(--err); }
+
+@keyframes blink { 50% { opacity: 0; } }
+
+.controls { display: flex; gap: 10px; }
+.controls button { font: 700 13px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--paper); background: transparent; border: 1px solid #5a5a56; padding: 9px 18px; cursor: pointer; }
+.controls button:hover { border-color: var(--hot); color: var(--hot); }
+.controls button:focus-visible { outline: 2px solid var(--hot); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .sel b i { animation: none; } }
+</style>
+</head>
+<body>
+
+<div class="poster" id="poster">
+  <div class="deco"><i class="plus"></i><span class="rule"></span><span class="ticks"></span><span class="blocks"><i></i><i></i><i></i></span><span class="code"></span><i class="plus"></i></div>
+
+  <div class="cols">
+    <div class="col" id="L">
+      <div class="page"><div class="screen"></div><div class="caret"></div></div>
+      <div class="read">
+        <div class="label">Without celis</div>
+        <div class="cost label">✗ 1 rework prompt needed</div>
+      </div>
+    </div>
+    <div class="col" id="R">
+      <div class="page"><div class="screen"></div></div>
+      <div class="read">
+        <div class="label">With celis</div>
+        <div class="cost label">✓ No rework</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot label"><span class="site">celis.ai</span></div>
+</div>
+
+<div class="controls">
+  <button id="replay" type="button">Replay</button>
+  <button id="pause" type="button">Pause</button>
+</div>
+
+<template id="sections">
+  <div class="sec nav" data-k="nav">
+    <div class="blk"></div>
+    <div class="mid"><span></span><span></span><span></span><span></span></div>
+    <div class="det cells"><span class="cell"><i class="mark"></i><i class="ln on" style="height:0.9cqw"></i></span><span class="cell"><i class="ln"></i></span><span class="cell"><i class="ln"></i></span><span class="cell"><i class="dot"></i></span></div>
+  </div>
+  <div class="sec hero" data-k="hero">
+    <div class="blk"></div>
+    <div class="mid"><span style="position:absolute;left:0;top:0;width:34%;height:50%"></span><span style="position:absolute;left:0;bottom:0;width:34%;height:40%"></span><span style="position:absolute;right:0;top:0;bottom:0;width:62%"></span></div>
+    <div class="det"><div class="cover"><canvas></canvas></div><h3 class="title"></h3><div class="copy"><i class="tag"></i><div class="ln" style="width:100%"></div><div class="ln" style="width:70%"></div><span class="go"><i></i></span></div></div>
+  </div>
+  <div class="sec features" data-k="features">
+    <div class="blk"></div>
+    <div class="mid rows"><span style="flex:1"></span><span style="flex:1"></span><span style="flex:1"></span></div>
+    <div class="det list">
+      <div class="item"><em>01</em><div class="ln" style="width:80%"></div><i class="add"></i></div>
+      <div class="item"><em>02</em><div class="ln" style="width:60%"></div><i class="add"></i></div>
+      <div class="item"><em>03</em><div class="ln" style="width:70%"></div><i class="add"></i></div>
+    </div>
+  </div>
+  <div class="sec pricing" data-k="pricing">
+    <div class="blk"></div>
+    <div class="mid" data-wrong><span style="flex:1"></span><span style="flex:1"></span><span style="flex:1"></span></div>
+    <div class="mid" data-right><span style="flex:1"></span><span style="flex:1"></span></div>
+    <div class="det cards three" data-wrong>
+      <div class="card"><span class="big">9</span><div class="ln" style="width:80%"></div><div class="pill"></div></div>
+      <div class="card"><span class="big">19</span><div class="ln" style="width:80%"></div><div class="pill"></div></div>
+      <div class="card"><span class="big">49</span><div class="ln" style="width:80%"></div><div class="pill"></div></div>
+    </div>
+    <div class="det cards two" data-right>
+      <div class="card"><span class="big">0</span><div class="ln" style="width:70%"></div><div class="pill"></div></div>
+      <div class="card dark"><span class="big">8</span><div class="ln" style="width:70%"></div><div class="pill"></div></div>
+    </div>
+  </div>
+</template>
+
+<script>
+const END = 14.2, HOLD = 4.5;
+const RIGHT_HOLD = [3.6, 1.2];
+const PAUSES = [[11.6, 1.4]];
+const LENGTH = END + RIGHT_HOLD[1] + PAUSES.reduce((sum, [, d]) => sum + d, 0);
+const ORDER = ["nav", "hero", "features", "pricing"];
+const clamp = (x) => Math.max(0, Math.min(1, x));
+const lin = (t, a, b) => clamp((t - a) / (b - a));
+const show = (n, from, to) => {
+  n.style.opacity = to > from ? 1 : 0;
+  n.style.clipPath = `inset(0 ${(1 - to) * 100}% 0 ${from * 100}%)`;
+};
+function handoff(older, newer, inV, v) {
+  show(older, v, inV);
+  show(newer, 0, v);
+}
+
+const PATHS = {
+  a: "M6 98 L18 86 L28 74 L42 66 L56 58 L74 48 L86 40",
+  b: "M6 98 L18 86 L14 76 L28 68 L24 58 L40 50 L36 42 L52 34 L58 27 L66 20",
+  c: "M6 98 L10 80 L8 62 L20 48 L34 36 L50 27 L66 20",
+  redo: "M18 86 L14 76 L28 68 L24 58 L40 50 L36 42 L52 34 L58 27 L66 20",
+};
+function overlay(host, plan) {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 100 100");
+  svg.setAttribute("preserveAspectRatio", "none");
+  svg.innerHTML = plan.map((key) => `<path class="walk" data-key="${key}" d="${PATHS[key]}" pathLength="1"/>`).join("") +
+    '<g class="x" transform="translate(86 40)"><rect x="-4.5" y="-4.5" width="9" height="9"/><path d="M-2.2 -2.2 L2.2 2.2 M2.2 -2.2 L-2.2 2.2"/></g>' +
+    '<g class="flag"><line x1="66" y1="20" x2="66" y2="5"/><path d="M66 5 L77 8.5 L66 12 Z"/></g>';
+  host.append(svg);
+  return { get: (key) => svg.querySelector(`[data-key="${key}"]`), x: svg.querySelector(".x"), flag: svg.querySelector(".flag") };
+}
+function draw(path, p) {
+  path.style.strokeDasharray = `${p} 1`;
+  path.style.opacity = p > 0 ? 1 : 0;
+}
+function routeLeft(t) {
+  const o = L.cover, a = o.get("a"), redo = o.get("redo");
+  a.classList.add("bad");
+  redo.classList.add("lost");
+  draw(a, lin(t, VERDICT, VERDICT + 0.5));
+  o.x.style.opacity = t >= VERDICT + 0.5 ? 1 : 0;
+  draw(redo, lin(t, VERDICT + 0.5, VERDICT + 1.0));
+  o.flag.style.opacity = t >= VERDICT + 1.0 ? 1 : 0;
+}
+function routeRight(t) {
+  const o = R.cover;
+  draw(o.get("b"), lin(t, VERDICT, VERDICT + 0.7));
+  o.flag.style.opacity = t >= VERDICT + 0.7 ? 1 : 0;
+  o.x.style.opacity = 0;
+}
+
+function sized(canvas) {
+  const dpr = Math.min(devicePixelRatio || 1, 2), w = Math.round(canvas.clientWidth * dpr), h = Math.round(canvas.clientHeight * dpr);
+  if (!w || !h) return null;
+  canvas.width = w; canvas.height = h;
+  return [canvas.getContext("2d"), w, h];
+}
+function topo(canvas) {
+  const s = sized(canvas);
+  if (!s) return;
+  const [g, w, h] = s, img = g.createImageData(w, h), px = img.data;
+  for (let j = 0; j < h; j++) {
+    for (let i = 0; i < w; i++) {
+      const x = i / w, y = j / h;
+      const v = (1 - Math.hypot(x - 0.66, (y - 0.22) * 1.15) * 1.5 + 0.06 * Math.sin(x * 9 + y * 7) + 0.04 * Math.sin(x * 21 - y * 13)) * 14;
+      const f = v - Math.floor(v), major = Math.floor(v) % 4 === 0;
+      const ink = f < (major ? 0.14 : 0.06);
+      const k = (j * w + i) * 4;
+      px[k] = ink ? 31 : 233; px[k + 1] = ink ? 31 : 232; px[k + 2] = ink ? 29 : 227; px[k + 3] = 255;
+    }
+  }
+  g.putImageData(img, 0, 0);
+}
+
+function selection(host) {
+  const el = document.createElement("div");
+  el.className = "sel";
+  el.innerHTML = '<b><i></i><span class="work">Working</span><span class="ok">✗ Missed requirements</span></b>';
+  host.append(el);
+  return el;
+}
+function mount(col, title, plan) {
+  const screen = col.querySelector(".screen");
+  screen.append(document.getElementById("sections").content.cloneNode(true));
+  screen.querySelector(".title").innerHTML = title;
+  const s = {}, sel = { page: selection(screen) };
+  sel.page.style.inset = "0.4cqw";
+  screen.querySelectorAll(".sec").forEach((el) => { s[el.dataset.k] = el; sel[el.dataset.k] = selection(el); });
+  return {
+    col, s, sel, screen, cover: overlay(screen.querySelector(".cover"), plan), caret: col.querySelector(".caret"),
+    cost: col.querySelector(".cost"),
+  };
+}
+const L = mount(document.getElementById("L"), "Part by<br>part.", ["a", "redo"]);
+const R = mount(document.getElementById("R"), "Sketch<br>first.", ["b"]);
+const covers = () => document.querySelectorAll(".cover canvas").forEach(topo);
+covers();
+addEventListener("resize", covers);
+document.fonts?.ready.then(covers);
+
+function work(side, key, bad) {
+  for (const [k, el] of Object.entries(side.sel)) {
+    el.classList.toggle("on", k === key);
+    el.classList.toggle("bad", k === key && !!bad);
+  }
+}
+function result(side, t) {
+  side.cost.classList.toggle("on", t >= RESULT);
+}
+function scanTo(side, y) {
+  side.caret.style.top = `${y + side.screen.offsetTop}px`;
+}
+
+const SCAN = [0.5, 9.4], FOUND = 10.2, ERASE = [10.8, 11.2], REDO = [11.3, 12.8], VERDICT = 13.0, RESULT = 13.8, DIM = [9.95, 13.0];
+function paintLeft(t) {
+  const secs = ORDER.map((k) => L.s[k]);
+  const top = secs[0].offsetTop, bottom = secs.at(-1).offsetTop + secs.at(-1).offsetHeight;
+  const p = lin(t, SCAN[0], SCAN[1]);
+  const y = top + p * (bottom - top);
+  for (const [i, el] of secs.entries()) {
+    const det = el.querySelector(ORDER[i] === "pricing" ? ".det[data-wrong]" : ".det");
+    const w = clamp((y - el.offsetTop) / el.offsetHeight);
+    det.style.opacity = w > 0 ? 1 : 0;
+    det.style.clipPath = `inset(0 0 ${(1 - w) * 100}% 0)`;
+  }
+  routeLeft(t);
+
+  const pr = L.s.pricing, wrong = pr.querySelector(".det[data-wrong]"), right = pr.querySelector(".det[data-right]");
+  wrong.classList.toggle("red", t >= FOUND);
+  const e = lin(t, ERASE[0], ERASE[1]);
+  if (t >= ERASE[0]) wrong.style.clipPath = `inset(0 0 ${e * 100}% 0)`;
+  const r = lin(t, REDO[0], REDO[1]);
+  right.style.opacity = r > 0 ? 1 : 0;
+  right.style.clipPath = `inset(0 0 ${(1 - r) * 100}% 0)`;
+
+  let caret = p > 0 && p < 1 ? y : null;
+  if (t >= ERASE[0] && t < ERASE[1]) caret = pr.offsetTop + pr.offsetHeight * (1 - e);
+  if (t >= REDO[0] && t < REDO[1]) caret = pr.offsetTop + pr.offsetHeight * r;
+  L.caret.style.opacity = caret === null ? 0 : 1;
+  if (caret !== null) scanTo(L, caret);
+
+  work(L, t >= FOUND && t < ERASE[1] ? "pricing" : null, true);
+  result(L, t);
+}
+
+const IMP = ["hero", "pricing", "features", "nav"];
+const S2 = { hero: 1.8, pricing: 2.5, features: 5.0, nav: 5.6 };
+const S3 = { hero: 6.1, pricing: 6.9, features: 7.7, nav: 8.5 };
+const BUILD = [0.4, 9.3], RFOUND = 3.3;
+const WORK = [["page", 0.4, 1.7], ["hero", 1.8, 2.5], ["pricing", 2.5, 4.9], ["features", 5.0, 5.6], ["nav", 5.6, 6.1],
+  ["hero", 6.1, 6.9], ["pricing", 6.9, 7.7], ["features", 7.7, 8.5], ["nav", 8.5, 9.3]];
+
+function paintRight(t) {
+  const s = R.s;
+  IMP.forEach((k, i) => {
+    const v1 = lin(t, 0.4 + i * 0.22, 0.4 + i * 0.22 + 0.35);
+    const v2 = lin(t, S2[k], S2[k] + 0.45);
+    const v3 = lin(t, S3[k], S3[k] + 0.55);
+    const blk = s[k].querySelector(".blk");
+    if (k === "pricing") {
+      const wrongMid = s[k].querySelector(".mid[data-wrong]"), rightMid = s[k].querySelector(".mid[data-right]");
+      handoff(blk, wrongMid, v1, v2);
+      const erase = lin(t, 4.1, 4.4);
+      if (t >= 4.1) show(wrongMid, erase, 1);
+      const v2b = lin(t, 4.4, 4.85);
+      handoff(rightMid, s[k].querySelector(".det[data-right]"), v2b, v3);
+      if (t < 4.4) show(rightMid, 0, 0);
+      wrongMid.classList.toggle("red", t >= RFOUND);
+      return;
+    }
+    const mid = s[k].querySelector(".mid"), det = s[k].querySelector(".det");
+    show(blk, v2, v1);
+    show(mid, v3, v2);
+    show(det, 0, v3);
+  });
+  routeRight(t);
+
+  const cur = WORK.find(([, a, z]) => t >= a && t < z);
+  work(R, cur && cur[0], cur && cur[0] === "pricing" && t >= RFOUND && t < 4.1);
+  result(R, t);
+}
+
+function paint(t) {
+  const [at, d] = RIGHT_HOLD, even = SCAN[1] + d;
+  const left = Math.min(t < even ? (t * SCAN[1]) / even : t - d, END);
+  const right = Math.min(t < at ? t : t < at + d ? at : t - d, END);
+  paintLeft(left);
+  paintRight(right);
+  L.col.style.opacity = 1 - 0.6 * lin(right, RFOUND - 0.1, RFOUND + 0.2) * (1 - lin(right, 4.4, 4.7));
+  R.col.style.opacity = 1 - 0.6 * lin(left, DIM[0], DIM[0] + 0.4) * (1 - lin(left, DIM[1] - 0.3, DIM[1]));
+}
+
+function story(real) {
+  let shift = 0;
+  for (const [at, d] of PAUSES) {
+    if (real - shift <= at) break;
+    if (real - shift < at + d) return at;
+    shift += d;
+  }
+  return real - shift;
+}
+
+const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let t0 = performance.now(), paused = still, at = still ? LENGTH : 0;
+function frame(now) {
+  if (!paused) {
+    at = (now - t0) / 1000;
+    if (at > LENGTH + HOLD) { t0 = now; at = 0; }
+  }
+  paint(story(at));
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+const pauseBtn = document.getElementById("pause");
+document.getElementById("replay").onclick = () => { t0 = performance.now(); at = 0; paused = false; pauseBtn.textContent = "Pause"; };
+pauseBtn.onclick = () => {
+  paused = !paused;
+  if (!paused) t0 = performance.now() - at * 1000;
+  pauseBtn.textContent = paused ? "Play" : "Pause";
+};
+</script>
+</body>
+</html>

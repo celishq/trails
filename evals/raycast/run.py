@@ -2,20 +2,25 @@
 """The Raycast bench: an agent does ten extension tasks, each in its own folder; reviews after the first two give
 rules, and the bench counts how often later tasks break them.
 
-  run.py <arm> [runs] [--jobs N] [--tasks pr,pr] [--model sonnet|haiku]    5 runs, 1 at a time, every task, sonnet
+  run.py <arm> [runs] [--jobs N] [--tasks pr,pr] [--model sonnet|haiku|opus|team] [--rules N]
+                                     5 runs, 1 at a time, every task, sonnet, rules from reviews
 
   arm    plain (no memory), auto (Claude Code auto memory, one folder per extension), self (a user CLAUDE.md that
          the agent keeps), oracle (a user CLAUDE.md the bench writes each review rule into), celis (the plugin
          from $CELIS_PLUGIN, the celis in $CELIS_BIN), gold (no agent: the merged code)
+  team   an Opus planner that gives every file edit and command to Haiku worker subagents
+  --rules N   no reviews and no follow-ups: oracle and celis hold the 5 rules among N - 5 rules of
+              data/distractors.json from the start, in the user CLAUDE.md or as `me` rules
 
 Each task is a new git repo that holds only its extension at the PR's base, so only the arm's memory carries over.
 Runs live in $RAYCAST_RUNS (default /tmp/celis-raycast); each run appends one line a task to results/<arm>.jsonl, or
-results/<arm>-haiku.jsonl for haiku.
+results/<arm>-<model>.jsonl for another model.
 """
 
 import argparse
 import json
 import os
+import random
 import shutil
 import subprocess
 import time
@@ -29,7 +34,12 @@ ROOT = HERE.parents[1]
 CLONE = HERE / "cache" / "extensions"
 RUNS = Path(os.environ.get("RAYCAST_RUNS", "/tmp/celis-raycast"))
 RESULTS = HERE / "results"
-MODELS = {"sonnet": "claude-sonnet-5-5", "haiku": "claude-haiku-5-5"}
+MODELS = {"sonnet": "claude-sonnet-5-5", "haiku": "claude-haiku-5-5", "opus": "claude-opus-5-5", "team": "claude-opus-5-5"}
+WORKER = {"worker": {"description": "Does one part of the plan: edits files and runs commands.", "model": "haiku",
+                     "prompt": "Do the part of the plan you are given, then report what you changed."}}
+TEAM = ["--agents", json.dumps(WORKER), "--append-system-prompt",
+        "You are the planner. Split the work into parts and give each part to a worker subagent; never edit a file "
+        "or run a build yourself. Check what each worker reports, and give it a new part when the work is not done."]
 AGENT = ["--output-format", "stream-json", "--verbose", "--dangerously-skip-permissions",
          "--setting-sources", "project", "--strict-mcp-config", "--max-budget-usd", "5", "--no-session-persistence"]
 DONE = "Go on to the end without asking."
@@ -76,7 +86,7 @@ def agent(arm, model, work, home, extension, prompt, log):
     """One Claude Code session in the work folder; returns its numbers from the stream-json transcript."""
     env = dict(os.environ, CELIS_HOME=str(home / "celis"))
     memory = {"autoMemoryEnabled": arm == "auto", "autoMemoryDirectory": str(home / "memory" / extension)}
-    flags = ["--settings", json.dumps(memory)]
+    flags = ["--settings", json.dumps(memory), *(TEAM if model == "team" else [])]
     if arm in ("self", "oracle"):
         env["CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD"] = "1"
         flags += ["--add-dir", str(home / "user")]
@@ -117,8 +127,22 @@ def keep(work, label):
        cwd=work)
 
 
-def chain(arm, model, run, tasks, rules):
-    name = arm if model == "sonnet" else f"{arm}-{model}"
+def seed(arm, root, standing):
+    """Puts the standing rules in the arm's memory before the first task."""
+    if arm == "oracle":
+        (root / "home" / "user" / "CLAUDE.md").write_text("# My rules\n\n" + "".join(f"- {r}\n" for r in standing))
+    if arm == "celis":
+        env = dict(os.environ, CELIS_HOME=str(root / "home" / "celis"),
+                   PATH=f"{os.environ.get('CELIS_BIN', ROOT / 'crates' / 'target' / 'release')}:{os.environ['PATH']}")
+        (root / "seed").mkdir()
+        sh("git", "init", "-q", cwd=root / "seed")
+        for rule in standing:
+            subprocess.run(["celis", "decide", "--scope", "me", "--", rule], cwd=root / "seed", env=env, check=True,
+                           capture_output=True)
+
+
+def chain(arm, model, run, tasks, rules, standing=None):
+    name = (arm if model == "sonnet" else f"{arm}-{model}") + (f"-r{len(standing)}" if standing else "")
     root = RUNS / f"{name}-{run}"
     logs = RESULTS / "transcripts" / f"{name}-{run}"
     shutil.rmtree(root, ignore_errors=True)
@@ -126,19 +150,21 @@ def chain(arm, model, run, tasks, rules):
     logs.mkdir(parents=True, exist_ok=True)
     if arm in ("self", "oracle"):
         (root / "home" / "user" / "CLAUDE.md").write_text(SELF if arm == "self" else "# My rules\n\n")
+    if standing:
+        seed(arm, root, standing)
     order = [t["pr"] for t in tasks]
     for position, task in enumerate(tasks, 1):
         work = root / "work" / task["extension"]
         base = workdir(task, work, task["base"])
         line = {"arm": arm, "model": model, "run": run, "position": position, "pr": task["pr"],
-                "rules": [r["id"] for r in rules if order.index(r["from"]) < position - 1]}
+                "rules": [r["id"] for r in rules if standing or order.index(r["from"]) < position - 1]}
         label = f"{position}-{task['pr']}"
         if arm == "gold":
             gold(task, work)
         else:
             line["session"] = agent(arm, model, work, root / "home", task["extension"], brief(task),
                                     logs / f"{label}.jsonl")
-            given = [r for r in rules if r["from"] == task["pr"]]
+            given = [] if standing else [r for r in rules if r["from"] == task["pr"]]
             if given:
                 line["review"] = agent(arm, model, work, root / "home", task["extension"], review(task, given),
                                        logs / f"{label}-review.jsonl")
@@ -149,7 +175,7 @@ def chain(arm, model, run, tasks, rules):
         keep(work, "check")
         line["follow"] = []
         state = line
-        while arm != "gold" and len(line["follow"]) < FOLLOW and (wrong := broken(line, state)):
+        while arm != "gold" and not standing and len(line["follow"]) < FOLLOW and (wrong := broken(line, state)):
             n = len(line["follow"]) + 1
             session = agent(arm, model, work, root / "home", task["extension"],
                             review(task, [r for r in rules if r["id"] in wrong]), logs / f"{label}-follow{n}.jsonl")
@@ -174,15 +200,22 @@ def main():
     parser.add_argument("--jobs", type=int, default=1)
     parser.add_argument("--tasks", default="")
     parser.add_argument("--model", choices=MODELS, default="sonnet")
+    parser.add_argument("--rules", type=int, default=0)
     args = parser.parse_args()
     tasks = json.loads((HERE / "data" / "tasks.json").read_text())
     if args.tasks:
         chosen = {int(n) for n in args.tasks.split(",")}
         tasks = [t for t in tasks if t["pr"] in chosen]
     rules = [r for r in json.loads((HERE / "data" / "rules.json").read_text()) if r["from"] in [t["pr"] for t in tasks]]
+    standing = None
+    if args.rules:
+        filler = json.loads((HERE / "data" / "distractors.json").read_text())
+        random.Random(0).shuffle(filler)
+        standing = [r["standing"] for r in rules] + [r["rule"] for r in filler[:args.rules - len(rules)]]
+        random.Random(args.rules).shuffle(standing)
     RESULTS.mkdir(exist_ok=True)
     with ThreadPoolExecutor(args.jobs) as pool:
-        for future in [pool.submit(chain, args.arm, args.model, run, tasks, rules) for run in range(1, args.runs + 1)]:
+        for future in [pool.submit(chain, args.arm, args.model, run, tasks, rules, standing) for run in range(1, args.runs + 1)]:
             future.result()
 
 

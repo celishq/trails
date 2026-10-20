@@ -1,0 +1,34 @@
+[
+  {
+    "id": "export",
+    "prompt": "Add an `export` command that writes all items to a JSON file. The output path comes from an option, and items with zero quantity are left out unless the user asks to include them. Log how many items were written.\n\nAdd tests for it. Go on to the end without asking."
+  },
+  {
+    "id": "sqlite",
+    "prompt": "Add a SQLite storage backend, selectable with STOCK_STORE=sqlite. Its database path comes from the STOCK_DB_PATH environment variable, with a default. A database error must surface as an error of the package.\n\nAdd tests for it. Go on to the end without asking."
+  },
+  {
+    "id": "import",
+    "prompt": "Add an `import` command that reads items from a CSV file with the columns sku, name, qty and price. Skip a bad row with a warning in the log, and fail with a clear error when the file does not exist.\n\nAdd tests for it. Go on to the end without asking."
+  },
+  {
+    "id": "batches",
+    "prompt": "Track batches: an item can have batches, each with a quantity and an expiry time. Add a `batches` command that lists the batches that expire within a number of days given by an option, 7 by default.\n\nAdd tests for it. Go on to the end without asking."
+  },
+  {
+    "id": "report",
+    "prompt": "Add a `report` command that shows the total quantity and the total value of the stock, and, when the user asks for it, the 5 most valuable items. Return a failure exit code when the store is empty.\n\nAdd tests for it. Go on to the end without asking."
+  },
+  {
+    "id": "backup",
+    "prompt": "Add a `backup` command that copies the data file into a backup folder given by the STOCK_BACKUP_DIR environment variable, with a timestamp in the file name. When that folder is a git repository, commit the copy with git.\n\nAdd tests for it. Go on to the end without asking."
+  },
+  {
+    "id": "price",
+    "prompt": "Add a `price` command that fetches the current price of an item with urllib from a URL template in the STOCK_PRICE_URL environment variable, such as https://example.com/price/{sku}. Retry up to 3 times on a network error, log each retry, and save the new price.\n\nAdd tests for it. Go on to the end without asking."
+  },
+  {
+    "id": "rename",
+    "prompt": "Add a `rename` command that changes the SKU of an item. Refuse with an error when the old SKU does not exist or the new one is taken, and log the change.\n\nAdd tests for it. Go on to the end without asking."
+  }
+]

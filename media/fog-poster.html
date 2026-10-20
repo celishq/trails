@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fog of Work</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@600;700&display=swap">
+<style>
+/* A square technical poster on grey paper: a fogged floor plan where agent cursors work like an ant colony.
+   Two tasks per loop: they search, one finds a solution and tells the others, all bring it home, a blocked agent warns the others; the second task follows the old trail. */
+:root {
+  --paper: #e9e8e3;
+  --ink: #1f1f1d;
+  --mute: #8a8984;
+  --hot: #ff4f1a;
+  --line: #b9b8b2;
+  --soft: #55554f;
+  --ok: #16a05a;
+  --err: #d0262b;
+  --hair: 0.15cqw;
+  --stroke: 0.3cqw;
+  --bold: 0.45cqw;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #2a2a28; color: var(--ink); }
+body { font: 15px/1.5 var(--mono); padding-inline: 16px; padding-block: 24px; display: grid; justify-items: center; gap: 18px; }
+
+.poster { position: relative; width: min(100%, 640px); aspect-ratio: 1 / 1; container-type: inline-size; overflow: hidden; background: var(--paper);
+  display: flex; flex-direction: column; justify-content: space-between; padding: 3.2cqw 3.2cqw 2.8cqw; }
+.poster::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.09; mix-blend-mode: multiply; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+.label { font: 600 1.9cqw/1.25 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; }
+.deco { display: flex; align-items: center; gap: 1.6cqw; height: 2.6cqw; }
+.plus { position: relative; width: 2.4cqw; height: 2.4cqw; flex: none; }
+.plus::before, .plus::after { content: ""; position: absolute; background: var(--ink); }
+.plus::before { left: 50%; top: 0; bottom: 0; width: 0.3cqw; margin-left: -0.15cqw; }
+.plus::after { top: 50%; left: 0; right: 0; height: 0.3cqw; margin-top: -0.15cqw; }
+.line { flex: 1; height: 0.3cqw; background: var(--ink); }
+.ticks { width: 22cqw; height: 1.6cqw; background: repeating-linear-gradient(90deg, var(--ink) 0 1px, transparent 1px 1.1cqw); }
+.blocks { display: flex; gap: 0.5cqw; }
+.blocks i { width: 1.4cqw; height: 1.4cqw; background: var(--ink); }
+.blocks i:last-child { background: var(--hot); }
+.code { width: 11cqw; height: 2cqw; background: repeating-linear-gradient(90deg, var(--ink) 0 0.25cqw, transparent 0.25cqw 0.45cqw, var(--ink) 0.45cqw 0.55cqw, transparent 0.55cqw 0.9cqw, var(--ink) 0.9cqw 1.35cqw, transparent 1.35cqw 1.6cqw); }
+.foot { display: flex; justify-content: flex-end; color: var(--mute); }
+.caption { min-height: 4cqw; text-align: center; font: 700 3.1cqw/1.3 var(--mono); letter-spacing: -0.01em; }
+.caption.in { animation: capin .35s ease-out; }
+@keyframes capin { from { opacity: 0; transform: translateY(0.8cqw); } }
+
+.board { position: relative; width: 83cqw; aspect-ratio: 1 / 1; margin-inline: auto; }
+.board canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.agent { position: absolute; left: 0; top: 0; z-index: 2; pointer-events: none; will-change: transform; transition: opacity .3s; }
+.agent .dot { position: absolute; left: -2.1cqw; top: -2.1cqw; width: 4.2cqw; height: 4.2cqw; border-radius: 50%; background: var(--c); border: var(--bold) solid #fff;
+  display: grid; place-items: center; box-shadow: 0 0.3cqw 0.6cqw rgb(31 31 29 / 0.3); transition: background .2s, border-color .2s; }
+.agent .dot svg { width: 2.2cqw; height: 2.2cqw; fill: #fff; }
+.agent em { position: absolute; left: -4.4cqw; top: -4.4cqw; display: grid; place-items: center; width: 3.4cqw; height: 3.4cqw; border-radius: 50%; background: var(--ink); color: #fff;
+  border: var(--stroke) solid #fff; font: 800 2.1cqw/1 var(--mono); font-style: normal; box-shadow: 0 0.2cqw 0.4cqw rgb(31 31 29 / 0.25); }
+.agent em::before { content: "?"; }
+.agent[data-s="fetch"] em::before { content: "→"; }
+.agent[data-s="carry"] em { background: var(--ok); }
+.agent[data-s="fetch"] .dot, .agent[data-s="carry"] .dot { border-color: var(--ok); }
+.agent[data-s="carry"] em::before { content: "◆"; font-size: 1.7cqw; }
+.agent[data-s="alert"] em { background: var(--err); }
+.agent[data-s="alert"] em::before { content: "!"; }
+.agent[data-s="home"] em::before { content: "⌂"; }
+.agent b { position: absolute; left: 2.6cqw; top: 0.8cqw; padding: 0.5cqw 1.1cqw; border-radius: 99px; background: var(--c); color: #fff;
+  font: 700 1.6cqw/1 var(--mono); white-space: nowrap; box-shadow: 0 0.3cqw 0.6cqw rgb(31 31 29 / 0.22); transition: background .2s, opacity .6s; }
+.agent[data-s="alert"] .dot, .agent[data-s="alert"] b { background: var(--err); }
+.agent::before { content: ""; position: absolute; left: -2.6cqw; top: -2.6cqw; width: 5.2cqw; height: 5.2cqw; border-radius: 50%; border: var(--bold) solid var(--p, var(--ok)); opacity: 0; }
+.agent.found::before { animation: ping .5s ease-out 3; }
+.agent.heard::before { animation: ping .6s ease-out; }
+.agent.found b { box-shadow: 0 0 0 var(--bold) var(--ok), 0 0.3cqw 0.6cqw rgb(31 31 29 / 0.22); }
+@keyframes ping { from { transform: scale(0.4); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .agent.found::before, .agent.heard::before, .caption.in { animation: none; } }
+
+.controls { display: flex; gap: 10px; }
+.controls button { font: 700 13px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--paper); background: transparent; border: 1px solid #5a5a56; padding: 9px 18px; cursor: pointer; }
+.controls button:hover { border-color: var(--hot); color: var(--hot); }
+.controls button:focus-visible { outline: 2px solid var(--hot); outline-offset: 3px; }
+</style>
+</head>
+<body>
+<div class="poster" id="poster">
+  <div class="deco"><i class="plus"></i><span class="line"></span><span class="ticks"></span><span class="blocks"><i></i><i></i><i></i></span><span class="code"></span><i class="plus"></i></div>
+  <div class="board" id="board"><canvas id="map"></canvas></div>
+  <div class="caption" id="caption"></div>
+  <div class="foot label">
+    <span>celis.ai</span>
+  </div>
+</div>
+
+<div class="controls">
+  <button id="replay" type="button">Replay</button>
+  <button id="pause" type="button">Pause</button>
+</div>
+
+<script>
+const N = 11, F = N * 3, HOME = 5 * N + 5, DT = 1 / 60, LENGTH = 47.7;
+const AGENTS = [
+  ["claude", "#d97757", "m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z"],
+  ["codex", "#3a3936", "M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"],
+  ["gemini", "#2f6fdc", "M11.04 19.32Q12 21.51 12 24q0-2.49.93-4.68.96-2.19 2.58-3.81t3.81-2.55Q21.51 12 24 12q-2.49 0-4.68-.93a12.3 12.3 0 0 1-3.81-2.58 12.3 12.3 0 0 1-2.58-3.81Q12 2.49 12 0q0 2.49-.96 4.68-.93 2.19-2.55 3.81a12.3 12.3 0 0 1-3.81 2.58Q2.49 12 0 12q2.49 0 4.68.96 2.19.93 3.81 2.55t2.55 3.81"],
+];
+const SPEED = { explore: 3, fetch: 3.6, carry: 3.6, home: 3.6 };
+const RADIUS = 1.9, REGROW = 8, LOAD = 9, WAVE = 5, BASE = 1.4, STATES = ["", "explore", "fetch", "carry", "alert", "home"], TASKS = 2, TRAIL = 30, SEEDS = { maze: 4, walk: 6, food: 10 };
+
+function rng(seed) {
+  return () => {
+    seed |= 0; seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const key = (a, b) => (a < b ? a * 1000 + b : b * 1000 + a);
+const rc = (c) => [Math.floor(c / N), c % N];
+const far = (a, b) => { const [r1, k1] = rc(a), [r2, k2] = rc(b); return Math.abs(r1 - r2) + Math.abs(k1 - k2); };
+function around(c) {
+  const [r, k] = rc(c), out = [];
+  if (r > 0) out.push(c - N);
+  if (r < N - 1) out.push(c + N);
+  if (k > 0) out.push(c - 1);
+  if (k < N - 1) out.push(c + 1);
+  return out;
+}
+const EDGES = [], INDEX = new Map();
+for (let c = 0; c < N * N; c++) for (const n of around(c)) if (c < n) { INDEX.set(key(c, n), EDGES.length); EDGES.push([c, n]); }
+
+const open = new Set();
+(function carve() {
+  const r = rng(SEEDS.maze), seen = new Set([HOME]), stack = [HOME];
+  while (stack.length) {
+    const c = stack.at(-1), next = around(c).filter((n) => !seen.has(n));
+    if (!next.length) { stack.pop(); continue; }
+    const n = next[Math.floor(r() * next.length)];
+    open.add(key(c, n)); seen.add(n); stack.push(n);
+  }
+  const shut = EDGES.filter(([a, b]) => !open.has(key(a, b)));
+  for (let i = Math.floor(shut.length * 0.32); i > 0; i--) open.add(key(...shut.splice(Math.floor(r() * shut.length), 1)[0]));
+})();
+
+function reach(from, can) {
+  const prev = new Map([[from, -1]]), queue = [from];
+  for (let q = 0; q < queue.length; q++) for (const n of around(queue[q])) if (can(queue[q], n) && !prev.has(n)) { prev.set(n, queue[q]); queue.push(n); }
+  return prev;
+}
+function shortest(from, to, can) {
+  const prev = reach(from, can);
+  if (!prev.has(to)) return null;
+  const path = [];
+  for (let c = to; c !== -1; c = prev.get(c)) path.unshift(c);
+  return path;
+}
+
+function simulate() {
+  const rw = rng(SEEDS.walk), rf = rng(SEEDS.food);
+  const vis = new Float32Array(F * F), strength = new Float32Array(EDGES.length);
+  const closed = new Set(), walls = [], foods = [], waves = [], homeHits = [], finds = [], heard = [], reroutes = [], dying = new Map(), captions = [[0, "Agents search the fog for a solution"]];
+  let homeAt = Infinity, endAt = null;
+  const can = (a, b) => { const k = key(a, b); return open.has(k) && !closed.has(k); };
+  const visAt = (c) => { const [r, k] = rc(c); return vis[(r * 3 + 1) * F + k * 3 + 1]; };
+  const centre = (c) => { const [r, k] = rc(c); return [k + 0.5, r + 0.5]; };
+  let food = null, respawn = Infinity;
+  function spawn(t) {
+    for (let i = 0; i < 1600; i++) {
+      const c = Math.floor(rf() * N * N);
+      if (far(c, HOME) < 6 || visAt(c) > 0.1 || (foods.length && i < 800 && (far(c, foods.at(-1).cell) < 2 || far(c, foods.at(-1).cell) > 3))) continue;
+      food = { cell: c, from: t, to: Infinity, takes: [], found: null, blocked: false };
+      foods.push(food);
+      return;
+    }
+  }
+  spawn(0);
+  const agents = AGENTS.map((_, i) => ({ i, at: HOME, next: null, p: 0, x: (HOME % N) + 0.5, y: Math.floor(HOME / N) + 0.5, mode: "explore", path: [], goal: null, knows: null, hold: 0.3 + i * 0.25, alertUntil: 0 }));
+  const steps = Math.round(LENGTH / DT) + 1;
+  const pos = new Float32Array(steps * agents.length * 3), visLog = new Uint8Array(steps * F * F), strLog = new Uint8Array(steps * EDGES.length);
+
+  const connected = () => reach(HOME, can).size === N * N;
+  const name = (a) => `<b style="color:${AGENTS[a.i][1]}">${AGENTS[a.i][0]}</b>`;
+  function tell(from, kind, [x, y], t, f) {
+    waves.push([t, x, y, kind]);
+    for (const b of agents) if (b !== from) listen(b, kind, f, t);
+  }
+  function go(a, goal) { const from = a.next ?? a.at; a.goal = goal; a.path = ((a.probe || a.knows?.direct ? shortest(from, goal, can) : cheapest(from, goal)) || [a.at]).slice(1); }
+  function cheapest(from, to) {
+    const cost = new Map([[from, 0]]), prev = new Map([[from, -1]]), left = new Set([from]);
+    while (left.size) {
+      let c = null;
+      for (const x of left) if (c === null || cost.get(x) < cost.get(c)) c = x;
+      left.delete(c);
+      if (c === to) break;
+      for (const n of around(c)) {
+        if (!can(c, n)) continue;
+        const w = cost.get(c) + 1 - 0.6 * Math.min(1, strength[INDEX.get(key(c, n))] / 2);
+        if (w < (cost.get(n) ?? Infinity)) { cost.set(n, w); prev.set(n, c); left.add(n); }
+      }
+    }
+    if (!prev.has(to)) return null;
+    const path = [];
+    for (let c = to; c !== -1; c = prev.get(c)) path.unshift(c);
+    return path;
+  }
+  function listen(a, kind, f, t) {
+    heard.push([t, a.i, kind]);
+    if (kind === "found" && f.to === Infinity) { a.knows = f; if (a.mode === "explore") { a.mode = "fetch"; go(a, f.cell); } }
+    if ((kind === "stuck" || kind === "shortcut") && a.mode !== "explore") go(a, a.goal);
+    if (kind === "empty") { a.knows = null; if (a.mode === "fetch") { a.mode = "explore"; a.path = []; } }
+  }
+  function scout(a, t) {
+    const last = foods.at(-2);
+    if (last && !last.follower && a.at !== last.cell) { last.follower = a; captions.push([t, `Next task → ${name(a)} follows the old trail`]); return go(a, last.cell); }
+    const prev = reach(a.at, can), dist = new Map([[a.at, 0]]);
+    for (const c of prev.keys()) if (c !== a.at) dist.set(c, dist.get(prev.get(c)) + 1);
+    const others = agents.filter((b) => b !== a && b.mode === "explore" && b.goal !== null).map((b) => b.goal);
+    let best = null, score = -Infinity;
+    for (const [c, d] of dist) {
+      if (d < 2 || visAt(c) > 0.5) continue;
+      const spread = Math.min(5, ...others.map((o) => far(o, c)));
+      const s = -d * 0.6 + spread + rw() * 1.5;
+      if (s > score) { score = s; best = c; }
+    }
+    go(a, best ?? [...dist.keys()].find((c) => dist.get(c) > 3));
+  }
+  function arrive(a, t) {
+    if (a.mode === "fetch" && a.at === a.goal && a.knows?.to === Infinity) {
+      const f = a.knows;
+      if (a.probe) {
+        const old = cheapest(HOME, f.cell);
+        a.probe = false; f.direct = true; f.directAt = t;
+        const nu = shortest(HOME, f.cell, can), kept = new Set(nu.slice(1).map((c, i) => key(nu[i], c)));
+        reroutes.push([t, old, nu, "shortcut"]);
+        old.slice(1).forEach((c, i) => { const k = key(old[i], c); if (!kept.has(k)) dying.set(INDEX.get(k), t); });
+        tell(a, "shortcut", centre(f.cell), t, f); captions.push([t, "Shorter path found → all switch, the old trail fades"]);
+      }
+      f.takes.push(t);
+      if (f.takes.length >= LOAD) { f.to = t; food = null; tell(a, "empty", centre(f.cell), t, f); a.knows = null; captions.push([t, "Task done ✓"]);
+        if (foods.length < TASKS) respawn = t + 2; else { homeAt = t + 2; captions.push([homeAt, "All tasks done → back to base"]); } }
+      a.mode = "carry"; go(a, HOME);
+      return;
+    }
+    if (a.mode === "carry") {
+      if (a.knows && !homeHits.some((h) => h > a.knows.found)) captions.push([t, "They are working on the task"]);
+      homeHits.push(t);
+      if (a.knows?.to === Infinity) {
+        const f = a.knows, trips = homeHits.filter((h) => h > f.found).length;
+        if (foods.length === TASKS && !f.probe && trips >= 2 && shortest(HOME, f.cell, can).length < cheapest(HOME, f.cell).length - 1) {
+          f.probe = a; a.probe = true; captions.push([t, `${name(a)} explores off the old trail`]);
+        }
+        a.mode = "fetch"; go(a, f.cell); return;
+      }
+    }
+    a.mode = "explore"; scout(a, t);
+  }
+  function decide(a, t) {
+    if (a.mode === "explore" && food && food.found === null) {
+      const [fx, fy] = centre(food.cell);
+      if (Math.hypot(a.x - fx, a.y - fy) < RADIUS * 0.8) {
+        food.found = t; finds.push([t, a.i]); a.knows = food; a.mode = "fetch"; go(a, food.cell);
+        tell(a, "found", [fx, fy], t, food); captions.push([t, `${name(a)} found a solution → tells the others`]);
+      }
+    }
+    for (let i = 0; i < 4 && !a.path.length; i++) arrive(a, t);
+    if (!can(a.at, a.path[0])) {
+      const old = [a.at, ...a.path];
+      if (a.mode !== "explore") { a.alertUntil = t + 1; tell(a, "stuck", [a.x, a.y], t, a.knows); captions.push([t, `Wall! ${name(a)} warns → all take a new path`]); }
+      go(a, a.goal);
+      if (a.mode !== "explore") {
+        const nu = [a.at, ...a.path], kept = new Set(nu.slice(1).map((c, i) => key(nu[i], c)));
+        reroutes.push([t, old, nu]);
+        old.slice(1).forEach((c, i) => { const k = key(old[i], c); if (!kept.has(k) && INDEX.has(k)) dying.set(INDEX.get(k), t); });
+      }
+    }
+    a.next = a.path.shift() ?? null;
+  }
+  function end(t) {
+    endAt = t;
+    for (const k of closed) walls.push([t, "open", k]);
+    closed.clear();
+  }
+  function block(t) {
+    if (!food || food.found === null || food.blocked || !(t > (homeHits.find((h) => h > food.found) ?? Infinity) + 3)) return;
+    if (food.probe && !(t > food.directAt + 2.5)) return;
+    for (const a of agents) {
+      if (a.mode === "explore") continue;
+      const route = [a.next ?? a.at, ...a.path];
+      for (let i = 1; i < route.length - 2; i++) {
+        const [c, d] = [route[i], route[i + 1]], k = key(c, d);
+        if (c === HOME || d === HOME || c === food.cell || d === food.cell) continue;
+        closed.add(k);
+        if (connected() && shortest(HOME, food.cell, can).length <= route.length + 10) { walls.push([t, "close", k]); food.blocked = true; return; }
+        closed.delete(k);
+      }
+    }
+  }
+  for (let n = 0; n < steps; n++) {
+    const t = n * DT, ending = endAt !== null && t > endAt;
+    block(t);
+    if (!food && t >= respawn) { spawn(t); respawn = Infinity; }
+    for (const a of agents) {
+      if (t < a.hold || a.done) continue;
+      if (t >= homeAt && a.mode !== "home") { a.mode = "home"; go(a, HOME); if (a.at === HOME && a.next === null) a.done = true; }
+      if (a.done) { if (agents.every((b) => b.done) && endAt === null) end(t); continue; }
+      if (a.next === null) decide(a, t);
+      if (a.next === null) continue;
+      const hx = (a.next % N) - (a.at % N), hy = Math.floor(a.next / N) - Math.floor(a.at / N);
+      const crowd = agents.some((b) => {
+        if (b === a || t < b.hold) return false;
+        const d = Math.hypot(b.x - a.x, b.y - a.y), bx = b.next === null ? 0 : (b.next % N) - (b.at % N), by = b.next === null ? 0 : Math.floor(b.next / N) - Math.floor(b.at / N);
+        return d < 0.8 && bx * hx + by * hy >= 0 && ((b.x - a.x) * hx + (b.y - a.y) * hy > 0.01 || (d < 0.05 && b.i < a.i));
+      });
+      a.p += SPEED[a.mode] * DT * (crowd ? 0.75 : 1);
+      if (a.p < 1) continue;
+      a.p -= 1;
+      const from = a.at;
+      a.at = a.next; a.next = null;
+      if (a.mode === "fetch" || a.mode === "carry") { const e = INDEX.get(key(from, a.at)); strength[e] = Math.min(4, strength[e] + 1); }
+      if (a.mode === "home" && a.at === HOME) { a.done = true; a.next = null; if (agents.every((b) => b.done)) end(t); continue; }
+      decide(a, t);
+      if (a.next === null) a.p = 0;
+    }
+    const fade = DT / (ending ? 1.2 : REGROW);
+    for (let i = 0; i < vis.length; i++) vis[i] = Math.max(0, vis[i] - fade);
+    const [hx, hy] = centre(HOME);
+    for (let fi = 0; fi < F; fi++) for (let fj = 0; fj < F; fj++) {
+      const d = Math.hypot((fj + 0.5) / 3 - hx, (fi + 0.5) / 3 - hy), u = Math.min(1, Math.max(0, (d - BASE * 0.5) / (BASE * 0.5)));
+      vis[fi * F + fj] = Math.max(vis[fi * F + fj], 1 - u * u * (3 - 2 * u));
+    }
+    agents.forEach((a, i) => {
+      const [r1, k1] = rc(a.at), [r2, k2] = rc(a.next ?? a.at), x = k1 + (k2 - k1) * a.p + 0.5, y = r1 + (r2 - r1) * a.p + 0.5;
+      const at = (n * agents.length + i) * 3;
+      a.x = x; a.y = y;
+      pos[at] = x; pos[at + 1] = y;
+      pos[at + 2] = t < a.hold || a.done ? 0 : t < a.alertUntil ? 4 : a.probe ? 1 : STATES.indexOf(a.mode);
+      if (t < a.hold || a.done) return;
+      const lo = (v) => Math.max(0, Math.floor((v - RADIUS) * 3)), hi = (v) => Math.min(F - 1, Math.ceil((v + RADIUS) * 3));
+      for (let fi = lo(y); fi <= hi(y); fi++) for (let fj = lo(x); fj <= hi(x); fj++) {
+        const d = Math.hypot((fj + 0.5) / 3 - x, (fi + 0.5) / 3 - y), u = Math.min(1, Math.max(0, (d - RADIUS * 0.45) / (RADIUS * 0.55)));
+        const v = 1 - u * u * (3 - 2 * u), at2 = fi * F + fj;
+        if (v > vis[at2]) vis[at2] = v;
+      }
+    });
+    const decay = 1 - DT / (ending ? 0.35 : TRAIL);
+    for (let e = 0; e < EDGES.length; e++) {
+      strength[e] *= decay;
+      if (t - (dying.get(e) ?? -9) < 1.5) strength[e] *= 1 - DT / 0.25;
+      strLog[n * EDGES.length + e] = Math.min(255, strength[e] * 40);
+    }
+    for (let i = 0; i < vis.length; i++) visLog[n * F * F + i] = vis[i] * 255;
+  }
+  return { endAt, steps, pos, visLog, strLog, walls, foods, waves, homeHits, finds, heard, reroutes, captions, count: agents.length };
+}
+const SIM = simulate();
+
+const board = document.getElementById("board"), canvas = document.getElementById("map"), g = canvas.getContext("2d");
+const cursors = AGENTS.map(([name, color, logo]) => {
+  const el = document.createElement("div");
+  el.className = "agent";
+  el.style.setProperty("--c", color);
+  el.innerHTML = `<em></em><span class="dot"><svg viewBox="0 0 24 24"><path d="${logo}"/></svg></span><b>${name}</b>`;
+  board.append(el);
+  return el;
+});
+const caption = document.getElementById("caption"), WAVE_INK = { shortcut: "#16a05a", found: "#16a05a", stuck: "#d0262b", empty: "#1f1f1d" };
+let said = null;
+const small = document.createElement("canvas"), sg = small.getContext("2d"), mask = sg.createImageData(F, F), layer = document.createElement("canvas"), lg = layer.getContext("2d");
+small.width = small.height = F;
+let fog = null, size = 0, dpr = 1;
+function resize() {
+  dpr = Math.min(devicePixelRatio || 1, 2); size = board.clientWidth;
+  canvas.width = canvas.height = layer.width = layer.height = Math.round(size * dpr);
+  const tile = document.createElement("canvas"), s = Math.max(4, Math.round(size / 110)) * dpr;
+  tile.width = tile.height = s;
+  const tg = tile.getContext("2d");
+  tg.fillStyle = "#d9d8d2"; tg.fillRect(0, 0, s, s);
+  tg.fillStyle = "#9a9993"; tg.beginPath(); tg.arc(s / 2, s / 2, s * 0.2, 0, Math.PI * 2); tg.fill();
+  fog = lg.createPattern(tile, "repeat");
+}
+addEventListener("resize", resize);
+resize();
+
+const clamp = (x) => Math.max(0, Math.min(1, x));
+function wallState(t) {
+  const shut = new Set(EDGES.filter(([a, b]) => !open.has(key(a, b))).map(([a, b]) => key(a, b))), fresh = new Map();
+  for (const [at, kind, k] of SIM.walls) {
+    if (at > t) break;
+    if (kind === "close") { shut.add(k); fresh.set(k, at); } else shut.delete(k);
+  }
+  return [shut, fresh];
+}
+function draw(t) {
+  const n = Math.min(SIM.steps - 1, Math.max(0, Math.round(t / DT))), W = canvas.width, c = W / N, q = W / 83, HAIR = 0.15 * q, LINE = 0.3 * q, BOLD = 0.45 * q, DASH = [0.6 * q, 0.6 * q];
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.fillStyle = "#e9e8e3"; g.fillRect(0, 0, W, W);
+  g.strokeStyle = "#d3d2cb"; g.lineWidth = HAIR; g.beginPath();
+  for (let i = 1; i < N; i++) { g.moveTo(i * c, 0); g.lineTo(i * c, W); g.moveTo(0, i * c); g.lineTo(W, i * c); }
+  g.stroke();
+
+
+  const mid = (cells) => cells.map((cl) => { const [r, k] = rc(cl); return [(k + 0.5) * c, (r + 0.5) * c]; });
+  g.lineCap = "round"; g.lineJoin = "round";
+  for (const [rt, old, nu, why] of SIM.reroutes) {
+    const age = t - rt;
+    if (age < 0 || age > 3.5) continue;
+    const gone = 1 - clamp(age / 2.5);
+    g.globalAlpha = gone; g.strokeStyle = why ? "#8a8984" : "#d0262b"; g.lineWidth = LINE; g.setLineDash(DASH);
+    g.beginPath(); mid(old).forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.stroke();
+    g.setLineDash([]);
+    const pts = mid(nu), upto = clamp((age - 0.3) / 0.9) * (pts.length - 1);
+    if (upto <= 0) continue;
+    g.globalAlpha = 0.85 * (1 - clamp((age - 2.5) / 1)); g.strokeStyle = "#16a05a"; g.lineWidth = BOLD;
+    g.beginPath(); g.moveTo(...pts[0]);
+    for (let i = 1; i <= Math.ceil(upto); i++) { const f = Math.min(1, upto - (i - 1)), [x0, y0] = pts[i - 1], [x1, y1] = pts[i]; g.lineTo(x0 + (x1 - x0) * f, y0 + (y1 - y0) * f); }
+    g.stroke();
+  }
+  g.globalAlpha = 1;
+  const [shut, fresh] = wallState(t);
+  g.lineCap = "square";
+  for (const k of shut) {
+    const a = Math.floor(k / 1000), b = k % 1000, [r1, k1] = rc(a), [r2, k2] = rc(b), age = fresh.has(k) ? t - fresh.get(k) : Infinity;
+    g.strokeStyle = age < 2.5 ? "#d0262b" : "#1f1f1d"; g.lineWidth = age < 2.5 ? BOLD : LINE;
+    g.beginPath();
+    if (r1 === r2) { const x = Math.max(k1, k2) * c; g.moveTo(x, r1 * c); g.lineTo(x, (r1 + 1) * c); }
+    else { const y = Math.max(r1, r2) * c; g.moveTo(k1 * c, y); g.lineTo((k1 + 1) * c, y); }
+    g.stroke();
+  }
+
+  g.globalAlpha = 1;
+  const last = SIM.homeHits.filter((x) => x <= t).at(-1), pop = last === undefined ? 0 : Math.exp(-(t - last) * 6);
+  const [hr, hk] = rc(HOME), hs = c * 0.6 * (1 + 0.22 * pop), hx = (hk + 0.5) * c, hy = (hr + 0.5) * c;
+  if (pop > 0.02) { g.globalAlpha = pop; g.strokeStyle = "#1f1f1d"; g.lineWidth = LINE; g.strokeRect(hx - hs * 0.8, hy - hs * 0.8, hs * 1.6, hs * 1.6); g.globalAlpha = 1; }
+  g.fillStyle = "#1f1f1d"; g.fillRect(hx - hs / 2, hy - hs / 2, hs, hs);
+  g.fillStyle = "#e9e8e3"; g.fillRect(hx - hs / 5, hy - hs / 5, (hs * 2) / 5, (hs * 2) / 5);
+
+  for (let i = 0; i < F * F; i++) { mask.data[i * 4 + 3] = 255 - SIM.visLog[n * F * F + i]; }
+  sg.putImageData(mask, 0, 0);
+  lg.globalCompositeOperation = "copy"; lg.fillStyle = fog; lg.fillRect(0, 0, W, W);
+  lg.globalCompositeOperation = "destination-in"; lg.imageSmoothingEnabled = true; lg.imageSmoothingQuality = "high"; lg.drawImage(small, 0, 0, W, W);
+  lg.globalCompositeOperation = "source-over";
+  g.drawImage(layer, 0, 0);
+  g.fillStyle = "#1f1f1d";
+  EDGES.forEach(([a, b], e) => {
+    const [r1, k1] = rc(a), [r2, k2] = rc(b), x1 = (k1 + 0.5) * c, y1 = (r1 + 0.5) * c, x2 = (k2 + 0.5) * c, y2 = (r2 + 0.5) * c;
+    const st = SIM.strLog[n * EDGES.length + e] / 40;
+    if (st > 0.05) {
+      g.fillStyle = "#16a05a"; g.globalAlpha = Math.min(1, 0.35 + st * 0.3);
+      const rad = Math.min(3.4, 1.1 + st * 0.5) * dpr;
+      for (const f of [0, 0.25, 0.5, 0.75]) { g.beginPath(); g.arc(x1 + (x2 - x1) * f, y1 + (y2 - y1) * f, rad, 0, Math.PI * 2); g.fill(); }
+      g.fillStyle = "#1f1f1d";
+    }
+  });
+  g.globalAlpha = 1;
+  for (const f of SIM.foods) {
+    const [fr, fk] = rc(f.cell), seen = f.found !== null && t >= f.found ? 1 : SIM.visLog[n * F * F + (fr * 3 + 1) * F + fk * 3 + 1] / 255;
+    const v = seen * clamp((t - f.from) / 0.4) * (1 - clamp((t - f.to - 1) / 0.5));
+    if (v <= 0) continue;
+    const taken = f.takes.filter((x) => x <= t), left = LOAD - taken.length, [r, k] = rc(f.cell), x = (k + 0.5) * c, y = (r + 0.5) * c;
+    const ink = "#16a05a", done = taken.length, cut = done ? clamp((t - taken.at(-1)) / 0.35) : 1, pop = done ? Math.exp(-(t - taken.at(-1)) * 6) : 0, S = c * 0.3 * (1 + 0.22 * pop), step = (Math.PI * 2) / LOAD;
+    const rhomb = (k) => { g.beginPath(); g.moveTo(x, y - S * k); g.lineTo(x + S * k, y); g.lineTo(x, y + S * k); g.lineTo(x - S * k, y); g.closePath(); };
+    g.globalAlpha = v; g.fillStyle = "#e9e8e3"; rhomb(1); g.fill();
+    g.save(); rhomb(1); g.clip(); g.fillStyle = ink;
+    const slice = (from, to, alpha) => { g.globalAlpha = v * alpha; g.beginPath(); g.moveTo(x, y); g.arc(x, y, S * 1.5, -Math.PI / 2 + from * step, -Math.PI / 2 + to * step); g.closePath(); g.fill(); };
+    if (done < LOAD) slice(done, LOAD, 1);
+    if (done && cut < 1) slice(done - 1, done + 0.02, 1 - cut);
+    g.restore();
+    g.globalAlpha = v; g.strokeStyle = ink; g.lineWidth = BOLD; g.lineJoin = "miter"; rhomb(1); g.stroke();
+    if (pop > 0.02) { g.globalAlpha = v * pop; g.lineWidth = LINE; rhomb(1.6); g.stroke(); }
+  }
+  g.globalAlpha = 1;
+  for (const [wt, wx, wy, kind] of SIM.waves) {
+    const x = wx * c, y = wy * c;
+    const rad = (t - wt) * WAVE * c, v = 1 - rad / (W * 1.3);
+    if (rad <= 0 || v <= 0) continue;
+    g.globalAlpha = v * 0.85; g.strokeStyle = kind === "stuck" ? "#d0262b" : kind === "found" || kind === "shortcut" ? "#16a05a" : "#1f1f1d"; g.lineWidth = LINE;
+    g.setLineDash(kind === "empty" ? DASH : []);
+    g.beginPath(); g.arc(x, y, rad, 0, Math.PI * 2); g.stroke();
+  }
+  g.setLineDash([]);
+  g.globalAlpha = 1;
+  g.lineWidth = BOLD; g.strokeStyle = "#1f1f1d"; g.strokeRect(BOLD / 2, BOLD / 2, W - BOLD, W - BOLD);
+
+  const line = SIM.captions.filter(([ct]) => ct <= t).at(-1);
+  if (line !== said) {
+    said = line;
+    caption.innerHTML = line?.[1] ?? "";
+    caption.classList.remove("in"); void caption.offsetWidth; caption.classList.add("in");
+  }
+  caption.style.opacity = 1 - clamp((t - (LENGTH - 1)) / 1);
+
+  const cell = size / N;
+  cursors.forEach((el, i) => {
+    const at = (n * SIM.count + i) * 3, x = SIM.pos[at], y = SIM.pos[at + 1], flags = SIM.pos[at + 2];
+    el.style.opacity = flags ? 1 : 0;
+    el.lastChild.style.opacity = t < 5 ? 1 : 0;
+    el.classList.toggle("found", SIM.finds.some(([ft, fi]) => fi === i && t >= ft && t < ft + 1.5));
+    const heard = SIM.heard.find(([ht, hi]) => hi === i && t >= ht && t < ht + 0.6);
+    el.classList.toggle("heard", !!heard);
+    if (heard) el.style.setProperty("--p", WAVE_INK[heard[2]]);
+    el.dataset.s = STATES[flags];
+    el.style.transform = `translate(${x * cell}px, ${y * cell}px)`;
+  });
+}
+
+const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let t0 = performance.now(), paused = still, at = still ? 20 : 0;
+function frame() {
+  const now = performance.now();
+  if (!paused) {
+    at = Math.max(0, (now - t0) / 1000);
+    if (at > LENGTH) { t0 = now; at = 0; }
+  }
+  draw(at);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+const pauseBtn = document.getElementById("pause");
+document.getElementById("replay").onclick = () => { t0 = performance.now(); at = 0; paused = false; pauseBtn.textContent = "Pause"; };
+pauseBtn.onclick = () => {
+  paused = !paused;
+  if (!paused) t0 = performance.now() - at * 1000;
+  pauseBtn.textContent = paused ? "Play" : "Pause";
+};
+</script>
+</body>
+</html>

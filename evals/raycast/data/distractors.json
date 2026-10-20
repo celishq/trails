@@ -1,0 +1,2002 @@
+[
+  {
+    "id": "metadata-screenshot-required",
+    "rule": "When an extension with a view command goes to the Store: add at least one screenshot in a metadata folder, because reviewers block a submission that has none.",
+    "source": "https://github.com/raycast/extensions/pull/29299"
+  },
+  {
+    "id": "screenshot-window-capture",
+    "rule": "When you take a metadata screenshot: use the Raycast Window Capture hotkey with Save to Metadata, because it gives the size and padding the Store expects.",
+    "source": "https://github.com/raycast/extensions/pull/28504"
+  },
+  {
+    "id": "screenshot-raycast-only",
+    "rule": "When you add a metadata image: show the extension inside Raycast, not the third-party app, because the Store page must show what the extension itself does.",
+    "source": "https://github.com/raycast/extensions/pull/29367"
+  },
+  {
+    "id": "screenshot-real-capture",
+    "rule": "When you add a metadata image: use a real capture of Raycast, not a generated or mocked-up picture, because reviewers reject images that do not show the real extension.",
+    "source": "https://github.com/raycast/extensions/pull/29052"
+  },
+  {
+    "id": "screenshot-mock-data",
+    "rule": "When an extension shows private data: use mock data in the metadata screenshots instead of blurring it, because blurred images look broken and real data leaks.",
+    "source": "https://github.com/raycast/extensions/pull/29211"
+  },
+  {
+    "id": "screenshot-same-background",
+    "rule": "When you add several metadata images: use the same background for all of them, because the Store wants one consistent visual expression.",
+    "source": "https://github.com/raycast/extensions/pull/25484"
+  },
+  {
+    "id": "screenshot-no-dev-icon",
+    "rule": "When you capture a metadata image: make sure the local development extension icon is not in the bottom bar, because dev-only elements must not show in the Store.",
+    "source": "https://github.com/raycast/extensions/pull/29168"
+  },
+  {
+    "id": "screenshot-no-command-list",
+    "rule": "When you prepare metadata images: do not add an image that only lists the commands, because the Store already shows the commands in a separate tab.",
+    "source": "https://github.com/raycast/extensions/pull/27617"
+  },
+  {
+    "id": "screenshot-no-duplicates",
+    "rule": "When you add metadata images: make each one show a different screen or state, because a duplicate screenshot adds nothing to the Store page.",
+    "source": "https://github.com/raycast/extensions/pull/25164"
+  },
+  {
+    "id": "screenshot-none-for-no-view",
+    "rule": "When every command in an extension is no-view: leave out the metadata folder, because there is no Raycast view to capture.",
+    "source": "https://github.com/raycast/extensions/pull/26497"
+  },
+  {
+    "id": "readme-media-not-metadata",
+    "rule": "When an image explains setup rather than the extension in use: link it from the README and keep the file in the media folder, because metadata is only for screenshots.",
+    "source": "https://github.com/raycast/extensions/pull/28307"
+  },
+  {
+    "id": "screenshot-not-cropped",
+    "rule": "When you check a metadata image: make sure it is not cropped, skewed or framed by a white border, because the Store needs the full padded window.",
+    "source": "https://github.com/raycast/extensions/pull/29288"
+  },
+  {
+    "id": "screenshot-more-states",
+    "rule": "When a command has several distinct states: add a screenshot for each important one, because more screenshots help users understand the extension.",
+    "source": "https://github.com/raycast/extensions/pull/29266"
+  },
+  {
+    "id": "icon-both-themes",
+    "rule": "When you make the extension icon: check that it reads well in both light and dark appearance, because reviewers reject icons with low contrast in one theme.",
+    "source": "https://github.com/raycast/extensions/pull/25484"
+  },
+  {
+    "id": "icon-generator",
+    "rule": "When the extension icon does not work in both themes: make one with icon.ray.so, because it gives Store-ready icons that read in light and dark.",
+    "source": "https://github.com/raycast/extensions/pull/26104"
+  },
+  {
+    "id": "icon-not-raycast-logo",
+    "rule": "When you publish an extension: replace the default Raycast icon with your own, because extensions that keep the default icon are rejected.",
+    "source": "https://github.com/raycast/extensions/pull/28908"
+  },
+  {
+    "id": "icon-not-generic",
+    "rule": "When you pick the extension icon: use an image that relates to what the extension does, because a generic icon makes it hard to recognize in the Store.",
+    "source": "https://github.com/raycast/extensions/pull/26450"
+  },
+  {
+    "id": "icon-not-misleading",
+    "rule": "When you pick the extension icon: do not use the logo of a different product, because a misleading icon sets the wrong expectations.",
+    "source": "https://github.com/raycast/extensions/pull/26082"
+  },
+  {
+    "id": "icon-png-format",
+    "rule": "When you add the extension icon: supply it as a PNG file, because the Store expects the extension icon in PNG format.",
+    "source": "https://github.com/raycast/extensions/pull/23736"
+  },
+  {
+    "id": "icon-sharp",
+    "rule": "When you draw or export the extension icon: keep its edges and details sharp, because an upscaled or low-resolution icon looks blurry in the Store.",
+    "source": "https://github.com/raycast/extensions/pull/30230"
+  },
+  {
+    "id": "icon-single-for-both",
+    "rule": "When the light and dark icons would be identical: keep one icon file, because a separate dark variant only adds upkeep.",
+    "source": "https://github.com/raycast/extensions/pull/29854"
+  },
+  {
+    "id": "image-open-before-commit",
+    "rule": "When you commit an image file: open it locally first to confirm it renders, because a corrupt upload shows as a broken image.",
+    "source": "https://github.com/raycast/extensions/pull/23736"
+  },
+  {
+    "id": "recapture-after-icon-change",
+    "rule": "When you change the extension icon: capture the metadata images again, because old screenshots would still show the old icon.",
+    "source": "https://github.com/raycast/extensions/pull/26450"
+  },
+  {
+    "id": "remove-unused-assets",
+    "rule": "When an asset is no longer used: delete it from the assets folder, because the Store asks for no unused icons or images.",
+    "source": "https://github.com/raycast/extensions/pull/26412"
+  },
+  {
+    "id": "no-duplicate-icon-file",
+    "rule": "When an icon already exists in assets: do not commit a second copy elsewhere, because duplicate images grow the extension for nothing.",
+    "source": "https://github.com/raycast/extensions/pull/23247"
+  },
+  {
+    "id": "remove-dev-artifacts",
+    "rule": "When you prepare a PR: remove dev artifacts such as scratch files, local notes or build output, because they do not belong in the extension.",
+    "source": "https://github.com/raycast/extensions/pull/27147"
+  },
+  {
+    "id": "gitignore-standard",
+    "rule": "When you set up .gitignore: use the standard Raycast one with node_modules, raycast-env.d.ts and the Swift and Rust build folders, because those files are generated.",
+    "source": "https://github.com/raycast/extensions/pull/30642"
+  },
+  {
+    "id": "raycast-env-not-committed",
+    "rule": "When raycast-env.d.ts is generated: list it in .gitignore and do not commit it, because Raycast creates it again from the manifest.",
+    "source": "https://github.com/raycast/extensions/pull/24014"
+  },
+  {
+    "id": "tsconfig-include-env",
+    "rule": "When you write tsconfig.json: include src/**/* and raycast-env.d.ts, because the generated preference and argument types live in that file.",
+    "source": "https://github.com/raycast/extensions/pull/23247"
+  },
+  {
+    "id": "eslint-flat-config",
+    "rule": "When you set up linting: use an ESLint 9 flat config that extends @raycast/eslint-config, because that is what the current templates ship.",
+    "source": "https://github.com/raycast/extensions/pull/23247"
+  },
+  {
+    "id": "keep-existing-eslint-file",
+    "rule": "When you contribute to an existing extension: keep its ESLint config file as it is, because an unrelated config change makes the PR hard to review.",
+    "source": "https://github.com/raycast/extensions/pull/25726"
+  },
+  {
+    "id": "ray-migrate",
+    "rule": "When an extension uses an old API version or ESLint setup: run npx ray migrate, because it upgrades the code and config to current Raycast conventions.",
+    "source": "https://github.com/raycast/extensions/pull/8219"
+  },
+  {
+    "id": "lockfile-in-sync",
+    "rule": "When you change dependencies: run npm install and commit the matching package-lock.json, because CI installs from the lock file with npm.",
+    "source": "https://github.com/raycast/extensions/pull/26196"
+  },
+  {
+    "id": "remove-unused-dependency",
+    "rule": "When a package in package.json is not imported anywhere: remove it, because unused dependencies grow the install and the review surface.",
+    "source": "https://github.com/raycast/extensions/pull/26501"
+  },
+  {
+    "id": "no-duplicate-dependency",
+    "rule": "When a package is listed in both dependencies and devDependencies: keep only one entry, because two entries let the versions drift.",
+    "source": "https://github.com/raycast/extensions/pull/26196"
+  },
+  {
+    "id": "no-ray-package",
+    "rule": "When you set up package.json: do not add a package named ray as a dependency, because the ray CLI already comes with @raycast/api.",
+    "source": "https://github.com/raycast/extensions/pull/26003"
+  },
+  {
+    "id": "build-script-ray-build",
+    "rule": "When you write package.json scripts: keep the build script as ray build, because the Store pipeline expects the Raycast build.",
+    "source": "https://github.com/raycast/extensions/pull/25726"
+  },
+  {
+    "id": "prepublish-guard",
+    "rule": "When you write package.json scripts: keep the template prepublishOnly guard and publish script, because they stop an accidental publish to npm.",
+    "source": "https://github.com/raycast/extensions/pull/25907"
+  },
+  {
+    "id": "platforms-macos-only",
+    "rule": "When an extension uses macOS-only APIs such as AppleScript or MenuBarExtra: set platforms to macOS in package.json, because otherwise it installs on Windows and fails.",
+    "source": "https://github.com/raycast/extensions/pull/30642"
+  },
+  {
+    "id": "platforms-not-overly-strict",
+    "rule": "When the code uses only cross-platform Node APIs: do not restrict platforms to macOS, because Windows users could use the extension too.",
+    "source": "https://github.com/raycast/extensions/pull/25907"
+  },
+  {
+    "id": "author-raycast-handle",
+    "rule": "When you set the author field: use your Raycast Store username, because validation fails for a handle that has no Raycast account.",
+    "source": "https://github.com/raycast/extensions/pull/26412"
+  },
+  {
+    "id": "keep-original-author",
+    "rule": "When you contribute to an extension someone else owns: leave the author field alone and add yourself to contributors, because the author stays the owner.",
+    "source": "https://github.com/raycast/extensions/pull/25726"
+  },
+  {
+    "id": "contributors-are-real",
+    "rule": "When you create a new extension: do not list contributors who did not work on it, because the contributors field credits real work.",
+    "source": "https://github.com/raycast/extensions/pull/25833"
+  },
+  {
+    "id": "omit-owner-field",
+    "rule": "When you do not publish for an organisation: leave out the owner field, because owner makes the extension private to that team.",
+    "source": "https://github.com/raycast/extensions/pull/25949"
+  },
+  {
+    "id": "no-unneeded-manifest-props",
+    "rule": "When you write package.json: remove manifest properties that the extension does not use, because the manifest must declare only what it needs.",
+    "source": "https://github.com/raycast/extensions/pull/26497"
+  },
+  {
+    "id": "name-without-raycast",
+    "rule": "When you name an extension: leave out words like raycast or extension, because every Store item is already a Raycast extension.",
+    "source": "https://github.com/raycast/extensions/pull/29833"
+  },
+  {
+    "id": "folder-matches-name",
+    "rule": "When you rename an extension: rename its folder to the new name as well, because the folder and the name field must agree.",
+    "source": "https://github.com/raycast/extensions/pull/30456"
+  },
+  {
+    "id": "single-command-title",
+    "rule": "When an extension has a single command: give the extension a title that says what it does, not only a brand, because users browse the Store by purpose.",
+    "source": "https://github.com/raycast/extensions/pull/30456"
+  },
+  {
+    "id": "title-case-brand",
+    "rule": "When a brand name is styled in all caps: write the extension title in normal Title Case, because Store titles follow the Apple Style Guide.",
+    "source": "https://github.com/raycast/extensions/pull/26219"
+  },
+  {
+    "id": "distinct-extension-name",
+    "rule": "When a name could be confused with an official or existing extension: make it more specific, because users must tell the extensions apart.",
+    "source": "https://github.com/raycast/extensions/pull/26450"
+  },
+  {
+    "id": "ai-tool-name-has-product",
+    "rule": "When you name an MCP server or AI tool: include the product it belongs to, because a generic name says nothing about its source.",
+    "source": "https://github.com/raycast/extensions/pull/29545"
+  },
+  {
+    "id": "command-title-verb",
+    "rule": "When you title a command: use a verb and a noun such as Generate Avatar, because the Store naming guide asks for that form.",
+    "source": "https://github.com/raycast/extensions/pull/1966"
+  },
+  {
+    "id": "command-title-explicit",
+    "rule": "When a command title is vague: rename it to say exactly what the command does, because users choose commands by their titles.",
+    "source": "https://github.com/raycast/extensions/pull/1966"
+  },
+  {
+    "id": "no-ellipsis-on-direct-action",
+    "rule": "When an action runs at once or opens preferences: do not end its title with an ellipsis, because the ellipsis marks an action with a submenu.",
+    "source": "https://github.com/raycast/extensions/pull/30642"
+  },
+  {
+    "id": "no-root-navigation-title",
+    "rule": "When a command renders its root view: do not set navigationTitle, because Raycast already shows the command name there.",
+    "source": "https://github.com/raycast/extensions/pull/6565"
+  },
+  {
+    "id": "list-empty-view",
+    "rule": "When a list can have no items: add a List.EmptyView with a helpful message, because a blank list leaves users unsure what to do.",
+    "source": "https://github.com/raycast/extensions/pull/27617"
+  },
+  {
+    "id": "first-run-empty-view",
+    "rule": "When a command has nothing to show on first use: show an empty view that explains the first step, because new users need a starting point.",
+    "source": "https://github.com/raycast/extensions/pull/24014"
+  },
+  {
+    "id": "use-progress-icon",
+    "rule": "When a list item shows progress or a percentage: use getProgressIcon from @raycast/utils, because it draws a native progress ring.",
+    "source": "https://github.com/raycast/extensions/pull/24014"
+  },
+  {
+    "id": "icons-on-list-items",
+    "rule": "When list items carry no visual marker: add an icon to each item, because icons make long lists faster to scan.",
+    "source": "https://github.com/raycast/extensions/pull/8219"
+  },
+  {
+    "id": "destructive-action-style",
+    "rule": "When an action deletes or removes data: set its style to Action.Style.Destructive, because Raycast then shows it in red.",
+    "source": "https://github.com/raycast/extensions/pull/8219"
+  },
+  {
+    "id": "submenu-for-choices",
+    "rule": "When an action needs one choice from several values: use ActionPanel.Submenu, because a submenu keeps the action panel short.",
+    "source": "https://github.com/raycast/extensions/pull/6565"
+  },
+  {
+    "id": "open-in-browser-action",
+    "rule": "When a list item maps to a web page: add an Open in Browser action, because users expect to jump to the source.",
+    "source": "https://github.com/raycast/extensions/pull/4172"
+  },
+  {
+    "id": "action-title-truthful",
+    "rule": "When an action opens a URL: name it after what the URL shows, because a title that promises a website but opens an image confuses users.",
+    "source": "https://github.com/raycast/extensions/pull/24597"
+  },
+  {
+    "id": "escape-api-data-in-html",
+    "rule": "When API data goes into HTML or markdown: escape or validate it first, because untrusted values can inject content.",
+    "source": "https://github.com/raycast/extensions/pull/24597"
+  },
+  {
+    "id": "generated-preferences-type",
+    "rule": "When you read preferences: use the generated Preferences or ExtensionPreferences type, because a hand-written interface drifts from the manifest.",
+    "source": "https://github.com/raycast/extensions/pull/8219"
+  },
+  {
+    "id": "no-non-null-assertion",
+    "rule": "When TypeScript can not prove a value exists: check it instead of using a non-null assertion, because the ! operator hides a real undefined.",
+    "source": "https://github.com/raycast/extensions/pull/8219"
+  },
+  {
+    "id": "no-ts-ignore",
+    "rule": "When TypeScript reports a type error: fix it or narrow the type instead of adding @ts-ignore, because the comment hides real bugs.",
+    "source": "https://github.com/raycast/extensions/pull/6565"
+  },
+  {
+    "id": "fix-lint-warnings",
+    "rule": "When ray lint warns about an unused variable: remove the variable, because the CI lint step fails on warnings.",
+    "source": "https://github.com/raycast/extensions/pull/22496"
+  },
+  {
+    "id": "run-prettier",
+    "rule": "When you finish code changes: run npm run fix-lint so Prettier formats the files, because CI rejects unformatted code.",
+    "source": "https://github.com/raycast/extensions/pull/27617"
+  },
+  {
+    "id": "remove-unused-exports",
+    "rule": "When an exported function is not used anywhere: remove it, because dead code costs review time.",
+    "source": "https://github.com/raycast/extensions/pull/26474"
+  },
+  {
+    "id": "single-purpose-files",
+    "rule": "When a source file mixes constants, types and hooks: split them into single-purpose files, because small files are easier to read.",
+    "source": "https://github.com/raycast/extensions/pull/23247"
+  },
+  {
+    "id": "shared-utility",
+    "rule": "When several commands repeat the same logic: move it into one shared utility, because duplicated code drifts apart.",
+    "source": "https://github.com/raycast/extensions/pull/26196"
+  },
+  {
+    "id": "module-level-regex",
+    "rule": "When a regular expression is used in a function that runs often: define it once at module level, because building it on each call wastes work.",
+    "source": "https://github.com/raycast/extensions/pull/22496"
+  },
+  {
+    "id": "keep-preference-name",
+    "rule": "When you change a preference: keep its name, because a new name drops the value existing users already set.",
+    "source": "https://github.com/raycast/extensions/pull/395"
+  },
+  {
+    "id": "keep-command-name",
+    "rule": "When you refactor or rename commands: keep each command's name field, because Raycast stores ranking, aliases and hotkeys under it.",
+    "source": "https://github.com/raycast/extensions/pull/25726"
+  },
+  {
+    "id": "keep-default-behaviour",
+    "rule": "When you add an option that changes output: keep the old behaviour as the default, because existing users rely on it.",
+    "source": "https://github.com/raycast/extensions/pull/26032"
+  },
+  {
+    "id": "keep-dropdown-values",
+    "rule": "When you change a dropdown preference: keep the old values valid, because users should not have to pick their setting again.",
+    "source": "https://github.com/raycast/extensions/pull/9565"
+  },
+  {
+    "id": "remove-in-steps",
+    "rule": "When you remove an extension or a large feature: trim it in steps, because a sudden removal leaves installed copies stuck on a stale version.",
+    "source": "https://github.com/raycast/extensions/pull/27598"
+  },
+  {
+    "id": "selected-finder-items",
+    "rule": "When a command needs the files selected in Finder: use getSelectedFinderItems from @raycast/api, because it avoids custom scripts.",
+    "source": "https://github.com/raycast/extensions/pull/20746"
+  },
+  {
+    "id": "setup-instructions-detail",
+    "rule": "When a required tool or setup is missing: render a Detail with the steps to fix it, because a thrown exception does not tell the user what to do.",
+    "source": "https://github.com/raycast/extensions/pull/726"
+  },
+  {
+    "id": "let-raycast-filter",
+    "rule": "When a list holds all its items in memory: let Raycast filter them with the built-in search, because manual filtering repeats work.",
+    "source": "https://github.com/raycast/extensions/pull/726"
+  },
+  {
+    "id": "action-callback-not-push",
+    "rule": "When an action only runs a function: use Action with onAction, not Action.Push, because Push is for showing a new view.",
+    "source": "https://github.com/raycast/extensions/pull/726"
+  },
+  {
+    "id": "readme-paid-features",
+    "rule": "When some features need payment: say so near the top of the README, because users must know before they install.",
+    "source": "https://github.com/raycast/extensions/pull/26343"
+  },
+  {
+    "id": "readme-how-to-buy",
+    "rule": "When an extension has paid tiers: tell users in the README how to buy them, because the README is the only place to explain it.",
+    "source": "https://github.com/raycast/extensions/pull/27726"
+  },
+  {
+    "id": "readme-token-scopes",
+    "rule": "When an extension needs an API token: list the exact token scopes in the README, because users should grant only what is needed.",
+    "source": "https://github.com/raycast/extensions/pull/29266"
+  },
+  {
+    "id": "readme-update-setup",
+    "rule": "When the sign-in or setup flow changes: update the README to match, because users follow the README to configure the extension.",
+    "source": "https://github.com/raycast/extensions/pull/25989"
+  },
+  {
+    "id": "readme-external-tool",
+    "rule": "When an extension depends on an external tool: explain in the README how to install and set it up, because users can not guess the steps.",
+    "source": "https://github.com/raycast/extensions/pull/8219"
+  },
+  {
+    "id": "single-english-readme",
+    "rule": "When you add a README: keep one English README, not copies per language, because Raycast supports only US English and copies drift.",
+    "source": "https://github.com/raycast/extensions/pull/24671"
+  },
+  {
+    "id": "no-custom-localization",
+    "rule": "When text in an extension could be translated: write it in US English only, because Raycast does not support localization.",
+    "source": "https://github.com/raycast/extensions/pull/28486"
+  },
+  {
+    "id": "locale-as-preference",
+    "rule": "When the locale changes behaviour, such as units or formats: offer a preference for it, because Raycast has no localization API.",
+    "source": "https://github.com/raycast/extensions/pull/28615"
+  },
+  {
+    "id": "raycast-ai-for-generation",
+    "rule": "When an extension needs text generation: consider the Raycast AI API, because it reuses the user's Raycast AI access and needs no extra key.",
+    "source": "https://github.com/raycast/extensions/pull/29266"
+  },
+  {
+    "id": "ai-evals",
+    "rule": "When an extension adds AI tools: add evals to the ai section of package.json, because reviewers ask for evals on AI extensions.",
+    "source": "https://github.com/raycast/extensions/pull/26550"
+  },
+  {
+    "id": "ai-instructions",
+    "rule": "When an AI extension needs guidance on when to call a tool: write it in the ai instructions field, because the model reads it with each request.",
+    "source": "https://github.com/raycast/extensions/pull/26221"
+  },
+  {
+    "id": "extend-existing-extension",
+    "rule": "When a similar extension already exists in the Store: extend it with a PR instead of making a new one, because reviewers reject near duplicates.",
+    "source": "https://github.com/raycast/extensions/pull/27910"
+  },
+  {
+    "id": "no-builtin-duplicate",
+    "rule": "When a built-in Raycast feature such as Quicklinks or File Search already does the job: do not submit an extension for it, because it adds no value.",
+    "source": "https://github.com/raycast/extensions/pull/25164"
+  },
+  {
+    "id": "pr-against-owner",
+    "rule": "When you change an extension you do not own: follow the contribute guide and open the PR on that extension, because the owner must sign off.",
+    "source": "https://github.com/raycast/extensions/pull/30523"
+  },
+  {
+    "id": "split-large-pr",
+    "rule": "When a PR mixes fixes, refactors and new features: split it into smaller PRs, because reviewers check small changes faster.",
+    "source": "https://github.com/raycast/extensions/pull/29798"
+  },
+  {
+    "id": "no-exe-binaries",
+    "rule": "When an extension needs native code: do not ship an .exe or other opaque binary, because reviewers treat it as an attack vector.",
+    "source": "https://github.com/raycast/extensions/pull/23289"
+  },
+  {
+    "id": "swift-tools-for-native",
+    "rule": "When an extension needs macOS native code: use the Raycast Swift tools package, because reviewers can read Swift source but not a prebuilt binary.",
+    "source": "https://github.com/raycast/extensions/pull/26453"
+  },
+  {
+    "id": "verify-downloaded-binary",
+    "rule": "When an extension downloads an executable: check its hash before you run it, because a changed file could run malicious code.",
+    "source": "https://github.com/raycast/extensions/pull/25989"
+  },
+  {
+    "id": "atomic-runtime-install",
+    "rule": "When you replace a downloaded runtime: install into a new folder and swap it after success, because a failed copy would delete the working one.",
+    "source": "https://github.com/raycast/extensions/pull/25989"
+  },
+  {
+    "id": "request-timeout",
+    "rule": "When a network request can stall: pass an AbortSignal with a timeout, because a hung request blocks the command forever.",
+    "source": "https://github.com/raycast/extensions/pull/25989"
+  },
+  {
+    "id": "single-source-config",
+    "rule": "When two files hold the same version number or mapping: keep it in one shared module, because the copies drift on the next upgrade.",
+    "source": "https://github.com/raycast/extensions/pull/25989"
+  },
+  {
+    "id": "remove-unused-parameter",
+    "rule": "When a function parameter is not used: remove it, because callers will assume it changes the behaviour.",
+    "source": "https://github.com/raycast/extensions/pull/25989"
+  },
+  {
+    "id": "minimal-persisted-personal-data",
+    "rule": "When you cache personal data such as an email address: keep it in memory unless it must persist, because LocalStorage keeps it on disk.",
+    "source": "https://github.com/raycast/extensions/pull/25989"
+  },
+  {
+    "id": "branch-on-error-codes",
+    "rule": "When code branches on an error: check its code or type, not words in its message, because message text changes between versions.",
+    "source": "https://github.com/raycast/extensions/pull/25989"
+  },
+  {
+    "id": "no-retry-after-abort",
+    "rule": "When a request is cancelled by the user: stop at once and do not retry, because a retry starts work the user cancelled.",
+    "source": "https://github.com/raycast/extensions/pull/25989"
+  },
+  {
+    "id": "cleanup-in-finally",
+    "rule": "When a sign-out clears local state: do it in a finally block, because a failed remote call must not leave stale data.",
+    "source": "https://github.com/raycast/extensions/pull/25989"
+  },
+  {
+    "id": "explicit-capability-check",
+    "rule": "When a feature depends on a model or API version: check explicit capability data, not a name prefix, because new names break the guess.",
+    "source": "https://github.com/raycast/extensions/pull/25989"
+  },
+  {
+    "id": "develop-without-downloads",
+    "rule": "When you write the dev script: do not make ray develop download files, because development must stay fast and work offline.",
+    "source": "https://github.com/raycast/extensions/pull/25989"
+  },
+  {
+    "id": "persist-setting-migration",
+    "rule": "When you migrate a stored setting: write the new value back to storage, because an in-memory change is lost on the next launch.",
+    "source": "https://github.com/raycast/extensions/pull/25989"
+  },
+  {
+    "id": "official-api-only",
+    "rule": "When you integrate a web service: use its official public API, because private endpoints break without notice.",
+    "source": "https://github.com/raycast/extensions/pull/25989"
+  },
+  {
+    "id": "respect-terms-of-service",
+    "rule": "When an extension calls a third-party service: check its terms of service, because spoofed user agents or embedded app keys can break them.",
+    "source": "https://github.com/raycast/extensions/pull/26687"
+  },
+  {
+    "id": "third-party-image-license",
+    "rule": "When an extension shows third-party icons or images: follow their license and credit rules, because the Store can not ship content it may not redistribute.",
+    "source": "https://github.com/raycast/extensions/pull/29743"
+  },
+  {
+    "id": "no-embedded-backend-keys",
+    "rule": "When an extension does not need a backend: do not embed a database URL or key in it, because shipped credentials are public.",
+    "source": "https://github.com/raycast/extensions/pull/26042"
+  },
+  {
+    "id": "large-prerequisite-outside",
+    "rule": "When an extension needs a large server or app: make it a documented prerequisite, because the extension should not download big releases itself.",
+    "source": "https://github.com/raycast/extensions/pull/28489"
+  },
+  {
+    "id": "interval-only-background-modes",
+    "rule": "When a command sets interval in the manifest: make it a no-view or menu-bar command, because Raycast ignores interval on view commands.",
+    "source": "https://github.com/raycast/extensions/pull/30642"
+  },
+  {
+    "id": "interval-not-too-short",
+    "rule": "When you choose a background interval: pick the longest one that keeps the data useful, because short intervals waste battery and API quota.",
+    "source": "https://github.com/raycast/extensions/pull/30642"
+  },
+  {
+    "id": "honour-every-preference",
+    "rule": "When a preference controls a feature: read it everywhere that feature renders, because an ignored preference looks like a bug.",
+    "source": "https://github.com/raycast/extensions/pull/30642"
+  },
+  {
+    "id": "remove-unread-preference",
+    "rule": "When a preference is never read by the code: remove it from the manifest, because users would change a setting that does nothing.",
+    "source": "https://github.com/raycast/extensions/pull/30642"
+  },
+  {
+    "id": "subtitle-for-multi-command",
+    "rule": "When an extension has several commands for one service: give the commands a subtitle with the service name, because it adds context in root search.",
+    "source": "https://github.com/raycast/extensions/pull/25866"
+  },
+  {
+    "id": "short-extension-description",
+    "rule": "When you write the extension description: keep it to one short sentence about what it does, because the Store shows it in the extension list.",
+    "source": "https://github.com/raycast/extensions/pull/26687"
+  },
+  {
+    "id": "with-access-token-everywhere",
+    "rule": "When commands use OAuth: wrap every command with withAccessToken, no-view ones too, because the token must be ready before the command runs.",
+    "source": "https://github.com/raycast/extensions/pull/25646"
+  },
+  {
+    "id": "recreate-old-template",
+    "rule": "When an extension is built on a very old template: recreate it with Create Extension and port the code, because the new template has current config.",
+    "source": "https://github.com/raycast/extensions/pull/24608"
+  },
+  {
+    "id": "keep-review-threads-open",
+    "rule": "When a review comment is not fixed yet: leave the thread unresolved, because resolved threads hide open work from the reviewer.",
+    "source": "https://github.com/raycast/extensions/pull/26687"
+  },
+  {
+    "id": "stream-large-files",
+    "rule": "When you hash or read large files: use streams, not readFileSync, because a whole-file read can exhaust memory.",
+    "source": "https://github.com/raycast/extensions/pull/25907"
+  },
+  {
+    "id": "ignore-generated-files",
+    "rule": "When a file is generated on your machine: add it to .gitignore instead of committing it, because generated files add noise to the PR.",
+    "source": "https://github.com/raycast/extensions/pull/25907"
+  },
+  {
+    "id": "asset-name-only",
+    "rule": "When you reference an image from the assets folder: give only the file name, because Raycast looks in assets by default.",
+    "source": "https://github.com/raycast/extensions/pull/25808"
+  },
+  {
+    "id": "native-app-icon",
+    "rule": "When a command opens a native app: use that app's icon, because a custom icon hides where the action leads.",
+    "source": "https://github.com/raycast/extensions/pull/9529"
+  },
+  {
+    "id": "themed-icon-source",
+    "rule": "When an icon needs a light and a dark file: pass source as an object with light and dark keys, because Raycast picks the right file per theme.",
+    "source": "https://github.com/raycast/extensions/pull/9529"
+  },
+  {
+    "id": "tint-monochrome-icon",
+    "rule": "When you use a monochrome SVG icon: set a tintColor such as Color.PrimaryText, because the icon then matches the theme.",
+    "source": "https://github.com/raycast/extensions/pull/4172"
+  },
+  {
+    "id": "enforce-promised-guard",
+    "rule": "When an extension promises to hide data behind authentication: enforce the check in every view, because one unguarded view leaks the data.",
+    "source": "https://github.com/raycast/extensions/pull/30225"
+  },
+  {
+    "id": "validate-helper-paths",
+    "rule": "When a native helper writes to a path it gets as an argument: validate the path first, because a helper with file access is a security risk.",
+    "source": "https://github.com/raycast/extensions/pull/30225"
+  },
+  {
+    "id": "buildable-native-helper",
+    "rule": "When you add a native helper: let reviewers build it from source in the repo, because they can not verify a precompiled file.",
+    "source": "https://github.com/raycast/extensions/pull/30225"
+  },
+  {
+    "id": "screencast-for-flows",
+    "rule": "When a PR changes a multi-step flow: attach a screencast to the PR, because reviewers want to see the flow before they try it.",
+    "source": "https://github.com/raycast/extensions/pull/27198"
+  },
+  {
+    "id": "green-checks-before-review",
+    "rule": "When the PR checks fail: fix them before you ask for review, because reviewers wait for a passing build.",
+    "source": "https://github.com/raycast/extensions/pull/26343"
+  },
+  {
+    "id": "address-bot-review",
+    "rule": "When an automated reviewer leaves comments on the PR: address them before you ask for human review, because staff review after that.",
+    "source": "https://github.com/raycast/extensions/pull/25935"
+  },
+  {
+    "id": "resolve-merge-conflicts",
+    "rule": "When the PR has merge conflicts: resolve them before you ask for review, because a conflicting PR can not be merged.",
+    "source": "https://github.com/raycast/extensions/pull/30429"
+  },
+  {
+    "id": "ready-for-review-button",
+    "rule": "When a PR was moved to draft: press Ready for review after you push the fixes, because reviewers only look at PRs marked ready.",
+    "source": "https://github.com/raycast/extensions/pull/28171"
+  },
+  {
+    "id": "system-binary-lookup",
+    "rule": "When you call a system binary whose location can vary: resolve it from PATH or check that it exists, because a hard-coded path fails on some setups.",
+    "source": "https://github.com/raycast/extensions/pull/23464"
+  },
+  {
+    "id": "menu-bar-title-concise",
+    "rule": "When a menu-bar command shows a title: keep it short, because the menu bar has little room.",
+    "source": "https://github.com/raycast/extensions/pull/30642"
+  },
+  {
+    "id": "reuse-exported-constant",
+    "rule": "When a constant is already exported by another module: import it instead of redefining it, because two copies can drift.",
+    "source": "https://github.com/raycast/extensions/pull/30642"
+  },
+  {
+    "id": "extension-description-accurate",
+    "rule": "When you write the extension description: name the actual content or service the extension covers, because users pick extensions by it.",
+    "source": "https://github.com/raycast/extensions/pull/26687"
+  },
+  {
+    "id": "license-mit",
+    "rule": "When you fill in package.json for the Store: set license to MIT, because the Store guidelines require the MIT license.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "current-api-version",
+    "rule": "When you prepare an extension for the Store: depend on a current @raycast/api version, because the Store asks for the up-to-date API.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "npm-only",
+    "rule": "When you install dependencies: use npm and not yarn or pnpm, because the Raycast CI builds and publishes with npm.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "no-other-lockfiles",
+    "rule": "When you commit an extension: leave out yarn.lock and pnpm-lock.yaml, because CI uses only package-lock.json.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "distribution-build-check",
+    "rule": "When an extension is ready for review: run npm run build and open the built extension in Raycast, because the distribution build does stricter type checks.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "extension-guidelines",
+    "rule": "When you plan a new Store extension: read the Raycast Extension Guidelines first, because the review checks every submission against them.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "apple-style-titles",
+    "rule": "When you write extension and command titles: follow the Apple Style Guide Title Case, because the Store naming rules are based on it.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "lowercase-trademarks",
+    "rule": "When a title contains a name that is written in lower case, such as iOS, macOS or npm: keep its own casing, because trademarks keep their spelling.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "extension-title-noun",
+    "rule": "When you title an extension: prefer a noun phrase such as Emoji Search over a verb phrase, because extension titles name a thing, not an action.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "no-generic-extension-title",
+    "rule": "When you title an extension: avoid generic words like Converter, Images or Utils, because users must see what it does from the title.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "no-articles-in-command",
+    "rule": "When you title a command: leave out articles, so Create Issue not Create an Issue, because the Store guide asks for short titles.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "command-not-service-name",
+    "rule": "When you title a command: do not use only the service name, such as NPM, because the title must say what the command does.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "subtitle-is-context",
+    "rule": "When you give a command a subtitle: use the app or service name, not a description, because the subtitle adds context and is searchable.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "no-redundant-subtitle",
+    "rule": "When a command subtitle would repeat the title: leave the subtitle out, because it adds no context.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "icon-512",
+    "rule": "When you export the extension icon: make it 512x512 pixels, because the Store requires that size.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "icon-light-dark-manifest",
+    "rule": "When the extension has separate light and dark icons: set both in package.json as the manifest describes, because Raycast picks the icon per theme.",
+    "source": "https://developers.raycast.com/information/manifest"
+  },
+  {
+    "id": "readme-for-setup",
+    "rule": "When an extension needs setup such as an API token: add a README.md at the extension root, because Raycast shows it as About This Extension.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "help-md-for-preferences",
+    "rule": "When required preferences need setup steps: add a help.md at the extension root, because Raycast shows it beside the preferences form.",
+    "source": "https://developers.raycast.com/api-reference/preferences"
+  },
+  {
+    "id": "at-least-one-category",
+    "rule": "When you publish an extension: give it at least one category in package.json, because every Store extension needs a category.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "category-title-case",
+    "rule": "When you set categories: use the exact Title Case names from the list, such as Developer Tools, because categories are case-sensitive.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "max-six-screenshots",
+    "rule": "When you add Store screenshots: add at most six and ideally three or more, because the details page shows up to six.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "screenshot-2000x1250",
+    "rule": "When you make a Store screenshot by hand: export it as a 2000 by 1250 pixel PNG, because that is the Store's size and format.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "screenshot-contrast-background",
+    "rule": "When you pick a screenshot background: choose one with good contrast to the Raycast window, because the extension must stand out.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "screenshot-informative-commands",
+    "rule": "When you choose what to capture: pick the most informative commands, because screenshots should show what the extension does in detail.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "screenshot-one-theme",
+    "rule": "When you capture Store screenshots: use one appearance for all of them, because mixed light and dark images look inconsistent.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "contact-author-first",
+    "rule": "When you plan a significant change to someone else's extension: contact the author before you start, because big changes need the author's sign-off.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "new-extension-for-new-config",
+    "rule": "When an integration targets the same service with a different setup, such as an enterprise server: it may be a separate extension, because the setups differ.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "automate-dependencies",
+    "rule": "When an extension needs a helper tool: install or set it up from the extension where possible, because extra manual downloads lose users.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "binary-from-trusted-host",
+    "rule": "When an extension downloads a binary in the background: take it from the vendor's official release and check its hash, because a swapped binary would run on users' machines.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "no-heavy-binaries",
+    "rule": "When an extension needs a binary: do not bundle a heavy one in assets, because it grows the download for every user.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "no-keychain-access",
+    "rule": "When an extension needs stored secrets: do not request Keychain access, because extensions that ask for it are rejected.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "preferences-api-for-config",
+    "rule": "When an extension needs configuration or credentials: use the preferences API, because Raycast then handles storage and the settings form.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "required-preferences",
+    "rule": "When a preference must be set before a command can run: mark it required, because Raycast asks for it before the command opens.",
+    "source": "https://developers.raycast.com/api-reference/preferences"
+  },
+  {
+    "id": "no-settings-command",
+    "rule": "When an extension needs settings: do not build a separate command to configure it, because preferences are the place for settings.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "action-title-case",
+    "rule": "When you title an action: use Title Case such as Copy to Clipboard, because the Store UI guidelines ask for it.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "action-icons-all-or-none",
+    "rule": "When some actions in a panel have icons: give icons to all of them, because a mix of icons and no icons looks broken.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "submenu-ellipsis",
+    "rule": "When an action opens a submenu: end its title with an ellipsis, such as Set Priority\u2026, because the ellipsis tells users more choices follow.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "submenu-no-repeat",
+    "rule": "When you fill a submenu: do not repeat the parent title in each item, because Low and High read better than Set Priority Low.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "navigation-api",
+    "rule": "When a command shows a new screen: push it with the Navigation API, because Raycast then handles back navigation like everywhere else.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "no-custom-nav-stack",
+    "rule": "When a command moves between screens: do not swap the view content by hand, because extensions with their own navigation stack are rejected.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "short-navigation-title",
+    "rule": "When you set a navigationTitle on a pushed screen: keep it short, such as an issue key, because long titles get cut off.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "stable-navigation-title",
+    "rule": "When a screen sets navigationTitle: do not change it repeatedly on that screen, because a changing title is a sign of misuse.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "text-field-placeholder",
+    "rule": "When you add a text field or text area, including a preference: give it a placeholder, because placeholders show what to type.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "search-bar-placeholder",
+    "rule": "When a list or grid has a search bar: set searchBarPlaceholder, because an empty search bar does not tell users what they can search.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "no-external-analytics",
+    "rule": "When you want usage data: do not add external analytics to the extension, because the Store does not allow them.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "us-english-spelling",
+    "rule": "When you write UI text: use US English spelling such as color and favorite, because Raycast supports only US English.",
+    "source": "https://developers.raycast.com/basics/prepare-an-extension-for-store"
+  },
+  {
+    "id": "grid-empty-view",
+    "rule": "When a grid can have no items: add a Grid.EmptyView, because it replaces the plain No Results view with guidance.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/grid"
+  },
+  {
+    "id": "list-item-accessories",
+    "rule": "When a list item has extra facts such as a date or count: show them as accessories, because accessories align on the right and stay scannable.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/list"
+  },
+  {
+    "id": "accessory-tooltips",
+    "rule": "When a list accessory shows only an icon or a short value: add a tooltip, because the meaning is not always clear.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/list"
+  },
+  {
+    "id": "accessory-date",
+    "rule": "When a list item shows a time: pass a Date as the accessory, because Raycast formats it as a relative time.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/list"
+  },
+  {
+    "id": "accessory-tag-color",
+    "rule": "When a list item shows a status: use a tag accessory with a color, because colored tags are quick to read.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/list"
+  },
+  {
+    "id": "list-sections",
+    "rule": "When list items fall into groups: put them in List.Section with a title, because sections make long lists easier to scan.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/list"
+  },
+  {
+    "id": "section-subtitle-count",
+    "rule": "When a list section holds a known number of items: show the count as the section subtitle, because users see the size at a glance.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/list"
+  },
+  {
+    "id": "list-item-keywords",
+    "rule": "When users may search an item by words that are not in its title: add them as keywords, because built-in filtering also matches keywords.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/list"
+  },
+  {
+    "id": "list-item-id",
+    "rule": "When list items can be re-ordered or reloaded: give each item a stable id, because Raycast keeps the selection by id.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/list"
+  },
+  {
+    "id": "list-is-showing-detail",
+    "rule": "When list items have long content: use isShowingDetail with List.Item.Detail, because a split view shows it without a new screen.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/list"
+  },
+  {
+    "id": "detail-metadata",
+    "rule": "When a detail view shows structured facts: use Detail.Metadata labels, tags and links, because metadata renders as a clean side panel.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/detail"
+  },
+  {
+    "id": "list-detail-metadata",
+    "rule": "When a list detail panel shows key facts: use List.Item.Detail.Metadata, because it renders aligned labels under the markdown.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/list"
+  },
+  {
+    "id": "search-bar-dropdown",
+    "rule": "When a list needs a filter such as a category or account: use a searchBarAccessory dropdown, because it keeps the filter beside the search.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/list"
+  },
+  {
+    "id": "dropdown-store-value",
+    "rule": "When a search bar dropdown should remember its choice: set storeValue, because Raycast then restores the last selection.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/list"
+  },
+  {
+    "id": "filtering-off-for-remote-search",
+    "rule": "When the search text queries a remote API: set filtering to false and handle onSearchTextChange, because built-in filtering would hide server results.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/list"
+  },
+  {
+    "id": "throttle-search",
+    "rule": "When search text triggers network requests: set throttle on the list, because it avoids a request on every keystroke.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/list"
+  },
+  {
+    "id": "grid-for-images",
+    "rule": "When the items are mainly images such as icons or photos: use Grid instead of List, because a grid shows visual content better.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/grid"
+  },
+  {
+    "id": "grid-columns",
+    "rule": "When you use a Grid: set columns and aspectRatio to fit the content, because the default size may crop or shrink images.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/grid"
+  },
+  {
+    "id": "grid-fit",
+    "rule": "When grid images have mixed shapes: set fit to Grid.Fit.Contain, because it shows the whole image without cropping.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/grid"
+  },
+  {
+    "id": "grid-inset",
+    "rule": "When grid images touch their cell edges: set an inset, because a small inset keeps icons from looking cramped.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/grid"
+  },
+  {
+    "id": "detail-markdown",
+    "rule": "When a command shows rich text: render it as markdown in a Detail, because Raycast styles headings, code and images natively.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/detail"
+  },
+  {
+    "id": "detail-actions",
+    "rule": "When a Detail view shows content: give it an action panel, because users expect to copy or open what they see.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/detail"
+  },
+  {
+    "id": "markdown-image-size",
+    "rule": "When markdown shows an image in a Detail: set its size with the raycast-height or raycast-width query, because large images push text off screen.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/detail"
+  },
+  {
+    "id": "form-title-and-placeholder",
+    "rule": "When you add a form field: give it a title and a placeholder, because users need to know what each field expects.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/form"
+  },
+  {
+    "id": "form-submit-action",
+    "rule": "When a command shows a form: add an Action.SubmitForm as the first action, because it binds to Cmd+Enter.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/form"
+  },
+  {
+    "id": "form-field-info",
+    "rule": "When a form field needs a short explanation: use its info prop, because Raycast shows it as a tooltip next to the field.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/form"
+  },
+  {
+    "id": "form-description",
+    "rule": "When a form needs a note above the fields: use Form.Description, because it renders as aligned text in the form.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/form"
+  },
+  {
+    "id": "form-separator",
+    "rule": "When a form has groups of fields: separate them with Form.Separator, because visual groups make long forms clearer.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/form"
+  },
+  {
+    "id": "form-store-value",
+    "rule": "When a form field should remember its last value: set storeValue, because Raycast then pre-fills it next time.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/form"
+  },
+  {
+    "id": "form-date-picker",
+    "rule": "When a form asks for a date or time: use Form.DatePicker, because it gives a native picker and a Date value.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/form"
+  },
+  {
+    "id": "form-date-type",
+    "rule": "When a form only needs a day: set the date picker type to Date, because the time part would confuse users.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/form"
+  },
+  {
+    "id": "form-file-picker",
+    "rule": "When a form asks for a file or folder: use Form.FilePicker, because it opens the native file dialog.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/form"
+  },
+  {
+    "id": "form-password-field",
+    "rule": "When a form asks for a secret: use Form.PasswordField, because it hides the typed text.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/form"
+  },
+  {
+    "id": "form-tag-picker",
+    "rule": "When a form allows several values from a set: use Form.TagPicker, because it handles multi-select natively.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/form"
+  },
+  {
+    "id": "form-dropdown-sections",
+    "rule": "When a form dropdown has many options: group them with Form.Dropdown.Section, because grouped options are easier to scan.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/form"
+  },
+  {
+    "id": "form-text-area-markdown",
+    "rule": "When a text area takes markdown: set enableMarkdown, because Raycast then highlights the syntax.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/form"
+  },
+  {
+    "id": "form-validation",
+    "rule": "When a form field has rules such as required input: validate it and set the field error, because users see the problem next to the field.",
+    "source": "https://developers.raycast.com/information/best-practices"
+  },
+  {
+    "id": "use-form-hook",
+    "rule": "When a form has several validated fields: use useForm from @raycast/utils, because it wires values, errors and submit for you.",
+    "source": "https://developers.raycast.com/utilities/react-hooks/useform"
+  },
+  {
+    "id": "form-validation-required",
+    "rule": "When a form field is required: use FormValidation.Required with useForm, because it gives the standard required-field message.",
+    "source": "https://developers.raycast.com/utilities/react-hooks/useform"
+  },
+  {
+    "id": "pop-after-submit",
+    "rule": "When a pushed form is submitted: call pop to return to the previous screen, because users expect to land back where they started.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/navigation"
+  },
+  {
+    "id": "close-after-action",
+    "rule": "When an action finishes the user's task: close the window with closeMainWindow or a HUD, because the user wants to move on.",
+    "source": "https://developers.raycast.com/api-reference/window-and-search-bar"
+  },
+  {
+    "id": "pop-to-root",
+    "rule": "When a command finishes and should reset: call popToRoot or close with popToRootType, because the next open should start fresh.",
+    "source": "https://developers.raycast.com/api-reference/window-and-search-bar"
+  },
+  {
+    "id": "primary-action-first",
+    "rule": "When you build an action panel: put the most common action first, because Enter runs the first action.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/action-panel"
+  },
+  {
+    "id": "secondary-action",
+    "rule": "When an item has a second common action: put it second, because Cmd+Enter runs the second action.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/action-panel"
+  },
+  {
+    "id": "action-panel-sections",
+    "rule": "When an action panel has many actions: group them in ActionPanel.Section, because groups make the panel easier to scan.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/action-panel"
+  },
+  {
+    "id": "action-panel-title",
+    "rule": "When an action panel belongs to one item: set its title to the item name, because it reminds users what they act on.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/action-panel"
+  },
+  {
+    "id": "copy-to-clipboard-action",
+    "rule": "When users may want an item's text or URL: add Action.CopyToClipboard, because it copies and confirms in one step.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/actions"
+  },
+  {
+    "id": "paste-action",
+    "rule": "When the result is text the user wants in the front app: add Action.Paste, because it inserts the text where the user works.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/actions"
+  },
+  {
+    "id": "show-in-finder",
+    "rule": "When an item is a local file: add Action.ShowInFinder, because users often want to see the file in place.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/actions"
+  },
+  {
+    "id": "open-with",
+    "rule": "When an item is a local file: add Action.OpenWith, because users may want a specific app for it.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/actions"
+  },
+  {
+    "id": "common-shortcuts",
+    "rule": "When an action matches a common pattern such as delete or refresh: use Keyboard.Shortcut.Common, because it gives the shortcut users know.",
+    "source": "https://developers.raycast.com/api-reference/keyboard"
+  },
+  {
+    "id": "no-shortcut-clash",
+    "rule": "When you assign shortcuts in one action panel: give each action a unique one, because a clash makes one action unreachable.",
+    "source": "https://developers.raycast.com/api-reference/keyboard"
+  },
+  {
+    "id": "cross-platform-shortcut",
+    "rule": "When an extension supports Windows and macOS: define shortcuts per platform, because Cmd does not exist on Windows.",
+    "source": "https://developers.raycast.com/api-reference/keyboard"
+  },
+  {
+    "id": "create-quicklink-action",
+    "rule": "When an item has a URL users revisit: add Action.CreateQuicklink, because users can then open it from root search.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/actions"
+  },
+  {
+    "id": "create-snippet-action",
+    "rule": "When an item is reusable text: consider Action.CreateSnippet, because users can turn it into a Raycast snippet.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/actions"
+  },
+  {
+    "id": "pick-date-action",
+    "rule": "When an action needs a date from the user: use Action.PickDate, because it opens a native date picker in the panel.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/actions"
+  },
+  {
+    "id": "open-extension-preferences",
+    "rule": "When users may need to change a setting: add an action that calls openExtensionPreferences, because it opens the right settings page.",
+    "source": "https://developers.raycast.com/api-reference/preferences"
+  },
+  {
+    "id": "open-command-preferences",
+    "rule": "When a setting belongs to one command: use openCommandPreferences, because it opens that command's settings.",
+    "source": "https://developers.raycast.com/api-reference/preferences"
+  },
+  {
+    "id": "command-preferences-scope",
+    "rule": "When a preference applies to one command only: declare it on that command, because extension-wide preferences show for every command.",
+    "source": "https://developers.raycast.com/information/manifest"
+  },
+  {
+    "id": "preference-types",
+    "rule": "When you declare a preference: pick the type that fits, such as password for tokens and checkbox for flags, because the form adapts to it.",
+    "source": "https://developers.raycast.com/api-reference/preferences"
+  },
+  {
+    "id": "password-preference",
+    "rule": "When a preference holds an API key or token: use the password type, because Raycast then masks the value.",
+    "source": "https://developers.raycast.com/api-reference/preferences"
+  },
+  {
+    "id": "preference-default",
+    "rule": "When a preference has a sensible default: set default in the manifest, because users can start without configuring it.",
+    "source": "https://developers.raycast.com/api-reference/preferences"
+  },
+  {
+    "id": "preference-description",
+    "rule": "When you declare a preference: write a clear description, because Raycast shows it under the field.",
+    "source": "https://developers.raycast.com/information/manifest"
+  },
+  {
+    "id": "checkbox-label",
+    "rule": "When you declare a checkbox preference: give it a label, because the label is the text next to the box.",
+    "source": "https://developers.raycast.com/information/manifest"
+  },
+  {
+    "id": "app-picker-preference",
+    "rule": "When users choose an app in settings: use the appPicker preference type, because it lists installed apps.",
+    "source": "https://developers.raycast.com/api-reference/preferences"
+  },
+  {
+    "id": "command-arguments",
+    "rule": "When a command needs one or two inputs: declare arguments in the manifest, because users can type them in root search.",
+    "source": "https://developers.raycast.com/information/lifecycle/arguments"
+  },
+  {
+    "id": "argument-placeholder",
+    "rule": "When you declare a command argument: give it a placeholder, because the placeholder is the only label users see.",
+    "source": "https://developers.raycast.com/information/lifecycle/arguments"
+  },
+  {
+    "id": "max-three-arguments",
+    "rule": "When a command needs more than three inputs: use a form instead of arguments, because a command can declare at most three arguments.",
+    "source": "https://developers.raycast.com/information/lifecycle/arguments"
+  },
+  {
+    "id": "password-argument",
+    "rule": "When an argument holds a secret: use the password argument type, because it hides the typed value.",
+    "source": "https://developers.raycast.com/information/lifecycle/arguments"
+  },
+  {
+    "id": "no-view-mode",
+    "rule": "When a command does its work without UI: set mode to no-view, because Raycast then runs it without opening a window.",
+    "source": "https://developers.raycast.com/information/manifest"
+  },
+  {
+    "id": "hud-for-no-view",
+    "rule": "When a no-view command finishes: confirm with showHUD, because the main window is closed and a HUD is the visible feedback.",
+    "source": "https://developers.raycast.com/api-reference/feedback/hud"
+  },
+  {
+    "id": "confirm-alert-destructive",
+    "rule": "When an action deletes data: ask with confirmAlert first, because users must be able to cancel a destructive step.",
+    "source": "https://developers.raycast.com/api-reference/feedback/alert"
+  },
+  {
+    "id": "alert-destructive-style",
+    "rule": "When a confirm alert guards a destructive step: set the primary action style to Alert.ActionStyle.Destructive, because it marks the risk in red.",
+    "source": "https://developers.raycast.com/api-reference/feedback/alert"
+  },
+  {
+    "id": "clipboard-api",
+    "rule": "When a command copies text in code: use Clipboard.copy, because it writes to the system clipboard on every platform.",
+    "source": "https://developers.raycast.com/api-reference/clipboard"
+  },
+  {
+    "id": "clipboard-concealed",
+    "rule": "When a command copies a password or token: pass the concealed option, because clipboard history then does not keep it.",
+    "source": "https://developers.raycast.com/api-reference/clipboard"
+  },
+  {
+    "id": "selected-text",
+    "rule": "When a command works on selected text: read it with getSelectedText, because it gets the selection from the front app.",
+    "source": "https://developers.raycast.com/api-reference/environment"
+  },
+  {
+    "id": "local-storage-api",
+    "rule": "When an extension must keep small data between runs: use LocalStorage from @raycast/api, because it is encrypted and scoped to the extension.",
+    "source": "https://developers.raycast.com/api-reference/storage"
+  },
+  {
+    "id": "cache-api",
+    "rule": "When an extension caches data for speed: use the Cache API, because it is synchronous and evicts old entries.",
+    "source": "https://developers.raycast.com/api-reference/cache"
+  },
+  {
+    "id": "cache-namespace",
+    "rule": "When different commands cache unrelated data: give each Cache a namespace, because keys from separate features must not collide.",
+    "source": "https://developers.raycast.com/api-reference/cache"
+  },
+  {
+    "id": "support-path",
+    "rule": "When an extension writes files of its own: store them under environment.supportPath, because that folder belongs to the extension.",
+    "source": "https://developers.raycast.com/api-reference/environment"
+  },
+  {
+    "id": "assets-path",
+    "rule": "When code needs a file from assets on disk: build its path from environment.assetsPath, because the install folder differs per user.",
+    "source": "https://developers.raycast.com/api-reference/environment"
+  },
+  {
+    "id": "is-dev-flag",
+    "rule": "When code must behave differently during development: check environment.isDevelopment, because it is false in the Store build.",
+    "source": "https://developers.raycast.com/api-reference/environment"
+  },
+  {
+    "id": "launch-type-check",
+    "rule": "When a command can run in the background: check environment.launchType, because user and background launches need different behaviour.",
+    "source": "https://developers.raycast.com/api-reference/environment"
+  },
+  {
+    "id": "can-access-ai",
+    "rule": "When a command uses Raycast AI: check environment.canAccess(AI) first, because not every user has AI access.",
+    "source": "https://developers.raycast.com/api-reference/ai"
+  },
+  {
+    "id": "ai-ask-model",
+    "rule": "When a command calls AI.ask: pick a model only if the task needs it, because the default model follows the user's settings.",
+    "source": "https://developers.raycast.com/api-reference/ai"
+  },
+  {
+    "id": "ai-creativity",
+    "rule": "When an AI call must give precise output: set a low creativity, because higher creativity adds variation.",
+    "source": "https://developers.raycast.com/api-reference/ai"
+  },
+  {
+    "id": "tool-input-docs",
+    "rule": "When you write an AI tool: document every input field with a JSDoc comment, because the model reads it to fill the input.",
+    "source": "https://developers.raycast.com/ai/learn-core-concepts-of-ai-extensions"
+  },
+  {
+    "id": "tool-confirmation",
+    "rule": "When an AI tool changes or deletes data: export a confirmation function, because users must approve the action first.",
+    "source": "https://developers.raycast.com/ai/learn-core-concepts-of-ai-extensions"
+  },
+  {
+    "id": "tool-description",
+    "rule": "When you declare an AI tool in the manifest: write a description that says when to use it, because the model picks tools by it.",
+    "source": "https://developers.raycast.com/ai/create-an-ai-extension"
+  },
+  {
+    "id": "tool-small-output",
+    "rule": "When an AI tool returns data: return only the fields the model needs, because large outputs waste context.",
+    "source": "https://developers.raycast.com/ai/follow-best-practices-for-ai-extensions"
+  },
+  {
+    "id": "oauth-pkce",
+    "rule": "When an extension signs users in with OAuth: use the OAuth PKCE client from @raycast/api, because it keeps no client secret in the extension.",
+    "source": "https://developers.raycast.com/api-reference/oauth"
+  },
+  {
+    "id": "oauth-service-utils",
+    "rule": "When a provider is built into @raycast/utils, such as GitHub or Linear: use OAuthService, because it already handles the flow.",
+    "source": "https://developers.raycast.com/utilities/oauth/oauthservice"
+  },
+  {
+    "id": "oauth-refresh-token",
+    "rule": "When an OAuth token expires: refresh it with the stored refresh token, because users should not sign in again each time.",
+    "source": "https://developers.raycast.com/api-reference/oauth"
+  },
+  {
+    "id": "oauth-proxy",
+    "rule": "When a provider does not support PKCE: use the Raycast OAuth proxy, because it keeps the client secret off the device.",
+    "source": "https://developers.raycast.com/api-reference/oauth"
+  },
+  {
+    "id": "get-access-token",
+    "rule": "When code inside withAccessToken needs the token: call getAccessToken, because it returns the token the wrapper prepared.",
+    "source": "https://developers.raycast.com/utilities/oauth/getaccesstoken"
+  },
+  {
+    "id": "menubar-sections",
+    "rule": "When a menu-bar menu has groups: use MenuBarExtra.Section, because sections add separators and titles.",
+    "source": "https://developers.raycast.com/api-reference/menu-bar-commands"
+  },
+  {
+    "id": "menubar-template-icon",
+    "rule": "When a menu-bar command shows an icon: use a monochrome icon that adapts to the theme, because it must match the menu bar in light and dark.",
+    "source": "https://developers.raycast.com/api-reference/menu-bar-commands"
+  },
+  {
+    "id": "menubar-alternate",
+    "rule": "When a menu item has a variant: use the alternate prop, because users reveal it by holding Option.",
+    "source": "https://developers.raycast.com/api-reference/menu-bar-commands"
+  },
+  {
+    "id": "menubar-interval",
+    "rule": "When a menu-bar command shows data that changes: set an interval, because the menu bar only updates when the command runs.",
+    "source": "https://developers.raycast.com/information/lifecycle/background-refresh"
+  },
+  {
+    "id": "update-command-metadata",
+    "rule": "When a no-view command has a live value: show it with updateCommandMetadata, because the subtitle updates in root search.",
+    "source": "https://developers.raycast.com/api-reference/command"
+  },
+  {
+    "id": "launch-command",
+    "rule": "When one command must start another command: use launchCommand, because it passes context and respects the launch type.",
+    "source": "https://developers.raycast.com/api-reference/command"
+  },
+  {
+    "id": "launch-context",
+    "rule": "When a command is opened with data from another command: read it from launchContext, because it carries the passed values.",
+    "source": "https://developers.raycast.com/information/lifecycle"
+  },
+  {
+    "id": "create-deeplink",
+    "rule": "When users want a link that opens a command with arguments: use createDeeplink from @raycast/utils, because it builds a valid Raycast URL.",
+    "source": "https://developers.raycast.com/utilities/functions/createdeeplink"
+  },
+  {
+    "id": "favicon-icon",
+    "rule": "When a list item stands for a website: use getFavicon from @raycast/utils as its icon, because the site's own icon is familiar.",
+    "source": "https://developers.raycast.com/utilities/icons/getfavicon"
+  },
+  {
+    "id": "avatar-icon",
+    "rule": "When a list item stands for a person without a photo: use getAvatarIcon from @raycast/utils, because it draws an initials avatar.",
+    "source": "https://developers.raycast.com/utilities/icons/getavataricon"
+  },
+  {
+    "id": "run-applescript-util",
+    "rule": "When a command runs AppleScript: use runAppleScript from @raycast/utils, because it handles timeouts and the osascript call.",
+    "source": "https://developers.raycast.com/utilities/functions/runapplescript"
+  },
+  {
+    "id": "run-powershell-util",
+    "rule": "When a Windows command runs PowerShell: use runPowerShellScript from @raycast/utils, because it handles the process call for you.",
+    "source": "https://developers.raycast.com/utilities/functions/runpowershellscript"
+  },
+  {
+    "id": "with-cache-util",
+    "rule": "When an expensive async function is called often with the same input: wrap it with withCache from @raycast/utils, because results are reused.",
+    "source": "https://developers.raycast.com/utilities/functions/withcache"
+  },
+  {
+    "id": "frecency-sorting",
+    "rule": "When users pick from the same list often: sort with useFrecencySorting from @raycast/utils, because frequent and recent items rise to the top.",
+    "source": "https://developers.raycast.com/utilities/react-hooks/usefrecencysorting"
+  },
+  {
+    "id": "built-in-icons",
+    "rule": "When an action or item needs a generic symbol: use the built-in Icon set, because those icons match Raycast's style.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/icons-and-images"
+  },
+  {
+    "id": "raycast-colors",
+    "rule": "When you tint icons or tags: use the Color constants, because they adapt to light and dark themes.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/colors"
+  },
+  {
+    "id": "icon-mask-circle",
+    "rule": "When you show a remote avatar image: set mask to Image.Mask.Circle, because round avatars match the Raycast style.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/icons-and-images"
+  },
+  {
+    "id": "icon-fallback",
+    "rule": "When an icon loads from a URL: set a fallback icon, because remote images can fail or load slowly.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/icons-and-images"
+  },
+  {
+    "id": "file-icon",
+    "rule": "When a list item is a local file: use fileIcon with the path, because Raycast shows the file's system icon.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/icons-and-images"
+  },
+  {
+    "id": "window-management-api",
+    "rule": "When a command moves or resizes windows: use the WindowManagement API, because it works with Raycast's own window handling.",
+    "source": "https://developers.raycast.com/api-reference/window-management"
+  },
+  {
+    "id": "open-app-api",
+    "rule": "When a command opens a file or URL in an app: use open from @raycast/api, because it handles the app and path for you.",
+    "source": "https://developers.raycast.com/api-reference/utilities"
+  },
+  {
+    "id": "get-applications",
+    "rule": "When a command needs installed apps: use getApplications, because it returns names, paths and bundle IDs.",
+    "source": "https://developers.raycast.com/api-reference/utilities"
+  },
+  {
+    "id": "trash-api",
+    "rule": "When a command deletes user files: move them with trash from @raycast/api, because users can then restore them.",
+    "source": "https://developers.raycast.com/api-reference/utilities"
+  },
+  {
+    "id": "show-in-finder-api",
+    "rule": "When code must reveal a file after creating it: call showInFinder, because it opens Finder at the file.",
+    "source": "https://developers.raycast.com/api-reference/utilities"
+  },
+  {
+    "id": "browser-extension-api",
+    "rule": "When a command needs the content of the open browser tab: use the BrowserExtension API, because it reads the tab through the Raycast browser extension.",
+    "source": "https://developers.raycast.com/api-reference/browser-extension"
+  },
+  {
+    "id": "file-structure",
+    "rule": "When you lay out an extension: put source in src, images in assets and Store images in metadata, because Raycast and the Store expect that layout.",
+    "source": "https://developers.raycast.com/information/file-structure"
+  },
+  {
+    "id": "command-entry-file",
+    "rule": "When you add a command to the manifest: create a file in src with the same name as the command, because Raycast loads the command from it.",
+    "source": "https://developers.raycast.com/information/file-structure"
+  },
+  {
+    "id": "security-no-secrets-in-code",
+    "rule": "When an extension needs credentials: never hard-code them in the source, because the source of every Store extension is public.",
+    "source": "https://developers.raycast.com/information/security"
+  },
+  {
+    "id": "ai-tool-clear-empty-result",
+    "rule": "When an AI tool returns an empty or failed result: return a clear message to the model, because it can then explain or try another way.",
+    "source": "https://developers.raycast.com/ai/follow-best-practices-for-ai-extensions"
+  },
+  {
+    "id": "ai-evals-format",
+    "rule": "When you write AI evals: give each eval an input and expected tool calls, because the eval runner checks which tools the model used.",
+    "source": "https://developers.raycast.com/ai/write-evals-for-your-ai-extension"
+  },
+  {
+    "id": "keywords-in-manifest",
+    "rule": "When users may search for a command by other words: add keywords to the command in the manifest, because root search matches them.",
+    "source": "https://developers.raycast.com/information/manifest"
+  },
+  {
+    "id": "disabled-by-default",
+    "rule": "When a command is optional for most users: set disabledByDefault, because users can enable it without clutter in root search.",
+    "source": "https://developers.raycast.com/information/manifest"
+  },
+  {
+    "id": "command-description",
+    "rule": "When you declare a command: write a one-sentence description, because the Store and preferences show it.",
+    "source": "https://developers.raycast.com/information/manifest"
+  },
+  {
+    "id": "strict-mode",
+    "rule": "When you set up tsconfig.json: keep strict mode on, because strict checks catch null and type bugs before users hit them.",
+    "source": "https://www.typescriptlang.org/tsconfig#strict"
+  },
+  {
+    "id": "no-explicit-any",
+    "rule": "When you type a value from outside, such as an API response: use unknown or a real type instead of any, because any turns off type checking.",
+    "source": "https://typescript-eslint.io/rules/no-explicit-any"
+  },
+  {
+    "id": "type-api-responses",
+    "rule": "When code reads a JSON API response: declare an interface for the fields it uses, because typed fields catch renamed or missing keys.",
+    "source": "https://www.typescriptlang.org/docs/handbook/2/objects.html"
+  },
+  {
+    "id": "narrow-unknown",
+    "rule": "When a value has type unknown: narrow it with a type guard before use, because unchecked casts hide wrong shapes.",
+    "source": "https://www.typescriptlang.org/docs/handbook/2/narrowing.html"
+  },
+  {
+    "id": "avoid-as-casts",
+    "rule": "When a value does not match the type you want: fix the type or narrow it, not cast with as, because casts silence real mismatches.",
+    "source": "https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#type-assertions"
+  },
+  {
+    "id": "union-literal-types",
+    "rule": "When a value can only be one of a few strings: type it as a union of string literals, because the compiler then rejects typos.",
+    "source": "https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#literal-types"
+  },
+  {
+    "id": "exhaustive-switch",
+    "rule": "When a switch covers a union type: add a never check in the default branch, because a new member then fails to compile.",
+    "source": "https://www.typescriptlang.org/docs/handbook/2/narrowing.html#exhaustiveness-checking"
+  },
+  {
+    "id": "readonly-constants",
+    "rule": "When you define a constant list or map: mark it as const, because literal types and readonly keep it from changing.",
+    "source": "https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-4.html"
+  },
+  {
+    "id": "prefer-type-imports",
+    "rule": "When an import is used only as a type: use import type, because the import is then removed from the bundle.",
+    "source": "https://typescript-eslint.io/rules/consistent-type-imports"
+  },
+  {
+    "id": "optional-chaining",
+    "rule": "When you read a property that may be missing: use optional chaining, because it avoids a crash on undefined.",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Optional_chaining"
+  },
+  {
+    "id": "nullish-coalescing",
+    "rule": "When you give a default for a missing value: use ?? instead of ||, because || also replaces valid values like 0 and empty strings.",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing"
+  },
+  {
+    "id": "const-over-let",
+    "rule": "When a variable is never reassigned: declare it with const, because const shows the value does not change.",
+    "source": "https://eslint.org/docs/latest/rules/prefer-const"
+  },
+  {
+    "id": "no-var",
+    "rule": "When you declare a variable: use const or let, never var, because var has function scope and hoisting surprises.",
+    "source": "https://eslint.org/docs/latest/rules/no-var"
+  },
+  {
+    "id": "strict-equality",
+    "rule": "When you compare values: use === and !==, because loose equality converts types in surprising ways.",
+    "source": "https://eslint.org/docs/latest/rules/eqeqeq"
+  },
+  {
+    "id": "async-await",
+    "rule": "When you write asynchronous code: use async and await instead of long then chains, because the flow is easier to read.",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function"
+  },
+  {
+    "id": "no-floating-promises",
+    "rule": "When you call an async function: await it or handle its rejection, because an unhandled promise fails silently.",
+    "source": "https://typescript-eslint.io/rules/no-floating-promises"
+  },
+  {
+    "id": "parallel-awaits",
+    "rule": "When several independent async calls are needed: run them with Promise.all, because sequential awaits add up the wait time.",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all"
+  },
+  {
+    "id": "no-await-in-loop",
+    "rule": "When a loop awaits independent work on each pass: collect the promises and await them together, because awaiting in the loop runs them one by one.",
+    "source": "https://eslint.org/docs/latest/rules/no-await-in-loop"
+  },
+  {
+    "id": "promisify-callbacks",
+    "rule": "When a Node API offers a promise version: use it, such as fs/promises, because callbacks mix badly with async code.",
+    "source": "https://nodejs.org/api/fs.html#promises-api"
+  },
+  {
+    "id": "no-sync-fs-in-render",
+    "rule": "When code runs during a React render: do not call synchronous file system functions, because they block the UI thread.",
+    "source": "https://nodejs.org/api/fs.html#synchronous-api"
+  },
+  {
+    "id": "execfile-over-exec",
+    "rule": "When you run a shell program with user input: use execFile with an argument array, because exec with a joined string allows command injection.",
+    "source": "https://nodejs.org/api/child_process.html#child_processexecfilefile-args-options-callback"
+  },
+  {
+    "id": "quote-shell-args",
+    "rule": "When you must build a shell command string: escape every user value, because unescaped input can run other commands.",
+    "source": "https://nodejs.org/api/child_process.html#spawning-bat-and-cmd-files-on-windows"
+  },
+  {
+    "id": "path-join",
+    "rule": "When you build file paths: use path.join or path.resolve, because hand-joined strings break on separators and other platforms.",
+    "source": "https://nodejs.org/api/path.html"
+  },
+  {
+    "id": "homedir-not-tilde",
+    "rule": "When a path starts at the home folder: expand it with os.homedir, because Node does not expand the tilde.",
+    "source": "https://nodejs.org/api/os.html#oshomedir"
+  },
+  {
+    "id": "url-search-params",
+    "rule": "When you build a URL with query values: use URL and URLSearchParams, because they encode special characters correctly.",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams"
+  },
+  {
+    "id": "encode-uri-component",
+    "rule": "When you put user text into a URL path: encode it with encodeURIComponent, because spaces and slashes break the URL.",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent"
+  },
+  {
+    "id": "date-libraries",
+    "rule": "When you format dates for display: use Intl.DateTimeFormat or a small date library, because hand-built formats are error-prone.",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DateTimeFormat"
+  },
+  {
+    "id": "intl-number-format",
+    "rule": "When you show numbers, money or units: format them with Intl.NumberFormat, because it adds separators and currency symbols correctly.",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat"
+  },
+  {
+    "id": "store-dates-iso",
+    "rule": "When you persist a date: store it as an ISO 8601 string or timestamp, because Date objects do not survive JSON as dates.",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toISOString"
+  },
+  {
+    "id": "immutable-updates",
+    "rule": "When you change arrays or objects held in React state: create new copies, because mutating them in place skips re-renders.",
+    "source": "https://react.dev/learn/updating-objects-in-state"
+  },
+  {
+    "id": "stable-keys",
+    "rule": "When you render a list of elements: use a stable unique key such as an id, not the array index, because index keys break item identity.",
+    "source": "https://react.dev/learn/rendering-lists#keeping-list-items-in-order-with-key"
+  },
+  {
+    "id": "derive-not-store",
+    "rule": "When a value can be computed from props or state: compute it during render, because duplicated state gets out of sync.",
+    "source": "https://react.dev/learn/choosing-the-state-structure"
+  },
+  {
+    "id": "use-memo-expensive",
+    "rule": "When a render does an expensive calculation: wrap it in useMemo, because it then runs only when its inputs change.",
+    "source": "https://react.dev/reference/react/useMemo"
+  },
+  {
+    "id": "use-callback-props",
+    "rule": "When a callback is passed to a memoized child: wrap it in useCallback, because a new function each render defeats the memo.",
+    "source": "https://react.dev/reference/react/useCallback"
+  },
+  {
+    "id": "small-components",
+    "rule": "When a command component grows long: split it into smaller components, because small components are easier to read and reuse.",
+    "source": "https://react.dev/learn/thinking-in-react"
+  },
+  {
+    "id": "custom-hooks",
+    "rule": "When several components share stateful logic: extract it into a custom hook, because one hook keeps the logic in one place.",
+    "source": "https://react.dev/learn/reusing-logic-with-custom-hooks"
+  },
+  {
+    "id": "hooks-rules",
+    "rule": "When you call React hooks: call them at the top level of a component and never inside conditions, because hook order must not change.",
+    "source": "https://react.dev/reference/rules/rules-of-hooks"
+  },
+  {
+    "id": "pure-render",
+    "rule": "When you write a React component: keep the render function free of side effects, because React may render more than once.",
+    "source": "https://react.dev/reference/rules/components-and-hooks-must-be-pure"
+  },
+  {
+    "id": "no-refs-for-ui-state",
+    "rule": "When a value changes what is shown: keep it in state, not in a ref, because changing a ref does not re-render.",
+    "source": "https://react.dev/reference/react/useRef"
+  },
+  {
+    "id": "conditional-render-zero",
+    "rule": "When you render conditionally with &&: make the left side a boolean, because a 0 would render as text.",
+    "source": "https://react.dev/learn/conditional-rendering"
+  },
+  {
+    "id": "component-pascal-case",
+    "rule": "When you name a React component: use PascalCase, because JSX treats lower-case names as built-in tags.",
+    "source": "https://react.dev/learn/your-first-component"
+  },
+  {
+    "id": "props-interface",
+    "rule": "When a component takes props: declare a props type, because typed props catch missing or wrong values.",
+    "source": "https://react.dev/learn/typescript#typing-component-props"
+  },
+  {
+    "id": "no-default-export-helpers",
+    "rule": "When a module exports helpers: use named exports, because they keep import names consistent and searchable.",
+    "source": "https://basarat.gitbook.io/typescript/main-1/defaultisbad"
+  },
+  {
+    "id": "command-default-export",
+    "rule": "When you write a command file: default-export the command function, because Raycast loads the command from the default export.",
+    "source": "https://developers.raycast.com/information/lifecycle"
+  },
+  {
+    "id": "early-return",
+    "rule": "When a function has guard conditions: return early, because deep nesting is hard to follow.",
+    "source": "https://eslint.org/docs/latest/rules/no-else-return"
+  },
+  {
+    "id": "descriptive-names",
+    "rule": "When you name variables and functions: use full descriptive words, because short cryptic names slow down reviewers.",
+    "source": "https://google.github.io/styleguide/tsguide.html#naming"
+  },
+  {
+    "id": "camel-case-identifiers",
+    "rule": "When you name variables and functions in TypeScript: use camelCase, because it is the common TypeScript style.",
+    "source": "https://google.github.io/styleguide/tsguide.html#identifiers"
+  },
+  {
+    "id": "upper-case-constants",
+    "rule": "When a module-level constant never changes: name it in UPPER_SNAKE_CASE, because readers then see it is a fixed value.",
+    "source": "https://google.github.io/styleguide/tsguide.html#identifiers-constants"
+  },
+  {
+    "id": "magic-numbers",
+    "rule": "When code uses a number with a special meaning: give it a named constant, because a bare number hides its purpose.",
+    "source": "https://typescript-eslint.io/rules/no-magic-numbers/"
+  },
+  {
+    "id": "no-commented-out-code",
+    "rule": "When code is no longer needed: delete it instead of commenting it out, because git keeps the history.",
+    "source": "https://google.github.io/styleguide/tsguide.html#comments-documentation"
+  },
+  {
+    "id": "no-unused-imports",
+    "rule": "When an import is no longer used: remove it, because unused imports add noise and can grow the bundle.",
+    "source": "https://typescript-eslint.io/rules/no-unused-vars"
+  },
+  {
+    "id": "no-dead-branches",
+    "rule": "When a condition can never be true: remove the branch, because dead branches confuse readers.",
+    "source": "https://typescript-eslint.io/rules/no-unnecessary-condition"
+  },
+  {
+    "id": "pin-major-versions",
+    "rule": "When you add a dependency: use a caret range on a stable major version, because it takes fixes without breaking changes.",
+    "source": "https://docs.npmjs.com/about-semantic-versioning"
+  },
+  {
+    "id": "small-dependencies",
+    "rule": "When a dependency adds only one small helper: write the helper instead, because each dependency adds size and risk.",
+    "source": "https://docs.npmjs.com/about-semantic-versioning"
+  },
+  {
+    "id": "no-deprecated-packages",
+    "rule": "When npm warns that a package is deprecated: replace it, because deprecated packages stop getting security fixes.",
+    "source": "https://docs.npmjs.com/cli/v10/commands/npm-deprecate"
+  },
+  {
+    "id": "npm-audit",
+    "rule": "When you add or update dependencies: check npm audit for known vulnerabilities, because the extension runs on users' machines.",
+    "source": "https://docs.npmjs.com/cli/v10/commands/npm-audit"
+  },
+  {
+    "id": "dev-deps-for-tooling",
+    "rule": "When a package is used only for build or lint tooling: put it in devDependencies, because it is not needed at runtime.",
+    "source": "https://docs.npmjs.com/cli/v10/configuring-npm/package-json#devdependencies"
+  },
+  {
+    "id": "https-only",
+    "rule": "When an extension calls a web API: use HTTPS URLs, because plain HTTP exposes tokens and data in transit.",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/Security/Transport_Layer_Security"
+  },
+  {
+    "id": "auth-header-not-url",
+    "rule": "When you send an API token: put it in a request header, not in the URL, because URLs end up in history and server records.",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Authorization"
+  },
+  {
+    "id": "rate-limit-respect",
+    "rule": "When an API returns 429: wait for the Retry-After time before the next call, because ignoring rate limits can get the key blocked.",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429"
+  },
+  {
+    "id": "timezone-aware",
+    "rule": "When code compares or displays dates: account for the user's time zone, because UTC and local dates differ near midnight.",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date"
+  },
+  {
+    "id": "locale-compare-sort",
+    "rule": "When you sort strings shown to users: use localeCompare, because plain comparison sorts accents and case wrongly.",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/localeCompare"
+  },
+  {
+    "id": "array-sort-copy",
+    "rule": "When you sort an array you did not create: sort a copy, because sort changes the array in place.",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/toSorted"
+  },
+  {
+    "id": "no-delete-in-loop",
+    "rule": "When you remove items while you iterate: build a new filtered array, because splicing during iteration skips items.",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/filter"
+  },
+  {
+    "id": "map-for-lookup",
+    "rule": "When code looks up items by key many times: build a Map once, because repeated find calls are slow on long lists.",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map"
+  },
+  {
+    "id": "set-for-dedupe",
+    "rule": "When you remove duplicate values: use a Set, because it is clearer and faster than nested loops.",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set"
+  },
+  {
+    "id": "template-literals",
+    "rule": "When you combine strings with values: use template literals, because they are easier to read than concatenation.",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals"
+  },
+  {
+    "id": "throw-error-objects",
+    "rule": "When code throws: throw an Error instance, not a string, because Error objects keep a stack trace.",
+    "source": "https://eslint.org/docs/latest/rules/no-throw-literal"
+  },
+  {
+    "id": "error-cause",
+    "rule": "When you rethrow an error with more context: pass the original as cause, because the root cause stays visible.",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/cause"
+  },
+  {
+    "id": "debounce-input-work",
+    "rule": "When typing triggers expensive local work: debounce it, because work on every keystroke makes the UI lag.",
+    "source": "https://developer.mozilla.org/en-US/docs/Glossary/Debounce"
+  },
+  {
+    "id": "no-blocking-loops",
+    "rule": "When code processes a large data set: process it in chunks or a worker, because a long loop freezes the command.",
+    "source": "https://nodejs.org/api/worker_threads.html"
+  },
+  {
+    "id": "prettier-defaults",
+    "rule": "When you format code: keep the Prettier config the template ships, because consistent formatting keeps diffs small.",
+    "source": "https://prettier.io/docs/en/configuration.html"
+  },
+  {
+    "id": "readable-regex",
+    "rule": "When a regular expression is complex: give it a named constant and use named groups, because readers can then follow it.",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions/Named_capturing_group"
+  },
+  {
+    "id": "escape-regex-input",
+    "rule": "When you build a regular expression from user text: escape special characters, because input like a dot or bracket changes the match.",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions#escaping"
+  },
+  {
+    "id": "list-item-subtitle",
+    "rule": "When a list item needs secondary text: put it in subtitle, not in the title, because the title stays short and easy to scan.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/list"
+  },
+  {
+    "id": "action-push-target",
+    "rule": "When an action opens a new screen: use Action.Push with a target view, because it pushes onto the Raycast navigation stack.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/actions"
+  },
+  {
+    "id": "controlled-search-text",
+    "rule": "When code must set or clear the search text: pass searchText together with onSearchTextChange, because a controlled search bar stays in sync.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/list"
+  },
+  {
+    "id": "form-initial-values",
+    "rule": "When a form edits an existing item: pre-fill the fields with defaultValue or initialValues, because users then change values instead of retyping.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/form"
+  },
+  {
+    "id": "toggle-quick-look",
+    "rule": "When a list item is a local file: set its quickLook prop and add Action.ToggleQuickLook, because users can then preview it with Quick Look.",
+    "source": "https://developers.raycast.com/api-reference/user-interface/actions"
+  },
+  {
+    "id": "sqlite-read-only",
+    "rule": "When an extension reads another app's SQLite database: open it read-only or query a copy, because writing could corrupt the other app's data.",
+    "source": "https://developers.raycast.com/utilities/functions/executesql"
+  },
+  {
+    "id": "escape-applescript-input",
+    "rule": "When user text goes into an AppleScript string: escape quotes and backslashes, because unescaped input breaks or changes the script.",
+    "source": "https://developer.apple.com/library/archive/documentation/AppleScript/Conceptual/AppleScriptLangGuide/reference/ASLR_classes.html"
+  },
+  {
+    "id": "lookup-object-map",
+    "rule": "When a long switch or if chain maps fixed keys to values: use an object or Map lookup, because a table is shorter and easier to extend.",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map"
+  },
+  {
+    "id": "hoist-pure-helpers",
+    "rule": "When a helper inside a component uses no props or state: move it outside the component, because it is then not re-created on each render.",
+    "source": "https://react.dev/learn/keeping-components-pure"
+  }
+]
