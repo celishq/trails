@@ -215,7 +215,7 @@ fn show(
     }
 }
 
-/// What the card turns through of `remarks`: the values that landed since `started`, else how the trail
+/// What the card may show of `remarks`: the values that landed since `started`, else how the trail
 /// stands.
 fn news(remarks: &[Remark], started: u64) -> Vec<Remark> {
     let fresh: Vec<Remark> = remarks
@@ -229,21 +229,32 @@ fn news(remarks: &[Remark], started: u64) -> Vec<Remark> {
     }
 }
 
-/// The remark of `remarks` the card shows now: the first, the newest, when a newer one came since
-/// `screen` last turned, else the next each `HOLD`.
+/// The remark the card shows now: the one it shows until it held it `HOLD`, or at once when that one
+/// only says how the trail stands, then the oldest of `remarks` it has not shown yet; once none is
+/// left, still the one it shows. It shows each once.
 fn turned(screen: &mut Screen, remarks: &[Remark]) -> Option<Remark> {
-    let newest = remarks.first()?.at;
-    let (index, since, seen) = screen.turning.get_or_insert((0, Instant::now(), newest));
-    if newest > *seen {
-        (*index, *since, *seen) = (0, Instant::now(), newest);
-    } else if since.elapsed() >= HOLD {
-        (*index, *since) = ((*index + 1) % remarks.len(), Instant::now());
+    let standing = screen
+        .remark
+        .as_ref()
+        .is_some_and(|(remark, _)| remark.at == 0);
+    let held = standing || screen.since.is_none_or(|since| since.elapsed() >= HOLD);
+    let next = remarks
+        .iter()
+        .filter(|r| !screen.seen.contains(r))
+        .min_by_key(|r| r.at)
+        .filter(|_| held)
+        .cloned();
+    if let Some(next) = next {
+        screen.seen.push(next.clone());
+        screen.since = Some(Instant::now());
+        return Some(next);
     }
-    remarks.get(*index % remarks.len()).cloned()
+    let shown = screen.remark.as_ref().map(|(remark, _)| remark.clone());
+    shown.or_else(|| remarks.last().cloned())
 }
 
-/// The seconds the card holds a remark before it turns to the next.
-const HOLD: Duration = Duration::from_secs(9);
+/// The seconds the card holds a remark at least before it shows the next new one.
+const HOLD: Duration = Duration::from_secs(7);
 
 /// The card of the remark `screen` shows, `width` wide, and whether it moves: once it changed, the
 /// headline before fades out, then this one fades in while its words type in behind a caret that blinks a
@@ -338,3 +349,6 @@ fn drain(
         };
     }
 }
+
+#[cfg(test)]
+mod tests;

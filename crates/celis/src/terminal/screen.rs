@@ -65,8 +65,8 @@ impl Command {
 /// What a watch shows of its tree: whether in colour, the first line in view, whether the view moves to
 /// the selected line on the next draw, the lines a page holds, the rows on the screen, what the last
 /// key did when it has something to say, when it was first drawn, when it first drew the checks it
-/// draws now, the remark it shows with when it changed to it, the remark it showed before, and which
-/// of the remarks it turns through it shows, since when, and the newest it saw, whether the terminal
+/// draws now, the remark it shows with when it changed to it, the remark it showed before, every
+/// remark it showed and since when it shows the newest of them, whether the terminal
 /// was resized since it last drew, the second it started, and whether it held the scene when it
 /// started.
 #[derive(Default)]
@@ -81,7 +81,8 @@ pub(crate) struct Screen {
     pub checked: Option<std::time::Instant>,
     pub remark: Option<(Remark, Option<std::time::Instant>)>,
     pub former: Option<Remark>,
-    pub turning: Option<(usize, std::time::Instant, u64)>,
+    pub seen: Vec<Remark>,
+    pub since: Option<std::time::Instant>,
     pub resized: bool,
     pub started: Option<u64>,
     pub played: Option<bool>,
