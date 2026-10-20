@@ -4,9 +4,8 @@ crates/target/
 evals/results/
 .celis
 evals/raycast/cache/
-evals/raycast/results/transcripts/
+evals/raycast/results/**/transcripts/
 evals/landing/cache/
 evals/landing/results/transcripts/
 evals/landing/checks/node_modules/
-evals/raycast/results
 __pycache__
