@@ -29,8 +29,11 @@ headers.
 
 Send in one message each call that does not wait on the output of another.
 
-1. Run `celis grep " live {me} "`, and with it the first search of step 2. Then, with the name that its
-   `project` line gives, `celis grep "\[<name>\] rule [0-9a-f]* live {project} "`. Keep every line of both.
+1. Run `celis grep -c " live {me} "`, and with it the first search of step 2. Then, with the name that
+   its `project` line gives, `celis grep -c "\[<name>\] rule [0-9a-f]* live {project} "`. Read each of
+   these two searches in pages of 50 lines, all pages in one message, up to 3 lines past its count:
+   `celis grep "<pattern>" | sed -n '1,50p'`, then `'51,100p'`, and so on. A larger page is cut to a
+   short preview that you cannot use. Keep every line of both.
 2. Search for the ask:
    `celis grep -i -E " (trail|step|proof|changed|dropped|rule) [0-9a-f]{8} .*(<word>|<word>|...)"`, with the
    verb and the words of what the ask wants done, their synonyms in the language of the lines, and the
