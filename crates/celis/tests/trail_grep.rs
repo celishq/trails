@@ -471,7 +471,7 @@ fn the_view_and_the_past_agents_first_searches_match_the_fixture() {
         .next()
         .unwrap();
     let mut kept = Vec::new();
-    for search in step_one.split("`celis grep \"").skip(1) {
+    for search in step_one.split("`celis grep -c \"").skip(1) {
         let pattern = search
             .split("\"`")
             .next()
