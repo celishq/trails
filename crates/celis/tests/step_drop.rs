@@ -3,7 +3,7 @@
 mod support;
 
 use support::{
-    account, add, cli, done_note, err, finish, live_ids, now, objects, out, refusal, step_note,
+    account, add, cli, err, finish, live_ids, mark_note, now, objects, out, refusal, step_note,
     Repo, DAY,
 };
 
@@ -155,7 +155,14 @@ fn a_step_that_replaces_another_drops_it() {
 fn drop_takes_a_done_trail_once() {
     let repo = Repo::new();
     let note = step_note(&repo, &account(), None, "the trail", now() - DAY);
-    done_note(&repo, &account(), &note, now() - DAY + 1);
+    mark_note(
+        &repo,
+        &account(),
+        "done",
+        &note.id,
+        "proof",
+        now() - DAY + 1,
+    );
     let trail = note.id;
     let o = cli(&repo, &["step", "drop", &trail[..8], "--", "stale"]);
     assert!(o.status.success(), "{}", err(&o));

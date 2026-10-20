@@ -3,7 +3,7 @@
 mod support;
 
 use support::{
-    account, add, added, cli, drop_note, err, finish, links, now, objects, out, refusal, step, Repo,
+    account, add, added, cli, err, finish, links, mark_note, now, objects, out, refusal, step, Repo,
 };
 
 /// The ids the step `id` of `trail` uses.
@@ -138,7 +138,8 @@ fn project_writes_into_a_project_the_store_has() {
 }
 
 /// `--project skill:<name>` writes a step and a rule of the project `skill:<name>` from a repo, and
-/// refuses an id that no record of the store has (`spec/02-cli.md`, "Commands"; `spec/07-names.md`, "Skill projects").
+/// refuses an id that no record of the store has (`spec/02-cli.md`, "Commands"; `spec/07-names.md`,
+/// "Skill projects").
 #[test]
 fn project_writes_into_a_skill_project() {
     let repo = Repo::new();
@@ -240,7 +241,14 @@ fn a_dropped_trail_keeps_its_state_and_frees_its_name() {
     let old = add(&repo, &["--", "Review a pull request"]);
     finish(&repo, &old[..8]);
     name(&repo, &old, "review");
-    drop_note(&repo, &account(), &old, now() + 1);
+    mark_note(
+        &repo,
+        &account(),
+        "drop",
+        &old,
+        "no longer holds",
+        now() + 1,
+    );
     assert_eq!(out(&cli(&repo, &["names"])), "");
     let state = &objects(&repo, &["tree", &old[..8]])[0]["trail"]["state"];
     assert_eq!(state, "done");

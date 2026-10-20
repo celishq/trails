@@ -147,7 +147,8 @@ pub(crate) struct Index<'a> {
 }
 
 /// One step: its record, its text with its edits, its links, the steps that replace it, how its marks
-/// left it, the drop that counts on it, and the record of the first name it holds; of its tree, the newest record, whether a step works, and whether a step under it is open.
+/// left it, the drop that counts on it, and the record of the first name it holds; of its tree, the
+/// newest record, whether a step works, and whether a step under it is open.
 pub(crate) struct Entry<'a> {
     pub(crate) note: &'a Note,
     pub(crate) step: StepRecord,

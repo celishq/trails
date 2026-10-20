@@ -3,7 +3,7 @@
 mod support;
 
 use celis_nostr::{Account, Note};
-use support::{account, cairn, drop_note, live_ids, now, out, put, rating, stored_rule, Repo, DAY};
+use support::{account, cairn, live_ids, mark_note, now, out, put, rating, stored_rule, Repo, DAY};
 
 fn short(id: &str) -> String {
     id[..8].to_string()
@@ -106,7 +106,14 @@ fn a_rule_is_live_until_a_drop_names_it() {
         "dropped",
         now() - 2 * DAY,
     );
-    drop_note(&repo, &account(), &dropped.id, now() - DAY);
+    mark_note(
+        &repo,
+        &account(),
+        "drop",
+        &dropped.id,
+        "no longer holds",
+        now() - DAY,
+    );
     assert_eq!(live_ids(&repo, &repo.path(), "repo"), [short(&kept.id)]);
     let o = repo.run(&repo.path(), &["grep", &short(&dropped.id)], &[], "");
     let text = out(&o);
