@@ -238,10 +238,6 @@ lines   <id8> [<project name>] <its title> · <yyyy-mm-dd>        each trail of 
           <kind> <id8> <fields> <text>                            each other line of the trail
         - rules of no trail
           [<project name>] rule <id8> <fields> <text>             each line with no trail
-cut     celis: <n> more lines in <n> trails match; narrow the search, or search one trail with celis grep " <id> \["
-        <id8> [<project name>] <its title, cut at 80> · <n> <kind>s, …   each trail cut
-        - rules of no trail · <n> rules                          the lines with no trail, when cut
-        … <n> more trails
 end     project [<project name>]
 ```
 
@@ -258,7 +254,7 @@ end     project [<project name>]
   line with no trail under `- rules of no trail`. A matched line that is no line of the view MUST NOT
   print. When no matched line is a line of the view, as with `-c` or `-l`, it MUST print what `grep`
   prints, and nothing else.
-- When the output is too long, `grep` MUST cut it at the end of a line, then index the trails it cut.
+- `grep` MUST print every matched line that is a line of the view, however long the output.
 - `grep` MUST end with the `project` line of the working folder.
 - When `grep` exits 1, `grep` MUST print `No line matches.` and exit 0. When it exits 2, it MUST exit 2.
 

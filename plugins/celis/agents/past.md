@@ -23,10 +23,9 @@ rule that replaced it holds.
 
 celis prints the lines it found under the header of their trail, `<id> [<project>] <title> · <day>`,
 the trails with the most lines first, each line two spaces in, without its day, trail and project. The
-lines of no trail print under `- rules of no trail`. Then `project [<name>]` names this project. When
-the output is too long, celis cuts it and gives each trail it cut, with how many lines of each kind it
-holds. Put every pattern in the one `celis grep` call, with `-e` or `-E`: a pipe to another `grep` drops
-the headers.
+lines of no trail print under `- rules of no trail`. Then `project [<name>]` names this project. Put
+every pattern in the one `celis grep` call, with `-e` or `-E`: a pipe to another `grep` drops the
+headers.
 
 Send in one message each call that does not wait on the output of another.
 

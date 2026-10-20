@@ -33,13 +33,4 @@ impl Header {
             self.id, self.project, self.title, self.day
         )
     }
-
-    /// `<id, first 8> [<project name>] <title>`, the title cut at `chars` characters.
-    pub fn short(&self, chars: usize) -> String {
-        let title = match self.title.char_indices().nth(chars) {
-            Some((end, _)) => format!("{}…", &self.title[..end]),
-            None => self.title.clone(),
-        };
-        format!("{} [{}] {title}", self.id, self.project)
-    }
 }

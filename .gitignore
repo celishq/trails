@@ -5,6 +5,7 @@ evals/results/
 .celis
 evals/raycast/cache/
 evals/raycast/results/**/transcripts/
+evals/drift/results/**/transcripts/
 evals/landing/cache/
 evals/landing/results/transcripts/
 evals/landing/checks/node_modules/
