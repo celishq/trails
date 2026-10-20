@@ -26,7 +26,14 @@ fn a_trails_state_comes_from_its_tree_and_ignores_steers() {
     let helped = add(&repo, &["--", "helped"]);
     let part = add(&repo, &["--under", &helped[..8], "--", "part two"]);
     let deeper = add(&repo, &["--under", &part[..8], "--", "deeper"]);
-    support::steer(&repo, &deeper, "Use a token.");
+    support::mark_note(
+        &repo,
+        &support::account(),
+        "steer",
+        &deeper,
+        "Use a token.",
+        support::now(),
+    );
     finish(&repo, &deeper[..8]);
     finish(&repo, &part[..8]);
     finish(&repo, &helped[..8]);
@@ -66,12 +73,12 @@ fn a_trail_with_no_open_step_under_it_is_reached_at_once() {
 /// not open.
 #[test]
 fn a_trail_ends_thirty_minutes_after_its_newest_record() {
-    use support::{account, done_note, now, step_note};
+    use support::{account, mark_note, now, step_note};
     let repo = Repo::new();
     let old = now() - 31 * 60;
     let finished = step_note(&repo, &account(), None, "finished", old);
     let part = step_note(&repo, &account(), Some(&finished), "part", old);
-    done_note(&repo, &account(), &part, old);
+    mark_note(&repo, &account(), "done", &part.id, "proof", old);
     let left = step_note(&repo, &account(), None, "left", old);
     let open = step_note(&repo, &account(), Some(&left), "open part", old);
     assert_eq!(state(&repo, &finished.id), "done");

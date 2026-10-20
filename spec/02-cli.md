@@ -31,7 +31,7 @@ celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>].
 celis step start <id>                                 take up a step, and see its rules
 celis step done <id> [--changed <text>] [--as-planned] [--pitfall <text>] -- <proof>
                                                        close a step with its proof
-celis step drop <id> -- <reason>                      close a step whose work is no longer wanted
+celis step drop <id> -- <reason>                      end a step, a done trail or a rule no longer wanted
 celis step edit <id> [--at <place>]... [--check <command>] [-- <text>]
                                                        give a step a new title, places or check
 celis prompt                                          a person's prompt, from a hook
@@ -54,8 +54,9 @@ decision  json  {"id", "created_at", "project", "scope", "replaces", "content"}
 - A flag no command takes is a usage error.
 - `decide` MUST write a rule of the working folder's project (CIP-05), with `--scope` and
   `--replaces` as its tags, and no `scope` tag for `project`.
-- `--project` on `decide` and `step add` MUST write the records of the project `skill:<name>` it names
-  (CIP-07, "Skill projects") in place of the working folder's, and refuse any other id as a usage error.
+- `--project` on `decide` and `step add` MUST write the records of the project it names in place of the
+  working folder's: `skill:<name>` (CIP-07, "Skill projects"), or a project id that a record of the store
+  has, with that record's project name. It MUST refuse any other id as a usage error.
 - `decide` MUST refuse empty text, and a scope that is not `me`, `project`, `trail:<id>` or `at:<place>`,
   as a usage error; a `trail:<id>` that no open trail of the project has, with `no-trail`; and a
   `--replaces` that no live rule of the project, and no live rule of a named trail, has, with
@@ -139,8 +140,11 @@ step  json  {"id", "created_at", "project", "links": [{"to", "kind": "under | re
   with `closed`; a `--replaces` of a trail with no first ask as a usage error; a `--uses` that no live
   rule and no step has, with `no-step`; and a `--uses` of a step of its own trail, or that starts both
   a rule's and a step's id, as a usage error.
-- `start`, `done` and `drop` MUST refuse a closed step, with `closed`. `start` of a working step MUST
-  write nothing and print the id of its first `start`.
+- `start` and `done` MUST refuse a closed step, with `closed`. `start` of a working step MUST write
+  nothing and print the id of its first `start`.
+- `drop` MUST take the id of a step or a rule. It MUST refuse a dropped step, a done step that is not a
+  trail, a trail dropped after done, and a rule that is not live, with `closed`; and an id that starts
+  both a rule's and a step's id as a usage error.
 - `done` MUST take one of `--changed <text>` and `--as-planned`, and a proof, else refuse as a usage
   error. It MUST refuse a step with an open step under it, with `open-steps`.
 - `done` MUST run the step's `check` in the project's top folder, and refuse with `check-failed` when it
@@ -226,9 +230,9 @@ the trails with it.
 
 ```
 view    <yyyy-mm-dd> <trail id8 | -> [<project name>] <kind> <id8> <fields> <text>
-          trail | step   <open | working | done | dropped | expired>[ revised-by <id>,…][ at:<place>]…
-          rule           <live | replaced-by <id>> {<me | project | trail:<id8> | at:<place>>}
-          proof | changed | dropped                              the step's id, no fields
+          trail | step   <open | working | done | done-dropped | dropped | expired>[ revised-by <id>,…][ at:<place>]…
+          rule           <live | replaced-by <id> | dropped> {<me | project | trail:<id8> | at:<place>>}
+          proof | changed | dropped                              the step's or rule's id, no fields
 lines   <id8> [<project name>] <its title> · <yyyy-mm-dd>        each trail of the lines
           trail <id8> <fields>                                    the trail's own line
           <kind> <id8> <fields> <text>                            each other line of the trail

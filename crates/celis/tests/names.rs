@@ -2,7 +2,9 @@
 
 mod support;
 
-use support::{add, added, cli, err, finish, links, objects, out, refusal, step, Repo};
+use support::{
+    account, add, added, cli, err, finish, links, mark_note, now, objects, out, refusal, step, Repo,
+};
 
 /// The ids the step `id` of `trail` uses.
 fn uses(repo: &Repo, trail: &str, id: &str) -> Vec<String> {
@@ -108,8 +110,36 @@ fn a_name_wins_over_an_id_that_starts_with_it() {
     assert_eq!(uses(&repo, &other, &id), [named]);
 }
 
+/// `--project` writes a rule and a step of another project that a record of the store has, with that
+/// record's project name (`spec/02-cli.md`, "Commands").
+#[test]
+fn project_writes_into_a_project_the_store_has() {
+    let repo = Repo::new();
+    let shop = repo.other("shop");
+    let o = repo.run(&shop, &["step", "add", "--", "Fix the prices"], &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+    let first = std::process::Command::new("git")
+        .args(["rev-list", "--max-parents=0", "HEAD"])
+        .current_dir(&shop)
+        .output()
+        .unwrap();
+    let id = String::from_utf8_lossy(&first.stdout).trim().to_string();
+    let text = "When you change prices: keep them in cents, because floats lose a cent.";
+    let o = cli(&repo, &["decide", "--project", &id, "--", text]);
+    assert!(o.status.success(), "{}", err(&o));
+    let grep = out(&cli(&repo, &["grep", "keep them in cents"]));
+    assert!(grep.contains("[shop] rule "), "{grep}");
+    let trail = add(
+        &repo,
+        &["--project", &id, "--new", "--", "Check the prices"],
+    );
+    let tree = objects(&repo, &["tree", &trail[..8]]);
+    assert_eq!(tree[0]["trail"]["project"], id.as_str(), "{tree:?}");
+}
+
 /// `--project skill:<name>` writes a step and a rule of the project `skill:<name>` from a repo, and
-/// refuses any other id (`spec/02-cli.md`, "Commands"; `spec/07-names.md`, "Skill projects").
+/// refuses an id that no record of the store has (`spec/02-cli.md`, "Commands"; `spec/07-names.md`,
+/// "Skill projects").
 #[test]
 fn project_writes_into_a_skill_project() {
     let repo = Repo::new();
@@ -200,5 +230,38 @@ fn names_lists_the_named_trails_most_used_first() {
         &cli(&repo, &["names", "--json", "--limit", "x"]),
         2,
         "usage",
+    );
+}
+
+/// A drop of a done trail keeps it done and frees its name for another trail (`spec/03-steps.md`,
+/// "Dropping"; `spec/07-names.md`, "Names").
+#[test]
+fn a_dropped_trail_keeps_its_state_and_frees_its_name() {
+    let repo = Repo::new();
+    let old = add(&repo, &["--", "Review a pull request"]);
+    finish(&repo, &old[..8]);
+    name(&repo, &old, "review");
+    mark_note(
+        &repo,
+        &account(),
+        "drop",
+        &old,
+        "no longer holds",
+        now() + 1,
+    );
+    assert_eq!(out(&cli(&repo, &["names"])), "");
+    let state = &objects(&repo, &["tree", &old[..8]])[0]["trail"]["state"];
+    assert_eq!(state, "done");
+    let grep = out(&cli(&repo, &["grep", &old[..8]]));
+    assert!(
+        grep.contains(&format!("trail {} done-dropped", &old[..8])),
+        "{grep}"
+    );
+    let new = add(&repo, &["--new", "--", "Review a design"]);
+    name(&repo, &new, "review");
+    let lines = out(&cli(&repo, &["names"]));
+    assert_eq!(
+        lines.trim(),
+        format!("review {} Review a design", &new[..8])
     );
 }

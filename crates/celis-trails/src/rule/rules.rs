@@ -1,6 +1,6 @@
 //! The rules of a store.
 
-use crate::{Place, Refusal, Rule, RuleEntry, Scope, Step, Steps, Used};
+use crate::{Mark, Place, Refusal, Rule, RuleEnd, RuleEntry, Scope, Step, Steps, Used};
 use celis_nostr::Note;
 use std::collections::{HashMap, HashSet};
 
@@ -29,6 +29,7 @@ impl<'a> Rules<'a> {
             .filter(|(_, overrides)| overrides.is_none())
             .filter_map(|((n, d), _)| Some((&**d.replaces.as_ref()?, *n)))
             .collect();
+        let drops = Mark::drops(records);
         let mut every: Vec<RuleEntry<'a>> = read
             .iter()
             .zip(overrides)
@@ -37,7 +38,12 @@ impl<'a> Rules<'a> {
                 RuleEntry {
                     note,
                     rule: rule.clone(),
-                    by: by.get(note.id.as_str()).copied().or(ended),
+                    end: by
+                        .get(note.id.as_str())
+                        .copied()
+                        .or(ended)
+                        .map(RuleEnd::Replaced)
+                        .or(drops.get(&note.id).map(|d| RuleEnd::Dropped(d))),
                     overrides,
                 }
             })

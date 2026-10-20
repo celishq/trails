@@ -131,17 +131,22 @@ impl Command {
         Project::at(&self.folder)
     }
 
-    /// The project `--project` names, `skill:<name>`, else the project of the working folder; any other
-    /// id is a usage error.
+    /// The project `--project` names, `skill:<name>` or a project of the store with the name of its
+    /// newest record, else the project of the working folder; any other id is a usage error.
     fn project_of(&self, args: &Args) -> Result<Project, Failure> {
         let project = self.project();
         let Some(id) = &args.project else {
             return Ok(project);
         };
-        let name = id.strip_prefix("skill:").and_then(Name::parse);
-        let name =
-            name.ok_or_else(|| Failure::usage(format!("--project takes skill:<name>, not {id}")))?;
-        Ok(project.skill(&name))
+        if let Some(name) = id.strip_prefix("skill:").and_then(Name::parse) {
+            return Ok(project.skill(&name));
+        }
+        let anchor = self.trails()?.anchor(id).ok_or_else(|| {
+            Failure::usage(format!(
+                "--project takes skill:<name> or a project of the store, not {id}"
+            ))
+        })?;
+        Ok(project.with(anchor))
     }
 
     /// Whether a watch prints in colour: unless `NO_COLOR` is set.

@@ -29,7 +29,7 @@ impl Command {
             scope => scope,
         };
         let rule = Rule {
-            anchor: project.anchor(),
+            anchor: project.anchor.clone(),
             scope,
             replaces: None,
             content,

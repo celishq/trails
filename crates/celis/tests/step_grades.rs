@@ -5,7 +5,7 @@ mod support;
 use celis_nostr::Note;
 use serde_json::Value;
 use std::process::Output;
-use support::{account, done_note, err, now, out, put, refusal, step_note, Repo};
+use support::{account, err, mark_note, now, out, put, refusal, step_note, Repo};
 
 fn run(repo: &Repo, args: &[&str]) -> Output {
     repo.run(&repo.path(), args, &[], "")
@@ -138,9 +138,9 @@ fn took_counts_from_the_first_start_else_from_the_step() {
         &repo,
         &Note::write(&account(), 1985u16, at + 3_000, tags, "").unwrap(),
     );
-    done_note(&repo, &account(), &started, at + 3_090);
+    mark_note(&repo, &account(), "done", &started.id, "proof", at + 3_090);
     let unstarted = step_note(&repo, &account(), Some(&trail), "unstarted", at);
-    done_note(&repo, &account(), &unstarted, at + 90);
+    mark_note(&repo, &account(), "done", &unstarted.id, "proof", at + 90);
     let o = run(&repo, &["tree", &trail.id[..8], "--full"]);
     assert!(o.status.success(), "{}", err(&o));
     let text = out(&o);

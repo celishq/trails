@@ -28,7 +28,7 @@ impl Command {
             return Ok(());
         }
         match Found::of(&found, &view) {
-            Some(lines) => super::put(out, &lines.text(&self.project().name)),
+            Some(lines) => super::put(out, &lines.text(&self.project().anchor.name)),
             None => super::put(out, &found),
         }
     }

@@ -275,7 +275,7 @@ pub const VERBS: &[Verb] = &[
         args: &[
             ("--scope <scope>", "at:<place>, trail:<id>, project, or me (default: project)"),
             ("--replaces <id>", "The rule this one replaces"),
-            ("--project <id>", "skill:<name>, for a trail from a skill file"),
+            ("--project <id>", "skill:<name>, or the id of a project in the store"),
             ("<text>", "When it applies, what to do, and why"),
         ],
         examples: &[
@@ -362,7 +362,7 @@ pub const VERBS: &[Verb] = &[
             ("--check <command>", "A command that proves the work"),
             ("--new", "Start a new trail, not a step of the session's trail"),
             ("--session <id>", "The session, when the hook names it"),
-            ("--project <id>", "skill:<name>, for a trail from a skill file"),
+            ("--project <id>", "skill:<name>, or the id of a project in the store"),
             ("<text>", "What the person wants done, then its expect: line"),
         ],
         examples: &[
@@ -397,9 +397,9 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "step drop",
         usage: &["celis step drop <id> -- <reason>"],
-        summary: "Drop a step you no longer need, and each open step under it.",
+        summary: "Drop a step, a done trail or a rule you no longer need, and each open step under it.",
         args: &[
-            ("<id>", "A step id, or its first 4 or more characters"),
+            ("<id>", "A step, trail or rule id, or its first 4 or more characters"),
             ("<reason>", "Why you no longer need it"),
         ],
         examples: &["celis step drop 4c1d22e0 -- \"The person chose the shared table.\""],

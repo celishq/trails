@@ -3,7 +3,7 @@
 mod support;
 
 use celis_nostr::{Account, Note};
-use support::{account, cairn, live_ids, now, put, rating, stored_rule, Repo, DAY};
+use support::{account, cairn, live_ids, mark_note, now, out, put, rating, stored_rule, Repo, DAY};
 
 fn short(id: &str) -> String {
     id[..8].to_string()
@@ -82,6 +82,45 @@ fn a_rule_is_live_until_another_rule_replaces_it() {
         live_ids(&repo, &repo.path(), "repo"),
         [short(&new.id), short(&gone.id)]
     );
+}
+
+/// A rule is live until a drop names it (`spec/05-rules.md`, "Rules").
+#[test]
+fn a_rule_is_live_until_a_drop_names_it() {
+    let repo = Repo::plain();
+    let id = repo.project_id();
+    let project = (id.as_str(), "repo");
+    let kept = stored_rule(
+        &repo,
+        project,
+        &account(),
+        (None, None),
+        "kept",
+        now() - 3 * DAY,
+    );
+    let dropped = stored_rule(
+        &repo,
+        project,
+        &account(),
+        (None, None),
+        "dropped",
+        now() - 2 * DAY,
+    );
+    mark_note(
+        &repo,
+        &account(),
+        "drop",
+        &dropped.id,
+        "no longer holds",
+        now() - DAY,
+    );
+    assert_eq!(live_ids(&repo, &repo.path(), "repo"), [short(&kept.id)]);
+    let o = repo.run(&repo.path(), &["grep", &short(&dropped.id)], &[], "");
+    let text = out(&o);
+    let rule = format!("rule {} dropped {{project}} dropped", short(&dropped.id));
+    assert!(text.contains(&rule), "{text}");
+    let reason = format!("dropped {} no longer holds", short(&dropped.id));
+    assert!(text.contains(&reason), "{text}");
 }
 
 /// A reader ignores cairns, ratings, outcomes, source records and splits a store holds from before

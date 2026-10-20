@@ -95,10 +95,13 @@ dropped   a `drop` names it
 - A step that `replaces` an open step MUST go under that step's `under` when it names none. Its writer
   MUST then drop the old step and its open steps with `replaced by <new id, first 8>`.
 - A step MUST NOT replace a trail or a dropped step.
+- A writer MAY drop a done trail, and MUST NOT drop another done step.
 
 **Readers**
 
 - A reader MUST ignore a drop with no content.
+- A drop of a done trail MUST keep it done. The trail is then **dropped after done**: it holds no name
+  (CIP-07). Its rules stay live.
 
 ## Editing
 
