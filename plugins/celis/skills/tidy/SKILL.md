@@ -1,13 +1,13 @@
 ---
-name: cleanup
-description: Cleans up the celis trails. Drops stale trails and rules, merges rules that say the same thing, settles rules that conflict, and turns work done many times into named trails. Use when the person runs /celis:cleanup, or asks to clean up or prune their trails or rules.
+name: tidy
+description: Tidies the celis trails. Drops stale trails and rules, merges rules that say the same thing, settles rules that conflict, and turns work done many times into named trails. Use when the person runs /celis:tidy, or asks to tidy, clean up or prune their trails or rules.
 ---
 
-You clean up the trails in four parts, in this order: stale, merge, conflicts, templates. Write nothing
+You tidy the trails in four parts, in this order: stale, merge, conflicts, templates. Write nothing
 before the person says yes.
 
 1. Ask the person what to clean: this project, this project and the `me` rules, or all projects.
-2. Add the cleanup as one ask, as the card says, and one step under it for each part. Take the parts one
+2. Add the tidy as one ask, as the card says, and one step under it for each part. Take the parts one
    at a time.
 3. For each change, show the person the records it touches, with their ids, and ask: yes, no, or yes to
    all in this part. Write a change only after a yes.

@@ -41,10 +41,10 @@ To write a named trail `<name>` that work in every project can use:
 4. `celis step done <ask id> --as-planned -- "<what it was made from>"`, then
    `celis name <trail id> <name>`.
 
-## Cleanup
+## Tidy
 
 When the past agent brings rules that say the same thing or say to do different things, or many stale
-trails, tell the person that `/celis:cleanup` cleans them up.
+trails, tell the person that `/celis:tidy` tidies them.
 
 ## Subagents and other sessions
 
