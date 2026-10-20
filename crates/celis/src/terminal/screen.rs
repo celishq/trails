@@ -151,7 +151,7 @@ impl Screen {
 
     /// The `body` rows of `lines` in view from `top`: a first row for the lines above it and a last
     /// row for the lines below it, when there are any; the `picked` line in view when the selection
-    /// moved.
+    /// moved, from the first line when it fits there.
     fn window(&mut self, lines: &[Styled], body: usize, picked: Option<usize>) -> Vec<Styled> {
         let len = lines.len();
         let fit = |top: usize| {
@@ -161,7 +161,9 @@ impl Screen {
         };
         self.top = self.top.min(len - (body - 1));
         if let (true, Some(picked)) = (std::mem::take(&mut self.follow), picked) {
-            if picked < self.top {
+            if picked < fit(0) {
+                self.top = 0;
+            } else if picked < self.top {
                 self.top = picked;
             }
             while picked >= self.top + fit(self.top) {

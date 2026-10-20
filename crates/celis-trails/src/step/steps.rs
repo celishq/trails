@@ -1,8 +1,9 @@
 //! The steps of a store, as they stand at one moment.
 
-use crate::{Mark, Refusal, Rule, Step, StepRecord};
+use crate::{Mark, Name, NamedTrail, Refusal, Rule, Step, StepRecord};
 use celis_nostr::Note;
 use std::cell::Cell;
+use std::collections::hash_map::Entry::Vacant;
 use std::collections::{HashMap, HashSet};
 
 /// The step records and marks of a store at the time `now`: which steps are open, how they nest, and how
@@ -86,6 +87,41 @@ impl<'a> Steps<'a> {
         roots.filter_map(|n| self.get(&n.id)).collect()
     }
 
+    /// The trail that holds the name `name`.
+    pub fn named(&'a self, name: &Name) -> Option<NamedTrail<'a>> {
+        let (name, record) = self.index.names.get_key_value(name)?;
+        let trail = self.get(record.tag("e")?)?;
+        Some(NamedTrail {
+            name,
+            trail,
+            record,
+        })
+    }
+
+    /// `step` with the name it holds first; `None` when it holds none.
+    pub(crate) fn named_of(&'a self, step: Step<'a>) -> Option<NamedTrail<'a>> {
+        let record = self.index.entries.get(step.id())?.name?;
+        let (name, _) = self
+            .index
+            .names
+            .get_key_value(&Name::parse(&record.content)?)?;
+        Some(NamedTrail {
+            name,
+            trail: step,
+            record,
+        })
+    }
+
+    /// Each named trail, by name.
+    pub fn names(&'a self) -> Vec<NamedTrail<'a>> {
+        let mut names: Vec<&Name> = self.index.names.keys().collect();
+        names.sort_by_key(|name| name.as_str());
+        names
+            .into_iter()
+            .filter_map(|name| self.named(name))
+            .collect()
+    }
+
     /// The open trail of the session `session` in the project `project`: the trail of its newest step,
     /// when it is not done or dropped.
     pub fn session(&'a self, project: &str, session: &str) -> Option<Step<'a>> {
@@ -107,10 +143,12 @@ pub(crate) struct Index<'a> {
     roots: Vec<&'a Note>,
     entries: HashMap<&'a str, Entry<'a>>,
     rules: HashSet<&'a str>,
+    names: HashMap<Name, &'a Note>,
 }
 
-/// One step: its record, its text with its edits, its links, the steps that replace it, and how its marks
-/// left it; of its tree, the newest record, whether a step works, and whether a step under it is open.
+/// One step: its record, its text with its edits, its links, the steps that replace it, how its marks
+/// left it, the drop that counts on it, and the record of the first name it holds; of its tree, the
+/// newest record, whether a step works, and whether a step under it is open.
 pub(crate) struct Entry<'a> {
     pub(crate) note: &'a Note,
     pub(crate) step: StepRecord,
@@ -118,6 +156,8 @@ pub(crate) struct Entry<'a> {
     pub(crate) replaced: Vec<&'a Note>,
     pub(crate) start: Option<&'a Note>,
     pub(crate) close: Option<(&'a Note, Close)>,
+    pub(crate) drop: Option<&'a Note>,
+    pub(crate) name: Option<&'a Note>,
     pub(crate) touched: u64,
     pub(crate) newest: u64,
     pub(crate) busy: bool,
@@ -150,6 +190,8 @@ impl<'a> Index<'a> {
                         replaced: Vec::new(),
                         start: None,
                         close: None,
+                        drop: None,
+                        name: None,
                         touched: note.created_at,
                         newest: 0,
                         busy: false,
@@ -168,6 +210,7 @@ impl<'a> Index<'a> {
                 old.replaced.push(note);
             }
         }
+        let mut named = Vec::new();
         for &note in &sorted {
             let Some((id, mark)) = Mark::read(note) else {
                 continue;
@@ -175,8 +218,21 @@ impl<'a> Index<'a> {
             let Some(entry) = entries.get_mut(&*id) else {
                 continue;
             };
+            if let Mark::Name { name } = &mark {
+                named.extend(Name::parse(name).map(|name| (name, id.clone(), note)));
+            }
             entry.touched = entry.touched.max(note.created_at);
             entry.mark(note, mark);
+        }
+        let mut names = HashMap::new();
+        for (name, id, note) in named {
+            let Some(entry) = entries.get_mut(&*id) else {
+                continue;
+            };
+            if let (None, Vacant(free)) = (entry.drop, names.entry(name)) {
+                free.insert(note);
+                entry.name.get_or_insert(note);
+            }
         }
         sum(&mut entries);
         let roots = all.iter().copied();
@@ -188,6 +244,7 @@ impl<'a> Index<'a> {
             all,
             entries,
             rules,
+            names,
         }
     }
 }
@@ -233,11 +290,15 @@ impl<'a> Entry<'a> {
             Mark::Start => {
                 self.start.get_or_insert(note);
             }
-            Mark::Done { proof, .. } if !proof.trim().is_empty() => {
+            Mark::Done { .. } => {
                 self.close.get_or_insert((note, Close::Done));
             }
-            Mark::Drop { reason } if !reason.trim().is_empty() => {
-                self.close.get_or_insert((note, Close::Dropped));
+            Mark::Drop { .. } if self.close.is_none() => {
+                self.close = Some((note, Close::Dropped));
+                self.drop = Some(note);
+            }
+            Mark::Drop { .. } if self.step.under.is_none() => {
+                self.drop.get_or_insert(note);
             }
             Mark::Edit {
                 text,

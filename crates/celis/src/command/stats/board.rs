@@ -1,7 +1,7 @@
 //! `celis stats` on a terminal: its cards, an opened card, or the route of a step, drawn again each
 //! time a record lands in the store or a linked folder.
 
-use super::sheet::{sheets, Sheet, CARDS};
+use super::card::{cards, Card, CARDS};
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::progress::Model;
@@ -101,7 +101,7 @@ struct Board<'a> {
     row: usize,
     back: Vec<String>,
     per_row: usize,
-    kept: Option<((usize, usize, bool), [Sheet; CARDS])>,
+    kept: Option<((usize, usize, bool), [Card; CARDS])>,
     head: Option<(bool, String)>,
     rows: Vec<Option<String>>,
     drawn: Option<Instant>,
@@ -149,16 +149,16 @@ impl Board<'_> {
         let card = (width - (self.per_row - 1)) / self.per_row;
         let full = card * self.per_row + self.per_row - 1;
         let sizes = (full - 4, card - 4, width < NARROW);
-        let (sizes, sheets) = match self.kept.take() {
-            Some((kept, sheets)) if kept == sizes => (kept, sheets),
-            _ => (sizes, sheets(model, sizes.0, sizes.1, sizes.2)),
+        let (sizes, drawn) = match self.kept.take() {
+            Some((kept, drawn)) if kept == sizes => (kept, drawn),
+            _ => (sizes, cards(model, sizes.0, sizes.1, sizes.2)),
         };
         self.picked = self.picked.min(CARDS - 1);
         let page = match self.view {
-            View::Card => self.opened(&sheets[self.picked], width),
-            _ => self.cards(&status, &sheets, (full, card), width),
+            View::Card => self.opened(&drawn[self.picked], width),
+            _ => self.cards(&status, &drawn, (full, card), width),
         };
-        self.kept = Some((sizes, sheets));
+        self.kept = Some((sizes, drawn));
         page
     }
 

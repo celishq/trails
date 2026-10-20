@@ -18,6 +18,34 @@ step only when you take that step. A past step that does the same thing in other
 step. When its title names its own case, write it in words that hold in yours. Add each step you take
 with `--uses <its id>`, so that later work can see which steps were reused.
 
+## Named trails
+
+A step that uses a named trail keeps its rules, and the rules of each named trail that it uses.
+
+- When the person names a named trail, or runs `/celis:use <name>`, add the ask with `--uses <name>`.
+- When the person wants a named trail's rule to work another way in this project, write the new rule
+  with `decide --replaces <its id>`. It holds in this project only, and the trail keeps its rule
+  elsewhere.
+- When celis says that a rule ends an override, tell the person. They choose whether to write the
+  override again with `decide --replaces <the new id>` in its project.
+- When a done trail did work that holds in other projects, and it has no name, give it one with
+  `celis name <trail id> <name>`: a short noun in lowercase words joined by `-`, such as `code-review`.
+
+To write a named trail `<name>` that work in every project can use:
+
+1. `celis step add --project skill:<name> --new [--uses <id>]... -- "<what the work does>"`. Its ask and
+   its trail print.
+2. For each step, in order: `celis step add --project skill:<name> --under <ask id> -- "<title>"`, then
+   `celis step done <its id> --as-planned -- "<where it comes from>"`.
+3. For each rule: `celis decide --project skill:<name> --scope trail:<trail id> -- "<rule>"`.
+4. `celis step done <ask id> --as-planned -- "<what it was made from>"`, then
+   `celis name <trail id> <name>`.
+
+## Tidy
+
+When the past agent brings rules that say the same thing or say to do different things, or many stale
+trails, tell the person that `/celis:tidy` tidies them.
+
 ## Subagents and other sessions
 
 When a subagent or another agent takes work, add a step for it under your working step, and put in its

@@ -47,7 +47,7 @@ impl Command {
         }
         let trails = self.trails()?;
         let steps = trails.steps();
-        let Some(trail) = steps.session(&project.id, &prompt.session) else {
+        let Some(trail) = steps.session(&project.anchor.project, &prompt.session) else {
             if !prompt.task && !self.recall(&trails, err, &asked)? {
                 self.offer(err, project, &asked)?;
             }

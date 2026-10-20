@@ -9,7 +9,7 @@ fn text(lines: Vec<Styled>) -> Vec<String> {
 /// rows to its height.
 #[test]
 fn a_card_frames_its_rows_at_its_width() {
-    let card = Card {
+    let card = Frame {
         title: "01 REUSE".into(),
         rows: vec!["one".into(), "a row too long to fit".into()],
         picked: false,
@@ -29,7 +29,7 @@ fn a_card_frames_its_rows_at_its_width() {
 /// The picked card is framed in heavy lines.
 #[test]
 fn the_picked_card_has_a_heavy_frame() {
-    let card = Card {
+    let card = Frame {
         title: "02".into(),
         rows: vec![],
         picked: true,
@@ -40,7 +40,7 @@ fn the_picked_card_has_a_heavy_frame() {
 /// Cards print side by side, a space between two, each row of cards as tall as its tallest card.
 #[test]
 fn cards_print_side_by_side() {
-    let card = |rows: usize| Card {
+    let card = |rows: usize| Frame {
         title: "c".into(),
         rows: vec!["x".into(); rows],
         picked: false,
@@ -63,7 +63,7 @@ fn cards_print_side_by_side() {
 /// A divider row draws a line across the card, joined to its frame.
 #[test]
 fn a_divider_row_crosses_the_card() {
-    let card = Card {
+    let card = Frame {
         title: "c".into(),
         rows: vec!["a".into(), RULE.into(), "b".into()],
         picked: false,

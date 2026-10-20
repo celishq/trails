@@ -3,47 +3,13 @@
 mod support;
 
 use serde_json::Value;
-use support::{add, cli, err, finish, objects, out, refusal, Repo};
+use support::{add, added, cli, err, finish, links, objects, out, refusal, step, Repo};
 
 /// The id `decide -- <text>` prints.
 fn decide(repo: &Repo, text: &str) -> String {
     let o = cli(repo, &["decide", "--", text]);
     assert!(o.status.success(), "{}", err(&o));
     out(&o).trim().to_string()
-}
-
-/// The ids `step add <args>` prints in the session `session`.
-fn ids(repo: &Repo, session: &str, args: &[&str]) -> Vec<String> {
-    let mut all = vec!["step", "add"];
-    all.extend(args);
-    let o = repo.run(
-        &repo.path(),
-        &all,
-        &[("CLAUDE_CODE_SESSION_ID", session)],
-        "",
-    );
-    assert!(o.status.success(), "{}", err(&o));
-    out(&o).lines().map(str::to_string).collect()
-}
-
-/// The JSON of the step `id` that `tree <trail> --json` prints.
-fn step(repo: &Repo, trail: &str, id: &str) -> Value {
-    objects(repo, &["tree", &trail[..8]])
-        .into_iter()
-        .filter_map(|v| v.get("step").or(v.get("trail")).cloned())
-        .find(|s| s["id"] == id)
-        .expect("the step")
-}
-
-/// The links of `step` of `kind`.
-fn links(step: &Value, kind: &str) -> Vec<String> {
-    step["links"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .filter(|l| l["kind"] == kind)
-        .map(|l| l["to"].as_str().unwrap().to_string())
-        .collect()
 }
 
 /// `step add --uses` takes a live rule and a step of another trail, writes each whole id, and gives
@@ -55,7 +21,7 @@ fn uses_takes_a_rule_and_a_step_of_another_trail() {
         &repo,
         "When a test adds two steps: wait 1.1 s between them.",
     );
-    let past = ids(&repo, "s1", &["--", "the senior price"]);
+    let past = added(&repo, "s1", &["--", "the senior price"]);
     let (past_ask, past_trail) = (&past[0], &past[1]);
     finish(&repo, &past_ask[..8]);
     let trail = add(&repo, &["--new", "--", "the student price"]);
@@ -114,7 +80,7 @@ fn uses_refuses_an_unknown_id_and_a_step_of_the_same_trail() {
 fn uses_goes_on_the_ask_of_a_new_trail() {
     let repo = Repo::new();
     let rule = decide(&repo, "When a price rounds: round down to the cent.");
-    let written = ids(&repo, "s1", &["--uses", &rule[..8], "--", "the price"]);
+    let written = added(&repo, "s1", &["--uses", &rule[..8], "--", "the price"]);
     let (ask, trail) = (&written[0], &written[1]);
     assert_eq!(links(&step(&repo, trail, ask), "uses"), [rule]);
     assert!(links(&step(&repo, trail, trail), "uses").is_empty());
@@ -126,7 +92,7 @@ fn uses_goes_on_the_ask_of_a_new_trail() {
 #[test]
 fn replaces_takes_a_done_step_and_reads_it_as_revised() {
     let repo = Repo::new();
-    let old = ids(&repo, "s1", &["--", "the badge"]);
+    let old = added(&repo, "s1", &["--", "the badge"]);
     let (old_ask, old_trail) = (&old[0], &old[1]);
     let part = add(&repo, &["--under", &old_ask[..8], "--", "the colour"]);
     finish(&repo, &part[..8]);
@@ -165,10 +131,10 @@ fn replaces_takes_a_done_step_and_reads_it_as_revised() {
 #[test]
 fn replaces_takes_a_trail_as_its_first_ask() {
     let repo = Repo::new();
-    let old = ids(&repo, "s1", &["--", "the badge"]);
+    let old = added(&repo, "s1", &["--", "the badge"]);
     let (old_ask, old_trail) = (&old[0], &old[1]);
     finish(&repo, &old_ask[..8]);
-    let fix = ids(
+    let fix = added(
         &repo,
         "s1",
         &["--replaces", &old_trail[..8], "--", "the badge is green"],
@@ -208,7 +174,7 @@ fn replaces_refuses_a_dropped_step() {
 /// `c` of a third that uses `b` and the rule; each done. Gives `(a, b, c, rule)`.
 fn chain(repo: &Repo) -> (String, String, String, String) {
     let rule = decide(repo, "When a price rounds: round down to the cent.");
-    let a = ids(repo, "s1", &["--", "a senior pays 80%"]).remove(0);
+    let a = added(repo, "s1", &["--", "a senior pays 80%"]).remove(0);
     finish(repo, &a[..8]);
     let follow = |source: &str, text: &str| {
         let trail = add(repo, &["--new", "--", text]);
@@ -333,7 +299,7 @@ fn tree_prints_follows_and_followed_lines() {
 #[test]
 fn a_new_trail_that_replaces_a_done_step_links_it_once() {
     let repo = Repo::new();
-    let old = ids(&repo, "s1", &["--", "the badge"]);
+    let old = added(&repo, "s1", &["--", "the badge"]);
     finish(&repo, &old[0][..8]);
     let o = repo.run(
         &repo.path(),
@@ -358,7 +324,7 @@ fn a_new_trail_that_replaces_a_done_step_links_it_once() {
     );
     let trail = step(&repo, &fix[1], &fix[1]);
     assert!(links(&trail, "replaces").is_empty(), "{trail}");
-    let again = ids(&repo, "s2", &["--", "the next fix"]);
+    let again = added(&repo, "s2", &["--", "the next fix"]);
     finish(&repo, &again[0][..8]);
     let o = repo.run(
         &repo.path(),
@@ -447,7 +413,7 @@ fn uses_of_a_trail_with_no_twin_names_the_trail() {
 #[test]
 fn a_session_trail_counts_followed_on_its_first_ask() {
     let repo = Repo::new();
-    let past = ids(&repo, "s1", &["--", "the senior price"]);
+    let past = added(&repo, "s1", &["--", "the senior price"]);
     finish(&repo, &past[0][..8]);
     let trail = add(&repo, &["--new", "--", "the student price"]);
     add(
@@ -468,7 +434,7 @@ fn a_session_trail_counts_followed_on_its_first_ask() {
 #[test]
 fn a_dropped_trail_shows_its_own_drop() {
     let repo = Repo::new();
-    let written = ids(&repo, "s1", &["--", "the trail"]);
+    let written = added(&repo, "s1", &["--", "the trail"]);
     finish(&repo, &written[0][..8]);
     let more = add(&repo, &["--under", &written[1][..8], "--", "more"]);
     let o = cli(

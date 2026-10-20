@@ -15,6 +15,7 @@ const SECTIONS: &[(&str, &str, &[&str])] = &[
         "",
         &[
             "tree [<id>]",
+            "names",
             "grep <pattern>",
             "stats [<id>]",
             "report <id>...",
@@ -30,6 +31,7 @@ const SECTIONS: &[(&str, &str, &[&str])] = &[
             "step drop <id>",
             "step edit <id>",
             "decide",
+            "name <trail> <name>",
         ],
     ),
     (
@@ -50,6 +52,8 @@ const SECTIONS: &[(&str, &str, &[&str])] = &[
 /// What each command of one word does, in a phrase.
 const PHRASES: &[(&str, &str)] = &[
     ("tree", "Show your trails and their steps"),
+    ("names", "Show the named trails, most used first"),
+    ("name", "Name a trail, so other work can use it by its name"),
     ("grep", "Search every trail with grep"),
     ("stats", "Show which steps and rules later work reused"),
     ("report", "Show trails as Markdown for a pull request"),

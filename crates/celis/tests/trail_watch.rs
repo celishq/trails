@@ -610,10 +610,10 @@ fn watch_prints_open_steps_then_rules_then_closed_steps() {
     let rule = (Some(scope.as_str()), None);
     support::stored_rule(&repo, (&project.0, project.1), &by, rule, "a rule", at);
     let finished = support::step_note(&repo, &by, Some(&trail), "finished", at + 1);
-    support::done_note(&repo, &by, &finished, at + 2);
+    support::mark_note(&repo, &by, "done", &finished.id, "proof", at + 2);
     let parent = support::step_note(&repo, &by, Some(&trail), "parent", at + 3);
     let old = support::step_note(&repo, &by, Some(&parent), "old child", at + 4);
-    support::done_note(&repo, &by, &old, at + 5);
+    support::mark_note(&repo, &by, "done", &old.id, "proof", at + 5);
     support::step_note(&repo, &by, Some(&parent), "new child", at + 6);
     support::step_note(&repo, &by, Some(&trail), "newest", at + 7);
     let mut watch = Watch::start(&repo, &["tree", &trail.id[..8]]);
@@ -648,7 +648,7 @@ fn watch_holds_expired_steps_in_the_closed_line() {
     let at = support::now() - 2 * 3600;
     let trail = support::step_note(&repo, &by, None, "the trail", at);
     let done = support::step_note(&repo, &by, Some(&trail), "done part", at + 1);
-    support::done_note(&repo, &by, &done, at + 2);
+    support::mark_note(&repo, &by, "done", &done.id, "proof", at + 2);
     support::step_note(&repo, &by, Some(&trail), "left part", at + 3);
     let mut watch = Watch::start(&repo, &["tree", &trail.id[..8]]);
     watch.size(24, 80);
@@ -765,11 +765,11 @@ fn watch_prints_a_trail_lines_details_under_its_title() {
     let at = support::now() - 4_000;
     let one = support::step_note(&repo, &by, None, "first", at);
     let part = support::step_note(&repo, &by, Some(&one), "part", at);
-    support::done_note(&repo, &by, &part, at + 5);
+    support::mark_note(&repo, &by, "done", &part.id, "proof", at + 5);
     let many = support::step_note(&repo, &by, None, "second", at + 10);
     for n in 0..12 {
         let part = support::step_note(&repo, &by, Some(&many), &format!("part {n}"), at + 10);
-        support::done_note(&repo, &by, &part, at + 20);
+        support::mark_note(&repo, &by, "done", &part.id, "proof", at + 20);
     }
     let project = repo.project_id();
     for n in 0..10 {
@@ -811,7 +811,7 @@ fn watch_counts_a_closed_trails_steps_by_mark() {
     let at = support::now() - 4_000;
     let trail = support::step_note(&repo, &by, None, "the trail", at);
     let part = support::step_note(&repo, &by, Some(&trail), "done part", at);
-    support::done_note(&repo, &by, &part, at + 5);
+    support::mark_note(&repo, &by, "done", &part.id, "proof", at + 5);
     let gone = add(&repo, &["--under", &trail.id[..8], "--", "gone part"]);
     let o = cli(&repo, &["step", "drop", &gone[..8], "--", "not needed"]);
     assert!(o.status.success(), "{}", err(&o));

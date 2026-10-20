@@ -7,8 +7,8 @@ use celis_trails::records::id::short;
 use celis_trails::Step;
 
 impl Tree<'_> {
-    /// Adds under `note` the lines of its text, its proof, change and with `grade` its grade when done, or
-    /// its reason when dropped, after `rail`.
+    /// Adds under `note` the lines of its text, its expect labelled, its proof, change and with `grade`
+    /// its grade when done, or its reason when dropped, after `rail`.
     pub(in crate::command::tree) fn closing(
         &self,
         note: Step,
@@ -17,7 +17,10 @@ impl Tree<'_> {
         out: &mut Vec<Row>,
     ) {
         for line in note.record().detail() {
-            self.labelled(out, rail, "", line);
+            match line.strip_prefix("expect:") {
+                Some(expect) => self.labelled(out, rail, "expect", expect.trim_start()),
+                None => self.labelled(out, rail, "", line),
+            }
         }
         if let (Some(done), Some(line)) = (note.done(), crate::text::line::grade(note)) {
             self.labelled(out, rail, "done", &done.content);

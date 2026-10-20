@@ -1,7 +1,7 @@
 //! The outcome card: the steps closed by how they ended.
 
 use super::super::table::{Row, Table};
-use super::{nothing, Sheet};
+use super::{nothing, Card};
 use crate::progress::{Period, Tally};
 use crate::terminal::canvas::Styled;
 use crate::terminal::glyph::strip;
@@ -11,14 +11,14 @@ use celis_trails::State;
 
 /// The outcome: the steps closed in the last 14 days by how they ended, as a strip of shares, with the
 /// count of revised done steps beside the done share.
-pub(super) fn outcome(last: &Period, inside: usize, ink: Ink) -> Sheet {
+pub(super) fn outcome(last: &Period, inside: usize, ink: Ink) -> Card {
     let closed = last.closed();
     let tally = Tally::of(&closed);
     let states = [State::Done, State::Dropped, State::Expired];
     let counts: Vec<usize> = states.iter().map(|&st| tally.count(st)).collect();
     let total: usize = counts.iter().sum();
     let face = match total {
-        0 => vec![ink.dim(&nothing("closed")).into()],
+        0 => vec![ink.dim(&nothing("step closed")).into()],
         _ => {
             let strip = strip(&counts, inside.saturating_sub(4));
             let mut face = vec![Styled::from(strip), Styled::default()];
@@ -47,7 +47,7 @@ pub(super) fn outcome(last: &Period, inside: usize, ink: Ink) -> Sheet {
             ],
         })
         .collect();
-    Sheet {
+    Card {
         title: "05 OUTCOME".into(),
         face,
         table: Table {

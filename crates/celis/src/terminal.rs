@@ -3,8 +3,8 @@
 pub mod background;
 pub mod bar;
 pub mod canvas;
-pub mod card;
 pub mod dude;
+pub mod frame;
 pub mod glyph;
 pub mod ink;
 pub mod live;

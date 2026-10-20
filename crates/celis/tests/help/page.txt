@@ -16,6 +16,9 @@ Read
   ├ --all             Show every trail of every project, by day
   └ --demo            Show sample trails in every state
 
+  names               Show the named trails, most used first
+  └ --limit <n>       Show the first <n> only
+
   grep <pattern>      Search every trail with grep
   stats [<id>]        Show which steps and rules later work reused
   └ --demo            Show four weeks of sample trails
@@ -27,10 +30,11 @@ Record work · your agents run these
   step add            Add a step to a trail, or start a new trail
   ├ --under <id>      The open step this step is part of
   ├ --replaces <id>   A step this one takes over, or a finished step it fixes
-  ├ --uses <id>       A rule this step follows, or a past step it reuses
+  ├ --uses <id>       A rule or a past step it follows, or a trail's name
   ├ --at <place>      Where the work happens: a file:line, a URL, or any text
   ├ --check <command> A command that proves the work
-  └ --new             Start a new trail, not a step of the session's trail
+  ├ --new             Start a new trail, not a step of the session's trail
+  └ --project <id>    skill:<name>, or the id of a project in the store
 
   step start <id>     Start a step and show the rules it must keep
   step done <id>      Finish a step with proof that it works
@@ -45,7 +49,10 @@ Record work · your agents run these
 
   decide              Record a rule that later work must keep
   ├ --scope <scope>   Where it applies: at:<place>, trail:<id>, me, or project
-  └ --replaces <id>   The rule this one replaces
+  ├ --replaces <id>   The rule this one replaces
+  └ --project <id>    skill:<name>, or the id of a project in the store
+
+  name <trail> <name> Name a trail, so other work can use it by its name
 
 Set up
   link [<folder>]     Keep this project's trails in a folder to commit or share
