@@ -73,7 +73,7 @@ impl Repo {
 
     /// The id of the main checkout's project: its first commit.
     pub fn project_id(&self) -> String {
-        Project::at(&self.path()).id
+        Project::at(&self.path()).anchor.project
     }
 
     /// A new worktree on a new branch `name`, beside the main checkout.

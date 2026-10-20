@@ -59,6 +59,12 @@ impl Trails {
         &self.records
     }
 
+    /// The anchor of the newest record of the project `project`.
+    pub fn anchor(&self, project: &str) -> Option<Anchor> {
+        let mut anchors = self.records.iter().rev().filter_map(Anchor::read);
+        anchors.find(|a| a.project == project)
+    }
+
     pub fn steps(&self) -> Steps<'_> {
         Steps::new(&self.records, self.now)
     }

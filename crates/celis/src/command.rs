@@ -21,7 +21,7 @@ use crate::failure::Failure;
 use crate::help::{self, VERBS};
 pub(crate) use args::Args;
 use celis_nostr::Note;
-use celis_trails::{Anchor, Link, Name, Project, Store, Trails};
+use celis_trails::{Link, Name, Project, Store, Trails};
 use serde_json::json;
 use std::collections::HashMap;
 use std::io::{IsTerminal, Write};
@@ -141,24 +141,12 @@ impl Command {
         if let Some(name) = id.strip_prefix("skill:").and_then(Name::parse) {
             return Ok(project.skill(&name));
         }
-        let trails = self.trails()?;
-        let anchor = trails
-            .records()
-            .iter()
-            .filter_map(|n| Some((n.created_at, Anchor::read(n)?)))
-            .filter(|(_, a)| a.project == *id)
-            .max_by_key(|(at, _)| *at)
-            .map(|(_, a)| a);
-        let anchor = anchor.ok_or_else(|| {
+        let anchor = self.trails()?.anchor(id).ok_or_else(|| {
             Failure::usage(format!(
                 "--project takes skill:<name> or a project of the store, not {id}"
             ))
         })?;
-        Ok(Project {
-            folder: project.folder,
-            id: anchor.project,
-            name: anchor.name,
-        })
+        Ok(project.with(anchor))
     }
 
     /// Whether a watch prints in colour: unless `NO_COLOR` is set.
