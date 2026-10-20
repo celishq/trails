@@ -10,9 +10,11 @@ Your agents use celis through the celis plugin.
 Record work (your agents run these)
   step     Add, start, finish, drop, or edit a step
   decide   Record a rule
+  name     Name a trail, so other work can use it by its name
 
 Read
   tree     Show a trail and its steps
+  names    Show the named trails, most used first
   grep     Search every trail with grep
   stats    Show what later work reused
   report   Show trails as Markdown for a pull request
@@ -268,17 +270,35 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "decide",
-        usage: &["celis decide [--scope <scope>] [--replaces <id>] -- <text>"],
+        usage: &["celis decide [--scope <scope>] [--replaces <id>] [--project <id>] -- <text>"],
         summary: "Record a rule that later work must follow, in its scope.",
         args: &[
             ("--scope <scope>", "at:<place>, trail:<id>, project, or me (default: project)"),
             ("--replaces <id>", "The rule this one replaces"),
+            ("--project <id>", "skill:<name>, or the id of a project in the store"),
             ("<text>", "When it applies, what to do, and why"),
         ],
         examples: &[
             "celis decide --scope at:shelf/prices.py \\",
             "  -- \"When you change prices: keep them in cents.\"",
         ],
+    },
+    Verb {
+        command: "name",
+        usage: &["celis name <trail id> <name>"],
+        summary: "Give a trail a name, so work in any project can use it: step add --uses <name> keeps its rules. The first trail with a name keeps it.",
+        args: &[
+            ("<trail id>", "A trail id, or its first 4 or more characters"),
+            ("<name>", "A lowercase letter, then lowercase letters, digits, and -"),
+        ],
+        examples: &["celis name 3fa2c1d0 review"],
+    },
+    Verb {
+        command: "names",
+        usage: &["celis names [--limit <n>]"],
+        summary: "Show each named trail of every project, as its name, id, and title, most used first. Changes nothing.",
+        args: &[("--limit <n>", "Show the first <n> only")],
+        examples: &["celis names --limit 20"],
     },
     Verb {
         command: "tree",
@@ -332,16 +352,17 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "step add",
-        usage: &["celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>]... [--check <command>] [--new] [--session <id>] -- <text>"],
+        usage: &["celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>]... [--check <command>] [--new] [--session <id>] [--project <id>] -- <text>"],
         summary: "Add a step. With no --under, it goes under the session's trail, or starts a new trail.",
         args: &[
             ("--under <id>", "The open step this step is part of"),
             ("--replaces <id>", "A step this one takes over, or a finished step it fixes"),
-            ("--uses <id>", "A rule this step follows, or a past step it reuses"),
+            ("--uses <id>", "A rule it follows, a past step, or a trail's name"),
             ("--at <place>", "A file:line, a URL, or any text"),
             ("--check <command>", "A command that proves the work"),
             ("--new", "Start a new trail, not a step of the session's trail"),
             ("--session <id>", "The session, when the hook names it"),
+            ("--project <id>", "skill:<name>, or the id of a project in the store"),
             ("<text>", "What the person wants done, then its expect: line"),
         ],
         examples: &[
@@ -376,9 +397,9 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "step drop",
         usage: &["celis step drop <id> -- <reason>"],
-        summary: "Drop a step you no longer need, and each open step under it.",
+        summary: "Drop a step, a done trail or a rule you no longer need, and each open step under it.",
         args: &[
-            ("<id>", "A step id, or its first 4 or more characters"),
+            ("<id>", "A step, trail or rule id, or its first 4 or more characters"),
             ("<reason>", "Why you no longer need it"),
         ],
         examples: &["celis step drop 4c1d22e0 -- \"The person chose the shared table.\""],

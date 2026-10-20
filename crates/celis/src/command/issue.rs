@@ -92,7 +92,11 @@ impl Command {
                 std::env::consts::ARCH
             ),
             format!("- sessions: {sessions}"),
-            format!("- project: {} `{}`", project.name, short(&project.id)),
+            format!(
+                "- project: {} `{}`",
+                project.anchor.name,
+                short(&project.anchor.project)
+            ),
             format!("- home: `{shown}`"),
             format!("- phrase: {phrase}"),
             format!("- records: {files} files, {read} read, {steps} steps"),

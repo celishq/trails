@@ -28,9 +28,14 @@ fn every_clone_and_every_worktree_of_one_repo_must_give_the_same_project_id() {
     assert!(cloned.success());
     for folder in [repo.path(), repo.path().join("sub"), tree, copy] {
         std::fs::create_dir_all(&folder).unwrap();
-        assert_eq!(Project::at(&folder).id, first, "{}", folder.display());
+        assert_eq!(
+            Project::at(&folder).anchor.project,
+            first,
+            "{}",
+            folder.display()
+        );
     }
-    assert_eq!(Project::at(&repo.worktree("feat-b")).name, "repo");
+    assert_eq!(Project::at(&repo.worktree("feat-b")).anchor.name, "repo");
 }
 
 /// Outside git, the working folder's path is the project id, and its name is the project name
@@ -41,8 +46,8 @@ fn outside_git_the_project_id_is_the_path_of_the_working_folder() {
     let folder = outside.path().join("shop");
     std::fs::create_dir_all(&folder).unwrap();
     let project = Project::at(&folder);
-    assert_eq!(project.id, folder.display().to_string());
-    assert_eq!(project.name, "shop");
+    assert_eq!(project.anchor.project, folder.display().to_string());
+    assert_eq!(project.anchor.name, "shop");
 }
 
 /// A clone in a folder of another name has that name, and the id stays the first commit

@@ -1,12 +1,13 @@
 celis keeps each ask as a trail: its steps, their proofs, and the rules that later work must keep.
 
 ```
-celis decide [--scope at:<place> | trail:<id> | me] [--replaces <id>] -- "<rule>"
-celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>] [--check <command>] [--new] [--session <id>] -- "<title>"
+celis decide [--scope at:<place> | trail:<id> | me] [--replaces <id>] [--project <id>] -- "<rule>"
+celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>] [--check <command>] [--new] [--session <id>] [--project <id>] -- "<title>"
 celis step start <id>
 celis step done <id> [--changed "<what differs>"] [--as-planned] [--pitfall "<rule>"] -- "<proof>"
 celis step drop <id> -- "<why>"
 celis step edit <id> [--at <place>]... [--check <command>] [-- "<new title>"]
+celis name <trail id> <name>
 celis tree [<id>] [--graph] [--full] [--all] [--demo]
 ```
 
@@ -18,7 +19,8 @@ celis tree [<id>] [--graph] [--full] [--all] [--demo]
    report on gets none: answer it, and run no command below.
 3. Add the ask with `step add` where the prompt hook says. With no hint, add it under the session's
    trail, else with `--new`. An ask that corrects done work takes `--replaces <its id>`. Give the ask the
-   project's own check, and `--uses <id>` for each rule or past step it follows.
+   project's own check, and `--uses <id>` for each rule, past step or named trail it follows. `--uses`
+   takes a trail's name.
 4. A step's title names what the person wants done: a verb and what it acts on, such as "Split a long
    file into its parts". Use words that hold in another project, and name the case only when that helps
    the next agent. On the line after the title, write `expect: <what a person can check when it is
@@ -43,5 +45,5 @@ from, so it matches the next task like it. Its scope is `trail:<id>` when it hol
 about a framework, a platform or a review's convention. When the person
 asks you to remember something, or states how the work must be done (review feedback, a convention, a
 correction), write each point as one rule before you do the work.
-Read the `steps.md` the session start names for moved files, past work, subagents, links, and when to
-stop.
+Read the `steps.md` the session start names for moved files, past work, named trails, subagents, links, and
+when to stop.

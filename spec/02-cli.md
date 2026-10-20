@@ -14,8 +14,10 @@ read. What a command shows a person is not part of it.
 ## Commands
 
 ```
-celis decide [--scope <scope>] [--replaces <id>] -- <text>
+celis decide [--scope <scope>] [--replaces <id>] [--project <id>] -- <text>
                                                        a rule, in its scope
+celis name <trail id> <name>                          give a trail a name
+celis names [--limit <n>]                             the named trails, most used first
 celis tree [<id>] [--graph] [--full] [--all] [--demo]
                                                        a trail and its steps; again on each change
 celis grep <grep option>... <pattern>                 every trail, through the system grep
@@ -24,12 +26,12 @@ celis report <id>... [--demo]                         the trails as Markdown, fo
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
 celis link [<folder>]                                 keep this project's trails in a folder
 celis unlink [<folder>]                               stop keeping them in a folder
-celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>]... [--check <command>] [--new] [--session <id>] -- <text>
+celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>]... [--check <command>] [--new] [--session <id>] [--project <id>] -- <text>
                                                        leave a step
 celis step start <id>                                 take up a step, and see its rules
 celis step done <id> [--changed <text>] [--as-planned] [--pitfall <text>] -- <proof>
                                                        close a step with its proof
-celis step drop <id> -- <reason>                      close a step whose work is no longer wanted
+celis step drop <id> -- <reason>                      end a step, a done trail or a rule no longer wanted
 celis step edit <id> [--at <place>]... [--check <command>] [-- <text>]
                                                        give a step a new title, places or check
 celis prompt                                          a person's prompt, from a hook
@@ -52,9 +54,13 @@ decision  json  {"id", "created_at", "project", "scope", "replaces", "content"}
 - A flag no command takes is a usage error.
 - `decide` MUST write a rule of the working folder's project (CIP-05), with `--scope` and
   `--replaces` as its tags, and no `scope` tag for `project`.
+- `--project` on `decide` and `step add` MUST write the records of the project it names in place of the
+  working folder's: `skill:<name>` (CIP-07, "Skill projects"), or a project id that a record of the store
+  has, with that record's project name. It MUST refuse any other id as a usage error.
 - `decide` MUST refuse empty text, and a scope that is not `me`, `project`, `trail:<id>` or `at:<place>`,
   as a usage error; a `trail:<id>` that no open trail of the project has, with `no-trail`; and a
-  `--replaces` that no live rule has, with `no-decision`.
+  `--replaces` that no live rule of the project, and no live rule of a named trail, has, with
+  `no-decision`.
 
 **Examples**
 
@@ -81,7 +87,7 @@ celis decide --scope me -- "When you write a commit message: use plain words, be
 - A command that writes records MUST print the id of each, its main record first.
 - With `--json`, a command but `grep` MUST print one JSON object a line, and nothing else, to stdout. A
   printed id is `{"id"}`.
-- Only `decide`, `step` and `prompt` MAY write a record. A command that refuses MUST write nothing.
+- Only `decide`, `name`, `step` and `prompt` MAY write a record. A command that refuses MUST write nothing.
 - A command MUST NOT ask a question, but `auth login` on a terminal.
 - A command MUST exit 0 when done, 2 on a usage error, and 1 on any other error.
 - An error MUST be named `usage`, `no-decision`, `no-trail`, `no-step`, `closed`, `open-steps`,
@@ -122,6 +128,8 @@ step  json  {"id", "created_at", "project", "links": [{"to", "kind": "under | re
 
 **Rules**
 
+- A `--uses` that is a name (CIP-07) MUST be taken as the id of its trail, before any id that starts
+  with it.
 - `add` MUST write the whole id of `--under`, `--replaces` and each `--uses`, each `--at` (CIP-01,
   "Places") and the `--check` as tags. A `--replaces` that names a trail MUST name its first ask.
 - `add` MUST write no step when an open step of the same project and `under` has the same text, and
@@ -132,8 +140,11 @@ step  json  {"id", "created_at", "project", "links": [{"to", "kind": "under | re
   with `closed`; a `--replaces` of a trail with no first ask as a usage error; a `--uses` that no live
   rule and no step has, with `no-step`; and a `--uses` of a step of its own trail, or that starts both
   a rule's and a step's id, as a usage error.
-- `start`, `done` and `drop` MUST refuse a closed step, with `closed`. `start` of a working step MUST
-  write nothing and print the id of its first `start`.
+- `start` and `done` MUST refuse a closed step, with `closed`. `start` of a working step MUST write
+  nothing and print the id of its first `start`.
+- `drop` MUST take the id of a step or a rule. It MUST refuse a dropped step, a done step that is not a
+  trail, a trail dropped after done, and a rule that is not live, with `closed`; and an id that starts
+  both a rule's and a step's id as a usage error.
 - `done` MUST take one of `--changed <text>` and `--as-planned`, and a proof, else refuse as a usage
   error. It MUST refuse a step with an open step under it, with `open-steps`.
 - `done` MUST run the step's `check` in the project's top folder, and refuse with `check-failed` when it
@@ -149,6 +160,43 @@ celis step add --under 3fa2c1d0 --at shelf/prices.py:40 -- "Write a test: a seni
 celis step start 4c1d22e0
 celis step done 4c1d22e0 --as-planned -- "python3 -m unittest: test_senior failed before, passes now."
 celis step drop 3fa2c1d0 -- "The person chose the shared price table instead."
+```
+
+## Name
+
+`name` writes the name of CIP-07.
+
+**Rules**
+
+- `name` MUST write the name record of the trail `<trail id>` names, and print its id. When the trail
+  already holds the name, it MUST write nothing and print the id of that record.
+- `name` MUST refuse a step that is not a trail, a text that is no name (CIP-07, "Names"), and a name
+  another trail holds, as usage errors.
+
+**Examples**
+
+```
+celis name 9b0e11aa review
+```
+
+## Names
+
+```
+line    <name> <trail id8> <the trail's title>
+json    {"name", "id", "title", "uses"}
+```
+
+- `uses`: how many steps of other trails use a step of its tree.
+
+**Rules**
+
+- `names` MUST print one line for each named trail of every project, most `uses` first, then newest.
+- `--limit <n>` MUST print the first `<n>` lines only.
+
+**Examples**
+
+```
+celis names --limit 20
 ```
 
 ## Prompt
@@ -182,9 +230,9 @@ the trails with it.
 
 ```
 view    <yyyy-mm-dd> <trail id8 | -> [<project name>] <kind> <id8> <fields> <text>
-          trail | step   <open | working | done | dropped | expired>[ revised-by <id>,…][ at:<place>]…
-          rule           <live | replaced-by <id>> {<me | project | trail:<id8> | at:<place>>}
-          proof | changed | dropped                              the step's id, no fields
+          trail | step   <open | working | done | done-dropped | dropped | expired>[ revised-by <id>,…][ at:<place>]…
+          rule           <live | replaced-by <id> | dropped> {<me | project | trail:<id8> | at:<place>>}
+          proof | changed | dropped                              the step's or rule's id, no fields
 lines   <id8> [<project name>] <its title> · <yyyy-mm-dd>        each trail of the lines
           trail <id8> <fields>                                    the trail's own line
           <kind> <id8> <fields> <text>                            each other line of the trail

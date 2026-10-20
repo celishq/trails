@@ -72,6 +72,13 @@ impl<'a> Reuse<'a> {
         self.sources.get(step.id()).cloned().unwrap_or_default()
     }
 
+    /// How many steps follow a step of the tree of `trail`.
+    pub fn tree_followers(&self, trail: Step<'a>) -> usize {
+        let tree = trail.tree().into_iter();
+        tree.map(|s| self.followers.get(s.id()).map_or(0, Vec::len))
+            .sum()
+    }
+
     /// Each step that `step` follows at any depth, depth first and once.
     pub fn up(&self, step: Step<'a>) -> Vec<Follow<'a>> {
         let mut found = Vec::new();

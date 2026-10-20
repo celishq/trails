@@ -4,7 +4,7 @@ mod support;
 
 use serde_json::Value;
 use std::process::Output;
-use support::{account, done_note, err, labelled, now, out, refusal, step_note, stored_rule, Repo};
+use support::{account, err, labelled, mark_note, now, out, refusal, step_note, stored_rule, Repo};
 
 const WORK: &str = "When you change prices: keep them in cents, because floats lost a cent.";
 
@@ -154,7 +154,7 @@ fn decide_refuses_a_trail_the_project_has_not_open() {
     let repo = Repo::new();
     let t = now() - 5 * 60;
     let done = step_note(&repo, &account(), None, "reached", t);
-    done_note(&repo, &account(), &done, t + 1);
+    mark_note(&repo, &account(), "done", &done.id, "proof", t + 1);
     let active = step_note(&repo, &account(), None, "active", t + 2);
     let part = step_note(&repo, &account(), Some(&active), "part", t + 3);
     let unknown = "0".repeat(64);
@@ -168,7 +168,7 @@ fn decide_refuses_a_trail_the_project_has_not_open() {
     let args = ["decide", "--json", "--scope", &scope, "--", WORK];
     refusal(&repo.run(&shop, &args, &[], ""), 1, "no-trail");
     assert!(labelled(&repo, "decision").is_empty());
-    done_note(&repo, &account(), &part, t + 4);
+    mark_note(&repo, &account(), "done", &part.id, "proof", t + 4);
     let args = ["decide", "--scope", &scope, "--", WORK];
     let o = repo.run(&repo.path(), &args, &[], "");
     assert!(o.status.success(), "{}", err(&o));

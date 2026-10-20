@@ -73,7 +73,7 @@ impl Repo {
 
     /// The id of the main checkout's project: its first commit.
     pub fn project_id(&self) -> String {
-        Project::at(&self.path()).id
+        Project::at(&self.path()).anchor.project
     }
 
     /// A new worktree on a new branch `name`, beside the main checkout.
@@ -159,19 +159,6 @@ fn shared(repo: &Repo) -> std::path::PathBuf {
 
 pub fn put(repo: &Repo, note: &Note) {
     Store::open(&repo.home()).unwrap().write(note).unwrap();
-}
-
-/// Writes an old steer record with `text` on the step `id`.
-pub fn steer(repo: &Repo, id: &str, text: &str) {
-    let tags: Vec<Vec<String>> = vec![
-        vec!["L".into(), "celis.step".into()],
-        vec!["l".into(), "steer".into(), "celis.step".into()],
-        vec!["e".into(), id.into()],
-    ];
-    put(
-        repo,
-        &Note::write(&account(), 1985u16, now(), tags, text).unwrap(),
-    );
 }
 
 /// A cairn on the repo that `by` signed at `at`, with the extra tags `extra`.
@@ -332,14 +319,14 @@ pub fn step_note(repo: &Repo, by: &Account, under: Option<&Note>, content: &str,
     note
 }
 
-/// A `done` of `step` that `by` signed at `at`, put in the store.
-pub fn done_note(repo: &Repo, by: &Account, step: &Note, at: u64) -> Note {
+/// A mark labelled `label` on the record `id`, saying `text`, that `by` signed at `at`, put in the store.
+pub fn mark_note(repo: &Repo, by: &Account, label: &str, id: &str, text: &str, at: u64) -> Note {
     let tags: Vec<Vec<String>> = vec![
         vec!["L".into(), "celis.step".into()],
-        vec!["l".into(), "done".into(), "celis.step".into()],
-        vec!["e".into(), step.id.clone()],
+        vec!["l".into(), label.into(), "celis.step".into()],
+        vec!["e".into(), id.into()],
     ];
-    let note = Note::write(by, 1985u16, at, tags, "proof").unwrap();
+    let note = Note::write(by, 1985u16, at, tags, text).unwrap();
     put(repo, &note);
     note
 }
@@ -505,5 +492,39 @@ pub fn ids(text: &str, kind: &str) -> Vec<String> {
     found(text)
         .into_iter()
         .filter_map(|(_, line)| Some(line.strip_prefix(&kind)?.split(' ').next()?.to_string()))
+        .collect()
+}
+
+/// The ids `step add <args>` prints in the session `session`.
+pub fn added(repo: &Repo, session: &str, args: &[&str]) -> Vec<String> {
+    let mut all = vec!["step", "add"];
+    all.extend(args);
+    let o = repo.run(
+        &repo.path(),
+        &all,
+        &[("CLAUDE_CODE_SESSION_ID", session)],
+        "",
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    out(&o).lines().map(str::to_string).collect()
+}
+
+/// The JSON of the step `id` that `tree <trail> --json` prints.
+pub fn step(repo: &Repo, trail: &str, id: &str) -> serde_json::Value {
+    objects(repo, &["tree", &trail[..8]])
+        .into_iter()
+        .filter_map(|v| v.get("step").or(v.get("trail")).cloned())
+        .find(|s| s["id"] == id)
+        .expect("the step")
+}
+
+/// The links of `step` of `kind`.
+pub fn links(step: &serde_json::Value, kind: &str) -> Vec<String> {
+    step["links"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|l| l["kind"] == kind)
+        .map(|l| l["to"].as_str().unwrap().to_string())
         .collect()
 }

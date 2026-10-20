@@ -8,7 +8,7 @@ pub mod steps;
 pub mod used;
 
 use crate::step::steps::{Close, Entry, LIFE};
-use crate::{Mark, State, StepId, StepRecord, Steps, Trail, Used};
+use crate::{Mark, NamedTrail, State, StepId, StepRecord, Steps, Trail, Used};
 use celis_nostr::Note;
 use std::collections::HashSet;
 
@@ -47,6 +47,11 @@ impl<'a> Step<'a> {
         self.entry.step.title()
     }
 
+    /// It, with the name it holds first (CIP-07); `None` when it holds none.
+    pub fn named(self) -> Option<NamedTrail<'a>> {
+        self.steps.named_of(self)
+    }
+
     pub fn is_trail(self) -> bool {
         self.entry.step.under.is_none()
     }
@@ -71,6 +76,32 @@ impl<'a> Step<'a> {
             None => self.steps.holds_rule(id).then_some(Used::Rule(id)),
         })
         .collect()
+    }
+
+    /// The trails that the steps on its `under` chain follow, then, past each named trail (CIP-07), the
+    /// trails that its steps follow, at any depth; each once.
+    pub fn followed(self) -> Vec<Step<'a>> {
+        let follows = |s: Step<'a>| {
+            let used = s.uses().into_iter();
+            used.filter_map(|u| match u {
+                Used::Follow(step) => Some(step.trail()),
+                Used::Rule(_) => None,
+            })
+        };
+        let chain = std::iter::successors(Some(self), |s| s.under());
+        let mut next: Vec<Step<'a>> = chain.flat_map(follows).collect();
+        next.reverse();
+        let mut found: Vec<Step<'a>> = Vec::new();
+        while let Some(trail) = next.pop() {
+            if found.iter().any(|f| f.id() == trail.id()) {
+                continue;
+            }
+            if trail.named().is_some() {
+                next.extend(trail.tree().into_iter().flat_map(follows));
+            }
+            found.push(trail);
+        }
+        found
     }
 
     /// The steps directly under it, oldest first.
@@ -153,6 +184,20 @@ impl<'a> Step<'a> {
         match self.entry.close {
             Some((note, Close::Dropped)) => Some(note),
             _ => None,
+        }
+    }
+
+    /// The first drop that counts on it: the one that closed it, or, as a trail, one after its done
+    /// (CIP-03, "Dropping").
+    pub fn drop_mark(self) -> Option<&'a Note> {
+        self.entry.drop
+    }
+
+    /// The word for its state that `grep` gives: `done-dropped` for a done trail a drop names.
+    pub fn state_word(self) -> &'static str {
+        match (self.state(), self.drop_mark()) {
+            (State::Done, Some(_)) => "done-dropped",
+            (state, _) => state.text(),
         }
     }
 

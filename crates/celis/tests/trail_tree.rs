@@ -38,14 +38,14 @@ fn tree_prints_the_trail_its_rules_and_the_steps_under_it() {
         at,
     );
     let colours = support::step_note(&repo, &by, Some(&trail), "colours", at);
-    support::done_note(&repo, &by, &colours, at + 90);
+    support::mark_note(&repo, &by, "done", &colours.id, "proof", at + 90);
     let page = support::step_note(&repo, &by, Some(&trail), "customers page", at + 1);
     let badge = support::step_note(&repo, &by, Some(&page), "badge", at + 2);
     let seal = support::step_note(&repo, &by, Some(&page), "seal", at + 3);
-    support::done_note(&repo, &by, &seal, at + 33);
+    support::mark_note(&repo, &by, "done", &seal.id, "proof", at + 33);
     let stamp = support::step_note(&repo, &by, Some(&page), "stamp", at + 4);
     let logo = support::step_note(&repo, &by, Some(&trail), "logo", at + 5);
-    support::done_note(&repo, &by, &logo, at + 65);
+    support::mark_note(&repo, &by, "done", &logo.id, "proof", at + 65);
     let footer = support::step_note(&repo, &by, Some(&trail), "footer", at + 6);
     let ids = |text: &str| {
         text.replace("{t}", short(&trail.id))
@@ -110,7 +110,7 @@ fn tree_prints_the_expect_line_in_the_label_column() {
         "logo\nexpect: the logo shows",
         at + 5,
     );
-    support::done_note(&repo, &by, &logo, at + 65);
+    support::mark_note(&repo, &by, "done", &logo.id, "proof", at + 65);
     let lines = printed(&repo, &[short(&trail.id), "--full"]);
     let at = lines.iter().position(|l| l.contains("logo")).unwrap();
     assert_eq!(
@@ -141,7 +141,7 @@ fn tree_prints_an_expired_step_with_the_closed_ones() {
         at,
     );
     let done = support::step_note(&repo, &by, Some(&trail), "done part", at + 1);
-    support::done_note(&repo, &by, &done, at + 31);
+    support::mark_note(&repo, &by, "done", &done.id, "proof", at + 31);
     let left = support::step_note(&repo, &by, Some(&trail), "left part", at + 2);
     let lines = printed(&repo, &[short(&trail.id)]);
     assert_eq!(
@@ -188,7 +188,7 @@ fn tree_prints_a_done_trails_proof_and_grade() {
     let by = support::account();
     let at = support::now() - 600;
     let trail = support::step_note(&repo, &by, None, "a small ask", at);
-    support::done_note(&repo, &by, &trail, at + 45);
+    support::mark_note(&repo, &by, "done", &trail.id, "proof", at + 45);
     assert_eq!(
         printed(&repo, &[short(&trail.id), "--full"]),
         [
@@ -516,12 +516,12 @@ fn tree_graph_prints_the_trail_as_a_chain_of_cards() {
         at,
     );
     let colours = support::step_note(&repo, &by, Some(&trail), "colours", at);
-    support::done_note(&repo, &by, &colours, at + 90);
+    support::mark_note(&repo, &by, "done", &colours.id, "proof", at + 90);
     let page = support::step_note(&repo, &by, Some(&trail), "customers page", at + 1);
     let badge = support::step_note(&repo, &by, Some(&page), "badge", at + 2);
     support::step_note(&repo, &by, Some(&badge), "badge icon", at + 3);
     let seal = support::step_note(&repo, &by, Some(&page), "seal", at + 4);
-    support::done_note(&repo, &by, &seal, at + 33);
+    support::mark_note(&repo, &by, "done", &seal.id, "proof", at + 33);
     support::step_note(&repo, &by, Some(&trail), "footer", at + 6);
     let printed = printed(&repo, &[short(&trail.id), "--graph"]);
     let graph = [

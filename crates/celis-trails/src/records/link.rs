@@ -26,7 +26,7 @@ impl Link {
         Link {
             folder: project.folder.join(place),
             path: place.to_string(),
-            project: project.id.clone(),
+            project: project.anchor.project.clone(),
         }
     }
 
@@ -39,7 +39,7 @@ impl Link {
         let project = Project::at(folder);
         listed
             .iter()
-            .filter(|(id, _)| *id == project.id)
+            .filter(|(id, _)| *id == project.anchor.project)
             .map(|(_, place)| Link::new(&project, place))
             .filter(|link| link.folder.is_dir())
             .collect()

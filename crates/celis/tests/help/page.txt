@@ -5,9 +5,11 @@ Your agents use celis through the celis plugin.
 Record work (your agents run these)
   step     Add, start, finish, drop, or edit a step
   decide   Record a rule
+  name     Name a trail, so other work can use it by its name
 
 Read
   tree     Show a trail and its steps
+  names    Show the named trails, most used first
   grep     Search every trail with grep
   stats    Show what later work reused
   report   Show trails as Markdown for a pull request

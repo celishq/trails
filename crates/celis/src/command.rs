@@ -6,6 +6,8 @@ mod graph;
 mod grep;
 mod issue;
 mod link;
+mod name;
+mod names;
 mod prompt;
 pub(crate) mod report;
 mod review;
@@ -19,7 +21,7 @@ use crate::failure::Failure;
 use crate::help::{self, VERBS};
 pub(crate) use args::Args;
 use celis_nostr::Note;
-use celis_trails::{Link, Project, Store, Trails};
+use celis_trails::{Link, Name, Project, Store, Trails};
 use serde_json::json;
 use std::collections::HashMap;
 use std::io::{IsTerminal, Write};
@@ -76,8 +78,10 @@ impl Command {
 
     fn go(&self, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> Result<(), Failure> {
         match args.words.first().map(String::as_str).unwrap_or("") {
-            "step" => self.step(args, out, err, &self.project()),
-            "decide" => self.decide(args, out, &self.project()),
+            "step" => self.step(args, out, err, &self.project_of(args)?),
+            "decide" => self.decide(args, out, err, &self.project_of(args)?),
+            "name" => self.name(args, out),
+            "names" => self.names(args, out),
             "tree" => self.tree(args, out),
             "grep" => self.grep(&self.args[1..], out),
             "past" => self.past(out),
@@ -125,6 +129,24 @@ impl Command {
     /// The project of the working folder.
     fn project(&self) -> Project {
         Project::at(&self.folder)
+    }
+
+    /// The project `--project` names, `skill:<name>` or a project of the store with the name of its
+    /// newest record, else the project of the working folder; any other id is a usage error.
+    fn project_of(&self, args: &Args) -> Result<Project, Failure> {
+        let project = self.project();
+        let Some(id) = &args.project else {
+            return Ok(project);
+        };
+        if let Some(name) = id.strip_prefix("skill:").and_then(Name::parse) {
+            return Ok(project.skill(&name));
+        }
+        let anchor = self.trails()?.anchor(id).ok_or_else(|| {
+            Failure::usage(format!(
+                "--project takes skill:<name> or a project of the store, not {id}"
+            ))
+        })?;
+        Ok(project.with(anchor))
     }
 
     /// Whether a watch prints in colour: unless `NO_COLOR` is set.

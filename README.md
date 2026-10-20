@@ -1,21 +1,3 @@
-```
-                   /\                                 /\
-          /\      /::\         /\        /\          /::\
-         /::\    /::::\       /::\      /::\    /\  /::::\
-        /::::\  /::::::\     /::::\    /::::\  /::\/::::::\      |>
-  _____/::::::\/::::::::\___/::::::\__/::::::\/:::/::::::::\     |
-                                                              .--+--.
-         ______   ______                                     /+++++++\
-        /  x   | |  |>  \                                   /+++++++++\
-        \______| |______/                                  /+++++++++++\
-      dead end | | next step                            .-'+++++++++++++'-.
-               |/|/                                     /+++++++++++++++++\
-   x_x                                                          //
-  |RIP|  x_x                       •_•|>                       //
- .......|RIP|.......................O.|.......................//...............
- ,      ,      ,      ,      ,      ,      ,      ,      ,      ,      ,      ,
-```
-
 <h1 align="center">Celis</h1>
 
 <p align="center">A small CLI and a plugin for AI agents which allows them to learn from each other.</p>
@@ -26,7 +8,9 @@
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue"></a>
 </p>
 
-<!-- video: drop the mp4 here in the GitHub editor -->
+
+https://github.com/user-attachments/assets/8cb59450-fb36-4fa6-82ae-5bcd59b1384b
+
 
 ## Why
 

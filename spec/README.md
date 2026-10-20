@@ -29,7 +29,8 @@ Every change of `spec/` MUST keep these rules:
     commit.
 11. **The spec changes first.** A test of a spec rule cites its section: ``(`spec/03-steps.md`,
     "Closing")``. A test of what the spec leaves out cites nothing.
-12. **A CIP adds, and never changes another.** A new meaning for a name is a new CIP. A final CIP is frozen.
+12. **A CIP adds, and never changes another.** A final CIP is frozen. A draft CIP MAY give a name a new
+    meaning only when older readers still read each record right; else the meaning is a new CIP.
 
 ## The CIPs
 
@@ -41,6 +42,7 @@ Every change of `spec/` MUST keep these rules:
 | 04 | Trails | the trail, its sessions and prompts, its rules | CIP-01, 03, 05 |
 | 05 | Rules | the rule and its scope | CIP-01 |
 | 06 | Reuse | the steps and rules a step uses, revisions | CIP-03, 04, 05 |
+| 07 | Names | the name of a trail, skill projects, the rules of a name, overrides | CIP-01, 03, 04, 05, 06 |
 
 ## Names
 
@@ -48,6 +50,7 @@ Every change of `spec/` MUST keep these rules:
 |---|---|---|
 | `project:<id>` · `project` | anchor of a project, its `K`, and its name tag | 01 |
 | `figma:<key>` · `web:<host>` | the project id of a record outside git | 01 |
+| `skill:<name>` | the project id of a trail from a skill file | 07 |
 | `$CELIS_HOME` · `$CELIS_HOME/trails/` · `$CELIS_HOME/phrase` · `$CELIS_HOME/links` | the home, the store, the phrase, the links | 01, 02 |
 | `celis` and its commands and flags | the command line | 02 |
 | `usage` · `no-decision` · `no-trail` · `no-step` · `closed` · `open-steps` · `check-failed` · `error` | errors | 02 |
@@ -61,6 +64,7 @@ Every change of `spec/` MUST keep these rules:
 | `scope` · `replaces` | rule tags | 05 |
 | `me` · `project` · `trail:<id>` · `at:<place>` | the scopes of a rule | 05 |
 | `uses` | step tag | 06 |
+| 1985 with `name` in `celis.step` | kind: the name of a trail (NIP-32) | 07 |
 
 **Deprecated.** A reader ignores each of these. Older versions wrote them.
 
@@ -87,5 +91,7 @@ Every change of `spec/` MUST keep these rules:
 | `session` | one run of an agent |
 | `prompt` | what you wrote to the agent while a trail was open |
 | `rule` | one sentence that holds in its scope until another replaces it |
-| `live` | a rule no other rule replaces |
+| `live` | a rule no other rule replaces and no drop names |
 | `revised` | done work that a later step replaces |
+| `named trail` | a trail that holds a name |
+| `override` | a rule that replaces a trail's rule of another project, in its own project only |

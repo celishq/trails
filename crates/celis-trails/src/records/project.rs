@@ -1,15 +1,15 @@
 //! A code project: its folder, id and name.
 
-use crate::Anchor;
+use crate::{Anchor, Name};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-/// A code project: its folder, the id every clone and worktree of it shares, and its name.
+/// A code project: its folder, and its anchor: the id every clone and worktree of it shares, and its
+/// name.
 #[derive(Clone)]
 pub struct Project {
     pub folder: PathBuf,
-    pub id: String,
-    pub name: String,
+    pub anchor: Anchor,
 }
 
 impl Project {
@@ -46,7 +46,10 @@ impl Project {
             .file_name()
             .map(|n| n.to_string_lossy().into_owned())
             .unwrap_or_else(|| main.display().to_string());
-        Project { folder, id, name }
+        Project {
+            folder,
+            anchor: Anchor { project: id, name },
+        }
     }
 
     /// Whether the project's folder lies in a git repo.
@@ -75,28 +78,35 @@ impl Project {
             let key = parts.next().filter(|k| !k.is_empty())?;
             matches!(kind, "file" | "design").then_some(key)
         });
-        match key {
-            Some(key) => Project {
-                folder: self.folder.clone(),
-                id: format!("figma:{key}"),
+        self.with(match key {
+            Some(key) => Anchor {
+                project: format!("figma:{key}"),
                 name: parts
                     .next()
                     .filter(|n| !n.is_empty())
                     .map_or(host, str::to_string),
             },
-            None => Project {
-                folder: self.folder.clone(),
-                id: format!("web:{host}"),
+            None => Anchor {
+                project: format!("web:{host}"),
                 name: host,
             },
-        }
+        })
     }
 
-    /// What a rule, trail or step written in this project is on.
-    pub fn anchor(&self) -> Anchor {
-        Anchor {
-            project: self.id.clone(),
-            name: self.name.clone(),
+    /// The project of the trail written from the skill file `name` (CIP-07, "Skill projects"), at this
+    /// project's folder.
+    pub fn skill(&self, name: &Name) -> Project {
+        self.with(Anchor {
+            project: format!("skill:{}", name.as_str()),
+            name: name.as_str().to_string(),
+        })
+    }
+
+    /// The project `anchor` names, at this project's folder.
+    pub fn with(&self, anchor: Anchor) -> Project {
+        Project {
+            folder: self.folder.clone(),
+            anchor,
         }
     }
 
