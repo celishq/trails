@@ -70,6 +70,7 @@ impl Tree<'_> {
                 title: step.title().to_string(),
                 tone: self.shone(note, self.tone(look(state).title, note.newest())),
                 meta: self.meta(note),
+                whole: open.then(|| below.clone()),
             });
             let item = Item {
                 id: note.id().to_string(),

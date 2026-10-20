@@ -34,6 +34,7 @@ impl Tree<'_> {
             title: plural(rules.len(), "rule"),
             tone: Style::new(),
             meta: Styled::default(),
+            whole: None,
         });
         let item = Item {
             id: id.clone(),
@@ -56,6 +57,7 @@ impl Tree<'_> {
                 title: rule.content.clone(),
                 tone: Style::new(),
                 meta: Styled::from(paint(DIM, &meta)),
+                whole: None,
             });
             let item = Item {
                 id: record.id.clone(),
@@ -87,6 +89,7 @@ impl Tree<'_> {
             title: plural(steps.len(), "closed step"),
             tone: Style::new(),
             meta: Styled::from(counts),
+            whole: None,
         });
         let item = Item {
             id: id.clone(),

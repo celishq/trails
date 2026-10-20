@@ -17,7 +17,7 @@ impl Tree<'_> {
     pub(super) fn frame(self, text: Vec<Styled>) -> Frame {
         Frame {
             text,
-            remark: None,
+            remarks: vec![],
             next: self.next.get(),
             spun: self.spun.get(),
             order: self.order.take(),

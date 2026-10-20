@@ -83,6 +83,7 @@ impl Tree<'_> {
             title: step.title().to_string(),
             tone: self.tone(BOLD, note.newest()),
             meta: joined(meta),
+            whole: Some(hair.clone()),
         });
         self.pick(self.item(note, true, &summary.rules), lines, first);
         if self.view.spin && state.active() {
@@ -117,6 +118,7 @@ impl Tree<'_> {
             title: step.title().to_string(),
             tone: self.tone(look(state).title, note.newest()),
             meta: joined(meta),
+            whole: None,
         });
         self.pick(self.item(note, false, &summary.rules), lines, first);
     }

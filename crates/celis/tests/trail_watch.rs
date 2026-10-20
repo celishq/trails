@@ -128,8 +128,8 @@ fn watch_draws_each_tree_over_the_last_on_the_alternate_screen() {
     assert!(!shown.contains("\x1b[2J"), "{shown:?}");
 }
 
-/// On a terminal, `tree` prints a tree whose times stand still again, cut to the new width, when the
-/// terminal's width changes.
+/// On a terminal, `tree` prints a tree whose times stand still again, wrapped to the new width, when the
+/// terminal's width changes: an open trail wraps its whole title.
 #[test]
 fn watch_on_a_terminal_prints_the_tree_again_when_its_width_changes() {
     let repo = Repo::new();
@@ -143,7 +143,7 @@ fn watch_on_a_terminal_prints_the_tree_again_when_its_width_changes() {
     let mut watch = Watch::start(&repo, &["tree", &trail[..8]]);
     watch.until("thirty characters");
     watch.resize(30);
-    watch.until("a trail whose w…");
+    watch.until("│  words run well");
     let trees = watch.trees(Duration::ZERO);
     assert!(trees.len() >= 2, "{trees:?}");
 }
@@ -1051,8 +1051,14 @@ fn watch_leaves_the_last_column_empty() {
         assert!(row.chars().count() < 40, "{row:?}");
     }
     let rows = watch.rows();
-    let trail = rows.iter().find(|r| r.contains("a trail whose")).unwrap();
-    assert!(trail.ends_with('…'), "{rows:?}");
+    let at = rows
+        .iter()
+        .position(|r| r.contains("a trail whose"))
+        .unwrap_or_else(|| panic!("{rows:?}"));
+    assert!(
+        rows[at + 1].ends_with("well past forty characters"),
+        "{rows:?}"
+    );
 }
 
 /// On a terminal, `tree` prints the tree again within a second after a record lands in a linked folder that is
@@ -1101,6 +1107,29 @@ fn watch_says_what_celis_brought_the_trail_beside_the_dude() {
     watch.until("│ When you add a page: copy the frame.");
 }
 
+/// When a step starts with a rule live for it while the watch runs, celis says the rule paid off: the
+/// step got it to keep; before, it says only how the trail stands, with no count of zero.
+#[test]
+fn watch_says_a_rule_paid_off_when_a_step_starts_with_one() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    let scope = format!("trail:{}", &trail[..8]);
+    let rule = "When you ship a page: run the checks.";
+    let o = cli(&repo, &["decide", "--scope", &scope, "--", rule]);
+    assert!(o.status.success(), "{}", err(&o));
+    let step = add(&repo, &["--under", &trail[..8], "--", "the page"]);
+    std::thread::sleep(Duration::from_millis(1100));
+    let mut watch = Watch::start(&repo, &["tree"]);
+    watch.size(24, 80);
+    watch.until("📈 This trail so far");
+    watch.until("│ I learned 1 rule here. ");
+    std::thread::sleep(Duration::from_millis(1100));
+    let o = cli(&repo, &["step", "start", &step[..8]]);
+    assert!(o.status.success(), "{}", err(&o));
+    watch.until("🎉 Rule paid off");
+    watch.until("│ Starting “the page”, your agent got 1 rule to keep, like: when");
+}
+
 /// What celis says is the newest value of every trail the watch shows: a rule learned in an older trail
 /// reaches the card at once.
 #[test]
@@ -1116,4 +1145,18 @@ fn watch_says_the_newest_value_of_every_trail() {
     let o = cli(&repo, &["decide", "--scope", &scope, "--", rule]);
     assert!(o.status.success(), "{}", err(&o));
     watch.until("│ When you ship a page: run the checks.");
+}
+
+/// A scene that fits only once the window widens shows still at once: the walker already cheering at
+/// the summit, no climb.
+#[test]
+fn watch_shows_a_scene_still_when_the_window_widens() {
+    let repo = Repo::new();
+    add(&repo, &["--", "the trail"]);
+    let mut watch = Watch::start(&repo, &["tree"]);
+    watch.size(40, 80);
+    watch.until("the trail");
+    watch.size(40, 140);
+    watch.until("\\^o^/ |>");
+    assert!(!watch.shown(Duration::ZERO).contains("•_•"));
 }

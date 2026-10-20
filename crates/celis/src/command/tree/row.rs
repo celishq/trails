@@ -6,7 +6,8 @@ use ratatui::style::Style;
 
 /// A row of the tree: text as it is; a titled row, its title in the look `tone` after `lead` and its
 /// `marks`, wrapped with its next lines after `rest`; a lined row, its title cut to one line after
-/// `lead` and its `marks`, with `meta` at the right; a note under a row, after `rail` and `label`, in
+/// `lead` and its `marks`, with `meta` at the right, or whole, wrapped after `whole`, when it has one; a
+/// note under a row, after `rail` and `label`, in
 /// the look `tone`; or the start of a selected element's lines, or of lines no element holds.
 pub(super) enum Row {
     Text(Styled),
@@ -23,6 +24,7 @@ pub(super) enum Row {
         title: String,
         tone: Style,
         meta: Styled,
+        whole: Option<Styled>,
     },
     Note {
         rail: Styled,
@@ -60,15 +62,16 @@ impl Row {
                 title,
                 tone,
                 meta,
+                whole,
             } => {
-                return vec![lined(
-                    lead,
+                return lined(
+                    (lead, whole),
                     marks,
                     slot,
                     (&title, tone, picked),
                     meta,
                     width,
-                )]
+                )
             }
             Row::Titled {
                 lead,
@@ -123,15 +126,15 @@ const ROOM: usize = 16;
 
 /// One line: `lead`, `marks` padded to `slot` and two spaces, the title in its look, bold when `picked`
 /// unless dim, cut with … to fit `width`, then `meta` at the right edge; with less than `ROOM` cells for
-/// the title, no meta.
+/// the title, no meta. With a `whole` lead, the title wrapped instead, its next lines after that lead.
 fn lined(
-    lead: Styled,
+    (lead, whole): (Styled, Option<Styled>),
     marks: Styled,
     slot: usize,
     (title, tone, picked): (&str, Style, bool),
     meta: Styled,
     width: Option<usize>,
-) -> Styled {
+) -> Vec<Styled> {
     let tone = match picked && tone != DIM {
         true => BOLD,
         false => tone,
@@ -146,21 +149,32 @@ fn lined(
             line.push_span("  ");
             line.spans.extend(meta.spans);
         }
-        return line;
+        return vec![line];
     };
     let used = chars(&line);
     let (meta, room) = match width.saturating_sub(used + chars(&meta) + 2) {
         room if room >= ROOM || chars(&meta) == 0 => (meta, room),
         _ => (Styled::default(), width.saturating_sub(used)),
     };
-    let title = cut(title, room);
-    line.push_span(paint(tone, &title));
-    let gap = width.saturating_sub(used + visible(&title) + chars(&meta));
+    let parts = match whole {
+        Some(_) if visible(title) > room => wrap(title, room),
+        _ => vec![cut(title, room)],
+    };
+    let first = parts.first().cloned().unwrap_or_default();
+    line.push_span(paint(tone, &first));
+    let gap = width.saturating_sub(used + visible(&first) + chars(&meta));
     if chars(&meta) > 0 {
         line.push_span(" ".repeat(gap.max(2)));
         line.spans.extend(meta.spans);
     }
-    line
+    let mut lines = vec![line];
+    for part in parts.into_iter().skip(1) {
+        let mut next = whole.clone().unwrap_or_default();
+        next.push_span(" ".repeat(used.saturating_sub(chars(&next))));
+        next.push_span(paint(tone, &part));
+        lines.push(next);
+    }
+    lines
 }
 
 /// `text` in lines of at most `width` characters, at least one, broken between words; a longer word is

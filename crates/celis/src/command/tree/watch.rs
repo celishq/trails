@@ -99,7 +99,7 @@ impl Live for Watch<'_> {
             copy,
             markdown,
             spun: frame.spun,
-            remark: frame.remark.take(),
+            remarks: std::mem::take(&mut frame.remarks),
             again: frame.next.map(until),
         };
         self.frame = Some(frame);

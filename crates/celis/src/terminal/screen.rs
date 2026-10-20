@@ -65,7 +65,10 @@ impl Command {
 /// What a watch shows of its tree: whether in colour, the first line in view, whether the view moves to
 /// the selected line on the next draw, the lines a page holds, the rows on the screen, what the last
 /// key did when it has something to say, when it was first drawn, when it first drew the checks it
-/// draws now, the remark it shows with when it changed to it, and the remark it showed before.
+/// draws now, the remark it shows with when it changed to it, the remark it showed before, and which
+/// of the remarks it turns through it shows, since when, and the newest it saw, whether the terminal
+/// was resized since it last drew, the second it started, and whether it held the scene when it
+/// started.
 #[derive(Default)]
 pub(crate) struct Screen {
     pub colour: bool,
@@ -78,13 +81,17 @@ pub(crate) struct Screen {
     pub checked: Option<std::time::Instant>,
     pub remark: Option<(Remark, Option<std::time::Instant>)>,
     pub former: Option<Remark>,
+    pub turning: Option<(usize, std::time::Instant, u64)>,
+    pub resized: bool,
+    pub started: Option<u64>,
+    pub played: Option<bool>,
 }
 
 impl Screen {
-    /// Draws `head` then `lines` over the screen from the top left, each row only when it changed: each
-    /// line cut short of the last column and cleared to its end, the rows under `head` and above the last
-    /// scrolled to show its `picked` line when the selection moved, `keys` or what the last key did on
-    /// the last row, dim, and the rest cleared.
+    /// Draws `head` then `lines` over the screen from the top left, the whole screen cleared first after
+    /// a resize, each row only when it changed: each line cut short of the last column and cleared to its
+    /// end, the rows under `head` and above the last scrolled to show its `picked` line when the
+    /// selection moved, `keys` or what the last key did on the last row, dim, and the rest cleared.
     pub fn draw(
         &mut self,
         out: &mut dyn Write,
@@ -123,6 +130,9 @@ impl Screen {
             return Ok(());
         }
         let mut text = String::from("\x1b[?2026h");
+        if std::mem::take(&mut self.resized) {
+            text += "\x1b[H\x1b[2J";
+        }
         for (n, row) in screen.iter().enumerate() {
             if self.shown.get(n) != Some(row) {
                 text += &format!("\x1b[{};1H{row}\x1b[K", n + 1);

@@ -106,14 +106,16 @@ impl Command {
             .find(|s| s.state().active())
             .or(chosen.first());
         let focus = focus.filter(|_| view.watch);
-        let said = chosen
+        let mut said: Vec<Remark> = chosen
             .iter()
             .filter(|_| view.watch)
-            .map(|s| tree.remark(s.trail()));
-        let newest = said.max_by_key(|r| r.at).filter(|r| r.at > 0);
-        let remark = newest.or_else(|| focus.map(|s| tree.remark(s.trail())));
+            .flat_map(|s| tree.said(s.trail()))
+            .collect();
+        said.sort_by_key(|r| std::cmp::Reverse(r.at));
+        let mut remarks = varied(said);
+        remarks.extend(focus.map(|s| tree.standing(s.trail())));
         Ok(Frame {
-            remark,
+            remarks,
             ..tree.frame(printed)
         })
     }
@@ -153,10 +155,10 @@ impl View {
 
 /// A printed tree or part of one: its lines, the earliest time a time it shows changes, whether it
 /// shows the spinner, the lines a watch selects in the order it prints them, the line of the selected
-/// one, and in a watch the newest thing celis says of its trails.
+/// one, and in a watch what celis says of its trails: its recent values, then how the trail stands.
 pub(crate) struct Frame {
     pub text: Vec<Styled>,
-    pub remark: Option<Remark>,
+    pub remarks: Vec<Remark>,
     pub next: Option<u64>,
     pub spun: bool,
     pub order: Vec<Item>,
@@ -488,6 +490,28 @@ fn after(rail: &Styled, more: Span<'static>) -> Styled {
 const FRESH: u64 = 2;
 /// What starts the id of a trail's rules line in a watch's order.
 const RULES: &str = "§";
+/// The most values celis turns through on its card.
+const SAID: usize = 8;
+
+/// `said`, newest first, as the card turns through it: the newest of each kind first, then the rest
+/// newest first, each once, up to `SAID`.
+fn varied(said: Vec<Remark>) -> Vec<Remark> {
+    let mut first: Vec<Remark> = vec![];
+    let mut rest: Vec<Remark> = vec![];
+    for remark in said {
+        if first.iter().chain(&rest).any(|r| r.words == remark.words) {
+            continue;
+        }
+        match first.iter().any(|r| r.kind == remark.kind) {
+            true => rest.push(remark),
+            false => first.push(remark),
+        }
+    }
+    first.extend(rest);
+    first.truncate(SAID);
+    first
+}
+
 /// The cells a day's box takes beside its lines: `│ ` before them and ` │` after.
 const BORDER: usize = 4;
 

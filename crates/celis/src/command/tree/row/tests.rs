@@ -8,6 +8,7 @@ fn lined_row(title: &str, meta: &str) -> Row {
         title: title.to_string(),
         tone: Style::new(),
         meta: Styled::from(paint(DIM, meta)),
+        whole: None,
     }
 }
 
