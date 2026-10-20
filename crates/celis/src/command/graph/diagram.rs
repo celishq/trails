@@ -3,8 +3,8 @@
 
 use super::events::{Events, Kind};
 use crate::command::tree::wrap;
-use crate::terminal::canvas::cut;
-use crate::terminal::look::{frame, look as mark};
+use crate::terminal::canvas::{cut, BOLD, CYAN, DIM, GREEN, MAGENTA};
+use crate::terminal::look::{frame, look as mark, SPINNER};
 use celis_trails::{State, Step, Trail};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
@@ -111,7 +111,7 @@ impl<'a> Diagram<'a> {
                 buf[(region.x + x, region.y + y)] = graph[(left + x, y)].clone();
             }
         }
-        let dim = Style::new().fg(Color::DarkGray);
+        let dim = DIM;
         let after = (columns.len() as u16).saturating_sub(first + fit);
         if first > 0 {
             buf.set_string(area.x, area.y + 1, format!("◀ {first} more"), dim);
@@ -138,7 +138,7 @@ impl<'a> Diagram<'a> {
         let top = area.bottom().saturating_sub(rules.len() as u16);
         for (n, (id, text)) in rules.into_iter().enumerate() {
             let y = top + n as u16;
-            buf.set_string(area.x, y, "§", Style::new().fg(Color::Magenta));
+            buf.set_string(area.x, y, "§", MAGENTA);
             let text = cut(text, usize::from(area.width.saturating_sub(2)));
             buf.set_string(area.x + 2, y, text, Style::new());
             areas.insert(id.to_string(), Rect::new(area.x, y, area.width, 1));
@@ -218,16 +218,16 @@ impl<'a> Diagram<'a> {
         drawn: &mut HashMap<String, Rect>,
     ) {
         let first = &column[0];
-        let dim = Style::new().fg(Color::DarkGray);
+        let dim = DIM;
         if joined {
             let (x, y) = (first.area.x - GAP, first.area.y + first.area.height / 2);
             let (line, colour) = match (first.state, first.replaced) {
-                (State::Done, false) => ("━", Color::Green),
-                (State::Working, false) => ("━", Color::Cyan),
-                _ => ("┄", Color::DarkGray),
+                (State::Done, false) => ("━", GREEN),
+                (State::Working, false) => ("━", CYAN),
+                _ => ("┄", DIM),
             };
             let edge = format!("{}▶", line.repeat(usize::from(GAP) - 1));
-            graph.set_string(x, y, edge, Style::new().fg(colour));
+            graph.set_string(x, y, edge, colour);
             drawn.insert(format!("edge:{}", first.step.id()), Rect::new(x, y, GAP, 1));
         }
         for card in column {
@@ -254,18 +254,17 @@ impl<'a> Diagram<'a> {
     fn card(&self, card: &Node, graph: &mut Buffer, drawn: &mut HashMap<String, Rect>) {
         let area = card.area;
         let (border, colour) = match (card.state, card.replaced) {
-            (_, true) | (State::Dropped, _) => (BorderType::Rounded, Color::DarkGray),
-            (State::Open, _) => (BorderType::LightDoubleDashed, Color::DarkGray),
+            (_, true) | (State::Dropped, _) | (State::Expired, _) => (BorderType::Rounded, DIM),
+            (State::Open, _) => (BorderType::LightDoubleDashed, DIM),
             (State::Working, _) if self.spin.is_some_and(|s| s / 5 % 2 == 1) => {
-                (BorderType::Thick, Color::LightCyan)
+                (BorderType::Thick, SPINNER)
             }
-            (State::Working, _) => (BorderType::Thick, Color::Cyan),
-            (State::Done, _) => (BorderType::Rounded, Color::Green),
-            (State::Expired, _) => (BorderType::Rounded, Color::Yellow),
+            (State::Working, _) => (BorderType::Thick, CYAN),
+            (State::Done, _) => (BorderType::Rounded, GREEN),
         };
         Block::bordered()
             .border_type(border)
-            .border_style(Style::new().fg(colour))
+            .border_style(colour)
             .render(area, graph);
         let x = area.x + 2;
         let ((mark, look), tone) = self.lit(card.step, card.state, card.replaced);
@@ -287,14 +286,14 @@ impl<'a> Diagram<'a> {
         }
         if card.more > 0 {
             let more = format!("+{} more", card.more);
-            graph.set_string(x, y, more, Style::new().fg(Color::DarkGray));
+            graph.set_string(x, y, more, DIM);
         }
         if let Some((done, all)) = card.progress {
             let y = area.bottom() - 2;
             let filled = done * 10 / all;
-            graph.set_string(x, y, "▰".repeat(filled), Style::new().fg(Color::Green));
+            graph.set_string(x, y, "▰".repeat(filled), GREEN);
             let rest = "▱".repeat(10 - filled);
-            let dim = Style::new().fg(Color::DarkGray);
+            let dim = DIM;
             graph.set_string(x + filled as u16, y, rest, dim);
             graph.set_string(x + 11, y, format!("{done}/{all}"), dim);
         }
@@ -312,11 +311,10 @@ impl<'a> Diagram<'a> {
             steps.len()
         );
         let room = usize::from(area.width).saturating_sub(right.chars().count() + 4);
-        buf.set_string(area.x, area.y, "◆", Style::new().fg(Color::Magenta));
-        let bold = Style::new().add_modifier(Modifier::BOLD);
-        buf.set_string(area.x + 2, area.y, cut(self.head.title(), room), bold);
+        buf.set_string(area.x, area.y, "◆", MAGENTA);
+        buf.set_string(area.x + 2, area.y, cut(self.head.title(), room), BOLD);
         let x = area.right().saturating_sub(right.chars().count() as u16);
-        buf.set_string(x, area.y, right, Style::new().fg(Color::DarkGray));
+        buf.set_string(x, area.y, right, DIM);
     }
 
     /// The first of `all` columns to show when `fit` fit: `offset`, moved just enough to show the
@@ -343,25 +341,15 @@ impl<'a> Diagram<'a> {
 
     /// The mark of a step in `state`, `replaced` or not, with its style, and the style of its title.
     fn look(&self, state: State, replaced: bool) -> ((&'static str, Style), Style) {
-        let dim = Style::new().fg(Color::DarkGray);
-        let gone = dim.add_modifier(Modifier::CROSSED_OUT);
+        let shown = mark(state);
         match (state, replaced) {
-            (_, true) => (("↺", dim), gone),
-            (State::Open, _) => ((mark(state).mark, dim), dim),
-            (State::Working, _) => {
-                let mark = self.spin.map_or(mark(state).mark, frame);
-                let bold = Style::new().add_modifier(Modifier::BOLD);
-                ((mark, Style::new().fg(Color::Cyan)), bold)
-            }
-            (State::Done, _) => (
-                (mark(state).mark, Style::new().fg(Color::Green)),
-                Style::new(),
+            (_, true) => (("↺", DIM), DIM.add_modifier(Modifier::CROSSED_OUT)),
+            (State::Open, _) => ((shown.mark, DIM), DIM),
+            (State::Working, _) => (
+                (self.spin.map_or(shown.mark, frame), shown.text),
+                shown.title,
             ),
-            (State::Dropped, _) => ((mark(state).mark, Style::new().fg(Color::Red)), gone),
-            (State::Expired, _) => {
-                let yellow = Style::new().fg(Color::Yellow);
-                ((mark(state).mark, yellow), yellow)
-            }
+            _ => ((shown.mark, shown.text), shown.title),
         }
     }
 

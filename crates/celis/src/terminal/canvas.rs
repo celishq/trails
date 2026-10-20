@@ -3,24 +3,37 @@
 use ratatui::buffer::Buffer;
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
-use unicode_width::UnicodeWidthStr;
+use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 /// A line of text with its looks.
 pub(crate) type Styled = Line<'static>;
 
 pub(crate) const DIM: Style = Style::new().add_modifier(Modifier::DIM);
 pub(crate) const BOLD: Style = Style::new().add_modifier(Modifier::BOLD);
-pub(crate) const GREEN: Style = Style::new().fg(Color::Green);
-pub(crate) const YELLOW: Style = Style::new().fg(Color::Yellow);
-pub(crate) const MAGENTA: Style = Style::new().fg(Color::Magenta);
-pub(crate) const RED: Style = Style::new().fg(Color::Red);
+/// Done: a neon mint.
+pub(crate) const GREEN: Style = Style::new().fg(Color::Rgb(52, 230, 140));
+/// Changed from its plan: amber.
+pub(crate) const YELLOW: Style = Style::new().fg(Color::Rgb(250, 204, 21));
+/// Working: a neon cyan.
+pub(crate) const CYAN: Style = Style::new().fg(Color::Rgb(34, 211, 238));
+/// Rules: a neon violet.
+pub(crate) const MAGENTA: Style = Style::new().fg(Color::Rgb(192, 96, 255));
+/// Dropped: rose.
+pub(crate) const RED: Style = Style::new().fg(Color::Rgb(251, 113, 133));
+/// The border of a day's box and the rule under its line: a slate blue, a little lighter than the
+/// screen.
+pub(crate) const FRAME: Style = Style::new().fg(Color::Rgb(30, 48, 76));
+/// The border of celis's card and the line after its headline, lighter than a day's box.
+pub(crate) const EDGE: Style = Style::new().fg(Color::Rgb(44, 66, 104));
+/// A link the person opens, like `Show more`: a soft blue.
+pub(crate) const LINK: Style = Style::new().fg(Color::Rgb(96, 165, 250));
 
 /// `text` in the look `style`.
 pub(crate) fn paint(style: Style, text: &str) -> Span<'static> {
     Span::styled(text.to_string(), style)
 }
 
-/// The characters of `text` a terminal shows; colour codes count none.
+/// The cells of `text` a terminal shows: a wide character counts 2, a colour code none.
 pub(crate) fn visible(text: &str) -> usize {
     let mut count = 0;
     let mut code = false;
@@ -28,24 +41,29 @@ pub(crate) fn visible(text: &str) -> usize {
         match (code, c) {
             (false, '\x1b') => code = true,
             (true, 'm') => code = false,
-            (false, _) => count += 1,
+            (false, c) => count += cells(c),
             _ => {}
         }
     }
     count
 }
 
-/// `text` cut to `width` visible characters, its last one `…`, when it is wider.
+/// The cells `c` takes on a terminal.
+fn cells(c: char) -> usize {
+    c.width().unwrap_or(0)
+}
+
+/// `text` cut to `width` visible cells, its last one `…`, when it is wider.
 pub(crate) fn cut(text: &str, width: usize) -> String {
     if width < 2 || visible(text) <= width {
         return text.to_string();
     }
     let mut kept = String::new();
     for c in text.chars() {
-        kept.push(c);
-        if visible(&kept) == width - 1 {
+        if visible(&kept) + cells(c) > width - 1 {
             break;
         }
+        kept.push(c);
     }
     kept.push('…');
     if text.contains('\x1b') {
@@ -54,12 +72,12 @@ pub(crate) fn cut(text: &str, width: usize) -> String {
     kept
 }
 
-/// The characters of `line`.
+/// The cells of `line` on a terminal.
 pub(crate) fn width(line: &Styled) -> usize {
-    line.spans.iter().map(|s| s.content.chars().count()).sum()
+    line.spans.iter().map(|s| s.content.width()).sum()
 }
 
-/// `line` cut to `width` characters, its last one `…` in the look before it, when it is wider.
+/// `line` cut to `width` cells, its last one `…` in the look before it, when it is wider.
 pub(crate) fn clip(line: &Styled, width: usize) -> Styled {
     if width < 2 || self::width(line) <= width {
         return line.clone();
@@ -70,8 +88,15 @@ pub(crate) fn clip(line: &Styled, width: usize) -> Styled {
         if left == 0 {
             break;
         }
-        let text: String = span.content.chars().take(left).collect();
-        left -= text.chars().count();
+        let mut text = String::new();
+        for c in span.content.chars() {
+            if cells(c) > left {
+                left = 0;
+                break;
+            }
+            left -= cells(c);
+            text.push(c);
+        }
         kept.push(Span::styled(text, span.style));
     }
     match kept.last_mut() {
@@ -81,7 +106,7 @@ pub(crate) fn clip(line: &Styled, width: usize) -> Styled {
     Styled::from(kept)
 }
 
-/// `line` with spaces after it to `width` characters.
+/// `line` with spaces after it to `width` cells.
 pub(crate) fn pad(mut line: Styled, width: usize) -> Styled {
     let pad = width.saturating_sub(self::width(&line));
     if pad > 0 {

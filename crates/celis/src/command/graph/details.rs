@@ -1,9 +1,11 @@
 //! The details of one step, as the node view opens them over its graph.
 
+use crate::terminal::canvas::{BOLD, DIM, GREEN, RED, YELLOW};
+use crate::terminal::look::look;
 use celis_trails::{Mark, State, Step};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
-use ratatui::style::{Color, Modifier, Style};
+use ratatui::style::Style;
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, BorderType, Clear, Paragraph, Widget, Wrap};
 
@@ -16,8 +18,7 @@ pub(super) fn details(step: Step, state: State, area: Rect, buf: &mut Buffer) {
         area.width.saturating_sub(4),
         area.height.saturating_sub(1),
     );
-    let dim = Style::new().fg(Color::DarkGray);
-    let bold = Style::new().add_modifier(Modifier::BOLD);
+    let (dim, bold) = (DIM, BOLD);
     let field = |name: &str, value: String, style: Style| {
         Line::from(vec![
             Span::styled(format!("{name:<8}"), dim),
@@ -35,18 +36,7 @@ pub(super) fn details(step: Step, state: State, area: Rect, buf: &mut Buffer) {
         })
         .collect();
     lines.push(Line::raw(""));
-    let colour = match state {
-        State::Open => Color::DarkGray,
-        State::Working => Color::Cyan,
-        State::Done => Color::Green,
-        State::Dropped => Color::Red,
-        State::Expired => Color::Yellow,
-    };
-    lines.push(field(
-        "state",
-        state.text().to_string(),
-        Style::new().fg(colour),
-    ));
+    lines.push(field("state", state.text().to_string(), look(state).text));
     if !record.places.is_empty() {
         lines.push(field("at", record.places.join(", "), Style::new()));
     }
@@ -63,19 +53,19 @@ pub(super) fn details(step: Step, state: State, area: Rect, buf: &mut Buffer) {
     }
     match step.close().map(|(_, mark)| mark) {
         Some(Mark::Done { proof, changed }) if state == State::Done => {
-            lines.push(field("proof", proof, Style::new().fg(Color::Green)));
+            lines.push(field("proof", proof, GREEN));
             if let Some(changed) = changed {
-                lines.push(field("changed", changed, Style::new().fg(Color::Yellow)));
+                lines.push(field("changed", changed, YELLOW));
             }
         }
         Some(Mark::Drop { reason }) if state == State::Dropped => {
-            lines.push(field("why", reason, Style::new().fg(Color::Red)));
+            lines.push(field("why", reason, RED));
         }
         _ => {}
     }
     let block = Block::bordered()
         .border_type(BorderType::Rounded)
-        .border_style(Style::new().fg(Color::White))
+        .border_style(Style::new())
         .title(format!(" {} ", &step.id()[..8]))
         .title_bottom(Line::styled(" enter esc close ", dim).right_aligned());
     Clear.render(area, buf);

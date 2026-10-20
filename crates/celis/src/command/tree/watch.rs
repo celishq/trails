@@ -99,6 +99,7 @@ impl Live for Watch<'_> {
             copy,
             markdown,
             spun: frame.spun,
+            remark: frame.remark.take(),
             again: frame.next.map(until),
         };
         self.frame = Some(frame);
@@ -107,8 +108,8 @@ impl Live for Watch<'_> {
 
     /// Moves the selection, or opens or closes lines.
     fn press(&mut self, key: Key, _: &Model, screen: &mut Screen) -> Result<(), Failure> {
-        let order = self.frame.as_ref().map_or(&[][..], |f| &f.order);
         let before = self.view.selected.clone();
+        let order = self.frame.as_ref().map_or(&[][..], |f| &f.order);
         press(key, &mut self.view, order, self.named);
         screen.follow |= self.view.selected != before;
         Ok(())

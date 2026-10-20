@@ -2,8 +2,11 @@
 //! again comes.
 
 use super::canvas::Styled;
-use super::look::{spin, spinner, TURN};
+use super::look::{spin, spinner, DRAWN, TURN};
+use super::remark::{self, Remark};
+use super::scene::{self, scene, FADE, PLAYS};
 use super::screen::{clipboard, Screen};
+use super::unfold::{fade, length, smooth, unfold};
 use super::wake::{Key, Wake};
 use crate::command::Command;
 use crate::failure::Failure;
@@ -16,8 +19,8 @@ use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender};
 use std::time::{Duration, Instant};
 
 /// One drawn page: its lines, the line to keep in view, its key line, the id `c` copies, the Markdown
-/// `m` copies, whether its lines hold a spinner that turns, and how long until it is drawn again with
-/// no wake.
+/// `m` copies, whether its lines hold a spinner that turns, what celis says above it, and how long
+/// until it is drawn again with no wake.
 #[derive(Default)]
 pub(crate) struct Page {
     pub lines: Vec<Styled>,
@@ -26,6 +29,7 @@ pub(crate) struct Page {
     pub copy: Option<String>,
     pub markdown: Option<String>,
     pub spun: bool,
+    pub remark: Option<Remark>,
     pub again: Option<Duration>,
 }
 
@@ -67,7 +71,7 @@ impl Command {
                 ..Screen::default()
             };
             if !self.held()? {
-                screen.draw(out, &empty.lines, None, &empty.keys)?;
+                screen.draw(out, &[], &empty.lines, None, &empty.keys)?;
                 while !self.held()? {
                     if let Ok(Wake::Quit) = wakes.1.recv_timeout(Duration::from_millis(250)) {
                         return Ok(());
@@ -124,8 +128,10 @@ impl Command {
     }
 }
 
-/// Draws `page` on `screen`, again each turn of its spinner, until a wake comes or its time to draw
-/// again passes; that wake.
+/// Draws `page` on `screen`, under what celis says when it has a remark, the screen prints in colour and
+/// leaves `TREE` rows under it, and under the trail scene too when the screen holds it whole, the scene
+/// alone while it plays its opening, then the card fading in and the rows unfolding, again each turn of its spinner or the dude, until a wake comes or its time to draw again
+/// passes; that wake.
 fn show(
     page: &Page,
     screen: &mut Screen,
@@ -133,15 +139,68 @@ fn show(
     events: &Receiver<Wake>,
 ) -> Result<Result<Wake, RecvTimeoutError>, Failure> {
     let due = page.again.map(|again| Instant::now() + again);
+    let checking = page
+        .lines
+        .iter()
+        .flat_map(|l| &l.spans)
+        .any(|s| s.content.contains(DRAWN));
+    if !checking {
+        screen.checked = None;
+    }
+    let checked = *screen.checked.get_or_insert_with(Instant::now);
+    let size = crate::command::size();
+    let room = size.map(|s| usize::from(s.ws_row).saturating_sub(1));
+    let width = size.map_or(0, |s| usize::from(s.ws_col).saturating_sub(1));
+    let fits = |rows: usize| room.is_some_and(|r| r >= rows + TREE);
+    let remark = page
+        .remark
+        .as_ref()
+        .filter(|_| screen.colour && fits(remark::ROWS));
+    let wide = width >= 2 + scene::COLUMNS + 2;
+    let scenery = remark.is_some() && wide && fits(scene::ROWS + remark::ROWS);
+    let opened = *screen.opened.get_or_insert_with(Instant::now);
+    if let Some(remark) = remark {
+        if screen.remark.as_ref().map(|(shown, _)| shown) != Some(remark) {
+            let changed = screen.remark.is_some().then(Instant::now);
+            screen.former = screen.remark.take().map(|(shown, _)| shown);
+            screen.remark = Some((remark.clone(), changed));
+        }
+    }
+    let turns = page.spun || remark.is_some();
+    let mut arriving;
     loop {
         let lines = match page.spun {
-            true => spinner(&page.lines, spin()),
+            true => spinner(&page.lines, spin(), drawn(checked)),
             false => page.lines.clone(),
         };
-        screen.draw(out, &lines, page.picked, &page.keys)?;
+        let opening = opened.elapsed().as_secs_f64();
+        let mut head = match scenery {
+            true => fade(&scene(drawn(opened), width), opening, FADE),
+            false => vec![],
+        };
+        let (card, moving) = match remark {
+            Some(_) => said(screen, width),
+            None => (vec![], false),
+        };
+        let since = opened.elapsed().as_secs_f64() - (PLAYS as u32 * TURN).as_secs_f64();
+        let fading = opening < FADE;
+        arriving =
+            scenery && (fading || (0.0..length(card.len() + room.unwrap_or(0))).contains(&since));
+        match (scenery, since) {
+            (true, ..0.0) => screen.draw(out, &head, &[], None, "")?,
+            (true, at) if at >= 0.0 && arriving => {
+                head.extend(fade(&card, at, IN));
+                screen.draw(out, &head, &unfold(&lines, at), page.picked, &page.keys)?;
+            }
+            _ => {
+                head.extend(card);
+                screen.draw(out, &head, &lines, page.picked, &page.keys)?;
+            }
+        }
         let left = due.map(|due| due.saturating_duration_since(Instant::now()));
-        let wait = match page.spun {
-            true => left.map_or(TURN, |left| left.min(TURN)),
+        let turn = if arriving || moving { FRAME } else { TURN };
+        let wait = match turns {
+            true => left.map_or(turn, |left| left.min(turn)),
             false => left.unwrap_or(Duration::MAX),
         };
         match events.recv_timeout(wait) {
@@ -150,6 +209,54 @@ fn show(
         }
     }
 }
+
+/// The card of the remark `screen` shows, `width` wide, and whether it moves: once it changed, the
+/// headline before fades out, then this one fades in while its words type in behind a caret that blinks a
+/// while after them, then goes.
+fn said(screen: &Screen, width: usize) -> (Vec<Styled>, bool) {
+    let Some((remark, changed)) = &screen.remark else {
+        return (vec![], false);
+    };
+    let Some(changed) = changed else {
+        return (remark.rows(spin(), (None, false, 1.0), width), false);
+    };
+    let at = changed.elapsed().as_secs_f64();
+    if let (Some(former), true) = (&screen.former, at < OUT) {
+        let rows = former.rows(spin(), (None, false, 1.0 - smooth(at / OUT)), width);
+        return (rows, true);
+    }
+    let at = at - OUT;
+    let typed = (at * PACE) as usize;
+    let caret = at < CARET && (typed < remark.length() || ((at * 2.5) as usize).is_multiple_of(2));
+    let shown = smooth(at / IN);
+    (
+        remark.rows(spin(), (Some(typed), caret, shown), width),
+        at < CARET,
+    )
+}
+
+/// The seconds the headline before takes to fade out.
+const OUT: f64 = 0.3;
+
+/// The seconds a headline takes to fade in.
+const IN: f64 = 0.45;
+
+/// The characters a changed remark types each second.
+const PACE: f64 = 45.0;
+
+/// The seconds a changed remark shows its caret.
+const CARET: f64 = 3.5;
+
+/// The frames of the spinner since `at`.
+fn drawn(at: Instant) -> usize {
+    (at.elapsed().as_millis() / TURN.as_millis()) as usize
+}
+
+/// The time between two frames while rows arrive.
+const FRAME: Duration = Duration::from_millis(16);
+
+/// The fewest rows a screen keeps for the tree under what celis says.
+const TREE: usize = 8;
 
 /// The run of wakes from `wake` on, with the wakes that wait in `events` up to a key that changes what
 /// a page shows; records wait 50 ms for more. Each key copies from `drawn`, the page last drawn, or

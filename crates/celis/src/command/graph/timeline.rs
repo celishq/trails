@@ -2,9 +2,10 @@
 
 use super::events::{Events, Kind};
 use crate::command::tree::cut;
+use crate::terminal::canvas::{BOLD, CYAN, DIM, GREEN};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
-use ratatui::style::{Color, Modifier, Style};
+use ratatui::style::Style;
 
 /// Draws the bottom two rows of `area` on `buf`: whether it plays, follows or stands at an event after
 /// the first `shown` of `events`, with the newest event shown, then a bar of the events shown.
@@ -17,11 +18,11 @@ pub(super) fn timeline(
 ) {
     let all = events.all.len();
     let (status, colour) = match (playing, live) {
-        (true, _) => (format!("▶ {}/{all}", shown), Color::Cyan),
-        (false, true) => ("● live".to_string(), Color::Green),
-        (false, false) => (format!("⏸ {}/{all}", shown), Color::Yellow),
+        (true, _) => (format!("▶ {}/{all}", shown), CYAN),
+        (false, true) => ("● live".to_string(), GREEN),
+        (false, false) => (format!("⏸ {}/{all}", shown), DIM),
     };
-    let style = Style::new().fg(colour).add_modifier(Modifier::BOLD);
+    let style = colour.patch(BOLD);
     let width = usize::from(area.width);
     buf.set_string(area.x, area.y, &status, style);
     if let Some(event) = events.all[..shown].last() {
@@ -36,11 +37,11 @@ pub(super) fn timeline(
     };
     for x in 0..width {
         let (bar, colour) = match x.cmp(&at) {
-            std::cmp::Ordering::Less => ("━", Color::Cyan),
-            std::cmp::Ordering::Equal => ("●", Color::White),
-            std::cmp::Ordering::Greater => ("─", Color::DarkGray),
+            std::cmp::Ordering::Less => ("━", CYAN),
+            std::cmp::Ordering::Equal => ("●", BOLD),
+            std::cmp::Ordering::Greater => ("─", DIM),
         };
-        buf.set_string(area.x + x as u16, area.y + 1, bar, Style::new().fg(colour));
+        buf.set_string(area.x + x as u16, area.y + 1, bar, colour);
     }
 }
 

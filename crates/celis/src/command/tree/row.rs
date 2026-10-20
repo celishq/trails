@@ -1,11 +1,12 @@
 //! A row of a tree, and how a titled row and the notes under it lay out.
 
-use super::visible;
+use super::{cut, visible};
 use crate::terminal::canvas::{paint, width as chars, Styled, BOLD, DIM};
 use ratatui::style::Style;
 
 /// A row of the tree: text as it is; a titled row, its title in the look `tone` after `lead` and its
-/// `marks`, wrapped with its next lines after `rest`; a note under a row, after `rail` and `label`, in
+/// `marks`, wrapped with its next lines after `rest`; a lined row, its title cut to one line after
+/// `lead` and its `marks`, with `meta` at the right; a note under a row, after `rail` and `label`, in
 /// the look `tone`; or the start of a selected element's lines, or of lines no element holds.
 pub(super) enum Row {
     Text(Styled),
@@ -15,6 +16,13 @@ pub(super) enum Row {
         title: String,
         tone: Style,
         rest: Styled,
+    },
+    Lined {
+        lead: Styled,
+        marks: Styled,
+        title: String,
+        tone: Style,
+        meta: Styled,
     },
     Note {
         rail: Styled,
@@ -29,7 +37,7 @@ impl Row {
     /// Its marks when it is a row, also when it is selected.
     pub fn marks(&self) -> Option<&Styled> {
         match self {
-            Row::Titled { marks, .. } => Some(marks),
+            Row::Titled { marks, .. } | Row::Lined { marks, .. } => Some(marks),
             Row::Mark(_, line) => line.marks(),
             _ => None,
         }
@@ -46,6 +54,22 @@ impl Row {
         let (first, next, text, tone) = match self {
             Row::Text(text) => return vec![text],
             Row::Mark(_, line) => return line.lines(slot, width, picked),
+            Row::Lined {
+                lead,
+                marks,
+                title,
+                tone,
+                meta,
+            } => {
+                return vec![lined(
+                    lead,
+                    marks,
+                    slot,
+                    (&title, tone, picked),
+                    meta,
+                    width,
+                )]
+            }
             Row::Titled {
                 lead,
                 marks,
@@ -94,6 +118,51 @@ impl Row {
     }
 }
 
+/// The fewest free cells a title keeps before a row drops its meta.
+const ROOM: usize = 16;
+
+/// One line: `lead`, `marks` padded to `slot` and two spaces, the title in its look, bold when `picked`
+/// unless dim, cut with … to fit `width`, then `meta` at the right edge; with less than `ROOM` cells for
+/// the title, no meta.
+fn lined(
+    lead: Styled,
+    marks: Styled,
+    slot: usize,
+    (title, tone, picked): (&str, Style, bool),
+    meta: Styled,
+    width: Option<usize>,
+) -> Styled {
+    let tone = match picked && tone != DIM {
+        true => BOLD,
+        false => tone,
+    };
+    let mut line = lead;
+    let pad = slot.saturating_sub(chars(&marks));
+    line.spans.extend(marks.spans);
+    line.push_span(" ".repeat(pad + 2));
+    let Some(width) = width else {
+        line.push_span(paint(tone, title));
+        if chars(&meta) > 0 {
+            line.push_span("  ");
+            line.spans.extend(meta.spans);
+        }
+        return line;
+    };
+    let used = chars(&line);
+    let (meta, room) = match width.saturating_sub(used + chars(&meta) + 2) {
+        room if room >= ROOM || chars(&meta) == 0 => (meta, room),
+        _ => (Styled::default(), width.saturating_sub(used)),
+    };
+    let title = cut(title, room);
+    line.push_span(paint(tone, &title));
+    let gap = width.saturating_sub(used + visible(&title) + chars(&meta));
+    if chars(&meta) > 0 {
+        line.push_span(" ".repeat(gap.max(2)));
+        line.spans.extend(meta.spans);
+    }
+    line
+}
+
 /// `text` in lines of at most `width` characters, at least one, broken between words; a longer word is
 /// broken across lines.
 pub(crate) fn wrap(text: &str, width: usize) -> Vec<String> {
@@ -113,3 +182,6 @@ pub(crate) fn wrap(text: &str, width: usize) -> Vec<String> {
     }
     lines
 }
+
+#[cfg(test)]
+mod tests;

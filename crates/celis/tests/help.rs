@@ -290,7 +290,7 @@ fn on_a_terminal_the_page_prints_in_celis_looks() {
     let mut watch = Watch::start(&repo, &["help"]);
     watch.shown(Duration::from_secs(2));
     let shown = String::from_utf8_lossy(&watch.seen).to_string();
-    for code in ["\x1b[1mcelis", "\x1b[1mstep add", "\x1b[32m✓"] {
+    for code in ["\x1b[1mcelis", "\x1b[1mstep add", "\x1b[38;2;52;230;140m✓"] {
         assert!(shown.contains(code), "{code:?} in {shown:?}");
     }
     let plain = support::watch::plain(&shown).replace("\r\n", "\n");

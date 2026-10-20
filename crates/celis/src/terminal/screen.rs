@@ -1,6 +1,7 @@
 //! What a watch draws on the terminal, and what it reads from it.
 
 use super::canvas::{clip, line, Styled, DIM};
+use super::remark::Remark;
 use super::wake::{keys, signals, Key, Wake};
 use crate::command::Command;
 use crate::failure::Failure;
@@ -13,8 +14,9 @@ use std::sync::mpsc::{channel, Receiver, Sender};
 use std::time::Duration;
 
 impl Command {
-    /// Runs `body` on the alternate screen, with the keys and signals it reads sent to the channel it
-    /// gets; then sets the terminal back and leaves the alternate screen with nothing printed.
+    /// Runs `body` on the alternate screen with autowrap off, with the keys and signals it reads sent to
+    /// the channel it gets, once it asked the terminal its background; then sets the terminal back and
+    /// leaves the alternate screen with nothing printed.
     pub(crate) fn screen(
         &self,
         out: &mut dyn Write,
@@ -22,13 +24,14 @@ impl Command {
     ) -> Result<(), Failure> {
         let (send, events) = channel();
         signals(send.clone());
+        super::background::ask();
         let typed = keys(send.clone());
-        write!(out, "\x1b[?1049h\x1b[?25l").map_err(anyhow::Error::from)?;
+        write!(out, "\x1b[?1049h\x1b[?7l\x1b[?25l").map_err(anyhow::Error::from)?;
         let done = body(out, (send, events));
         if let Some(terminal) = typed {
             unsafe { libc::tcsetattr(libc::STDIN_FILENO, libc::TCSANOW, &terminal) };
         }
-        write!(out, "\x1b[?25h\x1b[?1049l")
+        write!(out, "\x1b[?25h\x1b[?7h\x1b[?1049l")
             .and_then(|_| out.flush())
             .map_err(anyhow::Error::from)?;
         done
@@ -60,8 +63,9 @@ impl Command {
 }
 
 /// What a watch shows of its tree: whether in colour, the first line in view, whether the view moves to
-/// the selected line on the next draw, the lines a page holds, the rows on the screen, and what the last
-/// key did when it has something to say.
+/// the selected line on the next draw, the lines a page holds, the rows on the screen, what the last
+/// key did when it has something to say, when it was first drawn, when it first drew the checks it
+/// draws now, the remark it shows with when it changed to it, and the remark it showed before.
 #[derive(Default)]
 pub(crate) struct Screen {
     pub colour: bool,
@@ -70,16 +74,21 @@ pub(crate) struct Screen {
     pub page: usize,
     pub shown: Vec<String>,
     pub said: Option<String>,
+    pub opened: Option<std::time::Instant>,
+    pub checked: Option<std::time::Instant>,
+    pub remark: Option<(Remark, Option<std::time::Instant>)>,
+    pub former: Option<Remark>,
 }
 
 impl Screen {
-    /// Draws `lines` over the screen from the top left, each row only when it changed: each line cut
-    /// short of the last column and cleared to its end, the rows above the last scrolled to show its
-    /// `picked` line when the selection moved, `keys` or what the last key did on the last row, dim, and
-    /// the rest cleared.
+    /// Draws `head` then `lines` over the screen from the top left, each row only when it changed: each
+    /// line cut short of the last column and cleared to its end, the rows under `head` and above the last
+    /// scrolled to show its `picked` line when the selection moved, `keys` or what the last key did on
+    /// the last row, dim, and the rest cleared.
     pub fn draw(
         &mut self,
         out: &mut dyn Write,
+        head: &[Styled],
         lines: &[Styled],
         picked: Option<usize>,
         keys: &str,
@@ -88,16 +97,17 @@ impl Screen {
         let width = size.map(|s| usize::from(s.ws_col)).filter(|&w| w > 1);
         let width = width.map(|w| w - 1);
         let rows = size.map(|s| usize::from(s.ws_row)).filter(|&r| r > 0);
-        let mut screen = match rows
-            .map(|r| r - 1)
+        let mut screen = head.to_vec();
+        match rows
+            .map(|r| r.saturating_sub(1 + head.len()))
             .filter(|&body| body >= 3 && lines.len() > body)
         {
-            Some(body) => self.window(lines, body, picked),
+            Some(body) => screen.extend(self.window(lines, body, picked)),
             None => {
                 self.top = 0;
-                lines.to_vec()
+                screen.extend_from_slice(lines);
             }
-        };
+        }
         let said = self.said.as_deref().unwrap_or(keys);
         let last = rows.map(|r| r - 1).filter(|&k| k >= screen.len());
         screen.resize(last.unwrap_or(screen.len()), Styled::default());

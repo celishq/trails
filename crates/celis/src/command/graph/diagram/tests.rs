@@ -20,7 +20,8 @@ fn step(under: Option<&Note>, at: u64, content: &str) -> Note {
     .unwrap()
 }
 
-/// The selected card keeps the border of its state, and its mark and title show in bold bright yellow.
+/// The selected card keeps the dim border of its state, and its mark and title show in bold bright
+/// yellow.
 #[test]
 fn a_selected_card_shows_in_bold_bright_yellow_text() {
     let now = 1_800_000_000;
@@ -42,15 +43,13 @@ fn a_selected_card_shows_in_bold_bright_yellow_text() {
     let areas = diagram.render(buf.area, &mut buf, &Cell::new(0));
     let card = areas[&page.id];
     let corner = &buf[(card.x, card.y)];
-    assert_eq!((corner.symbol(), corner.fg), ("┌", Color::DarkGray));
-    let title = Style::new()
-        .fg(Color::LightYellow)
-        .add_modifier(Modifier::BOLD);
+    assert_eq!(corner.symbol(), "┌");
+    assert!(corner.modifier.contains(Modifier::DIM));
     for x in [card.x + 2, card.x + 4] {
         let cell = &buf[(x, card.y + 1)];
         assert_eq!(
             (cell.fg, cell.modifier),
-            (title.fg.unwrap(), title.add_modifier)
+            (Color::LightYellow, Modifier::BOLD)
         );
     }
 }

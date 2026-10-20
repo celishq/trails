@@ -5,9 +5,10 @@ use super::layout::{self, Group, Key};
 use super::row::Row;
 use super::{Frame, Tree, PROJECT};
 use crate::failure::Failure;
-use crate::terminal::canvas::{paint, Styled, BOLD, DIM};
+use crate::terminal::canvas::{clip, paint, visible, Styled, BOLD, DIM, FRAME};
 use crate::text::clock::weekday;
 use celis_trails::Step;
+use ratatui::text::Span;
 use std::cell::{Cell, RefCell};
 use std::collections::HashSet;
 
@@ -16,6 +17,7 @@ impl Tree<'_> {
     pub(super) fn frame(self, text: Vec<Styled>) -> Frame {
         Frame {
             text,
+            remark: None,
             next: self.next.get(),
             spun: self.spun.get(),
             order: self.order.take(),
@@ -103,7 +105,8 @@ impl Tree<'_> {
     }
 
     /// Prints the day group of `trails` from the day of `at`: a line with the day and its counts, then
-    /// its active trails, then the rest by project.
+    /// its active trails and the rest by project; in a watch, in a box under a rule, each project under
+    /// its 📁 heading.
     pub(super) fn day(
         &self,
         at: u64,
@@ -112,8 +115,32 @@ impl Tree<'_> {
     ) -> Result<(), Failure> {
         let active = trails.iter().filter(|s| s.state().active()).count();
         let counts = format!(" · {active} active · {} done", trails.len() - active);
-        let head = Styled::from(vec![paint(BOLD, &weekday(at)), paint(DIM, &counts)]);
-        let mut lines = vec![Row::Mark(false, Box::new(Row::Text(head)))];
+        let boxed = self.view.watch;
+        let mut head = vec![paint(BOLD, &weekday(at)), paint(DIM, &counts)];
+        if boxed {
+            head.insert(0, Span::raw("📅 "));
+        }
+        let mut lines = vec![Row::Mark(false, Box::new(Row::Text(Styled::from(head))))];
+        if boxed {
+            lines.push(Row::Mark(false, Box::new(Row::Text(Styled::from(RULED)))));
+        }
+        if boxed {
+            self.projects(trails, &mut lines);
+        } else {
+            self.active_first(trails, &mut lines);
+        }
+        if !boxed {
+            return self.show(lines, out);
+        }
+        self.put(out, edge("╭", "╮", self.width))?;
+        let mut body = vec![];
+        self.show(lines, &mut body)?;
+        out.extend(body.into_iter().map(|line| boxed_line(line, self.width)));
+        self.put(out, edge("╰", "╯", self.width))
+    }
+
+    /// Adds `trails` as `day` does off a box: its active trails, then the rest by project.
+    fn active_first(&self, trails: Vec<Step>, lines: &mut Vec<Row>) {
         let (active, rest): (Vec<Step>, Vec<Step>) =
             trails.into_iter().partition(|s| s.state().active());
         let mut last = None;
@@ -122,34 +149,97 @@ impl Tree<'_> {
         }
         for note in active {
             let block = self.view.full || !self.view.all;
-            self.trail(note, block, &mut last, &mut lines);
+            self.trail(note, block, &mut last, lines);
         }
-        let mut projects: Vec<(&str, Vec<Step>)> = vec![];
-        for note in rest {
-            let project = note.record().anchor.project.as_str();
-            match projects.iter_mut().find(|(p, _)| *p == project) {
-                Some((_, trails)) => trails.push(note),
-                None => projects.push((project, vec![note])),
-            }
-        }
-        for (_, trails) in projects {
-            let name = &trails[0].record().anchor.name;
+        for (name, trails) in by_project(rest) {
             lines.push(self.gap());
             lines.push(Row::Mark(
                 false,
-                Box::new(Row::Text(Styled::from(paint(PROJECT, name)))),
+                Box::new(Row::Text(Styled::from(paint(PROJECT, &name)))),
             ));
             let mut last = None;
             for note in trails {
                 let block = self.view.full || (!self.view.all && !self.view.watch);
-                self.trail(note, block, &mut last, &mut lines);
+                self.trail(note, block, &mut last, lines);
             }
         }
-        self.show(lines, out)
+    }
+
+    /// Adds `trails` in a day's box by project, a project with an active trail first: each after a
+    /// blank line, `📁` and its name, and a blank line, its active trails as blocks first.
+    fn projects(&self, trails: Vec<Step>, lines: &mut Vec<Row>) {
+        let mut projects = by_project(trails);
+        projects.sort_by_key(|(_, trails)| !trails.iter().any(|s| s.state().active()));
+        for (name, trails) in projects {
+            let (active, rest): (Vec<Step>, Vec<Step>) =
+                trails.into_iter().partition(|s| s.state().active());
+            lines.push(self.gap());
+            let title = vec![Span::raw("📁 "), paint(PROJECT, &name)];
+            lines.push(Row::Mark(false, Box::new(Row::Text(Styled::from(title)))));
+            lines.push(self.gap());
+            let mut last = None;
+            for note in active {
+                self.trail(note, self.view.full || !self.view.all, &mut last, lines);
+            }
+            for note in rest {
+                self.trail(note, self.view.full, &mut last, lines);
+            }
+        }
     }
 
     /// A blank line, which no element holds.
     pub(super) fn gap(&self) -> Row {
         Row::Mark(false, Box::new(Row::Text(Styled::default())))
     }
+}
+
+/// What stands for the rule under a day's line until its box draws it.
+const RULED: &str = "\u{E010}";
+
+/// A day box's top or bottom border, from `left` to `right`, round a line `width` wide.
+fn edge(left: &str, right: &str, width: Option<usize>) -> Styled {
+    let across = "─".repeat(width.unwrap_or(0) + 2);
+    Styled::from(vec![
+        Span::raw("  "),
+        paint(FRAME, &format!("{left}{across}{right}")),
+    ])
+}
+
+/// `line` in a day's box `width` wide: its cursor column, then `│ `, its text cut and padded to the width, and
+/// ` │`; the rule under the day's line as `├─…─┤`.
+fn boxed_line(line: Styled, width: Option<usize>) -> Styled {
+    let width = width.unwrap_or(0);
+    let mut spans = line.spans.into_iter();
+    let cursor = spans.next().unwrap_or_else(|| Span::raw("  "));
+    let text: Vec<Span<'static>> = spans.collect();
+    if text.iter().any(|s| s.content == RULED) {
+        let rule = vec![
+            cursor,
+            paint(FRAME, &format!("├{}┤", "─".repeat(width + 2))),
+        ];
+        return Styled::from(rule);
+    }
+    let text = clip(&Styled::from(text), width).spans;
+    let used: usize = text.iter().map(|s| visible(&s.content)).sum();
+    let mut row = vec![cursor, paint(FRAME, "│ ")];
+    row.extend(text);
+    row.push(Span::raw(" ".repeat(width.saturating_sub(used))));
+    row.push(paint(FRAME, " │"));
+    Styled::from(row)
+}
+
+/// `trails` by project, each project's name with its trails, in the order they first come.
+fn by_project(trails: Vec<Step>) -> Vec<(String, Vec<Step>)> {
+    let mut projects: Vec<(String, String, Vec<Step>)> = vec![];
+    for note in trails {
+        let anchor = &note.record().anchor;
+        match projects.iter_mut().find(|(p, ..)| *p == anchor.project) {
+            Some((.., trails)) => trails.push(note),
+            None => projects.push((anchor.project.clone(), anchor.name.clone(), vec![note])),
+        }
+    }
+    projects
+        .into_iter()
+        .map(|(_, name, trails)| (name, trails))
+        .collect()
 }
