@@ -31,7 +31,13 @@ Without hooks (2026-10-21, the same tasks, 1 run each arm; broken, then old in b
 | ------------------------------------------------------- | ----------------- | ----------------- | ----------------- |
 | delegated (the past agent runs `celis rules` at the ask) | 87% / 79%         | 48% / 51%         | 79% / 86%         |
 | coordinated (the agent searches itself: index, `celis grep`, `celis rules` before each change) | 71% / 59% | 24% / 48% | 23% (0%) / 42% (15%) |
+| reminded (coordinated, with notes at step add and step start)                    | —                 | 22% (3%) / 39% (17%) | 23% (3%) / 32% (4%) |
 | pickers                                                 | 35% / 45%         | 30% / 41%         | 33% / 43%         |
+
+- With the notes, Sonnet searched the rules with `celis grep` in 6 to 7 tasks of 8, not 1, and ran
+  `celis rules` after a write 7 times, not 0 or 1. It beat pickers at 400 and 1000 rules.
+- Sonnet still lost 55 rules at 1000 rules that it never saw: the harness cut 5 outputs of `celis rules`
+  to a 2 KB preview. A file not yet made matches every content rule by its path alone.
 
 - The agent that searches itself is the best arm on Opus at 400 rules and ties pickers at 1000. Sonnet
   beats pickers at 400 and loses at 1000. Haiku stays far behind pickers.
@@ -145,6 +151,27 @@ How the parts change over time:
 
 The scaffold uses only the core. When a model keeps the rules as well with the card and the query as
 with the scaffold, the scaffold can go off for that model, in a later release.
+
+## How the agent works
+
+The agent is the coordinator, on Sonnet or a larger model. It finds the rules itself and keeps them in
+its own context. celis says what to do at the moment the agent needs it, because the card at the session
+start is far from the work and the agent skips calls it only read about.
+
+```
+moment          celis says                                        the agent does
+--------------  ------------------------------------------------  ------------------------------------------
+new prompt      prompt hook: where to add the ask; run celis:past  runs celis:past for past asks
+step add (ask)  find the rules: celis rules, then celis grep       reads the index, greps the words that fit
+step start      celis rules <files> before each change; check the  gets the rules of each file before it
+                change against them before done                    changes it; checks its change before done
+step done       the review, and the next move                      writes a rule for what surprised it
+subagent        (card) put the rules of the work in its task        passes the rules; the subagent searches nothing
+```
+
+- celis prints help and the rules the plan links (trail rules, used rules, named trails). It never picks
+  rules by words or by place for the agent: the agent asks `celis rules` and `celis grep` for them.
+- A rule a tool can check belongs in that tool. tidy proposes the move.
 
 ## Interface
 

@@ -23,7 +23,8 @@ checked; 4 of those replaced an older version that the memory may still hold.
          and the agent asks celis rules and celis grep itself), delegated (taught, with the plugin of the
          celis arm: the card, the prompt hook, and the celis:past agent, which runs celis rules for the work),
          coordinated (delegated, with the card of the agent that searches the rules itself: the index of
-         celis rules, celis grep, and celis rules before each change; the past agent brings past asks)
+         celis rules, celis grep, and celis rules before each change; the past agent brings past asks),
+         reminded (coordinated, with step add and step start saying what to do at that moment)
 
 Each task starts from a new copy of seed/ and a new copy of the memory, so tasks are independent and run in
 parallel. Each task appends one line to results/<arm>-<model>-r<N>.jsonl.
@@ -57,7 +58,7 @@ NARROW = {"stock": "stock/*.py", "stock/commands": "stock/commands/*.py", "stock
 PICKS = ("picked", "pickers", "pickers50", "merged", "staged")
 JITS = ("jit", "narrow", "ranked", "scoped", "scopedrank", *PICKS)
 OWN = ("pull",)
-TRIGGERED = ("taught", "delegated", "coordinated")
+TRIGGERED = ("taught", "delegated", "coordinated", "reminded")
 STORED = ("celis", "placed", *JITS, *OWN, *TRIGGERED)
 FIXED = {"GIT_AUTHOR_DATE": "2026-01-01T00:00:00Z", "GIT_COMMITTER_DATE": "2026-01-01T00:00:00Z"}
 
@@ -206,7 +207,7 @@ def agent(arm, model, work, home, prompt, log):
     if arm == "oracle":
         env["CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD"] = "1"
         flags += ["--add-dir", str(home / "user")]
-    if arm in ("celis", "placed", *JITS, "delegated", "coordinated"):
+    if arm in ("celis", "placed", *JITS, "delegated", "coordinated", "reminded"):
         flags += ["--plugin-dir", str(plugin(home, arm)) if arm in PICKS
                   else os.environ.get("CELIS_PLUGIN", str(ROOT / "plugins" / "celis"))]
     start = time.time()

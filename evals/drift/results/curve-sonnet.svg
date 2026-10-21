@@ -8,6 +8,7 @@
 <polyline points="50.0,160.0 390.0,69.1" fill="none" stroke="#073b4c" stroke-width="2"/>
 <polyline points="50.0,66.4 390.0,57.7" fill="none" stroke="#118ab2" stroke-width="2"/>
 <polyline points="50.0,137.7 390.0,94.7" fill="none" stroke="#8ac926" stroke-width="2"/>
+<polyline points="50.0,166.0 390.0,101.4" fill="none" stroke="#ffd166" stroke-width="2"/>
 <polyline points="50.0,50.0 390.0,75.1" fill="none" stroke="#ef476f" stroke-width="2"/>
 <text x="660.0" y="20" text-anchor="middle" font-weight="bold">Replaced rules kept in the old version</text>
 <line x1="490" y1="250" x2="830" y2="250" stroke="#999"/>
@@ -18,19 +19,22 @@
 <polyline points="490.0,171.4 830.0,108.1" fill="none" stroke="#073b4c" stroke-width="2"/>
 <polyline points="490.0,64.4 830.0,165.8" fill="none" stroke="#118ab2" stroke-width="2"/>
 <polyline points="490.0,102.6 830.0,50.0" fill="none" stroke="#8ac926" stroke-width="2"/>
+<polyline points="490.0,239.8 830.0,199.2" fill="none" stroke="#ffd166" stroke-width="2"/>
 <polyline points="490.0,53.5 830.0,102.6" fill="none" stroke="#ef476f" stroke-width="2"/>
 <text x="1100.0" y="20" text-anchor="middle" font-weight="bold">Input tokens a task (k)</text>
 <line x1="930" y1="250" x2="1270" y2="250" stroke="#999"/>
 <line x1="930" y1="50" x2="930" y2="250" stroke="#999"/>
-<text x="924" y="54" text-anchor="end">322k</text>
+<text x="924" y="54" text-anchor="end">340k</text>
 <text x="930.0" y="266" text-anchor="middle">400</text>
 <text x="1270.0" y="266" text-anchor="middle">1000</text>
-<polyline points="930.0,93.0 1270.0,84.9" fill="none" stroke="#073b4c" stroke-width="2"/>
-<polyline points="930.0,129.2 1270.0,145.6" fill="none" stroke="#118ab2" stroke-width="2"/>
-<polyline points="930.0,65.0 1270.0,50.0" fill="none" stroke="#8ac926" stroke-width="2"/>
-<polyline points="930.0,165.3 1270.0,137.9" fill="none" stroke="#ef476f" stroke-width="2"/>
+<polyline points="930.0,101.3 1270.0,93.6" fill="none" stroke="#073b4c" stroke-width="2"/>
+<polyline points="930.0,135.6 1270.0,151.1" fill="none" stroke="#118ab2" stroke-width="2"/>
+<polyline points="930.0,74.8 1270.0,60.6" fill="none" stroke="#8ac926" stroke-width="2"/>
+<polyline points="930.0,50.0 1270.0,56.9" fill="none" stroke="#ffd166" stroke-width="2"/>
+<polyline points="930.0,169.8 1270.0,143.8" fill="none" stroke="#ef476f" stroke-width="2"/>
 <text x="50" y="310" fill="#073b4c">coordinated</text>
 <text x="210" y="310" fill="#118ab2">delegated</text>
 <text x="370" y="310" fill="#8ac926">pickers</text>
-<text x="530" y="310" fill="#ef476f">taught</text>
+<text x="530" y="310" fill="#ffd166">reminded</text>
+<text x="690" y="310" fill="#ef476f">taught</text>
 </svg>
