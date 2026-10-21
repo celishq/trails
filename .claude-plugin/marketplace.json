@@ -1,8 +1,8 @@
 {
   "name": "celis",
   "owner": { "name": "Celis" },
-  "description": "Celis: your agent remembers its steps and turns your corrections into rules.",
+  "description": "Stop telling your agent the same thing twice. Celis turns your corrections into rules that Claude Code, Codex, Cursor and Gemini remember in every project.",
   "plugins": [
-    { "name": "celis", "source": "./plugins/celis", "description": "The celis trail: tasks as trails of steps, and the decisions made at each place." }
+    { "name": "celis", "source": "./plugins/celis", "description": "Stop telling your agent the same thing twice. Celis turns your corrections into rules that Claude Code, Codex, Cursor and Gemini remember in every project." }
   ]
 }

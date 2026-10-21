@@ -1,8 +1,9 @@
 <h1 align="center">Celis</h1>
 
-<p align="center">A small CLI and a plugin that remembers every step your AI agent takes and turns its mistakes
-and your corrections into rules. The next session starts with them, so it knows what you already did,
-and it doesn't make the same mistake twice.</p>
+<h3 align="center">No more "You're absolutely right!"</h3>
+
+<p align="center">Stop telling your agent the same thing twice. Celis turns your corrections into rules that
+Claude Code, Codex, Cursor and Gemini remember in every project.</p>
 
 <p align="center">
   <a href="https://github.com/celishq/trails/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/celishq/trails"></a>

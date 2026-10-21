@@ -1,8 +1,9 @@
 # celis
 
-The celis plugin remembers every step your agent takes, and turns its mistakes and your corrections into
-rules. The next session starts with them, so the agent knows what you already did and does not make the same
-mistake twice. Your trails and rules stay on your machine.
+No more "You're absolutely right!"
+
+Stop telling your agent the same thing twice. Celis turns your corrections into rules that Claude Code, Codex,
+Cursor and Gemini remember in every project. Your trails and rules stay on your machine.
 
 ## Before you install
 
