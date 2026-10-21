@@ -1,10 +1,10 @@
 ---
 name: tidy
-description: Tidies the celis trails. Drops stale trails and rules, merges rules that say the same thing, settles rules that conflict, and turns work done many times into named trails. Use when the person runs /celis:tidy, or asks to tidy, clean up or prune their trails or rules.
+description: Tidies the celis trails. Drops stale trails and rules, fades rules no one corrects, fixes triggers that miss, merges rules that say the same thing, settles rules that conflict, moves rules into the place's own checks, and turns work done many times into named trails. Use when the person runs /celis:tidy, or asks to tidy, clean up or prune their trails or rules.
 ---
 
-You tidy the trails in four parts, in this order: stale, merge, conflicts, templates. Write nothing
-before the person says yes.
+You tidy the trails in six parts, in this order: stale, log, merge, conflicts, moves, templates. Write
+nothing before the person says yes.
 
 1. Ask the person what to clean: this project, this project and the `me` rules, or all projects.
 2. Add the tidy as one ask, as the card says, and one step under it for each part. Take the parts one
@@ -22,11 +22,30 @@ Find what no longer holds:
 - an `at:` rule whose place the project no longer has. Check the place only in the working folder's
   project;
 - a rule that names code, a file or a command that the project no longer has;
-- a rule of a trail whose done work was revised (`revised-by`) when the new work says otherwise.
+- a rule of a trail whose done work was revised (`revised-by`) when the new work says otherwise;
+- a one-off note: a rule about one event, not about work to come.
 
 Drop each one with `celis step drop <id> -- "<why it no longer holds>"`. A dropped trail keeps its
 rules: drop each of its rules that is stale too. When you drop a named trail, tell the person that its
 name is free.
+
+## Log
+
+`$CELIS_HOME/given` has a JSON line for each rule given in a session, and a line with `"miss": true` for
+each rule an agent replaced in a session that did not give it. Count the lines of each rule. Off macOS,
+the default of `$CELIS_HOME` is `$HOME/.local/share/celis`:
+
+```bash
+jq -r 'select(.rule) | "\(.rule[:8]) \(if .miss then "miss" else "given" end)"' "${CELIS_HOME:-$HOME/Library/Application Support/Celis}/given" | sort | uniq -c
+```
+
+- Fade a rule given 10 times or more that has no miss and that no rule replaces: drop it with
+  `-- "faded: given <n> times, never corrected"`.
+- For each rule with a miss, find the work of the miss's session: the `step` of the session's other
+  lines, and `celis tree <step>`. Run `celis rules --all <a file of that work>`, or `-- "<its
+  command>"`: `--all` only looks, and logs nothing. When the rule shows, the cap cut it: leave it. Else its trigger
+  missed: write the same text with a trigger that matches work like that, with `decide --replaces <its
+  id> --scope <its scope>` and `--path`, `--content`, `--command` or `--tool`.
 
 ## Merge
 
@@ -48,6 +67,19 @@ id8>"`. Write a new rule with `decide --replaces <one of them>`, and drop the ot
 A rule of a named trail from another project ends only in this project: write the winner with
 `decide --replaces <its id>`, as `steps.md` says for named trails.
 
+## Moves
+
+Find live rules that the place can hold itself. Leave out rules that grep marks ` promoted`.
+
+- A rule that a tool of the place can check: propose the change to that tool, such as the repo's
+  linter, tests or CI, or a Figma project's styles.
+- A rule that holds for all work in the project, that no tool can check: propose a line in the project's
+  agent instruction file, `AGENTS.md` when it has none.
+
+Show the person the rule and the change. After a yes, make the change, and run the check when there is
+one. Then mark the rule with `decide --replaces <its id> --scope <its scope> --promoted -- "<the same
+text>"`: celis keeps it, and knows that the place checks it.
+
 ## Templates
 
 Find groups of 4 or more done trails, of any project, that did the same work in any words. Leave out
@@ -65,5 +97,5 @@ named trails and trails dropped after done.
 
 ## End
 
-Close each part's step with what it changed: how many trails and rules it dropped, merged and wrote.
-Close the ask. Tell the person what each part changed, and each named trail it wrote.
+Close each part's step with what it changed: how many trails and rules it dropped, faded, merged, moved
+and wrote. Close the ask. Tell the person what each part changed, and each named trail it wrote.
