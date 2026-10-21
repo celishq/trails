@@ -4,8 +4,8 @@ export GIT_CEILING_DIRECTORIES="$(dirname "$PWD")"
 n=0
 while IFS= read -r rule; do
   n=$((n + 1))
-  [ "$n" = 150 ] && celis decide -- "When code handles money: keep amounts as integer cents, never floats, because float rounding broke the invoice totals." >/dev/null
-  celis decide -- "$rule" >/dev/null
+  [ "$n" = 150 ] && celis decide --scope me -- "When code handles money: keep amounts as integer cents, never floats, because float rounding broke the invoice totals." >/dev/null
+  celis decide --scope me -- "$rule" >/dev/null
 done <<'RULES'
 Never address record fields by position when they have names.
 Extract shared code only after the third copy, not the second.
