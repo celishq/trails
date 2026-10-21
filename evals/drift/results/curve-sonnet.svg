@@ -5,6 +5,7 @@
 <text x="44" y="54" text-anchor="end">53%</text>
 <text x="50.0" y="266" text-anchor="middle">400</text>
 <text x="390.0" y="266" text-anchor="middle">1000</text>
+<polyline points="50.0,160.0 390.0,69.1" fill="none" stroke="#073b4c" stroke-width="2"/>
 <polyline points="50.0,66.4 390.0,57.7" fill="none" stroke="#118ab2" stroke-width="2"/>
 <polyline points="50.0,137.7 390.0,94.7" fill="none" stroke="#8ac926" stroke-width="2"/>
 <polyline points="50.0,50.0 390.0,75.1" fill="none" stroke="#ef476f" stroke-width="2"/>
@@ -14,6 +15,7 @@
 <text x="484" y="54" text-anchor="end">68%</text>
 <text x="490.0" y="266" text-anchor="middle">400</text>
 <text x="830.0" y="266" text-anchor="middle">1000</text>
+<polyline points="490.0,171.4 830.0,108.1" fill="none" stroke="#073b4c" stroke-width="2"/>
 <polyline points="490.0,64.4 830.0,165.8" fill="none" stroke="#118ab2" stroke-width="2"/>
 <polyline points="490.0,102.6 830.0,50.0" fill="none" stroke="#8ac926" stroke-width="2"/>
 <polyline points="490.0,53.5 830.0,102.6" fill="none" stroke="#ef476f" stroke-width="2"/>
@@ -23,10 +25,12 @@
 <text x="924" y="54" text-anchor="end">322k</text>
 <text x="930.0" y="266" text-anchor="middle">400</text>
 <text x="1270.0" y="266" text-anchor="middle">1000</text>
+<polyline points="930.0,93.0 1270.0,84.9" fill="none" stroke="#073b4c" stroke-width="2"/>
 <polyline points="930.0,129.2 1270.0,145.6" fill="none" stroke="#118ab2" stroke-width="2"/>
 <polyline points="930.0,65.0 1270.0,50.0" fill="none" stroke="#8ac926" stroke-width="2"/>
 <polyline points="930.0,165.3 1270.0,137.9" fill="none" stroke="#ef476f" stroke-width="2"/>
-<text x="50" y="310" fill="#118ab2">delegated</text>
-<text x="210" y="310" fill="#8ac926">pickers</text>
-<text x="370" y="310" fill="#ef476f">taught</text>
+<text x="50" y="310" fill="#073b4c">coordinated</text>
+<text x="210" y="310" fill="#118ab2">delegated</text>
+<text x="370" y="310" fill="#8ac926">pickers</text>
+<text x="530" y="310" fill="#ef476f">taught</text>
 </svg>

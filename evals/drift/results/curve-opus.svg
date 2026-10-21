@@ -9,6 +9,7 @@
 <text x="346.68027759342056" y="266" text-anchor="middle">1000</text>
 <text x="390.0" y="266" text-anchor="middle">1600</text>
 <polyline points="50.0,187.2 134.5,173.3 262.2,105.1 346.7,86.9" fill="none" stroke="#2a9d8f" stroke-width="2"/>
+<polyline points="262.2,195.4 346.7,150.9" fill="none" stroke="#073b4c" stroke-width="2"/>
 <polyline points="262.2,64.5 346.7,50.0" fill="none" stroke="#118ab2" stroke-width="2"/>
 <polyline points="50.0,183.0 134.5,184.0 262.2,164.6 346.7,137.6 390.0,86.1" fill="none" stroke="#e76f51" stroke-width="2"/>
 <polyline points="50.0,130.5 134.5,115.7 262.2,172.7 346.7,150.2" fill="none" stroke="#8ac926" stroke-width="2"/>
@@ -25,6 +26,7 @@
 <text x="786.6802775934206" y="266" text-anchor="middle">1000</text>
 <text x="830.0" y="266" text-anchor="middle">1600</text>
 <polyline points="490.0,229.3 574.5,200.0 702.2,175.9 786.7,116.7" fill="none" stroke="#2a9d8f" stroke-width="2"/>
+<polyline points="702.2,250.0 786.7,220.4" fill="none" stroke="#073b4c" stroke-width="2"/>
 <polyline points="702.2,100.0 786.7,107.1" fill="none" stroke="#118ab2" stroke-width="2"/>
 <polyline points="490.0,128.6 574.5,107.1 702.2,84.5 786.7,92.9 830.0,50.0" fill="none" stroke="#e76f51" stroke-width="2"/>
 <polyline points="490.0,131.5 574.5,161.1 702.2,192.9 786.7,177.3" fill="none" stroke="#8ac926" stroke-width="2"/>
@@ -41,6 +43,7 @@
 <text x="1226.6802775934207" y="266" text-anchor="middle">1000</text>
 <text x="1270.0" y="266" text-anchor="middle">1600</text>
 <polyline points="930.0,144.5 1014.5,136.4 1142.2,122.8 1226.7,127.2" fill="none" stroke="#2a9d8f" stroke-width="2"/>
+<polyline points="1142.2,112.2 1226.7,93.8" fill="none" stroke="#073b4c" stroke-width="2"/>
 <polyline points="1142.2,172.1 1226.7,166.0" fill="none" stroke="#118ab2" stroke-width="2"/>
 <polyline points="930.0,211.6 1014.5,201.7 1142.2,151.0 1226.7,85.4 1270.0,50.0" fill="none" stroke="#e76f51" stroke-width="2"/>
 <polyline points="930.0,133.3 1014.5,115.0 1142.2,61.6 1226.7,128.3" fill="none" stroke="#8ac926" stroke-width="2"/>
@@ -48,10 +51,11 @@
 <polyline points="1142.2,148.0 1226.7,131.3" fill="none" stroke="#f78c6b" stroke-width="2"/>
 <polyline points="1142.2,171.0 1226.7,175.6" fill="none" stroke="#06d6a0" stroke-width="2"/>
 <text x="50" y="310" fill="#2a9d8f">celis</text>
-<text x="210" y="310" fill="#118ab2">delegated</text>
-<text x="370" y="310" fill="#e76f51">CLAUDE.md</text>
-<text x="530" y="310" fill="#8ac926">pickers</text>
-<text x="690" y="310" fill="#ef476f">taught</text>
-<text x="850" y="310" fill="#f78c6b">taught1</text>
-<text x="1010" y="310" fill="#06d6a0">triggered</text>
+<text x="210" y="310" fill="#073b4c">coordinated</text>
+<text x="370" y="310" fill="#118ab2">delegated</text>
+<text x="530" y="310" fill="#e76f51">CLAUDE.md</text>
+<text x="690" y="310" fill="#8ac926">pickers</text>
+<text x="850" y="310" fill="#ef476f">taught</text>
+<text x="1010" y="310" fill="#f78c6b">taught1</text>
+<text x="1170" y="310" fill="#06d6a0">triggered</text>
 </svg>

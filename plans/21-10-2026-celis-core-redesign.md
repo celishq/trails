@@ -25,6 +25,24 @@ After the build (2026-10-21, the same tasks, 1 run each arm):
 | triggered on `celis rules` (cap 5, rank) | 29% broken       | 41%             | 60%               | 61%              |
 | taught (the card and the query, no hook) | 64%              | 41%             | 74%               | 48%              |
 
+Without hooks (2026-10-21, the same tasks, 1 run each arm; broken, then old in brackets):
+
+| Arm                                                     | Haiku 400 / 1000  | Sonnet 400 / 1000 | Opus 400 / 1000   |
+| ------------------------------------------------------- | ----------------- | ----------------- | ----------------- |
+| delegated (the past agent runs `celis rules` at the ask) | 87% / 79%         | 48% / 51%         | 79% / 86%         |
+| coordinated (the agent searches itself: index, `celis grep`, `celis rules` before each change) | 71% / 59% | 24% / 48% | 23% (0%) / 42% (15%) |
+| pickers                                                 | 35% / 45%         | 30% / 41%         | 33% / 43%         |
+
+- The agent that searches itself is the best arm on Opus at 400 rules and ties pickers at 1000. Sonnet
+  beats pickers at 400 and loses at 1000. Haiku stays far behind pickers.
+- Opus read the index and searched with `celis grep` in all 8 tasks at 1000 rules. Sonnet and Haiku did
+  it in 1 or 2 tasks of 8, and ran `celis rules` on the files only.
+- Haiku cut the output of `celis rules` with `head` in 10 of 18 calls at 1000 rules, though the card
+  says not to.
+- No task gave work to a subagent, so the drift bench does not test the rules passed to subagents.
+- The first `celis rules` on a new Python file gives 162 rules (17 KB) at 400 rules. A later call in the
+  session gives only the new ones, and the ids of the rest (2 KB). The index is 3 KB.
+
 - Each broken rule of the triggered arm at 400 rules was a rule the agent never got. One Python write
   matches about 100 drift rules, and the cap gives 5 a call, so a session got 60 to 150 of them. The
   old hook gave about 9000 characters a call (40 to 60 rules).

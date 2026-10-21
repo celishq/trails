@@ -9,6 +9,7 @@
 <text x="346.68027759342056" y="266" text-anchor="middle">1000</text>
 <text x="390.0" y="266" text-anchor="middle">1600</text>
 <polyline points="50.0,200.3 134.5,178.6 262.2,88.1 346.7,66.9 390.0,50.0" fill="none" stroke="#2a9d8f" stroke-width="2"/>
+<polyline points="262.2,96.3 346.7,122.5" fill="none" stroke="#073b4c" stroke-width="2"/>
 <polyline points="262.2,61.7 346.7,78.6" fill="none" stroke="#118ab2" stroke-width="2"/>
 <polyline points="50.0,186.3 134.5,183.4 262.2,147.2 346.7,92.0 390.0,100.8" fill="none" stroke="#8338ec" stroke-width="2"/>
 <polyline points="50.0,196.0 134.5,190.6 262.2,174.8 346.7,136.3 390.0,100.1" fill="none" stroke="#3a0ca3" stroke-width="2"/>
@@ -35,6 +36,7 @@
 <text x="786.6802775934206" y="266" text-anchor="middle">1000</text>
 <text x="830.0" y="266" text-anchor="middle">1600</text>
 <polyline points="490.0,250.0 574.5,250.0 702.2,154.5 786.7,98.8 830.0,90.9" fill="none" stroke="#2a9d8f" stroke-width="2"/>
+<polyline points="702.2,119.6 786.7,188.6" fill="none" stroke="#073b4c" stroke-width="2"/>
 <polyline points="702.2,88.9 786.7,181.0" fill="none" stroke="#118ab2" stroke-width="2"/>
 <polyline points="490.0,220.4 574.5,204.0 702.2,178.4 786.7,98.8 830.0,134.9" fill="none" stroke="#8338ec" stroke-width="2"/>
 <polyline points="490.0,242.6 574.5,219.3 702.2,227.0 786.7,188.6 830.0,111.9" fill="none" stroke="#3a0ca3" stroke-width="2"/>
@@ -61,6 +63,7 @@
 <text x="1226.6802775934207" y="266" text-anchor="middle">1000</text>
 <text x="1270.0" y="266" text-anchor="middle">1600</text>
 <polyline points="930.0,168.0 1014.5,159.4 1142.2,158.5 1226.7,179.1 1270.0,159.1" fill="none" stroke="#2a9d8f" stroke-width="2"/>
+<polyline points="1142.2,188.0 1226.7,170.3" fill="none" stroke="#073b4c" stroke-width="2"/>
 <polyline points="1142.2,215.6 1226.7,206.8" fill="none" stroke="#118ab2" stroke-width="2"/>
 <polyline points="930.0,153.3 1014.5,160.3 1142.2,151.1 1226.7,134.4 1270.0,153.4" fill="none" stroke="#8338ec" stroke-width="2"/>
 <polyline points="930.0,157.0 1014.5,148.6 1142.2,118.7 1226.7,137.0 1270.0,127.5" fill="none" stroke="#3a0ca3" stroke-width="2"/>
@@ -78,20 +81,21 @@
 <polyline points="1142.2,181.4 1226.7,174.3" fill="none" stroke="#f78c6b" stroke-width="2"/>
 <polyline points="1142.2,196.9 1226.7,181.6" fill="none" stroke="#06d6a0" stroke-width="2"/>
 <text x="50" y="310" fill="#2a9d8f">celis</text>
-<text x="210" y="310" fill="#118ab2">delegated</text>
-<text x="370" y="310" fill="#8338ec">jit</text>
-<text x="530" y="310" fill="#3a0ca3">merged</text>
-<text x="690" y="310" fill="#f4a261">narrow</text>
-<text x="850" y="310" fill="#e76f51">CLAUDE.md</text>
-<text x="1010" y="310" fill="#ff595e">picked</text>
-<text x="1170" y="310" fill="#8ac926">pickers</text>
-<text x="1330" y="310" fill="#52b788">pickers50</text>
-<text x="1490" y="310" fill="#264653">placed</text>
-<text x="1650" y="310" fill="#e9c46a">ranked</text>
-<text x="1810" y="310" fill="#6a4c93">scoped</text>
-<text x="1970" y="310" fill="#1982c4">scopedrank</text>
-<text x="2130" y="310" fill="#f72585">staged</text>
-<text x="2290" y="310" fill="#ef476f">taught</text>
-<text x="2450" y="310" fill="#f78c6b">taught1</text>
-<text x="2610" y="310" fill="#06d6a0">triggered</text>
+<text x="210" y="310" fill="#073b4c">coordinated</text>
+<text x="370" y="310" fill="#118ab2">delegated</text>
+<text x="530" y="310" fill="#8338ec">jit</text>
+<text x="690" y="310" fill="#3a0ca3">merged</text>
+<text x="850" y="310" fill="#f4a261">narrow</text>
+<text x="1010" y="310" fill="#e76f51">CLAUDE.md</text>
+<text x="1170" y="310" fill="#ff595e">picked</text>
+<text x="1330" y="310" fill="#8ac926">pickers</text>
+<text x="1490" y="310" fill="#52b788">pickers50</text>
+<text x="1650" y="310" fill="#264653">placed</text>
+<text x="1810" y="310" fill="#e9c46a">ranked</text>
+<text x="1970" y="310" fill="#6a4c93">scoped</text>
+<text x="2130" y="310" fill="#1982c4">scopedrank</text>
+<text x="2290" y="310" fill="#f72585">staged</text>
+<text x="2450" y="310" fill="#ef476f">taught</text>
+<text x="2610" y="310" fill="#f78c6b">taught1</text>
+<text x="2770" y="310" fill="#06d6a0">triggered</text>
 </svg>
