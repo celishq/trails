@@ -20,7 +20,8 @@ celis tree [<id>] [--graph] [--full] [--all] [--demo]
      rules and the rules of this project, which the last line names.
    - Before you change a file or run a command, run `celis rules <files> -- "<command>"`, and keep each
      rule it gives. Run it again on a file after you write it, as some rules come only on the new text.
-     A rule it gave before prints as its id: `celis grep <id>` shows it again.
+     A rule it gave before prints as its id: `celis grep <id>` shows it again. Read all that celis
+     prints: never cut it with `head` or `grep`.
    - When you give work to a subagent, put in its task each rule that holds for that work, as celis
      printed it. A subagent searches nothing.
    - When the ask conflicts with a rule, the ask wins: replace the rule.

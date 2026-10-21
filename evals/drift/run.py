@@ -21,7 +21,9 @@ checked; 4 of those replaced an older version that the memory may still hold.
          and no rules given: the agent searches them with celis grep), taught (celis, each rule with its trigger
          of data/triggers.json, with no plugin, no tool hook and no picker: the session start gives the card,
          and the agent asks celis rules and celis grep itself), delegated (taught, with the plugin of the
-         celis arm: the card, the prompt hook, and the celis:past agent, which runs celis rules for the work)
+         celis arm: the card, the prompt hook, and the celis:past agent, which runs celis rules for the work),
+         coordinated (delegated, with the card of the agent that searches the rules itself: the index of
+         celis rules, celis grep, and celis rules before each change; the past agent brings past asks)
 
 Each task starts from a new copy of seed/ and a new copy of the memory, so tasks are independent and run in
 parallel. Each task appends one line to results/<arm>-<model>-r<N>.jsonl.
@@ -55,7 +57,7 @@ NARROW = {"stock": "stock/*.py", "stock/commands": "stock/commands/*.py", "stock
 PICKS = ("picked", "pickers", "pickers50", "merged", "staged")
 JITS = ("jit", "narrow", "ranked", "scoped", "scopedrank", *PICKS)
 OWN = ("pull",)
-TRIGGERED = ("taught", "delegated")
+TRIGGERED = ("taught", "delegated", "coordinated")
 STORED = ("celis", "placed", *JITS, *OWN, *TRIGGERED)
 FIXED = {"GIT_AUTHOR_DATE": "2026-01-01T00:00:00Z", "GIT_COMMITTER_DATE": "2026-01-01T00:00:00Z"}
 
@@ -204,7 +206,7 @@ def agent(arm, model, work, home, prompt, log):
     if arm == "oracle":
         env["CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD"] = "1"
         flags += ["--add-dir", str(home / "user")]
-    if arm in ("celis", "placed", *JITS, "delegated"):
+    if arm in ("celis", "placed", *JITS, "delegated", "coordinated"):
         flags += ["--plugin-dir", str(plugin(home, arm)) if arm in PICKS
                   else os.environ.get("CELIS_PLUGIN", str(ROOT / "plugins" / "celis"))]
     start = time.time()
