@@ -127,6 +127,10 @@ setups write `me` rules. Scores (main, then this branch): 02 1.00, 1.00; 08 1.00
 16 1.00, 0.60; 12, 14 and 15 1.00 on this branch. In 10 and 16, main's past agent finds the rule with
 `celis grep`; here the agent searches the index itself and misses it in 2 runs of 3.
 
+The past agent then brings the rules of the ask again, beside past steps: it reads the live rules in
+pages and keeps each that can apply. On this branch 08, 10, 14, 15 and 16 then score 1.00; 16 costs $0.58
+a run against main's $1.01.
+
 - With the notes, Sonnet searched the rules with `celis grep` in 6 to 7 tasks of 8, not 1, and ran
   `celis rules` after a write 7 times, not 0 or 1. It beat pickers at 400 and 1000 rules.
 - Sonnet still lost 55 rules at 1000 rules that it never saw: the harness cut 5 outputs of `celis rules`
