@@ -131,6 +131,19 @@ The past agent then brings the rules of the ask again, beside past steps: it rea
 pages and keeps each that can apply. On this branch 08, 10, 14, 15 and 16 then score 1.00; 16 costs $0.58
 a run against main's $1.01.
 
+Drift, Opus, the design that ships (`final`, 2 runs) against a CLAUDE.md that holds every rule (`oracle`, 1
+run); rules broken, the old version of a replaced rule kept, cost a task:
+
+| Rules | CLAUDE.md          | celis              |
+| ----- | ------------------ | ------------------ |
+| 40    | 29%, 61%, $0.31    | 14%, 0%, $0.43     |
+| 100   | 28%, 71%, $0.35    | 24%, 11%, $0.49    |
+| 400   | 37%, 83%, $0.55    | 31%, 23%, $0.61    |
+| 1000  | 48%, 79%, $0.84    | 51%, 41%, $0.66    |
+| 1600  | 70%, 100%, $1.04   | 57%, 52%, $0.73    |
+
+No memory breaks 95%. `evals/drift/chart.py` draws `results/claude-md-vs-celis-opus.svg`.
+
 - With the notes, Sonnet searched the rules with `celis grep` in 6 to 7 tasks of 8, not 1, and ran
   `celis rules` after a write 7 times, not 0 or 1. It beat pickers at 400 and 1000 rules.
 - Sonnet still lost 55 rules at 1000 rules that it never saw: the harness cut 5 outputs of `celis rules`
