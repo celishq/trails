@@ -1,4 +1,4 @@
-# What start.sh and ask.sh source: prints a hook's text in the shape the agent reads, and the lines that
+# What the hooks source: prints a hook's text in the shape the agent reads, and the lines that
 # name the session and the plugin's files to an agent other than Claude Code.
 
 # The text $3 for the agent $1 on the hook event $2.

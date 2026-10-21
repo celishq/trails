@@ -17,10 +17,11 @@ checked; 4 of those replaced an older version that the memory may still hold.
          data/pick.md agent for each page of 100 or 50 `me` rules, run in parallel, and data/past-pick.md
          as the past agent), merged (pickers, with jit.py running the pickers and a merge to 20 rules
          from the prompt hook, so the agent gets only those), staged (merged with no merge: the hook keeps the
-         whole pick, and each read gives the file the picked rules that act on it), triggered (celis, with no
-         plugin: trigger.py gives each rule before the edit or command its trigger in data/triggers.json
-         matches, and after a Bash command the rules of the files it changed, and a Haiku picker gives the situation rules at the ask), pull (celis, with no plugin and
-         no rules given: the agent searches them with celis grep), taught (celis, each rule with its trigger in
+         whole pick, and each read gives the file the picked rules that act on it), triggered (celis, each rule with
+         its trigger of data/triggers.json, and only the plugin's rules.sh hook: it gives the rules of each
+         tool call before it, and of the files a Bash command changed after it; a Haiku picker in trigger.py
+         gives the situation rules at the ask), pull (celis, with no plugin and
+         no rules given: the agent searches them with celis grep), taught (celis, each rule with its trigger of
          data/triggers.json, with no plugin, no tool hook and no picker: the session start gives the card, and
          the agent asks celis rules and celis grep itself)
 
@@ -39,7 +40,6 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import check
-import trigger
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
@@ -108,12 +108,12 @@ def seed(arm, home, rules, targets):
         ids, spread = {}, random.Random(len(rules[0]))
         scopes = json.loads((HERE / "data" / "scopes.json").read_text())
         by_text = {r["text"]: r["id"] for r in json.loads((HERE / "data" / "filler.json").read_text())["rules"]}
+        triggers = json.loads((HERE / "data" / "triggers.json").read_text()) if arm in ("triggered", "taught") else {}
         other = home / "other"
         other.mkdir()
         sh("git", "init", "-q", cwd=other)
         sh("git", "-c", "user.name=bench", "-c", "user.email=bench@local", "commit", "-q", "--allow-empty", "-m",
            "other", cwd=other, env=dict(os.environ, **FIXED))
-        known = trigger.triggers() if arm == "taught" else {}
         places = sorted(str(p.relative_to(HERE / "seed")) for p in (HERE / "seed").rglob("*")
                         if "__pycache__" not in p.parts) + FAKE
         for line in rules[0]:
@@ -128,11 +128,23 @@ def seed(arm, home, rules, targets):
                 scope = "me" if got == "me" else "project" if got == "other" else f"at:{got}"
             extra = ["--replaces", ids[new["id"]]] if new and new["id"] in ids else []
             if arm == "taught":
-                scope, extra = "me", extra + tags(known.get(line))
+                scope = "me"
+            if not old:
+                extra += trigger_args(triggers.get(target["id"] if target else by_text[line]))
             where = other if scope == "project" and arm != "placed" else place
             out = sh("celis", "decide", "--scope", scope, *extra, "--", line, cwd=where, env=env)
             if old:
                 ids[old["id"]] = out.split()[-1][:8]
+
+
+def trigger_args(trigger):
+    """The `celis decide` flags of `trigger`, a trigger of data/triggers.json or None."""
+    if not trigger:
+        return []
+    return ([f for path in trigger["paths"] for f in ("--path", path)]
+            + (["--content", trigger["content"]] if trigger["content"] else [])
+            + (["--command", trigger["command"]] if trigger["command"] else [])
+            + (["--situation"] if trigger["situation"] else []))
 
 
 def workdir(path):
@@ -146,13 +158,6 @@ def workdir(path):
     return sh("git", "rev-parse", "HEAD", cwd=path)
 
 
-def tags(known):
-    """The `celis decide` flags that write the trigger `known` of data/triggers.json."""
-    if not known:
-        return []
-    found = [f for p in known["paths"] for f in ("--path", p)]
-    found += [f for k in ("content", "command") if known[k] for f in (f"--{k}", known[k])]
-    return found + ["--situation"] * bool(known["situation"])
 
 
 def plugin(home, arm):
@@ -194,8 +199,9 @@ def agent(arm, model, work, home, prompt, log):
                                           "timeout": timeout}]
         settings["hooks"] = {"UserPromptSubmit": [{"hooks": hook("ask" if arm == "triggered" else "pull", 600)}]}
         if arm == "triggered":
-            settings["hooks"]["PreToolUse"] = [{"matcher": "Write|Edit|MultiEdit|Bash", "hooks": hook("pre")}]
-            settings["hooks"]["PostToolUse"] = [{"matcher": "Bash", "hooks": hook("post")}]
+            rules = [{"type": "command", "command": f"sh '{Path(os.environ.get('CELIS_PLUGIN', ROOT / 'plugins' / 'celis')) / 'hooks' / 'rules.sh'}'"}]
+            settings["hooks"]["PreToolUse"] = [{"matcher": "*", "hooks": rules}]
+            settings["hooks"]["PostToolUse"] = [{"matcher": "Bash", "hooks": rules}]
     if arm == "taught":
         script = Path(os.environ.get("CELIS_PLUGIN", ROOT / "plugins" / "celis")) / "hooks" / "start.sh"
         settings["hooks"] = {"SessionStart": [{"hooks": [{"type": "command", "command": f"sh {script}"}]}]}
