@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 440" width="900" height="440" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12">
+<rect width="900" height="440" fill="#fff"/>
+<text x="56" y="24" font-size="13" fill="#888">Claude Code, Opus. Lower is better. Labels: celis minus CLAUDE.md, in points.</text>
+<circle cx="62" cy="44" r="5" fill="#e76f51"/><text x="72" y="48" font-weight="700" fill="#e76f51">CLAUDE.md with every rule</text>
+<circle cx="262" cy="44" r="5" fill="#2a9d8f"/><text x="272" y="48" font-weight="700" fill="#2a9d8f">celis</text>
+<text x="56" y="82" font-size="17" font-weight="700" fill="#222">Rules broken</text>
+<line x1="56" y1="348" x2="400" y2="348" stroke="#eee"/>
+<text x="48" y="352" text-anchor="end" fill="#888">0%</text>
+<line x1="56" y1="289.0" x2="400" y2="289.0" stroke="#eee"/>
+<text x="48" y="293.0" text-anchor="end" fill="#888">25%</text>
+<line x1="56" y1="230.0" x2="400" y2="230.0" stroke="#eee"/>
+<text x="48" y="234.0" text-anchor="end" fill="#888">50%</text>
+<line x1="56" y1="171.0" x2="400" y2="171.0" stroke="#eee"/>
+<text x="48" y="175.0" text-anchor="end" fill="#888">75%</text>
+<line x1="56" y1="112" x2="400" y2="112" stroke="#eee"/>
+<text x="48" y="116" text-anchor="end" fill="#888">100%</text>
+<line x1="56" y1="124.8062015503876" x2="400" y2="124.8062015503876" stroke="#bbb" stroke-dasharray="5 4"/>
+<text x="400" y="118.8062015503876" text-anchor="end" fill="#888">no memory 95%</text>
+<polygon points="56.0,280.31007751937983 141.447089200268,281.3435114503817 141.447089200268,292.1526717557252 56.0,315.32307692307694" fill="#2a9d8f" opacity="0.14"/>
+<polygon points="141.447089200268,281.3435114503817 270.723544600134,261.7014925373134 270.723544600134,275.8641509433962 141.447089200268,292.1526717557252" fill="#2a9d8f" opacity="0.14"/>
+<polygon points="270.723544600134,261.7014925373134 356.17063380040196,234.43609022556393 356.17063380040196,228.23880597014926 270.723544600134,275.8641509433962" fill="#2a9d8f" opacity="0.14"/>
+<polygon points="356.17063380040196,234.43609022556393 400.0,182.44776119402985 400.0,212.8921933085502 356.17063380040196,228.23880597014926" fill="#2a9d8f" opacity="0.14"/>
+<polyline points="56.0,280.3 141.4,281.3 270.7,261.7 356.2,234.4 400.0,182.4" fill="none" stroke="#e76f51" stroke-width="3"/>
+<circle cx="56.0" cy="280.3" r="4.5" fill="#e76f51"/>
+<circle cx="141.4" cy="281.3" r="4.5" fill="#e76f51"/>
+<circle cx="270.7" cy="261.7" r="4.5" fill="#e76f51"/>
+<circle cx="356.2" cy="234.4" r="4.5" fill="#e76f51"/>
+<circle cx="400.0" cy="182.4" r="4.5" fill="#e76f51"/>
+<polyline points="56.0,315.3 141.4,292.2 270.7,275.9 356.2,228.2 400.0,212.9" fill="none" stroke="#2a9d8f" stroke-width="3"/>
+<circle cx="56.0" cy="315.3" r="4.5" fill="#2a9d8f"/>
+<circle cx="141.4" cy="292.2" r="4.5" fill="#2a9d8f"/>
+<circle cx="270.7" cy="275.9" r="4.5" fill="#2a9d8f"/>
+<circle cx="356.2" cy="228.2" r="4.5" fill="#2a9d8f"/>
+<circle cx="400.0" cy="212.9" r="4.5" fill="#2a9d8f"/>
+<text x="56.0" y="268.3" text-anchor="middle" font-size="14" font-weight="700" fill="#2a9d8f">−15</text>
+<text x="56.0" y="368" text-anchor="middle" fill="#888">40</text>
+<text x="141.4" y="269.3" text-anchor="middle" font-size="14" font-weight="700" fill="#2a9d8f">−5</text>
+<text x="141.4" y="368" text-anchor="middle" fill="#888">100</text>
+<text x="270.7" y="249.7" text-anchor="middle" font-size="14" font-weight="700" fill="#2a9d8f">−6</text>
+<text x="270.7" y="368" text-anchor="middle" fill="#888">400</text>
+<text x="356.2" y="216.2" text-anchor="middle" font-size="14" font-weight="700" fill="#e76f51">+3</text>
+<text x="356.2" y="368" text-anchor="middle" fill="#888">1000</text>
+<text x="400.0" y="170.4" text-anchor="middle" font-size="14" font-weight="700" fill="#2a9d8f">−13</text>
+<text x="400.0" y="368" text-anchor="middle" fill="#888">1600</text>
+<text x="228.0" y="388" text-anchor="middle" fill="#888">rules in memory</text>
+<text x="48" y="406" text-anchor="end" font-size="10" fill="#888">agent file of</text>
+<line x1="119.5" y1="398" x2="119.5" y2="406" stroke="#888"/>
+<text x="119.5" y="418" text-anchor="middle" font-size="10" fill="#888" transform="rotate(-25 119.5 418)">vscode</text>
+<line x1="160.8" y1="398" x2="160.8" y2="406" stroke="#888"/>
+<text x="160.8" y="418" text-anchor="middle" font-size="10" fill="#888" transform="rotate(-25 160.8 418)">next.js</text>
+<line x1="185.3" y1="398" x2="185.3" y2="406" stroke="#888"/>
+<text x="185.3" y="418" text-anchor="middle" font-size="10" fill="#888" transform="rotate(-25 185.3 418)">PostHog</text>
+<line x1="218.7" y1="398" x2="218.7" y2="406" stroke="#888"/>
+<text x="218.7" y="418" text-anchor="middle" font-size="10" fill="#888" transform="rotate(-25 218.7 418)">Kiali</text>
+<line x1="238.1" y1="398" x2="238.1" y2="406" stroke="#888"/>
+<text x="238.1" y="418" text-anchor="middle" font-size="10" fill="#888" transform="rotate(-25 238.1 418)">kube-router</text>
+<text x="536" y="82" font-size="17" font-weight="700" fill="#222">Outdated rules followed</text>
+<line x1="536" y1="348" x2="880" y2="348" stroke="#eee"/>
+<text x="528" y="352" text-anchor="end" fill="#888">0%</text>
+<line x1="536" y1="289.0" x2="880" y2="289.0" stroke="#eee"/>
+<text x="528" y="293.0" text-anchor="end" fill="#888">25%</text>
+<line x1="536" y1="230.0" x2="880" y2="230.0" stroke="#eee"/>
+<text x="528" y="234.0" text-anchor="end" fill="#888">50%</text>
+<line x1="536" y1="171.0" x2="880" y2="171.0" stroke="#eee"/>
+<text x="528" y="175.0" text-anchor="end" fill="#888">75%</text>
+<line x1="536" y1="112" x2="880" y2="112" stroke="#eee"/>
+<text x="528" y="116" text-anchor="end" fill="#888">100%</text>
+<polygon points="536.0,204.71428571428572 621.447089200268,179.42857142857144 621.447089200268,322.7142857142857 536.0,348.0" fill="#2a9d8f" opacity="0.14"/>
+<polygon points="621.447089200268,179.42857142857144 750.723544600134,152.68965517241378 750.723544600134,294.1754385964912 621.447089200268,322.7142857142857" fill="#2a9d8f" opacity="0.14"/>
+<polygon points="750.723544600134,152.68965517241378 836.1706338004019,162.57142857142858 836.1706338004019,251.07142857142858 750.723544600134,294.1754385964912" fill="#2a9d8f" opacity="0.14"/>
+<polygon points="836.1706338004019,162.57142857142858 880.0,112.0 880.0,225.78571428571428 836.1706338004019,251.07142857142858" fill="#2a9d8f" opacity="0.14"/>
+<polyline points="536.0,204.7 621.4,179.4 750.7,152.7 836.2,162.6 880.0,112.0" fill="none" stroke="#e76f51" stroke-width="3"/>
+<circle cx="536.0" cy="204.7" r="4.5" fill="#e76f51"/>
+<circle cx="621.4" cy="179.4" r="4.5" fill="#e76f51"/>
+<circle cx="750.7" cy="152.7" r="4.5" fill="#e76f51"/>
+<circle cx="836.2" cy="162.6" r="4.5" fill="#e76f51"/>
+<circle cx="880.0" cy="112.0" r="4.5" fill="#e76f51"/>
+<polyline points="536.0,348.0 621.4,322.7 750.7,294.2 836.2,251.1 880.0,225.8" fill="none" stroke="#2a9d8f" stroke-width="3"/>
+<circle cx="536.0" cy="348.0" r="4.5" fill="#2a9d8f"/>
+<circle cx="621.4" cy="322.7" r="4.5" fill="#2a9d8f"/>
+<circle cx="750.7" cy="294.2" r="4.5" fill="#2a9d8f"/>
+<circle cx="836.2" cy="251.1" r="4.5" fill="#2a9d8f"/>
+<circle cx="880.0" cy="225.8" r="4.5" fill="#2a9d8f"/>
+<text x="536.0" y="192.7" text-anchor="middle" font-size="14" font-weight="700" fill="#2a9d8f">−61</text>
+<text x="536.0" y="368" text-anchor="middle" fill="#888">40</text>
+<text x="621.4" y="167.4" text-anchor="middle" font-size="14" font-weight="700" fill="#2a9d8f">−61</text>
+<text x="621.4" y="368" text-anchor="middle" fill="#888">100</text>
+<text x="750.7" y="140.7" text-anchor="middle" font-size="14" font-weight="700" fill="#2a9d8f">−60</text>
+<text x="750.7" y="368" text-anchor="middle" fill="#888">400</text>
+<text x="836.2" y="150.6" text-anchor="middle" font-size="14" font-weight="700" fill="#2a9d8f">−38</text>
+<text x="836.2" y="368" text-anchor="middle" fill="#888">1000</text>
+<text x="880.0" y="100.0" text-anchor="middle" font-size="14" font-weight="700" fill="#2a9d8f">−48</text>
+<text x="880.0" y="368" text-anchor="middle" fill="#888">1600</text>
+<text x="708.0" y="388" text-anchor="middle" fill="#888">rules in memory</text>
+<text x="528" y="406" text-anchor="end" font-size="10" fill="#888">agent file of</text>
+<line x1="599.5" y1="398" x2="599.5" y2="406" stroke="#888"/>
+<text x="599.5" y="418" text-anchor="middle" font-size="10" fill="#888" transform="rotate(-25 599.5 418)">vscode</text>
+<line x1="640.8" y1="398" x2="640.8" y2="406" stroke="#888"/>
+<text x="640.8" y="418" text-anchor="middle" font-size="10" fill="#888" transform="rotate(-25 640.8 418)">next.js</text>
+<line x1="665.3" y1="398" x2="665.3" y2="406" stroke="#888"/>
+<text x="665.3" y="418" text-anchor="middle" font-size="10" fill="#888" transform="rotate(-25 665.3 418)">PostHog</text>
+<line x1="698.7" y1="398" x2="698.7" y2="406" stroke="#888"/>
+<text x="698.7" y="418" text-anchor="middle" font-size="10" fill="#888" transform="rotate(-25 698.7 418)">Kiali</text>
+<line x1="718.1" y1="398" x2="718.1" y2="406" stroke="#888"/>
+<text x="718.1" y="418" text-anchor="middle" font-size="10" fill="#888" transform="rotate(-25 718.1 418)">kube-router</text>
+</svg>

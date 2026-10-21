@@ -90,48 +90,82 @@ New job: students pay 10% less
 
 ## Early results
 
+### How we test memory
+
+The main thing celis does is split each job into smaller jobs, the way Jobs To Be Done does, and keep
+what each one taught. No public benchmark measures that kind of work. So we test the part that can be
+counted: does the agent keep the rules it has been given, as the memory grows?
+
+We took 1,600 coding rules from the agent instruction files of 13 large open-source repos, among them
+VS Code, Next.js, PostHog, Airflow, Grafana, ruff, LangChain and n8n, and rewrote them for one small
+Python app. The agent then does 8 everyday tasks on that app, like a CSV export, a backup or a SQLite store. After
+each task, a script checks 34 of the rules in the code it wrote. 4 of those rules changed over time:
+an older version says one thing, the newer one replaces it.
+
+We grow the memory from 40 to 1,600 rules, and compare three setups in Claude Code with Opus:
+
+- **CLAUDE.md:** every rule in a CLAUDE.md the agent reads at the start. Like a real file, it still
+  holds the old version of each rule that changed.
+- **celis:** the same rules in celis, where a new version replaces the old one.
+- **No memory:** neither.
+
+### What we found
+
+![Rules broken and outdated rules followed, CLAUDE.md against celis, from 40 to 1,600 rules](media/claude-md-vs-celis.svg)
+
+A CLAUDE.md works well while it is small, and degrades as it grows. celis broke fewer rules at most
+sizes, and it rarely followed a rule that had changed, because the old version is gone from what the
+agent sees. From 1,000 rules, celis was also cheaper: a big CLAUDE.md is read into every session.
+
+| Rules in memory | Rules broken, CLAUDE.md | Rules broken, celis | Outdated rules followed, CLAUDE.md | Outdated rules followed, celis | Cost per task, CLAUDE.md | Cost per task, celis |
+| --------------- | ----------------------- | ------------------- | ---------------------------------- | ------------------------------ | ------------------------ | -------------------- |
+| 40              | 29%                     | **14%**             | 61%                                | **0%**                         | $0.31                    | $0.43                |
+| 100             | 28%                     | **24%**             | 71%                                | **11%**                        | $0.35                    | $0.49                |
+| 400             | 37%                     | **31%**             | 83%                                | **23%**                        | $0.55                    | $0.61                |
+| 1,000           | **48%**                 | 51%                 | 79%                                | **41%**                        | $0.84                    | **$0.66**            |
+| 1,600           | 70%                     | **57%**             | 100%                               | **52%**                        | $1.04                    | **$0.73**            |
+
+With no memory, the agent broke 95% of the rules.
+
+**How many rules does a real repo have?** These are the bullet points in the root agent file of some
+of the repos we took rules from. Most repos have more agent files in their folders, so the real count
+is higher.
+
+| Repo                                                                 | Rules in its root agent file |
+| -------------------------------------------------------------------- | ---------------------------- |
+| [VS Code](https://github.com/microsoft/vscode)                       | 79                           |
+| [LangChain](https://github.com/langchain-ai/langchain)               | 94                           |
+| [Airflow](https://github.com/apache/airflow)                         | 110                          |
+| [Next.js](https://github.com/vercel/next.js)                         | 123                          |
+| [PostHog](https://github.com/PostHog/posthog)                        | 160                          |
+| [Kiali](https://github.com/kiali/kiali)                              | 229                          |
+| [kube-router](https://github.com/cloudnativelabs/kube-router)        | 282                          |
+
+So one big repo is already at 100 to 300 rules. Add the rules you keep for all your own work, and the
+rules of the other projects you touch, and a single CLAUDE.md soon holds more than 400.
+
 > [!NOTE]
-> These numbers come from our early evals, with each bench run once. We're still gathering data, so
-> take them as a first look, not a final benchmark. [RESULTS.md](RESULTS.md) has the full setup.
+> Each size is 8 tasks. celis ran twice, CLAUDE.md once, and two runs of the same setup can differ by
+> up to 15 points, so take the small gaps as a tie. The bench is in [evals/drift](evals/drift).
 
-**Say it once, in one project, and it holds in the next one.** We gave agents 10 real Raycast
-extension pull requests, all merged after the model's training data, each in a different extension.
-After the first two, a reviewer gave 5 rules, like "use the `{PR_MERGE_DATE}` placeholder in the
-changelog". Then we counted how often the next 8 jobs, in 8 other extensions, broke them. Each job
-starts in a fresh folder, so a project's `CLAUDE.md` can't carry the rules over.
+### It works across agents
 
-| Agent                                                | Review rules broken, of 43 | Extra review rounds | Cost for 10 jobs |
-| ---------------------------------------------------- | -------------------------- | ------------------- | ---------------- |
-| Claude Code, Sonnet                                  | 6                          | 6                   | $2.60            |
-| Claude Code, Sonnet, with celis                      | 3                          | 3                   | $2.70            |
-| Claude Code, Haiku                                   | 16                         | 17                  | $0.70            |
-| Claude Code, Haiku, with celis                       | 3                          | 7                   | $0.60            |
-| Claude Code, Opus with Haiku subagents               | 6                          | 5                   | $3.10            |
-| Claude Code, Opus with Haiku subagents, with celis   | 1                          | 1                   | $4.60            |
-
-With celis, Haiku broke fewer rules than Sonnet without it, for a quarter of the cost. And in a team,
-celis gave the rules to each Haiku subagent at its step. Without it, Opus broke 1 rule in the first 4
-later jobs, and 5 in the next 3.
-
-**Say it to Claude Code, and Codex keeps it.** We gave agents 8 real Supabase pull requests that
-build landing pages, all merged after the model's training data. After two of them, the agent got
-the rules that Supabase's review bots had asked for. Then we counted how often the later jobs broke
-those rules.
+celis keeps the rules outside any one agent, so a rule that Claude Code learned is there for Codex.
+We gave agents 8 real Supabase pull requests that build landing pages, all merged after the model's
+training data. After two of them, the agent got the rules that Supabase's review bots had asked for.
+Then we counted how often the later jobs broke those rules.
 
 | Agent                                          | Review rules broken per job | Cost per job |
 | ---------------------------------------------- | --------------------------- | ------------ |
 | Claude Code                                    | 2.75                        | $0.31        |
 | Claude Code with celis                         | 0                           | $0.31        |
 | Codex                                          | 2.38                        | $0.04        |
-| Codex with Celis, using rules from Claude Code | 0.25                        | $0.05        |
-
-Celis didn't make the pages look more like the real ones. What it changed is that agents kept
-the rules they had been given.
+| Codex with celis, using rules from Claude Code | 0.25                        | $0.05        |
 
 ## Why not just CLAUDE.md?
 
-A `CLAUDE.md` works well when the right rule is in it. In our evals, a `CLAUDE.md` that already held
-the rule did as well as celis. The catch is that someone has to write it, and keep it current.
+A small `CLAUDE.md` works well when the right rule is in it. It gets worse as it grows, it keeps old
+rules next to the new ones, and someone has to write it and keep it current.
 
 Celis writes the rules for you, from your corrections and code reviews, while the work happens.
 At the start of each job, the agent gets the rules and past steps that matter for it, from every
