@@ -17,7 +17,12 @@ checked; 4 of those replaced an older version that the memory may still hold.
          data/pick.md agent for each page of 100 or 50 `me` rules, run in parallel, and data/past-pick.md
          as the past agent), merged (pickers, with jit.py running the pickers and a merge to 20 rules
          from the prompt hook, so the agent gets only those), staged (merged with no merge: the hook keeps the
-         whole pick, and each read gives the file the picked rules that act on it)
+         whole pick, and each read gives the file the picked rules that act on it), triggered (celis, with no
+         plugin: trigger.py gives each rule before the edit or command its trigger in data/triggers.json
+         matches, and after a Bash command the rules of the files it changed, and a Haiku picker gives the situation rules at the ask), pull (celis, with no plugin and
+         no rules given: the agent searches them with celis grep), taught (celis, each rule with its trigger in
+         data/triggers.json, with no plugin, no tool hook and no picker: the session start gives the card, and
+         the agent asks celis rules and celis grep itself)
 
 Each task starts from a new copy of seed/ and a new copy of the memory, so tasks are independent and run in
 parallel. Each task appends one line to results/<arm>-<model>-r<N>.jsonl.
@@ -34,6 +39,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import check
+import trigger
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
@@ -50,6 +56,8 @@ NARROW = {"stock": "stock/*.py", "stock/commands": "stock/commands/*.py", "stock
           "tests": "tests/*.py"}
 PICKS = ("picked", "pickers", "pickers50", "merged", "staged")
 JITS = ("jit", "narrow", "ranked", "scoped", "scopedrank", *PICKS)
+OWN = ("triggered", "pull")
+STORED = ("celis", "placed", *JITS, *OWN, "taught")
 FIXED = {"GIT_AUTHOR_DATE": "2026-01-01T00:00:00Z", "GIT_COMMITTER_DATE": "2026-01-01T00:00:00Z"}
 
 
@@ -93,7 +101,7 @@ def seed(arm, home, rules, targets):
     (home / "user").mkdir(parents=True)
     if arm == "oracle":
         (home / "user" / "CLAUDE.md").write_text(claude_md(*rules))
-    if arm in ("celis", "placed", *JITS):
+    if arm in STORED:
         place = home / "seed"
         workdir(place)
         env = dict(CELIS, CELIS_HOME=str(home / "celis"))
@@ -105,6 +113,7 @@ def seed(arm, home, rules, targets):
         sh("git", "init", "-q", cwd=other)
         sh("git", "-c", "user.name=bench", "-c", "user.email=bench@local", "commit", "-q", "--allow-empty", "-m",
            "other", cwd=other, env=dict(os.environ, **FIXED))
+        known = trigger.triggers() if arm == "taught" else {}
         places = sorted(str(p.relative_to(HERE / "seed")) for p in (HERE / "seed").rglob("*")
                         if "__pycache__" not in p.parts) + FAKE
         for line in rules[0]:
@@ -112,12 +121,14 @@ def seed(arm, home, rules, targets):
             new = next((t for t in targets if "old" in t and t["text"] == line), None)
             target = old or new or next((t for t in targets if t["text"] == line), None)
             at = NARROW.get(target["place"], target["place"]) if target and arm == "narrow" else target and target["place"]
-            scope = ("me" if arm == "celis" else f"at:{at}" if target else "project" if arm == "placed"
+            scope = ("me" if arm in ("celis", *OWN) else f"at:{at}" if target else "project" if arm == "placed"
                      else f"at:{spread.choice(places)}")
             if arm.startswith("scoped") or arm in PICKS:
                 got = scopes.get(target["id"] if target else by_text[line], "other")
                 scope = "me" if got == "me" else "project" if got == "other" else f"at:{got}"
             extra = ["--replaces", ids[new["id"]]] if new and new["id"] in ids else []
+            if arm == "taught":
+                scope, extra = "me", extra + tags(known.get(line))
             where = other if scope == "project" and arm != "placed" else place
             out = sh("celis", "decide", "--scope", scope, *extra, "--", line, cwd=where, env=env)
             if old:
@@ -135,6 +146,15 @@ def workdir(path):
     return sh("git", "rev-parse", "HEAD", cwd=path)
 
 
+def tags(known):
+    """The `celis decide` flags that write the trigger `known` of data/triggers.json."""
+    if not known:
+        return []
+    found = [f for p in known["paths"] for f in ("--path", p)]
+    found += [f for k in ("content", "command") if known[k] for f in (f"--{k}", known[k])]
+    return found + ["--situation"] * bool(known["situation"])
+
+
 def plugin(home, arm):
     """A copy of the plugin in `home` with data/past.md as its past agent, or for the pickers arms
     data/past-pick.md and the data/pick.md agent."""
@@ -150,7 +170,7 @@ def plugin(home, arm):
 
 def agent(arm, model, work, home, prompt, log):
     """One Claude Code session in `work`; its numbers from the stream-json transcript."""
-    env = dict(CELIS if arm in ("celis", "placed", *JITS) else os.environ, CELIS_HOME=str(home / "celis"))
+    env = dict(CELIS if arm in STORED else os.environ, CELIS_HOME=str(home / "celis"))
     settings = {"autoMemoryEnabled": False}
     if arm in ("ranked", "scopedrank"):
         env["JIT_RANK"] = "words"
@@ -169,6 +189,16 @@ def agent(arm, model, work, home, prompt, log):
             env["JIT_STAGE"] = "file"
             settings["hooks"]["PostToolUse"][0]["matcher"] = "Read|Write"
             settings["hooks"]["PostToolUse"][0]["hooks"] = [dict(hook("read")[0], timeout=120)]
+    if arm in OWN:
+        hook = lambda mode, timeout=60: [{"type": "command", "command": f"python3 {HERE / 'trigger.py'} {mode}",
+                                          "timeout": timeout}]
+        settings["hooks"] = {"UserPromptSubmit": [{"hooks": hook("ask" if arm == "triggered" else "pull", 600)}]}
+        if arm == "triggered":
+            settings["hooks"]["PreToolUse"] = [{"matcher": "Write|Edit|MultiEdit|Bash", "hooks": hook("pre")}]
+            settings["hooks"]["PostToolUse"] = [{"matcher": "Bash", "hooks": hook("post")}]
+    if arm == "taught":
+        script = Path(os.environ.get("CELIS_PLUGIN", ROOT / "plugins" / "celis")) / "hooks" / "start.sh"
+        settings["hooks"] = {"SessionStart": [{"hooks": [{"type": "command", "command": f"sh {script}"}]}]}
     flags = ["--settings", json.dumps(settings)]
     if arm == "oracle":
         env["CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD"] = "1"
@@ -214,7 +244,7 @@ def task(arm, model, n, name, home, task, targets):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("arm", choices=["plain", "oracle", "celis", "placed", *JITS])
+    parser.add_argument("arm", choices=["plain", "oracle", "celis", "placed", *JITS, *OWN, "taught"])
     parser.add_argument("rules", nargs="+", type=int)
     parser.add_argument("--jobs", type=int, default=8)
     parser.add_argument("--model", choices=MODELS, default="haiku")

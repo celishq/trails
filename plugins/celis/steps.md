@@ -7,8 +7,9 @@ The cases that the card does not cover, and that no command prints. Do not run `
 A place is a file, a `file:line`, a folder, or a URL. A rule that holds at one place takes the scope
 `at:<place>`.
 
-When you move a file: write each rule at its old place again at the new place, with
-`decide --replaces <id> --scope at:<new place>`. Run `celis grep "at:<old place>"` to see them.
+When you move a file: write each rule of its old place again for the new place, with
+`decide --replaces <id>` and the new place as its scope or `--path`. Run `celis rules <old place> --all`
+to see them.
 
 ## Past work
 
