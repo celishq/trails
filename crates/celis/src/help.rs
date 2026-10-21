@@ -130,7 +130,10 @@ pub const GROUPS: &[Group] = &[
         "Add steps to a trail, then start, finish, drop, or edit them.",
         &[
             ("add", "Add a step to a trail, or start a new trail"),
-            ("start", "Start a step and show the rules at its places"),
+            (
+                "start",
+                "Start a step, and see what to do before each change",
+            ),
             ("done", "Finish a step with proof that it works"),
             (
                 "drop",

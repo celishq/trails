@@ -492,6 +492,18 @@ fn the_view_and_the_cards_rule_search_match_the_fixture() {
         .next()
         .unwrap()
         .replace("<word>|<word>", "price|push|question");
+    let ask = repo.run(
+        &repo.path(),
+        &["step", "add", "--new", "--", "an ask"],
+        &[],
+        "",
+    );
+    let said = String::from_utf8_lossy(&ask.stderr).to_string();
+    let search = format!(
+        "celis grep -i -E \"{}\"",
+        pattern.replace("price|push|question", "<word>|<word>")
+    );
+    assert!(said.contains(&search), "{said}");
     let args = ["-i", "-E", pattern.as_str()];
     let kept = lines(grep(&repo, &args));
     let want: Vec<String> = fixture["kept"]

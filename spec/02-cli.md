@@ -30,7 +30,7 @@ celis link [<folder>]                                 keep this project's trails
 celis unlink [<folder>]                               stop keeping them in a folder
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>]... [--check <command>] [--new] [--session <id>] [--project <id>] -- <text>
                                                        leave a step
-celis step start <id>                                 take up a step, and see its rules
+celis step start <id>                                 take up a step, and see the rules its plan links
 celis step done <id> [--changed <text>] [--as-planned] [--pitfall <text>] -- <proof>
                                                        close a step with its proof
 celis step drop <id> -- <reason>                      end a step, a done trail or a rule no longer wanted

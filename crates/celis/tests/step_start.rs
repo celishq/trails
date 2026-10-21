@@ -70,19 +70,16 @@ fn start_refuses_unknown_and_closed_steps_and_starts_a_step_once() {
     assert_eq!(files(), before);
 }
 
-/// `start` prints, after its id, the live rules at the step's places, a folder's rules holding
-/// for each file under it.
+/// `start` prints no rule at the step's places, and says how to get the rules of its files before each
+/// change and to check the change against them before done.
 #[test]
-fn start_prints_the_rules_at_the_steps_places() {
+fn start_says_how_to_get_and_check_the_rules_of_its_files() {
     let repo = Repo::new();
-    let decide = |scope: &str, text: &str| {
-        let o = cli(&repo, &["decide", "--scope", scope, "--", text]);
-        assert!(o.status.success(), "{}", err(&o));
-    };
-    decide("at:src", "keep src small");
-    decide("at:src/a.rs", "a.rs holds cents");
-    decide("at:docs/b.md", "b.md stays short");
-    decide("at:lib", "lib is frozen");
+    let o = cli(
+        &repo,
+        &["decide", "--scope", "at:src/a.rs", "--", "a.rs holds cents"],
+    );
+    assert!(o.status.success(), "{}", err(&o));
     let trail = add(&repo, &["--", "the trail"]);
     let args = [
         "--under",
@@ -97,14 +94,16 @@ fn start_prints_the_rules_at_the_steps_places() {
     let step = add(&repo, &args);
     let o = cli(&repo, &["step", "start", &step[..8]]);
     assert!(o.status.success(), "{}", err(&o));
-    let text = out(&o);
-    for said in ["keep src small", "a.rs holds cents", "b.md stays short"] {
-        assert!(text.contains(said), "{text}");
-    }
-    assert!(!text.contains("lib is frozen"), "{text}");
+    assert!(!out(&o).contains("a.rs holds cents"), "{}", out(&o));
+    let said = err(&o);
+    assert!(
+        said.contains("run celis rules src/a.rs docs/b.md <other files>"),
+        "{said}"
+    );
+    assert!(said.contains("Before done, run celis rules"), "{said}");
 }
 
-/// `start` does not run the step's check, and says nothing on stderr.
+/// `start` does not run the step's check.
 #[test]
 fn start_does_not_run_the_steps_check() {
     let repo = Repo::new();
@@ -122,7 +121,6 @@ fn start_does_not_run_the_steps_check() {
     );
     let o = cli(&repo, &["step", "start", &id[..8]]);
     assert!(o.status.success(), "{}", err(&o));
-    assert_eq!(err(&o), "");
     assert!(!repo.path().join("ran").exists());
 }
 

@@ -464,6 +464,23 @@ pub fn read_ids(repo: &Repo, folder: &Path, args: &[&str]) -> Vec<String> {
         .collect()
 }
 
+/// The ids, first 8 characters, of the rules `celis rules` prints in `folder` for the places of each
+/// `--at` of `args`, in order.
+pub fn place_ids(repo: &Repo, folder: &Path, args: &[&str]) -> Vec<String> {
+    let mut all = vec!["rules", "--json"];
+    let pairs = args.windows(2).filter(|w| w[0] == "--at");
+    all.extend(pairs.map(|w| w[1]));
+    let o = repo.run(folder, &all, &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+    out(&o)
+        .lines()
+        .filter_map(|l| {
+            let v: serde_json::Value = serde_json::from_str(l).unwrap();
+            Some(v.get("id")?.as_str()?[..8].to_string())
+        })
+        .collect()
+}
+
 /// A `TZ` where it is now about noon, so the hours before now fall on the same day.
 pub fn noon() -> String {
     let secs = std::time::UNIX_EPOCH.elapsed().unwrap().as_secs();

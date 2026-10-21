@@ -367,7 +367,8 @@ fn decide_writes_the_trigger_and_labels() {
         "",
     );
     assert!(o.status.success(), "{}", err(&o));
-    let step = add(&repo, &["--new", "--at", "shelf/a.py", "--", "t"]);
+    let id = out(&o).trim().to_string();
+    let step = add(&repo, &["--new", "--uses", &id, "--", "t"]);
     let step = step.lines().next().unwrap();
     let shown = objects(&repo, &["step", "start", step]);
     let rule = shown.iter().find_map(|v| v.get("decision")).unwrap();
@@ -395,7 +396,7 @@ fn an_older_rule_with_no_trigger_still_reads() {
     let repo = Repo::new();
     let id = repo.project_id();
     let at = support::now() - DAY;
-    stored_rule(
+    let old = stored_rule(
         &repo,
         (&id, "repo"),
         &account(),
@@ -403,7 +404,8 @@ fn an_older_rule_with_no_trigger_still_reads() {
         "old",
         at,
     );
-    let step = add(&repo, &["--new", "--at", "a.py", "--", "t"]);
+    assert_eq!(texts(&repo, &["a.py"]), ["old"]);
+    let step = add(&repo, &["--new", "--uses", &old.id, "--", "t"]);
     let step = step.lines().next().unwrap();
     let shown = objects(&repo, &["step", "start", step]);
     let rule = shown.iter().find_map(|v| v.get("decision")).unwrap();

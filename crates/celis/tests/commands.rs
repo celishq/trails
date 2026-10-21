@@ -44,10 +44,11 @@ fn a_rule_prints_its_id_scope_and_text() {
         "",
     );
     assert!(o.status.success(), "{}", err(&o));
-    let placed = short(out(&o).trim());
-    let step = short(out(&run(&repo, &["step", "add", "--at", "a.py", "--", "t"])).trim());
+    let placed = out(&o).trim().to_string();
+    let step = run(&repo, &["step", "add", "--uses", &placed, "--", "t"]);
+    let step = short(out(&step).trim());
     let lines = lines_of(&repo, &repo.path(), &["step", "start", &step]);
-    assert_eq!(lines[1..], [format!("{placed} at:a.py one")]);
+    assert_eq!(lines[1..], [format!("{} at:a.py one", short(&placed))]);
 }
 
 /// The json form of a rule is one object with the fields the section lists
@@ -64,7 +65,8 @@ fn the_json_form_of_a_rule_has_the_listed_fields() {
         "one",
         now() - 60,
     );
-    let step = short(out(&run(&repo, &["step", "add", "--at", "a.py", "--", "t"])).trim());
+    let step = run(&repo, &["step", "add", "--uses", &note.id, "--", "t"]);
+    let step = short(out(&step).trim());
     let o = repo.run(&repo.path(), &["step", "start", &step, "--json"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     let line: Value = serde_json::from_str(out(&o).lines().nth(1).unwrap()).unwrap();

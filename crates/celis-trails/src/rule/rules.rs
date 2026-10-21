@@ -141,15 +141,11 @@ impl<'a> Rules<'a> {
         rules
     }
 
-    /// The live rules `step` must keep, each once: those at its places, its trail's rules, each
-    /// rule a step on its `under` chain uses, and the rules of each trail it follows (`Step::followed`).
+    /// The live rules the plan of `step` links, each once: its trail's rules, each rule a step on its
+    /// `under` chain uses, and the rules of each trail it follows (`Step::followed`).
     pub fn kept(&self, step: Step) -> Vec<(&'a Note, Rule)> {
         let record = step.record();
-        let places = record.places.iter();
-        let mut found: Vec<_> = places
-            .flat_map(|place| self.at(&record.anchor.project, place))
-            .collect();
-        found.extend(self.of(step.trail()));
+        let mut found = self.of(step.trail());
         let chain = std::iter::successors(Some(step), |s| s.under());
         for used in chain.flat_map(Step::uses) {
             if let Used::Rule(id) = used {
