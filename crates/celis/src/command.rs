@@ -21,6 +21,7 @@ use crate::failure::Failure;
 use crate::help::{self, VERBS};
 pub(crate) use args::Args;
 use celis_nostr::Note;
+use celis_trails::records::id::short;
 use celis_trails::{Link, Name, Project, Store, Trails};
 use serde_json::json;
 use std::collections::HashMap;
@@ -44,8 +45,9 @@ pub struct Command {
 impl Command {
     /// Runs, writing to `out` and `err`, or prints the help page its words name. Returns the exit code.
     pub fn run(&self, out: &mut dyn Write, err: &mut dyn Write) -> i32 {
+        let colour = std::io::stdout().is_terminal() && self.colour();
         if let Some(page) = help::named(&self.args) {
-            let _ = writeln!(out, "{page}");
+            let _ = writeln!(out, "{}", help::text(&page, colour));
             return 0;
         }
         let json = Args::asks_json(&self.args);
@@ -205,8 +207,14 @@ impl Command {
         Ok(Trails::open(store, now(), limit))
     }
 
+    /// Prints the id of `note`: its first 8 characters on a terminal, else whole; `{"id"}` with
+    /// `--json`.
     pub(crate) fn id(&self, out: &mut dyn Write, args: &Args, note: &Note) -> Result<(), Failure> {
-        show(out, args.json, "id", json!(note.id), &note.id)
+        let line = match std::io::stdout().is_terminal() {
+            true => short(&note.id),
+            false => note.id.clone(),
+        };
+        show(out, args.json, "id", json!(note.id), &line)
     }
 }
 

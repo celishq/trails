@@ -2,18 +2,19 @@
 
 use crate::command::tree::level::ids;
 use crate::command::tree::row::Row;
-use crate::command::tree::{after, Item, RuleNote, Tree, CLOSED, RULES};
+use crate::command::tree::{Item, RuleNote, Tree, CLOSED, RULES};
 use crate::progress::Tally;
-use crate::terminal::canvas::{paint, Styled, MAGENTA};
+use crate::terminal::canvas::{paint, Styled, DIM, MAGENTA};
 use crate::terminal::look::look;
 use crate::text::line::plural;
+use celis_trails::records::id::short;
 use celis_trails::{State, Step};
 use ratatui::style::Style;
 use ratatui::text::Span;
 
 impl Tree<'_> {
     /// Adds the rules line `§ <n> rules` of the trail `trail` after `rail`, the `last` of its level;
-    /// open, a line under it for each of `rules`: `§ <text>`, wrapped, its id at the end.
+    /// open, a line under it for each of `rules`: `§ <text>`, cut to fit, its scope and id at the right.
     pub(super) fn rules_line(
         &self,
         rules: Vec<RuleNote>,
@@ -24,15 +25,16 @@ impl Tree<'_> {
     ) {
         let id = format!("{RULES}{trail}");
         let open = self.open(&id);
-        let (lead, rail) = self.branch(rail, last, Some(open));
+        let (lead, rail) = self.branch(rail, last, Some(open), self.lane(trail));
         let mark = paint(MAGENTA, "§");
         let first = lines.len();
-        lines.push(Row::Titled {
+        lines.push(Row::Lined {
             lead,
             marks: Styled::from(mark.clone()),
             title: plural(rules.len(), "rule"),
             tone: Style::new(),
-            rest: after(&rail, Span::raw("  ")),
+            meta: Styled::default(),
+            whole: None,
         });
         let item = Item {
             id: id.clone(),
@@ -46,14 +48,16 @@ impl Tree<'_> {
         }
         let all = rules.len();
         for (n, (record, rule)) in rules.into_iter().enumerate() {
-            let (lead, below) = self.branch(&rail, n + 1 == all, None);
+            let (lead, _) = self.branch(&rail, n + 1 == all, None, MAGENTA);
             let first = lines.len();
-            lines.push(Row::Titled {
+            let meta = format!("{} · {}", rule.scope.short(), short(&record.id));
+            lines.push(Row::Lined {
                 lead,
                 marks: Styled::from(mark.clone()),
                 title: rule.content.clone(),
                 tone: Style::new(),
-                rest: after(&below, Span::raw("  ")),
+                meta: Styled::from(paint(DIM, &meta)),
+                whole: None,
             });
             let item = Item {
                 id: record.id.clone(),
@@ -65,9 +69,8 @@ impl Tree<'_> {
         }
     }
 
-    /// Adds the closed line `<marks> <n> closed steps` of the ended `steps` of the line `above`, the last
-    /// of its level after `rail`: `✓` when one is done, `✗` when one is dropped, `◌` when one is expired;
-    /// open, the steps under it.
+    /// Adds the closed line `✓ <n> closed steps` of the ended `steps` of the line `above`, the last of its
+    /// level after `rail`, their count by state at the right (`✓ 7 · ✗ 1 · ◌ 2`); open, the steps under it.
     pub(super) fn closed_line(
         &self,
         steps: Vec<Step>,
@@ -77,20 +80,16 @@ impl Tree<'_> {
     ) {
         let id = format!("{CLOSED}{above}");
         let open = self.open(&id);
-        let (lead, rail) = self.branch(rail, true, Some(open));
-        let tally = Tally::of(&steps);
-        let marks: Styled = [State::Done, State::Dropped, State::Expired]
-            .into_iter()
-            .filter(|state| tally.count(*state) > 0)
-            .map(|state| paint(look(state).text, look(state).mark))
-            .collect();
+        let (lead, rail) = self.branch(rail, true, Some(open), self.lane(above));
+        let counts = counts(Tally::of(&steps));
         let first = lines.len();
-        lines.push(Row::Titled {
+        lines.push(Row::Lined {
             lead,
-            marks,
+            marks: Styled::from(paint(look(State::Done).text, look(State::Done).mark)),
             title: plural(steps.len(), "closed step"),
             tone: Style::new(),
-            rest: after(&rail, Span::raw("  ")),
+            meta: Styled::from(counts),
+            whole: None,
         });
         let item = Item {
             id: id.clone(),
@@ -103,4 +102,20 @@ impl Tree<'_> {
             self.steps(steps, &rail, &id, false, lines);
         }
     }
+}
+
+/// The closed steps of `tally` counted by state, each count after its mark (`✓ 7 · ✗ 1 · ◌ 2`).
+pub(super) fn counts(tally: Tally) -> Vec<Span<'static>> {
+    let mut counts: Vec<Span> = vec![];
+    for state in [State::Done, State::Dropped, State::Expired] {
+        let n = tally.count(state);
+        if n > 0 {
+            if !counts.is_empty() {
+                counts.push(paint(DIM, " · "));
+            }
+            counts.push(paint(look(state).text, look(state).mark));
+            counts.push(paint(DIM, &format!(" {n}")));
+        }
+    }
+    counts
 }

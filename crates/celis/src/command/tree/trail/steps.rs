@@ -4,11 +4,10 @@ use crate::command::tree::level::Level;
 use crate::command::tree::row::Row;
 use crate::command::tree::{after, Item, RuleNote, Tree};
 use crate::terminal::canvas::{paint, Styled, DIM};
-use crate::terminal::look::look;
-use crate::text::clock::took;
-use crate::text::line::plural;
+use crate::terminal::look::{lane, look, SHIMMER};
 use celis_trails::step::steps::LIFE;
 use celis_trails::{State, Step};
+use ratatui::style::Style;
 use ratatui::text::Span;
 
 impl Tree<'_> {
@@ -45,6 +44,7 @@ impl Tree<'_> {
         lines: &mut Vec<Row>,
     ) {
         let all = notes.len();
+        let colour = self.lane(above);
         for (n, note) in notes.into_iter().enumerate() {
             let step = note.record();
             let state = note.state();
@@ -53,27 +53,25 @@ impl Tree<'_> {
             }
             let open = self.open(note.id());
             let last = n + 1 == all && !more;
-            let (lead, rail) = self.branch(rail, last, self.opens(note).then_some(open));
             let size = note.tree().len() - 1;
             let level = Level::of(note.children());
             let folded = state == State::Done && size > 0 && !open;
+            let shown = open || (size > 0 && !folded);
+            let toggle = (self.opens(note) || size > 0).then_some(shown);
+            let (lead, rail) = self.branch(rail, last, toggle, colour);
             let below = match note.children().is_empty() || folded {
                 true => after(&rail, Span::raw("  ")),
-                false => after(&rail, paint(DIM, "│ ")),
+                false => after(&rail, paint(lane(state), "│ ")),
             };
             let first = lines.len();
-            lines.push(Row::Titled {
+            lines.push(Row::Lined {
                 lead,
                 marks: self.marked(note),
                 title: step.title().to_string(),
-                tone: self.tone(look(state).title, note.newest()),
-                rest: below.clone(),
+                tone: self.shone(note, self.tone(look(state).title, note.newest())),
+                meta: self.meta(note),
+                whole: open.then(|| below.clone()),
             });
-            let time = match state.closed() {
-                true => None,
-                false => self.worked(&note.tree()).map(took),
-            };
-            self.details(&below, [folded.then(|| plural(size, "step")), time], lines);
             let item = Item {
                 id: note.id().to_string(),
                 open,
@@ -91,40 +89,41 @@ impl Tree<'_> {
         }
     }
 
-    /// Adds `details` after `rail` as one dim line, `·` between two; none when all are empty.
-    pub(super) fn details(
+    /// The lead of a line of a level after `rail`: `├─`, or `└─` when it is the `last`, in the look
+    /// `colour` of the line it hangs from, then a space and `▸` or `▾` as `open` says when it opens, else
+    /// `──`, and a space; and the rail of the level under it, whose corners stand under this line's
+    /// marker.
+    pub(super) fn branch(
         &self,
         rail: &Styled,
-        details: [Option<String>; 2],
-        lines: &mut Vec<Row>,
-    ) {
-        let shown: Vec<String> = details.into_iter().flatten().collect();
-        if !shown.is_empty() {
-            lines.push(Row::Note {
-                rail: rail.clone(),
-                label: "",
-                text: shown.join(" · "),
-                tone: DIM,
-            });
+        last: bool,
+        open: Option<bool>,
+        colour: Style,
+    ) -> (Styled, Styled) {
+        let (corner, under) = match last {
+            true => ("└─", "     "),
+            false => ("├─", "│    "),
+        };
+        let mut lead = after(rail, paint(colour, corner));
+        match open {
+            None => lead.push_span(paint(colour, "──")),
+            Some(false) => lead.push_span(paint(DIM, " ▸")),
+            Some(true) => lead.push_span(paint(DIM, " ▾")),
         }
+        lead.push_span(" ");
+        (lead, after(rail, paint(colour, under)))
     }
 
-    /// The lead of a line of a level after `rail`, `├─ `, or `└─ ` when it is the `last`, its `─` a `▸`
-    /// or `▾` as `open` says when it opens, and the rail of the level under it.
-    pub(super) fn branch(&self, rail: &Styled, last: bool, open: Option<bool>) -> (Styled, Styled) {
-        let (corner, under) = match last {
-            true => ('└', "   "),
-            false => ('├', "│  "),
-        };
-        let chevron = match open {
-            None => '─',
-            Some(false) => '▸',
-            Some(true) => '▾',
-        };
-        (
-            after(rail, paint(DIM, &format!("{corner}{chevron} "))),
-            after(rail, paint(DIM, under)),
-        )
+    /// The look `tone` of the title of `note`, marked to shimmer in a watch while it works with no step
+    /// under it.
+    fn shone(&self, note: Step, tone: Style) -> Style {
+        match self.view.spin && note.state() == State::Working && note.children().is_empty() {
+            true => {
+                self.spun.set(true);
+                tone.add_modifier(SHIMMER)
+            }
+            false => tone,
+        }
     }
 
     /// Whether opening `note` shows something: lines under it, or steps under a closed one.

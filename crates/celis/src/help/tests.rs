@@ -9,7 +9,8 @@ fn a_long_usage_wraps_before_a_flag() {
         args: &[],
         examples: &[],
     }
-    .page();
+    .lines();
+    let page = text(&page, false);
     let lines: Vec<&str> = page.lines().collect();
     assert!(lines[1].starts_with("      ["), "{page}");
 }

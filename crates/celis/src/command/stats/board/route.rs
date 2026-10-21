@@ -1,7 +1,7 @@
 //! The route of a step on a board: the steps it follows, the step, and the steps that follow it.
 
 use super::super::table::Table;
-use super::{head, legend, Board, NARROW};
+use super::{legend, route_head, Board, NARROW};
 use crate::progress::Model;
 use crate::terminal::canvas::{paint, Styled, DIM};
 use crate::terminal::live::Page;
@@ -19,7 +19,7 @@ impl Board<'_> {
         let count = up.len() + down.len();
         self.row = self.row.min(count.saturating_sub(1));
         let name = &step.record().anchor.name;
-        let mut links = Links::new(head(Some(&short(step.id())), name, width), self.row, width);
+        let mut links = Links::new(route_head(&short(step.id()), name, width), self.row, width);
         if !up.is_empty() {
             links.lines.push(paint(DIM, "  FOLLOWS").into());
             for link in &up {
@@ -45,7 +45,6 @@ impl Board<'_> {
         let markdown = Table {
             head: vec!["Link", "Step", "Project", "Took"],
             rows: links.table,
-            wide: 1,
         }
         .markdown(&format!("{} {}", short(step.id()), step.title()));
         self.rows = links.rows;

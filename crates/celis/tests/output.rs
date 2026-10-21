@@ -240,6 +240,18 @@ fn a_command_that_writes_a_record_prints_its_id() {
     }
 }
 
+/// On a terminal, a command that writes a record prints the first 8 characters of its id
+/// (`spec/02-cli.md`, "Output and errors").
+#[test]
+fn on_a_terminal_a_written_record_prints_its_short_id() {
+    let repo = Repo::plain();
+    let mut watch = support::watch::Watch::start(&repo, &["step", "add", "--", "p"]);
+    let shown = support::watch::plain(&watch.shown(Duration::from_secs(2)));
+    let id = shown.lines().next().unwrap_or("").trim();
+    assert_eq!(id.len(), 8, "{shown:?}");
+    assert!(id.chars().all(|c| c.is_ascii_hexdigit()), "{shown:?}");
+}
+
 /// `decide` prints the id of its record, and `{"id"}` with `--json` (`spec/02-cli.md`,
 /// "Output and errors").
 #[test]

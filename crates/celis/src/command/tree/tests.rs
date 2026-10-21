@@ -83,3 +83,24 @@ fn the_tree_changes_next_when_its_first_time_changes() {
     .unwrap();
     assert_eq!(next(&[past, proof], now), None);
 }
+
+/// The card turns first through the newest value of each kind, then the rest newest first, each once.
+#[test]
+fn the_card_turns_through_each_kind_first() {
+    use crate::terminal::remark::{Kind, Remark};
+    let said = vec![
+        Remark::new(Kind::Learned, "a newer rule", 5),
+        Remark::new(Kind::Learned, "a newer rule", 5),
+        Remark::new(Kind::Learned, "an older rule", 4),
+        Remark::new(Kind::Kept, "a rule kept", 3),
+        Remark::new(Kind::Pitfall, "a pitfall", 2),
+    ];
+    let words: Vec<String> = varied(said)
+        .iter()
+        .map(|r| r.words.iter().map(|(w, _)| w.as_str()).collect())
+        .collect();
+    assert_eq!(
+        words,
+        ["a newer rule", "a rule kept", "a pitfall", "an older rule"]
+    );
+}

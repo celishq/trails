@@ -3,10 +3,12 @@
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::progress::{Flags, Grade, Model, Reuse, Tally};
+use crate::terminal::bar::bar;
 pub(crate) use crate::terminal::canvas::{cut, visible};
 use crate::terminal::canvas::{line as line_text, paint, width, Styled};
-use crate::terminal::canvas::{BOLD, DIM};
-use crate::terminal::look::{look, signs, SPINNER, SPUN};
+use crate::terminal::canvas::{BOLD, DIM, GREEN, LINK, MAGENTA, YELLOW};
+use crate::terminal::look::{lane, look, DRAWN, SPINNER, SPUN};
+use crate::terminal::remark::Remark;
 use crate::text::clock::stride;
 use crate::text::clock::{day, midnight};
 use celis_trails::records::id::short;
@@ -77,7 +79,12 @@ impl Command {
         let steps = model.steps;
         let chosen: Vec<Step> = match (id, view.all) {
             (Some(id), _) => vec![steps.find(id)?],
-            (None, true) => steps.roots().into_iter().rev().collect(),
+            (None, true) => {
+                let roots = steps.roots().into_iter().rev();
+                let (live, rest): (Vec<Step>, Vec<Step>) =
+                    roots.partition(|s| view.watch && live(*s, steps.now()));
+                live.into_iter().chain(rest).collect()
+            }
             (None, false) => today(steps),
         };
         let tree = Tree {
@@ -86,7 +93,10 @@ impl Command {
             reuse: model.reuse,
             layout,
             grouped: id.is_none(),
-            width: width.map(|w| w.saturating_sub(2 * usize::from(view.watch))),
+            width: width.map(|w| {
+                let boxed = view.watch && id.is_none();
+                w.saturating_sub(2 * usize::from(view.watch) + BORDER * usize::from(boxed))
+            }),
             view,
             spun: Cell::default(),
             order: RefCell::default(),
@@ -96,7 +106,23 @@ impl Command {
         };
         let mut printed = Vec::new();
         tree.print(&chosen, "trail", args.json, &mut printed)?;
-        Ok(tree.frame(printed))
+        let focus = chosen
+            .iter()
+            .find(|s| s.state().active())
+            .or(chosen.first());
+        let focus = focus.filter(|_| view.watch);
+        let mut said: Vec<Remark> = chosen
+            .iter()
+            .filter(|_| view.watch)
+            .flat_map(|s| tree.said(s.trail()))
+            .collect();
+        said.sort_by_key(|r| std::cmp::Reverse(r.at));
+        let mut remarks = varied(said);
+        remarks.extend(focus.map(|s| tree.standing(s.trail())));
+        Ok(Frame {
+            remarks,
+            ..tree.frame(printed)
+        })
     }
 }
 
@@ -107,6 +133,13 @@ pub(crate) fn today<'a>(steps: &'a Steps<'a>) -> Vec<Step<'a>> {
     roots
         .filter(|s| s.state().active() || s.newest() >= midnight)
         .collect()
+}
+
+/// Whether the trail `note` is a live session at `now`: active, or not dropped with a record in the
+/// last `LIFE` seconds, as when its agent just answered and waits for the person.
+pub(crate) fn live(note: Step, now: u64) -> bool {
+    let recent = now.saturating_sub(note.newest()) < LIFE && note.state() != State::Dropped;
+    note.state().active() || recent
 }
 
 /// How a tree shows: in a watch, with a cursor column; full; all with no id; and in a watch, with the
@@ -133,10 +166,11 @@ impl View {
 }
 
 /// A printed tree or part of one: its lines, the earliest time a time it shows changes, whether it
-/// shows the spinner, the lines a watch selects in the order it prints them, and the line of the
-/// selected one.
+/// shows the spinner, the lines a watch selects in the order it prints them, the line of the selected
+/// one, and in a watch what celis says of its trails: its recent values, then how the trail stands.
 pub(crate) struct Frame {
     pub text: Vec<Styled>,
+    pub remarks: Vec<Remark>,
     pub next: Option<u64>,
     pub spun: bool,
     pub order: Vec<Item>,
@@ -186,11 +220,13 @@ pub(crate) struct Tree<'a> {
 /// A live rule: its record and its rule.
 type RuleNote<'a> = (&'a celis_nostr::Note, celis_trails::Rule);
 
-/// What the tree says of a trail: the steps it prints under it, the done ones, the time they worked,
-/// and its rules.
+/// What the tree says of a trail: the steps it prints under it, the done ones, their count by state, the
+/// working ones, the time they worked, and its rules.
 struct Summary<'a> {
     all: usize,
     done: usize,
+    tally: Tally,
+    working: usize,
     worked: Option<u64>,
     rules: Vec<RuleNote<'a>>,
 }
@@ -222,7 +258,7 @@ impl Tree<'_> {
         }
         let mut days: Vec<(u64, String, Vec<Step>)> = vec![];
         for &note in notes {
-            let at = match self.view.all {
+            let at = match self.view.all && !(self.view.watch && live(note, self.steps.now())) {
                 true => note.note().created_at,
                 false => self.steps.now(),
             };
@@ -246,9 +282,9 @@ impl Tree<'_> {
             };
             let mut lines = vec![Row::Titled {
                 lead: Styled::default(),
-                marks: Styled::from(paint(DIM, chevron)),
+                marks: Styled::from(paint(LINK, chevron)),
                 title: label.to_string(),
-                tone: Style::new(),
+                tone: LINK,
                 rest: Styled::from("  "),
             }];
             let item = Item {
@@ -286,6 +322,8 @@ impl Tree<'_> {
         Summary {
             all: shown.len(),
             done: Tally::of(&shown).done,
+            tally: Tally::of(&shown),
+            working: working(&shown),
             worked,
             rules: self.rules(note),
         }
@@ -360,13 +398,78 @@ impl Tree<'_> {
         Ok(())
     }
 
-    /// The mark of `note` with its flags after it, each in its colour.
+    /// The mark of `note` with one sign after it: `↻` while it works again after a revision, `˜` when it
+    /// was done otherwise than planned; in a watch, the spinner on a live session's trail, and a check
+    /// drawn stroke by stroke for 2 seconds after a step was done.
     fn marked(&self, note: Step) -> Styled {
-        let signs = signs(Flags::of(note)).into_iter();
-        let flags = signs.map(|(sign, style)| paint(style, sign));
-        std::iter::once(self.mark(note.state()))
-            .chain(flags)
-            .collect()
+        let flags = Flags::of(note);
+        let sign = match note.state() {
+            State::Working if flags.revised => Some(paint(GREEN, "↻")),
+            State::Done if flags.changed => Some(paint(YELLOW, "˜")),
+            _ => None,
+        };
+        let fresh = note
+            .closed_at()
+            .is_some_and(|at| at + FRESH > self.steps.now());
+        let mark = match (note.state(), fresh && self.view.spin) {
+            _ if self.spins(note) => self.mark(State::Working),
+            (State::Done, true) => {
+                self.spun.set(true);
+                self.until(note.closed_at().unwrap_or_default() + FRESH);
+                paint(look(State::Done).text, DRAWN)
+            }
+            (state, _) => self.mark(state),
+        };
+        std::iter::once(mark).chain(sign).collect()
+    }
+
+    /// What the tree says of `note` at the right of its row: `↻ revised by <ids>` and `changed` when done
+    /// so, a bar of its steps with done/all when it has steps, then its id and its time.
+    fn meta(&self, note: Step) -> Styled {
+        let flags = Flags::of(note);
+        let mut spans = vec![];
+        if note.state() == State::Done && flags.revised {
+            let by: Vec<String> = note.revised().iter().map(|s| short(s.id())).collect();
+            spans.push(paint(GREEN, "↻ "));
+            spans.push(paint(DIM, &format!("revised by {} · ", by.join(", "))));
+        }
+        if note.state() == State::Done && flags.changed {
+            spans.push(paint(DIM, "changed · "));
+        }
+        let kids = note.children();
+        if !kids.is_empty() {
+            let tally = Tally::of(&kids);
+            let all = kids.len() as f64;
+            let working = working(&kids) as f64;
+            spans.extend(bar(tally.done as f64 / all, working / all, 6).spans);
+            spans.push(paint(DIM, &format!(" {}/{} · ", tally.done, kids.len())));
+        }
+        spans.push(paint(DIM, &short(note.id())));
+        let time = match note.state().closed() {
+            true => crate::text::line::time(note),
+            false => self.worked(&note.tree()).map(crate::text::clock::took),
+        };
+        if let Some(time) = time {
+            spans.push(paint(DIM, &format!(" · {time}")));
+        }
+        Styled::from(spans)
+    }
+
+    /// Whether `note` is a trail the watch spins as a live session.
+    fn spins(&self, note: Step) -> bool {
+        self.view.spin && note.is_trail() && live(note, self.steps.now())
+    }
+
+    /// The look of the lanes that hang from the line `above`: its state's colour, a closed line's green and a
+    /// rules line's magenta, as their marks.
+    fn lane(&self, above: &str) -> Style {
+        match self.steps.get(above) {
+            Some(step) if self.spins(step) => SPINNER,
+            Some(step) => lane(step.state()),
+            None if above.starts_with(CLOSED) => GREEN,
+            None if above.starts_with(RULES) => MAGENTA,
+            None => DIM,
+        }
     }
 
     /// The mark of a step in `state` in its colour; in a watch, a working one's is the spinner.
@@ -406,18 +509,51 @@ fn after(rail: &Styled, more: Span<'static>) -> Styled {
 const FRESH: u64 = 2;
 /// What starts the id of a trail's rules line in a watch's order.
 const RULES: &str = "§";
+/// The most values celis turns through on its card.
+const SAID: usize = 8;
+
+/// `said`, newest first, as the card turns through it: the newest of each kind first, then the rest
+/// newest first, each once, up to `SAID`.
+fn varied(said: Vec<Remark>) -> Vec<Remark> {
+    let mut first: Vec<Remark> = vec![];
+    let mut rest: Vec<Remark> = vec![];
+    for remark in said {
+        if first.iter().chain(&rest).any(|r| r.words == remark.words) {
+            continue;
+        }
+        match first.iter().any(|r| r.kind == remark.kind) {
+            true => rest.push(remark),
+            false => first.push(remark),
+        }
+    }
+    first.extend(rest);
+    first.truncate(SAID);
+    first
+}
+
+/// The cells a day's box takes beside its lines: `│ ` before them and ` │` after.
+const BORDER: usize = 4;
+
 /// The id of the `Show more` line in a watch's order.
 pub(crate) const MORE: &str = "+more";
 /// What starts the id of a trail's closed line in a watch's order.
 const CLOSED: &str = "✓";
 /// The colour of a project's name.
 const PROJECT: Style = BOLD;
+
+/// How many of `steps` are working.
+fn working(steps: &[Step]) -> usize {
+    steps.iter().filter(|s| s.state() == State::Working).count()
+}
+
 mod agent;
 mod day;
 mod json;
 mod layout;
 mod level;
+mod remark;
 mod row;
+
 #[cfg(test)]
 mod tests;
 mod trail;

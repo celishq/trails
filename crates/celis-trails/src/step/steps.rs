@@ -147,8 +147,9 @@ pub(crate) struct Index<'a> {
 }
 
 /// One step: its record, its text with its edits, its links, the steps that replace it, how its marks
-/// left it, the drop that counts on it, and the record of the first name it holds; of its tree, the
-/// newest record, whether a step works, and whether a step under it is open.
+/// left it, the drop that counts on it, the record of the first name it holds, and its newest prompt;
+/// of its tree, the newest record, whether a step works, whether a step under it is open, and when the
+/// last of its steps closed.
 pub(crate) struct Entry<'a> {
     pub(crate) note: &'a Note,
     pub(crate) step: StepRecord,
@@ -162,6 +163,8 @@ pub(crate) struct Entry<'a> {
     pub(crate) newest: u64,
     pub(crate) busy: bool,
     pub(crate) loose: bool,
+    pub(crate) asked: u64,
+    pub(crate) shut: u64,
 }
 
 /// How a step was closed.
@@ -196,6 +199,8 @@ impl<'a> Index<'a> {
                         newest: 0,
                         busy: false,
                         loose: false,
+                        asked: 0,
+                        shut: 0,
                     },
                 );
             }
@@ -271,14 +276,16 @@ fn sum<'a>(entries: &mut HashMap<&'a str, Entry<'a>>) {
         let mut newest = entry.touched;
         let mut busy = entry.start.is_some() && entry.close.is_none();
         let mut loose = false;
+        let mut shut = entry.close.map_or(0, |(note, _)| note.created_at);
         for child in &entry.children {
             let child = &entries[child.id.as_str()];
             newest = newest.max(child.newest);
             busy |= child.busy;
             loose |= child.loose || child.close.is_none();
+            shut = shut.max(child.shut);
         }
         if let Some(entry) = entries.get_mut(id) {
-            (entry.newest, entry.busy, entry.loose) = (newest, busy, loose);
+            (entry.newest, entry.busy, entry.loose, entry.shut) = (newest, busy, loose, shut);
         }
     }
 }
@@ -290,6 +297,7 @@ impl<'a> Entry<'a> {
             Mark::Start => {
                 self.start.get_or_insert(note);
             }
+            Mark::Prompt { .. } => self.asked = self.asked.max(note.created_at),
             Mark::Done { .. } => {
                 self.close.get_or_insert((note, Close::Done));
             }

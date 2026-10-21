@@ -65,7 +65,7 @@ Here's a trail halfway through a job:
 ```
 Job: seniors pay 20% less
 ├─ ✓ Find where prices are set
-├─ ◐ Change how the price is worked out     ← not sure how yet, so it's split up
+├─ ⠏ Change how the price is worked out     ← not sure how yet, so it's split up
 │  ├─ ✗ Change the price in the cart           dropped: the cart doesn't know the age
 │  │                                           rule: set prices in prices.py, not the cart
 │  ├─ ✓ Write a test: seniors pay 80%          proof: passes, once SHELF_OFFLINE=1 was set
@@ -73,7 +73,7 @@ Job: seniors pay 20% less
 │  └─ ○ Use the new price in prices.py      ← up next
 └─ ○ Show the senior price on the page      ← will split this later
 
-✓ done   ◐ in progress   ○ to do   ✗ dropped
+✓ done   ⠏ in progress   ○ to do   ✗ dropped
 ```
 
 A week later, you ask for a student discount. This is what the agent sees first:

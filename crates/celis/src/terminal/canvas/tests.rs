@@ -39,3 +39,19 @@ fn a_cut_line_keeps_its_looks() {
     assert_eq!(clip(&line, 2).spans, [Span::styled("a…", BOLD)]);
     assert_eq!(clip(&line, 6), line);
 }
+
+/// A wide character takes two cells: it counts 2, and a cut keeps no more cells than its width.
+#[test]
+fn a_wide_character_counts_two_cells() {
+    assert_eq!(visible("日本 ok"), 7);
+    assert_eq!(width(&Styled::raw("日本")), 4);
+    assert_eq!(cut("日本語の道", 6), "日本…");
+    assert_eq!(clip(&Styled::raw("日本語の道"), 6).to_string(), "日本…");
+}
+
+/// A line's own look reaches each of its runs.
+#[test]
+fn a_line_prints_its_own_look_on_each_run() {
+    let line = Styled::styled("Usage", BOLD);
+    assert_eq!(super::line(&line, true), "\x1b[1mUsage\x1b[0m");
+}
