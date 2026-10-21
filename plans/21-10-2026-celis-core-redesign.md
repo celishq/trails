@@ -139,8 +139,8 @@ log                  $CELIS_HOME/given, one JSON object a line:
                      {"at", "session", "rule"[, "step"]}   a rule given
                      {"at", "session", "compact": true}    a compaction; rules given before it count
                                                            as not given
-                     {"at", "session", "rule", "miss": true}   a rule replaced in the session that
-                                                           matched a call but did not come (phase 5)
+                     {"at", "session", "rule", "miss": true}   a rule the agent replaced in a session
+                                                           that was not given to it (phase 5)
 ```
 
 A regex is the syntax of the Rust `regex` crate: no lookaround and no backreferences. One that does not
@@ -161,8 +161,7 @@ Principles:
 9. The agent is smart and gets smarter. Celis gives what no model can know by itself: what the person
    and past sessions decided, and proof of the work. The core holds that; the push only helps today's
    models.
-10. A miss must be visible. When the agent corrects a rule that matched but did not come, the log
-    shows it.
+10. A miss must be visible. When the agent corrects a rule that it was not given, the log shows it.
 
 ## Phases
 
@@ -232,8 +231,8 @@ Result: `celis tree` shows which rules each step got, misses are visible, and th
 history.
 
 - The log also holds the step that was working when a rule came.
-- A miss: the agent replaces a rule that matched a call of the session but did not come, because the
-  cap cut it or its trigger missed. The log marks it.
+- A miss: the agent replaces a rule that was not given in that session, because the cap cut it or its
+  trigger missed. `celis decide --replaces` logs it.
 - The rank in `celis rules`: a rule made or raised by a correction first, then a rule with misses, then
   the order of phase 1. A cut rule stays a candidate for the next call that matches.
 - `celis tree` shows the rules given under each step.
