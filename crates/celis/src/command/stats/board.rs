@@ -270,7 +270,7 @@ fn frame(m: &Moment) -> (Sheet, u16, Vec<(u16, u16)>) {
 /// The width the board of `command` draws at: the terminal's less a column, held between the
 /// narrowest and widest, the widest off a terminal.
 fn breadth(command: &Command) -> u16 {
-    let columns = command.columns().map_or(usize::from(WIDTHS.1) + 1, |c| c);
+    let columns = command.columns().unwrap_or(usize::from(WIDTHS.1) + 1);
     let columns = u16::try_from(columns.saturating_sub(1)).unwrap_or(WIDTHS.1);
     columns.clamp(WIDTHS.0, WIDTHS.1)
 }
