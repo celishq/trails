@@ -391,11 +391,11 @@ fn a_prompt_with_no_open_trail_asks_for_the_past_agent() {
     assert!(said.contains("before any other tool"), "{said}");
     assert!(said.contains("wait for its answer"), "{said}");
     assert!(
-        said.contains("it brings the steps of past asks like it"),
+        said.contains("it brings the rules the ask must keep and the steps of past asks like it"),
         "{said}"
     );
     assert!(
-        said.contains("--uses <id> for each past step the ask follows"),
+        said.contains("--uses <id> for each rule and past step the ask follows"),
         "{said}"
     );
     assert!(said.contains(RULES), "{said}");
