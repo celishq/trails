@@ -1,6 +1,6 @@
 use super::*;
 use crate::progress::window::DAY;
-use celis_trails::{Anchor, Draft, Rule, Scope, Store, Trails};
+use celis_trails::{Anchor, Draft, Rule, Scope, Store, Trails, Trigger};
 use tempfile::TempDir;
 
 /// The second a store's one step closed.
@@ -118,6 +118,9 @@ fn reused(later: u64) -> (TempDir, Trails) {
         scope: Scope::Project,
         replaces: None,
         content: "When a rule holds: keep it, because it works.".into(),
+        trigger: Trigger::default(),
+        situation: false,
+        promoted: false,
     };
     trails.at(AT);
     let rule = trails.decide(rule, None).unwrap().records[0].id.clone();

@@ -52,7 +52,8 @@ Every change of `spec/` MUST keep these rules:
 | `figma:<key>` · `web:<host>` | the project id of a record outside git | 01 |
 | `skill:<name>` | the project id of a trail from a skill file | 07 |
 | `$CELIS_HOME` · `$CELIS_HOME/trails/` · `$CELIS_HOME/phrase` · `$CELIS_HOME/links` | the home, the store, the phrase, the links | 01, 02 |
-| `celis` and its commands and flags | the command line | 02 |
+| `$CELIS_HOME/given` | the log of the rules `rules` gave, and of compactions | 02 |
+| `celis` and its commands and flags, `rules` among them | the command line | 02 |
 | `usage` · `no-decision` · `no-trail` · `no-step` · `closed` · `open-steps` · `check-failed` · `error` | errors | 02 |
 | 1111 with `step` in `celis.step` | kind: a step (NIP-22) | 03 |
 | `under` · `replaces` · `at` · `check` | step tags | 03 |
@@ -62,6 +63,8 @@ Every change of `spec/` MUST keep these rules:
 | 1985 with `prompt` in `celis.step` | kind: a person's prompt, on the trail (NIP-32) | 04 |
 | 1111 with `decision` in `celis.decision` | kind: a rule (NIP-22) | 05 |
 | `scope` · `replaces` | rule tags | 05 |
+| `path` · `content` · `command` · `tool` | rule tags: the trigger | 05 |
+| `situation` · `promoted` in `celis.decision` | rule labels | 05 |
 | `me` · `project` · `trail:<id>` · `at:<place>` | the scopes of a rule | 05 |
 | `uses` | step tag | 06 |
 | 1985 with `name` in `celis.step` | kind: the name of a trail (NIP-32) | 07 |

@@ -3,7 +3,7 @@ use super::Layout;
 use crate::progress::{Model, Reuse};
 use crate::text::clock::day;
 use celis_nostr::{Account, Note};
-use celis_trails::{Anchor, Mark, Rule, Rules, Scope, StepId, StepRecord, Steps};
+use celis_trails::{Anchor, Mark, Rule, Rules, Scope, StepId, StepRecord, Steps, Trigger};
 use std::cell::Cell;
 
 /// The time the newest record was written.
@@ -103,6 +103,9 @@ fn a_record_forgets_only_the_group_of_its_trail() {
         scope: Scope::Project,
         replaces: None,
         content: "a rule".into(),
+        trigger: Trigger::default(),
+        situation: false,
+        promoted: false,
     }
     .record(&account(), NOW)
     .unwrap();

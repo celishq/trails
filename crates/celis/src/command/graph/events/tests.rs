@@ -1,6 +1,6 @@
 use super::*;
 use celis_nostr::{Account, Note};
-use celis_trails::{Anchor, Mark, Rule, Scope, StepId, StepRecord, Steps};
+use celis_trails::{Anchor, Mark, Rule, Scope, StepId, StepRecord, Steps, Trigger};
 
 fn account() -> Account {
     Account::new(&[1u8; 32]).unwrap()
@@ -60,6 +60,9 @@ fn a_history_holds_the_events_of_a_trail_in_the_order_they_happened() {
         scope: Scope::Trail(trail.id.clone()),
         replaces: None,
         content: "When it shows: keep it, because it works.".into(),
+        trigger: Trigger::default(),
+        situation: false,
+        promoted: false,
     }
     .record(&account(), now - 70)
     .unwrap();

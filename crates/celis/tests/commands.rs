@@ -78,8 +78,11 @@ fn the_json_form_of_a_rule_has_the_listed_fields() {
             "created_at",
             "id",
             "project",
+            "promoted",
             "replaces",
-            "scope"
+            "scope",
+            "situation",
+            "trigger"
         ]
     );
     assert_eq!(rule["id"], note.id.as_str());

@@ -14,8 +14,10 @@ read. What a command shows a person is not part of it.
 ## Commands
 
 ```
-celis decide [--scope <scope>] [--replaces <id>] [--project <id>] -- <text>
+celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--content <regex>] [--command <regex>] [--tool <regex>] [--situation] [--promoted] [--project <id>] -- <text>
                                                        a rule, in its scope
+celis rules [<file>]... [--all] [--session <id>] [-- <command>]
+                                                       the rules one call matches
 celis name <trail id> <name>                          give a trail a name
 celis names [--limit <n>]                             the named trails, most used first
 celis tree [<id>] [--graph] [--full] [--all] [--demo]
@@ -45,7 +47,8 @@ $CELIS_HOME   where celis keeps the phrase and the store
 ```
 
 ```
-decision  json  {"id", "created_at", "project", "scope", "replaces", "content"}
+decision  json  {"id", "created_at", "project", "scope", "replaces", "content",
+                 "trigger": {"paths", "content", "command", "tool"}, "situation", "promoted"}
 ```
 
 **Rules**
@@ -53,7 +56,9 @@ decision  json  {"id", "created_at", "project", "scope", "replaces", "content"}
 - Off macOS, `$CELIS_HOME` MUST default to `~/.local/share/celis`.
 - A flag no command takes is a usage error.
 - `decide` MUST write a rule of the working folder's project (CIP-05), with `--scope` and
-  `--replaces` as its tags, and no `scope` tag for `project`.
+  `--replaces` as its tags, and no `scope` tag for `project`; each `--path`, from the project's top
+  folder, as a `path` tag, `--content`, `--command` and `--tool` as their tags, and `--situation` and
+  `--promoted` as their labels.
 - `--project` on `decide` and `step add` MUST write the records of the project it names in place of the
   working folder's: `skill:<name>` (CIP-07, "Skill projects"), or a project id that a record of the store
   has, with that record's project name. It MUST refuse any other id as a usage error.
@@ -67,6 +72,7 @@ decision  json  {"id", "created_at", "project", "scope", "replaces", "content"}
 ```
 celis decide --scope at:shelf/prices.py -- "When you change prices: keep them in cents, because floats lost a cent."
 celis decide --scope me -- "When you write a commit message: use plain words, because the team reads them."
+celis decide --path "**/*.py" --content "float\(" -- "When you change prices: keep them in cents, because floats lost a cent."
 ```
 
 ## Help
@@ -213,7 +219,8 @@ Each agent's hooks give their JSON to `prompt`.
 - `prompt` MUST read the hook's JSON on stdin, with `conversation_id` in place of `session_id` when it
   has one.
 - On a prompt, it MUST write it as CIP-04 "Sessions" states, and print the record's id. On a compaction,
-  it MUST write and print nothing.
+  it MUST add the compaction line to `$CELIS_HOME/given` ("Rules"), and write no record and print
+  nothing.
 - A prompt that names a step with `celis step <id>` is a task for that step. With no open trail, `prompt`
   MUST NOT ask for the past agent on it.
 
@@ -221,6 +228,55 @@ Each agent's hooks give their JSON to `prompt`.
 
 ```
 echo '{"session_id": "95e9be99", "prompt": "Use the shared Badge."}' | celis prompt
+```
+
+## Rules
+
+`rules` gives the live rules in scope in the working folder's project (CIP-05) that one call matches
+(CIP-05, "Triggers").
+
+```
+line     <id8> <scope> <rule>
+json     {"id", "scope", "content"}
+more     celis: <n> more rules match this call; run it again for the next 5, or add --all.
+         celis: <n> more rules match this call; add --all to see them.       with no session
+json     {"more": <n>}
+hook     {"session_id", "cwd", "hook_event_name": "PreToolUse | PostToolUse", "tool_name",
+          "tool_input": {"file_path", "content", "new_string", "edits": [{"new_string"}],
+                         "notebook_path", "new_source", "command"}}
+given    $CELIS_HOME/given, one JSON object a line:
+         {"at", "session", "rule"[, "step"]}          a rule given
+         {"at", "session", "compact": true}           a compaction
+         {"at", "session", "rule", "miss": true}      a rule replaced in the session that matched a call
+                                                      but did not come
+```
+
+**Rules**
+
+- Each `<file>` MUST count as a read of that file, and `<command>` as a shell command.
+- With no file and no command, `rules` MUST read the hook's JSON on stdin, as Claude Code's
+  PreToolUse and PostToolUse give it: a Read, Write, Edit, MultiEdit or NotebookEdit is a file call, of
+  `file_path` or `notebook_path`, whose text is `content`, `new_string`, each `edits[].new_string`, or
+  `new_source`, and on a Read the file's text on disk; a Bash is a shell command on PreToolUse, and
+  after a shell command on PostToolUse; another tool is another tool call. With nothing matched it MUST
+  print nothing.
+- The files a shell command changed MUST be the files `git status --porcelain` gives in the project.
+- A rule with the `situation` label, and a rule with no trigger and no `at:<place>` scope, MUST NOT come.
+- `rules` MUST print at most 5 rules a call, but every rule with `--all`: first those that match a named
+  file (a `path` with no `*` or `?`, or an `at:<place>`), then a glob with `content`, a `command` or a
+  `tool`, then a glob with no `content`; newest first within each.
+- The session MUST be `--session`, else the hook's `session_id`, else the session of the environment.
+- `rules` MUST add a line to `$CELIS_HOME/given` for each rule it prints in a session, and MUST NOT print
+  a rule that the session's lines give after the session's last compaction line.
+- When more rules match than it prints, `rules` MUST end with the `more` line.
+- `$CELIS_HOME/given` is no record, and links do not carry it.
+
+**Examples**
+
+```
+celis rules shelf/prices.py
+celis rules --session 95e9be99 -- "pytest shelf/test_prices.py"
+echo '{"session_id": "95e9be99", "hook_event_name": "PreToolUse", "tool_name": "Read", "tool_input": {"file_path": "shelf/prices.py"}}' | celis rules
 ```
 
 ## Grep
@@ -232,6 +288,7 @@ the trails with it.
 view    <yyyy-mm-dd> <trail id8 | -> [<project name>] <kind> <id8> <fields> <text>
           trail | step   <open | working | done | done-dropped | dropped | expired>[ revised-by <id>,…][ at:<place>]…
           rule           <live | replaced-by <id> | dropped> {<me | project | trail:<id8> | at:<place>>}
+                           [ trigger][ situation][ promoted]
           proof | changed | dropped                              the step's or rule's id, no fields
 lines   <id8> [<project name>] <its title> · <yyyy-mm-dd>        each trail of the lines
           trail <id8> <fields>                                    the trail's own line
@@ -241,7 +298,9 @@ lines   <id8> [<project name>] <its title> · <yyyy-mm-dd>        each trail of 
 end     project [<project name>]
 ```
 
-`<id8>` is the first 8 characters of an id. A text holds each newline as a space.
+`<id8>` is the first 8 characters of an id. A text holds each newline as a space. A rule's fields end with
+` trigger` when it has a trigger tag (CIP-05), ` situation` when it has the `situation` label, and
+` promoted` when it has the `promoted` label.
 
 **Rules**
 

@@ -16,6 +16,7 @@ Read
   tree     Show a trail and its steps
   names    Show the named trails, most used first
   grep     Search every trail with grep
+  rules    Show the rules a file, a command, or a tool call matches
   stats    Show what later work reused
   report   Show trails as Markdown for a pull request
 
@@ -270,17 +271,38 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "decide",
-        usage: &["celis decide [--scope <scope>] [--replaces <id>] [--project <id>] -- <text>"],
-        summary: "Record a rule that later work must follow, in its scope.",
+        usage: &["celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--content <regex>] [--command <regex>] [--tool <regex>] [--situation] [--promoted] [--project <id>] -- <text>"],
+        summary: "Record a rule that later work must follow, in its scope. Its trigger names the files, commands, and tool calls it acts on, so celis rules gives it at that call.",
         args: &[
             ("--scope <scope>", "at:<place>, trail:<id>, project, or me (default: project)"),
             ("--replaces <id>", "The rule this one replaces"),
+            ("--path <glob>", "A file it acts on; * and ? within a folder, ** across"),
+            ("--content <regex>", "What the file's text must match"),
+            ("--command <regex>", "The shell commands it acts on"),
+            ("--tool <regex>", "The names of the other tool calls it acts on"),
+            ("--situation", "No file, command, or tool call shows it ahead"),
+            ("--promoted", "A tool of the place, like a linter, now checks it"),
             ("--project <id>", "skill:<name>, or the id of a project in the store"),
             ("<text>", "When it applies, what to do, and why"),
         ],
         examples: &[
             "celis decide --scope at:shelf/prices.py \\",
             "  -- \"When you change prices: keep them in cents.\"",
+        ],
+    },
+    Verb {
+        command: "rules",
+        usage: &["celis rules [<file>]... [--all] [--session <id>] [-- <command>]"],
+        summary: "Show the rules that reading a file or running a command matches, at most 5, the narrowest first. Each rule shows once a session, and again after the context is compacted. With no file and no command, read a tool hook's JSON from stdin. Changes nothing.",
+        args: &[
+            ("<file>", "A file you will read or change"),
+            ("--all", "Show every rule that matches, not 5"),
+            ("--session <id>", "The session, when the hook names it"),
+            ("<command>", "A shell command you will run"),
+        ],
+        examples: &[
+            "celis rules shelf/prices.py",
+            "celis rules -- \"pytest shelf/test_prices.py\"",
         ],
     },
     Verb {

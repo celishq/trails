@@ -1,7 +1,7 @@
 use super::*;
 use celis_nostr::{Account, Note};
 use celis_trails::step::steps::LIFE;
-use celis_trails::{Anchor, Mark, Rule, Scope, StepId, StepRecord, Steps};
+use celis_trails::{Anchor, Mark, Rule, Scope, StepId, StepRecord, Steps, Trigger};
 
 fn account() -> Account {
     Account::new(&[1u8; 32]).unwrap()
@@ -84,6 +84,9 @@ fn a_period_counts_its_done_steps_that_use_a_rule() {
         scope: Scope::Project,
         replaces: None,
         content: "keep cents".into(),
+        trigger: Trigger::default(),
+        situation: false,
+        promoted: false,
     }
     .record(&account(), 5)
     .unwrap();

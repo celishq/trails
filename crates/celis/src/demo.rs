@@ -3,7 +3,7 @@
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use celis_trails::{Anchor, Draft, Rule, Scope, Store, Trails};
+use celis_trails::{Anchor, Draft, Rule, Scope, Store, Trails, Trigger};
 use std::cell::{RefCell, RefMut};
 use std::io::Write;
 use std::path::PathBuf;
@@ -441,6 +441,9 @@ impl Demo {
             scope,
             replaces: None,
             content: text.to_string(),
+            trigger: Trigger::default(),
+            situation: false,
+            promoted: false,
         };
         let written = self.trails(ago)?.decide(rule, None)?;
         Ok(written.records[0].id.clone())

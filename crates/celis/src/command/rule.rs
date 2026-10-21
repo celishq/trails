@@ -2,12 +2,12 @@
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use celis_trails::{Place, Project, Rule, Scope};
+use celis_trails::{Place, Project, Rule, Scope, Trigger};
 use std::io::Write;
 
 impl Command {
-    /// Writes the rule `args` states on `project`, in its scope, signed by the account now, and
-    /// prints its id, then on `err` each override it ends.
+    /// Writes the rule `args` states on `project`, in its scope, with its trigger and labels, signed by
+    /// the account now, and prints its id, then on `err` each override it ends.
     pub(crate) fn decide(
         &self,
         args: &Args,
@@ -33,6 +33,18 @@ impl Command {
             scope,
             replaces: None,
             content,
+            trigger: Trigger {
+                paths: args
+                    .paths
+                    .iter()
+                    .map(|p| Place::resolve(p, &project.folder, &self.folder))
+                    .collect(),
+                content: args.content.clone(),
+                command: args.command.clone(),
+                tool: args.tool.clone(),
+            },
+            situation: args.situation,
+            promoted: args.promoted,
         };
         let written = self.trails()?.decide(rule, args.replaces.as_deref())?;
         self.print(written, args, out, err)

@@ -20,13 +20,24 @@ learns what later work must keep.
     ["project", "<project name>"],
     ["scope", "<me | trail:<step id> | at:<place>>"],
     ["replaces", "<id of the rule it replaces>"],
-    ["L", "celis.decision"], ["l", "decision", "celis.decision"]
+    ["path", "<glob>"], ["content", "<regex>"], ["command", "<regex>"], ["tool", "<regex>"],
+    ["L", "celis.decision"], ["l", "decision", "celis.decision"],
+    ["l", "situation", "celis.decision"], ["l", "promoted", "celis.decision"]
   ],
   "content": "When <what you see>: <what to do>, because <why>." }
 ```
 
 - `scope`: optional; where the rule holds ("Scope"). With none, it holds in the project.
 - `replaces`: optional; the rule this one takes the place of.
+- `path`: optional, repeatable; a file the rule acts on, as a glob from the project's top folder
+  ("Triggers").
+- `content`: optional; a regex that the file's text must match.
+- `command`: optional; a regex of the shell commands the rule acts on.
+- `tool`: optional; a regex of the names of the other tool calls the rule acts on.
+- `situation`: optional label; no call shows the rule ahead.
+- `promoted`: optional label; a tool of the place now checks the rule.
+
+`path`, `content`, `command` and `tool` are the rule's trigger.
 
 A drop (CIP-03, "Dropping") MAY name a rule, with why it no longer holds.
 
@@ -60,3 +71,23 @@ me                in every project
 
 - A rule `at:<place>` holds at that place whatever line the place names, under it when it is a
   folder, and at each place under a folder it names.
+
+## Triggers
+
+```
+<glob>    a path from the project's top folder: * within a segment, ** across segments, ? one character
+<regex>   the syntax of the Rust regex crate: no lookaround and no backreferences
+```
+
+**Readers**
+
+- On a file call, a rule matches when one of its `path` globs matches the file and its `content`, when
+  set, matches the file's text: the new text on a write or an edit, the file's text on a read.
+- On a shell command, a rule matches when its `command` matches the command, or when a file that the
+  command names matches as a file call whose text is the command.
+- After a shell command, a rule matches when a file the command changed matches as a file call with the
+  file's text.
+- On another tool call, a rule matches when its `tool` matches the tool's name.
+- A rule `at:<place>` counts as a rule with that place as its `path`, which matches as "Reading" states.
+- A pattern that does not compile matches nothing.
+- A rule with the `situation` label matches no call.
