@@ -15,7 +15,7 @@ from math import log
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-COLORS = {"oracle": "#e76f51", "celis": "#2a9d8f", "placed": "#264653", "jit": "#8338ec", "narrow": "#f4a261", "ranked": "#e9c46a", "scoped": "#6a4c93", "scopedrank": "#1982c4", "picked": "#ff595e", "pickers": "#8ac926", "pickers50": "#52b788", "merged": "#3a0ca3", "staged": "#f72585", "triggered": "#06d6a0", "pull": "#9d4edd", "taught": "#ef476f", "taught1": "#f78c6b", "delegated": "#118ab2", "coordinated": "#073b4c", "reminded": "#ffd166", "sized": "#ef8354", "tooled": "#2ec4b6"}
+COLORS = {"oracle": "#e76f51", "celis": "#2a9d8f", "placed": "#264653", "jit": "#8338ec", "narrow": "#f4a261", "ranked": "#e9c46a", "scoped": "#6a4c93", "scopedrank": "#1982c4", "picked": "#ff595e", "pickers": "#8ac926", "pickers50": "#52b788", "merged": "#3a0ca3", "staged": "#f72585", "triggered": "#06d6a0", "pull": "#9d4edd", "taught": "#ef476f", "taught1": "#f78c6b", "delegated": "#118ab2", "coordinated": "#073b4c", "reminded": "#ffd166", "sized": "#ef8354", "tooled": "#2ec4b6", "full": "#9b5de5", "checked": "#00bbf9"}
 W, H, PAD = 440, 300, 50
 
 

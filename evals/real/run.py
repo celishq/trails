@@ -5,7 +5,7 @@ Opus judge checks each diff against every live rule of the project and every `me
   run.py <arm> [--model sonnet|opus] [--jobs N] [--tasks id,id]
 
   arm    base (the installed celis and the plugin of the main checkout), new (the celis in $CELIS_BIN and the
-         plugin of this worktree), plain (no plugin and no store)
+         plugin in $CELIS_PLUGIN, else this worktree's), plain (no plugin and no store)
 
 Each task starts from a new clone of the main checkout's HEAD and a new copy of the store, so the real store is
 never written. Runs live in $REAL_RUNS (default /tmp/celis-real); each task appends one line to
@@ -33,7 +33,7 @@ AGENT = ["--output-format", "stream-json", "--verbose", "--dangerously-skip-perm
          "project", "--strict-mcp-config", "--max-budget-usd", "6", "--no-session-persistence"]
 BINS = {"base": Path(shutil.which("celis") or "/usr/local/bin/celis").parent,
         "new": Path(os.environ.get("CELIS_BIN", ROOT / "crates" / "target" / "release"))}
-PLUGINS = {"base": MAIN / "plugins" / "celis", "new": ROOT / "plugins" / "celis"}
+PLUGINS = {"base": MAIN / "plugins" / "celis", "new": Path(os.environ.get("CELIS_PLUGIN", ROOT / "plugins" / "celis"))}
 DONE = "Go on to the end without asking. Do not commit."
 JUDGE = """You judge whether a code change keeps the rules of its project. Below are the rules, one a line as
 `<id8> {{<scope>}} <rule>`, then the change as a git diff.

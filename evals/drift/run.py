@@ -28,7 +28,9 @@ checked; 4 of those replaced an older version that the memory may still hold.
          (reminded, with no past agent: a file not made yet gets only its path rules and a count of the
          rest, and step start names celis rules --diff for the check before done), tooled (reminded,
          with celis rules --diff named for the check before done, and long rule output that says its
-         size and reads in pages with --page)
+         size and reads in pages with --page), full (reminded, with every rule printed in full on each
+         call: no skip of rules given before), checked (full, with celis rules --diff named for the check
+         before done)
 
 Each task starts from a new copy of seed/ and a new copy of the memory, so tasks are independent and run in
 parallel. Each task appends one line to results/<arm>-<model>-r<N>.jsonl.
@@ -62,7 +64,7 @@ NARROW = {"stock": "stock/*.py", "stock/commands": "stock/commands/*.py", "stock
 PICKS = ("picked", "pickers", "pickers50", "merged", "staged")
 JITS = ("jit", "narrow", "ranked", "scoped", "scopedrank", *PICKS)
 OWN = ("pull",)
-TRIGGERED = ("taught", "delegated", "coordinated", "reminded", "sized", "tooled")
+TRIGGERED = ("taught", "delegated", "coordinated", "reminded", "sized", "tooled", "full", "checked")
 STORED = ("celis", "placed", *JITS, *OWN, *TRIGGERED)
 FIXED = {"GIT_AUTHOR_DATE": "2026-01-01T00:00:00Z", "GIT_COMMITTER_DATE": "2026-01-01T00:00:00Z"}
 
@@ -212,7 +214,7 @@ def agent(arm, model, work, home, prompt, log):
     if arm == "oracle":
         env["CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD"] = "1"
         flags += ["--add-dir", str(home / "user")]
-    if arm in ("celis", "placed", *JITS, "delegated", "coordinated", "reminded", "sized", "tooled"):
+    if arm in ("celis", "placed", *JITS, "delegated", "coordinated", "reminded", "sized", "tooled", "full", "checked"):
         flags += ["--plugin-dir", str(plugin(home, arm)) if arm in PICKS
                   else os.environ.get("CELIS_PLUGIN", str(ROOT / "plugins" / "celis"))]
     start = time.time()
