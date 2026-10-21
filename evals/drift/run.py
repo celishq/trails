@@ -32,7 +32,8 @@ checked; 4 of those replaced an older version that the memory may still hold.
          call: no skip of rules given before), checked (full, with celis rules --diff named for the check
          before done), words (checked, with no triggers: the agent finds the rules by their words with
          celis grep), quiet (checked, with no note at step add or step start), nodiff (checked, with
-         celis rules on the files git names changed in place of --diff)
+         celis rules on the files git names changed in place of --diff), paths (checked, with
+         triggers of paths only: no content and no command)
 
 Each task starts from a new copy of seed/ and a new copy of the memory, so tasks are independent and run in
 parallel. Each task appends one line to results/<arm>-<model>-r<N>.jsonl; with --again the lines join those of the
@@ -68,7 +69,7 @@ PICKS = ("picked", "pickers", "pickers50", "merged", "staged")
 JITS = ("jit", "narrow", "ranked", "scoped", "scopedrank", *PICKS)
 OWN = ("pull",)
 TRIGGERED = ("taught", "delegated", "coordinated", "reminded", "sized", "tooled", "full", "checked", "words", "quiet",
-             "nodiff")
+             "nodiff", "paths")
 UNTRIGGERED = ("words",)
 STORED = ("celis", "placed", *JITS, *OWN, *TRIGGERED)
 FIXED = {"GIT_AUTHOR_DATE": "2026-01-01T00:00:00Z", "GIT_COMMITTER_DATE": "2026-01-01T00:00:00Z"}
@@ -143,7 +144,10 @@ def seed(arm, home, rules, targets):
             if arm in TRIGGERED:
                 scope = "me"
             if not old and arm not in UNTRIGGERED:
-                extra += trigger_args(triggers.get(target["id"] if target else by_text[line]))
+                trigger = triggers.get(target["id"] if target else by_text[line])
+                if trigger and arm == "paths":
+                    trigger = dict(trigger, content=None, command=None)
+                extra += trigger_args(trigger)
             where = other if scope == "project" and arm != "placed" else place
             out = sh("celis", "decide", "--scope", scope, *extra, "--", line, cwd=where, env=env)
             if old:
@@ -155,8 +159,6 @@ def trigger_args(trigger):
     if not trigger:
         return []
     return ([f for path in trigger["paths"] for f in ("--path", path)]
-            + (["--content", trigger["content"]] if trigger["content"] else [])
-            + (["--command", trigger["command"]] if trigger["command"] else [])
             + (["--situation"] if trigger["situation"] else []))
 
 
@@ -220,7 +222,7 @@ def agent(arm, model, work, home, prompt, log):
         env["CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD"] = "1"
         flags += ["--add-dir", str(home / "user")]
     if arm in ("celis", "placed", *JITS, "delegated", "coordinated", "reminded", "sized", "tooled", "full", "checked", "words",
-               "quiet", "nodiff"):
+               "quiet", "nodiff", "paths"):
         flags += ["--plugin-dir", str(plugin(home, arm)) if arm in PICKS
                   else os.environ.get("CELIS_PLUGIN", str(ROOT / "plugins" / "celis"))]
     start = time.time()

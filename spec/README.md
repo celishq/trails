@@ -62,7 +62,7 @@ Every change of `spec/` MUST keep these rules:
 | 1985 with `prompt` in `celis.step` | kind: a person's prompt, on the trail (NIP-32) | 04 |
 | 1111 with `decision` in `celis.decision` | kind: a rule (NIP-22) | 05 |
 | `scope` · `replaces` | rule tags | 05 |
-| `path` · `content` · `command` | rule tags: the trigger | 05 |
+| `path` | rule tag: the trigger | 05 |
 | `situation` · `promoted` in `celis.decision` | rule labels | 05 |
 | `me` · `project` · `trail:<id>` · `at:<place>` | the scopes of a rule | 05 |
 | `uses` | step tag | 06 |

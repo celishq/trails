@@ -2,7 +2,7 @@
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use celis_trails::{Place, Project, Rule, Scope, Trigger};
+use celis_trails::{Place, Project, Rule, Scope};
 use std::io::Write;
 
 impl Command {
@@ -33,15 +33,11 @@ impl Command {
             scope,
             replaces: None,
             content,
-            trigger: Trigger {
-                paths: args
-                    .paths
-                    .iter()
-                    .map(|p| Place::resolve(p, &project.folder, &self.folder))
-                    .collect(),
-                content: args.content.clone(),
-                command: args.command.clone(),
-            },
+            paths: args
+                .paths
+                .iter()
+                .map(|p| Place::resolve(p, &project.folder, &self.folder))
+                .collect(),
             situation: args.situation,
             promoted: args.promoted,
         };

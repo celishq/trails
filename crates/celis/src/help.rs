@@ -16,7 +16,7 @@ Read
   tree     Show a trail and its steps
   names    Show the named trails, most used first
   grep     Search every trail with grep
-  rules    Show the rules of the files and the command you will touch
+  rules    Show the rules of the files you will touch
   stats    Show what later work reused
   report   Show trails as Markdown for a pull request
 
@@ -130,10 +130,7 @@ pub const GROUPS: &[Group] = &[
         "Add steps to a trail, then start, finish, drop, or edit them.",
         &[
             ("add", "Add a step to a trail, or start a new trail"),
-            (
-                "start",
-                "Start a step, and see what to do before each change",
-            ),
+            ("start", "Start a step and show the rules its plan links"),
             ("done", "Finish a step with proof that it works"),
             (
                 "drop",
@@ -274,15 +271,13 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "decide",
-        usage: &["celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--content <regex>] [--command <regex>] [--situation] [--promoted] [--project <id>] -- <text>"],
-        summary: "Record a rule that later work must follow, in its scope. Its trigger names the files and commands it acts on, so celis rules gives it for them.",
+        usage: &["celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--situation] [--promoted] [--project <id>] -- <text>"],
+        summary: "Record a rule that later work must follow, in its scope. Its paths name the files it acts on, so celis rules gives it for them.",
         args: &[
             ("--scope <scope>", "at:<place>, trail:<id>, project, or me (default: project)"),
             ("--replaces <id>", "The rule this one replaces"),
             ("--path <glob>", "A file it acts on; * and ? within a folder, ** across"),
-            ("--content <regex>", "What the file's text must match"),
-            ("--command <regex>", "The shell commands it acts on"),
-            ("--situation", "No file or command shows it ahead"),
+            ("--situation", "No file shows it ahead"),
             ("--promoted", "A tool of the place, like a linter, now checks it"),
             ("--project <id>", "skill:<name>, or the id of a project in the store"),
             ("<text>", "When it applies, what to do, and why"),
@@ -294,18 +289,16 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "rules",
-        usage: &["celis rules [<file>]... [--diff] [-- <command>]"],
-        summary: "Show every rule that the files you will read or change and a command you will run match, the most important first. With no file and no command, show the words the rules use, the most used first. Changes nothing.",
+        usage: &["celis rules [<file>]... [--diff]"],
+        summary: "Show every rule of the files you will read or change, the most important first. With no file, show the words the rules use, the most used first. Changes nothing.",
         args: &[
             ("<file>", "A file you will read or change"),
             ("--diff", "Each file git shows changed or new"),
-            ("<command>", "A shell command you will run"),
         ],
         examples: &[
             "celis rules",
             "celis rules shelf/prices.py",
             "celis rules --diff",
-            "celis rules shelf/prices.py -- \"pytest shelf/test_prices.py\"",
         ],
     },
     Verb {

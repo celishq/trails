@@ -143,7 +143,7 @@ fn rule(entry: &RuleEntry, trail: Option<String>) -> Vec<Row> {
     };
     let mut head = format!("{} {state} {{{}}}", short(&note.id), rule.scope.short());
     let marks = [
-        (!rule.trigger.is_empty(), " trigger"),
+        (!rule.paths.is_empty(), " trigger"),
         (rule.situation, " situation"),
         (rule.promoted, " promoted"),
     ];

@@ -20,7 +20,7 @@ learns what later work must keep.
     ["project", "<project name>"],
     ["scope", "<me | trail:<step id> | at:<place>>"],
     ["replaces", "<id of the rule it replaces>"],
-    ["path", "<glob>"], ["content", "<regex>"], ["command", "<regex>"],
+    ["path", "<glob>"],
     ["L", "celis.decision"], ["l", "decision", "celis.decision"],
     ["l", "situation", "celis.decision"], ["l", "promoted", "celis.decision"]
   ],
@@ -31,12 +31,10 @@ learns what later work must keep.
 - `replaces`: optional; the rule this one takes the place of.
 - `path`: optional, repeatable; a file the rule acts on, as a glob from the project's top folder
   ("Triggers").
-- `content`: optional; a regex that the file's text must match.
-- `command`: optional; a regex of the shell commands the rule acts on.
-- `situation`: optional label; the rule also holds in a case that no call shows ahead.
+- `situation`: optional label; the rule also holds in a case that no file shows ahead.
 - `promoted`: optional label; a tool of the place now checks the rule.
 
-`path`, `content` and `command` are the rule's trigger.
+The `path` tags are the rule's trigger.
 
 A drop (CIP-03, "Dropping") MAY name a rule, with why it no longer holds.
 
@@ -75,15 +73,9 @@ me                in every project
 
 ```
 <glob>    a path from the project's top folder: * within a segment, ** across segments, ? one character
-<regex>   the syntax of the Rust regex crate: no lookaround and no backreferences
 ```
 
 **Readers**
 
-- On a file call, a rule matches when one of its `path` globs matches the file and its `content`, when
-  set, matches the file's text: the new text on a write or an edit, the file's text on a read. A file
-  that does not exist yet matches when one of its `path` globs matches it, whatever its `content`.
-- On a shell command, a rule matches when its `command` matches the command, or when a file that the
-  command names matches as a file call whose text is the command.
+- A rule matches a file when one of its `path` globs matches the file's path.
 - A rule `at:<place>` counts as a rule with that place as its `path`, which matches as "Reading" states.
-- A pattern that does not compile matches nothing.

@@ -1,28 +1,25 @@
 //! CIP-05: a rule, one sentence that holds in its scope until another replaces it.
 
-pub mod call;
 pub mod fit;
 pub mod glob;
 pub mod rule_end;
 pub mod rule_entry;
 pub mod rules;
 pub mod scope;
-pub mod trigger;
 
-use crate::{Anchor, Call, Fit, Glob, Place, RuleId, Scope, Trigger};
+use crate::{Anchor, Fit, Glob, Place, RuleId, Scope};
 use anyhow::Result;
 use celis_nostr::{Account, Note};
-use regex::Regex;
 
-/// One rule, written on a project, that holds in its scope; with the calls it acts on, and its
-/// `situation` and `promoted` labels.
+/// One rule, written on a project, that holds in its scope; with the globs of the files it acts on,
+/// and its `situation` and `promoted` labels.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Rule {
     pub anchor: Anchor,
     pub scope: Scope,
     pub replaces: Option<RuleId>,
     pub content: String,
-    pub trigger: Trigger,
+    pub paths: Vec<String>,
     pub situation: bool,
     pub promoted: bool,
 }
@@ -39,7 +36,8 @@ impl Rule {
                 .into_iter()
                 .filter_map(|(name, value)| Some(vec![name.to_string(), value.clone()?])),
         );
-        tags.extend(self.trigger.tags());
+        let paths = self.paths.iter();
+        tags.extend(paths.map(|p| vec!["path".to_string(), p.clone()]));
         tags.push(vec!["L".to_string(), NAMESPACE.to_string()]);
         let labels = [("decision", true), ("situation", self.situation)];
         let labels = labels.into_iter().chain([("promoted", self.promoted)]);
@@ -73,54 +71,37 @@ impl Rule {
             scope,
             replaces: owned("replaces").map(RuleId::new),
             content: note.content.clone(),
-            trigger: Trigger::read(note),
+            paths: note
+                .tags
+                .iter()
+                .filter(|t| t.len() >= 2 && t[0] == "path")
+                .map(|t| t[1].clone())
+                .collect(),
             situation: labelled(note, "situation"),
             promoted: labelled(note, "promoted"),
         })
     }
 
-    /// How narrowly the rule fits `call`; `None` when it does not match it (CIP-05, "Triggers").
-    pub fn fit(&self, call: &Call) -> Option<Fit> {
-        match call {
-            Call::File { path, text } => self.file(path, text.as_deref()),
-            Call::Command { line, files } => {
-                let command = self.trigger.command.as_deref();
-                let command = command.filter(|c| found(c, line)).map(|_| Fit::Pattern);
-                let files = files.iter().filter_map(|f| self.file(f, Some(line)));
-                files.chain(command).min()
-            }
-        }
-    }
-
-    /// How narrowly the rule fits a call on the file `path` whose text is `text`.
-    fn file(&self, path: &str, text: Option<&str>) -> Option<Fit> {
-        let content = self.trigger.content.as_deref();
-        if let (Some(content), Some(text)) = (content, text) {
-            if !found(content, text) {
-                return None;
-            }
-        }
-        let at = match &self.scope {
-            Scope::At(place) => Place::new(place)
-                .meets(Place::new(path))
-                .then_some(Fit::Named),
+    /// How narrowly the rule fits the narrowest of `paths`; `None` when it matches none of them
+    /// (CIP-05, "Triggers").
+    pub fn fit(&self, paths: &[String]) -> Option<Fit> {
+        let place = match &self.scope {
+            Scope::At(place) => Some(Place::new(place)),
             _ => None,
         };
-        let globs = self.trigger.paths.iter().map(|p| Glob::new(p));
-        let globs = globs
-            .filter(|g| g.matches(path))
-            .map(|g| match g.is_literal() {
+        let globs: Vec<Glob> = self.paths.iter().map(|p| Glob::new(p)).collect();
+        let fits = paths.iter().filter_map(|path| {
+            let at = place.as_ref().filter(|p| p.meets(Place::new(path)));
+            let at = at.map(|_| Fit::Named);
+            let globs = globs.iter().filter(|g| g.matches(path));
+            let globs = globs.map(|g| match g.is_literal() {
                 true => Fit::Named,
-                false if content.is_some() => Fit::Pattern,
                 false => Fit::Glob,
             });
-        at.into_iter().chain(globs).min()
+            at.into_iter().chain(globs).min()
+        });
+        fits.min()
     }
-}
-
-/// Whether the regex `pattern` finds a match in `text`; a pattern that does not compile finds none.
-fn found(pattern: &str, text: &str) -> bool {
-    Regex::new(pattern).is_ok_and(|r| r.is_match(text))
 }
 
 /// Whether `note` holds the label `label` of a rule.

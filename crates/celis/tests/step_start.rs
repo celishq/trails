@@ -70,10 +70,9 @@ fn start_refuses_unknown_and_closed_steps_and_starts_a_step_once() {
     assert_eq!(files(), before);
 }
 
-/// `start` prints no rule at the step's places, and says how to get the rules of its files before each
-/// change and to check the change against them before done.
+/// `start` prints no rule at the step's places; the agent asks `celis rules` for them.
 #[test]
-fn start_says_how_to_get_and_check_the_rules_of_its_files() {
+fn start_prints_no_rule_at_the_steps_places() {
     let repo = Repo::new();
     let o = cli(
         &repo,
@@ -95,15 +94,9 @@ fn start_says_how_to_get_and_check_the_rules_of_its_files() {
     let o = cli(&repo, &["step", "start", &step[..8]]);
     assert!(o.status.success(), "{}", err(&o));
     assert!(!out(&o).contains("a.rs holds cents"), "{}", out(&o));
-    let said = err(&o);
-    assert!(
-        said.contains("run celis rules src/a.rs docs/b.md <other files>"),
-        "{said}"
-    );
-    assert!(said.contains("Before done, run celis rules"), "{said}");
 }
 
-/// `start` does not run the step's check.
+/// `start` does not run the step's check, and says nothing on stderr.
 #[test]
 fn start_does_not_run_the_steps_check() {
     let repo = Repo::new();
@@ -121,6 +114,7 @@ fn start_does_not_run_the_steps_check() {
     );
     let o = cli(&repo, &["step", "start", &id[..8]]);
     assert!(o.status.success(), "{}", err(&o));
+    assert_eq!(err(&o), "");
     assert!(!repo.path().join("ran").exists());
 }
 

@@ -30,8 +30,6 @@ pub(crate) struct Args {
     pub project: Option<String>,
     pub limit: Option<String>,
     pub paths: Vec<String>,
-    pub content: Option<String>,
-    pub command: Option<String>,
 }
 
 impl Args {
@@ -83,8 +81,6 @@ impl Args {
                 "--project" => parsed.project = Some(value(arg, rest.next())?),
                 "--limit" => parsed.limit = Some(value(arg, rest.next())?),
                 "--path" => parsed.paths.push(value(arg, rest.next())?),
-                "--content" => parsed.content = Some(value(arg, rest.next())?),
-                "--command" => parsed.command = Some(value(arg, rest.next())?),
                 flag if flag.starts_with("--") => {
                     bad.get_or_insert(Failure::usage(format!("{flag} is not a flag")));
                 }

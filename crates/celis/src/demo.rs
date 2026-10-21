@@ -3,7 +3,7 @@
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use celis_trails::{Anchor, Draft, Rule, Scope, Store, Trails, Trigger};
+use celis_trails::{Anchor, Draft, Rule, Scope, Store, Trails};
 use std::cell::{RefCell, RefMut};
 use std::io::Write;
 use std::path::PathBuf;
@@ -441,7 +441,7 @@ impl Demo {
             scope,
             replaces: None,
             content: text.to_string(),
-            trigger: Trigger::default(),
+            paths: vec![],
             situation: false,
             promoted: false,
         };

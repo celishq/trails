@@ -17,8 +17,7 @@ Write nothing to the store before the person says yes.
 5. Show the person the whole list: each rule's id8 and text, and its trigger, `situation` or drop with
    why. Ask: yes, no, or a change. With more than 50 rules, show and write them in batches of 50.
 6. After a yes, write each rule of the list:
-   - a trigger: `celis decide --replaces <id> [--scope <its scope>] [--path <glob>]... [--content <regex>]
-     [--command <regex>] -- "<the same text>"`;
+   - a trigger: `celis decide --replaces <id> [--scope <its scope>] [--path <glob>]... -- "<the same text>"`;
    - `situation`: the same, with `--situation` in place of the trigger flags;
    - a drop: `celis step drop <id> -- "<why>"`.
 
@@ -29,20 +28,17 @@ Write nothing to the store before the person says yes.
 
 ## Triggers
 
-A trigger names the files and commands that the rule is about. The rule's text stays the same.
+A trigger names the files that the rule is about. The rule's text stays the same.
 
-- Narrow beats broad. Name the files and the text the rule acts on: `--path "shop/prices.py"`, or
-  `--path "**/*.py" --content "price|amount"`, not `--path "**"`. A trigger that fires at each call is
+- Narrow beats broad. Name the files the rule acts on: `--path "shop/prices.py"`, or
+  `--path "shop/**/price*.py"`, not `--path "**"`. A trigger that fires at each call is
   noise.
 - `--path` is a glob from the project's top folder: `*` within a segment, `**` across segments, `?` one
   character. Give one `--path` for each place.
-- `--content` is a regex of the file's text, and `--command` of the shell command, such as `^git commit`.
-- A regex is the syntax of the Rust `regex` crate: no lookaround and no backreferences. A pattern that
-  does not compile matches nothing.
 - A `me` rule holds in every project: its paths must hold in any project, such as `**/*.py`, never a
   path of one repo.
-- Mark a rule `situation` when no file or command shows its case ahead, such as how to plan, how to
-  talk to the person, or another tool call, such as an MCP tool.
+- Mark a rule `situation` when no file shows its case ahead, such as how to plan, how to talk to the
+  person, a shell command, or another tool call, such as an MCP tool.
 
 ## Drops
 

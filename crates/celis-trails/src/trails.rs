@@ -8,7 +8,7 @@ pub mod written;
 use crate::records::id::short;
 use crate::{
     Anchor, Check, Draft, Mark, Name, Notice, Refusal, Rule, RuleId, Rules, Scope, Step, StepId,
-    StepRecord, Steps, Store, Trail, Trigger, Written,
+    StepRecord, Steps, Store, Trail, Written,
 };
 use celis_nostr::{Account, Note};
 use std::path::{Path, PathBuf};
@@ -206,7 +206,7 @@ impl Trails {
                 scope,
                 replaces: None,
                 content: pitfall,
-                trigger: Trigger::default(),
+                paths: vec![],
                 situation: false,
                 promoted: false,
             };

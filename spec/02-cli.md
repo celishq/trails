@@ -14,10 +14,10 @@ read. What a command shows a person is not part of it.
 ## Commands
 
 ```
-celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--content <regex>] [--command <regex>] [--situation] [--promoted] [--project <id>] -- <text>
+celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--situation] [--promoted] [--project <id>] -- <text>
                                                        a rule, in its scope
-celis rules [<file>]... [--diff] [-- <command>]
-                                                       the rules of some files and a command
+celis rules [<file>]... [--diff]
+                                                       the rules of some files
 celis name <trail id> <name>                          give a trail a name
 celis names [--limit <n>]                             the named trails, most used first
 celis tree [<id>] [--graph] [--full] [--all] [--demo]
@@ -48,7 +48,7 @@ $CELIS_HOME   where celis keeps the phrase and the store
 
 ```
 decision  json  {"id", "created_at", "project", "scope", "replaces", "content",
-                 "trigger": {"paths", "content", "command"}, "situation", "promoted"}
+                 "paths", "situation", "promoted"}
 ```
 
 **Rules**
@@ -57,8 +57,7 @@ decision  json  {"id", "created_at", "project", "scope", "replaces", "content",
 - A flag no command takes is a usage error.
 - `decide` MUST write a rule of the working folder's project (CIP-05), with `--scope` and
   `--replaces` as its tags, and no `scope` tag for `project`; each `--path`, from the project's top
-  folder, as a `path` tag, `--content` and `--command` as their tags, and `--situation` and
-  `--promoted` as their labels.
+  folder, as a `path` tag, and `--situation` and `--promoted` as their labels.
 - `--project` on `decide` and `step add` MUST write the records of the project it names in place of the
   working folder's: `skill:<name>` (CIP-07, "Skill projects"), or a project id that a record of the store
   has, with that record's project name. It MUST refuse any other id as a usage error.
@@ -73,7 +72,7 @@ decision  json  {"id", "created_at", "project", "scope", "replaces", "content",
 ```
 celis decide --scope at:shelf/prices.py -- "When you change prices: keep them in cents, because floats lost a cent."
 celis decide --scope me -- "When you write a commit message: use plain words, because the team reads them."
-celis decide --path "**/*.py" --content "float\(" -- "When you change prices: keep them in cents, because floats lost a cent."
+celis decide --path "**/prices*.py" -- "When you change prices: keep them in cents, because floats lost a cent."
 ```
 
 ## Help
@@ -232,8 +231,8 @@ echo '{"session_id": "95e9be99", "prompt": "Use the shared Badge."}' | celis pro
 
 ## Rules
 
-`rules` gives the live rules in scope in the working folder's project (CIP-05) that some files and a
-command match (CIP-05, "Triggers"). With no file and no command, it gives the words of those rules.
+`rules` gives the live rules in scope in the working folder's project (CIP-05) that some files match
+(CIP-05, "Triggers"). With no file, it gives the words of those rules.
 
 ```
 line     <id8> <scope> <rule>
@@ -244,18 +243,16 @@ index    <n> live rules. Their words, by how many rules use each:
 
 **Rules**
 
-- Each `<file>` MUST count as a read of that file, and `<command>` as a shell command. A `<file>` that
-  is a folder MUST count as a read of each file that `git ls-files --cached --others --exclude-standard
-  -- <folder>` gives in the project. `--diff` MUST count as a read of each file that `git diff
+- Each `<file>` MUST count as that file. A `<file>` that is a folder MUST count as each file that `git ls-files --cached --others --exclude-standard
+  -- <folder>` gives in the project. `--diff` MUST count as each file that `git diff
   --name-only HEAD` and `git ls-files --others --exclude-standard` give in the working folder, and that
   exists.
-- With no file and no command, `rules` MUST print the index of the live rules in scope: each word that two
+- With no file, `rules` MUST print the index of the live rules in scope: each word that two
   or more of them use before their "because", with how many use it, most used first.
 - A rule with no trigger and no `at:<place>` scope MUST NOT come.
 - `rules` MUST print every rule that matches: first a rule with a `replaces` tag, then the rest; within
-  each, first those that match a named file (a `path` with no `*` or
-  `?`, or an `at:<place>`), then a glob with `content` or a `command`, then a glob with no `content`;
-  newest first within each.
+  each, first those that match a named file (a `path` with no `*` or `?`, or an `at:<place>`), then a
+  glob; newest first within each.
 
 **Examples**
 

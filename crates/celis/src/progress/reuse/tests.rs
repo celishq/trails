@@ -1,6 +1,6 @@
 use super::*;
 use celis_nostr::Account;
-use celis_trails::{Anchor, RuleId, Scope, StepId, StepRecord, Trigger};
+use celis_trails::{Anchor, RuleId, Scope, StepId, StepRecord};
 
 fn account() -> Account {
     Account::new(&[1u8; 32]).unwrap()
@@ -36,7 +36,7 @@ fn rule(text: &str, at: u64, replaces: Option<&Note>) -> Note {
         scope: Scope::Project,
         replaces: replaces.map(|n| RuleId::new(&n.id)),
         content: text.into(),
-        trigger: Trigger::default(),
+        paths: vec![],
         situation: false,
         promoted: false,
     }

@@ -11,7 +11,7 @@ Read
   tree     Show a trail and its steps
   names    Show the named trails, most used first
   grep     Search every trail with grep
-  rules    Show the rules of the files and the command you will touch
+  rules    Show the rules of the files you will touch
   stats    Show what later work reused
   report   Show trails as Markdown for a pull request
 

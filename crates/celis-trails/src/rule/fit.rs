@@ -1,10 +1,8 @@
-//! How narrowly a rule's trigger fits a call.
+//! How narrowly a rule's trigger fits a file.
 
-/// How narrowly a rule's trigger fits a call, narrowest first: it names the file, it is a glob with
-/// `content` or a `command`, or it is a glob with no `content`.
+/// How narrowly a rule's trigger fits a file, narrowest first: it names the file, or it is a glob.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Fit {
     Named,
-    Pattern,
     Glob,
 }

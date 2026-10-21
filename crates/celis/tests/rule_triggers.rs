@@ -42,39 +42,19 @@ fn texts(repo: &Repo, args: &[&str]) -> Vec<String> {
         .collect()
 }
 
-/// On a read, a `path` glob matches the file and `content` matches the file's text on disk
-/// (`spec/05-rules.md`, "Triggers").
+/// A rule matches a file when one of its `path` globs matches the file's path, whether the file exists
+/// or not (`spec/05-rules.md`, "Triggers").
 #[test]
-fn a_read_matches_the_glob_and_the_files_text() {
+fn a_path_glob_matches_the_file() {
     let repo = Repo::new();
-    decide(
-        &repo,
-        &["--path", "**/*.py", "--content", "float"],
-        "floats",
-    );
+    decide(&repo, &["--path", "**/*.py"], "python");
     decide(&repo, &["--path", "shelf/*.py"], "shelf");
-    repo.write("shelf/a.py", "x = float(1)\n");
-    repo.write("shelf/b.py", "x = 1\n");
-    repo.write("c.rs", "float\n");
-    assert_eq!(texts(&repo, &["shelf/a.py"]), ["floats", "shelf"]);
-    assert_eq!(texts(&repo, &["shelf/b.py"]), ["shelf"]);
+    repo.write("shelf/a.py", "x = 1\n");
+    let mut shelf = texts(&repo, &["shelf/a.py"]);
+    shelf.sort();
+    assert_eq!(shelf, ["python", "shelf"]);
+    assert_eq!(texts(&repo, &["new.py"]), ["python"]);
     assert!(texts(&repo, &["c.rs"]).is_empty());
-}
-
-/// A file that does not exist yet matches by its `path` alone, whatever its `content`
-/// (`spec/05-rules.md`, "Triggers").
-#[test]
-fn a_file_not_yet_made_matches_by_its_path_alone() {
-    let repo = Repo::new();
-    decide(
-        &repo,
-        &["--path", "**/*.py", "--content", "float"],
-        "floats",
-    );
-    decide(&repo, &["--path", "*.rs"], "rust");
-    assert_eq!(texts(&repo, &["shelf/new.py"]), ["floats"]);
-    repo.write("shelf/new.py", "x = 1\n");
-    assert!(texts(&repo, &["shelf/new.py"]).is_empty());
 }
 
 /// `--diff` counts as a read of each file git shows changed or new (`spec/02-cli.md`, "Rules").
@@ -97,11 +77,7 @@ fn diff_reads_the_files_git_shows_changed() {
 #[test]
 fn a_folder_gives_the_rules_of_its_files() {
     let repo = Repo::new();
-    decide(
-        &repo,
-        &["--path", "shelf/*.py", "--content", "float"],
-        "floats",
-    );
+    decide(&repo, &["--path", "shelf/*.py"], "floats");
     decide(&repo, &["--path", "**/*.md"], "markdown");
     decide(&repo, &["--path", "*.log"], "logs");
     repo.write("shelf/a.py", "x = float(1)\n");
@@ -129,45 +105,13 @@ fn an_older_rule_with_a_tool_tag_has_no_trigger() {
     tagged(&repo, &[("tool", "^Grep$")], "grep", support::now() - DAY);
     let o = repo.run(&repo.path(), &["grep", " rule "], &[], "");
     assert!(out(&o).contains("live {project} grep"), "{}", out(&o));
-    assert!(rules(&repo, &[".", "--", "Grep"]).is_empty());
+    assert!(rules(&repo, &["."]).is_empty());
 }
 
-/// On a shell command, `command` matches it, or a file the command names matches as a file call with
-/// the command as its text (`spec/05-rules.md`, "Triggers").
-#[test]
-fn a_command_matches_its_regex_and_the_files_it_names() {
-    let repo = Repo::new();
-    decide(&repo, &["--command", "^pytest"], "tests");
-    decide(&repo, &["--path", "shelf/*.py"], "shelf");
-    decide(&repo, &["--path", "*.md", "--content", "^sed"], "sed");
-    let bash = |line: &str| texts(&repo, &["--", line]);
-    assert_eq!(bash("pytest -q"), ["tests"]);
-    assert_eq!(bash("cat shelf/a.py | head"), ["shelf"]);
-    assert_eq!(bash("sed -i s/a/b/ README.md"), ["sed"]);
-    assert!(bash("cat README.md").is_empty());
-    assert!(bash("ls").is_empty());
-    assert_eq!(
-        texts(&repo, &["--", "pytest", "shelf/a.py"]),
-        ["tests", "shelf"]
-    );
-}
-
-/// The files and the command of one call each match (`spec/02-cli.md`, "Rules").
-#[test]
-fn the_files_and_the_command_each_match() {
-    let repo = Repo::new();
-    decide(&repo, &["--command", "^pytest"], "tests");
-    decide(&repo, &["--path", "*.md"], "markdown");
-    decide(&repo, &["--path", "*.py"], "python");
-    let mut shown = texts(&repo, &["README.md", "a.py", "--", "pytest -q"]);
-    shown.sort();
-    assert_eq!(shown, ["markdown", "python", "tests"]);
-}
-
-/// With no file and no command, `rules` gives each word that two or more live rules use before their
+/// With no file, `rules` gives each word that two or more live rules use before their
 /// "because", most used first (`spec/02-cli.md`, "Rules").
 #[test]
-fn rules_with_no_file_and_no_command_give_the_index() {
+fn rules_with_no_file_give_the_index() {
     let repo = Repo::new();
     decide(
         &repo,
@@ -197,17 +141,6 @@ fn rules_with_no_file_and_no_command_give_the_index() {
     }
 }
 
-/// A pattern that does not compile matches nothing (`spec/05-rules.md`, "Triggers").
-#[test]
-fn a_pattern_that_does_not_compile_matches_nothing() {
-    let repo = Repo::new();
-    decide(&repo, &["--path", "*.md", "--content", "("], "content");
-    decide(&repo, &["--command", "("], "command");
-    let bash = texts(&repo, &["--", "cat README.md ("]);
-    assert!(bash.is_empty(), "{bash:?}");
-    assert!(rules(&repo, &["README.md"]).is_empty());
-}
-
 /// A rule `at:<place>` counts as a rule with that place as its `path`, and holds under a folder it
 /// names (`spec/05-rules.md`, "Triggers").
 #[test]
@@ -228,13 +161,13 @@ fn a_rule_with_no_trigger_never_comes() {
     decide(&repo, &["--situation"], "situation");
     decide(&repo, &[], "no trigger");
     decide(&repo, &["--scope", "me"], "mine");
-    assert!(rules(&repo, &["README.md", "--", "ls"]).is_empty());
+    assert!(rules(&repo, &["README.md"]).is_empty());
     decide(&repo, &["--path", "*.md", "--situation"], "both");
     assert_eq!(texts(&repo, &["README.md"]), ["both"]);
 }
 
-/// Rules come with a named file first, then a glob with content or a command, then a glob with no
-/// content; newest first within each (`spec/02-cli.md`, "Rules").
+/// Rules come with a named file first, then a glob; newest first within each (`spec/02-cli.md`,
+/// "Rules").
 #[test]
 fn rules_come_narrowest_first_then_newest() {
     let repo = Repo::new();
@@ -242,12 +175,6 @@ fn rules_come_narrowest_first_then_newest() {
     let order = [
         (&[("path", "*.py")][..], "wide old", at),
         (&[("path", "*.py")], "wide new", at + 1),
-        (
-            &[("path", "**/*.py"), ("content", "x")],
-            "content old",
-            at + 2,
-        ),
-        (&[("command", "cat")], "command new", at + 3),
         (&[("path", "a.py")], "named old", at + 4),
         (&[("scope", "at:a.py")], "at new", at + 5),
     ];
@@ -255,15 +182,8 @@ fn rules_come_narrowest_first_then_newest() {
         tagged(&repo, tags, content, made);
     }
     assert_eq!(
-        texts(&repo, &["--", "cat a.py x"]),
-        [
-            "at new",
-            "named old",
-            "command new",
-            "content old",
-            "wide new",
-            "wide old"
-        ]
+        texts(&repo, &["a.py"]),
+        ["at new", "named old", "wide new", "wide old"]
     );
 }
 
@@ -291,7 +211,7 @@ fn every_rule_comes_on_each_call() {
 #[test]
 fn grep_marks_triggers_situations_and_promoted_rules() {
     let repo = Repo::new();
-    let trigger = decide(&repo, &["--command", "^make"], "trigger");
+    let trigger = decide(&repo, &["--path", "Makefile"], "trigger");
     let all = decide(
         &repo,
         &["--path", "*.md", "--situation", "--promoted"],
@@ -318,8 +238,8 @@ fn grep_marks_triggers_situations_and_promoted_rules() {
     assert!(line(&plain).ends_with("live {project} plain"), "{shown}");
 }
 
-/// `decide` writes each `--path` from the project's top folder, `--content`, `--command`,
-/// `--situation` and `--promoted`, and a reader reads them back; `--tool` is no flag
+/// `decide` writes each `--path` from the project's top folder, `--situation` and `--promoted`, and a
+/// reader reads them back; `--tool`, `--content` and `--command` are no flags
 /// (`spec/02-cli.md`, "Commands").
 #[test]
 fn decide_writes_the_trigger_and_labels() {
@@ -335,10 +255,6 @@ fn decide_writes_the_trigger_and_labels() {
             "*.py",
             "--path",
             "b.md",
-            "--content",
-            "x",
-            "--command",
-            "^make",
             "--situation",
             "--promoted",
             "--",
@@ -353,21 +269,15 @@ fn decide_writes_the_trigger_and_labels() {
     let step = step.lines().next().unwrap();
     let shown = objects(&repo, &["step", "start", step]);
     let rule = shown.iter().find_map(|v| v.get("decision")).unwrap();
-    assert_eq!(
-        rule["trigger"],
-        json!({"paths": ["shelf/*.py", "shelf/b.md"], "content": "x", "command": "^make"})
-    );
+    assert_eq!(rule["paths"], json!(["shelf/*.py", "shelf/b.md"]));
     assert_eq!(
         (&rule["situation"], &rule["promoted"]),
         (&json!(true), &json!(true))
     );
-    let o = repo.run(
-        &repo.path(),
-        &["decide", "--tool", "Grep", "--", "t"],
-        &[],
-        "",
-    );
-    assert_eq!(o.status.code(), Some(2), "{o:?}");
+    for flag in ["--tool", "--content", "--command"] {
+        let o = repo.run(&repo.path(), &["decide", flag, "x", "--", "t"], &[], "");
+        assert_eq!(o.status.code(), Some(2), "{o:?}");
+    }
 }
 
 /// A rule from before triggers still reads, with no trigger and no label, and comes at its place
@@ -390,8 +300,7 @@ fn an_older_rule_with_no_trigger_still_reads() {
     let step = step.lines().next().unwrap();
     let shown = objects(&repo, &["step", "start", step]);
     let rule = shown.iter().find_map(|v| v.get("decision")).unwrap();
-    let empty = json!({"paths": [], "content": null, "command": null});
-    assert_eq!(rule["trigger"], empty);
+    assert_eq!(rule["paths"], json!([]));
     assert_eq!(
         (&rule["situation"], &rule["promoted"]),
         (&json!(false), &json!(false))

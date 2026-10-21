@@ -7,29 +7,6 @@ use celis_trails::records::id::short;
 use celis_trails::{Draft, Notice, Place, Project, Written};
 use std::io::Write;
 
-/// What an agent does at a new ask, before its first step.
-const ASK: &str = "celis: find the rules of this ask first: celis rules prints the words the rules use. \
-Search the rules with the words that fit the ask: celis grep -i -E \" rule [0-9a-f]{8} live .*(<word>|<word>)\". \
-Keep the {me} rules and those of this project.";
-
-/// What an agent does while a step works at `places`: get the rules before each change, and check the
-/// change against them before done.
-fn work(places: &[String]) -> String {
-    let files: Vec<&str> = places
-        .iter()
-        .filter(|p| !p.contains("://"))
-        .map(|p| p.split(':').next().unwrap_or(p))
-        .collect();
-    let named = match files.is_empty() {
-        true => "<files>".to_string(),
-        false => format!("{} <other files>", files.join(" ")),
-    };
-    format!(
-        "celis: before each change, run celis rules {named} -- \"<command>\", and keep each rule. \
-         Before done, run celis rules --diff, and fix your change where it breaks a rule."
-    )
-}
-
 impl Command {
     /// Runs `step <verb>` with `args`, writing to `out` and notes to `err`.
     pub(crate) fn step(
@@ -79,18 +56,11 @@ impl Command {
             new: args.new,
         };
         let written = self.trails()?.add(draft)?;
-        let first = written.records.first().map(|n| n.id.clone());
-        self.print(written, args, out, err)?;
-        let trails = self.trails()?;
-        let steps = trails.steps();
-        match first.and_then(|id| steps.find(&id).ok()) {
-            Some(step) if step.is_trail() || step.is_ask() => super::put(err, ASK),
-            _ => Ok(()),
-        }
+        self.print(written, args, out, err)
     }
 
-    /// Starts the open step `args` names, and prints the id of its start, the rules its plan links,
-    /// then how to find and check the rules of its work.
+    /// Starts the open step `args` names, and prints the id of its start, then the rules its plan
+    /// links.
     fn step_start(
         &self,
         args: &Args,
@@ -98,12 +68,8 @@ impl Command {
         err: &mut dyn Write,
     ) -> Result<(), Failure> {
         let id = args.id("step start")?;
-        let trails = self.trails()?;
-        let written = trails.start(id)?;
-        self.print(written, args, out, err)?;
-        let steps = trails.steps();
-        let places = &steps.find(id)?.record().places;
-        super::put(err, &work(places))
+        let written = self.trails()?.start(id)?;
+        self.print(written, args, out, err)
     }
 
     /// Closes the open step `args` names, done with its proof and what changed from its plan, and prints
