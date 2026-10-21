@@ -23,11 +23,14 @@ only when you say yes.
 
 ## What the plugin runs
 
-The plugin's hooks run two shell scripts in `plugins/celis/hooks/`, and each one runs the `celis` command:
+The plugin's hooks run short shell scripts in `plugins/celis/hooks/`. Each one only runs the `celis`
+command, or says how to install it when it is missing:
 
-- `start.sh`, at the start of a session, prints how to use celis, or how to install `celis` when it is
-  missing.
-- `ask.sh`, on each prompt, writes the prompt on the session's open trail and prints a note for the agent.
+- `celis hook start`, at the start of a session, prints how to use celis.
+- `celis hook ask`, on each prompt, writes the prompt on the session's open trail and prints a note for the
+  agent.
+
+Claude Code runs `start.sh` and `ask.sh`. The other agents run `run.sh`.
 
 The plugin downloads nothing and installs nothing. You install `celis` yourself.
 

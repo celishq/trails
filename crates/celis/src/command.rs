@@ -4,6 +4,7 @@ mod args;
 mod auth;
 mod graph;
 mod grep;
+mod hook;
 mod issue;
 mod link;
 mod name;
@@ -91,6 +92,7 @@ impl Command {
             "link" => self.link(args, out, &self.project()),
             "unlink" => self.unlink(args, out, &self.project()),
             "prompt" => self.prompt(args, out, err, &self.project()),
+            "hook" => self.hook(args, out),
             "auth" => self.auth(args, out, err),
             "update" => self.update(args),
             "" => Err(Failure::usage("expected: celis <command>")),
