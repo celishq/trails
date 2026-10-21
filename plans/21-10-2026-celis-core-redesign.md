@@ -95,6 +95,22 @@ Each part of checked removed in turn, at 400 rules, 2 runs a cell (rules broken,
 - The notes and `--diff` cost Opus only 3 to 5 points, near the run spread, but Sonnet 9 to 11. The
   design keeps all three parts.
 
+Paths only (no `content`, no `command` triggers), at 400 rules, 2 runs: Sonnet 42% (44% / 41%), Opus 17%
+(15% / 20%), against checked's 34% and 18%. The design is for smart models, so a part that Opus does not
+need goes: the triggers are paths only, and step add and step start print no note (quiet: Opus 21%).
+`--diff` stays (nodiff: Opus 23%, runs 21% to 24% against 16% to 19%).
+
+Raycast, Sonnet, 2 runs, 43 rule checks a run (rules from reviews, each task a new repo):
+
+| Arm                                        | Broken           | Follow-up rounds | Builds | Cost  |
+| ------------------------------------------ | ---------------- | ---------------- | ------ | ----- |
+| main's celis and plugin                    | 0% (0% / 0%)     | 0.0              | 10/10  | $2.2  |
+| this branch before paths only (checked)    | 3% (2% / 5%)     | 1.5              | 9.5/10 | $2.5  |
+
+- The branch broke the changelog rule on task 8 in both runs, and the failure-toast rule once. On task 8
+  the agent read only the index and `celis grep` with `| head`, and no `celis rules <files>`. On main,
+  the past agent brought the rules of the ask; here it brings only past steps.
+
 - With the notes, Sonnet searched the rules with `celis grep` in 6 to 7 tasks of 8, not 1, and ran
   `celis rules` after a write 7 times, not 0 or 1. It beat pickers at 400 and 1000 rules.
 - Sonnet still lost 55 rules at 1000 rules that it never saw: the harness cut 5 outputs of `celis rules`
