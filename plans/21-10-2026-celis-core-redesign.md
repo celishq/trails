@@ -69,6 +69,18 @@ reminded on both.
   rules) found 4 of 37 applying rules broken with the base plugin, 3 of 35 with the new one, and 4 of 37
   with no memory. Five small tasks cannot tell the arms apart.
 
+One change per arm (2026-10-21, Sonnet and Opus, 400 / 1000 rules, broken):
+
+| Arm                                              | Sonnet      | Opus        |
+| ------------------------------------------------ | ----------- | ----------- |
+| reminded                                         | 33% / 58%   | 23% / 32%   |
+| full (every rule in full on each call, no skip)  | 39% / 65%   | 27% / 44%   |
+| checked (full, with `celis rules --diff` named)  | 31% / 66%   | 19% / 34%   |
+
+The real-rules bench, 15 tasks on Opus, 11 valid (4 named code only on this branch): base broke 7 of 58
+applying rules, checked 6 of 67, no memory 7 of 62. Most breaks are tasks that ask for what a rule
+forbids, where the ask wins; all three arms broke the same few. The bench cannot tell the arms apart.
+
 - With the notes, Sonnet searched the rules with `celis grep` in 6 to 7 tasks of 8, not 1, and ran
   `celis rules` after a write 7 times, not 0 or 1. It beat pickers at 400 and 1000 rules.
 - Sonnet still lost 55 rules at 1000 rules that it never saw: the harness cut 5 outputs of `celis rules`
