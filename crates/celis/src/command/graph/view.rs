@@ -47,13 +47,13 @@ pub(super) struct View {
 }
 
 impl View {
-    /// A view of `trails`: all of them when there are more than one, else the one, the first picked,
-    /// following the newest card.
+    /// A view of `trails`: all of them, or the trail `named` when one is, the first picked, following
+    /// the newest card.
     pub fn new(trails: &[Step], named: Option<&str>) -> View {
         let first = trails.first().map(|t| t.id().to_string());
-        let mode = match (named, trails.len()) {
-            (Some(_), _) | (None, 0 | 1) => Mode::Trail,
-            _ => Mode::All,
+        let mode = match named {
+            Some(_) => Mode::Trail,
+            None => Mode::All,
         };
         View {
             mode: Some(mode),

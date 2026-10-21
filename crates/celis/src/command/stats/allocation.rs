@@ -20,7 +20,7 @@ pub(super) fn panel() -> Panel {
 
 /// Allocation: the active time with its change, the time lost to rework and to dropped work with their
 /// shares; then each project's time as one bar of productive, rework and dropped time, growing, with
-/// its time and share; the rows it takes.
+/// its time and share; under them the legend of the three; the rows it takes.
 fn allocation(s: &mut Sheet, m: &Moment, _: u16, y: u16, w: u16) -> u16 {
     let month = m.month;
     let total = month.time();
@@ -29,6 +29,7 @@ fn allocation(s: &mut Sheet, m: &Moment, _: u16, y: u16, w: u16) -> u16 {
     let share = |part: u64| percent(part as usize, total as usize);
     let moved = total as i64 - month.prior_active as i64;
     let change = match moved {
+        _ if m.prior().resolved() == 0 => "no prior steps".to_string(),
         0 => "= no change".to_string(),
         d if d > 0 => format!("▲ {}", minutes(d as u64)),
         d => format!("▼ {}", minutes(d.unsigned_abs())),
@@ -59,7 +60,6 @@ fn allocation(s: &mut Sheet, m: &Moment, _: u16, y: u16, w: u16) -> u16 {
     let tail = 16;
     let top = s.flow(4, y + 2, w - 4, &head);
     let mut row = y + 2 + top + 1;
-    row += s.flow(4, row, w - 4, &legend);
     let most = month
         .projects
         .iter()
@@ -69,7 +69,7 @@ fn allocation(s: &mut Sheet, m: &Moment, _: u16, y: u16, w: u16) -> u16 {
         .max(1);
     let span = w.saturating_sub(14 + tail).max(3);
     for (k, project) in month.projects.iter().enumerate() {
-        s.put(4, row, &format!("📁 {}", cut(&project.name, 9)), BOLD);
+        s.put(4, row, &format!("📁 {}", cut(&project.name, 8)), BOLD);
         let grow = ease(m.t - 1.2 - 0.1 * k as f64);
         let cells = ((project.active as f64 / most as f64 * f64::from(span) * grow)
             .round_ties_even() as u16)
@@ -87,5 +87,7 @@ fn allocation(s: &mut Sheet, m: &Moment, _: u16, y: u16, w: u16) -> u16 {
         s.put(w + 3 - tail, row, &text, Style::new());
         row += 1;
     }
+    row += 1;
+    row += s.flow(4, row, w - 4, &legend);
     row - y + 2
 }

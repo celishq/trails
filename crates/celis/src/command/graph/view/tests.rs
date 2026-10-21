@@ -133,3 +133,20 @@ fn the_arrows_walk_an_opened_card() {
     view.press(Key::Left, &steps);
     assert_eq!(view.row.as_deref(), Some(row.as_str()));
 }
+
+/// With no trail named the view opens on All, even with one trail of today; with one named, on its
+/// graph.
+#[test]
+fn the_view_opens_on_all_unless_a_trail_is_named() {
+    let mut bench = Bench::new();
+    let trail = bench.step("shop", None, "the one trail");
+    bench.step("shop", Some(&trail), "a step");
+    let (all, named) = crate::progress::Model::of(&bench.trails, |m| {
+        let trails = super::super::folders(m.steps);
+        assert_eq!(trails.len(), 1);
+        let all = View::new(&trails, None).mode();
+        let named = View::new(&trails, Some(&trail)).mode();
+        (all, named)
+    });
+    assert_eq!((all, named), (Mode::All, Mode::Trail));
+}
