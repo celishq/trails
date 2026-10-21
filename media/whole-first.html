@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Top-down vs Whole-first</title>
+<style>
+/* Two soft browser windows on a warm ground, Braun-calm but on screen. No device frame, no deep black.
+   The address bar loads; a round chip at its end gives the verdict. Three palettes switch on the root's data-v. */
+:root {
+  --room: #ecebe7; --win: #f4f3ef; --screen: #f8f7f3; --well: #e6e4de; --tile: #fdfcf9;
+  --ink: #57554f; --grey: #d0cdc5; --accent: #ff6a1f; --accent-hi: #ff9a5c; --red: #d8432f; --green: #3e9b58;
+  color-scheme: light;
+}
+:root[data-v="2"] {
+  --room: #e8e6dc; --win: #f1efe6; --screen: #f6f4ec; --well: #dde2d5; --tile: #fbfaf4;
+  --ink: #4e5a57; --grey: #c8cdbf; --accent: #d39a2c; --accent-hi: #e9bd63; --red: #d4473a; --green: #4f8f57;
+}
+:root[data-v="3"] {
+  --room: #ece5d9; --win: #f3ede2; --screen: #f7f2e9; --well: #e6ded0; --tile: #fcf9f3;
+  --ink: #2f5b61; --grey: #d5cbbb; --accent: #12676e; --accent-hi: #3f9198; --red: #c8553d; --green: #3d8b6a;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--room); color: var(--ink); transition: background .3s; }
+body { font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; padding-inline: 16px; padding-block: 24px; display: grid; justify-items: center; gap: 18px; }
+
+.stage { width: min(100%, 720px); aspect-ratio: 1 / 1; container-type: inline-size; display: grid; place-items: center; background: var(--room); border-radius: 14px; }
+.windows { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 5.5cqw; padding-inline: 6.5cqw; }
+
+.win { border-radius: 2.8cqw; background: var(--win); padding: 1.8cqw; display: flex; flex-direction: column; gap: 1.8cqw;
+  box-shadow: -0.6cqw -0.6cqw 1.4cqw rgb(255 255 255 / 0.85), 0.8cqw 1cqw 2.4cqw rgb(70 60 45 / 0.13), inset 0 0.15cqw 0 rgb(255 255 255 / 0.9); }
+.top { display: flex; align-items: center; gap: 1.2cqw; height: 3.4cqw; padding-inline: 0.6cqw; }
+.dots { display: flex; gap: 0.6cqw; }
+.dots b { width: 1.1cqw; height: 1.1cqw; border-radius: 50%; background: var(--well); box-shadow: inset 0 0.1cqw 0.2cqw rgb(0 0 0 / 0.1); }
+.url { flex: 1; height: 2.6cqw; border-radius: 99px; background: var(--well); box-shadow: inset 0 0.15cqw 0.35cqw rgb(0 0 0 / 0.1); overflow: hidden; position: relative; }
+.load { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 99px; background: linear-gradient(90deg, var(--accent-hi), var(--accent)); }
+#L .load { background: var(--grey); }
+.chip { position: relative; width: 3.4cqw; height: 3.4cqw; border-radius: 50%; background: var(--win); box-shadow: -0.2cqw -0.2cqw 0.4cqw #fff, 0.2cqw 0.3cqw 0.6cqw rgb(70 60 45 / 0.16); }
+.chip i { position: absolute; inset: 0; border-radius: 50%; opacity: 0; display: grid; place-items: center; }
+.chip i.no { background: var(--red); box-shadow: 0 0 2.4cqw color-mix(in srgb, var(--red) 50%, transparent); }
+.chip i.yes { background: var(--green); box-shadow: 0 0 2.4cqw color-mix(in srgb, var(--green) 50%, transparent); }
+.chip svg, .x svg { width: 52%; height: 52%; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+
+.screen { border-radius: 1.8cqw; padding: 2.4cqw; display: flex; flex-direction: column; gap: 2.2cqw; background: var(--screen); box-shadow: inset 0 0.2cqw 0.5cqw rgb(0 0 0 / 0.06); }
+
+.sec { position: relative; }
+.sec.nav { height: 2.6cqw; }
+.sec.hero { height: 15cqw; }
+.sec.features { height: 9.5cqw; }
+.sec.pricing { height: 11.5cqw; }
+.sec.footer { height: 2cqw; }
+.sec > * { position: absolute; inset: 0; }
+.blk, .split span { border-radius: 1.1cqw; background: var(--well); box-shadow: inset 0 0.2cqw 0.45cqw rgb(0 0 0 / 0.08), inset 0 -0.1cqw 0.15cqw rgb(255 255 255 / 0.9); }
+.blk, .split { opacity: 0; }
+.split { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2cqw; }
+.det { opacity: 0; }
+
+.marks { inset: -1.1cqw; --c: var(--accent); --l: 1.8cqw; --w: 0.28cqw; opacity: 0; transition: opacity .2s;
+  background:
+    linear-gradient(var(--c), var(--c)) 0 0 / var(--l) var(--w), linear-gradient(var(--c), var(--c)) 0 0 / var(--w) var(--l),
+    linear-gradient(var(--c), var(--c)) 100% 0 / var(--l) var(--w), linear-gradient(var(--c), var(--c)) 100% 0 / var(--w) var(--l),
+    linear-gradient(var(--c), var(--c)) 0 100% / var(--l) var(--w), linear-gradient(var(--c), var(--c)) 0 100% / var(--w) var(--l),
+    linear-gradient(var(--c), var(--c)) 100% 100% / var(--l) var(--w), linear-gradient(var(--c), var(--c)) 100% 100% / var(--w) var(--l);
+  background-repeat: no-repeat; }
+.marks.on { opacity: 1; }
+.marks.bad { --c: var(--red); }
+
+.bar { height: 0.6cqw; border-radius: 99px; background: var(--grey); }
+.bar.head { height: 1.8cqw; border-radius: 0.5cqw; background: var(--ink); }
+.logo { width: 2.4cqw; height: 2.4cqw; border-radius: 50%; background: var(--accent); flex: none; }
+.btn { height: 2.4cqw; width: 5.6cqw; border-radius: 99px; background: var(--ink); }
+.btn.hot { width: 8cqw; background: linear-gradient(160deg, var(--accent-hi), var(--accent)); }
+.btn.line { background: transparent; box-shadow: inset 0 0 0 0.25cqw var(--ink); }
+
+.nav .det, .footer .det { display: flex; align-items: center; gap: 1.1cqw; }
+.nav .det .bar:first-of-type, .footer .det .bar:first-of-type { margin-right: auto; }
+.footer .det { padding-top: 1cqw; }
+.rule { position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--grey); }
+
+.hero .det { display: grid; grid-template-columns: 1.1fr 1fr; gap: 2cqw; }
+.copy { display: flex; flex-direction: column; justify-content: center; gap: 0.9cqw; }
+.copy .btn { margin-top: 1cqw; }
+.art { position: relative; border-radius: 1.4cqw; background: var(--well); box-shadow: inset 0 0.2cqw 0.45cqw rgb(0 0 0 / 0.08); overflow: hidden; }
+.art::before { content: ""; position: absolute; inset: 1.2cqw; background: radial-gradient(circle, var(--grey) 0.22cqw, transparent 0.27cqw) 0 0 / 1cqw 1cqw; }
+.sun { position: absolute; width: 48%; aspect-ratio: 1; border-radius: 50%; left: 26%; top: 24%;
+  background: linear-gradient(160deg, var(--accent-hi), var(--accent) 60%); box-shadow: inset 0 0.2cqw 0.2cqw rgb(255 255 255 / 0.35), 0 0.5cqw 1cqw rgb(0 0 0 / 0.15); }
+
+.tiles { display: grid; gap: 1.2cqw; height: 100%; }
+.tiles.three { grid-template-columns: repeat(3, 1fr); }
+.tiles.two { grid-template-columns: repeat(2, 1fr); }
+.tile { border-radius: 1.2cqw; padding: 1.1cqw; display: flex; flex-direction: column; gap: 0.8cqw; background: var(--tile);
+  box-shadow: inset 0 0.15cqw 0.15cqw #fff, 0 0.25cqw 0.6cqw rgb(70 60 45 / 0.1); transition: background .3s; }
+.shape { width: 2.4cqw; height: 2.4cqw; border-radius: 50%; background: var(--well); box-shadow: inset 0 0.15cqw 0.3cqw rgb(0 0 0 / 0.1); }
+.tile:nth-child(2) .shape { background: linear-gradient(160deg, var(--accent-hi), var(--accent)); box-shadow: none; }
+.num { width: 55%; height: 2.4cqw; border-radius: 0.5cqw; background: var(--ink); transition: background .3s; }
+.tile .btn { width: 100%; height: 2.2cqw; margin-top: auto; transition: background .3s; }
+.tile .bar { transition: background .3s; }
+.red .tile { background: color-mix(in srgb, var(--red) 12%, var(--tile)); }
+.red .num, .red .btn, .red .bar { background: var(--red); }
+
+.x { inset: auto; top: 50%; left: 50%; width: 5cqw; height: 5cqw; margin: -2.5cqw 0 0 -2.5cqw; border-radius: 50%; background: var(--red); display: grid; place-items: center; opacity: 0;
+  box-shadow: 0 0 0 0.6cqw var(--screen), 0 0.4cqw 1cqw rgb(0 0 0 / 0.18); }
+
+.controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.controls button { font: 600 13px ui-monospace, Menlo, monospace; color: var(--ink); background: var(--win); border: 0; border-radius: 99px; padding: 9px 18px; cursor: pointer; box-shadow: 0 1px 2px rgb(0 0 0 / 0.12), inset 0 1px 0 #fff; }
+.controls button:hover { color: var(--accent); }
+.controls button[aria-pressed="true"] { color: var(--accent); background: var(--well); box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.14); }
+.controls button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.controls hr { width: 1px; height: 22px; margin: auto 4px; border: 0; background: var(--grey); }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="windows">
+    <div class="win" id="L">
+      <div class="top"><div class="dots"><b></b><b></b><b></b></div><div class="url"><div class="load"></div></div>
+        <div class="chip"><i class="no"><svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg></i></div></div>
+      <div class="screen"></div>
+    </div>
+    <div class="win" id="R">
+      <div class="top"><div class="dots"><b></b><b></b><b></b></div><div class="url"><div class="load"></div></div>
+        <div class="chip"><i class="yes"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></i></div></div>
+      <div class="screen"></div>
+    </div>
+  </div>
+</div>
+
+<div class="controls">
+  <button id="replay" type="button">Replay</button>
+  <button id="pause" type="button">Pause</button>
+  <hr>
+  <button type="button" data-v="1" aria-pressed="true">Paper</button>
+  <button type="button" data-v="2" aria-pressed="false">Sage</button>
+  <button type="button" data-v="3" aria-pressed="false">Teal</button>
+</div>
+
+<template id="sections">
+  <div class="sec nav" data-k="nav">
+    <div class="blk"></div>
+    <div class="det"><div class="logo"></div><div class="bar" style="width:4cqw"></div><div class="bar" style="width:2.8cqw"></div><div class="bar" style="width:2.8cqw"></div><div class="btn"></div></div>
+  </div>
+  <div class="sec hero" data-k="hero">
+    <div class="blk"></div>
+    <div class="det">
+      <div class="copy"><div class="bar head" style="width:100%"></div><div class="bar head" style="width:70%"></div><div class="bar" style="width:90%"></div><div class="bar" style="width:62%"></div><div class="btn hot"></div></div>
+      <div class="art"><div class="sun"></div></div>
+    </div>
+  </div>
+  <div class="sec features" data-k="features">
+    <div class="blk"></div>
+    <div class="split"><span></span><span></span><span></span></div>
+    <div class="det tiles three">
+      <div class="tile"><div class="shape"></div><div class="bar" style="width:85%"></div><div class="bar" style="width:55%"></div></div>
+      <div class="tile"><div class="shape"></div><div class="bar" style="width:85%"></div><div class="bar" style="width:55%"></div></div>
+      <div class="tile"><div class="shape"></div><div class="bar" style="width:85%"></div><div class="bar" style="width:55%"></div></div>
+    </div>
+  </div>
+  <div class="sec pricing" data-k="pricing">
+    <div class="blk"></div>
+    <div class="det tiles three" data-wrong>
+      <div class="tile"><div class="num"></div><div class="bar" style="width:80%"></div><div class="btn"></div></div>
+      <div class="tile"><div class="num"></div><div class="bar" style="width:80%"></div><div class="btn"></div></div>
+      <div class="tile"><div class="num"></div><div class="bar" style="width:80%"></div><div class="btn"></div></div>
+    </div>
+    <div class="det tiles two" data-right>
+      <div class="tile"><div class="num" style="width:45%"></div><div class="bar" style="width:70%"></div><div class="btn line"></div></div>
+      <div class="tile"><div class="num" style="width:45%"></div><div class="bar" style="width:70%"></div><div class="btn hot"></div></div>
+    </div>
+    <div class="x"><svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg></div>
+  </div>
+  <div class="sec footer" data-k="footer">
+    <div class="blk"></div>
+    <div class="det"><div class="rule"></div><div class="logo" style="width:1.3cqw;height:1.3cqw"></div><div class="bar" style="width:6cqw"></div><div class="bar" style="width:3.4cqw"></div><div class="bar" style="width:3.4cqw"></div></div>
+  </div>
+</template>
+
+<script>
+const END = 10.6, HOLD = 2.5;
+const clamp = (x) => Math.max(0, Math.min(1, x));
+const ramp = (t, a, b) => { const x = clamp((t - a) / (b - a)); return x * x * (3 - 2 * x); };
+const lin = (t, a, b) => clamp((t - a) / (b - a));
+const back = (x) => 1 + 2.2 * Math.pow(x - 1, 3) + 1.2 * Math.pow(x - 1, 2);
+const pop = (n, t, a, d, from) => {
+  const x = lin(t, a, a + d);
+  n.style.opacity = clamp(x * 2);
+  n.style.transform = `scale(${from + (1 - from) * back(x)})`;
+};
+
+function mount(win) {
+  const screen = win.querySelector(".screen");
+  screen.append(document.getElementById("sections").content.cloneNode(true));
+  const s = {};
+  screen.querySelectorAll(".sec").forEach((el) => {
+    const m = document.createElement("div");
+    m.className = "marks";
+    el.append(m);
+    s[el.dataset.k] = el;
+  });
+  return { s, verdict: win.querySelector(".chip i"), load: win.querySelector(".load") };
+}
+const L = mount(document.getElementById("L"));
+const R = mount(document.getElementById("R"));
+const fill = (n, v) => { n.style.width = `${v * 100}%`; };
+
+const PIECES = ".rule, .logo, .bar, .btn, .art, .sun, .tile, .shape, .num";
+const leftParts = [];
+for (const k of ["nav", "hero", "features", "pricing", "footer"]) {
+  const det = L.s[k].querySelector(k === "pricing" ? "[data-wrong]" : ".det");
+  det.style.opacity = 1;
+  leftParts.push(...det.querySelectorAll(PIECES));
+}
+const BUILD = [0.4, 7.6];
+const STEP = (BUILD[1] - BUILD[0]) / leftParts.length;
+
+function shake(n, t, a) {
+  const x = t >= a && t < a + 0.5 ? Math.sin((t - a) * 55) * 0.7 * (1 - lin(t, a, a + 0.5)) : 0;
+  n.style.translate = `${x}cqw 0`;
+}
+
+function paintLeft(t) {
+  leftParts.forEach((n, i) => pop(n, t, BUILD[0] + i * STEP, 0.3, 0.5));
+  fill(L.load, lin(t, BUILD[0], BUILD[1]));
+  const wrong = L.s.pricing.querySelector("[data-wrong]");
+  const flag = 8.8;
+  wrong.classList.toggle("red", t >= flag);
+  shake(wrong, t, flag + 0.1);
+  const m = L.s.pricing.querySelector(".marks");
+  m.classList.toggle("on", t >= flag);
+  m.classList.add("bad");
+  pop(L.s.pricing.querySelector(".x"), t, flag + 0.25, 0.35, 0.5);
+  pop(L.verdict, t, flag + 0.6, 0.35, 0.6);
+}
+
+function show(n, v) {
+  n.style.opacity = v;
+  n.style.filter = v > 0 && v < 1 ? `blur(${(1 - v) * 0.6}cqw)` : "none";
+}
+
+function paintRight(t) {
+  const s = R.s;
+  const order = ["nav", "hero", "features", "pricing", "footer"];
+  const det = {
+    nav: ramp(t, 6.9, 7.4), hero: ramp(t, 1.2, 1.9), features: ramp(t, 2.9, 3.5),
+    pricing: ramp(t, 6.2, 6.8), footer: ramp(t, 7.5, 8.0),
+  };
+  order.forEach((k, i) => {
+    s[k].querySelector(".blk").style.opacity = ramp(t, 0.3 + i * 0.08, 0.6 + i * 0.08) * (1 - det[k]);
+  });
+  const split = ramp(t, 2.3, 2.6);
+  s.features.querySelector(".blk").style.opacity = ramp(t, 0.46, 0.76) * (1 - split);
+  s.features.querySelector(".split").style.opacity = split * (1 - det.features);
+  ["nav", "hero", "features", "footer"].forEach((k) => show(s[k].querySelector(".det"), det[k]));
+
+  const wrongEl = s.pricing.querySelector("[data-wrong]");
+  const wrong = ramp(t, 3.8, 4.3) * (1 - ramp(t, 5.9, 6.2));
+  show(wrongEl, wrong);
+  wrongEl.classList.toggle("red", t >= 4.8);
+  shake(wrongEl, t, 4.9);
+  show(s.pricing.querySelector("[data-right]"), det.pricing);
+  s.pricing.querySelector(".blk").style.opacity = ramp(t, 0.54, 0.84) * (1 - Math.max(wrong, det.pricing));
+  const x = s.pricing.querySelector(".x");
+  pop(x, t, 4.95, 0.35, 0.5);
+  if (t >= 5.8) x.style.opacity = 1 - ramp(t, 5.8, 6.0);
+
+  const focus = { hero: [1.0, 2.2], features: [2.2, 3.6], pricing: [3.6, 6.85], nav: [6.85, 7.45], footer: [7.45, 8.1] };
+  for (const k of order) {
+    const [a, z] = focus[k];
+    const m = s[k].querySelector(".marks");
+    m.classList.toggle("on", t >= a && t < z);
+    m.classList.toggle("bad", k === "pricing" && t >= 4.8 && t < 5.9);
+  }
+  fill(R.load, lin(t, 0.3, 8.1));
+  pop(R.verdict, t, 8.3, 0.35, 0.6);
+}
+
+function paint(t) {
+  const c = Math.min(t, END);
+  paintLeft(c);
+  paintRight(c);
+}
+
+const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let t0 = performance.now(), paused = still, at = still ? END : 0;
+function frame(now) {
+  if (!paused) {
+    at = (now - t0) / 1000;
+    if (at > END + HOLD) { t0 = now; at = 0; }
+  }
+  paint(at);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+const pauseBtn = document.getElementById("pause");
+document.getElementById("replay").onclick = () => { t0 = performance.now(); at = 0; paused = false; pauseBtn.textContent = "Pause"; };
+pauseBtn.onclick = () => {
+  paused = !paused;
+  if (!paused) t0 = performance.now() - at * 1000;
+  pauseBtn.textContent = paused ? "Play" : "Pause";
+};
+document.querySelectorAll(".controls [data-v]").forEach((b) => {
+  b.onclick = () => {
+    document.documentElement.dataset.v = b.dataset.v;
+    document.querySelectorAll(".controls [data-v]").forEach((o) => o.setAttribute("aria-pressed", o === b));
+  };
+});
+</script>
+</body>
+</html>

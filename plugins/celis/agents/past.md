@@ -23,17 +23,19 @@ rule that replaced it holds.
 
 celis prints the lines it found under the header of their trail, `<id> [<project>] <title> · <day>`,
 the trails with the most lines first, each line two spaces in, without its day, trail and project. The
-lines of no trail print under `- rules of no trail`. Then `project [<name>]` names this project. When
-the output is too long, celis cuts it and gives each trail it cut, with how many lines of each kind it
-holds. Put every pattern in the one `celis grep` call, with `-e` or `-E`: a pipe to another `grep` drops
-the headers.
+lines of no trail print under `- rules of no trail`. Then `project [<name>]` names this project. Put
+every pattern in the one `celis grep` call, with `-e` or `-E`: a pipe to another `grep` drops the
+headers.
 
 Send in one message each call that does not wait on the output of another.
 
-1. Run `celis grep " live {me} "`, and with it the first search of step 2. Then, with the name that its
-   `project` line gives, `celis grep "\[<name>\] rule [0-9a-f]* live {project} "`.
-2. Search for the ask, without proofs:
-   `celis grep -i -E " (trail|step|changed|dropped|rule) [0-9a-f]{8} .*(<word>|<word>|...)"`, with the
+1. Run `celis grep -c " live {me} "`, and with it the first search of step 2. Then, with the name that
+   its `project` line gives, `celis grep -c "\[<name>\] rule [0-9a-f]* live {project} "`. Read each of
+   these two searches in pages of 50 lines, all pages in one message, up to 3 lines past its count:
+   `celis grep "<pattern>" | sed -n '1,50p'`, then `'51,100p'`, and so on. A larger page is cut to a
+   short preview that you cannot use. Keep every line of both.
+2. Search for the ask:
+   `celis grep -i -E " (trail|step|proof|changed|dropped|rule) [0-9a-f]{8} .*(<word>|<word>|...)"`, with the
    verb and the words of what the ask wants done, their synonyms in the language of the lines, and the
    places of the ask. When too many lines match, narrow the search: add `-w` or more exact words. When
    no line matches, try other words. Stop when a search brings no new useful line, or after 4 searches.
@@ -46,7 +48,7 @@ Answer in this shape. Copy each line as celis printed it, with its id:
 
 ```
 keep
-  <line>                each rule of step 1 that can apply to the ask
+  <line>                each line you kept in step 1
 found
   <line>                each line of a search that can apply to the ask, from any project
 past <id> <title>       each trail you chose in step 3

@@ -52,7 +52,7 @@ fn run(words: &[String], view: String) -> Result<Option<String>, Failure> {
     match output.status.code() {
         Some(0) => Ok(Some(
             String::from_utf8_lossy(&output.stdout)
-                .trim_end()
+                .trim_end_matches('\n')
                 .to_string(),
         )),
         Some(1) => Ok(None),

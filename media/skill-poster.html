@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skill From Trails</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=JetBrains+Mono:wght@400;600;700&display=swap">
+<style>
+/* A square technical poster on grey paper: past trails as rows of dots on the left, a skill card on the right.
+   Dots fly into the card and become its rules and steps. Ink for work, orange-red for dead ends. */
+:root {
+  --paper: #e9e8e3;
+  --ink: #1f1f1d;
+  --mute: #8a8984;
+  --grey: var(--line);
+  --hot: #ff4f1a;
+  --line: #b9b8b2;
+  --soft: #55554f;
+  --ok: #16a05a;
+  --err: #d0262b;
+  --hair: 0.15cqw;
+  --stroke: 0.3cqw;
+  --bold: 0.45cqw;
+  --display: "Archivo", "Arial Narrow", "Helvetica Neue", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #2a2a28; color: var(--ink); }
+body { font: 15px/1.5 var(--mono); padding-inline: 16px; padding-block: 24px; display: grid; justify-items: center; gap: 18px; }
+
+.poster { position: relative; width: min(100%, 640px); aspect-ratio: 1 / 1; container-type: inline-size; overflow: hidden; background: var(--paper);
+  display: flex; flex-direction: column; justify-content: space-between; padding: 3.2cqw 3.2cqw 2.8cqw; }
+.poster::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.09; mix-blend-mode: multiply; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+.label { font: 600 1.9cqw/1.25 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; }
+.deco { display: flex; align-items: center; gap: 1.6cqw; height: 2.6cqw; }
+.plus { position: relative; width: 2.4cqw; height: 2.4cqw; flex: none; }
+.plus::before, .plus::after { content: ""; position: absolute; background: var(--ink); }
+.plus::before { left: 50%; top: 0; bottom: 0; width: 0.3cqw; margin-left: -0.15cqw; }
+.plus::after { top: 50%; left: 0; right: 0; height: 0.3cqw; margin-top: -0.15cqw; }
+.rule { flex: 1; height: 0.3cqw; background: var(--ink); }
+.ticks { width: 22cqw; height: 1.6cqw; background: repeating-linear-gradient(90deg, var(--ink) 0 1px, transparent 1px 1.1cqw); }
+.blocks { display: flex; gap: 0.5cqw; }
+.blocks i { width: 1.4cqw; height: 1.4cqw; background: var(--ink); }
+.blocks i:last-child { background: var(--hot); }
+.code { width: 11cqw; height: 2cqw; background: repeating-linear-gradient(90deg, var(--ink) 0 0.25cqw, transparent 0.25cqw 0.45cqw, var(--ink) 0.45cqw 0.55cqw, transparent 0.55cqw 0.9cqw, var(--ink) 0.9cqw 1.35cqw, transparent 1.35cqw 1.6cqw); }
+.foot { display: flex; justify-content: flex-end; color: var(--mute); }
+
+.cols { display: grid; grid-template-columns: 31cqw 1fr; gap: 4.4cqw; align-items: start; zoom: 1.12; }
+
+.trails { position: relative; display: flex; flex-direction: column; gap: 3.2cqw; padding-top: 1cqw; }
+.scan { position: absolute; left: -1.2cqw; right: 0; height: 0.4cqw; margin-top: -0.2cqw; background: var(--ink); opacity: 0; z-index: 2; }
+.scan::before, .scan::after { content: ""; position: absolute; top: 50%; margin-top: -0.9cqw; border: 0.9cqw solid transparent; }
+.scan::before { left: -0.6cqw; border-left-color: var(--ink); }
+.scan::after { right: -0.6cqw; border-right-color: var(--ink); }
+.trails > .label { margin-bottom: -0.6cqw; }
+.trail { display: flex; flex-direction: column; gap: 1cqw; transition: opacity .4s; }
+.trail.dim { opacity: 0.25; }
+.trail .name { font: 600 1.6cqw/1 var(--mono); letter-spacing: 0.05em; text-transform: uppercase; color: var(--mute); }
+.row { position: relative; width: max-content; display: flex; gap: 1.8cqw; height: 2.2cqw; align-items: center; }
+.row .line { position: absolute; left: 1.1cqw; right: 1.1cqw; top: 50%; height: 0.3cqw; margin-top: -0.15cqw; background: var(--ink); }
+.d { position: relative; z-index: 1; width: 2.2cqw; height: 2.2cqw; flex: none; }
+.d.s { border-radius: 50%; background: var(--ink); }
+.d.x { border-radius: 50%; background: var(--paper); border: var(--bold) solid var(--hot); }
+.d.r { background: var(--ink); }
+.d::after { content: ""; position: absolute; inset: -0.9cqw; border: var(--stroke) solid var(--ink); border-radius: inherit; opacity: 0; transition: opacity .2s; }
+.d.x::after { border-color: var(--hot); inset: -1.3cqw; }
+.d.lit::after { opacity: 0.35; }
+.d.on::after { opacity: 1; }
+
+.links { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 4; pointer-events: none; overflow: visible; }
+.links path { fill: none; stroke: var(--ink); stroke-width: var(--hair); opacity: 0; }
+.links circle { fill: var(--ink); opacity: 0; }
+.links .hot { stroke: var(--hot); }
+.links circle.hot { fill: var(--hot); }
+
+.fly { position: absolute; z-index: 5; width: 2.2cqw; height: 2.2cqw; margin: -1.1cqw 0 0 -1.1cqw; opacity: 0; pointer-events: none; }
+
+.card { position: relative; border: var(--stroke) solid var(--ink); padding: 2.4cqw; display: flex; flex-direction: column; gap: 1.6cqw; }
+.card .top { display: flex; justify-content: space-between; color: var(--mute); }
+.card h1 { margin: 0; padding-bottom: 1.4cqw; border-bottom: var(--hair) solid var(--ink); font: 900 6.4cqw/0.86 var(--display); font-variation-settings: "wdth" 62; text-transform: uppercase; }
+.group { display: flex; flex-direction: column; gap: 1cqw; }
+.group > .label { color: var(--mute); }
+.slot { position: relative; display: grid; grid-template-columns: 6.4cqw 1fr; align-items: center; gap: 1.4cqw; min-height: 3.6cqw; border-bottom: var(--hair) dashed var(--grey); }
+.slot .tag { justify-self: start; opacity: 0; font: 700 1.6cqw/1 var(--mono); letter-spacing: 0.06em; }
+.slot.k-rule .tag { padding: 0.5cqw 0.8cqw; border: var(--stroke) solid var(--ink); }
+.slot.k-lesson .tag { border-color: var(--hot); color: var(--hot); }
+.slot.k-step .tag { font-size: 2cqw; }
+.slot .text { font: 700 2.5cqw/1.15 var(--display); font-variation-settings: "wdth" 78; text-transform: uppercase; }
+.slot::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; background: var(--ink); transform: scaleX(var(--v, 0)); transform-origin: left; }
+.ready { display: flex; justify-content: flex-end; align-items: center; opacity: 0; }
+.ready b { padding: 0.6cqw 1.2cqw; background: var(--ink); color: var(--paper); }
+
+.controls { display: flex; gap: 10px; }
+.controls button { font: 700 13px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--paper); background: transparent; border: 1px solid #5a5a56; padding: 9px 18px; cursor: pointer; }
+.controls button:hover { border-color: var(--hot); color: var(--hot); }
+.controls button:focus-visible { outline: 2px solid var(--hot); outline-offset: 3px; }
+</style>
+</head>
+<body>
+<div class="poster" id="poster">
+  <div class="deco"><i class="plus"></i><span class="rule"></span><span class="ticks"></span><span class="blocks"><i></i><i></i><i></i></span><span class="code"></span><i class="plus"></i></div>
+
+  <div class="cols">
+    <div class="trails" id="trails"><span class="label">Past trails</span><i class="scan" id="scan"></i></div>
+    <div class="card" id="card">
+      <div class="top label"><span>New task</span></div>
+      <h1>Students pay<br>10% less.</h1>
+      <div class="group" id="rules"><span class="label">Rules</span></div>
+      <div class="group" id="steps"><span class="label">Steps</span></div>
+      <div class="ready label"><b>✓ Ready</b></div>
+    </div>
+  </div>
+
+  <svg class="links" id="links"></svg>
+  <div class="foot label">celis.ai</div>
+</div>
+
+<div class="controls">
+  <button id="replay" type="button">Replay</button>
+  <button id="pause" type="button">Pause</button>
+</div>
+
+<script>
+const TRAILS = [
+  { name: "Seniors pay 20% less", dots: "ssxsss" },
+  { name: "Happy hour prices", dots: "srss" },
+  { name: "Login page", dots: "ssxsssss", dim: true },
+  { name: "Coupon codes", dots: "ssr" },
+  { name: "Dark mode", dots: "sssss", dim: true },
+];
+const PICKS = [
+  [0, 0, "step", "Find where prices are set"],
+  [0, 2, "lesson", "Cart has no age: use prices.py"],
+  [1, 1, "rule", "Tests need SHELF_OFFLINE=1"],
+  [0, 3, "step", "Write a test: a student pays 90%"],
+  [3, 2, "rule", "One discount per order"],
+  [0, 4, "step", "Use the rule in prices.py"],
+  [1, 3, "step", "Show the new price on the page"],
+];
+const SCAN = [0.4, 2.0], DIM = 2.0, FIRST = 2.5, EACH = 1.2, LINK = [0.2, 0.8], PER_CHAR = 0.022;
+const READY = FIRST + PICKS.length * EACH + 0.2, CLEAR = [READY + 3, READY + 4], LOOP = READY + 4.6;
+const clamp = (x) => Math.max(0, Math.min(1, x));
+const lin = (t, a, b) => clamp((t - a) / (b - a));
+const ease = (x) => x * x * (3 - 2 * x);
+
+const poster = document.getElementById("poster"), trails = document.getElementById("trails"), scan = document.getElementById("scan");
+const rows = TRAILS.map((tr) => {
+  const el = document.createElement("div");
+  el.className = "trail";
+  el.innerHTML = `<span class="name">${tr.name}</span><div class="row"><i class="line"></i>${[...tr.dots].map((k) => `<i class="d ${k}"></i>`).join("")}</div>`;
+  trails.append(el);
+  return { el, dots: [...el.querySelectorAll(".d")], dim: tr.dim };
+});
+
+let step = 0;
+const slots = PICKS.map(([, , kind, text]) => {
+  const el = document.createElement("div");
+  el.className = `slot k-${kind === "lesson" ? "rule k-lesson" : kind}`;
+  const tag = kind === "step" ? String(++step).padStart(2, "0") : "RULE";
+  el.innerHTML = `<span class="tag">${tag}</span><span class="text"></span>`;
+  document.getElementById(kind === "step" ? "steps" : "rules").append(el);
+  return { el, tag: el.querySelector(".tag"), text: el.querySelector(".text"), full: text };
+});
+
+const ns = "http://www.w3.org/2000/svg", links = document.getElementById("links");
+const wires = PICKS.map(([r, d, kind]) => {
+  const path = document.createElementNS(ns, "path"), tip = document.createElementNS(ns, "circle");
+  path.setAttribute("pathLength", "1");
+  path.setAttribute("class", kind === "lesson" ? "hot" : "");
+  tip.setAttribute("class", kind === "lesson" ? "hot" : "");
+  links.append(path, tip);
+  const fly = document.createElement("i");
+  fly.className = `fly d ${TRAILS[r].dots[d]}`;
+  poster.append(fly);
+  return { path, tip, fly };
+});
+const ready = document.querySelector(".ready");
+
+function box(el) {
+  const p = poster.getBoundingClientRect(), b = el.getBoundingClientRect();
+  return { x: b.left - p.left, y: b.top - p.top, w: b.width, h: b.height };
+}
+
+function paint(t) {
+  const W = poster.clientWidth, H = poster.clientHeight;
+  links.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const clear = ease(lin(t, CLEAR[0], CLEAR[1]));
+
+  const tb = box(trails), first = box(rows[0].el), last = box(rows.at(-1).el);
+  const u = lin(t, SCAN[0], SCAN[1]), s = ease(u), y = first.y + s * (last.y + last.h - first.y);
+  scan.style.opacity = u > 0 && u < 1 ? Math.min(1, u * 8, (1 - u) * 8) : 0;
+  scan.style.top = `${y - tb.y}px`;
+  for (const r of rows) {
+    r.dots.forEach((d) => {
+      const b = box(d);
+      d.classList.toggle("lit", s > 0 && s < 1 && Math.abs(b.y + b.h / 2 - y) < b.h * 1.4);
+    });
+    r.el.classList.toggle("dim", !!r.dim && t >= DIM && t < CLEAR[1]);
+  }
+
+  PICKS.forEach(([r, d], i) => {
+    const at = FIRST + i * EACH, src = rows[r].dots[d], slot = slots[i], w = wires[i];
+    const a = box(src), b = box(slot.tag);
+    const x0 = a.x + a.w, y0 = a.y + a.h / 2, x1 = b.x - poster.clientWidth * 0.012, y1 = b.y + b.h / 2, dx = (x1 - x0) * 0.55;
+    w.path.setAttribute("d", `M${x0} ${y0} C${x0 + dx} ${y0} ${x1 - dx} ${y1} ${x1} ${y1}`);
+    const l = ease(lin(t, at + LINK[0], at + LINK[1])) * (1 - clear);
+    w.path.style.strokeDasharray = `${l} 1`;
+    w.path.style.opacity = l > 0 ? 1 : 0;
+    w.tip.setAttribute("cx", x1); w.tip.setAttribute("cy", y1); w.tip.setAttribute("r", W * 0.006);
+    w.tip.style.opacity = lin(t, at + LINK[1] - 0.05, at + LINK[1] + 0.15) * (1 - clear);
+    src.classList.toggle("on", t >= at && t < at + LINK[1] + 0.3);
+    const f = lin(t, at + LINK[0], at + LINK[1]), moving = f > 0 && f < 1;
+    w.fly.style.opacity = moving ? Math.min(1, f * 6, (1 - f) * 6) : 0;
+    if (moving) {
+      const pt = w.path.getPointAtLength(l * w.path.getTotalLength());
+      w.fly.style.left = `${pt.x}px`;
+      w.fly.style.top = `${pt.y}px`;
+    }
+    const land = at + LINK[1], v = lin(t, land, land + slot.full.length * PER_CHAR) * (1 - clear);
+    slot.tag.style.opacity = lin(t, land, land + 0.2) * (1 - clear);
+    slot.text.textContent = slot.full.slice(0, Math.round(slot.full.length * v));
+    slot.el.style.setProperty("--v", v);
+  });
+  ready.style.opacity = lin(t, READY, READY + 0.3) * (1 - lin(t, CLEAR[0], CLEAR[0] + 0.3));
+}
+
+const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let t0 = performance.now(), paused = still, at = still ? READY + 1 : 0;
+function frame(now) {
+  if (!paused) {
+    at = (now - t0) / 1000;
+    if (at > LOOP) { t0 = now; at = 0; }
+  }
+  paint(at);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+const pauseBtn = document.getElementById("pause");
+document.getElementById("replay").onclick = () => { t0 = performance.now(); at = 0; paused = false; pauseBtn.textContent = "Pause"; };
+pauseBtn.onclick = () => {
+  paused = !paused;
+  if (!paused) t0 = performance.now() - at * 1000;
+  pauseBtn.textContent = paused ? "Play" : "Pause";
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Result Benchmark</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=JetBrains+Mono:wght@400;600;700&display=swap">
+<style>
+/* A square technical poster on grey paper: cost per task, input and output tokens per arm, split into one shot and follow-ups. */
+:root {
+  --paper: #e9e8e3;
+  --ink: #1f1f1d;
+  --mute: #8a8984;
+  --hot: #ff4f1a;
+  --line: #b9b8b2;
+  --soft: #55554f;
+  --ok: #16a05a;
+  --err: #d0262b;
+  --hair: 0.15cqw;
+  --stroke: 0.3cqw;
+  --bold: 0.45cqw;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --display: "Archivo", "Arial Narrow", "Helvetica Neue", sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #2a2a28; color: var(--ink); }
+body { font: 15px/1.5 var(--mono); padding-inline: 16px; padding-block: 24px; display: grid; justify-items: center; }
+
+.poster { position: relative; width: min(100%, 640px); aspect-ratio: 1 / 1; container-type: inline-size; overflow: hidden; background: var(--paper);
+  display: flex; flex-direction: column; justify-content: space-between; padding: 3.2cqw 3.2cqw 2.8cqw; }
+.poster::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.09; mix-blend-mode: multiply; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+.label { font: 600 1.9cqw/1.25 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; }
+.deco { display: flex; align-items: center; gap: 1.6cqw; height: 2.6cqw; }
+.plus { position: relative; width: 2.4cqw; height: 2.4cqw; flex: none; }
+.plus::before, .plus::after { content: ""; position: absolute; background: var(--ink); }
+.plus::before { left: 50%; top: 0; bottom: 0; width: 0.3cqw; margin-left: -0.15cqw; }
+.plus::after { top: 50%; left: 0; right: 0; height: 0.3cqw; margin-top: -0.15cqw; }
+.line { flex: 1; height: 0.3cqw; background: var(--ink); }
+.ticks { width: 22cqw; height: 1.6cqw; background: repeating-linear-gradient(90deg, var(--ink) 0 1px, transparent 1px 1.1cqw); }
+.blocks { display: flex; gap: 0.5cqw; }
+.blocks i { width: 1.4cqw; height: 1.4cqw; background: var(--ink); }
+.blocks i:last-child { background: var(--hot); }
+.code { width: 11cqw; height: 2cqw; background: repeating-linear-gradient(90deg, var(--ink) 0 0.25cqw, transparent 0.25cqw 0.45cqw, var(--ink) 0.45cqw 0.55cqw, transparent 0.55cqw 0.9cqw, var(--ink) 0.9cqw 1.35cqw, transparent 1.35cqw 1.6cqw); }
+.foot { display: flex; justify-content: space-between; color: var(--mute); }
+
+.head { display: flex; align-items: flex-end; justify-content: space-between; gap: 3cqw; }
+.title { margin: 0; font: 900 9.6cqw/0.84 var(--display); font-variation-settings: "wdth" 62; text-transform: uppercase; letter-spacing: -0.01em; }
+.title em { font-style: normal; color: var(--hot); }
+.key { display: flex; flex-direction: column; gap: 1cqw; margin: 0 0 0.6cqw; color: var(--soft); }
+.key span { display: flex; white-space: nowrap; align-items: center; justify-content: flex-end; gap: 1.2cqw; }
+.key i { width: 2.4cqw; height: 1.6cqw; background: var(--ink); }
+.key i.follow, .bar i.follow { background: repeating-linear-gradient(135deg, var(--err) 0 0.5cqw, var(--paper) 0.5cqw 0.8cqw); box-shadow: inset 0 0 0 var(--hair) var(--err); }
+
+.chart { display: flex; flex-direction: column; gap: 2.8cqw; }
+.panel h2 { margin: 0; padding-bottom: 1.2cqw; border-bottom: var(--bold) solid var(--ink); font: 600 1.6cqw/1.2 var(--mono); letter-spacing: 0.05em; text-transform: uppercase; }
+.row { display: grid; grid-template-columns: 19cqw 1fr 15cqw; align-items: center; gap: 1.6cqw; padding: 1.3cqw 0; border-bottom: var(--hair) solid var(--ink); }
+.row b { font: 600 1.8cqw/1.3 var(--mono); }
+.bar { display: flex; height: 4cqw; }
+.bar i { background: var(--ink); }
+.celis .bar i { background: var(--hot); }
+.row output { text-align: right; font: 800 4.2cqw/1 var(--display); font-variation-settings: "wdth" 70; }
+.row small { display: block; margin-top: 0.5cqw; font: 600 1.3cqw/1 var(--mono); letter-spacing: 0.04em; color: var(--err); }
+.celis output { color: var(--hot); }
+.celis small { color: var(--soft); }
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="deco"><i class="plus"></i><span class="line"></span><span class="ticks"></span><span class="blocks"><i></i><i></i><i></i></span><span class="code"></span><i class="plus"></i></div>
+
+  <div class="head">
+    <h1 class="title"><em>0</em> follow-ups.<br><em>33%</em> fewer tokens</h1>
+    <p class="key label"><span>One shot <i></i></span><span>Follow-ups <i class="follow"></i></span></p>
+  </div>
+
+  <div class="chart">
+    <section class="panel">
+      <h2>Cost per task</h2>
+      <div class="row"><b>Claude Code<br>+ CLAUDE.md</b><div class="bar"><i style="width: 84.6%"></i><i class="follow" style="width: 15.4%"></i></div><output>$0.40<small>+$0.06 follow-ups</small></output></div>
+      <div class="row celis"><b>Claude Code<br>+ celis</b><div class="bar"><i style="width: 78.3%"></i></div><output>$0.31<small>no follow-ups</small></output></div>
+    </section>
+    <section class="panel">
+      <h2>Input tokens, with cache</h2>
+      <div class="row"><b>Claude Code<br>+ CLAUDE.md</b><div class="bar"><i style="width: 88.8%"></i><i class="follow" style="width: 11.2%"></i></div><output>7.12M<small>+0.80M follow-ups</small></output></div>
+      <div class="row celis"><b>Claude Code<br>+ celis</b><div class="bar"><i style="width: 66.9%"></i></div><output>4.76M<small>no follow-ups</small></output></div>
+    </section>
+    <section class="panel">
+      <h2>Output tokens</h2>
+      <div class="row"><b>Claude Code<br>+ CLAUDE.md</b><div class="bar"><i style="width: 87.5%"></i><i class="follow" style="width: 12.5%"></i></div><output>93k<small>+12k follow-ups</small></output></div>
+      <div class="row celis"><b>Claude Code<br>+ celis</b><div class="bar"><i style="width: 75.2%"></i></div><output>70k<small>no follow-ups</small></output></div>
+    </section>
+  </div>
+
+  <div class="foot label"><span>Benchmark</span><span>celis.ai</span></div>
+</div>
+</body>
+</html>

@@ -1,6 +1,8 @@
 <h1 align="center">Celis</h1>
 
-<p align="center">A small CLI and a plugin for AI agents which allows them to learn from each other.</p>
+<p align="center">A small CLI and a plugin that remembers every step your AI agent takes and turns its mistakes
+and your corrections into rules. The next session starts with them, so it knows what you already did,
+and it doesn't make the same mistake twice.</p>
 
 <p align="center">
   <a href="https://github.com/celishq/trails/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/celishq/trails"></a>
@@ -89,12 +91,32 @@ New job: students pay 10% less
 ## Early results
 
 > [!NOTE]
-> These numbers come from our early evals, with each job run once. We're still gathering data, so
-> take them as a first look, not a final benchmark.
+> These numbers come from our early evals, with each bench run once. We're still gathering data, so
+> take them as a first look, not a final benchmark. [RESULTS.md](RESULTS.md) has the full setup.
 
-We gave agents 8 real Supabase pull requests that build landing pages, all merged after the
-model's training data. After two of them, the agent got the rules that Supabase's review bots had
-asked for. Then we counted how often the later jobs broke those rules.
+**Say it once, in one project, and it holds in the next one.** We gave agents 10 real Raycast
+extension pull requests, all merged after the model's training data, each in a different extension.
+After the first two, a reviewer gave 5 rules, like "use the `{PR_MERGE_DATE}` placeholder in the
+changelog". Then we counted how often the next 8 jobs, in 8 other extensions, broke them. Each job
+starts in a fresh folder, so a project's `CLAUDE.md` can't carry the rules over.
+
+| Agent                                                | Review rules broken, of 43 | Extra review rounds | Cost for 10 jobs |
+| ---------------------------------------------------- | -------------------------- | ------------------- | ---------------- |
+| Claude Code, Sonnet                                  | 6                          | 6                   | $2.60            |
+| Claude Code, Sonnet, with celis                      | 3                          | 3                   | $2.70            |
+| Claude Code, Haiku                                   | 16                         | 17                  | $0.70            |
+| Claude Code, Haiku, with celis                       | 3                          | 7                   | $0.60            |
+| Claude Code, Opus with Haiku subagents               | 6                          | 5                   | $3.10            |
+| Claude Code, Opus with Haiku subagents, with celis   | 1                          | 1                   | $4.60            |
+
+With celis, Haiku broke fewer rules than Sonnet without it, for a quarter of the cost. And in a team,
+celis gave the rules to each Haiku subagent at its step. Without it, Opus broke 1 rule in the first 4
+later jobs, and 5 in the next 3.
+
+**Say it to Claude Code, and Codex keeps it.** We gave agents 8 real Supabase pull requests that
+build landing pages, all merged after the model's training data. After two of them, the agent got
+the rules that Supabase's review bots had asked for. Then we counted how often the later jobs broke
+those rules.
 
 | Agent                                          | Review rules broken per job | Cost per job |
 | ---------------------------------------------- | --------------------------- | ------------ |
