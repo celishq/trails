@@ -56,6 +56,19 @@ On Opus, sized broke 26% (4%) and 38% (11%), against reminded's 23% (3%) and 32%
 - Opus kept the method with no past agent and ran `celis rules --diff` in 8 to 9 tasks of 8. Its breaks
   are rules it saw.
 
+Tooled (reminded with the past agent, `celis rules --diff` named for the check, and a size line and
+`--page` past 16 KB) broke Sonnet 52% (32%) / 66% (28%) and Opus 36% (21%) / 52% (30%): worse than
+reminded on both.
+
+- Sonnet cut `celis rules` with `head` or `tail` in 35 of 44 calls, against 19 of 43 in reminded. The
+  size line says that the output is long, and `tail` cut that line away with the first rules. `--page`
+  came 5 times in 32 tasks.
+- The check with `--diff` gave the text of only the rules not given before. The rest came as one line of
+  ids, so the agent checked its change against ids.
+- The real-rules bench (5 new tasks on celis-trails, a copy of the real store, an Opus judge over 426
+  rules) found 4 of 37 applying rules broken with the base plugin, 3 of 35 with the new one, and 4 of 37
+  with no memory. Five small tasks cannot tell the arms apart.
+
 - With the notes, Sonnet searched the rules with `celis grep` in 6 to 7 tasks of 8, not 1, and ran
   `celis rules` after a write 7 times, not 0 or 1. It beat pickers at 400 and 1000 rules.
 - Sonnet still lost 55 rules at 1000 rules that it never saw: the harness cut 5 outputs of `celis rules`

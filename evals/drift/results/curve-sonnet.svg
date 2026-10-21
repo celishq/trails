@@ -12,6 +12,7 @@
 <polyline points="50.0,166.7 390.0,104.8" fill="none" stroke="#ffd166" stroke-width="2"/>
 <polyline points="50.0,85.9 390.0,89.7" fill="none" stroke="#ef8354" stroke-width="2"/>
 <polyline points="50.0,50.0 390.0,75.6" fill="none" stroke="#ef476f" stroke-width="2"/>
+<polyline points="50.0,120.3 390.0,85.2" fill="none" stroke="#2ec4b6" stroke-width="2"/>
 <text x="660.0" y="20" text-anchor="middle" font-weight="bold">Replaced rules kept in the old version</text>
 <line x1="490" y1="250" x2="830" y2="250" stroke="#999"/>
 <line x1="490" y1="50" x2="490" y2="250" stroke="#999"/>
@@ -25,6 +26,7 @@
 <polyline points="490.0,239.8 830.0,199.2" fill="none" stroke="#ffd166" stroke-width="2"/>
 <polyline points="490.0,134.2 830.0,123.7" fill="none" stroke="#ef8354" stroke-width="2"/>
 <polyline points="490.0,53.5 830.0,102.6" fill="none" stroke="#ef476f" stroke-width="2"/>
+<polyline points="490.0,155.3 830.0,168.7" fill="none" stroke="#2ec4b6" stroke-width="2"/>
 <text x="1100.0" y="20" text-anchor="middle" font-weight="bold">Input tokens a task (k)</text>
 <line x1="930" y1="250" x2="1270" y2="250" stroke="#999"/>
 <line x1="930" y1="50" x2="930" y2="250" stroke="#999"/>
@@ -38,6 +40,7 @@
 <polyline points="930.0,50.0 1270.0,56.9" fill="none" stroke="#ffd166" stroke-width="2"/>
 <polyline points="930.0,119.5 1270.0,75.5" fill="none" stroke="#ef8354" stroke-width="2"/>
 <polyline points="930.0,169.8 1270.0,143.8" fill="none" stroke="#ef476f" stroke-width="2"/>
+<polyline points="930.0,55.3 1270.0,55.3" fill="none" stroke="#2ec4b6" stroke-width="2"/>
 <text x="50" y="310" fill="#2a9d8f">celis</text>
 <text x="210" y="310" fill="#073b4c">coordinated</text>
 <text x="370" y="310" fill="#118ab2">delegated</text>
@@ -45,4 +48,5 @@
 <text x="690" y="310" fill="#ffd166">reminded</text>
 <text x="850" y="310" fill="#ef8354">sized</text>
 <text x="1010" y="310" fill="#ef476f">taught</text>
+<text x="1170" y="310" fill="#2ec4b6">tooled</text>
 </svg>

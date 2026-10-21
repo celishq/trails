@@ -1,0 +1,7 @@
+[
+  {"id": "grep-limit", "prompt": "Add a `--limit <n>` flag to `celis grep`: it prints at most n of the lines found, then one line that says how many it left out."},
+  {"id": "names-json", "prompt": "Let `celis names` take `--json`: one JSON object a line for each name, with the name, the id of its trail and its project."},
+  {"id": "at-outside", "prompt": "Make `celis step add --at <place>` refuse a place that is an absolute path outside the project's top folder, as a usage error that names the place."},
+  {"id": "tree-day-cap", "prompt": "Make `celis tree --all` show at most 20 trails a day, newest first, and then one line that says how many trails of that day it left out."},
+  {"id": "eval-docs", "prompt": "Add a section to CONTRIBUTING.md that tells a contributor how to add a new eval case under evals/, with the files a case needs, and an example."}
+]
