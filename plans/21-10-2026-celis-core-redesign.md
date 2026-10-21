@@ -119,6 +119,14 @@ Plugin evals, Opus, 3 runs a case (score; main, then this branch): 02-larger-fea
 0.82; the other nine cases 1.00 on both, 11-tidy too. In 08 and 10 the one rule has no path, and the
 index shows only words that two rules use, so it shows none; the past agent no longer brings rules.
 
+The evals then changed: the index shows words that one rule uses; 02 grades the trail and its proofs,
+not the split; 10 checks that the subagent's task holds the rule; 12 has narrow graders; new cases 14
+(a rule with a path), 15 (the check with `--diff`) and 16 (one rule among 300 without paths). The harness
+gives the agent a new repo after the setup, so a setup's project rules fall in another project; the
+setups write `me` rules. Scores (main, then this branch): 02 1.00, 1.00; 08 1.00, 1.00; 10 1.00, 0.59;
+16 1.00, 0.60; 12, 14 and 15 1.00 on this branch. In 10 and 16, main's past agent finds the rule with
+`celis grep`; here the agent searches the index itself and misses it in 2 runs of 3.
+
 - With the notes, Sonnet searched the rules with `celis grep` in 6 to 7 tasks of 8, not 1, and ran
   `celis rules` after a write 7 times, not 0 or 1. It beat pickers at 400 and 1000 rules.
 - Sonnet still lost 55 rules at 1000 rules that it never saw: the harness cut 5 outputs of `celis rules`
