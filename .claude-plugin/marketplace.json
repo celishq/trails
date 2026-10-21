@@ -1,6 +1,7 @@
 {
   "name": "celis",
   "owner": { "name": "Celis" },
+  "description": "Celis: your agent remembers its steps and turns your corrections into rules.",
   "plugins": [
     { "name": "celis", "source": "./plugins/celis", "description": "The celis trail: tasks as trails of steps, and the decisions made at each place." }
   ]
