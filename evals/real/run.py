@@ -9,7 +9,7 @@ Opus judge checks each diff against every live rule of the project and every `me
 
 Each task starts from a new clone of the main checkout's HEAD and a new copy of the store, so the real store is
 never written. Runs live in $REAL_RUNS (default /tmp/celis-real); each task appends one line to
-results/<arm>-<model>.jsonl.
+results/<arm>-<model>.jsonl. The results hold the real rules, so git ignores them.
 """
 
 import argparse
