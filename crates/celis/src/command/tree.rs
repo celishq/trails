@@ -399,8 +399,8 @@ impl Tree<'_> {
     }
 
     /// The mark of `note` with one sign after it: `↻` while it works again after a revision, `˜` when it
-    /// was done otherwise than planned; in a watch, a check drawn stroke by stroke for 2 seconds after
-    /// it was done.
+    /// was done otherwise than planned; in a watch, the spinner on a live session's trail, and a check
+    /// drawn stroke by stroke for 2 seconds after a step was done.
     fn marked(&self, note: Step) -> Styled {
         let flags = Flags::of(note);
         let sign = match note.state() {
@@ -412,6 +412,7 @@ impl Tree<'_> {
             .closed_at()
             .is_some_and(|at| at + FRESH > self.steps.now());
         let mark = match (note.state(), fresh && self.view.spin) {
+            _ if self.spins(note) => self.mark(State::Working),
             (State::Done, true) => {
                 self.spun.set(true);
                 self.until(note.closed_at().unwrap_or_default() + FRESH);
@@ -454,10 +455,16 @@ impl Tree<'_> {
         Styled::from(spans)
     }
 
+    /// Whether `note` is a trail the watch spins as a live session.
+    fn spins(&self, note: Step) -> bool {
+        self.view.spin && note.is_trail() && live(note, self.steps.now())
+    }
+
     /// The look of the lanes that hang from the line `above`: its state's colour, a closed line's green and a
     /// rules line's magenta, as their marks.
     fn lane(&self, above: &str) -> Style {
         match self.steps.get(above) {
+            Some(step) if self.spins(step) => SPINNER,
             Some(step) => lane(step.state()),
             None if above.starts_with(CLOSED) => GREEN,
             None if above.starts_with(RULES) => MAGENTA,

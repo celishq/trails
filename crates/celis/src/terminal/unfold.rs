@@ -64,7 +64,7 @@ pub(crate) fn smooth(x: f64) -> f64 {
 }
 
 /// `x` held between 0 and 1, eased out.
-fn ease(x: f64) -> f64 {
+pub(crate) fn ease(x: f64) -> f64 {
     1.0 - (1.0 - x.clamp(0.0, 1.0)).powi(3)
 }
 
@@ -95,19 +95,33 @@ fn cells(line: &Styled, count: usize) -> Styled {
 
 /// `line` with each colour `alpha` of the way from the background to its own, in true colour.
 fn faded(line: &Styled, alpha: f64) -> Styled {
-    let spans = line.spans.iter().map(|span| {
-        let style = span.style;
-        let dim = style.add_modifier.contains(Modifier::DIM);
-        let fg = blend(rgb(style.fg, dim, true), alpha);
-        let mut look = Style::new()
-            .fg(fg)
-            .add_modifier(style.add_modifier - Modifier::DIM);
-        if style.bg.is_some_and(|c| c != Color::Reset) {
-            look = look.bg(blend(rgb(style.bg, false, false), alpha));
-        }
-        Span::styled(span.content.clone(), look)
-    });
+    let spans = line
+        .spans
+        .iter()
+        .map(|span| Span::styled(span.content.clone(), faded_style(span.style, alpha)));
     Styled::from(spans.collect::<Vec<_>>())
+}
+
+/// `style` with its colours `alpha` of the way from the background to its own, in true colour, dim
+/// as half of the way.
+pub(crate) fn faded_style(style: Style, alpha: f64) -> Style {
+    let dim = style.add_modifier.contains(Modifier::DIM);
+    let fg = blend(rgb(style.fg, dim, true), alpha);
+    let mut look = Style::new()
+        .fg(fg)
+        .add_modifier(style.add_modifier - Modifier::DIM);
+    if style.bg.is_some_and(|c| c != Color::Reset) {
+        look = look.bg(blend(rgb(style.bg, false, false), alpha));
+    }
+    look
+}
+
+/// The true colour `k` of the way from `from` to `to`, each as the demo paints it.
+pub(crate) fn mix(from: Color, to: Color, k: f64) -> Color {
+    let (a, b) = (rgb(Some(from), false, true), rgb(Some(to), false, true));
+    let k = k.clamp(0.0, 1.0);
+    let part = |x: u8, y: u8| (x as f64 + (y as f64 - x as f64) * k).round() as u8;
+    Color::Rgb(part(a.0, b.0), part(a.1, b.1), part(a.2, b.2))
 }
 
 /// The colour `alpha` of the way from the background to `to`.

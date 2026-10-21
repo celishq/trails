@@ -7,6 +7,7 @@ pub mod dude;
 pub mod frame;
 pub mod glyph;
 pub mod ink;
+pub mod legend;
 pub mod live;
 pub mod look;
 pub mod remark;

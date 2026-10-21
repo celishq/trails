@@ -1,6 +1,5 @@
 //! The steps linked to the step of a route: a line each, as the route lists them and as its Markdown.
 
-use crate::command::stats::table::Row;
 use crate::terminal::canvas::{cut, paint, visible, Styled, DIM};
 use crate::terminal::look::look;
 use crate::text::line::time;
@@ -12,7 +11,7 @@ use ratatui::text::Span;
 pub(super) struct Links {
     pub lines: Vec<Styled>,
     pub rows: Vec<Option<String>>,
-    pub table: Vec<Row>,
+    pub table: Vec<Vec<String>>,
     pub picked: Option<usize>,
     row: usize,
     width: usize,
@@ -54,14 +53,11 @@ impl Links {
         ];
         self.lines.push(Styled::from(spans));
         self.rows.push(Some(at.id().to_string()));
-        self.table.push(Row {
-            id: Some(at.id().to_string()),
-            cells: vec![
-                kind.to_string(),
-                at.title().to_string(),
-                at.record().anchor.name.clone(),
-                time(at).unwrap_or("—".into()),
-            ],
-        });
+        self.table.push(vec![
+            kind.to_string(),
+            at.title().to_string(),
+            at.record().anchor.name.clone(),
+            time(at).unwrap_or("—".into()),
+        ]);
     }
 }

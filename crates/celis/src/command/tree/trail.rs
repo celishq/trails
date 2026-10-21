@@ -5,7 +5,7 @@ use super::row::Row;
 use super::{Item, RuleNote, Summary, Tree, RULES};
 use crate::terminal::bar::bar;
 use crate::terminal::canvas::{paint, Styled, BOLD, DIM};
-use crate::terminal::look::{lane, look};
+use crate::terminal::look::{lane, look, SPINNER};
 use crate::text::clock::{stride, took};
 use crate::text::line::plural;
 use celis_trails::{State, Step, Trail};
@@ -67,7 +67,11 @@ impl Tree<'_> {
         let state = note.state();
         let work = self.work(note);
         let summary = self.summary(note, work);
-        let hair = Styled::from(vec![Span::raw("  "), paint(lane(state), "│ ")]);
+        let colour = match self.spins(note) {
+            true => SPINNER,
+            false => lane(state),
+        };
+        let hair = Styled::from(vec![Span::raw("  "), paint(colour, "│ ")]);
         let first = lines.len();
         let mut meta = vec![];
         if !self.grouped || (state.active() && !self.view.watch) {
@@ -94,7 +98,7 @@ impl Tree<'_> {
         self.followed(work, &hair, lines);
         let level = Level::of(Trail::new(note).parts());
         if !(level.active.is_empty() && level.ended.is_empty() && summary.rules.is_empty()) {
-            let rail = vec![Span::raw("  "), paint(lane(state), "│")];
+            let rail = vec![Span::raw("  "), paint(colour, "│")];
             lines.push(Row::Text(Styled::from(rail)));
         }
         self.level(level, summary.rules, &Styled::from("  "), note.id(), lines);

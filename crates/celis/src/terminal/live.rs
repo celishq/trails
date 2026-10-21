@@ -44,6 +44,11 @@ pub(crate) trait Live {
 
     /// Moves as `key` asks on the page it last drew from `model`.
     fn press(&mut self, key: Key, model: &Model, screen: &mut Screen) -> Result<(), Failure>;
+
+    /// Whether the person types into it, so `q` types and does not quit.
+    fn typing(&self) -> bool {
+        false
+    }
 }
 
 /// The wakes of one run: whether records landed, whether the whole store must be read again, the
@@ -58,7 +63,7 @@ struct Batch {
 
 impl Command {
     /// Draws the page `start` makes from the store on the alternate screen, live; with no store, draws
-    /// `empty` and writes nothing until one is made. Ends on an interrupt or `q`.
+    /// `empty` and writes nothing until one is made. Ends on an interrupt or a `q` it does not type.
     pub(crate) fn live<P: Live>(
         &self,
         out: &mut dyn Write,
@@ -73,7 +78,8 @@ impl Command {
             if !self.held()? {
                 screen.draw(out, &[], &empty.lines, None, &empty.keys)?;
                 while !self.held()? {
-                    if let Ok(Wake::Quit) = wakes.1.recv_timeout(Duration::from_millis(250)) {
+                    let wake = wakes.1.recv_timeout(Duration::from_millis(250));
+                    if let Ok(Wake::Quit | Wake::Key(Key::Quit)) = wake {
                         return Ok(());
                     }
                 }
@@ -329,6 +335,7 @@ fn drain(
             Ok(Wake::Rescan) => (batch.landed, batch.linked) = (true, true),
             Ok(Wake::Store(read)) => (batch.landed, batch.store) = (true, Some(read)),
             Ok(Wake::Resize) => (screen.shown, screen.resized) = (vec![], true),
+            Ok(Wake::Key(Key::Quit)) if !page.typing() => return Ok(None),
             Ok(Wake::Key(key)) => {
                 laid = key.lays_out();
                 screen.said = match (&key, &drawn.copy, &drawn.markdown) {

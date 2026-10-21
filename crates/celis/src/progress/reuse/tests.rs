@@ -41,22 +41,23 @@ fn rule(text: &str, at: u64, replaces: Option<&Note>) -> Note {
     .unwrap()
 }
 
-/// Reuse counts the follows of some steps, and their uses of a live rule, not of a replaced one
-/// (`spec/06-reuse.md`, "Uses").
+/// Reuse counts the follows, and the uses of a live rule, not of a replaced one (`spec/06-reuse.md`,
+/// "Uses").
 #[test]
-fn reuse_counts_the_follows_and_live_rule_uses_of_some_steps() {
+fn reuse_counts_the_follows_and_live_rule_uses() {
     let old = rule("old", 1, None);
     let new = rule("new", 2, Some(&old));
     let trail = step("trail", 10, None, &[]);
     let source = step("source", 11, Some(&trail), &[]);
     let both = step("both", 21, Some(&trail), &[&source.id, &new.id, &old.id]);
     let other = step("other", 22, Some(&trail), &[&new.id]);
+    let live = new.id.clone();
     let records = vec![old, new, trail, source, both.clone(), other];
     let steps = Steps::new(&records, 50);
     let rules = Rules::new(&records);
     let reuse = Reuse::new(&steps);
-    let picked = vec![steps.get(&both.id).unwrap()];
-    assert_eq!(reuse.follows_of(&picked), 1);
-    assert_eq!(reuse.uses_of(&picked, &rules), 1);
-    assert_eq!(reuse.uses_of(&steps.all(), &rules), 2);
+    let used = reuse.used(&rules);
+    assert_eq!(reuse.total(), 1);
+    assert_eq!(used.len(), 1);
+    assert_eq!((used[0].0.id.as_str(), used[0].2), (live.as_str(), 2));
 }

@@ -55,7 +55,7 @@ const PHRASES: &[(&str, &str)] = &[
     ("names", "Show the named trails, most used first"),
     ("name", "Name a trail, so other work can use it by its name"),
     ("grep", "Search every trail with grep"),
-    ("stats", "Show which steps and rules later work reused"),
+    ("stats", "Show what later work reused, and how work went"),
     ("report", "Show trails as Markdown for a pull request"),
     ("decide", "Record a rule that later work must keep"),
     (

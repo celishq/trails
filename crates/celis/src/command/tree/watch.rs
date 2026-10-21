@@ -167,7 +167,10 @@ fn press(key: Key, view: &mut View, order: &[Item], named: bool) {
             | Key::Top
             | Key::End
             | Key::Copy
-            | Key::Markdown,
+            | Key::Markdown
+            | Key::Char(_)
+            | Key::Erase
+            | Key::Quit,
             _,
         ) => {}
         (Key::Full, _) => view.full = !view.full,

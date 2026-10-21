@@ -256,7 +256,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "stats",
         usage: &["celis stats [<id>] [--demo]"],
-        summary: "Show each step that later work reused and how often, then each rule that steps followed, then the total. With an id, show what that step reused and what reused it. On a terminal, show them as cards that update as work lands. Changes nothing.",
+        summary: "Show each step that later work reused and how often, then each rule that steps followed, then the total. With an id, show what that step reused and what reused it. On a terminal, show the totals of all time, then the last 14 days against the 14 before: reuse rate, first-pass success, resolved steps and median step time, then Learning, Quality, Output and speed, and Resources, each opened with enter, updating as work lands. Changes nothing.",
         args: &[
             ("<id>", "A step id, or its first 4 or more characters"),
             ("--demo", "Show four weeks of sample trails"),
@@ -338,7 +338,7 @@ pub const VERBS: &[Verb] = &[
         summary: "Show a trail with its state, rules, and steps. With no id, show the active trails and today's trails of every project.",
         args: &[
             ("<id>", "A step id, or its first 4 or more characters"),
-            ("--graph", "Show one trail as a live graph you can replay"),
+            ("--graph", "Show today's trails as live graphs of cards"),
             ("--full", "Show each step's proof, grade, and reason"),
             ("--all", "Show every trail of every project, by day"),
             ("--demo", "Show sample trails in every state"),

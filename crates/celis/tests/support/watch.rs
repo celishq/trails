@@ -163,6 +163,18 @@ impl Watch {
         }
     }
 
+    /// Waits until the newest tree holds `text`, each spinner frame in it read as `⠿`.
+    pub fn until_spun(&mut self, text: &str) {
+        let start = Instant::now();
+        while start.elapsed() < Duration::from_secs(5) {
+            let last = self.trees(Duration::from_millis(50)).pop();
+            if last.is_some_and(|t| still(&t).contains(text)) {
+                return;
+            }
+        }
+        panic!("no {text:?} in {:?}", still(&self.shown(Duration::ZERO)));
+    }
+
     /// Waits until the newest tree holds `text`; the time it took.
     pub fn until(&mut self, text: &str) -> Duration {
         let start = Instant::now();
@@ -288,4 +300,12 @@ fn unboxed(row: String) -> Option<String> {
         }
         _ => Some(row),
     }
+}
+
+/// `text` with each spinner frame read as `⠿`, so a spinning mark compares whatever its frame.
+pub fn still(text: &str) -> String {
+    let frames = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏";
+    text.chars()
+        .map(|c| if frames.contains(c) { '⠿' } else { c })
+        .collect()
 }

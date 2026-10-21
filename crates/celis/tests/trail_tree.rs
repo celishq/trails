@@ -496,9 +496,10 @@ fn tree_demo_prints_every_state_and_writes_nothing() {
     refusal(&o, 2, "usage");
 }
 
-/// `tree <id> --graph` prints the trail as a graph: its title, project and done steps, then each step
-/// right under it as a card in a chain from left to right in the order they were added, its own steps
-/// as cards below it with theirs inside, and the trail's rules; no time.
+/// `tree <id> --graph` prints the trail as a graph: its path, its steps by state with its bar, done of
+/// all and time worked, then each step right under it as a card in a chain from left to right in the
+/// order they were added, a done one closed to its time, an open one with steps under it the bar of
+/// those done, and the trail's rules.
 #[test]
 fn tree_graph_prints_the_trail_as_a_chain_of_cards() {
     let repo = Repo::new();
@@ -523,23 +524,36 @@ fn tree_graph_prints_the_trail_as_a_chain_of_cards() {
     let seal = support::step_note(&repo, &by, Some(&page), "seal", at + 4);
     support::mark_note(&repo, &by, "done", &seal.id, "proof", at + 33);
     support::step_note(&repo, &by, Some(&trail), "footer", at + 6);
-    let printed = printed(&repo, &[short(&trail.id), "--graph"]);
+    let printed: Vec<String> = printed(&repo, &[short(&trail.id), "--graph"])
+        .iter()
+        .map(|line| unnamed(line))
+        .collect();
     let graph = [
-        "◆ build the CRM                                                                     repo · 2/6",
+        "  All trails  ›  📁 repo  ›  ○ build the CRM",
+        "  ────────────────────────────────────────────────────────────────────────────────────────────────────────",
+        "  ✓ 2 done · ○ 4 open                                               ━━━━━━━━━━━━━━━━━━━━━━━━  2/6 · 1m 59s",
         "",
-        "╭──────────────────────────╮     ┌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┐     ┌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┐",
-        "│ ✓ colours                │     ╎ ○ customers page         ╎     ╎ ○ footer                 ╎",
-        "│                          │┄┄┄┄▶╎ ▰▰▰▱▱▱▱▱▱▱ 1/3           ╎┄┄┄┄▶╎                          ╎",
-        "╰──────────────────────────╯     └┬╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┘     └╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┘",
-        "                                  │ ┌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┐",
-        "                                  ├─╎ ○ badge               ╎",
-        "                                  │ ╎ ○ badge icon          ╎",
-        "                                  │ └╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┘",
-        "                                  │ ╭───────────────────────╮",
-        "                                  └─│ ✓ seal                │",
-        "                                    ╰───────────────────────╯",
+        "  ╭─ ✓ <id> ────────╮   ╭╌ ▸ ○ <id> ╌╌╌╌╌╌╮   ╭╌ ○ <id> ╌╌╌╌╌╌╌╌╮",
+        "  │ colours             │   ╎ customers page      ╎   ╎ footer              ╎",
+        "  │              1m 30s │┄┄▶╎                     ╎┄┄▶╎                     ╎",
+        "  ╰─────────────────────╯   ╎ ━━━━━━━━━━━━ 1/3    ╎   ╎ open                ╎",
+        "                            ╰╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╯   ╰╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╯",
         "",
-        "§ colours are tokens",
+        "  ╭─ § Rules 1 ──────────────────────────────────────────────────────────────────────────────────────────╮",
+        "  │ § <id>  colours are tokens                                                                       │",
+        "  ╰──────────────────────────────────────────────────────────────────────────────────────────────────────╯",
     ];
     assert_eq!(printed, graph);
+}
+
+/// `line` with each id of 8 hex digits as `<id>`.
+fn unnamed(line: &str) -> String {
+    let words =
+        line.split(' ').map(
+            |w| match w.len() == 8 && w.chars().all(|c| c.is_ascii_hexdigit()) {
+                true => "<id>",
+                false => w,
+            },
+        );
+    words.collect::<Vec<_>>().join(" ")
 }

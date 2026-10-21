@@ -1,6 +1,7 @@
 //! What a watch draws on the terminal, and what it reads from it.
 
 use super::canvas::{clip, line, Styled, DIM};
+use super::legend::legend;
 use super::remark::Remark;
 use super::wake::{keys, signals, Key, Wake};
 use crate::command::Command;
@@ -92,7 +93,8 @@ impl Screen {
     /// Draws `head` then `lines` over the screen from the top left, the whole screen cleared first after
     /// a resize, each row only when it changed: each line cut short of the last column and cleared to its
     /// end, the rows under `head` and above the last scrolled to show its `picked` line when the
-    /// selection moved, `keys` or what the last key did on the last row, dim, and the rest cleared.
+    /// selection moved, the key line `keys`, its keys bold, or what the last key did on the last row, dim,
+    /// and the rest cleared.
     pub fn draw(
         &mut self,
         out: &mut dyn Write,
@@ -116,10 +118,12 @@ impl Screen {
                 screen.extend_from_slice(lines);
             }
         }
-        let said = self.said.as_deref().unwrap_or(keys);
         let last = rows.map(|r| r - 1).filter(|&k| k >= screen.len());
         screen.resize(last.unwrap_or(screen.len()), Styled::default());
-        screen.push(Styled::from(Span::styled(said.to_string(), DIM)));
+        screen.push(match &self.said {
+            Some(said) => Styled::from(Span::styled(said.to_string(), DIM)),
+            None => legend(keys),
+        });
         let screen: Vec<String> = screen
             .iter()
             .map(|l| match width {

@@ -11,7 +11,7 @@ Usage
 
 Read
   tree [<id>]         Show your trails and their steps
-  ├ --graph           Show one trail as a live graph you can replay
+  ├ --graph           Show today's trails as live graphs of cards
   ├ --full            Show each step's proof, grade, and reason
   ├ --all             Show every trail of every project, by day
   └ --demo            Show sample trails in every state
@@ -20,7 +20,7 @@ Read
   └ --limit <n>       Show the first <n> only
 
   grep <pattern>      Search every trail with grep
-  stats [<id>]        Show which steps and rules later work reused
+  stats [<id>]        Show what later work reused, and how work went
   └ --demo            Show four weeks of sample trails
 
   report <id>...      Show trails as Markdown for a pull request

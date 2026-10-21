@@ -37,8 +37,9 @@ fn watch_prints_the_tree_again_when_a_record_lands() {
 #[test]
 fn watch_prints_the_tree_again_only_when_it_changes() {
     let repo = Repo::new();
-    let trail = add(&repo, &["--", "the trail"]);
-    finish(&repo, &trail[..8]);
+    let (by, at) = (support::account(), support::now() - 3_600);
+    let trail = support::step_note(&repo, &by, None, "the trail", at).id;
+    support::mark_note(&repo, &by, "done", &trail, "proof", at + 1);
     let mut watch = Watch::start(&repo, &["tree", &trail[..8]]);
     watch.until("✓  the trail");
     let shown = watch.trees(Duration::from_millis(1200)).len();
@@ -65,7 +66,7 @@ fn watch_with_no_id_prints_what_tree_prints() {
     assert!(o.status.success(), "{}", err(&o));
     watch.until("the shop trail");
     finish(&repo, &first[..8]);
-    watch.until("✓  the first trail");
+    watch.until_spun("⠿  the first trail");
 }
 
 /// On a home with no store and no phrase, `tree` on a terminal shows the empty state, writes nothing, and
@@ -275,7 +276,10 @@ fn watch_selects_a_trail_and_opens_it_with_enter() {
     assert!(raw.contains("\x1b[1man ended trail"), "{raw:?}");
     let last = watch.trees(Duration::ZERO).pop().unwrap();
     assert!(last.contains("\r\n▌ │ ▸ ✓  an ended trail"), "{last:?}");
-    assert!(last.contains("\r\n  │ ▾ ○  an active trail"), "{last:?}");
+    assert!(
+        support::watch::still(&last).contains("\r\n  │ ▾ ⠿  an active trail"),
+        "{last:?}"
+    );
     watch.press("\r");
     watch.until("▸ ✓  1 closed step");
     watch.press("\r");
@@ -301,8 +305,13 @@ fn watch_draws_a_run_of_keys_as_one_tree() {
     let title = tenth.find("step ").unwrap() + "step 00".len();
     watch.press(&"\x1b[B".repeat(10));
     watch.until(&format!("▌{}", &tenth[1..title]));
-    let drawn = watch.trees(Duration::from_millis(300)).len() - before;
-    assert!(drawn < 4, "{drawn} trees for 10 keys");
+    let trees = watch.trees(Duration::from_millis(300));
+    let picks: Vec<Option<usize>> = trees[before..]
+        .iter()
+        .map(|t| t.split("\r\n").position(|r| r.starts_with('▌')))
+        .collect();
+    let moves = picks.windows(2).filter(|w| w[0] != w[1]).count();
+    assert!(moves < 4, "{moves} moves of the selection for 10 keys");
 }
 
 /// A spinner tick rewrites only the rows that changed: no row of a step that stands still.
@@ -723,7 +732,11 @@ fn watch_groups_today_by_project_and_shows_more() {
         "{rows:?}"
     );
     assert_eq!(rows[1..4], ["  ", "  📁 repo", "  "], "{rows:?}");
-    assert_eq!(rows[4], "  ▾ ○  the trail", "{rows:?}");
+    assert_eq!(
+        support::watch::still(&rows[4]),
+        "  ▾ ⠿  the trail",
+        "{rows:?}"
+    );
     assert!(!rows.join("\n").contains("an old trail"), "{rows:?}");
     watch.press("\x1b[B\x1b[B");
     watch.until("▌ ▸ Show more");
@@ -918,7 +931,7 @@ fn watch_keeps_a_selection_when_its_line_leaves() {
     watch.press("\x1b[B\x1b[B");
     watch.until("▌ │ ▸ ✓  an old trail");
     watch.press("a");
-    watch.until("▌ │ ▾ ○  the trail");
+    watch.until_spun("▌ │ ▾ ⠿  the trail");
     watch.press("\x1b[B");
     watch.until("▌ ▸ Show more");
 }
@@ -1165,7 +1178,7 @@ fn watch_shows_a_scene_still_when_the_window_widens() {
 }
 
 /// A trail begun days ago with a record in the last half hour is a live session: All shows it first,
-/// in today's box, as a block, though its steps are all done.
+/// in today's box, as a block with the spinner for its mark, though its steps are all done.
 #[test]
 fn watch_shows_a_live_session_on_top_in_all() {
     let repo = Repo::new();
@@ -1191,7 +1204,7 @@ fn watch_shows_a_live_session_on_top_in_all() {
         .unwrap();
     assert!(live < idle, "{rows:?}");
     assert!(
-        rows[live].starts_with("  ▾ ✓  an old live trail"),
+        support::watch::still(&rows[live]).starts_with("  ▾ ⠿  an old live trail"),
         "{rows:?}"
     );
     assert!(rows[0].ends_with(" · 1 active · 0 done"), "{rows:?}");

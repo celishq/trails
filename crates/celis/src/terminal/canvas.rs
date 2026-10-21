@@ -27,6 +27,10 @@ pub(crate) const FRAME: Style = Style::new().fg(Color::Rgb(30, 48, 76));
 pub(crate) const EDGE: Style = Style::new().fg(Color::Rgb(44, 66, 104));
 /// A link the person opens, like `Show more`: a soft blue.
 pub(crate) const LINK: Style = Style::new().fg(Color::Rgb(96, 165, 250));
+/// A second share beside cyan, like a second project's time: a quiet slate.
+pub(crate) const SLATE: Style = Style::new().fg(Color::Rgb(86, 120, 168));
+/// What the person selected: the text's light.
+pub(crate) const LIGHT: Style = Style::new().fg(Color::Rgb(241, 245, 249));
 
 /// `text` in the look `style`.
 pub(crate) fn paint(style: Style, text: &str) -> Span<'static> {

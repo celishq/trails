@@ -57,7 +57,7 @@ pub(crate) const SPUN: &str = "\u{E000}";
 pub(crate) const DRAWN: &str = "\u{E001}";
 
 /// The strokes of a check being drawn, one a frame, before the check itself.
-const STROKES: [&str; 5] = ["⠄", "⢄", "⢤", "⢴", "⢼"];
+pub(crate) const STROKES: [&str; 5] = ["⠄", "⢄", "⢤", "⢴", "⢼"];
 
 /// The mark on a title that shimmers in a view: a bold band runs across it.
 pub(crate) const SHIMMER: Modifier = Modifier::SLOW_BLINK;
