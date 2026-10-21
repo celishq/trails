@@ -63,7 +63,8 @@ decision  json  {"id", "created_at", "project", "scope", "replaces", "content",
   working folder's: `skill:<name>` (CIP-07, "Skill projects"), or a project id that a record of the store
   has, with that record's project name. It MUST refuse any other id as a usage error.
 - `decide` MUST refuse empty text, and a scope that is not `me`, `project`, `trail:<id>` or `at:<place>`,
-  as a usage error; a `trail:<id>` that no open trail of the project has, with `no-trail`; and a
+  as a usage error; a `trail:<id>` that no open trail of the project has, with `no-trail`, unless
+  `--replaces` names a live rule of that trail; and a
   `--replaces` that no live rule of the project, and no live rule of a named trail, has, with
   `no-decision`.
 

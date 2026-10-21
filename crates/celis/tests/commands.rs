@@ -177,6 +177,40 @@ fn decide_refuses_a_trail_the_project_has_not_open() {
     assert!(o.status.success(), "{}", err(&o));
 }
 
+/// `decide` takes `trail:<id>` of a done trail when `--replaces` names a live rule of that trail
+/// (`spec/02-cli.md`, "Commands").
+#[test]
+fn decide_keeps_a_done_trails_scope_when_it_replaces_its_rule() {
+    let repo = Repo::new();
+    let t = now() - 5 * 60;
+    let trail = step_note(&repo, &account(), None, "reached", t);
+    let scope = format!("trail:{}", trail.id);
+    let first = repo.run(
+        &repo.path(),
+        &["decide", "--scope", &scope, "--", WORK],
+        &[],
+        "",
+    );
+    assert!(first.status.success(), "{}", err(&first));
+    let old = String::from_utf8_lossy(&first.stdout).trim().to_string();
+    mark_note(&repo, &account(), "done", &trail.id, "proof", t + 1);
+    let args = ["decide", "--json", "--scope", &scope, "--", WORK];
+    refusal(&repo.run(&repo.path(), &args, &[], ""), 1, "no-trail");
+    let args = [
+        "decide",
+        "--scope",
+        &scope,
+        "--replaces",
+        &old,
+        "--path",
+        "**/*.py",
+        "--",
+        WORK,
+    ];
+    let o = repo.run(&repo.path(), &args, &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+}
+
 /// `decide` refuses a `--replaces` no live rule has, with `no-decision`
 /// (`spec/02-cli.md`, "Commands").
 #[test]
