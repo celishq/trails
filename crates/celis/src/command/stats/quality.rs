@@ -6,6 +6,7 @@ use super::panel::Panel;
 use super::sheet::{Group, Sheet};
 use crate::terminal::canvas::{paint, BOLD, CYAN, DIM, GREEN, RED, YELLOW};
 use crate::terminal::unfold::ease;
+use ratatui::style::Style;
 
 /// The panel of Quality: how the resolved steps of the last 14 days ended.
 pub(super) fn panel() -> Panel {
@@ -17,13 +18,13 @@ pub(super) fn panel() -> Panel {
     }
 }
 
-/// How the resolved steps ended: one bar split by outcome, growing; the status model that adds them up;
-/// and the rework rate with its change, each wrapped to the width; the rows it takes. First-pass success
+/// How the resolved steps ended: one bar split by outcome, growing; under a blank row, the status model
+/// that adds them up and the rework rate with its change, the count and the rate in plain white, each wrapped to the width; the rows it takes. First-pass success
 /// stands on its tile.
 fn resolution(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
     let now = m.now();
     let model: Vec<Group> = [
-        paint(BOLD, &format!("{} resolved", now.resolved())),
+        paint(Style::new(), &format!("{} resolved", now.resolved())),
         paint(DIM, " = "),
         paint(
             GREEN.patch(BOLD),
@@ -53,12 +54,12 @@ fn resolution(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
         (now.expired as f64 * k, DIM),
     ];
     s.stack(x + 2, y + 2, &parts, w - 4);
-    let mut row = y + 3;
+    let mut row = y + 4;
     row += s.flow(x + 2, row, w - 4, &model);
-    let rework = vec![
-        paint(YELLOW.patch(BOLD), &format!("{}%", now.rework_rate())),
-        paint(DIM, " reworked"),
-    ];
+    let rework = vec![paint(
+        Style::new(),
+        &format!("{}% reworked", now.rework_rate()),
+    )];
     let values = (Some(now.rework_rate()), m.before(|o| o.rework_rate()));
     row += s.flow(
         x + 2,

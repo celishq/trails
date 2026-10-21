@@ -465,9 +465,9 @@ fn tree_demo_prints_every_state_and_writes_nothing() {
     let o = repo.run(&repo.path(), &["tree", "--demo"], &env, "");
     assert!(o.status.success(), "{}", err(&o));
     let text = out(&o);
-    let working = text.lines().filter(|l| l.starts_with("◐ ")).count();
+    let working = text.lines().filter(|l| l.starts_with("⠏ ")).count();
     assert!(working >= 2, "{text}");
-    for mark in ["○ ", "◐ ", "✓ ", "✓↻ ", "✗ ", "◌ "] {
+    for mark in ["○ ", "⠏ ", "✓ ", "✓↻ ", "✗ ", "◌ "] {
         assert!(
             text.lines().any(|l| l.trim_start().starts_with(mark)),
             "{mark}: {text}"

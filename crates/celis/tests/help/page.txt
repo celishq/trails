@@ -64,7 +64,7 @@ Set up
   issue [<id>]...     Write a problem report for the celis team
 
 Marks
-  ○ open  ◐ working  ✓ done  ✗ dropped  ◌ expired  ↻ revised  ~ changed  § rule
+  ○ open  ⠏ working  ✓ done  ✗ dropped  ◌ expired  ↻ revised  ~ changed  § rule
 
 celis keeps your recovery phrase and records in $CELIS_HOME.
 

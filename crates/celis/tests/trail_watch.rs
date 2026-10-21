@@ -198,7 +198,6 @@ fn watch_spins_a_working_step_and_says_when_the_trail_was_active() {
         .collect();
     assert!(marks.len() >= 3, "{trees:?}");
     let last = trees.last().unwrap();
-    assert!(!last.contains('◐'), "{last:?}");
     assert!(last.contains("━  0/1 · "), "{last:?}");
 }
 

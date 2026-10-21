@@ -19,7 +19,7 @@ pub(crate) struct Look {
 pub(crate) fn look(state: State) -> Look {
     let (mark, text, title) = match state {
         State::Open => ("○", Style::new(), Style::new()),
-        State::Working => ("◐", CYAN, BOLD),
+        State::Working => (SPIN[SPIN.len() - 1], CYAN, BOLD),
         State::Done => ("✓", GREEN, Style::new()),
         State::Dropped => ("✗", RED, DIM),
         State::Expired => ("◌", DIM, DIM),

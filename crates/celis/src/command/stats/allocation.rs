@@ -18,30 +18,9 @@ pub(super) fn panel() -> Panel {
     }
 }
 
-/// The groups that name a project's `rework` and `dropped` seconds, each kept whole.
-fn losses(rework: u64, dropped: u64) -> Vec<Group> {
-    let mut groups = vec![];
-    if rework > 0 {
-        groups.push(vec![
-            paint(YELLOW.patch(BOLD), &minutes(rework)),
-            paint(DIM, " rework"),
-        ]);
-    }
-    if dropped > 0 {
-        let lead = if rework > 0 { "  ·  " } else { "" };
-        groups.push(vec![
-            paint(DIM, lead),
-            paint(RED.patch(BOLD), &minutes(dropped)),
-            paint(DIM, " dropped"),
-        ]);
-    }
-    groups
-}
-
 /// Allocation: the active time with its change, the time lost to rework and to dropped work with their
 /// shares; then each project's time as one bar of productive, rework and dropped time, growing, with
-/// its time and share, and under a project that lost time its rework and dropped minutes; the rows it
-/// takes.
+/// its time and share; the rows it takes.
 fn allocation(s: &mut Sheet, m: &Moment, _: u16, y: u16, w: u16) -> u16 {
     let month = m.month;
     let total = month.time();
@@ -107,9 +86,6 @@ fn allocation(s: &mut Sheet, m: &Moment, _: u16, y: u16, w: u16) -> u16 {
         let text = format!("{:>7}  {}%", minutes(project.active), share(project.active));
         s.put(w + 3 - tail, row, &text, Style::new());
         row += 1;
-        if project.rework > 0 || project.dropped > 0 {
-            row += s.flow(16, row, w - 16, &losses(project.rework, project.dropped));
-        }
     }
     row - y + 2
 }

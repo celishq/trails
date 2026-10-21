@@ -97,7 +97,7 @@ fn opened_sections_show_their_details() {
         "DAILY ACTIVITY",
         "ALLOCATION · active time",
         "📁 shop",
-        "20m rework  ·  4m dropped",
+        "20m rework 67%  ·  4m dropped 13%",
     ] {
         assert!(text.contains(part), "{part:?} in\n{text}");
     }
