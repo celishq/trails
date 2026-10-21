@@ -11,6 +11,8 @@
 <polyline points="50.0,173.4 134.5,156.4 262.2,73.2 346.7,51.0" fill="none" stroke="#2a9d8f" stroke-width="2"/>
 <polyline points="50.0,168.2 134.5,169.5 262.2,145.7 346.7,112.8 390.0,50.0" fill="none" stroke="#e76f51" stroke-width="2"/>
 <polyline points="50.0,104.1 134.5,86.1 262.2,155.7 346.7,128.2" fill="none" stroke="#8ac926" stroke-width="2"/>
+<polyline points="262.2,133.8 346.7,112.6" fill="none" stroke="#ef476f" stroke-width="2"/>
+<polyline points="262.2,134.2 346.7,77.2" fill="none" stroke="#06d6a0" stroke-width="2"/>
 <text x="660.0" y="20" text-anchor="middle" font-weight="bold">Replaced rules kept in the old version</text>
 <line x1="490" y1="250" x2="830" y2="250" stroke="#999"/>
 <line x1="490" y1="50" x2="490" y2="250" stroke="#999"/>
@@ -23,6 +25,8 @@
 <polyline points="490.0,229.3 574.5,200.0 702.2,175.9 786.7,116.7" fill="none" stroke="#2a9d8f" stroke-width="2"/>
 <polyline points="490.0,128.6 574.5,107.1 702.2,84.5 786.7,92.9 830.0,50.0" fill="none" stroke="#e76f51" stroke-width="2"/>
 <polyline points="490.0,131.5 574.5,161.1 702.2,192.9 786.7,177.3" fill="none" stroke="#8ac926" stroke-width="2"/>
+<polyline points="702.2,236.2 786.7,236.7" fill="none" stroke="#ef476f" stroke-width="2"/>
+<polyline points="702.2,250.0 786.7,250.0" fill="none" stroke="#06d6a0" stroke-width="2"/>
 <text x="1100.0" y="20" text-anchor="middle" font-weight="bold">Input tokens a task (k)</text>
 <line x1="930" y1="250" x2="1270" y2="250" stroke="#999"/>
 <line x1="930" y1="50" x2="930" y2="250" stroke="#999"/>
@@ -35,7 +39,11 @@
 <polyline points="930.0,144.5 1014.5,136.4 1142.2,122.8 1226.7,127.2" fill="none" stroke="#2a9d8f" stroke-width="2"/>
 <polyline points="930.0,211.6 1014.5,201.7 1142.2,151.0 1226.7,85.4 1270.0,50.0" fill="none" stroke="#e76f51" stroke-width="2"/>
 <polyline points="930.0,133.3 1014.5,115.0 1142.2,61.6 1226.7,128.3" fill="none" stroke="#8ac926" stroke-width="2"/>
+<polyline points="1142.2,148.0 1226.7,131.3" fill="none" stroke="#ef476f" stroke-width="2"/>
+<polyline points="1142.2,171.0 1226.7,175.6" fill="none" stroke="#06d6a0" stroke-width="2"/>
 <text x="50" y="310" fill="#2a9d8f">celis</text>
 <text x="210" y="310" fill="#e76f51">CLAUDE.md</text>
 <text x="370" y="310" fill="#8ac926">pickers</text>
+<text x="530" y="310" fill="#ef476f">taught</text>
+<text x="690" y="310" fill="#06d6a0">triggered</text>
 </svg>

@@ -21,6 +21,8 @@
 <polyline points="50.0,187.1 134.5,178.6 262.2,165.0 346.7,92.8 390.0,58.1" fill="none" stroke="#6a4c93" stroke-width="2"/>
 <polyline points="50.0,194.2 134.5,188.6 262.2,159.9 346.7,80.3 390.0,65.9" fill="none" stroke="#1982c4" stroke-width="2"/>
 <polyline points="50.0,117.5 134.5,116.6 262.2,94.0 346.7,73.5 390.0,59.1" fill="none" stroke="#f72585" stroke-width="2"/>
+<polyline points="262.2,111.9 346.7,89.7" fill="none" stroke="#ef476f" stroke-width="2"/>
+<polyline points="262.2,188.3 346.7,121.1" fill="none" stroke="#06d6a0" stroke-width="2"/>
 <text x="660.0" y="20" text-anchor="middle" font-weight="bold">Replaced rules kept in the old version</text>
 <line x1="490" y1="250" x2="830" y2="250" stroke="#999"/>
 <line x1="490" y1="50" x2="490" y2="250" stroke="#999"/>
@@ -43,6 +45,8 @@
 <polyline points="490.0,228.5 574.5,214.2 702.2,181.0 786.7,96.6 830.0,81.2" fill="none" stroke="#6a4c93" stroke-width="2"/>
 <polyline points="490.0,227.0 574.5,218.2 702.2,188.6 786.7,146.6 830.0,88.9" fill="none" stroke="#1982c4" stroke-width="2"/>
 <polyline points="490.0,178.4 574.5,188.6 702.2,178.4 786.7,104.2 830.0,106.8" fill="none" stroke="#f72585" stroke-width="2"/>
+<polyline points="702.2,194.3 786.7,173.3" fill="none" stroke="#ef476f" stroke-width="2"/>
+<polyline points="702.2,227.0 786.7,202.3" fill="none" stroke="#06d6a0" stroke-width="2"/>
 <text x="1100.0" y="20" text-anchor="middle" font-weight="bold">Input tokens a task (k)</text>
 <line x1="930" y1="250" x2="1270" y2="250" stroke="#999"/>
 <line x1="930" y1="50" x2="930" y2="250" stroke="#999"/>
@@ -65,6 +69,8 @@
 <polyline points="930.0,152.2 1014.5,133.8 1142.2,114.6 1226.7,147.2 1270.0,154.9" fill="none" stroke="#6a4c93" stroke-width="2"/>
 <polyline points="930.0,140.4 1014.5,127.8 1142.2,146.9 1226.7,103.8 1270.0,136.6" fill="none" stroke="#1982c4" stroke-width="2"/>
 <polyline points="930.0,180.2 1014.5,169.4 1142.2,139.5 1226.7,153.1 1270.0,161.6" fill="none" stroke="#f72585" stroke-width="2"/>
+<polyline points="1142.2,181.4 1226.7,174.3" fill="none" stroke="#ef476f" stroke-width="2"/>
+<polyline points="1142.2,196.9 1226.7,181.6" fill="none" stroke="#06d6a0" stroke-width="2"/>
 <text x="50" y="310" fill="#2a9d8f">celis</text>
 <text x="210" y="310" fill="#8338ec">jit</text>
 <text x="370" y="310" fill="#3a0ca3">merged</text>
@@ -78,4 +84,6 @@
 <text x="1650" y="310" fill="#6a4c93">scoped</text>
 <text x="1810" y="310" fill="#1982c4">scopedrank</text>
 <text x="1970" y="310" fill="#f72585">staged</text>
+<text x="2130" y="310" fill="#ef476f">taught</text>
+<text x="2290" y="310" fill="#06d6a0">triggered</text>
 </svg>

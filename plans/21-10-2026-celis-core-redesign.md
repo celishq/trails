@@ -18,6 +18,20 @@ All numbers come from `evals/drift` (8 tasks, 1 run each arm) and from a copy of
 | pickers (Haiku reads all rules)      | 35%              | 33%             | 45%               | 43%              |
 | triggered (hook at each action)      | 22%              | 26%             | 61%               | 62%              |
 
+After the build (2026-10-21, the same tasks, 1 run each arm):
+
+| Arm                                      | 400 rules, Haiku | 400 rules, Opus | 1000 rules, Haiku | 1000 rules, Opus |
+| ---------------------------------------- | ---------------- | --------------- | ----------------- | ---------------- |
+| triggered on `celis rules` (cap 5, rank) | 29% broken       | 41%             | 60%               | 61%              |
+| taught (the card and the query, no hook) | 64%              | 41%             | 74%               | 48%              |
+
+- Each broken rule of the triggered arm at 400 rules was a rule the agent never got. One Python write
+  matches about 100 drift rules, and the cap gives 5 a call, so a session got 60 to 150 of them. The
+  old hook gave about 9000 characters a call (40 to 60 rules).
+- With the rank, triggered kept no old version of a replaced rule on Opus (0% at 400 and 1000).
+- On Opus at 1000 rules, the taught arm broke fewer rules than triggered (48% to 61%).
+- Raycast, Sonnet, 1 run: the new plugin broke 2% of 43 rule checks, today's plugin 7%.
+
 - At 400 rules, triggered kept the old version of a replaced rule 4% of the time. The other arms kept it
   11% to 46% of the time.
 - At 1000 rules, triggered gave about 300 rules a task. All drift rules are Python conventions, so all of
@@ -270,6 +284,8 @@ Result: `/celis:tidy` proposes where rules belong, and fixes the triggers that m
 - Full hooks for Codex, Gemini CLI and Cursor. On them, the card teaches the query.
 - The scaffold off for a model. A later release decides it from the `taught` arm.
 - Rebalanced caps. The caps stay fixed until a bench or real use shows a better pair.
+- Stats from the log. `celis stats` counts the rules an ask used from its `uses` tags. A later release
+  makes it count the rules given from the log, and show the misses of each day.
 
 ## Open questions
 
