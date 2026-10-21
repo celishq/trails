@@ -33,7 +33,8 @@ checked; 4 of those replaced an older version that the memory may still hold.
          before done), words (checked, with no triggers: the agent finds the rules by their words with
          celis grep), quiet (checked, with no note at step add or step start), nodiff (checked, with
          celis rules on the files git names changed in place of --diff), paths (checked, with
-         triggers of paths only: no content and no command)
+         triggers of paths only: no content and no command), final (the design that ships: paths only,
+         no notes, and the past agent bringing rules; from $CELIS_BIN and $CELIS_PLUGIN)
 
 Each task starts from a new copy of seed/ and a new copy of the memory, so tasks are independent and run in
 parallel. Each task appends one line to results/<arm>-<model>-r<N>.jsonl; with --again the lines join those of the
@@ -69,7 +70,7 @@ PICKS = ("picked", "pickers", "pickers50", "merged", "staged")
 JITS = ("jit", "narrow", "ranked", "scoped", "scopedrank", *PICKS)
 OWN = ("pull",)
 TRIGGERED = ("taught", "delegated", "coordinated", "reminded", "sized", "tooled", "full", "checked", "words", "quiet",
-             "nodiff", "paths")
+             "nodiff", "paths", "final")
 UNTRIGGERED = ("words",)
 STORED = ("celis", "placed", *JITS, *OWN, *TRIGGERED)
 FIXED = {"GIT_AUTHOR_DATE": "2026-01-01T00:00:00Z", "GIT_COMMITTER_DATE": "2026-01-01T00:00:00Z"}
@@ -222,7 +223,7 @@ def agent(arm, model, work, home, prompt, log):
         env["CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD"] = "1"
         flags += ["--add-dir", str(home / "user")]
     if arm in ("celis", "placed", *JITS, "delegated", "coordinated", "reminded", "sized", "tooled", "full", "checked", "words",
-               "quiet", "nodiff", "paths"):
+               "quiet", "nodiff", "paths", "final"):
         flags += ["--plugin-dir", str(plugin(home, arm)) if arm in PICKS
                   else os.environ.get("CELIS_PLUGIN", str(ROOT / "plugins" / "celis"))]
     start = time.time()
