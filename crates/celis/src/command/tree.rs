@@ -79,7 +79,12 @@ impl Command {
         let steps = model.steps;
         let chosen: Vec<Step> = match (id, view.all) {
             (Some(id), _) => vec![steps.find(id)?],
-            (None, true) => steps.roots().into_iter().rev().collect(),
+            (None, true) => {
+                let roots = steps.roots().into_iter().rev();
+                let (live, rest): (Vec<Step>, Vec<Step>) =
+                    roots.partition(|s| view.watch && live(*s, steps.now()));
+                live.into_iter().chain(rest).collect()
+            }
             (None, false) => today(steps),
         };
         let tree = Tree {
@@ -128,6 +133,13 @@ pub(crate) fn today<'a>(steps: &'a Steps<'a>) -> Vec<Step<'a>> {
     roots
         .filter(|s| s.state().active() || s.newest() >= midnight)
         .collect()
+}
+
+/// Whether the trail `note` is a live session at `now`: active, or not dropped with a record in the
+/// last `LIFE` seconds, as when its agent just answered and waits for the person.
+pub(crate) fn live(note: Step, now: u64) -> bool {
+    let recent = now.saturating_sub(note.newest()) < LIFE && note.state() != State::Dropped;
+    note.state().active() || recent
 }
 
 /// How a tree shows: in a watch, with a cursor column; full; all with no id; and in a watch, with the
@@ -246,7 +258,7 @@ impl Tree<'_> {
         }
         let mut days: Vec<(u64, String, Vec<Step>)> = vec![];
         for &note in notes {
-            let at = match self.view.all {
+            let at = match self.view.all && !(self.view.watch && live(note, self.steps.now())) {
                 true => note.note().created_at,
                 false => self.steps.now(),
             };

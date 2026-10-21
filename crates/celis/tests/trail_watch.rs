@@ -258,9 +258,10 @@ fn watch_names_its_keys_and_quits_on_q() {
 #[test]
 fn watch_selects_a_trail_and_opens_it_with_enter() {
     let repo = Repo::new();
-    let ended = add(&repo, &["--", "an ended trail"]);
-    let part = add(&repo, &["--under", &ended[..8], "--", "its part"]);
-    finish(&repo, &part[..8]);
+    let (by, at) = (support::account(), support::now() - 3_600);
+    let ended = support::step_note(&repo, &by, None, "an ended trail", at);
+    let part = support::step_note(&repo, &by, Some(&ended), "its part", at + 1);
+    support::mark_note(&repo, &by, "done", &part.id, "proof", at + 2);
     add(&repo, &["--", "an active trail"]);
     let mut watch = Watch::start(&repo, &["tree"]);
     watch.until("an ended trail");
@@ -736,9 +737,11 @@ fn watch_groups_today_by_project_and_shows_more() {
 fn watch_cuts_long_titles_to_the_width() {
     let repo = Repo::new();
     let words = "one two three four five six seven eight nine ten eleven twelve";
-    let done = add(&repo, &["--", &format!("done trail {words}")]);
-    let part = add(&repo, &["--under", &done[..8], "--", "its part"]);
-    finish(&repo, &part[..8]);
+    let (by, at) = (support::account(), support::now() - 3_600);
+    let title = format!("done trail {words}");
+    let done = support::step_note(&repo, &by, None, &title, at);
+    let part = support::step_note(&repo, &by, Some(&done), "its part", at + 1);
+    support::mark_note(&repo, &by, "done", &part.id, "proof", at + 2);
     let trail = add(&repo, &["--", "the trail"]);
     add(
         &repo,
@@ -1159,4 +1162,37 @@ fn watch_shows_a_scene_still_when_the_window_widens() {
     watch.size(40, 140);
     watch.until("\\^o^/ |>");
     assert!(!watch.shown(Duration::ZERO).contains("•_•"));
+}
+
+/// A trail begun days ago with a record in the last half hour is a live session: All shows it first,
+/// in today's box, as a block, though its steps are all done.
+#[test]
+fn watch_shows_a_live_session_on_top_in_all() {
+    let repo = Repo::new();
+    let by = support::account();
+    let old = support::now() - 2 * support::DAY;
+    support::step_note(&repo, &by, None, "an old idle trail", old);
+    let trail = support::step_note(&repo, &by, None, "an old live trail", old + 60);
+    let part = support::step_note(&repo, &by, Some(&trail), "its part", old + 61);
+    support::mark_note(&repo, &by, "done", &part.id, "proof", support::now() - 60);
+    let mut watch = Watch::start(&repo, &["tree"]);
+    watch.size(40, 80);
+    watch.until("an old live trail");
+    watch.press("a");
+    watch.until("an old idle trail");
+    let rows = watch.rows();
+    let live = rows
+        .iter()
+        .position(|r| r.contains("an old live trail"))
+        .unwrap();
+    let idle = rows
+        .iter()
+        .position(|r| r.contains("an old idle trail"))
+        .unwrap();
+    assert!(live < idle, "{rows:?}");
+    assert!(
+        rows[live].starts_with("  ▾ ✓  an old live trail"),
+        "{rows:?}"
+    );
+    assert!(rows[0].ends_with(" · 1 active · 0 done"), "{rows:?}");
 }

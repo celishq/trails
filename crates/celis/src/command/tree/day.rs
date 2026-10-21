@@ -3,10 +3,11 @@
 
 use super::layout::{self, Group, Key};
 use super::row::Row;
-use super::{Frame, Tree, PROJECT};
+use super::{live, Frame, Tree, PROJECT};
 use crate::failure::Failure;
 use crate::terminal::canvas::{clip, paint, visible, Styled, BOLD, DIM, FRAME};
 use crate::text::clock::weekday;
+use celis_trails::step::steps::LIFE;
 use celis_trails::Step;
 use ratatui::text::Span;
 use std::cell::{Cell, RefCell};
@@ -113,7 +114,11 @@ impl Tree<'_> {
         trails: Vec<Step>,
         out: &mut Vec<Styled>,
     ) -> Result<(), Failure> {
-        let active = trails.iter().filter(|s| s.state().active()).count();
+        let now = self.steps.now();
+        for note in trails.iter().filter(|s| self.view.watch && live(**s, now)) {
+            self.until(note.newest() + LIFE);
+        }
+        let active = trails.iter().filter(|s| self.lively(**s)).count();
         let counts = format!(" · {active} active · {} done", trails.len() - active);
         let boxed = self.view.watch;
         let mut head = vec![paint(BOLD, &weekday(at)), paint(DIM, &counts)];
@@ -165,25 +170,33 @@ impl Tree<'_> {
         }
     }
 
-    /// Adds `trails` in a day's box by project, a project with an active trail first: each after a
-    /// blank line, `📁` and its name, and a blank line, its active trails as blocks first.
+    /// Adds `trails` in a day's box by project, a project with a live trail first: each after a blank
+    /// line, `📁` and its name, and a blank line, its live trails as blocks first.
     fn projects(&self, trails: Vec<Step>, lines: &mut Vec<Row>) {
         let mut projects = by_project(trails);
-        projects.sort_by_key(|(_, trails)| !trails.iter().any(|s| s.state().active()));
+        projects.sort_by_key(|(_, trails)| !trails.iter().any(|s| self.lively(*s)));
         for (name, trails) in projects {
             let (active, rest): (Vec<Step>, Vec<Step>) =
-                trails.into_iter().partition(|s| s.state().active());
+                trails.into_iter().partition(|s| self.lively(*s));
             lines.push(self.gap());
             let title = vec![Span::raw("📁 "), paint(PROJECT, &name)];
             lines.push(Row::Mark(false, Box::new(Row::Text(Styled::from(title)))));
             lines.push(self.gap());
             let mut last = None;
             for note in active {
-                self.trail(note, self.view.full || !self.view.all, &mut last, lines);
+                self.trail(note, true, &mut last, lines);
             }
             for note in rest {
                 self.trail(note, self.view.full, &mut last, lines);
             }
+        }
+    }
+
+    /// Whether `note` heads its day: in a watch while it is a live session, else while it is active.
+    fn lively(&self, note: Step) -> bool {
+        match self.view.watch {
+            true => live(note, self.steps.now()),
+            false => note.state().active(),
         }
     }
 
