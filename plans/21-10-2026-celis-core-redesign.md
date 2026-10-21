@@ -34,6 +34,28 @@ Without hooks (2026-10-21, the same tasks, 1 run each arm; broken, then old in b
 | reminded (coordinated, with notes at step add and step start)                    | —                 | 22% (3%) / 39% (17%) | 23% (3%) / 32% (4%) |
 | pickers                                                 | 35% / 45%         | 30% / 41%         | 33% / 43%         |
 
+The Sonnet numbers above count every check. With the plain Sonnet run, the report now leaves out the 10
+habits Sonnet keeps with no memory, as it does for Haiku and Opus. Broken, then old, on that count:
+
+| Arm (Sonnet)                                                       | 400 rules  | 1000 rules |
+| ------------------------------------------------------------------ | ---------- | ---------- |
+| plain (no memory)                                                  | 96% (100%) | —          |
+| celis today (main's plugin and the installed celis)                | 69% (59%)  | 77% (61%)  |
+| delegated                                                          | 73% (63%)  | 76% (29%)  |
+| coordinated                                                        | 36% (27%)  | 73% (48%)  |
+| reminded                                                           | 33% (3%)   | 58% (17%)  |
+| sized (reminded, no past agent, content rules wait for text, --diff) | 66% (39%)  | 64% (43%)  |
+| pickers                                                            | 45% (50%)  | 61% (68%)  |
+
+On Opus, sized broke 26% (4%) and 38% (11%), against reminded's 23% (3%) and 32% (4%).
+
+- With no past agent, Sonnet added no step in 4 to 5 tasks of 8: it searched, then did the work with no
+  `step add` and no `step start`, so it got no note and checked nothing. With the past agent, it added
+  and started a step in all 16 tasks. The call of the agent held Sonnet in the method; the search itself
+  was not what helped.
+- Opus kept the method with no past agent and ran `celis rules --diff` in 8 to 9 tasks of 8. Its breaks
+  are rules it saw.
+
 - With the notes, Sonnet searched the rules with `celis grep` in 6 to 7 tasks of 8, not 1, and ran
   `celis rules` after a write 7 times, not 0 or 1. It beat pickers at 400 and 1000 rules.
 - Sonnet still lost 55 rules at 1000 rules that it never saw: the harness cut 5 outputs of `celis rules`
