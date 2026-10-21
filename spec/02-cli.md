@@ -233,11 +233,15 @@ echo '{"session_id": "95e9be99", "prompt": "Use the shared Badge."}' | celis pro
 ## Rules
 
 `rules` gives the live rules in scope in the working folder's project (CIP-05) that some files and a
-command match (CIP-05, "Triggers").
+command match (CIP-05, "Triggers"). With no file and no command, it gives the words of those rules.
 
 ```
 line     <id8> <scope> <rule>
+before   given before: <id8>…                         the rules given before in the session
 json     {"id", "scope", "content"}
+         {"given": [<id>…]}
+index    <n> live rules. Their words, by how many rules use each:
+         <word> <n>, …
 given    $CELIS_HOME/given, one JSON object a line:
          {"at", "session", "rule"[, "step"]}          a rule given
          {"at", "session", "rule", "miss": true}      a miss: a rule replaced in the session that was not
@@ -248,15 +252,20 @@ given    $CELIS_HOME/given, one JSON object a line:
 
 - Each `<file>` MUST count as a read of that file, and `<command>` as a shell command. A `<file>` that
   is a folder MUST count as a read of each file that `git ls-files --cached --others --exclude-standard
-  -- <folder>` gives in the project. With no file and no command, `rules` MUST fail with `usage`.
+  -- <folder>` gives in the project.
+- With no file and no command, `rules` MUST print the index of the live rules in scope: each word that two
+  or more of them use before their "because", with how many use it, most used first.
 - A rule with no trigger and no `at:<place>` scope MUST NOT come.
 - `rules` MUST print every rule that matches: first a rule with a `replaces` tag, then a rule that a miss
   line names, then the rest; within each, first those that match a named file (a `path` with no `*` or
   `?`, or an `at:<place>`), then a glob with `content` or a `command`, then a glob with no `content`;
   newest first within each.
 - The session MUST be `--session`, else the session of the environment.
-- In a session, `rules` MUST add a line to `$CELIS_HOME/given` for each rule it prints. The line MUST hold
-  `step`, the id of the oldest working step of the session's open trail in the project, when there is one.
+- In a session, a rule that a line of the session gives MUST print only as its id, on the `before` line
+  after the others.
+- In a session, `rules` MUST add a line to `$CELIS_HOME/given` for each rule it prints in full. The line
+  MUST hold `step`, the id of the oldest working step of the session's open trail in the project, when
+  there is one.
 - `decide --replaces` in a session (CIP-04, "Sessions") MUST add a miss line for the rule it replaces
   when no line of the session gives that rule. A miss line gives no rule.
 - `$CELIS_HOME/given` is no record, and links do not carry it.
@@ -264,6 +273,7 @@ given    $CELIS_HOME/given, one JSON object a line:
 **Examples**
 
 ```
+celis rules
 celis rules shelf/prices.py
 celis rules --session 95e9be99 shelf/prices.py -- "pytest shelf/test_prices.py"
 ```

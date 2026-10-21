@@ -211,7 +211,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "grep",
         usage: &["celis grep <grep option>... <pattern>"],
-        summary: "Search every trail of every project with the system grep. Each trail, step, proof, change, drop reason, and rule is one line with its day, trail, project, kind, and id. Show the lines found under the header of their trail, the trails with the most lines first, at most 8,000 bytes, then the trails cut. Changes nothing.",
+        summary: "Search every trail of every project with the system grep. Each trail, step, proof, change, drop reason, and rule is one line with its day, trail, project, kind, and id. Show every line found under the header of its trail, the trails with the most lines first. Changes nothing.",
         args: &[
             ("<grep option>", "Any option of grep, such as -i, -E, -w, or -A 3"),
             ("<pattern>", "What to find, as grep reads it"),
@@ -292,13 +292,14 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "rules",
         usage: &["celis rules [<file>]... [--session <id>] [-- <command>]"],
-        summary: "Show every rule that the files you will read or change and a command you will run match, the most important first. Changes nothing.",
+        summary: "Show every rule that the files you will read or change and a command you will run match, the most important first; a rule shown before in the session shows as its id. With no file and no command, show the words the rules use, the most used first. Changes nothing.",
         args: &[
             ("<file>", "A file you will read or change"),
             ("--session <id>", "The session, when the environment does not name it"),
             ("<command>", "A shell command you will run"),
         ],
         examples: &[
+            "celis rules",
             "celis rules shelf/prices.py",
             "celis rules shelf/prices.py -- \"pytest shelf/test_prices.py\"",
         ],
