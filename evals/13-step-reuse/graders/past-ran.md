@@ -1,7 +1,7 @@
 ---
 type: tool_used
-tool: Bash
-input_match: celis grep
+tool: Agent
+input_match: past
 min: 1
 arm: with-only
 ---

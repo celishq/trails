@@ -16,7 +16,7 @@ read. What a command shows a person is not part of it.
 ```
 celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--content <regex>] [--command <regex>] [--situation] [--promoted] [--project <id>] -- <text>
                                                        a rule, in its scope
-celis rules [<file>]... [--diff] [--session <id>] [-- <command>]
+celis rules [<file>]... [--diff] [--page <n>] [--session <id>] [-- <command>]
                                                        the rules of some files and a command
 celis name <trail id> <name>                          give a trail a name
 celis names [--limit <n>]                             the named trails, most used first
@@ -222,7 +222,7 @@ Each agent's hooks give their JSON to `prompt`.
 - On a prompt, it MUST write it as CIP-04 "Sessions" states, and print the record's id. On a compaction,
   it MUST write no record and print nothing.
 - A prompt that names a step with `celis step <id>` is a task for that step. With no open trail, `prompt`
-  MUST NOT ask for the past search on it.
+  MUST NOT ask for the past agent on it.
 
 **Examples**
 
@@ -236,12 +236,12 @@ echo '{"session_id": "95e9be99", "prompt": "Use the shared Badge."}' | celis pro
 command match (CIP-05, "Triggers"). With no file and no command, it gives the words of those rules.
 
 ```
+size     <n> rules match (<k> KB); a tool may cut long output: read them with --page 1 to --page <pages>
+page     page <p> of <pages>: rules <first>-<last> of <n>
 line     <id8> <scope> <rule>
 before   given before: <id8>…                         the rules given before in the session
-waiting  <n> more rules may match the text of <file>…; run celis rules again after you write them
 json     {"id", "scope", "content"}
          {"given": [<id>…]}
-         {"waiting": <n>}
 index    <n> live rules. Their words, by how many rules use each:
          <word> <n>, …
 given    $CELIS_HOME/given, one JSON object a line:
@@ -257,8 +257,6 @@ given    $CELIS_HOME/given, one JSON object a line:
   -- <folder>` gives in the project. `--diff` MUST count as a read of each file that `git diff
   --name-only HEAD` and `git ls-files --others --exclude-standard` give in the working folder, and that
   exists.
-- After the others, `rules` MUST print the `waiting` line when a named file does not exist and rules
-  with `content` match it by `path`, with how many.
 - With no file and no command, `rules` MUST print the index of the live rules in scope: each word that two
   or more of them use before their "because", with how many use it, most used first.
 - A rule with no trigger and no `at:<place>` scope MUST NOT come.
@@ -267,6 +265,10 @@ given    $CELIS_HOME/given, one JSON object a line:
   `?`, or an `at:<place>`), then a glob with `content` or a `command`, then a glob with no `content`;
   newest first within each.
 - The session MUST be `--session`, else the session of the environment.
+- When the rules it prints in full take more than 16 KB, `rules` MUST print the `size` line first.
+- With `--page <p>`, `rules` MUST print the `page` line, then only the rules from the `100 × (p - 1) + 1`st
+  to the `100 × p`th that it would print in full. `--page` MUST take a whole number from 1, else fail
+  with `usage`.
 - In a session, a rule that a line of the session gives MUST print only as its id, on the `before` line
   after the others.
 - In a session, `rules` MUST add a line to `$CELIS_HOME/given` for each rule it prints in full. The line
@@ -287,8 +289,8 @@ celis rules --session 95e9be99 shelf/prices.py -- "pytest shelf/test_prices.py"
 
 ## Grep
 
-`grep` gives every trail of every project to the system `grep`, as lines. The plugin's card searches the
-trails with it.
+`grep` gives every trail of every project to the system `grep`, as lines. The plugin's `past.md` searches
+the trails with it, and so does the card.
 
 ```
 view    <yyyy-mm-dd> <trail id8 | -> [<project name>] <kind> <id8> <fields> <text>

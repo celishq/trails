@@ -82,8 +82,7 @@ me                in every project
 
 - On a file call, a rule matches when one of its `path` globs matches the file and its `content`, when
   set, matches the file's text: the new text on a write or an edit, the file's text on a read. A file
-  that does not exist yet matches when one of its `path` globs matches it and the rule has no
-  `content`.
+  that does not exist yet matches when one of its `path` globs matches it, whatever its `content`.
 - On a shell command, a rule matches when its `command` matches the command, or when a file that the
   command names matches as a file call whose text is the command.
 - A rule `at:<place>` counts as a rule with that place as its `path`, which matches as "Reading" states.

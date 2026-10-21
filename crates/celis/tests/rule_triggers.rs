@@ -61,28 +61,20 @@ fn a_read_matches_the_glob_and_the_files_text() {
     assert!(texts(&repo, &["c.rs"]).is_empty());
 }
 
-/// A file that does not exist yet matches a rule by its `path` only when the rule has no `content`
-/// (`spec/05-rules.md`, "Triggers"); `rules` then says how many rules wait for its text
-/// (`spec/02-cli.md`, "Rules").
+/// A file that does not exist yet matches by its `path` alone, whatever its `content`
+/// (`spec/05-rules.md`, "Triggers").
 #[test]
-fn a_file_not_yet_made_matches_only_rules_with_no_content() {
+fn a_file_not_yet_made_matches_by_its_path_alone() {
     let repo = Repo::new();
     decide(
         &repo,
         &["--path", "**/*.py", "--content", "float"],
         "floats",
     );
-    decide(&repo, &["--path", "**/*.py"], "python");
     decide(&repo, &["--path", "*.rs"], "rust");
-    assert_eq!(
-        rules(&repo, &["shelf/new.py"])[1..],
-        ["1 more rules may match the text of shelf/new.py; run celis rules again after you write them"]
-    );
-    assert_eq!(texts(&repo, &["shelf/new.py"])[..1], ["python"]);
-    let json = objects(&repo, &["rules", "shelf/new.py"]);
-    assert_eq!(json.last().unwrap()["waiting"], 1);
-    repo.write("shelf/new.py", "x = float(1)\n");
-    assert_eq!(texts(&repo, &["shelf/new.py"]), ["floats", "python"]);
+    assert_eq!(texts(&repo, &["shelf/new.py"]), ["floats"]);
+    repo.write("shelf/new.py", "x = 1\n");
+    assert!(texts(&repo, &["shelf/new.py"]).is_empty());
 }
 
 /// `--diff` counts as a read of each file git shows changed or new, and not of a deleted one
@@ -99,6 +91,44 @@ fn diff_reads_the_files_git_shows_changed() {
     let mut found = texts(&repo, &["--diff"]);
     found.sort();
     assert_eq!(found, ["markdown", "python"]);
+}
+
+/// Past 16 KB, `rules` first prints how many rules match and how to read them in pages; `--page`
+/// prints one page of 100 rules after its line, and refuses a page that is no whole number from 1
+/// (`spec/02-cli.md`, "Rules").
+#[test]
+fn many_rules_come_with_their_size_and_in_pages() {
+    let repo = Repo::new();
+    let at = support::now() - DAY;
+    let long = "x".repeat(150);
+    for n in 0..120u64 {
+        tagged(
+            &repo,
+            &[("path", "*.md")],
+            &format!("rule {n} {long}"),
+            at + n,
+        );
+    }
+    let all = rules(&repo, &["README.md"]);
+    assert_eq!(all.len(), 121);
+    assert!(
+        all[0].starts_with("120 rules match (") && all[0].ends_with("--page 1 to --page 2"),
+        "{}",
+        all[0]
+    );
+    let second = rules(&repo, &["README.md", "--page", "2"]);
+    assert_eq!(second[0], "page 2 of 2: rules 101-120 of 120");
+    assert_eq!(second.len(), 21);
+    assert!(second[1].contains(" rule 19 "), "{}", second[1]);
+    for page in ["0", "x"] {
+        let o = repo.run(
+            &repo.path(),
+            &["rules", "README.md", "--page", page],
+            &[],
+            "",
+        );
+        assert_eq!(o.status.code(), Some(2), "{o:?}");
+    }
 }
 
 /// A folder counts as a read of each file git gives under it, ignored files left out

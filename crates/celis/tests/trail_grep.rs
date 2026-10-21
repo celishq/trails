@@ -316,7 +316,7 @@ fn grep_prints_numbered_lines_under_their_trail() {
     );
 }
 
-/// `past` writes nothing and prints that it is gone and that the plugin's card searches with
+/// `past` writes nothing and prints that it is gone and that the plugin's `past.md` searches with
 /// `grep`.
 #[test]
 fn past_says_it_is_gone() {
@@ -329,7 +329,7 @@ fn past_says_it_is_gone() {
         "{text}"
     );
     assert!(
-        text.contains("card searches the trails with celis grep"),
+        text.contains("past.md searches the trails with celis grep"),
         "{text}"
     );
     assert!(!repo.store().exists());

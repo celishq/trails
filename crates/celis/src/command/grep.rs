@@ -37,7 +37,7 @@ impl Command {
     pub(crate) fn past(&self, out: &mut dyn Write) -> Result<(), Failure> {
         super::put(
             out,
-            "celis past is gone: update the celis plugin, whose card searches the trails with celis grep.",
+            "celis past is gone: update the celis plugin, whose past.md searches the trails with celis grep.",
         )
     }
 }

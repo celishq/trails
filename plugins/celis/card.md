@@ -1,7 +1,7 @@
 celis keeps each ask as a trail: its steps, their proofs, and the rules that later work must keep.
 
 ```
-celis rules [<file>]... [--diff] [--session <id>] [-- "<command>"]
+celis rules [<file>]... [--diff] [--page <n>] [--session <id>] [-- "<command>"]
 celis grep <grep option>... "<pattern>"
 celis decide [--scope at:<place> | trail:<id> | me] [--replaces <id>] [--path <glob>]... [--content <regex>] [--command <regex>] [--situation] [--promoted] [--project <id>] -- "<rule>"
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>] [--check <command>] [--new] [--session <id>] [--project <id>] -- "<title>"
@@ -13,8 +13,8 @@ celis name <trail id> <name>
 celis tree [<id>] [--graph] [--full] [--all] [--demo]
 ```
 
-1. At a new ask, search for past asks like it when celis asks, even for a simple ask. Then find the
-   rules of the ask, as `step add` says: run `celis rules` for the words the rules use, and search
+1. At a new ask, run the `celis:past` agent when celis asks for it, even for a simple ask. Then find
+   the rules of the ask, as `step add` says: run `celis rules` for the words the rules use, and search
    them with `celis grep -i -E " rule [0-9a-f]{8} live .*(<word>|<word>)"`. Keep each rule in your own
    context. When the ask conflicts with a rule, the ask wins: replace the rule.
 2. An ask that changes a file, however small, or that works toward a result someone can check, gets a
@@ -29,8 +29,8 @@ celis tree [<id>] [--graph] [--full] [--all] [--demo]
    with the most doubt, one level at a time, until a step is one action. Only the step you take next
    gets `--at` and a `--check` that proves it. Add the next step after you close this one.
 4. For each step: `start`, and do what it prints: run `celis rules <files> -- "<command>"` before each
-   change, and before `done`, check your change against the rules of each file you changed. Read all
-   that celis prints: never cut it with `head` or `grep`. Then `done` with a proof a person can check,
+   change, and before `done`, check your change against `celis rules --diff`. Read all that celis
+   prints: never cut it with `head` or `grep`, and read long output with `--page`. Then `done` with a proof a person can check,
    such as a command and its result: `--as-planned` when the result matches `expect`, else
    `--changed`. A wrong step, or a fix to done work, takes `--replaces <id>`. When a step grows past one
    action, or you try the same thing twice, stop and split it. When you give work to a subagent, put in

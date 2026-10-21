@@ -28,11 +28,12 @@ project() {
   printf '%s' "$dir"
 }
 
-# The session of the hook's JSON $1, and where steps.md is under the plugin root $2.
+# The session of the hook's JSON $1, and where steps.md and past.md are under the plugin root $2.
 names() {
   id=$(field "$1" conversation_id)
   [ -n "$id" ] || id=$(field "$1" conversationId)
   [ -n "$id" ] || id=$(field "$1" session_id)
   echo "celis session: $id. Pass --session $id to each celis step add."
   echo "steps.md: $2/steps.md"
+  echo "past.md: $2/agents/past.md"
 }

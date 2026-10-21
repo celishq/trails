@@ -10,6 +10,12 @@ use celis_trails::records::id::short;
 use celis_trails::{Call, Fit, Place, Project, Rule, State, Trails};
 pub(super) use given::Given;
 use index::Index;
+
+/// The most rules a page holds.
+const PAGE: usize = 100;
+
+/// The size past which the output says how many rules match and how to read them in pages.
+const LARGE: usize = 16 * 1024;
 use serde_json::json;
 use std::io::Write;
 use std::path::Path;
@@ -24,6 +30,11 @@ impl Command {
             files.extend(changed(&self.folder));
         }
         let line = args.text.as_deref().filter(|t| !t.trim().is_empty());
+        let page = match args.page.as_deref().map(str::parse::<usize>) {
+            None => None,
+            Some(Ok(p)) if p >= 1 => Some(p),
+            Some(_) => return Err(Failure::usage("--page takes a whole number from 1")),
+        };
         if !self.held()? {
             return Ok(());
         }
@@ -47,20 +58,44 @@ impl Command {
             })
             .collect();
         found.sort_by_key(|(fit, note, rule)| rank(rule, misses.contains(&note.id), *fit));
-        let live = trails.rules().live(&project.anchor.project).into_iter();
-        let waiting = live
-            .filter(|(_, rule)| calls.iter().any(|c| rule.waits(c)))
-            .count();
         let session = args.session.clone().or_else(|| self.session());
         let before = session.as_deref().map(|s| given.of(s)).unwrap_or_default();
         let (old, new): (Vec<_>, Vec<_>) = found
             .iter()
             .partition(|(_, note, _)| before.contains(&note.id));
-        for (_, note, rule) in &new {
-            let object =
-                json!({"id": note.id, "scope": rule.scope.text(), "content": rule.content});
-            let line = crate::text::line::rule(note, rule);
-            super::put(out, &if args.json { object.to_string() } else { line })?;
+        let lines: Vec<String> = new
+            .iter()
+            .map(|(_, note, rule)| match args.json {
+                true => json!({"id": note.id, "scope": rule.scope.text(), "content": rule.content})
+                    .to_string(),
+                false => crate::text::line::rule(note, rule),
+            })
+            .collect();
+        let pages = lines.len().div_ceil(PAGE);
+        let shown = match page {
+            Some(p) => (PAGE * (p - 1)).min(lines.len())..(PAGE * p).min(lines.len()),
+            None => 0..lines.len(),
+        };
+        let bytes: usize = lines.iter().map(|l| l.len() + 1).sum();
+        let head = match page {
+            Some(p) => Some(format!(
+                "page {p} of {pages}: rules {}-{} of {}",
+                shown.start + 1,
+                shown.end,
+                lines.len()
+            )),
+            None if bytes > LARGE => Some(format!(
+                "{} rules match ({} KB); a tool may cut long output: read them with --page 1 to --page {pages}",
+                lines.len(),
+                bytes.div_ceil(1024)
+            )),
+            None => None,
+        };
+        if let Some(head) = head.filter(|_| !args.json) {
+            super::put(out, &head)?;
+        }
+        for line in &lines[shown.clone()] {
+            super::put(out, line)?;
         }
         if !old.is_empty() {
             let ids = old.iter().map(|(_, n, _)| n.id.as_str());
@@ -73,23 +108,8 @@ impl Command {
             };
             super::put(out, &text)?;
         }
-        if waiting > 0 {
-            let missing: Vec<&str> = files
-                .iter()
-                .map(String::as_str)
-                .filter(|f| !self.folder.join(f).exists())
-                .collect();
-            let text = match args.json {
-                true => json!({ "waiting": waiting }).to_string(),
-                false => format!(
-                    "{waiting} more rules may match the text of {}; run celis rules again after you write them",
-                    missing.join(" ")
-                ),
-            };
-            super::put(out, &text)?;
-        }
         if let Some(session) = session {
-            let ids: Vec<&str> = new.iter().map(|(_, n, _)| n.id.as_str()).collect();
+            let ids: Vec<&str> = new[shown].iter().map(|(_, n, _)| n.id.as_str()).collect();
             let step = working(&trails, &project, &session);
             given.give(&session, &ids, step.as_deref(), super::now())?;
         }

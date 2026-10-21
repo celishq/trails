@@ -92,29 +92,14 @@ impl Rule {
         }
     }
 
-    /// Whether the rule waits for the text of `call`: a file not made yet that its path matches, while
-    /// its `content` needs the text.
-    pub fn waits(&self, call: &Call) -> bool {
-        match call {
-            Call::File { path, text: None } if self.trigger.content.is_some() => {
-                self.at_path(path).is_some()
-            }
-            _ => false,
-        }
-    }
-
     /// How narrowly the rule fits a call on the file `path` whose text is `text`.
     fn file(&self, path: &str, text: Option<&str>) -> Option<Fit> {
-        match (self.trigger.content.as_deref(), text) {
-            (Some(content), Some(text)) if !found(content, text) => return None,
-            (Some(_), None) => return None,
-            _ => {}
+        let content = self.trigger.content.as_deref();
+        if let (Some(content), Some(text)) = (content, text) {
+            if !found(content, text) {
+                return None;
+            }
         }
-        self.at_path(path)
-    }
-
-    /// How narrowly the rule's place or globs fit the file `path`, its `content` aside.
-    fn at_path(&self, path: &str) -> Option<Fit> {
         let at = match &self.scope {
             Scope::At(place) => Place::new(place)
                 .meets(Place::new(path))
@@ -126,7 +111,7 @@ impl Rule {
             .filter(|g| g.matches(path))
             .map(|g| match g.is_literal() {
                 true => Fit::Named,
-                false if self.trigger.content.is_some() => Fit::Pattern,
+                false if content.is_some() => Fit::Pattern,
                 false => Fit::Glob,
             });
         at.into_iter().chain(globs).min()
