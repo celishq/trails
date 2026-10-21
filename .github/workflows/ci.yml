@@ -8,8 +8,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Lints and tests the workspace, then installs the build the way a person does, on a clean shell that must
-  # find `celis` on PATH. The build is the runner's own, not the musl release, under the release's name.
+  # Lints and tests the workspace, then installs the build with `install.sh` and finds `celis` from a new shell.
   cli:
     name: CLI and Linux install
     runs-on: ubuntu-latest
@@ -34,8 +33,6 @@ jobs:
           mkdir -p "$RUNNER_TEMP/release/latest/download" "$RUNNER_TEMP/home"
           tar -czf "$RUNNER_TEMP/release/latest/download/$name" -C crates/target/debug celis
           (cd "$RUNNER_TEMP/release/latest/download" && sha256sum "$name" > "$name.sha256")
-      # `env -i` so the runner's own PATH, which may hold ~/.local/bin, proves nothing. Twice, so a second
-      # install adds no second line.
       - name: Install, and find celis in a new shell
         run: |
           set -eu
@@ -48,8 +45,7 @@ jobs:
           env -i HOME="$home" PATH=/usr/bin:/bin sh -lc 'celis --version'
           test "$(grep -c '.local/bin' "$home/.bashrc")" = 1
 
-  # Installs the plugin the way a person does, with each agent's own CLI, on fresh homes. Cursor installs only
-  # from a signed-in session; `make verify` runs its hooks as its manifest declares.
+  # Installs the plugin with the Codex and Gemini CLIs on fresh homes.
   plugins:
     name: Agent plugin install
     runs-on: ubuntu-latest
@@ -77,8 +73,7 @@ jobs:
           gemini extensions install "$GITHUB_WORKSPACE" --consent < /dev/null
           gemini extensions list 2>&1 | grep -F "celis ($(jq -r .version "$GITHUB_WORKSPACE/gemini-extension.json"))"
 
-  # A PR whose manifests carry a version with no tag yet is a release PR. It must be higher than the latest
-  # release, and its release archives must build before the merge can publish them.
+  # Prints the version a release PR would publish, empty for a PR that is no release.
   release-version:
     name: Release version
     runs-on: ubuntu-latest
@@ -98,7 +93,7 @@ jobs:
     with:
       version: ${{ needs.release-version.outputs.version }}
 
-  # The one required check of the release: it passes when the PR is no release, or when its archives built.
+  # Passes when the PR is no release, or when its release archives built.
   release:
     name: Release builds
     needs: [release-version, release-builds]

@@ -1,8 +1,6 @@
 #!/bin/sh
-# On each prompt of the person: `celis prompt` writes it on the session's open trail, and this prints the
-# note it gives about the working step. With no open trail, it names the agent that finds past work; to
-# Codex and Gemini CLI, which do not load it, the note names past.md. $1 names the agent: claude (the
-# default), codex, cursor or gemini.
+# On each prompt: writes the prompt on the session's open trail, and prints the note celis gives the agent.
+# $1 names the agent: claude (the default), codex, cursor or gemini.
 root="$(cd "$(dirname "$0")/.." && pwd)"
 . "$root/hooks/out.sh"
 agent=${1:-claude}

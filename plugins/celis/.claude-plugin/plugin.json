@@ -4,5 +4,6 @@
   "description": "The celis trail for agents: your tasks as trails of graded steps, and the rules learned at each place, loaded at the start of each session.",
   "author": {
     "name": "Celis"
-  }
+  },
+  "license": "MIT"
 }

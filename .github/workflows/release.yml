@@ -1,9 +1,7 @@
 name: Release
 
-# Publishes a release when a merge to main carries a manifest version with no tag yet: the merge of the PR
-# that `make release` opens. It builds the archives from the merge commit, tags it `v<version>`, attests each
-# archive's build, and puts every archive on its GitHub release with `install.sh`. celis.ai serves the
-# `install.sh` of the latest release. A last job installs the release with its own `install.sh` on clean runners.
+# Publishes release `v<version>` when a merge to main carries a manifest version with no tag yet: its attested
+# archives and `install.sh`. A last job installs the release on clean runners.
 
 on:
   push:
