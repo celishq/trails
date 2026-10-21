@@ -43,7 +43,6 @@ impl Command {
                     .collect(),
                 content: args.content.clone(),
                 command: args.command.clone(),
-                tool: args.tool.clone(),
             },
             situation: args.situation,
             promoted: args.promoted,

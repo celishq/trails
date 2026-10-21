@@ -3,7 +3,7 @@ celis keeps each ask as a trail: its steps, their proofs, and the rules that lat
 ```
 celis rules [<file>]... [--session <id>] [-- "<command>"]
 celis grep <grep option>... "<pattern>"
-celis decide [--scope at:<place> | trail:<id> | me] [--replaces <id>] [--path <glob>]... [--content <regex>] [--command <regex>] [--tool <regex>] [--situation] [--promoted] [--project <id>] -- "<rule>"
+celis decide [--scope at:<place> | trail:<id> | me] [--replaces <id>] [--path <glob>]... [--content <regex>] [--command <regex>] [--situation] [--promoted] [--project <id>] -- "<rule>"
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>] [--check <command>] [--new] [--session <id>] [--project <id>] -- "<title>"
 celis step start <id>
 celis step done <id> [--changed "<what differs>"] [--as-planned] [--pitfall "<rule>"] -- "<proof>"
@@ -13,9 +13,9 @@ celis name <trail id> <name>
 celis tree [<id>] [--graph] [--full] [--all] [--demo]
 ```
 
-1. Ask before you act. Run the `celis:past` agent with the ask and the files and commands you will
-   touch, at a new ask, even a simple one, and again when the work moves to other files or commands.
-   Keep each rule it brings. With no such agent, run `celis rules <files> -- "<command>"` yourself
+1. Ask before you act. Run the `celis:past` agent at a new ask, even a simple one, with the ask and the
+   files and commands you will touch. Run it again once you know the files and commands, before the
+   first change, and again when the work moves to others. Keep each rule it brings. With no such agent, run `celis rules <files> -- "<command>"` yourself
    before you change a file or run a command, and search for past asks like this one:
    `celis grep -i -E " (step|rule) [0-9a-f]{8} .*(<word>|<word>)"`, with the words of the ask. A rule
    that no file or command shows comes only from a search:

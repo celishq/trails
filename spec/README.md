@@ -63,7 +63,7 @@ Every change of `spec/` MUST keep these rules:
 | 1985 with `prompt` in `celis.step` | kind: a person's prompt, on the trail (NIP-32) | 04 |
 | 1111 with `decision` in `celis.decision` | kind: a rule (NIP-22) | 05 |
 | `scope` · `replaces` | rule tags | 05 |
-| `path` · `content` · `command` · `tool` | rule tags: the trigger | 05 |
+| `path` · `content` · `command` | rule tags: the trigger | 05 |
 | `situation` · `promoted` in `celis.decision` | rule labels | 05 |
 | `me` · `project` · `trail:<id>` · `at:<place>` | the scopes of a rule | 05 |
 | `uses` | step tag | 06 |
@@ -78,6 +78,7 @@ Every change of `spec/` MUST keep these rules:
 | 1111 in `celis.cairn` · kind 7 · `celis.outcome` · `celis.source` · splits | cairns, ratings, outcomes, sources, splits |
 | a `done` with a `step` tag in place of `e` | a done of a step in the code |
 | `$CELIS_HOME/key` | the key, now the phrase; `auth login` removes it |
+| `tool` | a rule tag: the other tool calls a rule acted on |
 
 ## Words
 

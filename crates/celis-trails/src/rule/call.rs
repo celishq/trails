@@ -2,8 +2,8 @@
 
 use regex::Regex;
 
-/// One tool call that a rule's trigger may match (CIP-05, "Triggers"): a file with its text, when
-/// known, or a shell command with the files it names.
+/// One tool call that a rule's trigger may match (CIP-05, "Triggers"): a file with its text, none
+/// when it does not exist yet, or a shell command with the files it names.
 pub enum Call {
     File { path: String, text: Option<String> },
     Command { line: String, files: Vec<String> },

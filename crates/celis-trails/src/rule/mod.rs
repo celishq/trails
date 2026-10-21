@@ -95,8 +95,10 @@ impl Rule {
     /// How narrowly the rule fits a call on the file `path` whose text is `text`.
     fn file(&self, path: &str, text: Option<&str>) -> Option<Fit> {
         let content = self.trigger.content.as_deref();
-        if content.is_some_and(|c| !text.is_some_and(|t| found(c, t))) {
-            return None;
+        if let (Some(content), Some(text)) = (content, text) {
+            if !found(content, text) {
+                return None;
+            }
         }
         let at = match &self.scope {
             Scope::At(place) => Place::new(place)

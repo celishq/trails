@@ -26,7 +26,7 @@ impl Command {
         let project = self.project();
         let mut calls: Vec<Call> = files
             .iter()
-            .map(|f| read(&project, &self.folder, f))
+            .flat_map(|f| reads(&project, &self.folder, f))
             .collect();
         calls.extend(line.map(|l| command(&project, &self.folder, l)));
         let trails = self.trails()?;
@@ -72,6 +72,32 @@ fn working(trails: &Trails, project: &Project, session: &str) -> Option<String> 
     let mut tree = trail.tree().into_iter().skip(1);
     tree.find(|s| s.state() == State::Working)
         .map(|s| s.id().to_string())
+}
+
+/// A read of the file `file`, given in `folder`, else of each file git gives under it when it is a
+/// folder.
+fn reads(project: &Project, folder: &Path, file: &str) -> Vec<Call> {
+    if !folder.join(file).is_dir() {
+        return vec![read(project, folder, file)];
+    }
+    let listed = std::process::Command::new("git")
+        .args([
+            "ls-files",
+            "-z",
+            "--cached",
+            "--others",
+            "--exclude-standard",
+            "--",
+            file,
+        ])
+        .current_dir(folder)
+        .output();
+    let text = listed.map_or_else(
+        |_| String::new(),
+        |o| String::from_utf8_lossy(&o.stdout).into(),
+    );
+    let files = text.split('\0').filter(|f| !f.is_empty());
+    files.map(|f| read(project, folder, f)).collect()
 }
 
 /// A read of the file `file`, given in `folder`, with its text on disk.

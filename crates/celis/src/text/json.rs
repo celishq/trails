@@ -43,7 +43,6 @@ pub(crate) fn rule(note: &Note, rule: &Rule) -> Value {
             "paths": rule.trigger.paths,
             "content": rule.trigger.content,
             "command": rule.trigger.command,
-            "tool": rule.trigger.tool,
         },
         "situation": rule.situation,
         "promoted": rule.promoted,

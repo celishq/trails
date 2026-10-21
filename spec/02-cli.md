@@ -14,7 +14,7 @@ read. What a command shows a person is not part of it.
 ## Commands
 
 ```
-celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--content <regex>] [--command <regex>] [--tool <regex>] [--situation] [--promoted] [--project <id>] -- <text>
+celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--content <regex>] [--command <regex>] [--situation] [--promoted] [--project <id>] -- <text>
                                                        a rule, in its scope
 celis rules [<file>]... [--session <id>] [-- <command>]
                                                        the rules of some files and a command
@@ -48,7 +48,7 @@ $CELIS_HOME   where celis keeps the phrase and the store
 
 ```
 decision  json  {"id", "created_at", "project", "scope", "replaces", "content",
-                 "trigger": {"paths", "content", "command", "tool"}, "situation", "promoted"}
+                 "trigger": {"paths", "content", "command"}, "situation", "promoted"}
 ```
 
 **Rules**
@@ -57,7 +57,7 @@ decision  json  {"id", "created_at", "project", "scope", "replaces", "content",
 - A flag no command takes is a usage error.
 - `decide` MUST write a rule of the working folder's project (CIP-05), with `--scope` and
   `--replaces` as its tags, and no `scope` tag for `project`; each `--path`, from the project's top
-  folder, as a `path` tag, `--content`, `--command` and `--tool` as their tags, and `--situation` and
+  folder, as a `path` tag, `--content` and `--command` as their tags, and `--situation` and
   `--promoted` as their labels.
 - `--project` on `decide` and `step add` MUST write the records of the project it names in place of the
   working folder's: `skill:<name>` (CIP-07, "Skill projects"), or a project id that a record of the store
@@ -246,8 +246,9 @@ given    $CELIS_HOME/given, one JSON object a line:
 
 **Rules**
 
-- Each `<file>` MUST count as a read of that file, and `<command>` as a shell command. With no file and
-  no command, `rules` MUST fail with `usage`.
+- Each `<file>` MUST count as a read of that file, and `<command>` as a shell command. A `<file>` that
+  is a folder MUST count as a read of each file that `git ls-files --cached --others --exclude-standard
+  -- <folder>` gives in the project. With no file and no command, `rules` MUST fail with `usage`.
 - A rule with no trigger and no `at:<place>` scope MUST NOT come.
 - `rules` MUST print every rule that matches: first a rule with a `replaces` tag, then a rule that a miss
   line names, then the rest; within each, first those that match a named file (a `path` with no `*` or

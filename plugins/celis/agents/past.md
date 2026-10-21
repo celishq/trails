@@ -31,9 +31,11 @@ call, with `-e`: a pipe to another `grep` drops the headers.
 Send in one message each call that does not wait on the output of another.
 
 1. Get the rules of the files, folders and commands of your prompt, in one call:
-   `celis rules <file>... -- "<command>"`, each path from the project's top folder. It prints
-   `<id> <scope> <rule>` a line, the most important first. When the prompt names more commands, or you
-   learn of more files, run it again for them.
+   `celis rules <file>... -- "<command>"`, each path from the project's top folder. A folder gives the
+   rules of each file in it. When the prompt names no file yet, run `celis rules <the folders the ask
+   names>`, else `celis rules .` for every file of the project, and bring only the rules the ask needs.
+   It prints `<id> <scope> <rule>` a line, the most important first. When the prompt names more
+   commands, or you learn of more files, run it again for them.
 2. Run the first search of step 3. With the name that its `project` line gives, count the rules you may
    bring:
    `celis grep -c -E -e "rule [0-9a-f]{8} live \{me\} ((trigger )?situation )?[^a-z]" -e "\[<name>\] rule [0-9a-f]{8} live \{project\} ((trigger )?situation )?[^a-z]"`.

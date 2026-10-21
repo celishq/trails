@@ -31,7 +31,6 @@ pub(crate) struct Args {
     pub paths: Vec<String>,
     pub content: Option<String>,
     pub command: Option<String>,
-    pub tool: Option<String>,
 }
 
 impl Args {
@@ -84,7 +83,6 @@ impl Args {
                 "--path" => parsed.paths.push(value(arg, rest.next())?),
                 "--content" => parsed.content = Some(value(arg, rest.next())?),
                 "--command" => parsed.command = Some(value(arg, rest.next())?),
-                "--tool" => parsed.tool = Some(value(arg, rest.next())?),
                 flag if flag.starts_with("--") => {
                     bad.get_or_insert(Failure::usage(format!("{flag} is not a flag")));
                 }

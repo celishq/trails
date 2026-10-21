@@ -20,7 +20,7 @@ learns what later work must keep.
     ["project", "<project name>"],
     ["scope", "<me | trail:<step id> | at:<place>>"],
     ["replaces", "<id of the rule it replaces>"],
-    ["path", "<glob>"], ["content", "<regex>"], ["command", "<regex>"], ["tool", "<regex>"],
+    ["path", "<glob>"], ["content", "<regex>"], ["command", "<regex>"],
     ["L", "celis.decision"], ["l", "decision", "celis.decision"],
     ["l", "situation", "celis.decision"], ["l", "promoted", "celis.decision"]
   ],
@@ -33,11 +33,10 @@ learns what later work must keep.
   ("Triggers").
 - `content`: optional; a regex that the file's text must match.
 - `command`: optional; a regex of the shell commands the rule acts on.
-- `tool`: optional; a regex of the names of the other tool calls the rule acts on.
 - `situation`: optional label; the rule also holds in a case that no call shows ahead.
 - `promoted`: optional label; a tool of the place now checks the rule.
 
-`path`, `content`, `command` and `tool` are the rule's trigger.
+`path`, `content` and `command` are the rule's trigger.
 
 A drop (CIP-03, "Dropping") MAY name a rule, with why it no longer holds.
 
@@ -82,7 +81,8 @@ me                in every project
 **Readers**
 
 - On a file call, a rule matches when one of its `path` globs matches the file and its `content`, when
-  set, matches the file's text: the new text on a write or an edit, the file's text on a read.
+  set, matches the file's text: the new text on a write or an edit, the file's text on a read. A file
+  that does not exist yet matches when one of its `path` globs matches it, whatever its `content`.
 - On a shell command, a rule matches when its `command` matches the command, or when a file that the
   command names matches as a file call whose text is the command.
 - A rule `at:<place>` counts as a rule with that place as its `path`, which matches as "Reading" states.

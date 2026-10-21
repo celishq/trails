@@ -2,14 +2,13 @@
 
 use celis_nostr::Note;
 
-/// What calls a rule acts on: the files by `paths` and `content`, the shell commands by `command`, and
-/// the other tool calls by `tool` (CIP-05, "Triggers").
+/// What calls a rule acts on: the files by `paths` and `content`, and the shell commands by `command`
+/// (CIP-05, "Triggers").
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Trigger {
     pub paths: Vec<String>,
     pub content: Option<String>,
     pub command: Option<String>,
-    pub tool: Option<String>,
 }
 
 impl Trigger {
@@ -18,14 +17,10 @@ impl Trigger {
         *self == Trigger::default()
     }
 
-    /// Its tags: a `path` tag for each path, then `content`, `command` and `tool` when set.
+    /// Its tags: a `path` tag for each path, then `content` and `command` when set.
     pub fn tags(&self) -> Vec<Vec<String>> {
         let paths = self.paths.iter().map(|p| ("path", p));
-        let one = [
-            ("content", &self.content),
-            ("command", &self.command),
-            ("tool", &self.tool),
-        ];
+        let one = [("content", &self.content), ("command", &self.command)];
         let one = one
             .into_iter()
             .filter_map(|(name, value)| Some((name, value.as_ref()?)));
@@ -46,7 +41,6 @@ impl Trigger {
                 .collect(),
             content: owned("content"),
             command: owned("command"),
-            tool: owned("tool"),
         }
     }
 }
