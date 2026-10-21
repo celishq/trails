@@ -347,12 +347,12 @@ fn grep_q_prints_nothing_on_a_match() {
     );
 }
 
-/// The view and what `grep` prints of it match `spec/fixtures/grep-view.json`, and the first searches of
-/// `past.md` print exactly the lines it keeps (`spec/02-cli.md`, "Grep").
+/// The view and what `grep` prints of it match `spec/fixtures/grep-view.json`, and the rule search of
+/// `past.md` prints exactly the lines it keeps (`spec/02-cli.md`, "Grep").
 #[test]
-fn the_view_and_the_past_agents_first_searches_match_the_fixture() {
+fn the_view_and_the_past_agents_rule_search_match_the_fixture() {
     use celis_trails::{Anchor, Mark, StepId, StepRecord};
-    use support::{account, put, stored_rule};
+    use support::{account, put, stored_rule, tagged_rule};
     let fixture: serde_json::Value =
         serde_json::from_str(include_str!("../../../spec/fixtures/grep-view.json")).unwrap();
     let past = include_str!("../../../plugins/celis/agents/past.md");
@@ -427,6 +427,25 @@ fn the_view_and_the_past_agents_first_searches_match_the_fixture() {
         "When you write a commit message: use plain words.",
         t + 8,
     );
+    let tag = |tag: &[&str]| vec![tag.iter().map(|t| t.to_string()).collect()];
+    let situation = tagged_rule(
+        &repo,
+        project,
+        &by,
+        (None, None),
+        tag(&["l", "situation", "celis.decision"]),
+        "When the person asks a question: answer it first.",
+        t + 9,
+    );
+    let push = tagged_rule(
+        &repo,
+        project,
+        &by,
+        (Some("me"), None),
+        tag(&["command", "^git push"]),
+        "When you push: run the tests first.",
+        t + 10,
+    );
     let names = [
         ("trail", &trail),
         ("table", &table),
@@ -435,6 +454,8 @@ fn the_view_and_the_past_agents_first_searches_match_the_fixture() {
         ("old", &old),
         ("new", &new),
         ("me", &me),
+        ("situation", &situation),
+        ("push", &push),
     ];
     let fill = |line: &serde_json::Value| {
         let mut line = line.as_str().unwrap().to_string();
@@ -470,15 +491,23 @@ fn the_view_and_the_past_agents_first_searches_match_the_fixture() {
         .split("\n2. ")
         .next()
         .unwrap();
-    let mut kept = Vec::new();
-    for search in step_one.split("`celis grep -c \"").skip(1) {
-        let pattern = search
-            .split("\"`")
-            .next()
-            .unwrap()
-            .replace("<name>", "repo");
-        kept.extend(lines(grep(&repo, &[&pattern])));
+    let call = step_one
+        .split("`celis grep -c -E ")
+        .nth(1)
+        .unwrap()
+        .split("\"`")
+        .next()
+        .unwrap()
+        .replace("<name>", "repo");
+    let mut args = vec!["-E".to_string()];
+    for pattern in call.split("-e \"").skip(1) {
+        args.extend([
+            "-e".to_string(),
+            pattern.trim_end().trim_end_matches('"').to_string(),
+        ]);
     }
+    let args: Vec<&str> = args.iter().map(String::as_str).collect();
+    let kept = lines(grep(&repo, &args));
     let want: Vec<String> = fixture["kept"]
         .as_array()
         .unwrap()
