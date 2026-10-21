@@ -16,7 +16,7 @@ Read
   tree     Show a trail and its steps
   names    Show the named trails, most used first
   grep     Search every trail with grep
-  rules    Show the rules a file, a command, or a tool call matches
+  rules    Show the rules of the files and the command you will touch
   stats    Show what later work reused
   report   Show trails as Markdown for a pull request
 
@@ -292,17 +292,16 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "rules",
-        usage: &["celis rules [<file>]... [--all] [--session <id>] [-- <command>]"],
-        summary: "Show the rules that reading a file or running a command matches, at most 5, the narrowest first. Each rule shows once a session, and again after the context is compacted. With no file and no command, read a tool hook's JSON from stdin. Changes nothing.",
+        usage: &["celis rules [<file>]... [--session <id>] [-- <command>]"],
+        summary: "Show every rule that the files you will read or change and a command you will run match, the most important first. Changes nothing.",
         args: &[
             ("<file>", "A file you will read or change"),
-            ("--all", "Show every rule that matches, not 5"),
-            ("--session <id>", "The session, when the hook names it"),
+            ("--session <id>", "The session, when the environment does not name it"),
             ("<command>", "A shell command you will run"),
         ],
         examples: &[
             "celis rules shelf/prices.py",
-            "celis rules -- \"pytest shelf/test_prices.py\"",
+            "celis rules shelf/prices.py -- \"pytest shelf/test_prices.py\"",
         ],
     },
     Verb {

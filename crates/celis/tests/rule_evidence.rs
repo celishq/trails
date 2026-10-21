@@ -109,20 +109,6 @@ fn rules_rank_a_correction_then_a_miss_then_the_narrowest() {
     );
 }
 
-/// A rule the cap cuts is not given, so the next call of the session that matches it gives it
-/// (`spec/02-cli.md`, "Rules").
-#[test]
-fn a_cut_rule_comes_at_the_next_call_that_matches() {
-    let repo = Repo::new();
-    let at = support::now() - DAY;
-    tagged(&repo, &[("path", "**/*.md")], "cut", at);
-    for n in 0..5u64 {
-        tagged(&repo, &[("path", "*.md")], &format!("rule {n}"), at + 1 + n);
-    }
-    assert!(!rules(&repo, "s1", "README.md").contains(&"cut".to_string()));
-    assert_eq!(rules(&repo, "s1", "docs/b.md"), ["cut"]);
-}
-
 /// `tree` shows under each step the rules given while it worked, whole with `--full`.
 #[test]
 fn the_tree_shows_the_rules_given_under_each_step() {

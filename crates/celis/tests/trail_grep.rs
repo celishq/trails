@@ -484,14 +484,14 @@ fn the_view_and_the_past_agents_rule_search_match_the_fixture() {
         .map(fill)
         .collect();
     assert_eq!(lines(grep(&repo, &[""])), want);
-    let step_one = past
-        .split("\n1. ")
+    let search = past
+        .split("\n2. ")
         .nth(1)
         .unwrap()
-        .split("\n2. ")
+        .split("\n3. ")
         .next()
         .unwrap();
-    let call = step_one
+    let call = search
         .split("`celis grep -c -E ")
         .nth(1)
         .unwrap()

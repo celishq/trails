@@ -13,7 +13,7 @@ mod hook;
 impl Command {
     /// Acts on a hook: a prompt goes on its session's open trail, with notes on `err` about the work;
     /// with no open trail, it names the past agent, once a session, unless the prompt is a task. A
-    /// compaction lets the session name the past agent again, and logs it in `$CELIS_HOME/given`.
+    /// compaction lets the session name the past agent again.
     pub(crate) fn prompt(
         &self,
         args: &Args,
@@ -24,7 +24,7 @@ impl Command {
         match Hook::read()? {
             Hook::Compaction { session } => {
                 let _ = std::fs::remove_file(self.asked(&session)?);
-                super::rules::Given::new(&self.home()?).compact(&session, super::now())
+                Ok(())
             }
             Hook::Prompt(prompt) => self.ask(args, out, err, project, prompt),
             Hook::Nothing => Ok(()),
@@ -111,7 +111,8 @@ impl Command {
         let line = format!(
             "celis: a new ask in this session; before any other tool, run the celis:past agent in the \
              foreground with the ask and the places it may touch, and wait for its answer; it brings the \
-             situation rules the ask must keep, and the steps of past asks like it; add the ask with \
+             rules of the files and commands the work will touch, the situation rules the ask must keep, \
+             and the steps of past asks like it; add the ask with \
              --uses <id> for each past step the ask follows. {RULES}"
         );
         super::put(err, &line)?;

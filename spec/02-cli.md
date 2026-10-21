@@ -16,8 +16,8 @@ read. What a command shows a person is not part of it.
 ```
 celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--content <regex>] [--command <regex>] [--tool <regex>] [--situation] [--promoted] [--project <id>] -- <text>
                                                        a rule, in its scope
-celis rules [<file>]... [--all] [--session <id>] [-- <command>]
-                                                       the rules one call matches
+celis rules [<file>]... [--session <id>] [-- <command>]
+                                                       the rules of some files and a command
 celis name <trail id> <name>                          give a trail a name
 celis names [--limit <n>]                             the named trails, most used first
 celis tree [<id>] [--graph] [--full] [--all] [--demo]
@@ -220,8 +220,7 @@ Each agent's hooks give their JSON to `prompt`.
 - `prompt` MUST read the hook's JSON on stdin, with `conversation_id` in place of `session_id` when it
   has one.
 - On a prompt, it MUST write it as CIP-04 "Sessions" states, and print the record's id. On a compaction,
-  it MUST add the compaction line to `$CELIS_HOME/given` ("Rules"), and write no record and print
-  nothing.
+  it MUST write no record and print nothing.
 - A prompt that names a step with `celis step <id>` is a task for that step. With no open trail, `prompt`
   MUST NOT ask for the past agent on it.
 
@@ -233,56 +232,39 @@ echo '{"session_id": "95e9be99", "prompt": "Use the shared Badge."}' | celis pro
 
 ## Rules
 
-`rules` gives the live rules in scope in the working folder's project (CIP-05) that one call matches
-(CIP-05, "Triggers").
+`rules` gives the live rules in scope in the working folder's project (CIP-05) that some files and a
+command match (CIP-05, "Triggers").
 
 ```
 line     <id8> <scope> <rule>
 json     {"id", "scope", "content"}
-more     celis: <n> more rules match this call; run it again for the next 5, or add --all.
-         celis: <n> more rules match this call; add --all to see them.       with no session
-json     {"more": <n>}
-hook     {"session_id", "cwd", "hook_event_name": "PreToolUse | PostToolUse", "tool_name",
-          "tool_input": {"file_path", "content", "new_string", "edits": [{"new_string"}],
-                         "notebook_path", "new_source", "command"}}
 given    $CELIS_HOME/given, one JSON object a line:
          {"at", "session", "rule"[, "step"]}          a rule given
-         {"at", "session", "compact": true}           a compaction
          {"at", "session", "rule", "miss": true}      a miss: a rule replaced in the session that was not
                                                       given in it
 ```
 
 **Rules**
 
-- Each `<file>` MUST count as a read of that file, and `<command>` as a shell command.
-- With no file and no command, `rules` MUST read the hook's JSON on stdin, as Claude Code's
-  PreToolUse and PostToolUse give it: a Read, Write, Edit, MultiEdit or NotebookEdit is a file call, of
-  `file_path` or `notebook_path`, whose text is `content`, `new_string`, each `edits[].new_string`, or
-  `new_source`, and on a Read the file's text on disk; a Bash is a shell command on PreToolUse, and
-  after a shell command on PostToolUse; another tool is another tool call. With nothing matched it MUST
-  print nothing.
-- The files a shell command changed MUST be the files `git status --porcelain` gives in the project.
+- Each `<file>` MUST count as a read of that file, and `<command>` as a shell command. With no file and
+  no command, `rules` MUST fail with `usage`.
 - A rule with no trigger and no `at:<place>` scope MUST NOT come.
-- `rules` MUST print at most 5 rules a call, but every rule with `--all`: first a rule with a `replaces`
-  tag, then a rule that a miss line names, then the rest; within each, first those that match a named
-  file (a `path` with no `*` or `?`, or an `at:<place>`), then a glob with `content`, a `command` or a
-  `tool`, then a glob with no `content`; newest first within each.
-- The session MUST be `--session`, else the hook's `session_id`, else the session of the environment.
-- But with `--all`, `rules` MUST add a line to `$CELIS_HOME/given` for each rule it prints in a session,
-  and MUST NOT print a rule that the session's lines give after the session's last compaction line. The line MUST hold
+- `rules` MUST print every rule that matches: first a rule with a `replaces` tag, then a rule that a miss
+  line names, then the rest; within each, first those that match a named file (a `path` with no `*` or
+  `?`, or an `at:<place>`), then a glob with `content` or a `command`, then a glob with no `content`;
+  newest first within each.
+- The session MUST be `--session`, else the session of the environment.
+- In a session, `rules` MUST add a line to `$CELIS_HOME/given` for each rule it prints. The line MUST hold
   `step`, the id of the oldest working step of the session's open trail in the project, when there is one.
 - `decide --replaces` in a session (CIP-04, "Sessions") MUST add a miss line for the rule it replaces
-  when no line of the session gives that rule after the session's last compaction line. A miss line
-  gives no rule.
-- When more rules match than it prints, `rules` MUST end with the `more` line.
+  when no line of the session gives that rule. A miss line gives no rule.
 - `$CELIS_HOME/given` is no record, and links do not carry it.
 
 **Examples**
 
 ```
 celis rules shelf/prices.py
-celis rules --session 95e9be99 -- "pytest shelf/test_prices.py"
-echo '{"session_id": "95e9be99", "hook_event_name": "PreToolUse", "tool_name": "Read", "tool_input": {"file_path": "shelf/prices.py"}}' | celis rules
+celis rules --session 95e9be99 shelf/prices.py -- "pytest shelf/test_prices.py"
 ```
 
 ## Grep

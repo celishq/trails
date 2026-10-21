@@ -25,38 +25,21 @@ fn tagged(repo: &Repo, tags: &[(&str, &str)], content: &str, at: u64) -> Note {
     note
 }
 
-/// The lines `celis rules <args>` prints in the main checkout, with `stdin`.
-fn rules(repo: &Repo, args: &[&str], stdin: &str) -> Vec<String> {
+/// The lines `celis rules <args>` prints in the main checkout.
+fn rules(repo: &Repo, args: &[&str]) -> Vec<String> {
     let mut all = vec!["rules"];
     all.extend(args);
-    let o = repo.run(&repo.path(), &all, &[], stdin);
+    let o = repo.run(&repo.path(), &all, &[], "");
     assert!(o.status.success(), "{}", err(&o));
     out(&o).lines().map(str::to_string).collect()
 }
 
-/// The texts of the rules `celis rules` prints for the hook `tool` with `input` on `event`, in the
-/// session `session`.
-fn hooked(repo: &Repo, event: &str, tool: &str, input: Value, session: &str) -> Vec<String> {
-    let hook = json!({
-        "session_id": session,
-        "cwd": repo.path(),
-        "hook_event_name": event,
-        "tool_name": tool,
-        "tool_input": input,
-    });
-    texts(&rules(repo, &[], &hook.to_string()))
-}
-
-/// The text of each rule line of `lines`, without its id and scope.
-fn texts(lines: &[String]) -> Vec<String> {
-    let rules = lines.iter().filter(|l| !l.starts_with("celis: "));
-    rules
+/// The text of each rule `celis rules <args>` prints, without its id and scope.
+fn texts(repo: &Repo, args: &[&str]) -> Vec<String> {
+    let lines = rules(repo, args).into_iter();
+    lines
         .map(|l| l.splitn(3, ' ').nth(2).unwrap().to_string())
         .collect()
-}
-
-fn file(repo: &Repo, rel: &str) -> String {
-    repo.path().join(rel).display().to_string()
 }
 
 /// On a read, a `path` glob matches the file and `content` matches the file's text on disk
@@ -73,48 +56,9 @@ fn a_read_matches_the_glob_and_the_files_text() {
     repo.write("shelf/a.py", "x = float(1)\n");
     repo.write("shelf/b.py", "x = 1\n");
     repo.write("c.rs", "float\n");
-    let read = |rel: &str| {
-        hooked(
-            &repo,
-            "PreToolUse",
-            "Read",
-            json!({"file_path": file(&repo, rel)}),
-            "s",
-        )
-    };
-    assert_eq!(read("shelf/a.py"), ["floats", "shelf"]);
-    assert_eq!(texts(&rules(&repo, &["shelf/b.py"], "")), ["shelf"]);
-    assert!(read("c.rs").is_empty());
-}
-
-/// On a write or an edit, `content` matches the new text: `content`, `new_string`, each
-/// `edits[].new_string`, or `new_source` (`spec/05-rules.md`, "Triggers"; `spec/02-cli.md`, "Rules").
-#[test]
-fn a_write_or_an_edit_matches_its_new_text() {
-    let repo = Repo::new();
-    decide(&repo, &["--path", "*.py", "--content", "float"], "floats");
-    repo.write("a.py", "float on disk\n");
-    let path = file(&repo, "a.py");
-    let call = |tool: &str, input: Value| hooked(&repo, "PreToolUse", tool, input, "");
-    assert_eq!(
-        call("Write", json!({"file_path": path, "content": "float(1)"})),
-        ["floats"]
-    );
-    assert!(call("Write", json!({"file_path": path, "content": "1"})).is_empty());
-    assert_eq!(
-        call("Edit", json!({"file_path": path, "new_string": "float"})),
-        ["floats"]
-    );
-    assert!(call("Edit", json!({"file_path": path, "new_string": "int"})).is_empty());
-    let edits = json!([{"new_string": "int"}, {"new_string": "float"}]);
-    assert_eq!(
-        call("MultiEdit", json!({"file_path": path, "edits": edits})),
-        ["floats"]
-    );
-    let edits = json!([{"new_string": "int"}]);
-    assert!(call("MultiEdit", json!({"file_path": path, "edits": edits})).is_empty());
-    let notebook = json!({"notebook_path": file(&repo, "n.py"), "new_source": "float"});
-    assert_eq!(call("NotebookEdit", notebook), ["floats"]);
+    assert_eq!(texts(&repo, &["shelf/a.py"]), ["floats", "shelf"]);
+    assert_eq!(texts(&repo, &["shelf/b.py"]), ["shelf"]);
+    assert!(texts(&repo, &["c.rs"]).is_empty());
 }
 
 /// On a shell command, `command` matches it, or a file the command names matches as a file call with
@@ -125,46 +69,43 @@ fn a_command_matches_its_regex_and_the_files_it_names() {
     decide(&repo, &["--command", "^pytest"], "tests");
     decide(&repo, &["--path", "shelf/*.py"], "shelf");
     decide(&repo, &["--path", "*.md", "--content", "^sed"], "sed");
-    let bash = |line: &str| hooked(&repo, "PreToolUse", "Bash", json!({"command": line}), "");
+    let bash = |line: &str| texts(&repo, &["--", line]);
     assert_eq!(bash("pytest -q"), ["tests"]);
     assert_eq!(bash("cat shelf/a.py | head"), ["shelf"]);
     assert_eq!(bash("sed -i s/a/b/ README.md"), ["sed"]);
     assert!(bash("cat README.md").is_empty());
     assert!(bash("ls").is_empty());
     assert_eq!(
-        texts(&rules(&repo, &["--", "pytest", "shelf/a.py"], "")),
+        texts(&repo, &["--", "pytest", "shelf/a.py"]),
         ["tests", "shelf"]
     );
 }
 
-/// After a shell command, each file it changed matches as a file call with its text: the files
-/// `git status --porcelain` gives (`spec/05-rules.md`, "Triggers"; `spec/02-cli.md`, "Rules").
+/// The files and the command of one call each match (`spec/02-cli.md`, "Rules").
 #[test]
-fn after_a_command_each_changed_file_matches_with_its_text() {
+fn the_files_and_the_command_each_match() {
     let repo = Repo::new();
-    decide(
-        &repo,
-        &["--path", "**/*.py", "--content", "float"],
-        "floats",
-    );
-    decide(&repo, &["--path", "README.md"], "readme");
-    let after = || hooked(&repo, "PostToolUse", "Bash", json!({"command": "make"}), "");
-    assert!(after().is_empty());
-    repo.write("shelf/new.py", "x = float(1)\n");
-    repo.write("old.py", "x = 1\n");
-    assert_eq!(after(), ["floats"]);
-    repo.write("README.md", "changed\n");
-    assert_eq!(after(), ["readme", "floats"]);
+    decide(&repo, &["--command", "^pytest"], "tests");
+    decide(&repo, &["--path", "*.md"], "markdown");
+    decide(&repo, &["--path", "*.py"], "python");
+    let mut shown = texts(&repo, &["README.md", "a.py", "--", "pytest -q"]);
+    shown.sort();
+    assert_eq!(shown, ["markdown", "python", "tests"]);
 }
 
-/// On another tool call, `tool` matches its name (`spec/05-rules.md`, "Triggers").
+/// With no file and no command, `rules` is a usage error (`spec/02-cli.md`, "Rules").
 #[test]
-fn another_tool_call_matches_by_its_name() {
+fn rules_with_no_file_and_no_command_is_a_usage_error() {
     let repo = Repo::new();
-    decide(&repo, &["--tool", "^Grep$"], "grep");
-    let call = |tool: &str| hooked(&repo, "PreToolUse", tool, json!({"pattern": "x"}), "");
-    assert_eq!(call("Grep"), ["grep"]);
-    assert!(call("Glob").is_empty());
+    for args in [&["rules"][..], &["rules", "--", " "]] {
+        let o = repo.run(&repo.path(), args, &[], "");
+        assert_eq!(o.status.code(), Some(2), "{o:?}");
+        assert!(
+            err(&o).contains("rules needs a file or a command"),
+            "{}",
+            err(&o)
+        );
+    }
 }
 
 /// A pattern that does not compile matches nothing (`spec/05-rules.md`, "Triggers").
@@ -173,17 +114,9 @@ fn a_pattern_that_does_not_compile_matches_nothing() {
     let repo = Repo::new();
     decide(&repo, &["--path", "*.md", "--content", "("], "content");
     decide(&repo, &["--command", "("], "command");
-    decide(&repo, &["--tool", "["], "tool");
-    let bash = hooked(
-        &repo,
-        "PreToolUse",
-        "Bash",
-        json!({"command": "cat README.md ("}),
-        "",
-    );
+    let bash = texts(&repo, &["--", "cat README.md ("]);
     assert!(bash.is_empty(), "{bash:?}");
-    assert!(hooked(&repo, "PreToolUse", "[", json!({}), "").is_empty());
-    assert!(rules(&repo, &["README.md"], "").is_empty());
+    assert!(rules(&repo, &["README.md"]).is_empty());
 }
 
 /// A rule `at:<place>` counts as a rule with that place as its `path`, and holds under a folder it
@@ -193,9 +126,9 @@ fn an_at_rule_comes_at_its_place() {
     let repo = Repo::new();
     decide(&repo, &["--scope", "at:shelf"], "in the shelf");
     decide(&repo, &["--scope", "at:a.py:3"], "at a line");
-    assert_eq!(texts(&rules(&repo, &["shelf/b.py"], "")), ["in the shelf"]);
-    assert_eq!(texts(&rules(&repo, &["a.py"], "")), ["at a line"]);
-    assert!(rules(&repo, &["b.py"], "").is_empty());
+    assert_eq!(texts(&repo, &["shelf/b.py"]), ["in the shelf"]);
+    assert_eq!(texts(&repo, &["a.py"]), ["at a line"]);
+    assert!(rules(&repo, &["b.py"]).is_empty());
 }
 
 /// A rule with no trigger and no `at:<place>` never comes, and a situation rule with a trigger comes at
@@ -206,9 +139,9 @@ fn a_rule_with_no_trigger_never_comes() {
     decide(&repo, &["--situation"], "situation");
     decide(&repo, &[], "no trigger");
     decide(&repo, &["--scope", "me"], "mine");
-    assert!(rules(&repo, &["README.md", "--all", "--", "ls"], "").is_empty());
+    assert!(rules(&repo, &["README.md", "--", "ls"]).is_empty());
     decide(&repo, &["--path", "*.md", "--situation"], "both");
-    assert_eq!(texts(&rules(&repo, &["README.md"], "")), ["both"]);
+    assert_eq!(texts(&repo, &["README.md"]), ["both"]);
 }
 
 /// Rules come with a named file first, then a glob with content or a command, then a glob with no
@@ -232,9 +165,8 @@ fn rules_come_narrowest_first_then_newest() {
     for (tags, content, made) in order {
         tagged(&repo, tags, content, made);
     }
-    let shown = texts(&rules(&repo, &["--all", "--", "cat a.py x"], ""));
     assert_eq!(
-        shown,
+        texts(&repo, &["--", "cat a.py x"]),
         [
             "at new",
             "named old",
@@ -246,101 +178,49 @@ fn rules_come_narrowest_first_then_newest() {
     );
 }
 
-/// At most 5 rules come a call; the rest come on the next call of the session, with a pointer, or all
-/// with `--all`, which logs none; each rule once a session (`spec/02-cli.md`, "Rules").
+/// Every rule that matches comes, on each call of a session; `--json` gives each as an object
+/// (`spec/02-cli.md`, "Rules").
 #[test]
-fn five_rules_a_call_then_a_pointer_to_the_rest() {
+fn every_rule_comes_on_each_call() {
     let repo = Repo::new();
     let at = support::now() - DAY;
     for n in 0..7u64 {
         tagged(&repo, &[("path", "*.md")], &format!("rule {n}"), at + n);
     }
-    let first = rules(&repo, &["README.md", "--session", "s1"], "");
-    assert_eq!(
-        texts(&first),
-        ["rule 6", "rule 5", "rule 4", "rule 3", "rule 2"]
-    );
-    assert_eq!(
-        first.last().unwrap(),
-        "celis: 2 more rules match this call; run it again for the next 5, or add --all."
-    );
-    let second = rules(&repo, &["README.md", "--session", "s1"], "");
-    assert_eq!(second.len(), 2, "{second:?}");
-    assert_eq!(texts(&second), ["rule 1", "rule 0"]);
-    assert!(rules(&repo, &["README.md", "--session", "s1"], "").is_empty());
-    let look = ["README.md", "--session", "s1", "--all"];
-    assert_eq!(texts(&rules(&repo, &look, "")).len(), 7);
-    assert_eq!(texts(&rules(&repo, &look, "")).len(), 7);
-    let fresh = rules(&repo, &["README.md", "--session", "s2"], "");
-    assert_eq!(texts(&fresh).len(), 5);
-    let alone = rules(&repo, &["README.md"], "");
-    assert_eq!(
-        alone.last().unwrap(),
-        "celis: 2 more rules match this call; add --all to see them."
-    );
-    assert_eq!(texts(&rules(&repo, &["README.md"], "")).len(), 5);
+    let first = texts(&repo, &["README.md", "--session", "s1"]);
+    assert_eq!(first.len(), 7, "{first:?}");
+    assert_eq!((first[0].as_str(), first[6].as_str()), ("rule 6", "rule 0"));
+    assert_eq!(texts(&repo, &["README.md", "--session", "s1"]), first);
     let json = objects(&repo, &["rules", "README.md"]);
-    assert_eq!(json.len(), 6);
-    assert_eq!(json[5], json!({"more": 2}));
+    assert_eq!(json.len(), 7);
     let keys: Vec<&String> = json[0].as_object().unwrap().keys().collect();
     assert_eq!(keys, ["content", "id", "scope"]);
 }
 
-/// Each rule given in a session is logged in `$CELIS_HOME/given`; after a compaction that `prompt` logs,
-/// it comes again (`spec/02-cli.md`, "Rules" and "Prompt").
+/// Each rule printed in a session is logged in `$CELIS_HOME/given`, with the session from `--session`,
+/// else the environment; with no session, none is logged (`spec/02-cli.md`, "Rules").
 #[test]
-fn a_compaction_gives_the_rules_again() {
+fn each_rule_printed_in_a_session_is_logged() {
     let repo = Repo::new();
     let id = decide(&repo, &["--path", "*.md"], "markdown");
-    let hook = |session: &str| {
-        hooked(
-            &repo,
-            "PreToolUse",
-            "Read",
-            json!({"file_path": file(&repo, "README.md")}),
-            session,
-        )
-    };
-    assert_eq!(hook("s1"), ["markdown"]);
-    assert!(hook("s1").is_empty());
-    let compact = json!({"session_id": "s1", "source": "compact"}).to_string();
-    let o = repo.run(&repo.path(), &["prompt"], &[], &compact);
-    assert!(o.status.success(), "{}", err(&o));
-    assert!(out(&o).is_empty() && err(&o).is_empty(), "{o:?}");
-    assert_eq!(hook("s1"), ["markdown"]);
+    assert!(rules(&repo, &["a.rs", "--session", "s1"]).is_empty());
+    rules(&repo, &["README.md"]);
+    assert!(!repo.home().join("given").exists());
+    rules(&repo, &["README.md", "--session", "s1"]);
+    let env = [("CELIS_SESSION_ID", "env")];
+    repo.run(&repo.path(), &["rules", "README.md"], &env, "");
     let log = std::fs::read_to_string(repo.home().join("given")).unwrap();
     let lines: Vec<Value> = log
         .lines()
         .map(|l| serde_json::from_str(l).unwrap())
         .collect();
-    assert_eq!(lines.len(), 3);
+    assert_eq!(lines.len(), 2, "{log}");
     assert_eq!(
         (&lines[0]["session"], &lines[0]["rule"]),
         (&json!("s1"), &json!(id))
     );
     assert!(lines[0]["at"].is_u64());
-    assert_eq!(lines[1]["compact"], true);
-    assert_eq!(lines[2]["rule"], id.as_str());
-}
-
-/// A hook that matches nothing prints nothing; the session comes from the environment when the hook
-/// and `--session` name none (`spec/02-cli.md`, "Rules").
-#[test]
-fn a_hook_that_matches_nothing_prints_nothing() {
-    let repo = Repo::new();
-    decide(&repo, &["--path", "*.md"], "markdown");
-    let hook = json!({"hook_event_name": "PreToolUse", "tool_name": "Read", "tool_input": {"file_path": file(&repo, "a.rs")}});
-    let o = repo.run(&repo.path(), &["rules"], &[], &hook.to_string());
-    assert!(
-        o.status.success() && out(&o).is_empty() && err(&o).is_empty(),
-        "{o:?}"
-    );
-    let env = [("CELIS_SESSION_ID", "env")];
-    for _ in 0..2 {
-        repo.run(&repo.path(), &["rules", "README.md"], &env, "");
-    }
-    let log = std::fs::read_to_string(repo.home().join("given")).unwrap();
-    assert_eq!(log.lines().count(), 1, "{log}");
+    assert_eq!(lines[1]["session"], "env");
 }
 
 /// The grep view marks a rule with a trigger, a situation rule and a promoted rule (`spec/02-cli.md`,
@@ -445,5 +325,5 @@ fn an_older_rule_with_no_trigger_still_reads() {
         (&rule["situation"], &rule["promoted"]),
         (&json!(false), &json!(false))
     );
-    assert_eq!(texts(&rules(&repo, &["a.py"], "")), ["old"]);
+    assert_eq!(texts(&repo, &["a.py"]), ["old"]);
 }

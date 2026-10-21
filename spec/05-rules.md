@@ -85,8 +85,5 @@ me                in every project
   set, matches the file's text: the new text on a write or an edit, the file's text on a read.
 - On a shell command, a rule matches when its `command` matches the command, or when a file that the
   command names matches as a file call whose text is the command.
-- After a shell command, a rule matches when a file the command changed matches as a file call with the
-  file's text.
-- On another tool call, a rule matches when its `tool` matches the tool's name.
 - A rule `at:<place>` counts as a rule with that place as its `path`, which matches as "Reading" states.
 - A pattern that does not compile matches nothing.

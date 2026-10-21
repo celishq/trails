@@ -42,10 +42,10 @@ jq -r 'select(.rule) | "\(.rule[:8]) \(if .miss then "miss" else "given" end)"' 
 - Fade a rule given 10 times or more that has no miss and that no rule replaces: drop it with
   `-- "faded: given <n> times, never corrected"`.
 - For each rule with a miss, find the work of the miss's session: the `step` of the session's other
-  lines, and `celis tree <step>`. Run `celis rules --all <a file of that work>`, or `-- "<its
-  command>"`: `--all` only looks, and logs nothing. When the rule shows, the cap cut it: leave it. Else its trigger
+  lines, and `celis tree <step>`. Run `celis rules <a file of that work>`, or `-- "<its command>"`.
+  When the rule shows, its trigger matched, and the agent did not ask: leave it. Else its trigger
   missed: write the same text with a trigger that matches work like that, with `decide --replaces <its
-  id> --scope <its scope>` and `--path`, `--content`, `--command` or `--tool`.
+  id> --scope <its scope>` and `--path`, `--content` or `--command`.
 
 ## Merge
 

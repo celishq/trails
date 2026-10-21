@@ -266,59 +266,6 @@ fn claudes_hooks_ask_for_the_past_agent_again_after_a_compaction() {
         .contains("celis:past agent"));
 }
 
-/// Claude Code's tool hooks give the rules of each tool call before it, and of the files a Bash command
-/// changed after it, as the call's context; they print nothing when no rule matches.
-#[test]
-fn claudes_tool_hooks_give_the_rules_of_each_call() {
-    let repo = Repo::new();
-    let rule = "When you change prices: keep them in cents.";
-    let o = repo.run(
-        &repo.path(),
-        &["decide", "--path", "**/*.py", "--", rule],
-        &[],
-        "",
-    );
-    assert!(o.status.success(), "{}", err(&o));
-    let claude = &AGENTS[0];
-    let call = |session: &str, event: &str, tool: &str, input: serde_json::Value| {
-        let hook = serde_json::json!({"session_id": session, "cwd": repo.path(),
-            "hook_event_name": event, "tool_name": tool, "tool_input": input});
-        claude.run(&repo, event, &hook.to_string())
-    };
-    let read = call(
-        "s1",
-        "PreToolUse",
-        "Read",
-        serde_json::json!({"file_path": "notes.md"}),
-    );
-    assert_eq!(read, "");
-    let write = call(
-        "s1",
-        "PreToolUse",
-        "Write",
-        serde_json::json!({"file_path": "shop.py", "content": "x = 1"}),
-    );
-    let write: serde_json::Value = serde_json::from_str(&write).unwrap();
-    assert_eq!(write["hookSpecificOutput"]["hookEventName"], "PreToolUse");
-    let context = write["hookSpecificOutput"]["additionalContext"]
-        .as_str()
-        .unwrap();
-    assert!(context.contains(rule), "{context}");
-    repo.write("shop.py", "x = 1\n");
-    let after = call(
-        "s2",
-        "PostToolUse",
-        "Bash",
-        serde_json::json!({"command": "make"}),
-    );
-    let after: serde_json::Value = serde_json::from_str(&after).unwrap();
-    assert_eq!(after["hookSpecificOutput"]["hookEventName"], "PostToolUse");
-    let context = after["hookSpecificOutput"]["additionalContext"]
-        .as_str()
-        .unwrap();
-    assert!(context.contains(rule), "{context}");
-}
-
 /// The prompt hooks of Codex and Gemini CLI ask to do what past.md says in place of the past agent.
 #[test]
 fn codex_and_gemini_prompt_hooks_name_past_md_for_the_past_agent() {

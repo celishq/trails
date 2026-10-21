@@ -89,10 +89,6 @@ impl Rule {
                 let files = files.iter().filter_map(|f| self.file(f, Some(line)));
                 files.chain(command).min()
             }
-            Call::Tool { name } => {
-                let tool = self.trigger.tool.as_deref();
-                tool.filter(|t| found(t, name)).map(|_| Fit::Pattern)
-            }
         }
     }
 

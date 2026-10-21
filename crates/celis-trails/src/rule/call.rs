@@ -3,11 +3,10 @@
 use regex::Regex;
 
 /// One tool call that a rule's trigger may match (CIP-05, "Triggers"): a file with its text, when
-/// known; a shell command with the files it names; or another tool by its name.
+/// known, or a shell command with the files it names.
 pub enum Call {
     File { path: String, text: Option<String> },
     Command { line: String, files: Vec<String> },
-    Tool { name: String },
 }
 
 impl Call {

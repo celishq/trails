@@ -8,8 +8,8 @@ A place is a file, a `file:line`, a folder, or a URL. A rule that holds at one p
 `at:<place>`.
 
 When you move a file: write each rule of its old place again for the new place, with
-`decide --replaces <id>` and the new place as its scope or `--path`. Run `celis rules <old place> --all`
-to see them.
+`decide --replaces <id>` and the new place as its scope or `--path`. Run `celis rules <old place>` to
+see them.
 
 ## Past work
 

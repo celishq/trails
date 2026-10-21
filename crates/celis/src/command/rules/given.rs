@@ -6,8 +6,7 @@ use std::collections::{HashMap, HashSet};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-/// `$CELIS_HOME/given`: one JSON line for each rule given in a session, each compaction of a session,
-/// and each miss.
+/// `$CELIS_HOME/given`: one JSON line for each rule given in a session, and each miss.
 pub(crate) struct Given {
     path: PathBuf,
 }
@@ -20,20 +19,13 @@ impl Given {
         }
     }
 
-    /// The ids of the rules given in `session` after its last compaction.
+    /// The ids of the rules given in `session`.
     pub fn of(&self, session: &str) -> HashSet<String> {
-        let mut ids = HashSet::new();
         let lines = self.lines().into_iter();
-        for line in lines.filter(|l| l["session"] == session && l["miss"] != true) {
-            match (line["compact"] == true, line["rule"].as_str()) {
-                (true, _) => ids.clear(),
-                (false, Some(rule)) => {
-                    ids.insert(rule.to_string());
-                }
-                _ => {}
-            }
-        }
-        ids
+        let lines = lines.filter(|l| l["session"] == session && l["miss"] != true);
+        lines
+            .filter_map(|l| Some(l["rule"].as_str()?.to_string()))
+            .collect()
     }
 
     /// The ids of the rules a miss names.
@@ -81,11 +73,6 @@ impl Given {
         self.add(vec![
             json!({"at": at, "session": session, "rule": rule, "miss": true}),
         ])
-    }
-
-    /// Logs a compaction of `session` at `at`.
-    pub fn compact(&self, session: &str, at: u64) -> Result<(), Failure> {
-        self.add(vec![json!({"at": at, "session": session, "compact": true})])
     }
 
     /// Each line of the log that is JSON.

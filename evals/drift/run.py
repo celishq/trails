@@ -17,13 +17,11 @@ checked; 4 of those replaced an older version that the memory may still hold.
          data/pick.md agent for each page of 100 or 50 `me` rules, run in parallel, and data/past-pick.md
          as the past agent), merged (pickers, with jit.py running the pickers and a merge to 20 rules
          from the prompt hook, so the agent gets only those), staged (merged with no merge: the hook keeps the
-         whole pick, and each read gives the file the picked rules that act on it), triggered (celis, each rule with
-         its trigger of data/triggers.json, and only the plugin's rules.sh hook: it gives the rules of each
-         tool call before it, and of the files a Bash command changed after it; a Haiku picker in trigger.py
-         gives the situation rules at the ask), pull (celis, with no plugin and
-         no rules given: the agent searches them with celis grep), taught (celis, each rule with its trigger of
-         data/triggers.json, with no plugin, no tool hook and no picker: the session start gives the card, and
-         the agent asks celis rules and celis grep itself)
+         whole pick, and each read gives the file the picked rules that act on it), pull (celis, with no plugin
+         and no rules given: the agent searches them with celis grep), taught (celis, each rule with its trigger
+         of data/triggers.json, with no plugin, no tool hook and no picker: the session start gives the card,
+         and the agent asks celis rules and celis grep itself), delegated (taught, with the plugin of the
+         celis arm: the card, the prompt hook, and the celis:past agent, which runs celis rules for the work)
 
 Each task starts from a new copy of seed/ and a new copy of the memory, so tasks are independent and run in
 parallel. Each task appends one line to results/<arm>-<model>-r<N>.jsonl.
@@ -56,8 +54,9 @@ NARROW = {"stock": "stock/*.py", "stock/commands": "stock/commands/*.py", "stock
           "tests": "tests/*.py"}
 PICKS = ("picked", "pickers", "pickers50", "merged", "staged")
 JITS = ("jit", "narrow", "ranked", "scoped", "scopedrank", *PICKS)
-OWN = ("triggered", "pull")
-STORED = ("celis", "placed", *JITS, *OWN, "taught")
+OWN = ("pull",)
+TRIGGERED = ("taught", "delegated")
+STORED = ("celis", "placed", *JITS, *OWN, *TRIGGERED)
 FIXED = {"GIT_AUTHOR_DATE": "2026-01-01T00:00:00Z", "GIT_COMMITTER_DATE": "2026-01-01T00:00:00Z"}
 
 
@@ -108,7 +107,7 @@ def seed(arm, home, rules, targets):
         ids, spread = {}, random.Random(len(rules[0]))
         scopes = json.loads((HERE / "data" / "scopes.json").read_text())
         by_text = {r["text"]: r["id"] for r in json.loads((HERE / "data" / "filler.json").read_text())["rules"]}
-        triggers = json.loads((HERE / "data" / "triggers.json").read_text()) if arm in ("triggered", "taught") else {}
+        triggers = json.loads((HERE / "data" / "triggers.json").read_text()) if arm in TRIGGERED else {}
         other = home / "other"
         other.mkdir()
         sh("git", "init", "-q", cwd=other)
@@ -127,7 +126,7 @@ def seed(arm, home, rules, targets):
                 got = scopes.get(target["id"] if target else by_text[line], "other")
                 scope = "me" if got == "me" else "project" if got == "other" else f"at:{got}"
             extra = ["--replaces", ids[new["id"]]] if new and new["id"] in ids else []
-            if arm == "taught":
+            if arm in TRIGGERED:
                 scope = "me"
             if not old:
                 extra += trigger_args(triggers.get(target["id"] if target else by_text[line]))
@@ -197,11 +196,7 @@ def agent(arm, model, work, home, prompt, log):
     if arm in OWN:
         hook = lambda mode, timeout=60: [{"type": "command", "command": f"python3 {HERE / 'trigger.py'} {mode}",
                                           "timeout": timeout}]
-        settings["hooks"] = {"UserPromptSubmit": [{"hooks": hook("ask" if arm == "triggered" else "pull", 600)}]}
-        if arm == "triggered":
-            rules = [{"type": "command", "command": f"sh '{Path(os.environ.get('CELIS_PLUGIN', ROOT / 'plugins' / 'celis')) / 'hooks' / 'rules.sh'}'"}]
-            settings["hooks"]["PreToolUse"] = [{"matcher": "*", "hooks": rules}]
-            settings["hooks"]["PostToolUse"] = [{"matcher": "Bash", "hooks": rules}]
+        settings["hooks"] = {"UserPromptSubmit": [{"hooks": hook("pull", 600)}]}
     if arm == "taught":
         script = Path(os.environ.get("CELIS_PLUGIN", ROOT / "plugins" / "celis")) / "hooks" / "start.sh"
         settings["hooks"] = {"SessionStart": [{"hooks": [{"type": "command", "command": f"sh {script}"}]}]}
@@ -209,7 +204,7 @@ def agent(arm, model, work, home, prompt, log):
     if arm == "oracle":
         env["CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD"] = "1"
         flags += ["--add-dir", str(home / "user")]
-    if arm in ("celis", "placed", *JITS):
+    if arm in ("celis", "placed", *JITS, "delegated"):
         flags += ["--plugin-dir", str(plugin(home, arm)) if arm in PICKS
                   else os.environ.get("CELIS_PLUGIN", str(ROOT / "plugins" / "celis"))]
     start = time.time()
@@ -250,7 +245,7 @@ def task(arm, model, n, name, home, task, targets):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("arm", choices=["plain", "oracle", "celis", "placed", *JITS, *OWN, "taught"])
+    parser.add_argument("arm", choices=["plain", "oracle", "celis", "placed", *JITS, *OWN, *TRIGGERED])
     parser.add_argument("rules", nargs="+", type=int)
     parser.add_argument("--jobs", type=int, default=8)
     parser.add_argument("--model", choices=MODELS, default="haiku")

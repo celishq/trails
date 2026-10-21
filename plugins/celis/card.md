@@ -1,7 +1,7 @@
 celis keeps each ask as a trail: its steps, their proofs, and the rules that later work must keep.
 
 ```
-celis rules [<file>]... [--all] [--session <id>] [-- "<command>"]
+celis rules [<file>]... [--session <id>] [-- "<command>"]
 celis grep <grep option>... "<pattern>"
 celis decide [--scope at:<place> | trail:<id> | me] [--replaces <id>] [--path <glob>]... [--content <regex>] [--command <regex>] [--tool <regex>] [--situation] [--promoted] [--project <id>] -- "<rule>"
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>] [--check <command>] [--new] [--session <id>] [--project <id>] -- "<title>"
@@ -13,12 +13,11 @@ celis name <trail id> <name>
 celis tree [<id>] [--graph] [--full] [--all] [--demo]
 ```
 
-1. Ask before you act. At a new ask, when celis asks for the `celis:past` agent, run it as celis says,
-   even for a simple ask. With no such agent, search for past asks like this one yourself:
-   `celis grep -i -E " (step|rule) [0-9a-f]{8} .*(<word>|<word>)"`, with the words of the ask. Before you
-   read or change a file, and before you run a command, run `celis rules` with those files and that
-   command, and keep each rule it gives. Run it again on a file after you write it, because some rules
-   come only on the new text. When celis already gave the rules of a call, do not ask again. A rule
+1. Ask before you act. Run the `celis:past` agent with the ask and the files and commands you will
+   touch, at a new ask, even a simple one, and again when the work moves to other files or commands.
+   Keep each rule it brings. With no such agent, run `celis rules <files> -- "<command>"` yourself
+   before you change a file or run a command, and search for past asks like this one:
+   `celis grep -i -E " (step|rule) [0-9a-f]{8} .*(<word>|<word>)"`, with the words of the ask. A rule
    that no file or command shows comes only from a search:
    `celis grep -i -E " rule [0-9a-f]{8} live .* situation .*(<word>|<word>)"`. When the ask conflicts
    with a rule, the ask wins: replace the rule.
@@ -40,7 +39,7 @@ celis tree [<id>] [--graph] [--full] [--all] [--demo]
 5. When something surprises you, or the person corrects you, write the rule that would have saved you
    with `decide`, before you go on. Give it the narrowest trigger that shows its moment: `--path` for
    the files it acts on, with `--content` when only some text in them matters, `--command` for shell
-   commands, `--tool` for other tool calls, and `--situation` only when no call shows it ahead. A
+   commands, and `--situation` only when no file or command shows it ahead. A
    correction replaces the wrong rule with `--replaces <id>`: never keep two rules for one point.
 6. Do what celis prints after each command. It names the next move.
 7. Close the ask, never the trail. Tell the person about the ask by the steps right under it, and each
@@ -54,6 +53,6 @@ when it holds for that kind of work in any project: a rule about a framework, a 
 convention. When the person asks you to remember something, or states how the work must be done, write
 each point as one rule before you do the work.
 
-For more: `celis rules <file> --all` gives every rule of a file, `celis grep` searches every trail and
+For more: `celis rules <file>` gives every rule of a file, `celis grep` searches every trail and
 rule, and `celis tree` shows the work. Read the `steps.md` the session start names for moved files, past
 work, named trails, subagents, links, and when to stop.
