@@ -32,6 +32,7 @@ fn next(records: &[Note], now: u64) -> Option<u64> {
     let tree = Tree {
         steps: &steps,
         rules: &rules,
+        given: &Default::default(),
         reuse: &reuse,
         layout: None,
         grouped: false,

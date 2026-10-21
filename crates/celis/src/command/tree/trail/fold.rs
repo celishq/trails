@@ -12,7 +12,7 @@ use ratatui::style::Style;
 use ratatui::text::Span;
 
 impl Tree<'_> {
-    /// Adds the rules line `§ <n> rules` of the trail `trail` after `rail`, the `last` of its level;
+    /// Adds the rules line `§ <n> rules` of the trail or step `trail` after `rail`, the `last` of its level;
     /// open, a line under it for each of `rules`: `§ <text>`, wrapped, its id at the end.
     pub(super) fn rules_line(
         &self,

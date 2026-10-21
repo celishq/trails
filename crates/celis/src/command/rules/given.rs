@@ -2,12 +2,12 @@
 
 use crate::failure::Failure;
 use serde_json::{json, Value};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-/// `$CELIS_HOME/given`: one JSON line for each rule given in a session, and for each compaction of a
-/// session.
+/// `$CELIS_HOME/given`: one JSON line for each rule given in a session, each compaction of a session,
+/// and each miss.
 pub(crate) struct Given {
     path: PathBuf,
 }
@@ -22,11 +22,8 @@ impl Given {
 
     /// The ids of the rules given in `session` after its last compaction.
     pub fn of(&self, session: &str) -> HashSet<String> {
-        let text = std::fs::read_to_string(&self.path).unwrap_or_default();
         let mut ids = HashSet::new();
-        let lines = text
-            .lines()
-            .filter_map(|l| serde_json::from_str::<Value>(l).ok());
+        let lines = self.lines().into_iter();
         for line in lines.filter(|l| l["session"] == session && l["miss"] != true) {
             match (line["compact"] == true, line["rule"].as_str()) {
                 (true, _) => ids.clear(),
@@ -39,17 +36,63 @@ impl Given {
         ids
     }
 
-    /// Logs each rule of `rules` as given in `session` at `at`.
-    pub fn give(&self, session: &str, rules: &[&str], at: u64) -> Result<(), Failure> {
-        let lines = rules
-            .iter()
-            .map(|r| json!({"at": at, "session": session, "rule": r}));
+    /// The ids of the rules a miss names.
+    pub fn misses(&self) -> HashSet<String> {
+        let lines = self.lines().into_iter().filter(|l| l["miss"] == true);
+        lines
+            .filter_map(|l| Some(l["rule"].as_str()?.to_string()))
+            .collect()
+    }
+
+    /// The ids of the rules given while each step worked, by step id, in the order given, each once.
+    pub fn steps(&self) -> HashMap<String, Vec<String>> {
+        let mut steps: HashMap<String, Vec<String>> = HashMap::new();
+        for line in self.lines().into_iter().filter(|l| l["miss"] != true) {
+            if let (Some(step), Some(rule)) = (line["step"].as_str(), line["rule"].as_str()) {
+                let rules = steps.entry(step.to_string()).or_default();
+                if !rules.iter().any(|r| r == rule) {
+                    rules.push(rule.to_string());
+                }
+            }
+        }
+        steps
+    }
+
+    /// Logs each rule of `rules` as given in `session` at `at`, while `step` worked.
+    pub fn give(
+        &self,
+        session: &str,
+        rules: &[&str],
+        step: Option<&str>,
+        at: u64,
+    ) -> Result<(), Failure> {
+        let lines = rules.iter().map(|r| {
+            let mut line = json!({"at": at, "session": session, "rule": r});
+            if let Some(step) = step {
+                line["step"] = json!(step);
+            }
+            line
+        });
         self.add(lines.collect())
+    }
+
+    /// Logs a miss of the rule `rule` in `session` at `at`.
+    pub fn miss(&self, session: &str, rule: &str, at: u64) -> Result<(), Failure> {
+        self.add(vec![
+            json!({"at": at, "session": session, "rule": rule, "miss": true}),
+        ])
     }
 
     /// Logs a compaction of `session` at `at`.
     pub fn compact(&self, session: &str, at: u64) -> Result<(), Failure> {
         self.add(vec![json!({"at": at, "session": session, "compact": true})])
+    }
+
+    /// Each line of the log that is JSON.
+    fn lines(&self) -> Vec<Value> {
+        let text = std::fs::read_to_string(&self.path).unwrap_or_default();
+        let lines = text.lines();
+        lines.filter_map(|l| serde_json::from_str(l).ok()).collect()
     }
 
     /// Adds `lines` to the end of the log, and makes its folder.

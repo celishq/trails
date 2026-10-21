@@ -2,7 +2,7 @@
 
 use crate::command::tree::level::Level;
 use crate::command::tree::row::Row;
-use crate::command::tree::{after, Item, RuleNote, Tree};
+use crate::command::tree::{after, Item, RuleNote, Tree, RULES};
 use crate::terminal::canvas::{paint, Styled, DIM};
 use crate::terminal::look::look;
 use crate::text::clock::took;
@@ -34,8 +34,8 @@ impl Tree<'_> {
 
     /// Adds the steps `notes` under the line `above` after `rail`, the last of their level unless `more`,
     /// each followed by its own one level down, each with its title wrapped and its details under it; an
-    /// open one with the lines `--full` prints under it, a closed done one with no time and its steps
-    /// folded.
+    /// open one with the lines `--full` prints under it, then the rules line of the rules given while it
+    /// worked; a closed done one with no time and its steps folded.
     pub(in crate::command::tree) fn steps(
         &self,
         notes: Vec<Step>,
@@ -56,8 +56,9 @@ impl Tree<'_> {
             let (lead, rail) = self.branch(rail, last, self.opens(note).then_some(open));
             let size = note.tree().len() - 1;
             let level = Level::of(note.children());
+            let given = self.given(note);
             let folded = state == State::Done && size > 0 && !open;
-            let below = match note.children().is_empty() || folded {
+            let below = match (note.children().is_empty() && given.is_empty()) || folded {
                 true => after(&rail, Span::raw("  ")),
                 false => after(&rail, paint(DIM, "│ ")),
             };
@@ -74,11 +75,15 @@ impl Tree<'_> {
                 false => self.worked(&note.tree()).map(took),
             };
             self.details(&below, [folded.then(|| plural(size, "step")), time], lines);
+            let rules = (!given.is_empty()).then(|| format!("{RULES}{}", note.id()));
+            let rules = rules
+                .into_iter()
+                .chain(given.iter().map(|(r, _)| r.id.clone()));
             let item = Item {
                 id: note.id().to_string(),
                 open,
                 parent: Some(above.to_string()),
-                under: level.ids(note.id()),
+                under: rules.chain(level.ids(note.id())).collect(),
             };
             self.pick(item, lines, first);
             if open {
@@ -86,7 +91,7 @@ impl Tree<'_> {
                 self.followed(note, &below, lines);
             }
             if !folded {
-                self.level(level, vec![], &rail, note.id(), lines);
+                self.level(level, given, &rail, note.id(), lines);
             }
         }
     }

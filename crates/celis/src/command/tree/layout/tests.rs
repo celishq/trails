@@ -44,6 +44,7 @@ fn print(records: &[Note], layout: &Layout) {
     let tree = Tree {
         steps: &steps,
         rules: &rules,
+        given: &Default::default(),
         reuse: &reuse,
         layout: Some(layout),
         grouped: true,

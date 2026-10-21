@@ -43,7 +43,8 @@ impl Tree<'_> {
     }
 
     /// Adds the steps `notes` after `indent`, each as its mark, id and title, its first place and
-    /// worked time, then its lines and its level two spaces further in.
+    /// worked time, then its lines, the rules given while it worked, whole with `--full`, and its level
+    /// two spaces further in.
     fn agent_steps(&self, notes: Vec<Step>, indent: &str, lines: &mut Vec<Row>) {
         for note in notes {
             let mut line = format!("{indent}{}", self.heading(note));
@@ -56,6 +57,14 @@ impl Tree<'_> {
             lines.push(Row::Text(line.into()));
             let under = format!("{indent}  ");
             self.below(note, &under, lines);
+            for (record, rule) in self.given(note) {
+                let text = match self.view.full {
+                    true => rule.content.as_str(),
+                    false => rule.brief(),
+                };
+                let line = format!("{under}§ {} {text}", short(&record.id));
+                lines.push(Row::Text(line.into()));
+            }
             let level = Level::of(note.children());
             self.agent_steps(level.active, &under, lines);
             self.agent_steps(level.ended, &under, lines);

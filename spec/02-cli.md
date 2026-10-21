@@ -248,8 +248,8 @@ hook     {"session_id", "cwd", "hook_event_name": "PreToolUse | PostToolUse", "t
 given    $CELIS_HOME/given, one JSON object a line:
          {"at", "session", "rule"[, "step"]}          a rule given
          {"at", "session", "compact": true}           a compaction
-         {"at", "session", "rule", "miss": true}      a rule replaced in the session that matched a call
-                                                      but did not come
+         {"at", "session", "rule", "miss": true}      a miss: a rule replaced in the session that was not
+                                                      given in it
 ```
 
 **Rules**
@@ -263,12 +263,17 @@ given    $CELIS_HOME/given, one JSON object a line:
   print nothing.
 - The files a shell command changed MUST be the files `git status --porcelain` gives in the project.
 - A rule with the `situation` label, and a rule with no trigger and no `at:<place>` scope, MUST NOT come.
-- `rules` MUST print at most 5 rules a call, but every rule with `--all`: first those that match a named
+- `rules` MUST print at most 5 rules a call, but every rule with `--all`: first a rule with a `replaces`
+  tag, then a rule that a miss line names, then the rest; within each, first those that match a named
   file (a `path` with no `*` or `?`, or an `at:<place>`), then a glob with `content`, a `command` or a
   `tool`, then a glob with no `content`; newest first within each.
 - The session MUST be `--session`, else the hook's `session_id`, else the session of the environment.
 - `rules` MUST add a line to `$CELIS_HOME/given` for each rule it prints in a session, and MUST NOT print
-  a rule that the session's lines give after the session's last compaction line.
+  a rule that the session's lines give after the session's last compaction line. The line MUST hold
+  `step`, the id of the oldest working step of the session's open trail in the project, when there is one.
+- `decide --replaces` in a session (CIP-04, "Sessions") MUST add a miss line for the rule it replaces
+  when no line of the session gives that rule after the session's last compaction line. A miss line
+  gives no rule.
 - When more rules match than it prints, `rules` MUST end with the `more` line.
 - `$CELIS_HOME/given` is no record, and links do not carry it.
 
