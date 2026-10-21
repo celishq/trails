@@ -30,10 +30,13 @@ checked; 4 of those replaced an older version that the memory may still hold.
          with celis rules --diff named for the check before done, and long rule output that says its
          size and reads in pages with --page), full (reminded, with every rule printed in full on each
          call: no skip of rules given before), checked (full, with celis rules --diff named for the check
-         before done)
+         before done), words (checked, with no triggers: the agent finds the rules by their words with
+         celis grep), quiet (checked, with no note at step add or step start), nodiff (checked, with
+         celis rules on the files git names changed in place of --diff)
 
 Each task starts from a new copy of seed/ and a new copy of the memory, so tasks are independent and run in
-parallel. Each task appends one line to results/<arm>-<model>-r<N>.jsonl.
+parallel. Each task appends one line to results/<arm>-<model>-r<N>.jsonl; with --again the lines join those of the
+last run, so a cell holds two runs.
 """
 
 import argparse
@@ -64,7 +67,9 @@ NARROW = {"stock": "stock/*.py", "stock/commands": "stock/commands/*.py", "stock
 PICKS = ("picked", "pickers", "pickers50", "merged", "staged")
 JITS = ("jit", "narrow", "ranked", "scoped", "scopedrank", *PICKS)
 OWN = ("pull",)
-TRIGGERED = ("taught", "delegated", "coordinated", "reminded", "sized", "tooled", "full", "checked")
+TRIGGERED = ("taught", "delegated", "coordinated", "reminded", "sized", "tooled", "full", "checked", "words", "quiet",
+             "nodiff")
+UNTRIGGERED = ("words",)
 STORED = ("celis", "placed", *JITS, *OWN, *TRIGGERED)
 FIXED = {"GIT_AUTHOR_DATE": "2026-01-01T00:00:00Z", "GIT_COMMITTER_DATE": "2026-01-01T00:00:00Z"}
 
@@ -137,7 +142,7 @@ def seed(arm, home, rules, targets):
             extra = ["--replaces", ids[new["id"]]] if new and new["id"] in ids else []
             if arm in TRIGGERED:
                 scope = "me"
-            if not old:
+            if not old and arm not in UNTRIGGERED:
                 extra += trigger_args(triggers.get(target["id"] if target else by_text[line]))
             where = other if scope == "project" and arm != "placed" else place
             out = sh("celis", "decide", "--scope", scope, *extra, "--", line, cwd=where, env=env)
@@ -214,7 +219,8 @@ def agent(arm, model, work, home, prompt, log):
     if arm == "oracle":
         env["CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD"] = "1"
         flags += ["--add-dir", str(home / "user")]
-    if arm in ("celis", "placed", *JITS, "delegated", "coordinated", "reminded", "sized", "tooled", "full", "checked"):
+    if arm in ("celis", "placed", *JITS, "delegated", "coordinated", "reminded", "sized", "tooled", "full", "checked", "words",
+               "quiet", "nodiff"):
         flags += ["--plugin-dir", str(plugin(home, arm)) if arm in PICKS
                   else os.environ.get("CELIS_PLUGIN", str(ROOT / "plugins" / "celis"))]
     start = time.time()
@@ -232,13 +238,13 @@ def agent(arm, model, work, home, prompt, log):
             "output": usage.get("output_tokens", 0), "seconds": round(time.time() - start)}
 
 
-def task(arm, model, n, name, home, task, targets):
+def task(arm, model, n, name, home, task, targets, again):
     """Does one task with a copy of the memory, checks it, and appends its line to the results."""
     root = RUNS / name / task["id"]
     shutil.rmtree(root, ignore_errors=True)
     shutil.copytree(home, root / "home")
     base = workdir(root / "work")
-    logs = RESULTS / "transcripts" / name
+    logs = RESULTS / "transcripts" / (f"{name}-again" if again else name)
     logs.mkdir(parents=True, exist_ok=True)
     session = agent(arm, model, root / "work", root / "home", task["prompt"], logs / f"{task['id']}.jsonl")
     line = {"arm": arm, "model": model, "rules": n, "task": task["id"], "session": session,
@@ -260,6 +266,7 @@ def main():
     parser.add_argument("--jobs", type=int, default=8)
     parser.add_argument("--model", choices=MODELS, default="haiku")
     parser.add_argument("--tasks", default="")
+    parser.add_argument("--again", action="store_true")
     args = parser.parse_args()
     targets = json.loads((HERE / "data" / "targets.json").read_text())
     filler = json.loads((HERE / "data" / "filler.json").read_text()) if args.arm != "plain" else {}
@@ -273,8 +280,9 @@ def main():
         home = RUNS / name / "home"
         shutil.rmtree(RUNS / name, ignore_errors=True)
         seed(args.arm, home, memory(n, targets, filler) if filler else ([], []), targets)
-        (RESULTS / f"{name}.jsonl").unlink(missing_ok=True)
-        jobs += [(args.arm, args.model, n, name, home, t, targets) for t in tasks]
+        if not args.again:
+            (RESULTS / f"{name}.jsonl").unlink(missing_ok=True)
+        jobs += [(args.arm, args.model, n, name, home, t, targets, args.again) for t in tasks]
     with ThreadPoolExecutor(args.jobs) as pool:
         for future in [pool.submit(task, *job) for job in jobs]:
             future.result()
