@@ -16,7 +16,7 @@ read. What a command shows a person is not part of it.
 ```
 celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--content <regex>] [--command <regex>] [--situation] [--promoted] [--project <id>] -- <text>
                                                        a rule, in its scope
-celis rules [<file>]... [--session <id>] [-- <command>]
+celis rules [<file>]... [--diff] [--session <id>] [-- <command>]
                                                        the rules of some files and a command
 celis name <trail id> <name>                          give a trail a name
 celis names [--limit <n>]                             the named trails, most used first
@@ -250,7 +250,9 @@ given    $CELIS_HOME/given, one JSON object a line:
 
 - Each `<file>` MUST count as a read of that file, and `<command>` as a shell command. A `<file>` that
   is a folder MUST count as a read of each file that `git ls-files --cached --others --exclude-standard
-  -- <folder>` gives in the project.
+  -- <folder>` gives in the project. `--diff` MUST count as a read of each file that `git diff
+  --name-only HEAD` and `git ls-files --others --exclude-standard` give in the working folder, and that
+  exists.
 - With no file and no command, `rules` MUST print the index of the live rules in scope: each word that two
   or more of them use before their "because", with how many use it, most used first.
 - A rule with no trigger and no `at:<place>` scope MUST NOT come.
@@ -271,6 +273,7 @@ given    $CELIS_HOME/given, one JSON object a line:
 ```
 celis rules
 celis rules shelf/prices.py
+celis rules --diff
 celis rules --session 95e9be99 shelf/prices.py -- "pytest shelf/test_prices.py"
 ```
 

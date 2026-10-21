@@ -18,7 +18,10 @@ impl Command {
     /// each in the session, with its working step.
     /// With no file and no command, prints the index of the live rules in scope. Writes no record.
     pub(crate) fn rules(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
-        let files = &args.words[1..];
+        let mut files = args.words[1..].to_vec();
+        if args.diff {
+            files.extend(changed(&self.folder));
+        }
         let line = args.text.as_deref().filter(|t| !t.trim().is_empty());
         if !self.held()? {
             return Ok(());
@@ -26,7 +29,7 @@ impl Command {
         let project = self.project();
         let trails = self.trails()?;
         let live = trails.rules().live(&project.anchor.project).into_iter();
-        if files.is_empty() && line.is_none() {
+        if files.is_empty() && line.is_none() && !args.diff {
             let index = Index::of(live.map(|(_, rule)| rule.content));
             return super::put(out, &index.text());
         }
@@ -77,6 +80,29 @@ fn working(trails: &Trails, project: &Project, session: &str) -> Option<String> 
     let mut tree = trail.tree().into_iter().skip(1);
     tree.find(|s| s.state() == State::Working)
         .map(|s| s.id().to_string())
+}
+
+/// The files that git shows changed or new in `folder`, each that exists.
+fn changed(folder: &Path) -> Vec<String> {
+    let listed = |args: &[&str]| {
+        let output = std::process::Command::new("git")
+            .args(args)
+            .current_dir(folder)
+            .output();
+        output.map_or_else(
+            |_| String::new(),
+            |o| String::from_utf8_lossy(&o.stdout).into(),
+        )
+    };
+    let text = listed(&["diff", "--name-only", "--relative", "HEAD"])
+        + &listed(&["ls-files", "--others", "--exclude-standard"]);
+    let mut files: Vec<String> = Vec::new();
+    for file in text.lines().filter(|f| folder.join(f).is_file()) {
+        if !files.iter().any(|f| f == file) {
+            files.push(file.to_string());
+        }
+    }
+    files
 }
 
 /// A read of the file `file`, given in `folder`, else of each file git gives under it when it is a

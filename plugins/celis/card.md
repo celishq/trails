@@ -1,7 +1,7 @@
 celis keeps each ask as a trail: its steps, their proofs, and the rules that later work must keep.
 
 ```
-celis rules [<file>]... [--session <id>] [-- "<command>"]
+celis rules [<file>]... [--diff] [--session <id>] [-- "<command>"]
 celis grep <grep option>... "<pattern>"
 celis decide [--scope at:<place> | trail:<id> | me] [--replaces <id>] [--path <glob>]... [--content <regex>] [--command <regex>] [--situation] [--promoted] [--project <id>] -- "<rule>"
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>] [--check <command>] [--new] [--session <id>] [--project <id>] -- "<title>"
@@ -29,7 +29,7 @@ celis tree [<id>] [--graph] [--full] [--all] [--demo]
    with the most doubt, one level at a time, until a step is one action. Only the step you take next
    gets `--at` and a `--check` that proves it. Add the next step after you close this one.
 4. For each step: `start`, and do what it prints: run `celis rules <files> -- "<command>"` before each
-   change, and before `done`, check your change against the rules of each file you changed. Read all
+   change, and before `done`, check your change against `celis rules --diff`. Read all
    that celis prints: never cut it with `head` or `grep`. Then `done` with a proof a person can check,
    such as a command and its result: `--as-planned` when the result matches `expect`, else
    `--changed`. A wrong step, or a fix to done work, takes `--replaces <id>`. When a step grows past one

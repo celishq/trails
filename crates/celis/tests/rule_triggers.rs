@@ -77,6 +77,21 @@ fn a_file_not_yet_made_matches_by_its_path_alone() {
     assert!(texts(&repo, &["shelf/new.py"]).is_empty());
 }
 
+/// `--diff` counts as a read of each file git shows changed or new (`spec/02-cli.md`, "Rules").
+#[test]
+fn diff_reads_the_files_git_shows_changed() {
+    let repo = Repo::new();
+    decide(&repo, &["--path", "*.md"], "markdown");
+    decide(&repo, &["--path", "*.py"], "python");
+    decide(&repo, &["--path", "*.rs"], "rust");
+    assert!(rules(&repo, &["--diff"]).is_empty());
+    repo.write("new.py", "x = 1\n");
+    repo.write("README.md", "changed\n");
+    let mut found = texts(&repo, &["--diff"]);
+    found.sort();
+    assert_eq!(found, ["markdown", "python"]);
+}
+
 /// A folder counts as a read of each file git gives under it, ignored files left out
 /// (`spec/02-cli.md`, "Rules").
 #[test]
