@@ -108,8 +108,8 @@ fn an_older_rule_with_a_tool_tag_has_no_trigger() {
     assert!(rules(&repo, &["."]).is_empty());
 }
 
-/// With no file, `rules` gives each word that two or more live rules use before their
-/// "because", most used first (`spec/02-cli.md`, "Rules").
+/// With no file, `rules` gives each word that the live rules use before their "because", most used
+/// first (`spec/02-cli.md`, "Rules").
 #[test]
 fn rules_with_no_file_give_the_index() {
     let repo = Repo::new();
@@ -131,13 +131,12 @@ fn rules_with_no_file_give_the_index() {
     for args in [&[][..], &["--", " "]] {
         let lines = rules(&repo, args);
         assert_eq!(
-            lines,
-            [
-                "3 live rules. Their words, by how many rules use each:",
-                "prices 2",
-            ],
+            lines[0], "3 live rules. Their words, by how many rules use each:",
             "{lines:?}"
         );
+        assert!(lines[1].starts_with("prices 2, "), "{lines:?}");
+        assert!(lines[1].contains("refund 1"), "{lines:?}");
+        assert!(!lines[1].contains("floats"), "{lines:?}");
     }
 }
 

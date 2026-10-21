@@ -18,7 +18,7 @@ const COMMON: &[&str] = &[
     "why", "will", "with", "would", "you", "your",
 ];
 
-/// Each word that two or more rules use before their "because", with how many use it, most used
+/// Each word that the rules use before their "because", with how many use it, most used
 /// first; and how many rules there are.
 pub(super) struct Index {
     rules: usize,
@@ -42,7 +42,7 @@ impl Index {
                 *counts.entry(word.to_string()).or_default() += 1;
             }
         }
-        let mut words: Vec<(String, usize)> = counts.into_iter().filter(|(_, n)| *n >= 2).collect();
+        let mut words: Vec<(String, usize)> = counts.into_iter().collect();
         words.sort_by(|(a, x), (b, y)| y.cmp(x).then(a.cmp(b)));
         Index { rules, words }
     }

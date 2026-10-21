@@ -247,8 +247,8 @@ index    <n> live rules. Their words, by how many rules use each:
   -- <folder>` gives in the project. `--diff` MUST count as each file that `git diff
   --name-only HEAD` and `git ls-files --others --exclude-standard` give in the working folder, and that
   exists.
-- With no file, `rules` MUST print the index of the live rules in scope: each word that two
-  or more of them use before their "because", with how many use it, most used first.
+- With no file, `rules` MUST print the index of the live rules in scope: each word that
+  they use before their "because", with how many use it, most used first.
 - A rule with no trigger and no `at:<place>` scope MUST NOT come.
 - `rules` MUST print every rule that matches: first a rule with a `replaces` tag, then the rest; within
   each, first those that match a named file (a `path` with no `*` or `?`, or an `at:<place>`), then a
