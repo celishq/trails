@@ -81,6 +81,20 @@ The real-rules bench, 15 tasks on Opus, 11 valid (4 named code only on this bran
 applying rules, checked 6 of 67, no memory 7 of 62. Most breaks are tasks that ask for what a rule
 forbids, where the ask wins; all three arms broke the same few. The bench cannot tell the arms apart.
 
+Each part of checked removed in turn, at 400 rules, 2 runs a cell (rules broken, run 1 / run 2):
+
+| Arm                                                     | Sonnet            | Opus              |
+| ------------------------------------------------------- | ----------------- | ----------------- |
+| checked                                                 | 34% (31% / 38%)   | 18% (19% / 16%)   |
+| quiet (no note at step add or step start)               | 43% (41% / 45%)   | 21% (20% / 22%)   |
+| nodiff (`celis rules` on the files git names, no `--diff`) | 45% (45% / 45%) | 23% (21% / 24%)   |
+| words (no triggers: the agent searches by words)        | 54% (55% / 53%)   | 48% (49% / 47%)   |
+
+- Every removal broke more rules. Triggers matter most: without them, both models break 20 to 30 points
+  more, and keep the old version of a replaced rule 14% to 30% of the time, not 2% to 7%.
+- The notes and `--diff` cost Opus only 3 to 5 points, near the run spread, but Sonnet 9 to 11. The
+  design keeps all three parts.
+
 - With the notes, Sonnet searched the rules with `celis grep` in 6 to 7 tasks of 8, not 1, and ran
   `celis rules` after a write 7 times, not 0 or 1. It beat pickers at 400 and 1000 rules.
 - Sonnet still lost 55 rules at 1000 rules that it never saw: the harness cut 5 outputs of `celis rules`

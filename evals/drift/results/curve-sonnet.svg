@@ -6,15 +6,18 @@
 <text x="50.0" y="266" text-anchor="middle">400</text>
 <text x="390.0" y="266" text-anchor="middle">1000</text>
 <polyline points="50.0,76.6 390.0,56.8" fill="none" stroke="#2a9d8f" stroke-width="2"/>
-<polyline points="50.0,173.2 390.0,84.6" fill="none" stroke="#00bbf9" stroke-width="2"/>
+<polyline points="50.0,164.8 390.0,84.6" fill="none" stroke="#00bbf9" stroke-width="2"/>
 <polyline points="50.0,161.1 390.0,68.7" fill="none" stroke="#073b4c" stroke-width="2"/>
 <polyline points="50.0,66.4 390.0,60.2" fill="none" stroke="#118ab2" stroke-width="2"/>
 <polyline points="50.0,152.3 390.0,87.1" fill="none" stroke="#9b5de5" stroke-width="2"/>
+<polyline points="50.0,137.1" fill="none" stroke="#00f5d4" stroke-width="2"/>
 <polyline points="50.0,137.4 390.0,97.7" fill="none" stroke="#8ac926" stroke-width="2"/>
+<polyline points="50.0,142.7" fill="none" stroke="#fee440" stroke-width="2"/>
 <polyline points="50.0,166.7 390.0,104.8" fill="none" stroke="#ffd166" stroke-width="2"/>
 <polyline points="50.0,85.9 390.0,89.7" fill="none" stroke="#ef8354" stroke-width="2"/>
 <polyline points="50.0,50.0 390.0,75.6" fill="none" stroke="#ef476f" stroke-width="2"/>
 <polyline points="50.0,120.3 390.0,85.2" fill="none" stroke="#2ec4b6" stroke-width="2"/>
+<polyline points="50.0,114.4" fill="none" stroke="#f15bb5" stroke-width="2"/>
 <text x="660.0" y="20" text-anchor="middle" font-weight="bold">Replaced rules kept in the old version</text>
 <line x1="490" y1="250" x2="830" y2="250" stroke="#999"/>
 <line x1="490" y1="50" x2="490" y2="250" stroke="#999"/>
@@ -22,39 +25,48 @@
 <text x="490.0" y="266" text-anchor="middle">400</text>
 <text x="830.0" y="266" text-anchor="middle">1000</text>
 <polyline points="490.0,75.3 830.0,71.1" fill="none" stroke="#2a9d8f" stroke-width="2"/>
-<polyline points="490.0,240.2 830.0,184.5" fill="none" stroke="#00bbf9" stroke-width="2"/>
+<polyline points="490.0,245.0 830.0,184.5" fill="none" stroke="#00bbf9" stroke-width="2"/>
 <polyline points="490.0,171.4 830.0,108.1" fill="none" stroke="#073b4c" stroke-width="2"/>
 <polyline points="490.0,64.4 830.0,165.8" fill="none" stroke="#118ab2" stroke-width="2"/>
 <polyline points="490.0,239.8 830.0,229.7" fill="none" stroke="#9b5de5" stroke-width="2"/>
+<polyline points="490.0,173.8" fill="none" stroke="#00f5d4" stroke-width="2"/>
 <polyline points="490.0,102.6 830.0,50.0" fill="none" stroke="#8ac926" stroke-width="2"/>
+<polyline points="490.0,244.9" fill="none" stroke="#fee440" stroke-width="2"/>
 <polyline points="490.0,239.8 830.0,199.2" fill="none" stroke="#ffd166" stroke-width="2"/>
 <polyline points="490.0,134.2 830.0,123.7" fill="none" stroke="#ef8354" stroke-width="2"/>
 <polyline points="490.0,53.5 830.0,102.6" fill="none" stroke="#ef476f" stroke-width="2"/>
 <polyline points="490.0,155.3 830.0,168.7" fill="none" stroke="#2ec4b6" stroke-width="2"/>
+<polyline points="490.0,160.5" fill="none" stroke="#f15bb5" stroke-width="2"/>
 <text x="1100.0" y="20" text-anchor="middle" font-weight="bold">Input tokens a task (k)</text>
 <line x1="930" y1="250" x2="1270" y2="250" stroke="#999"/>
 <line x1="930" y1="50" x2="930" y2="250" stroke="#999"/>
-<text x="924" y="54" text-anchor="end">375k</text>
+<text x="924" y="54" text-anchor="end">366k</text>
 <text x="930.0" y="266" text-anchor="middle">400</text>
 <text x="1270.0" y="266" text-anchor="middle">1000</text>
-<polyline points="930.0,133.0 1270.0,144.7" fill="none" stroke="#2a9d8f" stroke-width="2"/>
-<polyline points="930.0,50.0 1270.0,85.7" fill="none" stroke="#00bbf9" stroke-width="2"/>
-<polyline points="930.0,115.0 1270.0,108.0" fill="none" stroke="#073b4c" stroke-width="2"/>
-<polyline points="930.0,146.1 1270.0,160.2" fill="none" stroke="#118ab2" stroke-width="2"/>
-<polyline points="930.0,80.6 1270.0,95.2" fill="none" stroke="#9b5de5" stroke-width="2"/>
-<polyline points="930.0,90.9 1270.0,78.0" fill="none" stroke="#8ac926" stroke-width="2"/>
-<polyline points="930.0,68.4 1270.0,74.7" fill="none" stroke="#ffd166" stroke-width="2"/>
-<polyline points="930.0,131.5 1270.0,91.6" fill="none" stroke="#ef8354" stroke-width="2"/>
-<polyline points="930.0,177.2 1270.0,153.6" fill="none" stroke="#ef476f" stroke-width="2"/>
-<polyline points="930.0,73.2 1270.0,73.2" fill="none" stroke="#2ec4b6" stroke-width="2"/>
+<polyline points="930.0,130.2 1270.0,142.3" fill="none" stroke="#2a9d8f" stroke-width="2"/>
+<polyline points="930.0,50.0 1270.0,81.9" fill="none" stroke="#00bbf9" stroke-width="2"/>
+<polyline points="930.0,111.9 1270.0,104.7" fill="none" stroke="#073b4c" stroke-width="2"/>
+<polyline points="930.0,143.7 1270.0,158.1" fill="none" stroke="#118ab2" stroke-width="2"/>
+<polyline points="930.0,76.7 1270.0,91.6" fill="none" stroke="#9b5de5" stroke-width="2"/>
+<polyline points="930.0,102.8" fill="none" stroke="#00f5d4" stroke-width="2"/>
+<polyline points="930.0,87.2 1270.0,74.0" fill="none" stroke="#8ac926" stroke-width="2"/>
+<polyline points="930.0,76.9" fill="none" stroke="#fee440" stroke-width="2"/>
+<polyline points="930.0,64.2 1270.0,70.6" fill="none" stroke="#ffd166" stroke-width="2"/>
+<polyline points="930.0,128.8 1270.0,87.9" fill="none" stroke="#ef8354" stroke-width="2"/>
+<polyline points="930.0,175.5 1270.0,151.4" fill="none" stroke="#ef476f" stroke-width="2"/>
+<polyline points="930.0,69.1 1270.0,69.1" fill="none" stroke="#2ec4b6" stroke-width="2"/>
+<polyline points="930.0,88.6" fill="none" stroke="#f15bb5" stroke-width="2"/>
 <text x="50" y="310" fill="#2a9d8f">celis</text>
 <text x="210" y="310" fill="#00bbf9">checked</text>
 <text x="370" y="310" fill="#073b4c">coordinated</text>
 <text x="530" y="310" fill="#118ab2">delegated</text>
 <text x="690" y="310" fill="#9b5de5">full</text>
-<text x="850" y="310" fill="#8ac926">pickers</text>
-<text x="1010" y="310" fill="#ffd166">reminded</text>
-<text x="1170" y="310" fill="#ef8354">sized</text>
-<text x="1330" y="310" fill="#ef476f">taught</text>
-<text x="1490" y="310" fill="#2ec4b6">tooled</text>
+<text x="850" y="310" fill="#00f5d4">nodiff</text>
+<text x="1010" y="310" fill="#8ac926">pickers</text>
+<text x="1170" y="310" fill="#fee440">quiet</text>
+<text x="1330" y="310" fill="#ffd166">reminded</text>
+<text x="1490" y="310" fill="#ef8354">sized</text>
+<text x="1650" y="310" fill="#ef476f">taught</text>
+<text x="1810" y="310" fill="#2ec4b6">tooled</text>
+<text x="1970" y="310" fill="#f15bb5">words</text>
 </svg>
