@@ -12,8 +12,8 @@ mod hook;
 
 impl Command {
     /// Acts on a hook: a prompt goes on its session's open trail, with notes on `err` about the work;
-    /// with no open trail, it names the past agent, once a session, unless the prompt is a task. A
-    /// compaction lets the session name the past agent again.
+    /// with no open trail, it names the past search, once a session, unless the prompt is a task. A
+    /// compaction lets the session name the past search again.
     pub(crate) fn prompt(
         &self,
         args: &Args,
@@ -95,9 +95,9 @@ impl Command {
         super::put(err, &joins(Some(trail.id())))
     }
 
-    /// Names the past agent, when the store holds any record and `asked` does not exist; then writes
+    /// Names the past search, when the store holds any record and `asked` does not exist; then writes
     /// `asked`. Else says how a new ask joins a trail of today, or starts one. Returns whether it named
-    /// the agent.
+    /// the search.
     fn recall(&self, trails: &Trails, err: &mut dyn Write, asked: &Path) -> Result<bool, Failure> {
         if asked.exists() || trails.is_empty() {
             let line = if today(&trails.steps()).is_empty() {
@@ -109,18 +109,16 @@ impl Command {
             return Ok(false);
         }
         let line = format!(
-            "celis: a new ask in this session; before any other tool, run the celis:past agent in the \
-             foreground with the ask and the places it may touch, and wait for its answer; it brings the \
-             rules of the files and commands the work will touch, the situation rules the ask must keep, \
-             and the steps of past asks like it; add the ask with \
-             --uses <id> for each past step the ask follows. {RULES}"
+            "celis: a new ask in this session; before any other tool, search for past asks like it, \
+             with the words of the ask: celis grep -i -E \"(trail|step) [0-9a-f]{{8}} done .*(<word>|<word>)\"; \
+             add the ask with --uses <id> for each past step it follows. {RULES}"
         );
         super::put(err, &line)?;
         mark(asked)?;
         Ok(true)
     }
 
-    /// The file that marks that `session` named the past agent.
+    /// The file that marks that `session` named the past search.
     fn asked(&self, session: &str) -> Result<std::path::PathBuf, Failure> {
         Ok(self
             .home()?

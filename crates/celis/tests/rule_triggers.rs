@@ -61,20 +61,44 @@ fn a_read_matches_the_glob_and_the_files_text() {
     assert!(texts(&repo, &["c.rs"]).is_empty());
 }
 
-/// A file that does not exist yet matches by its `path` alone, whatever its `content`
-/// (`spec/05-rules.md`, "Triggers").
+/// A file that does not exist yet matches a rule by its `path` only when the rule has no `content`
+/// (`spec/05-rules.md`, "Triggers"); `rules` then says how many rules wait for its text
+/// (`spec/02-cli.md`, "Rules").
 #[test]
-fn a_file_not_yet_made_matches_by_its_path_alone() {
+fn a_file_not_yet_made_matches_only_rules_with_no_content() {
     let repo = Repo::new();
     decide(
         &repo,
         &["--path", "**/*.py", "--content", "float"],
         "floats",
     );
+    decide(&repo, &["--path", "**/*.py"], "python");
     decide(&repo, &["--path", "*.rs"], "rust");
-    assert_eq!(texts(&repo, &["shelf/new.py"]), ["floats"]);
-    repo.write("shelf/new.py", "x = 1\n");
-    assert!(texts(&repo, &["shelf/new.py"]).is_empty());
+    assert_eq!(
+        rules(&repo, &["shelf/new.py"])[1..],
+        ["1 more rules may match the text of shelf/new.py; run celis rules again after you write them"]
+    );
+    assert_eq!(texts(&repo, &["shelf/new.py"])[..1], ["python"]);
+    let json = objects(&repo, &["rules", "shelf/new.py"]);
+    assert_eq!(json.last().unwrap()["waiting"], 1);
+    repo.write("shelf/new.py", "x = float(1)\n");
+    assert_eq!(texts(&repo, &["shelf/new.py"]), ["floats", "python"]);
+}
+
+/// `--diff` counts as a read of each file git shows changed or new, and not of a deleted one
+/// (`spec/02-cli.md`, "Rules").
+#[test]
+fn diff_reads_the_files_git_shows_changed() {
+    let repo = Repo::new();
+    decide(&repo, &["--path", "*.md"], "markdown");
+    decide(&repo, &["--path", "*.py"], "python");
+    decide(&repo, &["--path", "*.rs"], "rust");
+    assert!(rules(&repo, &["--diff"]).is_empty());
+    repo.write("new.py", "x = 1\n");
+    repo.write("README.md", "changed\n");
+    let mut found = texts(&repo, &["--diff"]);
+    found.sort();
+    assert_eq!(found, ["markdown", "python"]);
 }
 
 /// A folder counts as a read of each file git gives under it, ignored files left out

@@ -1,7 +1,7 @@
 celis keeps each ask as a trail: its steps, their proofs, and the rules that later work must keep.
 
 ```
-celis rules [<file>]... [--session <id>] [-- "<command>"]
+celis rules [<file>]... [--diff] [--session <id>] [-- "<command>"]
 celis grep <grep option>... "<pattern>"
 celis decide [--scope at:<place> | trail:<id> | me] [--replaces <id>] [--path <glob>]... [--content <regex>] [--command <regex>] [--situation] [--promoted] [--project <id>] -- "<rule>"
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>] [--check <command>] [--new] [--session <id>] [--project <id>] -- "<title>"
@@ -13,8 +13,8 @@ celis name <trail id> <name>
 celis tree [<id>] [--graph] [--full] [--all] [--demo]
 ```
 
-1. At a new ask, run the `celis:past` agent when celis asks for it, even for a simple ask. Then find
-   the rules of the ask, as `step add` says: run `celis rules` for the words the rules use, and search
+1. At a new ask, search for past asks like it when celis asks, even for a simple ask. Then find the
+   rules of the ask, as `step add` says: run `celis rules` for the words the rules use, and search
    them with `celis grep -i -E " rule [0-9a-f]{8} live .*(<word>|<word>)"`. Keep each rule in your own
    context. When the ask conflicts with a rule, the ask wins: replace the rule.
 2. An ask that changes a file, however small, or that works toward a result someone can check, gets a

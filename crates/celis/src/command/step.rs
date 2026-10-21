@@ -26,7 +26,7 @@ fn work(places: &[String]) -> String {
     };
     format!(
         "celis: before each change, run celis rules {named} -- \"<command>\", and keep each rule. \
-         Before done, run celis rules on each file you changed, and fix your change where it breaks a rule."
+         Before done, run celis rules --diff, and fix your change where it breaks a rule."
     )
 }
 

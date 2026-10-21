@@ -239,7 +239,7 @@ fn each_agents_prompt_hook_writes_a_prompt_on_its_sessions_trail() {
     }
 }
 
-/// Claude Code's prompt hook asks for the past agent once a session, and again after a compaction's
+/// Claude Code's prompt hook asks for the past search once a session, and again after a compaction's
 /// session start.
 #[test]
 fn claudes_hooks_ask_for_the_past_agent_again_after_a_compaction() {
@@ -255,20 +255,20 @@ fn claudes_hooks_ask_for_the_past_agent_again_after_a_compaction() {
     let ask = claude.payload("s1", &repo.path(), "make it blue");
     assert!(claude
         .run(&repo, claude.ask, &ask)
-        .contains("celis:past agent"));
+        .contains("past asks like it"));
     assert!(!claude
         .run(&repo, claude.ask, &ask)
-        .contains("celis:past agent"));
+        .contains("past asks like it"));
     let compact = serde_json::json!({"session_id": "s1", "cwd": repo.path(), "source": "compact"});
     claude.run(&repo, claude.start, &compact.to_string());
     assert!(claude
         .run(&repo, claude.ask, &ask)
-        .contains("celis:past agent"));
+        .contains("past asks like it"));
 }
 
-/// The prompt hooks of Codex and Gemini CLI ask to do what past.md says in place of the past agent.
+/// The prompt hooks of Codex and Gemini CLI give the same past search as Claude Code's.
 #[test]
-fn codex_and_gemini_prompt_hooks_name_past_md_for_the_past_agent() {
+fn codex_and_gemini_prompt_hooks_give_the_past_search() {
     let repo = Repo::new();
     let o = repo.run(
         &repo.path(),
@@ -284,12 +284,7 @@ fn codex_and_gemini_prompt_hooks_name_past_md_for_the_past_agent() {
             &agent.payload(agent.name, &repo.path(), "make it blue"),
         );
         let said = agent.context(&said);
-        assert!(
-            said.contains("do what past.md says"),
-            "{}: {said}",
-            agent.name
-        );
-        assert!(!said.contains("celis:past"), "{}: {said}", agent.name);
+        assert!(said.contains("past asks like it"), "{}: {said}", agent.name);
     }
 }
 

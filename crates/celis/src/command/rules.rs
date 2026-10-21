@@ -19,7 +19,10 @@ impl Command {
     /// each in the session, with its working step; a rule given before in the session prints as its id.
     /// With no file and no command, prints the index of the live rules in scope. Writes no record.
     pub(crate) fn rules(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
-        let files = &args.words[1..];
+        let mut files = args.words[1..].to_vec();
+        if args.diff {
+            files.extend(changed(&self.folder));
+        }
         let line = args.text.as_deref().filter(|t| !t.trim().is_empty());
         if !self.held()? {
             return Ok(());
@@ -27,7 +30,7 @@ impl Command {
         let project = self.project();
         let trails = self.trails()?;
         let live = trails.rules().live(&project.anchor.project).into_iter();
-        if files.is_empty() && line.is_none() {
+        if files.is_empty() && line.is_none() && !args.diff {
             let index = Index::of(live.map(|(_, rule)| rule.content));
             return super::put(out, &index.text());
         }
@@ -44,6 +47,10 @@ impl Command {
             })
             .collect();
         found.sort_by_key(|(fit, note, rule)| rank(rule, misses.contains(&note.id), *fit));
+        let live = trails.rules().live(&project.anchor.project).into_iter();
+        let waiting = live
+            .filter(|(_, rule)| calls.iter().any(|c| rule.waits(c)))
+            .count();
         let session = args.session.clone().or_else(|| self.session());
         let before = session.as_deref().map(|s| given.of(s)).unwrap_or_default();
         let (old, new): (Vec<_>, Vec<_>) = found
@@ -62,6 +69,21 @@ impl Command {
                 false => format!(
                     "given before: {}",
                     ids.map(short).collect::<Vec<_>>().join(" ")
+                ),
+            };
+            super::put(out, &text)?;
+        }
+        if waiting > 0 {
+            let missing: Vec<&str> = files
+                .iter()
+                .map(String::as_str)
+                .filter(|f| !self.folder.join(f).exists())
+                .collect();
+            let text = match args.json {
+                true => json!({ "waiting": waiting }).to_string(),
+                false => format!(
+                    "{waiting} more rules may match the text of {}; run celis rules again after you write them",
+                    missing.join(" ")
                 ),
             };
             super::put(out, &text)?;
@@ -93,6 +115,29 @@ fn working(trails: &Trails, project: &Project, session: &str) -> Option<String> 
     let mut tree = trail.tree().into_iter().skip(1);
     tree.find(|s| s.state() == State::Working)
         .map(|s| s.id().to_string())
+}
+
+/// The files that git shows changed or new in `folder`, each that exists.
+fn changed(folder: &Path) -> Vec<String> {
+    let listed = |args: &[&str]| {
+        let output = std::process::Command::new("git")
+            .args(args)
+            .current_dir(folder)
+            .output();
+        output.map_or_else(
+            |_| String::new(),
+            |o| String::from_utf8_lossy(&o.stdout).into(),
+        )
+    };
+    let text = listed(&["diff", "--name-only", "--relative", "HEAD"])
+        + &listed(&["ls-files", "--others", "--exclude-standard"]);
+    let mut files: Vec<String> = Vec::new();
+    for file in text.lines().filter(|f| folder.join(f).is_file()) {
+        if !files.iter().any(|f| f == file) {
+            files.push(file.to_string());
+        }
+    }
+    files
 }
 
 /// A read of the file `file`, given in `folder`, else of each file git gives under it when it is a

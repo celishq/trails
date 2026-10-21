@@ -13,11 +13,12 @@ see them.
 
 ## Past work
 
-When the `celis:past` agent returns past work that did the same thing as your ask and went as planned,
-take the steps right under its ask as yours, with the `changed` lines in mind. Copy the steps under a
-step only when you take that step. A past step that does the same thing in other words is the same
-step. When its title names its own case, write it in words that hold in yours. Add each step you take
-with `--uses <its id>`, so that later work can see which steps were reused.
+When a past search finds past work that did the same thing as your ask and went as planned, take the
+steps right under its ask as yours, with the `changed` lines in mind. Get them with
+`celis grep -E " <trail id> \[[^]]*\] (trail|step|changed) "`. Copy the steps under a step only when you
+take that step. A past step that does the same thing in other words is the same step. When its title
+names its own case, write it in words that hold in yours. Add each step you take with `--uses <its id>`,
+so that later work can see which steps were reused.
 
 ## Named trails
 
