@@ -79,12 +79,8 @@ impl Rule {
         })
     }
 
-    /// How narrowly the rule fits `call`; `None` when it does not match it, or is a situation rule
-    /// (CIP-05, "Triggers").
+    /// How narrowly the rule fits `call`; `None` when it does not match it (CIP-05, "Triggers").
     pub fn fit(&self, call: &Call) -> Option<Fit> {
-        if self.situation {
-            return None;
-        }
         match call {
             Call::File { path, text } => self.file(path, text.as_deref()),
             Call::Command { line, files } => {

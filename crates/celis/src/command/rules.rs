@@ -18,9 +18,9 @@ const CAP: usize = 5;
 
 impl Command {
     /// Prints the live rules in scope that the files and command of `args` match, else the call of the
-    /// hook on stdin: those not yet given in the session, by `rank`, at most 5 but with `--all`, then
-    /// how many more match. Logs each rule it gives in the session, with its working step. Writes no
-    /// record.
+    /// hook on stdin: those not yet given in the session, by `rank`, at most 5, then how many more
+    /// match; logs each in the session, with its working step. With `--all`, every match, logged as
+    /// none. Writes no record.
     pub(crate) fn rules(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let files = &args.words[1..];
         let line = args.text.as_deref().filter(|t| !t.trim().is_empty());
@@ -44,7 +44,10 @@ impl Command {
         }
         let trails = self.trails()?;
         let given = Given::new(&self.home()?);
-        let seen = session.as_deref().map(|s| given.of(s)).unwrap_or_default();
+        let seen = match (&session, args.all) {
+            (Some(session), false) => given.of(session),
+            _ => Default::default(),
+        };
         let misses = given.misses();
         let live = trails.rules().live(&project.anchor.project).into_iter();
         let mut found: Vec<(Fit, &Note, Rule)> = live
@@ -65,7 +68,7 @@ impl Command {
             let line = crate::text::line::rule(note, rule);
             super::put(out, &if args.json { object.to_string() } else { line })?;
         }
-        if let Some(session) = &session {
+        if let Some(session) = session.as_ref().filter(|_| !args.all) {
             let ids: Vec<&str> = found[..shown]
                 .iter()
                 .map(|(_, n, _)| n.id.as_str())

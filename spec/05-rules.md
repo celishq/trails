@@ -34,7 +34,7 @@ learns what later work must keep.
 - `content`: optional; a regex that the file's text must match.
 - `command`: optional; a regex of the shell commands the rule acts on.
 - `tool`: optional; a regex of the names of the other tool calls the rule acts on.
-- `situation`: optional label; no call shows the rule ahead.
+- `situation`: optional label; the rule also holds in a case that no call shows ahead.
 - `promoted`: optional label; a tool of the place now checks the rule.
 
 `path`, `content`, `command` and `tool` are the rule's trigger.
@@ -90,4 +90,3 @@ me                in every project
 - On another tool call, a rule matches when its `tool` matches the tool's name.
 - A rule `at:<place>` counts as a rule with that place as its `path`, which matches as "Reading" states.
 - A pattern that does not compile matches nothing.
-- A rule with the `situation` label matches no call.

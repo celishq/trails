@@ -198,15 +198,17 @@ fn an_at_rule_comes_at_its_place() {
     assert!(rules(&repo, &["b.py"], "").is_empty());
 }
 
-/// A situation rule and a rule with no trigger and no `at:<place>` never come (`spec/05-rules.md`,
-/// "Triggers"; `spec/02-cli.md`, "Rules").
+/// A rule with no trigger and no `at:<place>` never comes, and a situation rule with a trigger comes at
+/// its calls (`spec/05-rules.md`, "Triggers"; `spec/02-cli.md`, "Rules").
 #[test]
-fn a_situation_rule_and_a_rule_with_no_trigger_never_come() {
+fn a_rule_with_no_trigger_never_comes() {
     let repo = Repo::new();
-    decide(&repo, &["--path", "*.md", "--situation"], "situation");
+    decide(&repo, &["--situation"], "situation");
     decide(&repo, &[], "no trigger");
     decide(&repo, &["--scope", "me"], "mine");
     assert!(rules(&repo, &["README.md", "--all", "--", "ls"], "").is_empty());
+    decide(&repo, &["--path", "*.md", "--situation"], "both");
+    assert_eq!(texts(&rules(&repo, &["README.md"], "")), ["both"]);
 }
 
 /// Rules come with a named file first, then a glob with content or a command, then a glob with no
@@ -245,7 +247,7 @@ fn rules_come_narrowest_first_then_newest() {
 }
 
 /// At most 5 rules come a call; the rest come on the next call of the session, with a pointer, or all
-/// with `--all`; each rule once a session (`spec/02-cli.md`, "Rules").
+/// with `--all`, which logs none; each rule once a session (`spec/02-cli.md`, "Rules").
 #[test]
 fn five_rules_a_call_then_a_pointer_to_the_rest() {
     let repo = Repo::new();
@@ -266,15 +268,11 @@ fn five_rules_a_call_then_a_pointer_to_the_rest() {
     assert_eq!(second.len(), 2, "{second:?}");
     assert_eq!(texts(&second), ["rule 1", "rule 0"]);
     assert!(rules(&repo, &["README.md", "--session", "s1"], "").is_empty());
-    assert_eq!(
-        texts(&rules(
-            &repo,
-            &["README.md", "--session", "s2", "--all"],
-            ""
-        ))
-        .len(),
-        7
-    );
+    let look = ["README.md", "--session", "s1", "--all"];
+    assert_eq!(texts(&rules(&repo, &look, "")).len(), 7);
+    assert_eq!(texts(&rules(&repo, &look, "")).len(), 7);
+    let fresh = rules(&repo, &["README.md", "--session", "s2"], "");
+    assert_eq!(texts(&fresh).len(), 5);
     let alone = rules(&repo, &["README.md"], "");
     assert_eq!(
         alone.last().unwrap(),
