@@ -1,9 +1,9 @@
 name: Release
 
 # Publishes a release when a merge to main carries a manifest version with no tag yet: the merge of the PR
-# that `make release` opens. It builds the archives from the merge commit, tags it `v<version>`, and puts every
-# archive on its GitHub release with `install.sh`. celis.ai serves the `install.sh` of the latest release. A
-# last job installs the release with its own `install.sh` on clean runners.
+# that `make release` opens. It builds the archives from the merge commit, tags it `v<version>`, attests each
+# archive's build, and puts every archive on its GitHub release with `install.sh`. celis.ai serves the
+# `install.sh` of the latest release. A last job installs the release with its own `install.sh` on clean runners.
 
 on:
   push:
@@ -39,6 +39,8 @@ jobs:
     runs-on: namespace-profile-linux
     permissions:
       contents: write
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@v7
       - uses: actions/download-artifact@v7
@@ -46,6 +48,9 @@ jobs:
           pattern: cli-*
           merge-multiple: true
           path: dist
+      - uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: dist/*.tar.gz
       - name: Release
         env:
           GH_TOKEN: ${{ github.token }}

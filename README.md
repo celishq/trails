@@ -147,6 +147,31 @@ curl -fsSL https://celis.ai/install.sh | sh
 
 To update it later, run `celis update`.
 
+<details>
+<summary>Read the script first, and check the download</summary>
+
+The script puts `celis` in `~/.local/bin`, with no `sudo`. When that folder isn't on your PATH, it
+adds one `export PATH=…` line to `~/.profile` and to your shell's rc file. To read it before it
+runs:
+
+```bash
+curl -fsSL https://celis.ai/install.sh -o install.sh
+less install.sh
+sh install.sh
+```
+
+Each archive on [GitHub Releases](https://github.com/celishq/trails/releases) has a checksum, which
+the script checks, and a build attestation, which proves that this repo's release workflow built
+it. To check an archive yourself with the [GitHub CLI](https://cli.github.com):
+
+```bash
+gh attestation verify celis-aarch64-apple-darwin.tar.gz -R celishq/trails
+```
+
+[SECURITY.md](SECURITY.md) says what celis keeps, sends and runs.
+
+</details>
+
 **2. Add the plugin to your agent:**
 
 | Agent       | Install                                                                         | Then                                                                                        |
