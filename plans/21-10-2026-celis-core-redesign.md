@@ -111,6 +111,14 @@ Raycast, Sonnet, 2 runs, 43 rule checks a run (rules from reviews, each task a n
   the agent read only the index and `celis grep` with `| head`, and no `celis rules <files>`. On main,
   the past agent brought the rules of the ask; here it brings only past steps.
 
+Raycast, Opus, 2 runs, with paths only and no notes: main and this branch both broke 0% of 43 rule
+checks; builds 10/10 against 9/10; cost $7.3 against $7.1.
+
+Plugin evals, Opus, 3 runs a case (score; main, then this branch): 02-larger-feature 0.71, 0.57;
+05-secret 0.87, 0.77; 08-rule-reuse 1.00, 0.88; 10-subagent-delegation 0.74, 0.44; 12-migrate (new)
+0.82; the other nine cases 1.00 on both, 11-tidy too. In 08 and 10 the one rule has no path, and the
+index shows only words that two rules use, so it shows none; the past agent no longer brings rules.
+
 - With the notes, Sonnet searched the rules with `celis grep` in 6 to 7 tasks of 8, not 1, and ran
   `celis rules` after a write 7 times, not 0 or 1. It beat pickers at 400 and 1000 rules.
 - Sonnet still lost 55 rules at 1000 rules that it never saw: the harness cut 5 outputs of `celis rules`
