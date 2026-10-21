@@ -294,19 +294,16 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "rules",
-        usage: &["celis rules [<file>]... [--diff] [--page <n>] [--session <id>] [-- <command>]"],
+        usage: &["celis rules [<file>]... [--session <id>] [-- <command>]"],
         summary: "Show every rule that the files you will read or change and a command you will run match, the most important first; a rule shown before in the session shows as its id. With no file and no command, show the words the rules use, the most used first. Changes nothing.",
         args: &[
             ("<file>", "A file you will read or change"),
-            ("--diff", "Each file git shows changed or new"),
-            ("--page <n>", "Only the nth 100 of the rules"),
             ("--session <id>", "The session, when the environment does not name it"),
             ("<command>", "A shell command you will run"),
         ],
         examples: &[
             "celis rules",
             "celis rules shelf/prices.py",
-            "celis rules --diff",
             "celis rules shelf/prices.py -- \"pytest shelf/test_prices.py\"",
         ],
     },
