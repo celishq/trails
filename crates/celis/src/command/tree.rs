@@ -19,7 +19,7 @@ use ratatui::text::Span;
 pub(crate) use row::wrap;
 use row::Row;
 use std::cell::{Cell, RefCell};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::io::{IsTerminal, Write};
 
 impl Command {
@@ -80,11 +80,9 @@ impl Command {
             (None, true) => steps.roots().into_iter().rev().collect(),
             (None, false) => today(steps),
         };
-        let given = super::rules::Given::new(&self.home()?).steps();
         let tree = Tree {
             steps,
             rules: model.rules,
-            given: &given,
             reuse: model.reuse,
             layout,
             grouped: id.is_none(),
@@ -166,14 +164,13 @@ impl Item {
 /// What `tree` with no id prints while it has no trail to print.
 pub(crate) const EMPTY: &str = "No active trails. Run `celis tree --all` to see every trail.";
 
-/// The steps and rules a tree is printed from, the rules given while each step worked by its id, the day
-/// groups it keeps, and how: grouped by day and project; `width` wide; as `view` shows it, off a watch as the agent view. `next` holds the
+/// The steps and rules a tree is printed from, the day groups it keeps, and how: grouped by
+/// day and project; `width` wide; as `view` shows it, off a watch as the agent view. `next` holds the
 /// earliest time a time it printed changes, `spun` whether it printed the spinner, `order` the lines a
 /// watch selects, `printed` the count of its lines, and `picked` the line of the selected trail.
 pub(crate) struct Tree<'a> {
     pub steps: &'a Steps<'a>,
     pub rules: &'a Rules<'a>,
-    pub given: &'a HashMap<String, Vec<String>>,
     pub reuse: &'a Reuse<'a>,
     pub layout: Option<&'a Layout>,
     pub grouped: bool,
@@ -301,15 +298,6 @@ impl Tree<'_> {
             false => note,
         };
         self.rules.of(owner)
-    }
-
-    /// The rules given while `note` worked, in the order given.
-    fn given(&self, note: Step) -> Vec<RuleNote<'_>> {
-        let ids = self.given.get(note.id()).into_iter().flatten();
-        let every = self.rules.every();
-        ids.filter_map(|id| every.iter().find(|e| e.note.id == *id))
-            .map(|e| e.said())
-            .collect()
     }
 
     /// The time the steps of `tree` with no step under them worked: what a done one took, and the time

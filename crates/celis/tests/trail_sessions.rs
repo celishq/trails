@@ -391,7 +391,7 @@ fn a_prompt_with_no_open_trail_asks_for_the_past_agent() {
     assert!(said.contains("before any other tool"), "{said}");
     assert!(said.contains("wait for its answer"), "{said}");
     assert!(
-        said.contains("rules of the files and commands the work will touch"),
+        said.contains("it brings the steps of past asks like it"),
         "{said}"
     );
     assert!(

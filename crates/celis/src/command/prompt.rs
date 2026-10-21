@@ -111,9 +111,7 @@ impl Command {
         let line = format!(
             "celis: a new ask in this session; before any other tool, run the celis:past agent in the \
              foreground with the ask and the places it may touch, and wait for its answer; it brings the \
-             rules of the files and commands the work will touch, the situation rules the ask must keep, \
-             and the steps of past asks like it; add the ask with \
-             --uses <id> for each past step the ask follows. {RULES}"
+             steps of past asks like it; add the ask with --uses <id> for each past step the ask follows. {RULES}"
         );
         super::put(err, &line)?;
         mark(asked)?;

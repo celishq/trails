@@ -52,7 +52,6 @@ Every change of `spec/` MUST keep these rules:
 | `figma:<key>` · `web:<host>` | the project id of a record outside git | 01 |
 | `skill:<name>` | the project id of a trail from a skill file | 07 |
 | `$CELIS_HOME` · `$CELIS_HOME/trails/` · `$CELIS_HOME/phrase` · `$CELIS_HOME/links` | the home, the store, the phrase, the links | 01, 02 |
-| `$CELIS_HOME/given` | the log of the rules `rules` gave, and of misses | 02 |
 | `celis` and its commands and flags, `rules` among them | the command line | 02 |
 | `usage` · `no-decision` · `no-trail` · `no-step` · `closed` · `open-steps` · `check-failed` · `error` | errors | 02 |
 | 1111 with `step` in `celis.step` | kind: a step (NIP-22) | 03 |

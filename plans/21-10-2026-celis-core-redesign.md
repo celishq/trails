@@ -347,6 +347,9 @@ Result: the person's existing rules come at the moment too, and recall gets smal
 
 ### Phase 5. Evidence: the step, the misses and the rank
 
+Removed later: once `celis rules` printed every rule on each call, the log grew by about 300 lines a
+small task, and no bench showed a gain from misses. The rank keeps a correction first, then the fit.
+
 Result: `celis tree` shows which rules each step got, misses are visible, and the rank uses the
 history.
 
@@ -376,7 +379,7 @@ place of all `me` and `project` rules.
 
 Result: `/celis:tidy` proposes where rules belong, and fixes the triggers that miss.
 
-- Tidy reads the log: it offers to fade rules given often and never corrected, to drop one-off notes,
+- Removed later with the log (Phase 5). Tidy read the log: it offered to fade rules given often and never corrected, to drop one-off notes,
   and to rewrite the trigger of each rule with misses.
 - It proposes moves into the place's own checks (a repo's linter, tests or CI, a Figma project's styles)
   and into AGENTS.md. A moved rule stays in celis with the `promoted` label of CIP-05.

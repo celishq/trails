@@ -1,6 +1,5 @@
 //! `celis decide`: write a rule.
 
-use crate::command::rules::Given;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use celis_trails::{Place, Project, Rule, Scope, Trigger};
@@ -8,8 +7,7 @@ use std::io::Write;
 
 impl Command {
     /// Writes the rule `args` states on `project`, in its scope, with its trigger and labels, signed by
-    /// the account now, and prints its id, then on `err` each override it ends. In a session, logs a
-    /// miss of the rule it replaces when the session was not given it.
+    /// the account now, and prints its id, then on `err` each override it ends.
     pub(crate) fn decide(
         &self,
         args: &Args,
@@ -48,13 +46,6 @@ impl Command {
             promoted: args.promoted,
         };
         let written = self.trails()?.decide(rule, args.replaces.as_deref())?;
-        let replaced = written.records.first().and_then(Rule::read);
-        if let (Some(session), Some(old)) = (self.session(), replaced.and_then(|r| r.replaces)) {
-            let given = Given::new(&self.home()?);
-            if !given.of(&session).contains(&*old) {
-                given.miss(&session, &old, super::now())?;
-            }
-        }
         self.print(written, args, out, err)
     }
 }

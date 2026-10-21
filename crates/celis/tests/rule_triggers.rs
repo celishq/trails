@@ -3,7 +3,7 @@
 mod support;
 
 use celis_nostr::Note;
-use serde_json::{json, Value};
+use serde_json::json;
 use support::{account, add, err, objects, out, put, rule_tags, stored_rule, Repo, DAY};
 
 /// The id `celis decide <args> -- <text>` prints in the main checkout.
@@ -276,40 +276,14 @@ fn every_rule_comes_on_each_call() {
     for n in 0..7u64 {
         tagged(&repo, &[("path", "*.md")], &format!("rule {n}"), at + n);
     }
-    let first = texts(&repo, &["README.md", "--session", "s1"]);
+    let first = texts(&repo, &["README.md"]);
     assert_eq!(first.len(), 7, "{first:?}");
     assert_eq!((first[0].as_str(), first[6].as_str()), ("rule 6", "rule 0"));
-    assert_eq!(texts(&repo, &["README.md", "--session", "s1"]), first);
+    assert_eq!(texts(&repo, &["README.md"]), first);
     let json = objects(&repo, &["rules", "README.md"]);
     assert_eq!(json.len(), 7);
     let keys: Vec<&String> = json[0].as_object().unwrap().keys().collect();
     assert_eq!(keys, ["content", "id", "scope"]);
-}
-
-/// Each rule printed in a session is logged in `$CELIS_HOME/given`, with the session from `--session`,
-/// else the environment; with no session, none is logged (`spec/02-cli.md`, "Rules").
-#[test]
-fn each_rule_printed_in_a_session_is_logged() {
-    let repo = Repo::new();
-    let id = decide(&repo, &["--path", "*.md"], "markdown");
-    assert!(rules(&repo, &["a.rs", "--session", "s1"]).is_empty());
-    rules(&repo, &["README.md"]);
-    assert!(!repo.home().join("given").exists());
-    rules(&repo, &["README.md", "--session", "s1"]);
-    let env = [("CELIS_SESSION_ID", "env")];
-    repo.run(&repo.path(), &["rules", "README.md"], &env, "");
-    let log = std::fs::read_to_string(repo.home().join("given")).unwrap();
-    let lines: Vec<Value> = log
-        .lines()
-        .map(|l| serde_json::from_str(l).unwrap())
-        .collect();
-    assert_eq!(lines.len(), 2, "{log}");
-    assert_eq!(
-        (&lines[0]["session"], &lines[0]["rule"]),
-        (&json!("s1"), &json!(id))
-    );
-    assert!(lines[0]["at"].is_u64());
-    assert_eq!(lines[1]["session"], "env");
 }
 
 /// The grep view marks a rule with a trigger, a situation rule and a promoted rule (`spec/02-cli.md`,

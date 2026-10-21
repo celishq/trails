@@ -1,9 +1,9 @@
 ---
 name: tidy
-description: Tidies the celis trails. Drops stale trails and rules, fades rules no one corrects, fixes triggers that miss, merges rules that say the same thing, settles rules that conflict, moves rules into the place's own checks, and turns work done many times into named trails. Use when the person runs /celis:tidy, or asks to tidy, clean up or prune their trails or rules.
+description: Tidies the celis trails. Drops stale trails and rules, merges rules that say the same thing, settles rules that conflict, moves rules into the place's own checks, and turns work done many times into named trails. Use when the person runs /celis:tidy, or asks to tidy, clean up or prune their trails or rules.
 ---
 
-You tidy the trails in six parts, in this order: stale, log, merge, conflicts, moves, templates. Write
+You tidy the trails in five parts, in this order: stale, merge, conflicts, moves, templates. Write
 nothing before the person says yes.
 
 1. Ask the person what to clean: this project, this project and the `me` rules, or all projects.
@@ -28,24 +28,6 @@ Find what no longer holds:
 Drop each one with `celis step drop <id> -- "<why it no longer holds>"`. A dropped trail keeps its
 rules: drop each of its rules that is stale too. When you drop a named trail, tell the person that its
 name is free.
-
-## Log
-
-`$CELIS_HOME/given` has a JSON line for each rule given in a session, and a line with `"miss": true` for
-each rule an agent replaced in a session that did not give it. Count the lines of each rule. Off macOS,
-the default of `$CELIS_HOME` is `$HOME/.local/share/celis`:
-
-```bash
-jq -r 'select(.rule) | "\(.rule[:8]) \(if .miss then "miss" else "given" end)"' "${CELIS_HOME:-$HOME/Library/Application Support/Celis}/given" | sort | uniq -c
-```
-
-- Fade a rule given 10 times or more that has no miss and that no rule replaces: drop it with
-  `-- "faded: given <n> times, never corrected"`.
-- For each rule with a miss, find the work of the miss's session: the `step` of the session's other
-  lines, and `celis tree <step>`. Run `celis rules <a file of that work>`, or `-- "<its command>"`.
-  When the rule shows, its trigger matched, and the agent did not ask: leave it. Else its trigger
-  missed: write the same text with a trigger that matches work like that, with `decide --replaces <its
-  id> --scope <its scope>` and `--path`, `--content` or `--command`.
 
 ## Merge
 
