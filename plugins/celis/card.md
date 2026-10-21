@@ -13,14 +13,17 @@ celis name <trail id> <name>
 celis tree [<id>] [--graph] [--full] [--all] [--demo]
 ```
 
-1. Ask before you act. Run the `celis:past` agent at a new ask, even a simple one, with the ask and the
-   files and commands you will touch. Run it again once you know the files and commands, before the
-   first change, and again when the work moves to others. Keep each rule it brings. With no such agent, run `celis rules <files> -- "<command>"` yourself
-   before you change a file or run a command, and search for past asks like this one:
-   `celis grep -i -E " (step|rule) [0-9a-f]{8} .*(<word>|<word>)"`, with the words of the ask. A rule
-   that no file or command shows comes only from a search:
-   `celis grep -i -E " rule [0-9a-f]{8} live .* situation .*(<word>|<word>)"`. When the ask conflicts
-   with a rule, the ask wins: replace the rule.
+1. Find the rules yourself, before you act, and keep them in your own context:
+   - At a new ask, run `celis rules` for the words the rules use, and the `celis:past` agent, as celis
+     says, for past asks like this one. Then search the rules with the words of the ask and of the
+     index that fit it: `celis grep -i -E " rule [0-9a-f]{8} live .*(<word>|<word>)"`. Keep the `{me}`
+     rules and the rules of this project, which the last line names.
+   - Before you change a file or run a command, run `celis rules <files> -- "<command>"`, and keep each
+     rule it gives. Run it again on a file after you write it, as some rules come only on the new text.
+     A rule it gave before prints as its id: `celis grep <id>` shows it again.
+   - When you give work to a subagent, put in its task each rule that holds for that work, as celis
+     printed it. A subagent searches nothing.
+   - When the ask conflicts with a rule, the ask wins: replace the rule.
 2. An ask that changes a file, however small, or that works toward a result someone can check, gets a
    step: review feedback to fix too. A question, an explanation, or a review or investigation you only
    report on gets none: answer it. Add the ask with `step add` where the prompt hook says. With no hint,
@@ -53,6 +56,5 @@ when it holds for that kind of work in any project: a rule about a framework, a 
 convention. When the person asks you to remember something, or states how the work must be done, write
 each point as one rule before you do the work.
 
-For more: `celis rules <file>` gives every rule of a file, `celis grep` searches every trail and
-rule, and `celis tree` shows the work. Read the `steps.md` the session start names for moved files, past
+For more: `celis tree` shows the work. Read the `steps.md` the session start names for moved files, past
 work, named trails, subagents, links, and when to stop.

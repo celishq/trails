@@ -1,10 +1,10 @@
 {
   "about": [
-    "The view `celis grep` searches, what it prints of it, and what the past agent's first searches print.",
-    "celis writes the view and `plugins/celis/agents/past.md` reads it, so both must match this file:",
+    "The view `celis grep` searches, what it prints of it, and what the card's rule search prints.",
+    "celis writes the view and `plugins/celis/card.md` reads it, so both must match this file:",
     "the CLI test builds the store below, finds each line of `lines` in the view once, compares what",
-    "`celis grep \"\"` prints to `printed`, then runs the rule search of past.md's step 1 and checks",
-    "that it prints exactly `kept`.",
+    "`celis grep \"\"` prints to `printed`, then runs the card's rule search with the words",
+    "price, push and question, and checks that it prints exactly `kept`.",
     "",
     "Each <name> stands for the first 8 characters of a record's id, which a test knows only once it",
     "has written the record. All records are made on 2026-01-15 at noon UTC, in the order of `lines`",
@@ -44,8 +44,8 @@
   ],
   "kept": [
     "- rules of no trail",
+    "  [repo] rule <push> live {me} trigger When you push: run the tests first.",
     "  [repo] rule <situation> live {project} situation When the person asks a question: answer it first.",
-    "  [repo] rule <me> live {me} When you write a commit message: use plain words.",
     "  [repo] rule <new> live {project} When a price prints: use cents."
   ]
 }

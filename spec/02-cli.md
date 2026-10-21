@@ -281,7 +281,7 @@ celis rules --session 95e9be99 shelf/prices.py -- "pytest shelf/test_prices.py"
 ## Grep
 
 `grep` gives every trail of every project to the system `grep`, as lines. The plugin's `past.md` searches
-the trails with it.
+the trails with it, and so does the card.
 
 ```
 view    <yyyy-mm-dd> <trail id8 | -> [<project name>] <kind> <id8> <fields> <text>

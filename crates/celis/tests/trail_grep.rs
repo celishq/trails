@@ -348,14 +348,14 @@ fn grep_q_prints_nothing_on_a_match() {
 }
 
 /// The view and what `grep` prints of it match `spec/fixtures/grep-view.json`, and the rule search of
-/// `past.md` prints exactly the lines it keeps (`spec/02-cli.md`, "Grep").
+/// the card prints exactly the lines it keeps (`spec/02-cli.md`, "Grep").
 #[test]
-fn the_view_and_the_past_agents_rule_search_match_the_fixture() {
+fn the_view_and_the_cards_rule_search_match_the_fixture() {
     use celis_trails::{Anchor, Mark, StepId, StepRecord};
     use support::{account, put, stored_rule, tagged_rule};
     let fixture: serde_json::Value =
         serde_json::from_str(include_str!("../../../spec/fixtures/grep-view.json")).unwrap();
-    let past = include_str!("../../../plugins/celis/agents/past.md");
+    let card = include_str!("../../../plugins/celis/card.md");
     let repo = Repo::new();
     let (by, id) = (account(), repo.project_id());
     let t = 1_768_478_400;
@@ -484,29 +484,15 @@ fn the_view_and_the_past_agents_rule_search_match_the_fixture() {
         .map(fill)
         .collect();
     assert_eq!(lines(grep(&repo, &[""])), want);
-    let search = past
-        .split("\n2. ")
-        .nth(1)
-        .unwrap()
-        .split("\n3. ")
-        .next()
-        .unwrap();
-    let call = search
-        .split("`celis grep -c -E ")
+    let pattern = card
+        .split("`celis grep -i -E \"")
         .nth(1)
         .unwrap()
         .split("\"`")
         .next()
         .unwrap()
-        .replace("<name>", "repo");
-    let mut args = vec!["-E".to_string()];
-    for pattern in call.split("-e \"").skip(1) {
-        args.extend([
-            "-e".to_string(),
-            pattern.trim_end().trim_end_matches('"').to_string(),
-        ]);
-    }
-    let args: Vec<&str> = args.iter().map(String::as_str).collect();
+        .replace("<word>|<word>", "price|push|question");
+    let args = ["-i", "-E", pattern.as_str()];
     let kept = lines(grep(&repo, &args));
     let want: Vec<String> = fixture["kept"]
         .as_array()

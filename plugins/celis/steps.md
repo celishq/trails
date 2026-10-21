@@ -44,15 +44,15 @@ To write a named trail `<name>` that work in every project can use:
 
 ## Tidy
 
-When the past agent brings rules that say the same thing or say to do different things, or many stale
-trails, tell the person that `/celis:tidy` tidies them.
+When a search brings rules that say the same thing or say to do different things, or many stale trails,
+tell the person that `/celis:tidy` tidies them.
 
 ## Subagents and other sessions
 
-When a subagent or another agent takes work, add a step for it under your working step, and put in its
-task: "celis step <id>: run celis step start <id> first and celis step done <id> last." `start` prints
-the rules it must keep, and the agent adds its own steps `--under <id>`. To go on with another session's
-trail, add your first step `--under <its id>`.
+When a subagent or another agent takes work, add a step for it under your working step. Put in its task
+each rule of that work, as celis printed it, and: "celis step <id>: run celis step start <id> first and
+celis step done <id> last." `start` prints the rules at the step's places, and the agent adds its own
+steps `--under <id>`. To go on with another session's trail, add your first step `--under <its id>`.
 
 ## Links
 
