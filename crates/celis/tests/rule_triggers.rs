@@ -252,29 +252,21 @@ fn rules_come_narrowest_first_then_newest() {
     );
 }
 
-/// A rule given before in the session comes only as its id, on one line after the others; outside the
-/// session it comes in full; `--json` gives each as an object (`spec/02-cli.md`, "Rules").
+/// Every rule that matches comes, on each call of a session; `--json` gives each as an object
+/// (`spec/02-cli.md`, "Rules").
 #[test]
-fn a_rule_given_before_in_the_session_comes_as_its_id() {
+fn every_rule_comes_on_each_call() {
     let repo = Repo::new();
     let at = support::now() - DAY;
-    let ids: Vec<String> = (0..3u64)
-        .map(|n| tagged(&repo, &[("path", "*.md")], &format!("rule {n}"), at + n).id)
-        .collect();
+    for n in 0..7u64 {
+        tagged(&repo, &[("path", "*.md")], &format!("rule {n}"), at + n);
+    }
     let first = texts(&repo, &["README.md", "--session", "s1"]);
-    assert_eq!(first, ["rule 2", "rule 1", "rule 0"]);
-    tagged(&repo, &[("path", "*.md")], "rule 3", at + 3);
-    let short: Vec<&str> = ids.iter().rev().map(|i| &i[..8]).collect();
-    assert_eq!(
-        rules(&repo, &["README.md", "--session", "s1"])[1..],
-        [format!("given before: {}", short.join(" "))]
-    );
-    assert_eq!(texts(&repo, &["README.md", "--session", "s2"]).len(), 4);
-    assert_eq!(texts(&repo, &["README.md"]).len(), 4);
-    let json = objects(&repo, &["rules", "README.md", "--session", "s1"]);
-    assert_eq!(json.len(), 1, "{json:?}");
-    assert_eq!(json[0]["given"].as_array().unwrap().len(), 4);
+    assert_eq!(first.len(), 7, "{first:?}");
+    assert_eq!((first[0].as_str(), first[6].as_str()), ("rule 6", "rule 0"));
+    assert_eq!(texts(&repo, &["README.md", "--session", "s1"]), first);
     let json = objects(&repo, &["rules", "README.md"]);
+    assert_eq!(json.len(), 7);
     let keys: Vec<&String> = json[0].as_object().unwrap().keys().collect();
     assert_eq!(keys, ["content", "id", "scope"]);
 }

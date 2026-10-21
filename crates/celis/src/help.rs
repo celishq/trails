@@ -295,7 +295,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "rules",
         usage: &["celis rules [<file>]... [--session <id>] [-- <command>]"],
-        summary: "Show every rule that the files you will read or change and a command you will run match, the most important first; a rule shown before in the session shows as its id. With no file and no command, show the words the rules use, the most used first. Changes nothing.",
+        summary: "Show every rule that the files you will read or change and a command you will run match, the most important first. With no file and no command, show the words the rules use, the most used first. Changes nothing.",
         args: &[
             ("<file>", "A file you will read or change"),
             ("--session <id>", "The session, when the environment does not name it"),

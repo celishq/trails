@@ -237,9 +237,7 @@ command match (CIP-05, "Triggers"). With no file and no command, it gives the wo
 
 ```
 line     <id8> <scope> <rule>
-before   given before: <id8>…                         the rules given before in the session
 json     {"id", "scope", "content"}
-         {"given": [<id>…]}
 index    <n> live rules. Their words, by how many rules use each:
          <word> <n>, …
 given    $CELIS_HOME/given, one JSON object a line:
@@ -261,10 +259,8 @@ given    $CELIS_HOME/given, one JSON object a line:
   `?`, or an `at:<place>`), then a glob with `content` or a `command`, then a glob with no `content`;
   newest first within each.
 - The session MUST be `--session`, else the session of the environment.
-- In a session, a rule that a line of the session gives MUST print only as its id, on the `before` line
-  after the others.
-- In a session, `rules` MUST add a line to `$CELIS_HOME/given` for each rule it prints in full. The line
-  MUST hold `step`, the id of the oldest working step of the session's open trail in the project, when
+- In a session, `rules` MUST add a line to `$CELIS_HOME/given` for each rule it prints. The line MUST
+  hold `step`, the id of the oldest working step of the session's open trail in the project, when
   there is one.
 - `decide --replaces` in a session (CIP-04, "Sessions") MUST add a miss line for the rule it replaces
   when no line of the session gives that rule. A miss line gives no rule.

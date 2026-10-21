@@ -6,7 +6,6 @@ mod index;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use celis_nostr::Note;
-use celis_trails::records::id::short;
 use celis_trails::{Call, Fit, Place, Project, Rule, State, Trails};
 pub(super) use given::Given;
 use index::Index;
@@ -16,7 +15,7 @@ use std::path::Path;
 
 impl Command {
     /// Prints every live rule in scope that the files and command of `args` match, by `rank`, and logs
-    /// each in the session, with its working step; a rule given before in the session prints as its id.
+    /// each in the session, with its working step.
     /// With no file and no command, prints the index of the live rules in scope. Writes no record.
     pub(crate) fn rules(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let files = &args.words[1..];
@@ -45,29 +44,14 @@ impl Command {
             .collect();
         found.sort_by_key(|(fit, note, rule)| rank(rule, misses.contains(&note.id), *fit));
         let session = args.session.clone().or_else(|| self.session());
-        let before = session.as_deref().map(|s| given.of(s)).unwrap_or_default();
-        let (old, new): (Vec<_>, Vec<_>) = found
-            .iter()
-            .partition(|(_, note, _)| before.contains(&note.id));
-        for (_, note, rule) in &new {
+        for (_, note, rule) in &found {
             let object =
                 json!({"id": note.id, "scope": rule.scope.text(), "content": rule.content});
             let line = crate::text::line::rule(note, rule);
             super::put(out, &if args.json { object.to_string() } else { line })?;
         }
-        if !old.is_empty() {
-            let ids = old.iter().map(|(_, n, _)| n.id.as_str());
-            let text = match args.json {
-                true => json!({"given": ids.collect::<Vec<_>>()}).to_string(),
-                false => format!(
-                    "given before: {}",
-                    ids.map(short).collect::<Vec<_>>().join(" ")
-                ),
-            };
-            super::put(out, &text)?;
-        }
         if let Some(session) = session {
-            let ids: Vec<&str> = new.iter().map(|(_, n, _)| n.id.as_str()).collect();
+            let ids: Vec<&str> = found.iter().map(|(_, n, _)| n.id.as_str()).collect();
             let step = working(&trails, &project, &session);
             given.give(&session, &ids, step.as_deref(), super::now())?;
         }
