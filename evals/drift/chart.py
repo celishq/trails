@@ -62,7 +62,7 @@ def draw(model, title, note, top, md, celis):
              f'<rect class="claude" x="{LEFT}" y="76" width="12" height="12" rx="3"/>',
              f'<text class="body ink" x="{LEFT + 18}" y="86">CLAUDE.md with every rule</text>',
              f'<rect class="celis" x="{LEFT + 210}" y="76" width="12" height="12" rx="3"/>',
-             f'<text class="body ink" x="{LEFT + 228}" y="86">celis</text>']
+             f'<text class="body ink" x="{LEFT + 228}" y="86">Celis</text>']
     for step in range(5):
         v = top * step / 4
         parts.append(f'<line class="grid" x1="{LEFT}" y1="{y(v):.1f}" x2="{W - RIGHT}" y2="{y(v):.1f}"/>')

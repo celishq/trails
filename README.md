@@ -36,11 +36,11 @@ Celis borrows an idea from the Jobs To Be Done methodology: say what you want do
 do it. "Seniors pay 20% less" is a job. "Edit the cart" is just one way to do it, and maybe
 not the right one.
 
-In celis, every job gets split into smaller jobs. We call each of those a **step**, and a step
+In Celis, every job gets split into smaller jobs. We call each of those a **step**, and a step
 can split again. All the steps for one job together make its **trail**.
 
 Trails use [nostr](https://nostr.org), an open protocol, as their data format: each record is a
-note signed with your own key. celis never sends them to relays or anywhere else, so
+note signed with your own key. Celis never sends them to relays or anywhere else, so
 everything stays on your machine.
 
 Here's what happens when you give your agent a job:
@@ -92,7 +92,7 @@ New job: students pay 10% less
 
 ### How we test memory
 
-No public benchmark measures work split into jobs, as celis does it. So we test the part that can be
+No public benchmark measures work split into jobs, as Celis does it. So we test the part that can be
 counted: does the agent keep the rules it has been given, as the memory grows?
 
 We took 1,600 coding rules from the agent instruction files of 13 large open-source repos, among them
@@ -105,20 +105,20 @@ We grow the memory from 40 to 1,600 rules, and compare three setups in Claude Co
 
 - **CLAUDE.md:** every rule in a CLAUDE.md the agent reads at the start. Like a real file, it still
   holds the old version of each rule that changed.
-- **celis:** the same rules in celis, where a new version replaces the old one.
+- **Celis:** the same rules in Celis, where a new version replaces the old one.
 - **No memory:** neither.
 
 ### What we found
 
-A CLAUDE.md works well while it is small, and degrades as it grows. celis broke fewer rules at most
-sizes. When a rule changed, celis rarely followed its old version, because the new rule replaces the
+A CLAUDE.md works well while it is small, and degrades as it grows. Celis broke fewer rules at most
+sizes. When a rule changed, Celis rarely followed its old version, because the new rule replaces the
 old one; a CLAUDE.md keeps both, and the agent often picks the old one.
 
-![Outdated rules the agent followed, CLAUDE.md against celis, from 40 to 1,600 rules in memory](media/outdated-rules.svg)
+![Outdated rules the agent followed, CLAUDE.md against Celis, from 40 to 1,600 rules in memory](media/outdated-rules.svg)
 
-![Rules the agent broke, CLAUDE.md against celis, from 40 to 1,600 rules in memory](media/rules-broken.svg)
+![Rules the agent broke, CLAUDE.md against Celis, from 40 to 1,600 rules in memory](media/rules-broken.svg)
 
-| Rules in memory | Outdated rules followed, CLAUDE.md | Outdated rules followed, celis | Rules broken, CLAUDE.md | Rules broken, celis | Cost per task, CLAUDE.md | Cost per task, celis |
+| Rules in memory | Outdated rules followed, CLAUDE.md | Outdated rules followed, Celis | Rules broken, CLAUDE.md | Rules broken, Celis | Cost per task, CLAUDE.md | Cost per task, Celis |
 | --------------- | ---------------------------------- | ------------------------------ | ----------------------- | ------------------- | ------------------------ | -------------------- |
 | 40              | 61%                                | **0%**                         | 29%                     | **14%**             | $0.31                    | $0.43                |
 | 100             | 71%                                | **11%**                        | 28%                     | **24%**             | $0.35                    | $0.49                |
@@ -143,7 +143,7 @@ you add the rules you keep for your own work, so one file soon holds hundreds.
 | [kube-router](https://github.com/cloudnativelabs/kube-router) | 282                          |
 
 > [!NOTE]
-> Each size is 8 tasks. celis ran twice, CLAUDE.md once, and two runs of the same setup can differ by
+> Each size is 8 tasks. Celis ran twice, CLAUDE.md once, and two runs of the same setup can differ by
 > up to 15 points, so take the small gaps as a tie. The bench is in [evals/drift](evals/drift).
 
 ### It works across agents
@@ -155,9 +155,9 @@ Then we counted how often the later jobs broke those rules.
 | Agent                                          | Review rules broken per job | Cost per job |
 | ---------------------------------------------- | --------------------------- | ------------ |
 | Claude Code                                    | 2.75                        | $0.31        |
-| Claude Code with celis                         | 0                           | $0.31        |
+| Claude Code with Celis                         | 0                           | $0.31        |
 | Codex                                          | 2.38                        | $0.04        |
-| Codex with celis, using rules from Claude Code | 0.25                        | $0.05        |
+| Codex with Celis, using rules from Claude Code | 0.25                        | $0.05        |
 
 ## Why not just CLAUDE.md?
 
@@ -189,18 +189,18 @@ To update it later, run `celis update`.
 | Agent       | Install                                                                         | Then                                                                                        |
 | ----------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | Claude Code | `/plugin marketplace add celishq/trails`<br>`/plugin install celis@celis`       | —                                                                                           |
-| Codex       | `codex plugin marketplace add celishq/trails`<br>`codex plugin add celis@celis` | Trust its hooks with `/hooks`. In a sandbox, let it write the folder celis keeps trails in. |
+| Codex       | `codex plugin marketplace add celishq/trails`<br>`codex plugin add celis@celis` | Trust its hooks with `/hooks`. In a sandbox, let it write the folder Celis keeps trails in. |
 | Cursor      | `cursor-agent plugin marketplace add https://github.com/celishq/trails`         | Install `celis` from `/plugins`. Cursor doesn't remind the agent on each message.           |
 | Gemini CLI  | `gemini extensions install https://github.com/celishq/trails`                   | —                                                                                           |
-| Antigravity | `agy plugin install https://github.com/celishq/trails`                          | Antigravity has no prompt hook, so celis doesn't write your prompts on the trail.           |
+| Antigravity | `agy plugin install https://github.com/celishq/trails`                          | Antigravity has no prompt hook, so Celis doesn't write your prompts on the trail.           |
 
 **3. Give your agent a job,** and run `celis tree` in a second terminal to watch its steps.
 Questions don't leave a trail; only jobs that change files do.
 
 <details>
-<summary>Keep celis data somewhere else</summary>
+<summary>Keep Celis data somewhere else</summary>
 
-celis keeps your trails and your key in `~/Library/Application Support/Celis` on macOS, and in
+Celis keeps your trails and your key in `~/Library/Application Support/Celis` on macOS, and in
 `~/.local/share/celis` on Linux. To keep them in another folder, for a test or a
 separate setup, set `CELIS_HOME` to that folder before you start the agent:
 
@@ -232,8 +232,8 @@ CELIS_HOME="$PWD/.celis-home" claude
 
 **How do I fix a bad rule?**
 
-Tell your agent. celis is agent native: your agent knows every command, so asking it is always
-easier than running celis yourself. It writes a new rule that replaces the old one
+Tell your agent. Celis is agent native: your agent knows every command, so asking it is always
+easier than running Celis yourself. It writes a new rule that replaces the old one
 (`celis decide --replaces <id>`). A rule can't be deleted, but once it's replaced, agents stop
 seeing it.
 
@@ -252,7 +252,7 @@ share their parent's session.
 
 **Where is my key, and how do I back it up?**
 
-celis makes a 12-word recovery phrase the first time it saves a trail. Run `celis auth phrase`
+Celis makes a 12-word recovery phrase the first time it saves a trail. Run `celis auth phrase`
 to see it and write it down. On another computer, run `celis auth login` and type it in.
 
 **What other commands are there?**
@@ -263,7 +263,7 @@ work reused with `celis stats`, and turn trails into Markdown for a pull request
 
 **Does it work on Windows?**
 
-Not yet natively. Run celis in WSL.
+Not yet natively. Run Celis in WSL.
 
 ## Status
 
