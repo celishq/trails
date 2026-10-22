@@ -93,16 +93,16 @@ New job: students pay 10% less
 
 ### How we test memory
 
-No public benchmark measures work split into jobs, as Celis does it. So we test the part that can be
-counted: does the agent keep the rules it has been given, as the memory grows?
+No public benchmark measures work that is split into jobs the way Celis splits it. So we test the part
+we can count: does the agent keep the rules it has been given as its memory grows?
 
-We took 1,600 coding rules from the agent instruction files of 13 large open-source repos, among them
+To find out, we took 1,600 coding rules from the agent instruction files of 13 large open-source repos, among them
 VS Code, Next.js, PostHog, Airflow, Grafana, ruff, LangChain and n8n, and rewrote them for one small
 Python app. The agent then does 8 everyday tasks on that app, like a CSV export, a backup or a SQLite
 store. After each task, a script checks 34 of the rules in the code it wrote. 4 of those rules changed
 over time: an older version says one thing, the newer one replaces it.
 
-We grow the memory from 40 to 1,600 rules, and compare three setups in Claude Code with Opus:
+We then grow the memory from 40 to 1,600 rules and compare three setups in Claude Code with Opus:
 
 - **CLAUDE.md:** every rule in a CLAUDE.md the agent reads at the start. Like a real file, it still
   holds the old version of each rule that changed.
@@ -111,9 +111,11 @@ We grow the memory from 40 to 1,600 rules, and compare three setups in Claude Co
 
 ### What we found
 
-A CLAUDE.md works well while it is small, and degrades as it grows. Celis broke fewer rules at most
-sizes. When a rule changed, Celis rarely followed its old version, because the new rule replaces the
-old one; a CLAUDE.md keeps both, and the agent often picks the old one.
+A CLAUDE.md works well while it is small, but it degrades as it grows. The clearest gap is in rules
+that changed: a CLAUDE.md keeps the old version next to the new one, and the agent often follows the
+old one. In Celis the new rule replaces the old one, so the agent rarely sees it. Celis also broke
+fewer rules at most sizes, and from 1,000 rules it cost less, because a big CLAUDE.md is read into
+every session.
 
 ![Outdated rules the agent followed, CLAUDE.md against Celis, from 40 to 1,600 rules in memory](media/outdated-rules.svg)
 
@@ -127,11 +129,11 @@ old one; a CLAUDE.md keeps both, and the agent often picks the old one.
 | 1,000           | 79%                                | **41%**                        | **48%**                 | 51%                 | $0.84                    | **$0.66**            |
 | 1,600           | 100%                               | **52%**                        | 70%                     | **57%**             | $1.04                    | **$0.73**            |
 
-With no memory, the agent broke 95% of the rules.
+With no memory at all, the agent broke 95% of the rules.
 
-**How many rules does a real repo have?** The marks under each chart show where these repos fall: the
-bullet points in their root agent file today. Most repos have more agent files in their folders, and
-you add the rules you keep for your own work, so one file soon holds hundreds.
+How many rules does a real project have? The marks under each chart show where some well-known repos
+fall today, counting the bullet points in their root agent file. Most of them have more agent files in
+their folders, and you add the rules you keep for your own work, so one file soon holds hundreds.
 
 | Repo                                                          | Rules in its root agent file |
 | ------------------------------------------------------------- | ---------------------------- |
@@ -149,7 +151,8 @@ you add the rules you keep for your own work, so one file soon holds hundreds.
 
 ### It works across agents
 
-We gave agents 8 real Supabase pull requests that build landing pages, all merged after the model's
+The rules live in Celis, not in one agent's files, so a rule one agent learns is there for the next.
+To test this, we gave agents 8 real Supabase pull requests that build landing pages, all merged after the model's
 training data. After two of them, the agent got the rules that Supabase's review bots had asked for.
 Then we counted how often the later jobs broke those rules.
 
@@ -162,11 +165,12 @@ Then we counted how often the later jobs broke those rules.
 
 ## Why not just CLAUDE.md?
 
-Besides what the results show, someone has to write a `CLAUDE.md` and keep it current.
+A `CLAUDE.md` is a good start, but someone has to write it and keep it current, and as the results
+show, it gets worse as it grows.
 
-Celis writes the rules for you, from your corrections and code reviews, while the work happens.
-At the start of each job, the agent gets the rules and past steps that matter for it, from every
-project. And every agent gets them, whichever instruction file it reads.
+Celis writes the rules for you, from your corrections and code reviews, while the work happens. At
+the start of each job, the agent gets the rules and past steps that matter for it, from every
+project, whichever agent you use and whichever instruction file it reads.
 
 ## Install
 
@@ -186,17 +190,10 @@ sh install.sh
 To update it later, run `celis update`.
 
 <details>
-<summary>Read the script first, and check the download</summary>
+<summary>What the script does, and how to check the download</summary>
 
 The script puts `celis` in `~/.local/bin`, with no `sudo`. When that folder isn't on your PATH, it
-adds one `export PATH=…` line to `~/.profile` and to your shell's rc file. To read it before it
-runs:
-
-```bash
-curl -fsSL https://celis.ai/install.sh -o install.sh
-less install.sh
-sh install.sh
-```
+adds one `export PATH=…` line to `~/.profile` and to your shell's rc file.
 
 Each archive on [GitHub Releases](https://github.com/celishq/trails/releases) has a checksum, which
 the script checks, and a build attestation, which proves that this repo's release workflow built
@@ -206,7 +203,7 @@ it. To check an archive yourself with the [GitHub CLI](https://cli.github.com):
 gh attestation verify celis-aarch64-apple-darwin.tar.gz -R celishq/trails
 ```
 
-[SECURITY.md](SECURITY.md) says what celis keeps, sends and runs.
+[SECURITY.md](SECURITY.md) says what Celis keeps, sends and runs.
 
 </details>
 
