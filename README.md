@@ -110,15 +110,15 @@ We grow the memory from 40 to 1,600 rules, and compare three setups in Claude Co
 
 ### What we found
 
-![Rules broken and outdated rules followed, CLAUDE.md against celis, from 40 to 1,600 rules](media/claude-md-vs-celis.svg)
+![Rules broken by the agent, CLAUDE.md against celis, from 40 to 1,600 rules in memory](media/claude-md-vs-celis.svg)
 
 A CLAUDE.md works well while it is small, and degrades as it grows. celis broke fewer rules at most
 sizes, and it rarely followed a rule that had changed, because the old version is gone from what the
 agent sees.
 
-The ticks under the chart mark how many rules sit in the root agent file of VS Code, Next.js, PostHog,
-Kiali and kube-router today, counted as bullet points. Most repos have more agent files in their
-folders, and you add the rules you keep for your own work, so a single CLAUDE.md soon holds hundreds.
+How big does a real CLAUDE.md get? Counted as bullet points, the root agent file holds 79 rules in
+VS Code, 123 in Next.js, 160 in PostHog and 282 in kube-router. Most repos have more agent files in
+their folders, and you add the rules you keep for your own work, so one file soon holds hundreds.
 
 | Rules in memory | Rules broken, CLAUDE.md | Rules broken, celis | Outdated rules followed, CLAUDE.md | Outdated rules followed, celis | Cost per task, CLAUDE.md | Cost per task, celis |
 | --------------- | ----------------------- | ------------------- | ---------------------------------- | ------------------------------ | ------------------------ | -------------------- |

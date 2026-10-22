@@ -1,106 +1,43 @@
 #!/usr/bin/env python3
-"""Draws media/claude-md-vs-celis.svg in the style of the celis app: as the memory grows, the rules broken and the
-outdated rules followed, a CLAUDE.md that holds every rule against celis, with the gap between them marked.
+"""Draws media/claude-md-vs-celis.svg: the rules broken at each memory size, a CLAUDE.md that holds every rule
+against celis, as pairs of bars with the gap under each pair.
 
   chart.py [model] [celis arm]    opus and final when none is named
 
-Each point pools every task of every run at that size; habits are left out as report.py leaves them out. The
-ticks under each card mark the rules in the root agent file of some well-known repos.
+Each bar pools every task of every run at that size; habits are left out as report.py leaves them out.
 """
 
 import json
 import sys
-from math import log
 from pathlib import Path
 
 import report
 
 HERE = Path(__file__).resolve().parent
 OUT = HERE.parents[1] / "media" / "claude-md-vs-celis.svg"
-CARD, H, GAP, PAD, LEFT, TOP, BOTTOM = 440, 460, 24, 24, 44, 150, 96
-REPOS = {"VS Code": 79, "Next.js": 123, "PostHog": 160, "Kiali": 229, "kube-router": 282}
+W, H, LEFT, RIGHT, TOP, BOTTOM, BAR, PAIR = 880, 410, 64, 32, 104, 72, 44, 6
 STYLE = """
-  .board { fill: #fafcff } .card { fill: #fff; stroke: rgb(81 116 153 / 0.1125) }
-  .ink { fill: #23262e } .secondary { fill: rgb(35 38 46 / 0.65) } .accent { fill: #517499 }
-  .danger { fill: #944842 } .grid { stroke: rgb(35 38 46 / 0.06) } .rule { stroke: rgb(35 38 46 / 0.225) }
-  .md { stroke: rgb(35 38 46 / 0.65) } .md-dot { fill: rgb(35 38 46 / 0.65) }
-  .celis { stroke: #517499 } .celis-dot { fill: #517499 } .wash { fill: rgb(81 116 153 / 0.10) }
-  .loss { fill: rgb(148 72 66 / 0.12) }
-  text { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Helvetica, Arial, sans-serif;
-         font-variant-numeric: tabular-nums; letter-spacing: 0.025em }
-  .group { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em }
-  .headline { font-size: 42px; font-weight: 500; letter-spacing: -0.02em }
-  .body { font-size: 13px } .caption { font-size: 11px } .mark { font-size: 9px; font-weight: 500 }
-  .delta { font-size: 12px; font-weight: 600 }
+  .board { fill: #fff } .ink { fill: #23262e } .secondary { fill: rgb(35 38 46 / 0.6) }
+  .grid { stroke: rgb(35 38 46 / 0.08) } .claude { fill: #d97757 } .celis { fill: #517499 }
+  .worse { fill: #b4492f }
+  text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+         font-variant-numeric: tabular-nums }
+  .title { font-size: 20px; font-weight: 600 } .body { font-size: 13px } .value { font-size: 13px; font-weight: 600 }
+  .size { font-size: 14px; font-weight: 600 } .delta { font-size: 13px; font-weight: 700 }
+  .mark { font-size: 11px }
   @media (prefers-color-scheme: dark) {
-    .board { fill: #1c1f23 } .card { fill: #1c1d1f; stroke: rgb(100 143 189 / 0.18) }
-    .ink { fill: #e6edf5 } .secondary { fill: rgb(230 237 245 / 0.65) } .accent { fill: #648fbd }
-    .danger { fill: #cc6d66 } .grid { stroke: rgb(230 237 245 / 0.07) } .rule { stroke: rgb(230 237 245 / 0.225) }
-    .md { stroke: rgb(230 237 245 / 0.65) } .md-dot { fill: rgb(230 237 245 / 0.65) }
-    .celis { stroke: #648fbd } .celis-dot { fill: #648fbd } .wash { fill: rgb(100 143 189 / 0.14) }
-    .loss { fill: rgb(204 109 102 / 0.16) }
+    .board { fill: #0d1117 } .ink { fill: #e6edf5 } .secondary { fill: rgb(230 237 245 / 0.6) }
+    .grid { stroke: rgb(230 237 245 / 0.1) } .celis { fill: #6b9bd1 } .worse { fill: #e07a62 }
   }
 """
 
 
-def points(arm, model, key, skip, replaced):
-    """The share `key` of `arm` at each memory size."""
+def broken(arm, model, skip, replaced):
+    """The share of rules `arm` broke at each memory size."""
     found = {}
     for path in (HERE / "results").glob(f"{arm}-{model}-r*.jsonl"):
-        found[int(path.stem.split("-r")[-1])] = report.measures(report.lines(path.stem), skip, replaced)[key]
+        found[int(path.stem.split("-r")[-1])] = report.measures(report.lines(path.stem), skip, replaced)["broken"]
     return dict(sorted(found.items()))
-
-
-def card(left, title, md, celis, none):
-    """One card: a group label, the gap at the largest size as its headline, then CLAUDE.md and celis by size."""
-    sizes = list(md)
-    plot = (left + PAD + LEFT, left + CARD - PAD)
-    x = lambda n: plot[0] + (log(n) - log(sizes[0])) / (log(sizes[-1]) - log(sizes[0])) * (plot[1] - plot[0])
-    y = lambda v: TOP + (1 - v) * (H - TOP - BOTTOM)
-    last = sizes[-1]
-    gap = round((md[last] - celis[last]) * 100)
-    parts = [f'<rect class="card" x="{left}" y="0.5" width="{CARD}" height="{H - 1}" rx="12" stroke-width="1"/>',
-             f'<text class="group secondary" x="{left + PAD}" y="{PAD + 14}">{title}</text>',
-             f'<text class="headline accent" x="{left + PAD}" y="{PAD + 64}">{gap} pts</text>',
-             f'<text class="body secondary" x="{left + PAD}" y="{PAD + 86}">fewer with celis at {last:,} rules: '
-             f'{celis[last]:.0%} against {md[last]:.0%}</text>']
-    for v in (0, 0.25, 0.5, 0.75, 1):
-        parts.append(f'<line class="grid" x1="{plot[0]}" y1="{y(v)}" x2="{plot[1]}" y2="{y(v)}"/>')
-        parts.append(f'<text class="mark secondary" x="{plot[0] - 8}" y="{y(v) + 3}" text-anchor="end">'
-                     f'{v:.0%}</text>')
-    if none is not None:
-        parts.append(f'<line class="rule" x1="{plot[0]}" y1="{y(none)}" x2="{plot[1]}" y2="{y(none)}" '
-                     f'stroke-dasharray="2 2"/>')
-        parts.append(f'<text class="caption secondary" x="{plot[1]}" y="{y(none) - 6}" text-anchor="end">'
-                     f'no memory {none:.0%}</text>')
-    for a, b in zip(sizes, sizes[1:]):
-        fill = "wash" if md[a] + md[b] >= celis[a] + celis[b] else "loss"
-        shape = f"{x(a):.1f},{y(md[a]):.1f} {x(b):.1f},{y(md[b]):.1f} {x(b):.1f},{y(celis[b]):.1f} " \
-                f"{x(a):.1f},{y(celis[a]):.1f}"
-        parts.append(f'<polygon class="{fill}" points="{shape}"/>')
-    for cls, series in (("md", md), ("celis", celis)):
-        line = " ".join(f"{x(n):.1f},{y(v):.1f}" for n, v in series.items())
-        parts.append(f'<polyline class="{cls}" points="{line}" fill="none" stroke-width="2" '
-                     f'stroke-linecap="round" stroke-linejoin="round"/>')
-        parts += [f'<circle class="{cls}-dot" cx="{x(n):.1f}" cy="{y(v):.1f}" r="3.5"/>' for n, v in series.items()]
-    for n in sizes:
-        delta = round((celis[n] - md[n]) * 100)
-        sign = "−" if delta < 0 else "+" if delta > 0 else "±"
-        top = min(y(md[n]), y(celis[n])) - 10
-        parts.append(f'<text class="delta {"accent" if delta <= 0 else "danger"}" x="{x(n):.1f}" y="{top:.1f}" '
-                     f'text-anchor="middle">{sign}{abs(delta)}</text>')
-        parts.append(f'<text class="mark secondary" x="{x(n):.1f}" y="{H - BOTTOM + 16}" text-anchor="middle">'
-                     f'{n:,}</text>')
-    parts.append(f'<text class="caption secondary" x="{(plot[0] + plot[1]) / 2}" y="{H - BOTTOM + 34}" '
-                 f'text-anchor="middle">rules in memory</text>')
-    parts.append(f'<text class="mark secondary" x="{plot[0] - 8}" y="{H - BOTTOM + 56}" text-anchor="end">'
-                 f'AGENTS.md</text>')
-    for name, n in REPOS.items():
-        parts.append(f'<line class="rule" x1="{x(n):.1f}" y1="{H - BOTTOM + 46}" x2="{x(n):.1f}" '
-                     f'y2="{H - BOTTOM + 54}"/>')
-        parts.append(f'<text class="mark secondary" x="{x(n):.1f}" y="{H - BOTTOM + 66}" text-anchor="end" '
-                     f'transform="rotate(-30 {x(n):.1f} {H - BOTTOM + 66})">{name}</text>')
-    return parts
 
 
 def main():
@@ -108,28 +45,43 @@ def main():
     arm = (sys.argv[2:] or ["final"])[0]
     targets = json.loads((HERE / "data" / "targets.json").read_text())
     replaced = {t["id"] for t in targets if "old" in t}
-    plain = report.lines(f"plain-{model}")
-    skip = report.habits(plain)
-    none = report.measures(plain, skip, replaced)["broken"]
-    width, height = 2 * CARD + GAP + 2 * PAD, H + 2 * PAD + 34
-    parts = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" width="{width}" '
-             f'height="{height}">', f"<style>{STYLE}</style>",
-             f'<rect class="board" width="{width}" height="{height}" rx="18"/>',
-             f'<circle class="md-dot" cx="{PAD + 6}" cy="{PAD + 10}" r="4"/>',
-             f'<text class="body ink" x="{PAD + 16}" y="{PAD + 14}">CLAUDE.md with every rule</text>',
-             f'<circle class="celis-dot" cx="{PAD + 206}" cy="{PAD + 10}" r="4"/>',
-             f'<text class="body ink" x="{PAD + 216}" y="{PAD + 14}">celis</text>',
-             f'<text class="caption secondary" x="{width - PAD}" y="{PAD + 14}" text-anchor="end">Claude Code, '
-             f'{model.capitalize()}. Lower is better. Labels: celis minus CLAUDE.md, in points.</text>',
-             f'<g transform="translate({PAD} {PAD + 34})">']
-    for i, (key, title, base) in enumerate((("broken", "Rules broken", none),
-                                            ("old", "Outdated rules followed", None))):
-        md = points("oracle", model, key, skip, replaced)
-        celis = points(arm, model, key, skip, replaced)
-        parts += card(i * (CARD + GAP), title, md, celis, base)
-        print(title, "  ".join(f"{n}: {md[n]:.0%} → {celis[n]:.0%}" for n in md))
-    parts += ["</g>", "</svg>"]
+    skip = report.habits(report.lines(f"plain-{model}"))
+    md = broken("oracle", model, skip, replaced)
+    celis = broken(arm, model, skip, replaced)
+    sizes = list(md)
+    top = 0.8
+    y = lambda v: TOP + (1 - v / top) * (H - TOP - BOTTOM)
+    slot = (W - LEFT - RIGHT) / len(sizes)
+    parts = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}">',
+             f"<style>{STYLE}</style>", f'<rect class="board" width="{W}" height="{H}" rx="12"/>',
+             f'<text class="title ink" x="{LEFT}" y="40">Rules the agent broke, as its memory grows</text>',
+             f'<text class="body secondary" x="{LEFT}" y="62">Claude Code with {model.capitalize()}, 8 tasks at '
+             f'each size. Lower is better.</text>',
+             f'<rect class="claude" x="{LEFT}" y="76" width="12" height="12" rx="3"/>',
+             f'<text class="body ink" x="{LEFT + 18}" y="86">CLAUDE.md with every rule</text>',
+             f'<rect class="celis" x="{LEFT + 210}" y="76" width="12" height="12" rx="3"/>',
+             f'<text class="body ink" x="{LEFT + 228}" y="86">celis</text>']
+    for v in (0, 0.2, 0.4, 0.6, 0.8):
+        parts.append(f'<line class="grid" x1="{LEFT}" y1="{y(v):.1f}" x2="{W - RIGHT}" y2="{y(v):.1f}"/>')
+        parts.append(f'<text class="mark secondary" x="{LEFT - 10}" y="{y(v) + 4:.1f}" text-anchor="end">'
+                     f'{v:.0%}</text>')
+    for i, n in enumerate(sizes):
+        centre = LEFT + slot * (i + 0.5)
+        for cls, value, dx in (("claude", md[n], -BAR - PAIR / 2), ("celis", celis[n], PAIR / 2)):
+            x = centre + dx
+            parts.append(f'<rect class="{cls}" x="{x:.1f}" y="{y(value):.1f}" width="{BAR}" '
+                         f'height="{y(0) - y(value):.1f}" rx="4"/>')
+            parts.append(f'<text class="value ink" x="{x + BAR / 2:.1f}" y="{y(value) - 8:.1f}" '
+                         f'text-anchor="middle">{value:.0%}</text>')
+        delta = round((celis[n] - md[n]) * 100)
+        text = f"{'−' if delta < 0 else '+'}{abs(delta)} pts" if delta else "even"
+        parts.append(f'<text class="size ink" x="{centre:.1f}" y="{y(0) + 24:.1f}" text-anchor="middle">'
+                     f'{n:,} rules</text>')
+        parts.append(f'<text class="delta {"celis" if delta <= 0 else "worse"}" x="{centre:.1f}" '
+                     f'y="{y(0) + 46:.1f}" text-anchor="middle">{text}</text>')
+    parts.append("</svg>")
     OUT.write_text("\n".join(parts) + "\n")
+    print("  ".join(f"{n}: {md[n]:.0%} vs {celis[n]:.0%}" for n in sizes))
     print(OUT)
 
 
