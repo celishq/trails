@@ -34,7 +34,8 @@ celis tree [<id>] [--graph] [--full] [--all] [--demo]
    such as a command and its result: `--as-planned` when the result matches `expect`, else
    `--changed`. A wrong step, or a fix to done work, takes `--replaces <id>`. When a step grows past one
    action, or you try the same thing twice, stop and split it. When you give work to a subagent, put in
-   its task each rule of that work, as celis printed it.
+   its task each rule of that work, as celis printed it. Name a secret by where it lives, such as
+   `API_KEY in .env`, never by its value: a record is signed and cannot be deleted.
 5. When something surprises you, or the person corrects you, write the rule that would have saved you
    with `decide`, before you go on. Give it `--path` for the files it acts on, as narrow as the rule
    allows, and `--situation` only when no file shows it ahead. A

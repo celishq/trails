@@ -12,6 +12,10 @@ celis keeps your trails, rules, prompts and account phrase on your machine only:
 phrase file can be read by its owner alone. `celis link` copies a project's trails into a folder of that
 project, `.celis/trails` by default, so they go wherever you commit or push that folder.
 
+The card tells each agent to name a secret by where it lives, never by its value. celis itself does not
+check for secrets: a prompt that holds a key is kept as you wrote it, in a signed record that cannot be
+deleted. Keep keys out of your prompts.
+
 ## What celis sends
 
 The `celis` command connects to the network for `celis update` only. It downloads `install.sh` of the latest
