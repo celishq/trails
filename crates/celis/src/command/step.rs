@@ -59,8 +59,8 @@ impl Command {
         self.print(written, args, out, err)
     }
 
-    /// Starts the open step `args` names, and prints the id of its start, then the rules at its
-    /// places.
+    /// Starts the open step `args` names, and prints the id of its start, then the rules its plan
+    /// links.
     fn step_start(
         &self,
         args: &Args,

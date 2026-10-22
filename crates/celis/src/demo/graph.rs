@@ -286,6 +286,9 @@ impl Written {
                     scope: Scope::Trail(trail),
                     replaces: None,
                     content: self.plan.rules[r].0.to_string(),
+                    paths: vec![],
+                    situation: false,
+                    promoted: false,
                 };
                 store.at(at);
                 store.decide(rule, None)?;

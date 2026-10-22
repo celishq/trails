@@ -12,3 +12,16 @@ for n in 1 2 3 4; do
   step=$(celis step add --under "$trail" -- "Write the entry under a new version heading in CHANGELOG.md" 2>/dev/null)
   celis step done "$step" --as-planned -- "CHANGELOG.md has a 1.$n heading with the entry." >/dev/null 2>&1
 done
+mkdir -p tests
+printf 'from cart import total\n\n\ndef test_total():\n    assert total([150, 250]) == 400\n' > tests/test_cart.py
+printf '[project]\nname = "shop"\n\n[tool.ruff]\ntarget-version = "py311"\n' > pyproject.toml
+printf '# shop\n\nAgents read this file before they work here.\n' > AGENTS.md
+celis decide -- "When you write Python: keep each line at most 100 characters, because the team reviews code side by side." >/dev/null
+celis decide -- "When you finish a change: tell the person which files you changed and why, because they review each change by hand." >/dev/null
+celis decide --path "test/*.py" -- "When you write a test: give each test one assert, because a failure must name one cause." >/dev/null
+trail=$(celis step add --new -- "Add tests for the cart" 2>/dev/null)
+for n in 1 2 3; do
+  step=$(celis step add --under "$trail" --at tests/test_cart.py -- "Add test $n to tests/test_cart.py" 2>/dev/null)
+  celis step done "$step" --as-planned -- "tests/test_cart.py has test $n, and pytest passes." >/dev/null 2>&1
+done
+celis step done "$trail" --as-planned -- "tests/test_cart.py has 3 tests, and pytest passes." >/dev/null 2>&1

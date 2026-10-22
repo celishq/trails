@@ -1,10 +1,10 @@
 ---
 name: tidy
-description: Tidies the celis trails. Drops stale trails and rules, merges rules that say the same thing, settles rules that conflict, and turns work done many times into named trails. Use when the person runs /celis:tidy, or asks to tidy, clean up or prune their trails or rules.
+description: Tidies the celis trails. Drops stale trails and rules, merges rules that say the same thing, settles rules that conflict, moves rules into the place's own checks, and turns work done many times into named trails. Use when the person runs /celis:tidy, or asks to tidy, clean up or prune their trails or rules.
 ---
 
-You tidy the trails in four parts, in this order: stale, merge, conflicts, templates. Write nothing
-before the person says yes.
+You tidy the trails in five parts, in this order: stale, merge, conflicts, moves, templates. Write
+nothing before the person says yes.
 
 1. Ask the person what to clean: this project, this project and the `me` rules, or all projects.
 2. Add the tidy as one ask, as the card says, and one step under it for each part. Take the parts one
@@ -22,7 +22,8 @@ Find what no longer holds:
 - an `at:` rule whose place the project no longer has. Check the place only in the working folder's
   project;
 - a rule that names code, a file or a command that the project no longer has;
-- a rule of a trail whose done work was revised (`revised-by`) when the new work says otherwise.
+- a rule of a trail whose done work was revised (`revised-by`) when the new work says otherwise;
+- a one-off note: a rule about one event, not about work to come.
 
 Drop each one with `celis step drop <id> -- "<why it no longer holds>"`. A dropped trail keeps its
 rules: drop each of its rules that is stale too. When you drop a named trail, tell the person that its
@@ -48,6 +49,19 @@ id8>"`. Write a new rule with `decide --replaces <one of them>`, and drop the ot
 A rule of a named trail from another project ends only in this project: write the winner with
 `decide --replaces <its id>`, as `steps.md` says for named trails.
 
+## Moves
+
+Find live rules that the place can hold itself. Leave out rules that grep marks ` promoted`.
+
+- A rule that a tool of the place can check: propose the change to that tool, such as the repo's
+  linter, tests or CI, or a Figma project's styles.
+- A rule that holds for all work in the project, that no tool can check: propose a line in the project's
+  agent instruction file, `AGENTS.md` when it has none.
+
+Show the person the rule and the change. After a yes, make the change, and run the check when there is
+one. Then mark the rule with `decide --replaces <its id> --scope <its scope> --promoted -- "<the same
+text>"`: celis keeps it, and knows that the place checks it.
+
 ## Templates
 
 Find groups of 4 or more done trails, of any project, that did the same work in any words. Leave out
@@ -65,5 +79,5 @@ named trails and trails dropped after done.
 
 ## End
 
-Close each part's step with what it changed: how many trails and rules it dropped, merged and wrote.
-Close the ask. Tell the person what each part changed, and each named trail it wrote.
+Close each part's step with what it changed: how many trails and rules it dropped, faded, merged, moved
+and wrote. Close the ask. Tell the person what each part changed, and each named trail it wrote.

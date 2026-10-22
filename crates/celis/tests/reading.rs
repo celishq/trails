@@ -2,7 +2,7 @@
 
 mod support;
 
-use support::{account, now, read_ids, stored_rule, Repo, DAY};
+use support::{account, now, place_ids, stored_rule, Repo, DAY};
 
 fn short(id: &str) -> String {
     id[..8].to_string()
@@ -41,8 +41,8 @@ fn a_reader_gives_only_live_rules_of_the_working_folders_project() {
         now() - 2 * DAY,
     );
     let at = ["--at", "src/a.rs"];
-    assert_eq!(read_ids(&repo, &repo.path(), &at), [short(&new.id)]);
-    let in_shop = read_ids(&repo, &shop, &at);
+    assert_eq!(place_ids(&repo, &repo.path(), &at), [short(&new.id)]);
+    let in_shop = place_ids(&repo, &shop, &at);
     assert!(!in_shop.contains(&short(&new.id)), "{in_shop:?}");
     assert!(!in_shop.contains(&short(&foreign.id)), "{in_shop:?}");
 }
@@ -83,14 +83,14 @@ fn a_rule_at_a_file_is_at_that_file_whatever_line_and_a_folder_holds_what_lies_u
     let other = at("src/x/ab.rs:1", 1);
     let folder = repo.path();
     assert_eq!(
-        read_ids(&repo, &folder, &["--at", "src/x/a.rs"])[..3],
+        place_ids(&repo, &folder, &["--at", "src/x/a.rs"])[..3],
         [bare.clone(), line99.clone(), line3.clone()]
     );
     assert_eq!(
-        read_ids(&repo, &folder, &["--at", "src/x"]),
+        place_ids(&repo, &folder, &["--at", "src/x"]),
         [other, deep, bare, line99, line3]
     );
-    assert_eq!(read_ids(&repo, &folder, &["--at", "src/xy"]), [sibling]);
+    assert_eq!(place_ids(&repo, &folder, &["--at", "src/xy"]), [sibling]);
 }
 
 /// A reader orders the rules at a place newest first, then by id.
@@ -111,7 +111,7 @@ fn a_reader_orders_rules_newest_first_then_by_id() {
     let mut want = vec![newest];
     want.extend(tied);
     want.push(oldest);
-    assert_eq!(read_ids(&repo, &repo.path(), &["--at", "src/a.rs"]), want);
+    assert_eq!(place_ids(&repo, &repo.path(), &["--at", "src/a.rs"]), want);
 }
 
 /// A place resolves against the working folder and reads as a path from the project's top folder, so
@@ -131,9 +131,9 @@ fn a_place_reads_as_a_path_from_the_projects_top_folder() {
     assert!(o.status.success(), "{}", support::err(&o));
     let id = short(support::out(&o).trim());
     let full = root.join("src/a.rs").display().to_string();
-    assert_eq!(read_ids(&repo, &root, &["--at", &full]), [id.as_str()]);
-    assert_eq!(read_ids(&repo, &src, &["--at", "a.rs"]), [id.as_str()]);
-    assert_eq!(read_ids(&repo, &src, &["--at", "../src"]), [id.as_str()]);
+    assert_eq!(place_ids(&repo, &root, &["--at", &full]), [id.as_str()]);
+    assert_eq!(place_ids(&repo, &src, &["--at", "a.rs"]), [id.as_str()]);
+    assert_eq!(place_ids(&repo, &src, &["--at", "../src"]), [id.as_str()]);
     let o = repo.run(&root, &["grep", "at:src/a.rs:3"], &[], "");
     assert!(
         support::out(&o).contains(&format!("rule {id} live {{at:src/a.rs:3}} kept")),

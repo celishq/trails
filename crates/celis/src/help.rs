@@ -111,7 +111,7 @@ pub const GROUPS: &[Group] = &[
         "Add steps to a trail, then start, finish, drop, or edit them.",
         &[
             ("add", "Add a step to a trail, or start a new trail"),
-            ("start", "Start a step and show the rules it must keep"),
+            ("start", "Start a step and show the rules its plan links"),
             ("done", "Finish a step with proof that it works"),
             ("drop", "Drop a step and the open steps under it"),
             (
@@ -250,7 +250,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "grep",
         usage: &["celis grep <grep option>... <pattern>"],
-        summary: "Search every trail of every project with the system grep, one line for each trail, step, proof, change, drop reason, and rule. Show what it finds under each trail's header, the trails with the most lines first, up to 8,000 bytes. Changes nothing.",
+        summary: "Search every trail of every project with the system grep, one line for each trail, step, proof, change, drop reason, and rule. Show what it finds under each trail's header, the trails with the most lines first. Changes nothing.",
         args: &[
             ("<grep option>", "Any option of grep, such as -i, -E, -w, or -A 3"),
             ("<pattern>", "What to find, as grep reads it"),
@@ -310,17 +310,34 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "decide",
-        usage: &["celis decide [--scope <scope>] [--replaces <id>] [--project <id>] -- <text>"],
-        summary: "Record a rule that later work must keep. With no --scope, it holds for the whole project.",
+        usage: &["celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--situation] [--promoted] [--project <id>] -- <text>"],
+        summary: "Record a rule that later work must keep. With no --scope, it holds for the whole project. Its paths name the files it acts on, so celis rules gives it for them.",
         args: &[
             ("--scope <scope>", "Where it applies: at:<place>, trail:<id>, me, or project"),
             ("--replaces <id>", "The rule this one replaces"),
+            ("--path <glob>", "A file it acts on; * and ? within a folder, ** across"),
+            ("--situation", "No file shows it ahead"),
+            ("--promoted", "A tool of the place, like a linter, now checks it"),
             ("--project <id>", "skill:<name>, or the id of a project in the store"),
             ("<text>", "When it applies, what to do, and why"),
         ],
         examples: &[
             "celis decide --scope at:shelf/prices.py \\",
             "  -- \"When you change prices: keep them in cents.\"",
+        ],
+    },
+    Verb {
+        command: "rules",
+        usage: &["celis rules [<file>]... [--diff]"],
+        summary: "Show every rule of the files you will read or change, the most important first. With no file, show the words the rules use, the most used first. Changes nothing.",
+        args: &[
+            ("<file>", "A file you will read or change"),
+            ("--diff", "Each file git shows changed or new"),
+        ],
+        examples: &[
+            "celis rules",
+            "celis rules shelf/prices.py",
+            "celis rules --diff",
         ],
     },
     Verb {

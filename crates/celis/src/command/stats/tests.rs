@@ -85,6 +85,9 @@ impl Desk {
             scope: Scope::Project,
             replaces: None,
             content: "When you price: round down, because the shelf does.".into(),
+            paths: vec![],
+            situation: false,
+            promoted: false,
         };
         let id = self.trails.decide(rule, None).unwrap().records[0]
             .id

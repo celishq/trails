@@ -14,8 +14,10 @@ read. What a command shows a person is not part of it.
 ## Commands
 
 ```
-celis decide [--scope <scope>] [--replaces <id>] [--project <id>] -- <text>
+celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--situation] [--promoted] [--project <id>] -- <text>
                                                        a rule, in its scope
+celis rules [<file>]... [--diff]
+                                                       the rules of some files
 celis name <trail id> <name>                          give a trail a name
 celis names [--limit <n>]                             the named trails, most used first
 celis tree [<id>] [--graph] [--full] [--all] [--demo]
@@ -28,7 +30,7 @@ celis link [<folder>]                                 keep this project's trails
 celis unlink [<folder>]                               stop keeping them in a folder
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>]... [--check <command>] [--new] [--session <id>] [--project <id>] -- <text>
                                                        leave a step
-celis step start <id>                                 take up a step, and see its rules
+celis step start <id>                                 take up a step, and see the rules its plan links
 celis step done <id> [--changed <text>] [--as-planned] [--pitfall <text>] -- <proof>
                                                        close a step with its proof
 celis step drop <id> -- <reason>                      end a step, a done trail or a rule no longer wanted
@@ -47,7 +49,8 @@ $CELIS_HOME   where celis keeps the phrase and the store
 ```
 
 ```
-decision  json  {"id", "created_at", "project", "scope", "replaces", "content"}
+decision  json  {"id", "created_at", "project", "scope", "replaces", "content",
+                 "paths", "situation", "promoted"}
 ```
 
 **Rules**
@@ -55,12 +58,14 @@ decision  json  {"id", "created_at", "project", "scope", "replaces", "content"}
 - Off macOS, `$CELIS_HOME` MUST default to `~/.local/share/celis`.
 - A flag no command takes is a usage error.
 - `decide` MUST write a rule of the working folder's project (CIP-05), with `--scope` and
-  `--replaces` as its tags, and no `scope` tag for `project`.
+  `--replaces` as its tags, and no `scope` tag for `project`; each `--path`, from the project's top
+  folder, as a `path` tag, and `--situation` and `--promoted` as their labels.
 - `--project` on `decide` and `step add` MUST write the records of the project it names in place of the
   working folder's: `skill:<name>` (CIP-07, "Skill projects"), or a project id that a record of the store
   has, with that record's project name. It MUST refuse any other id as a usage error.
 - `decide` MUST refuse empty text, and a scope that is not `me`, `project`, `trail:<id>` or `at:<place>`,
-  as a usage error; a `trail:<id>` that no open trail of the project has, with `no-trail`; and a
+  as a usage error; a `trail:<id>` that no open trail of the project has, with `no-trail`, unless
+  `--replaces` names a live rule of that trail; and a
   `--replaces` that no live rule of the project, and no live rule of a named trail, has, with
   `no-decision`.
 
@@ -69,6 +74,7 @@ decision  json  {"id", "created_at", "project", "scope", "replaces", "content"}
 ```
 celis decide --scope at:shelf/prices.py -- "When you change prices: keep them in cents, because floats lost a cent."
 celis decide --scope me -- "When you write a commit message: use plain words, because the team reads them."
+celis decide --path "**/prices*.py" -- "When you change prices: keep them in cents, because floats lost a cent."
 ```
 
 ## Help
@@ -215,7 +221,7 @@ Each agent's hooks give their JSON to `prompt`.
 - `prompt` MUST read the hook's JSON on stdin, with `conversation_id` in place of `session_id` when it
   has one.
 - On a prompt, it MUST write it as CIP-04 "Sessions" states, and print the record's id. On a compaction,
-  it MUST write and print nothing.
+  it MUST write no record and print nothing.
 - A prompt that names a step with `celis step <id>` is a task for that step. With no open trail, `prompt`
   MUST NOT ask for the past agent on it.
 
@@ -223,6 +229,39 @@ Each agent's hooks give their JSON to `prompt`.
 
 ```
 echo '{"session_id": "95e9be99", "prompt": "Use the shared Badge."}' | celis prompt
+```
+
+## Rules
+
+`rules` gives the live rules in scope in the working folder's project (CIP-05) that some files match
+(CIP-05, "Triggers"). With no file, it gives the words of those rules.
+
+```
+line     <id8> <scope> <rule>
+json     {"id", "scope", "content"}
+index    <n> live rules. Their words, by how many rules use each:
+         <word> <n>, …
+```
+
+**Rules**
+
+- Each `<file>` MUST count as that file. A `<file>` that is a folder MUST count as each file that
+  `git ls-files --cached --others --exclude-standard -- <folder>` gives in the project. `--diff` MUST count as each file that `git diff
+  --name-only HEAD` and `git ls-files --others --exclude-standard` give in the working folder, and that
+  exists.
+- With no file, `rules` MUST print the index of the live rules in scope: each word that
+  they use before their "because", with how many use it, most used first.
+- A rule with no trigger and no `at:<place>` scope MUST NOT come.
+- `rules` MUST print every rule that matches: first a rule with a `replaces` tag, then the rest; within
+  each, first those that match a named file (a `path` with no `*` or `?`, or an `at:<place>`), then a
+  glob; newest first within each.
+
+**Examples**
+
+```
+celis rules
+celis rules shelf/prices.py
+celis rules --diff
 ```
 
 ## Hooks
@@ -255,12 +294,13 @@ echo '{"session_id": "95e9be99", "cwd": "/repo", "prompt": "Use the shared Badge
 ## Grep
 
 `grep` gives every trail of every project to the system `grep`, as lines. The plugin's `past.md` searches
-the trails with it.
+the trails with it, and so does the card.
 
 ```
 view    <yyyy-mm-dd> <trail id8 | -> [<project name>] <kind> <id8> <fields> <text>
           trail | step   <open | working | done | done-dropped | dropped | expired>[ revised-by <id>,…][ at:<place>]…
           rule           <live | replaced-by <id> | dropped> {<me | project | trail:<id8> | at:<place>>}
+                           [ trigger][ situation][ promoted]
           proof | changed | dropped                              the step's or rule's id, no fields
 lines   <id8> [<project name>] <its title> · <yyyy-mm-dd>        each trail of the lines
           trail <id8> <fields>                                    the trail's own line
@@ -270,7 +310,9 @@ lines   <id8> [<project name>] <its title> · <yyyy-mm-dd>        each trail of 
 end     project [<project name>]
 ```
 
-`<id8>` is the first 8 characters of an id. A text holds each newline as a space.
+`<id8>` is the first 8 characters of an id. A text holds each newline as a space. A rule's fields end with
+` trigger` when it has a trigger tag (CIP-05), ` situation` when it has the `situation` label, and
+` promoted` when it has the `promoted` label.
 
 **Rules**
 

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "grep-limit",
+    "prompt": "Add a `--limit <n>` flag to `celis grep`: it prints at most n of the lines found, then one line that says how many it left out."
+  },
+  {
+    "id": "names-json",
+    "prompt": "Let `celis names` take `--json`: one JSON object a line for each name, with the name, the id of its trail and its project."
+  },
+  {
+    "id": "at-outside",
+    "prompt": "Make `celis step add --at <place>` refuse a place that is an absolute path outside the project's top folder, as a usage error that names the place."
+  },
+  {
+    "id": "tree-day-cap",
+    "prompt": "Make `celis tree --all` show at most 20 trails a day, newest first, and then one line that says how many trails of that day it left out."
+  },
+  {
+    "id": "eval-docs",
+    "prompt": "Add a section to CONTRIBUTING.md that tells a contributor how to add a new eval case under evals/, with the files a case needs, and an example."
+  },
+  {
+    "id": "grep-since",
+    "prompt": "Add a `--since <yyyy-mm-dd>` flag to `celis grep` that keeps only the lines of that day or later."
+  },
+  {
+    "id": "rules-trigger-json",
+    "prompt": "Make `celis rules --json` give each rule's trigger too, as the decision json of `step start --json` does."
+  },
+  {
+    "id": "pinned-rule",
+    "prompt": "Add a pinned rule: `celis decide --pinned` writes the label `[\"l\", \"pinned\", \"celis.decision\"]`, and `celis rules` prints pinned rules first. Write it into the spec first."
+  },
+  {
+    "id": "rename-given",
+    "prompt": "The type `Given` in crates/celis/src/command/rules/given.rs is named after what it does. Give it a better name and update every use."
+  },
+  {
+    "id": "index-tests",
+    "prompt": "Add unit tests for crates/celis/src/command/rules/index.rs: the counts of words, the words it leaves out, and the wrap of long lines."
+  },
+  {
+    "id": "card-missing",
+    "prompt": "Tell the agent in the plugin card what to do when a celis command prints that celis is older than its plugin."
+  },
+  {
+    "id": "tree-project",
+    "prompt": "Add `celis tree --project <name>`: it shows only the trails of that project."
+  },
+  {
+    "id": "decide-when",
+    "prompt": "Make `celis decide` refuse a rule whose text does not start with \"When \", as a usage error that shows the form \"When X: do Y, because Z\"."
+  },
+  {
+    "id": "readme-rules",
+    "prompt": "Describe `celis rules` and its index of words in README.md, for a person who installs celis."
+  },
+  {
+    "id": "stats-empty",
+    "prompt": "Make `celis stats` print one plain line when the store holds no record, in place of empty tables."
+  }
+]

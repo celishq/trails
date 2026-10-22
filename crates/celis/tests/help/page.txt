@@ -20,6 +20,9 @@ Read
   └ --limit <n>       Show the first <n> only
 
   grep <pattern>      Search every trail with grep
+  rules [<file>]...   Show the rules of the files you will touch
+  └ --diff            Each file git shows changed or new
+
   stats [<id>]        Show what later work reused, and how work went
   └ --demo            Show four weeks of sample trails
 
@@ -36,7 +39,7 @@ Record work · your agents run these
   ├ --new             Start a new trail, not a step of the session's trail
   └ --project <id>    skill:<name>, or the id of a project in the store
 
-  step start <id>     Start a step and show the rules it must keep
+  step start <id>     Start a step and show the rules its plan links
   step done <id>      Finish a step with proof that it works
   ├ --changed <text>  How the result differs from its expect line
   ├ --as-planned      The result matches its expect line; else use --changed
@@ -50,6 +53,9 @@ Record work · your agents run these
   decide              Record a rule that later work must keep
   ├ --scope <scope>   Where it applies: at:<place>, trail:<id>, me, or project
   ├ --replaces <id>   The rule this one replaces
+  ├ --path <glob>     A file it acts on; * and ? within a folder, ** across
+  ├ --situation       No file shows it ahead
+  ├ --promoted        A tool of the place, like a linter, now checks it
   └ --project <id>    skill:<name>, or the id of a project in the store
 
   name <trail> <name> Name a trail, so other work can use it by its name

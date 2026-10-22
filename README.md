@@ -17,51 +17,18 @@ https://github.com/user-attachments/assets/8cb59450-fb36-4fa6-82ae-5bcd59b1384b
 
 ## Why
 
-- **Skills that build themselves.** You don't write skill files by hand. When your agent starts
-  something new, it finds similar work done before and hands over what worked. It gets
-  better with every job.
-- **Your agent stops repeating mistakes.** Correct it once, in chat or in a code review, and
-  it remembers the fix next time, even in another project.
-- **Less hand-holding.** The agent checks its own work after every step, so it can go further
-  on its own.
-- **All your agents learn together.** Something Claude Code learned is there for Codex and
-  Cursor too.
-- **Run agents in parallel.** A swarm of agents can work on one job at once. When one of them
-  learns a rule, the others get it at their next step, not after the session ends.
-- **You can see what happened.** Every step comes with proof: a passing test, a command's
-  output, a screenshot. You can also watch the steps show up while the agent works.
+- **Your agent stops repeating mistakes.** Correct it once, in chat or in a code review, and it remembers,
+  even in another project.
+- **Skills that build themselves.** When your agent starts something new, it finds similar work it did
+  before and reuses what worked.
+- **All your agents learn together.** What Claude Code learns, Codex and Cursor know too.
+- **You can see what happened.** Every step comes with proof, like a passing test or a command's output.
 
 ## How it works
 
-Celis borrows an idea from the Jobs To Be Done methodology: say what you want done, not how to
-do it. "Seniors pay 20% less" is a job. "Edit the cart" is just one way to do it, and maybe
-not the right one.
-
-In celis, every job gets split into smaller jobs. We call each of those a **step**, and a step
-can split again. All the steps for one job together make its **trail**.
-
-Trails use [nostr](https://nostr.org), an open protocol, as their data format: each record is a
-note signed with your own key. celis never sends them to relays or anywhere else, so
-everything stays on your machine.
-
-Here's what happens when you give your agent a job:
-
-1. **The session starts.** The plugin shows the agent how to work in steps.
-2. **The agent looks back.** Before it begins, the agent goes through your old trails from
-   all your projects and finds steps like the ones coming up. It brings back what worked, what
-   didn't, and why.
-3. **The agent works one step at a time.** It does a step, proves it worked, and only then
-   picks the next one. It starts with the part it's least sure about and splits it up until
-   each piece is clear. Steps are named by what they're for, not how they were done, so the
-   same step turns up again in other projects.
-4. **The agent learns from what went wrong.** When a step doesn't go as planned, the agent
-   writes down what it learned as a **rule**, like "tests need SHELF_OFFLINE=1". When you
-   correct the agent, or give it code review comments to fix, each point becomes a rule too.
-   A rule can be for one project or for all of them.
-5. **Subagents get the rules too.** When the agent hands a step to a subagent, the rules for
-   that step go with it.
-
-Here's a trail halfway through a job:
+Your agent splits each job into small steps, proves each one works, and keeps what it learned as
+rules. The next time it works on something similar, Celis brings it those rules and the steps that
+worked, from every project.
 
 ```
 Job: seniors pay 20% less
@@ -77,66 +44,33 @@ Job: seniors pay 20% less
 ✓ done   ⠏ in progress   ○ to do   ✗ dropped
 ```
 
-A week later, you ask for a student discount. This is what the agent sees first:
+A week later, you ask for a student discount, and the agent starts with the senior discount's trail and
+its two rules.
 
-```
-New job: students pay 10% less
+## Does it work?
 
-  ✓ seniors pay 20% less    40 min · no corrections   ← start from this trail
+We gave Claude Code 8 coding tasks with 40 to 1,600 rules to keep, taken from the agent files of big
+open-source repos like VS Code and Next.js. We put the rules either in a CLAUDE.md or in Celis.
 
-  rules:
-  • tests need SHELF_OFFLINE=1
-  • set prices in prices.py, not the cart
-```
+![Outdated rules the agent followed, CLAUDE.md against Celis, from 40 to 1,600 rules in memory](media/outdated-rules.svg)
 
-## Early results
+![Rules the agent broke, CLAUDE.md against Celis, from 40 to 1,600 rules in memory](media/rules-broken.svg)
 
-> [!NOTE]
-> These numbers come from our early evals, with each bench run once. We're still gathering data, so
-> take them as a first look, not a final benchmark. [RESULTS.md](RESULTS.md) has the full setup.
+A small CLAUDE.md works well. As it grows, the agent misses more of its rules, and it often follows
+the old version of a rule that changed. With Celis, the agent broke fewer rules at most sizes, and
+followed old rules far less often. Real repos already have 80 to 280 rules in one agent file.
 
-**Say it once, in one project, and it holds in the next one.** We gave agents 10 real Raycast
-extension pull requests, all merged after the model's training data, each in a different extension.
-After the first two, a reviewer gave 5 rules, like "use the `{PR_MERGE_DATE}` placeholder in the
-changelog". Then we counted how often the next 8 jobs, in 8 other extensions, broke them. Each job
-starts in a fresh folder, so a project's `CLAUDE.md` can't carry the rules over.
+**Why?** The rules fit in the context window, but the agent's attention doesn't stretch that far. The
+one rule that matters gets lost among hundreds of others. Celis gives the agent the right rules at
+the right time: when a job starts, before it changes a file, and before it says it's done.
 
-| Agent                                                | Review rules broken, of 43 | Extra review rounds | Cost for 10 jobs |
-| ---------------------------------------------------- | -------------------------- | ------------------- | ---------------- |
-| Claude Code, Sonnet                                  | 6                          | 6                   | $2.60            |
-| Claude Code, Sonnet, with celis                      | 3                          | 3                   | $2.70            |
-| Claude Code, Haiku                                   | 16                         | 17                  | $0.70            |
-| Claude Code, Haiku, with celis                       | 3                          | 7                   | $0.60            |
-| Claude Code, Opus with Haiku subagents               | 6                          | 5                   | $3.10            |
-| Claude Code, Opus with Haiku subagents, with celis   | 1                          | 1                   | $4.60            |
+We treat the agent as a capable collaborator that owns its work. Celis doesn't tell it how to do the
+job; it gives it what it needs to do the job well.
 
-With celis, Haiku broke fewer rules than Sonnet without it, for a quarter of the cost. And in a team,
-celis gave the rules to each Haiku subagent at its step. Without it, Opus broke 1 rule in the first 4
-later jobs, and 5 in the next 3.
+**It works across agents, too.** In another test, Claude Code learned the review rules of real
+Supabase pull requests. Codex then broke 0.25 of them per job with Celis, against 2.38 without.
 
-**Say it to Claude Code, and Codex keeps it.** We gave agents 8 real Supabase pull requests that
-build landing pages, all merged after the model's training data. After two of them, the agent got
-the rules that Supabase's review bots had asked for. Then we counted how often the later jobs broke
-those rules.
-
-| Agent                                          | Review rules broken per job | Cost per job |
-| ---------------------------------------------- | --------------------------- | ------------ |
-| Claude Code                                    | 2.75                        | $0.31        |
-| Claude Code with celis                         | 0                           | $0.31        |
-| Codex                                          | 2.38                        | $0.04        |
-| Codex with Celis, using rules from Claude Code | 0.25                        | $0.05        |
-
-Celis didn't make the pages look more like the real ones. What it changed is that agents kept
-the rules they had been given.
-
-## Why not just CLAUDE.md?
-
-A `CLAUDE.md` works well when the right rule is in it. In our evals, a `CLAUDE.md` that already held
-the rule did as well as celis. The catch is that someone has to write it, and keep it current.
-
-Celis writes the rules for you, from your corrections and code reviews, while the work happens.
-At the start of each job, the agent gets the rules and past steps that matter for it, from every
-project. And every agent gets them, whichever instruction file it reads.
+The full setup, numbers and limits are in [evals/drift](evals/drift/README.md).
 
 ## Install
 
@@ -156,17 +90,10 @@ sh install.sh
 To update it later, run `celis update`.
 
 <details>
-<summary>Read the script first, and check the download</summary>
+<summary>What the script does, and how to check the download</summary>
 
 The script puts `celis` in `~/.local/bin`, with no `sudo`. When that folder isn't on your PATH, it
-adds one `export PATH=…` line to `~/.profile` and to your shell's rc file. To read it before it
-runs:
-
-```bash
-curl -fsSL https://celis.ai/install.sh -o install.sh
-less install.sh
-sh install.sh
-```
+adds one `export PATH=…` line to `~/.profile` and to your shell's rc file.
 
 Each archive on [GitHub Releases](https://github.com/celishq/trails/releases) has a checksum, which
 the script checks, and a build attestation, which proves that this repo's release workflow built
@@ -176,7 +103,7 @@ it. To check an archive yourself with the [GitHub CLI](https://cli.github.com):
 gh attestation verify celis-aarch64-apple-darwin.tar.gz -R celishq/trails
 ```
 
-[SECURITY.md](SECURITY.md) says what celis keeps, sends and runs.
+[SECURITY.md](SECURITY.md) says what Celis keeps, sends and runs.
 
 </details>
 
@@ -185,102 +112,46 @@ gh attestation verify celis-aarch64-apple-darwin.tar.gz -R celishq/trails
 | Agent       | Install                                                                         | Then                                                                                        |
 | ----------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | Claude Code | `/plugin marketplace add celishq/trails`<br>`/plugin install celis@celis`       | —                                                                                           |
-| Codex       | `codex plugin marketplace add celishq/trails`<br>`codex plugin add celis@celis` | Trust its hooks with `/hooks`. In a sandbox, let it write the folder celis keeps trails in. |
+| Codex       | `codex plugin marketplace add celishq/trails`<br>`codex plugin add celis@celis` | Trust its hooks with `/hooks`. In a sandbox, let it write the folder Celis keeps trails in. |
 | Cursor      | `cursor-agent plugin marketplace add https://github.com/celishq/trails`         | Install `celis` from `/plugins`. Cursor doesn't remind the agent on each message.           |
 | Gemini CLI  | `gemini extensions install https://github.com/celishq/trails`                   | —                                                                                           |
-| Antigravity | `agy plugin install https://github.com/celishq/trails`                          | Antigravity has no prompt hook, so celis doesn't write your prompts on the trail.           |
+| Antigravity | `agy plugin install https://github.com/celishq/trails`                          | Antigravity has no prompt hook, so Celis doesn't write your prompts on the trail.           |
 
 **3. Give your agent a job,** and run `celis tree` in a second terminal to watch its steps.
 Questions don't leave a trail; only jobs that change files do.
-
-<details>
-<summary>Keep celis data somewhere else</summary>
-
-celis keeps your trails and your key in `~/Library/Application Support/Celis` on macOS, and in
-`~/.local/share/celis` on Linux. To keep them in another folder, for a test or a
-separate setup, set `CELIS_HOME` to that folder before you start the agent:
-
-```bash
-CELIS_HOME="$PWD/.celis-home" claude
-```
-
-</details>
 
 ## Uninstall
 
 1. Remove the plugin from your agent the same way you added it. In Claude Code, run
    `/plugin uninstall celis@celis`.
-2. Delete the binary:
-
-   ```bash
-   rm ~/.local/bin/celis
-   ```
-
-3. To delete your trails and your key too, delete the data folder. Trails live only on your
-   machine, so this removes them for good.
-
-   ```bash
-   rm -rf ~/Library/Application\ Support/Celis   # macOS
-   rm -rf ~/.local/share/celis                   # Linux
-   ```
+2. Delete the binary: `rm ~/.local/bin/celis`
+3. To delete your trails and your key too, delete the data folder. This removes them for good:
+   `~/Library/Application Support/Celis` on macOS, `~/.local/share/celis` on Linux.
 
 ## Questions
 
-**How do I fix a bad rule?**
+**How do I fix a bad rule?** Tell your agent. It writes a new rule that replaces the old one, and
+agents stop seeing the old one.
 
-Tell your agent. celis is agent native: your agent knows every command, so asking it is always
-easier than running celis yourself. It writes a new rule that replaces the old one
-(`celis decide --replaces <id>`). A rule can't be deleted, but once it's replaced, agents stop
-seeing it.
-
-**How do I share trails with my team?**
-
-Run `celis link` in the project. It keeps an up-to-date copy of the project's trails in
-`.celis/trails/` in the repo, so you can commit them and git syncs them like any other file.
-You can link any other folder too, like a synced drive. Rules you keep for all your own work
+**How do I share trails with my team?** Run `celis link` in the project. It keeps a copy of the
+project's trails in `.celis/trails/`, so you can commit them. Rules you keep for all your own work
 stay private.
 
-**Is a job one session?**
+**Where is my data?** On your machine only: `~/Library/Application Support/Celis` on macOS, and
+`~/.local/share/celis` on Linux. Each record is a [nostr](https://nostr.org) note signed with your own
+key, and Celis never sends it anywhere. To use another folder, set `CELIS_HOME` before you start the
+agent. Run `celis auth phrase` to see your recovery phrase, and `celis auth login` on another
+computer.
 
-Not always. Your agent decides on its own how to split a job, and picks the way that gets it
-done best. A job can take many sessions, and one session can work on many jobs. Subagents
-share their parent's session.
+**What else can I run?** `celis help` lists every command, such as `celis grep` to search your trails
+and `celis report` to turn a trail into Markdown for a pull request.
 
-**Where is my key, and how do I back it up?**
-
-celis makes a 12-word recovery phrase the first time it saves a trail. Run `celis auth phrase`
-to see it and write it down. On another computer, run `celis auth login` and type it in.
-
-**What other commands are there?**
-
-Run `celis help`. Besides `tree`, you can search all trails with `celis grep`, see what later
-work reused with `celis stats`, and turn trails into Markdown for a pull request with
-`celis report`.
-
-**Does it work on Windows?**
-
-Not yet natively. Run celis in WSL.
+**Does it work on Windows?** Through WSL.
 
 ## Status
 
-Celis is in early development. Releases are `0.0.x`, and the trail format is still a draft, so
-it may change between versions.
+Celis is in early development: releases are `0.0.x`, and the trail format may still change. It works
+with Claude Code, Codex, Cursor, Gemini CLI and Antigravity, on macOS and Linux.
 
-What works today:
-
-- Claude Code, Codex, Cursor, Gemini CLI and Antigravity
-- macOS and Linux, and Windows through WSL
-- Sharing trails with your team through git, with `celis link`
-
-## Talk to us
-
-Celis is new, and we'd love to hear from you. If you want help getting started, or you have
-feedback of any kind, [tell us here](https://tally.so/r/pbl09Z).
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## License
-
-[MIT](LICENSE)
+We'd love to hear from you: [tell us here](https://tally.so/r/pbl09Z). To contribute, see
+[CONTRIBUTING.md](CONTRIBUTING.md). Licensed under [MIT](LICENSE).

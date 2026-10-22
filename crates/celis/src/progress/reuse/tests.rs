@@ -36,6 +36,9 @@ fn rule(text: &str, at: u64, replaces: Option<&Note>) -> Note {
         scope: Scope::Project,
         replaces: replaces.map(|n| RuleId::new(&n.id)),
         content: text.into(),
+        paths: vec![],
+        situation: false,
+        promoted: false,
     }
     .record(&account(), at)
     .unwrap()

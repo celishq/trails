@@ -105,7 +105,7 @@ fn add_says_when_a_step_joins_the_sessions_trail() {
     );
     assert!(o.status.success(), "{}", err(&o));
     assert_eq!(
-        err(&o).trim(),
+        err(&o).lines().next().unwrap_or(""),
         format!(
             "celis: the step joined the trail {}; edit its title when it no longer covers the work.",
             &trail[..8]

@@ -70,19 +70,15 @@ fn start_refuses_unknown_and_closed_steps_and_starts_a_step_once() {
     assert_eq!(files(), before);
 }
 
-/// `start` prints, after its id, the live rules at the step's places, a folder's rules holding
-/// for each file under it.
+/// `start` prints no rule at the step's places; the agent asks `celis rules` for them.
 #[test]
-fn start_prints_the_rules_at_the_steps_places() {
+fn start_prints_no_rule_at_the_steps_places() {
     let repo = Repo::new();
-    let decide = |scope: &str, text: &str| {
-        let o = cli(&repo, &["decide", "--scope", scope, "--", text]);
-        assert!(o.status.success(), "{}", err(&o));
-    };
-    decide("at:src", "keep src small");
-    decide("at:src/a.rs", "a.rs holds cents");
-    decide("at:docs/b.md", "b.md stays short");
-    decide("at:lib", "lib is frozen");
+    let o = cli(
+        &repo,
+        &["decide", "--scope", "at:src/a.rs", "--", "a.rs holds cents"],
+    );
+    assert!(o.status.success(), "{}", err(&o));
     let trail = add(&repo, &["--", "the trail"]);
     let args = [
         "--under",
@@ -97,11 +93,7 @@ fn start_prints_the_rules_at_the_steps_places() {
     let step = add(&repo, &args);
     let o = cli(&repo, &["step", "start", &step[..8]]);
     assert!(o.status.success(), "{}", err(&o));
-    let text = out(&o);
-    for said in ["keep src small", "a.rs holds cents", "b.md stays short"] {
-        assert!(text.contains(said), "{text}");
-    }
-    assert!(!text.contains("lib is frozen"), "{text}");
+    assert!(!out(&o).contains("a.rs holds cents"), "{}", out(&o));
 }
 
 /// `start` does not run the step's check, and says nothing on stderr.

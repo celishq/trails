@@ -467,6 +467,9 @@ impl Demo {
             scope,
             replaces: None,
             content: text.to_string(),
+            paths: vec![],
+            situation: false,
+            promoted: false,
         };
         let written = self.trails(ago)?.decide(rule, None)?;
         Ok(written.records[0].id.clone())

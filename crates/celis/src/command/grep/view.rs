@@ -141,7 +141,18 @@ fn rule(entry: &RuleEntry, trail: Option<String>) -> Vec<Row> {
         head,
         text: flat(text),
     };
-    let head = format!("{} {state} {{{}}}", short(&note.id), rule.scope.short());
+    let mut head = format!("{} {state} {{{}}}", short(&note.id), rule.scope.short());
+    let marks = [
+        (!rule.paths.is_empty(), " trigger"),
+        (rule.situation, " situation"),
+        (rule.promoted, " promoted"),
+    ];
+    head.extend(
+        marks
+            .into_iter()
+            .filter(|(on, _)| *on)
+            .map(|(_, mark)| mark),
+    );
     let mut rows = vec![row(Kind::Rule, note, head, &rule.content)];
     if let Some(RuleEnd::Dropped(drop)) = entry.end {
         rows.push(row(Kind::Dropped, drop, short(&note.id), &drop.content));

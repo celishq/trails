@@ -288,6 +288,19 @@ pub fn stored_rule(
     content: &str,
     created: u64,
 ) -> Note {
+    tagged_rule(repo, project, by, place, Vec::new(), content, created)
+}
+
+/// A rule as [`stored_rule`] writes it, with the tags `extra` too.
+pub fn tagged_rule(
+    repo: &Repo,
+    project: (&str, &str),
+    by: &Account,
+    place: (Option<&str>, Option<&str>),
+    extra: Vec<Vec<String>>,
+    content: &str,
+    created: u64,
+) -> Note {
     let anchor = format!("project:{}", project.0);
     let mut tags: Vec<Vec<String>> = vec![
         vec!["I".into(), anchor.clone()],
@@ -304,6 +317,7 @@ pub fn stored_rule(
     if let Some(id) = place.1 {
         tags.push(vec!["replaces".into(), id.into()]);
     }
+    tags.extend(extra);
     let note = Note::write(by, 1111u16, created, tags, content).unwrap();
     put(repo, &note);
     note
@@ -446,6 +460,23 @@ pub fn read_ids(repo: &Repo, folder: &Path, args: &[&str]) -> Vec<String> {
         .filter_map(|l| {
             let v: serde_json::Value = serde_json::from_str(l).unwrap();
             Some(v.get("decision")?["id"].as_str()?[..8].to_string())
+        })
+        .collect()
+}
+
+/// The ids, first 8 characters, of the rules `celis rules` prints in `folder` for the places of each
+/// `--at` of `args`, in order.
+pub fn place_ids(repo: &Repo, folder: &Path, args: &[&str]) -> Vec<String> {
+    let mut all = vec!["rules", "--json"];
+    let pairs = args.windows(2).filter(|w| w[0] == "--at");
+    all.extend(pairs.map(|w| w[1]));
+    let o = repo.run(folder, &all, &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+    out(&o)
+        .lines()
+        .filter_map(|l| {
+            let v: serde_json::Value = serde_json::from_str(l).unwrap();
+            Some(v.get("id")?.as_str()?[..8].to_string())
         })
         .collect()
 }

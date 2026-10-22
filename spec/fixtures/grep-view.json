@@ -1,17 +1,20 @@
 {
   "about": [
-    "The view `celis grep` searches, what it prints of it, and what the past agent's first searches print.",
-    "celis writes the view and `plugins/celis/agents/past.md` reads it, so both must match this file:",
+    "The view `celis grep` searches, what it prints of it, and what the card's rule search prints.",
+    "celis writes the view and `plugins/celis/card.md` reads it, so both must match this file:",
     "the CLI test builds the store below, finds each line of `lines` in the view once, compares what",
-    "`celis grep \"\"` prints to `printed`, then runs the first searches past.md names and checks that",
-    "they print exactly `kept`.",
+    "`celis grep \"\"` prints to `printed`, then runs the card's rule search with the words",
+    "price, push and question, and checks that it prints exactly `kept`.",
     "",
     "Each <name> stands for the first 8 characters of a record's id, which a test knows only once it",
     "has written the record. All records are made on 2026-01-15 at noon UTC, in the order of `lines`",
     "read from the bottom of each block: the trail, then the table step, its done, the chart step, its",
-    "drop, the trail's rule, the floats rule, the cents rule that replaces it, and the me rule."
+    "drop, the trail's rule, the floats rule, the cents rule that replaces it, the me rule, the situation rule,",
+    "and the me rule with a trigger."
   ],
   "lines": [
+    "2026-01-15 - [repo] rule <push> live {me} trigger When you push: run the tests first.",
+    "2026-01-15 - [repo] rule <situation> live {project} situation When the person asks a question: answer it first.",
     "2026-01-15 - [repo] rule <me> live {me} When you write a commit message: use plain words.",
     "2026-01-15 - [repo] rule <new> live {project} When a price prints: use cents.",
     "2026-01-15 - [repo] rule <old> replaced-by <new> {project} When a price prints: use floats.",
@@ -33,14 +36,16 @@
     "  proof <table> the table shows",
     "  changed <table> a list, not a table",
     "- rules of no trail",
+    "  [repo] rule <push> live {me} trigger When you push: run the tests first.",
+    "  [repo] rule <situation> live {project} situation When the person asks a question: answer it first.",
     "  [repo] rule <me> live {me} When you write a commit message: use plain words.",
     "  [repo] rule <new> live {project} When a price prints: use cents.",
     "  [repo] rule <old> replaced-by <new> {project} When a price prints: use floats."
   ],
   "kept": [
     "- rules of no trail",
-    "  [repo] rule <me> live {me} When you write a commit message: use plain words.",
-    "- rules of no trail",
+    "  [repo] rule <push> live {me} trigger When you push: run the tests first.",
+    "  [repo] rule <situation> live {project} situation When the person asks a question: answer it first.",
     "  [repo] rule <new> live {project} When a price prints: use cents."
   ]
 }

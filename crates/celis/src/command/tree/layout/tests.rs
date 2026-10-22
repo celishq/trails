@@ -103,6 +103,9 @@ fn a_record_forgets_only_the_group_of_its_trail() {
         scope: Scope::Project,
         replaces: None,
         content: "a rule".into(),
+        paths: vec![],
+        situation: false,
+        promoted: false,
     }
     .record(&account(), NOW)
     .unwrap();

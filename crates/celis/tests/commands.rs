@@ -44,10 +44,11 @@ fn a_rule_prints_its_id_scope_and_text() {
         "",
     );
     assert!(o.status.success(), "{}", err(&o));
-    let placed = short(out(&o).trim());
-    let step = short(out(&run(&repo, &["step", "add", "--at", "a.py", "--", "t"])).trim());
+    let placed = out(&o).trim().to_string();
+    let step = run(&repo, &["step", "add", "--uses", &placed, "--", "t"]);
+    let step = short(out(&step).trim());
     let lines = lines_of(&repo, &repo.path(), &["step", "start", &step]);
-    assert_eq!(lines[1..], [format!("{placed} at:a.py one")]);
+    assert_eq!(lines[1..], [format!("{} at:a.py one", short(&placed))]);
 }
 
 /// The json form of a rule is one object with the fields the section lists
@@ -64,7 +65,8 @@ fn the_json_form_of_a_rule_has_the_listed_fields() {
         "one",
         now() - 60,
     );
-    let step = short(out(&run(&repo, &["step", "add", "--at", "a.py", "--", "t"])).trim());
+    let step = run(&repo, &["step", "add", "--uses", &note.id, "--", "t"]);
+    let step = short(out(&step).trim());
     let o = repo.run(&repo.path(), &["step", "start", &step, "--json"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     let line: Value = serde_json::from_str(out(&o).lines().nth(1).unwrap()).unwrap();
@@ -77,9 +79,12 @@ fn the_json_form_of_a_rule_has_the_listed_fields() {
             "content",
             "created_at",
             "id",
+            "paths",
             "project",
+            "promoted",
             "replaces",
-            "scope"
+            "scope",
+            "situation"
         ]
     );
     assert_eq!(rule["id"], note.id.as_str());
@@ -170,6 +175,40 @@ fn decide_refuses_a_trail_the_project_has_not_open() {
     assert!(labelled(&repo, "decision").is_empty());
     mark_note(&repo, &account(), "done", &part.id, "proof", t + 4);
     let args = ["decide", "--scope", &scope, "--", WORK];
+    let o = repo.run(&repo.path(), &args, &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+}
+
+/// `decide` takes `trail:<id>` of a done trail when `--replaces` names a live rule of that trail
+/// (`spec/02-cli.md`, "Commands").
+#[test]
+fn decide_keeps_a_done_trails_scope_when_it_replaces_its_rule() {
+    let repo = Repo::new();
+    let t = now() - 5 * 60;
+    let trail = step_note(&repo, &account(), None, "reached", t);
+    let scope = format!("trail:{}", trail.id);
+    let first = repo.run(
+        &repo.path(),
+        &["decide", "--scope", &scope, "--", WORK],
+        &[],
+        "",
+    );
+    assert!(first.status.success(), "{}", err(&first));
+    let old = String::from_utf8_lossy(&first.stdout).trim().to_string();
+    mark_note(&repo, &account(), "done", &trail.id, "proof", t + 1);
+    let args = ["decide", "--json", "--scope", &scope, "--", WORK];
+    refusal(&repo.run(&repo.path(), &args, &[], ""), 1, "no-trail");
+    let args = [
+        "decide",
+        "--scope",
+        &scope,
+        "--replaces",
+        &old,
+        "--path",
+        "**/*.py",
+        "--",
+        WORK,
+    ];
     let o = repo.run(&repo.path(), &args, &[], "");
     assert!(o.status.success(), "{}", err(&o));
 }

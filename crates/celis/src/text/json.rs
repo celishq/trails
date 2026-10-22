@@ -39,5 +39,8 @@ pub(crate) fn rule(note: &Note, rule: &Rule) -> Value {
         "scope": rule.scope.text(),
         "replaces": rule.replaces,
         "content": rule.content,
+        "paths": rule.paths,
+        "situation": rule.situation,
+        "promoted": rule.promoted,
     })
 }

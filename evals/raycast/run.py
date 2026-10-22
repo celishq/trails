@@ -9,6 +9,7 @@ rules, and the bench counts how often later tasks break them.
          the agent keeps), oracle (a user CLAUDE.md the bench writes each review rule into), celis (the plugin
          from $CELIS_PLUGIN, the celis in $CELIS_BIN), gold (no agent: the merged code)
   team   an Opus planner that gives every file edit and command to Haiku worker subagents
+  --name X    the name of the results file and runs, in place of the arm and model
   --rules N   no reviews and no follow-ups: oracle and celis hold the 5 rules among N - 5 rules of
               data/distractors.json from the start, in the user CLAUDE.md or as `me` rules
 
@@ -141,8 +142,8 @@ def seed(arm, root, standing):
                            capture_output=True)
 
 
-def chain(arm, model, run, tasks, rules, standing=None):
-    name = (arm if model == "sonnet" else f"{arm}-{model}") + (f"-r{len(standing)}" if standing else "")
+def chain(arm, model, run, tasks, rules, standing=None, name=None):
+    name = name or (arm if model == "sonnet" else f"{arm}-{model}") + (f"-r{len(standing)}" if standing else "")
     root = RUNS / f"{name}-{run}"
     logs = RESULTS / "transcripts" / f"{name}-{run}"
     shutil.rmtree(root, ignore_errors=True)
@@ -201,6 +202,7 @@ def main():
     parser.add_argument("--tasks", default="")
     parser.add_argument("--model", choices=MODELS, default="sonnet")
     parser.add_argument("--rules", type=int, default=0)
+    parser.add_argument("--name", default=None)
     args = parser.parse_args()
     tasks = json.loads((HERE / "data" / "tasks.json").read_text())
     if args.tasks:
@@ -215,7 +217,7 @@ def main():
         random.Random(args.rules).shuffle(standing)
     RESULTS.mkdir(exist_ok=True)
     with ThreadPoolExecutor(args.jobs) as pool:
-        for future in [pool.submit(chain, args.arm, args.model, run, tasks, rules, standing) for run in range(1, args.runs + 1)]:
+        for future in [pool.submit(chain, args.arm, args.model, run, tasks, rules, standing, args.name) for run in range(1, args.runs + 1)]:
             future.result()
 
 

@@ -4,7 +4,7 @@ Add steps to a trail, then start, finish, drop, or edit them.
 
 Commands
   add      Add a step to a trail, or start a new trail
-  start    Start a step and show the rules it must keep
+  start    Start a step and show the rules its plan links
   done     Finish a step with proof that it works
   drop     Drop a step and the open steps under it
   edit     Change a step's title, where it works, or its check

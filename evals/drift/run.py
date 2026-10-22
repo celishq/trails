@@ -17,10 +17,28 @@ checked; 4 of those replaced an older version that the memory may still hold.
          data/pick.md agent for each page of 100 or 50 `me` rules, run in parallel, and data/past-pick.md
          as the past agent), merged (pickers, with jit.py running the pickers and a merge to 20 rules
          from the prompt hook, so the agent gets only those), staged (merged with no merge: the hook keeps the
-         whole pick, and each read gives the file the picked rules that act on it)
+         whole pick, and each read gives the file the picked rules that act on it), pull (celis, with no plugin
+         and no rules given: the agent searches them with celis grep), taught (celis, each rule with its trigger
+         of data/triggers.json, with no plugin, no tool hook and no picker: the session start gives the card,
+         and the agent asks celis rules and celis grep itself), delegated (taught, with the plugin of the
+         celis arm: the card, the prompt hook, and the celis:past agent, which runs celis rules for the work),
+         coordinated (delegated, with the card of the agent that searches the rules itself: the index of
+         celis rules, celis grep, and celis rules before each change; the past agent brings past asks),
+         reminded (coordinated, with step add and step start saying what to do at that moment), sized
+         (reminded, with no past agent: a file not made yet gets only its path rules and a count of the
+         rest, and step start names celis rules --diff for the check before done), tooled (reminded,
+         with celis rules --diff named for the check before done, and long rule output that says its
+         size and reads in pages with --page), full (reminded, with every rule printed in full on each
+         call: no skip of rules given before), checked (full, with celis rules --diff named for the check
+         before done), words (checked, with no triggers: the agent finds the rules by their words with
+         celis grep), quiet (checked, with no note at step add or step start), nodiff (checked, with
+         celis rules on the files git names changed in place of --diff), paths (checked, with
+         triggers of paths only: no content and no command), final (the design that ships: paths only,
+         no notes, and the past agent bringing rules; from $CELIS_BIN and $CELIS_PLUGIN)
 
 Each task starts from a new copy of seed/ and a new copy of the memory, so tasks are independent and run in
-parallel. Each task appends one line to results/<arm>-<model>-r<N>.jsonl.
+parallel. Each task appends one line to results/<arm>-<model>-r<N>.jsonl; with --again the lines join those of the
+last run, so a cell holds two runs.
 """
 
 import argparse
@@ -50,6 +68,11 @@ NARROW = {"stock": "stock/*.py", "stock/commands": "stock/commands/*.py", "stock
           "tests": "tests/*.py"}
 PICKS = ("picked", "pickers", "pickers50", "merged", "staged")
 JITS = ("jit", "narrow", "ranked", "scoped", "scopedrank", *PICKS)
+OWN = ("pull",)
+TRIGGERED = ("taught", "delegated", "coordinated", "reminded", "sized", "tooled", "full", "checked", "words", "quiet",
+             "nodiff", "paths", "final")
+UNTRIGGERED = ("words",)
+STORED = ("celis", "placed", *JITS, *OWN, *TRIGGERED)
 FIXED = {"GIT_AUTHOR_DATE": "2026-01-01T00:00:00Z", "GIT_COMMITTER_DATE": "2026-01-01T00:00:00Z"}
 
 
@@ -93,13 +116,14 @@ def seed(arm, home, rules, targets):
     (home / "user").mkdir(parents=True)
     if arm == "oracle":
         (home / "user" / "CLAUDE.md").write_text(claude_md(*rules))
-    if arm in ("celis", "placed", *JITS):
+    if arm in STORED:
         place = home / "seed"
         workdir(place)
         env = dict(CELIS, CELIS_HOME=str(home / "celis"))
         ids, spread = {}, random.Random(len(rules[0]))
         scopes = json.loads((HERE / "data" / "scopes.json").read_text())
         by_text = {r["text"]: r["id"] for r in json.loads((HERE / "data" / "filler.json").read_text())["rules"]}
+        triggers = json.loads((HERE / "data" / "triggers.json").read_text()) if arm in TRIGGERED else {}
         other = home / "other"
         other.mkdir()
         sh("git", "init", "-q", cwd=other)
@@ -112,16 +136,31 @@ def seed(arm, home, rules, targets):
             new = next((t for t in targets if "old" in t and t["text"] == line), None)
             target = old or new or next((t for t in targets if t["text"] == line), None)
             at = NARROW.get(target["place"], target["place"]) if target and arm == "narrow" else target and target["place"]
-            scope = ("me" if arm == "celis" else f"at:{at}" if target else "project" if arm == "placed"
+            scope = ("me" if arm in ("celis", *OWN) else f"at:{at}" if target else "project" if arm == "placed"
                      else f"at:{spread.choice(places)}")
             if arm.startswith("scoped") or arm in PICKS:
                 got = scopes.get(target["id"] if target else by_text[line], "other")
                 scope = "me" if got == "me" else "project" if got == "other" else f"at:{got}"
             extra = ["--replaces", ids[new["id"]]] if new and new["id"] in ids else []
+            if arm in TRIGGERED:
+                scope = "me"
+            if not old and arm not in UNTRIGGERED:
+                trigger = triggers.get(target["id"] if target else by_text[line])
+                if trigger and arm == "paths":
+                    trigger = dict(trigger, content=None, command=None)
+                extra += trigger_args(trigger)
             where = other if scope == "project" and arm != "placed" else place
             out = sh("celis", "decide", "--scope", scope, *extra, "--", line, cwd=where, env=env)
             if old:
                 ids[old["id"]] = out.split()[-1][:8]
+
+
+def trigger_args(trigger):
+    """The `celis decide` flags of `trigger`, a trigger of data/triggers.json or None."""
+    if not trigger:
+        return []
+    return ([f for path in trigger["paths"] for f in ("--path", path)]
+            + (["--situation"] if trigger["situation"] else []))
 
 
 def workdir(path):
@@ -135,6 +174,8 @@ def workdir(path):
     return sh("git", "rev-parse", "HEAD", cwd=path)
 
 
+
+
 def plugin(home, arm):
     """A copy of the plugin in `home` with data/past.md as its past agent, or for the pickers arms
     data/past-pick.md and the data/pick.md agent."""
@@ -142,6 +183,7 @@ def plugin(home, arm):
     if not copy.exists():
         shutil.copytree(os.environ.get("CELIS_PLUGIN", ROOT / "plugins" / "celis"), copy)
         picks = arm.startswith("pickers") or arm in ("merged", "staged")
+        (copy / "agents").mkdir(exist_ok=True)
         shutil.copy(HERE / "data" / ("past-pick.md" if picks else "past.md"), copy / "agents" / "past.md")
         if arm.startswith("pickers"):
             shutil.copy(HERE / "data" / "pick.md", copy / "agents" / "pick.md")
@@ -150,7 +192,7 @@ def plugin(home, arm):
 
 def agent(arm, model, work, home, prompt, log):
     """One Claude Code session in `work`; its numbers from the stream-json transcript."""
-    env = dict(CELIS if arm in ("celis", "placed", *JITS) else os.environ, CELIS_HOME=str(home / "celis"))
+    env = dict(CELIS if arm in STORED else os.environ, CELIS_HOME=str(home / "celis"))
     settings = {"autoMemoryEnabled": False}
     if arm in ("ranked", "scopedrank"):
         env["JIT_RANK"] = "words"
@@ -169,11 +211,19 @@ def agent(arm, model, work, home, prompt, log):
             env["JIT_STAGE"] = "file"
             settings["hooks"]["PostToolUse"][0]["matcher"] = "Read|Write"
             settings["hooks"]["PostToolUse"][0]["hooks"] = [dict(hook("read")[0], timeout=120)]
+    if arm in OWN:
+        hook = lambda mode, timeout=60: [{"type": "command", "command": f"python3 {HERE / 'trigger.py'} {mode}",
+                                          "timeout": timeout}]
+        settings["hooks"] = {"UserPromptSubmit": [{"hooks": hook("pull", 600)}]}
+    if arm == "taught":
+        script = Path(os.environ.get("CELIS_PLUGIN", ROOT / "plugins" / "celis")) / "hooks" / "start.sh"
+        settings["hooks"] = {"SessionStart": [{"hooks": [{"type": "command", "command": f"sh {script}"}]}]}
     flags = ["--settings", json.dumps(settings)]
     if arm == "oracle":
         env["CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD"] = "1"
         flags += ["--add-dir", str(home / "user")]
-    if arm in ("celis", "placed", *JITS):
+    if arm in ("celis", "placed", *JITS, "delegated", "coordinated", "reminded", "sized", "tooled", "full", "checked", "words",
+               "quiet", "nodiff", "paths", "final"):
         flags += ["--plugin-dir", str(plugin(home, arm)) if arm in PICKS
                   else os.environ.get("CELIS_PLUGIN", str(ROOT / "plugins" / "celis"))]
     start = time.time()
@@ -191,13 +241,13 @@ def agent(arm, model, work, home, prompt, log):
             "output": usage.get("output_tokens", 0), "seconds": round(time.time() - start)}
 
 
-def task(arm, model, n, name, home, task, targets):
+def task(arm, model, n, name, home, task, targets, again):
     """Does one task with a copy of the memory, checks it, and appends its line to the results."""
     root = RUNS / name / task["id"]
     shutil.rmtree(root, ignore_errors=True)
     shutil.copytree(home, root / "home")
     base = workdir(root / "work")
-    logs = RESULTS / "transcripts" / name
+    logs = RESULTS / "transcripts" / (f"{name}-again" if again else name)
     logs.mkdir(parents=True, exist_ok=True)
     session = agent(arm, model, root / "work", root / "home", task["prompt"], logs / f"{task['id']}.jsonl")
     line = {"arm": arm, "model": model, "rules": n, "task": task["id"], "session": session,
@@ -214,11 +264,12 @@ def task(arm, model, n, name, home, task, targets):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("arm", choices=["plain", "oracle", "celis", "placed", *JITS])
+    parser.add_argument("arm", choices=["plain", "oracle", "celis", "placed", *JITS, *OWN, *TRIGGERED])
     parser.add_argument("rules", nargs="+", type=int)
     parser.add_argument("--jobs", type=int, default=8)
     parser.add_argument("--model", choices=MODELS, default="haiku")
     parser.add_argument("--tasks", default="")
+    parser.add_argument("--again", action="store_true")
     args = parser.parse_args()
     targets = json.loads((HERE / "data" / "targets.json").read_text())
     filler = json.loads((HERE / "data" / "filler.json").read_text()) if args.arm != "plain" else {}
@@ -232,8 +283,9 @@ def main():
         home = RUNS / name / "home"
         shutil.rmtree(RUNS / name, ignore_errors=True)
         seed(args.arm, home, memory(n, targets, filler) if filler else ([], []), targets)
-        (RESULTS / f"{name}.jsonl").unlink(missing_ok=True)
-        jobs += [(args.arm, args.model, n, name, home, t, targets) for t in tasks]
+        if not args.again:
+            (RESULTS / f"{name}.jsonl").unlink(missing_ok=True)
+        jobs += [(args.arm, args.model, n, name, home, t, targets, args.again) for t in tasks]
     with ThreadPoolExecutor(args.jobs) as pool:
         for future in [pool.submit(task, *job) for job in jobs]:
             future.result()

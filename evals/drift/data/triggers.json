@@ -1,0 +1,7947 @@
+{
+ "r1-do-not-denormalise-supplier-names": {
+  "paths": [
+   "stock/models.py",
+   "stock/storage/**/*.py",
+   "stock/commands/*.py"
+  ],
+  "content": "supplier",
+  "command": "",
+  "situation": false
+ },
+ "command-names": {
+  "paths": [
+   "stock/commands/*.py"
+  ],
+  "content": "(?m)^def ",
+  "command": "",
+  "situation": false
+ },
+ "r1-never-reorder-rename-export-columns": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "export|column|csv|fieldnames|header",
+  "command": "",
+  "situation": true
+ },
+ "r1-keep-storage-interface-small-get": {
+  "paths": [
+   "stock/storage/*.py"
+  ],
+  "content": "def ",
+  "command": "",
+  "situation": false
+ },
+ "r2-pr-co-review-new": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (review|edit)",
+  "situation": true
+ },
+ "flag-kebab": {
+  "paths": [
+   "stock/cli.py",
+   "stock/commands/*.py"
+  ],
+  "content": "add_argument|option\\(|--|-[a-zA-Z]['\"]",
+  "command": "",
+  "situation": false
+ },
+ "all-names": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?m)^(def|class) ",
+  "command": "",
+  "situation": false
+ },
+ "r2-review-follow-up-issue": {
+  "paths": [],
+  "content": "",
+  "command": "^gh (pr (review|comment)|issue create)",
+  "situation": true
+ },
+ "r1-before-migration-rewrites-data-file": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "migrat|upgrade|rewrite",
+  "command": "",
+  "situation": false
+ },
+ "r2-commit-gitignore-local": {
+  "paths": [
+   ".gitignore"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r2-review-dry-limit": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (review|comment)",
+  "situation": true
+ },
+ "r1-money-values-use-decimaldecimal-with": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "price|cost|amount|money|currency|Decimal|float\\(",
+  "command": "",
+  "situation": false
+ },
+ "r1-keep-stockcommands-thin-parse-request": {
+  "paths": [
+   "stock/commands/*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r2-pr-reply-every-comment": {
+  "paths": [],
+  "content": "",
+  "command": "^gh (pr (comment|review)|api .*comments)",
+  "situation": true
+ },
+ "r2-commit-blank-second": {
+  "paths": [],
+  "content": "",
+  "command": "^git commit",
+  "situation": false
+ },
+ "r1-skus-are-caseinsensitive-lookup-but": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)sku",
+  "command": "",
+  "situation": false
+ },
+ "r2-pr-milestone": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|edit)",
+  "situation": false
+ },
+ "r1-model-methods-return-new-values": {
+  "paths": [
+   "stock/models.py"
+  ],
+  "content": "storage|store|save|write|put\\(|append_movement",
+  "command": "",
+  "situation": false
+ },
+ "quotes": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\"",
+  "command": "",
+  "situation": false
+ },
+ "r1-do-not-grow-model-into": {
+  "paths": [
+   "stock/models.py"
+  ],
+  "content": "(?m)^\\s*(class|def) ",
+  "command": "",
+  "situation": false
+ },
+ "broad-except": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "except",
+  "command": "",
+  "situation": false
+ },
+ "r1-equality-between-two-models-compares": {
+  "paths": [
+   "stock/models.py"
+  ],
+  "content": "__eq__|__hash__|dataclass|eq=",
+  "command": "",
+  "situation": false
+ },
+ "r1-serial-number-belongs-exactly-one": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)serial",
+  "command": "",
+  "situation": false
+ },
+ "r1-data-directory-records-which-backend": {
+  "paths": [
+   "stock/storage/*.py",
+   "stock/config.py"
+  ],
+  "content": "backend|data_dir|open\\(|load",
+  "command": "",
+  "situation": false
+ },
+ "r1-never-expose-backend-cursor-row": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "cursor|rowid|row_id|lastrowid",
+  "command": "",
+  "situation": false
+ },
+ "r1-before-adding-feature-check-whether": {
+  "paths": [],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r2-merge-rebase-series": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr merge",
+  "situation": false
+ },
+ "r1-prefer-receipt-stock-coming-shipment": {
+  "paths": [
+   "stock/**/*.py",
+   "README.md",
+   "CHANGELOG.md"
+  ],
+  "content": "['\"](in|out)['\"]|\\b(stock|move|movement)_(in|out)\\b|\\b(in|out)_(stock|movement|qty)\\b|incoming|outgoing",
+  "command": "",
+  "situation": false
+ },
+ "r1-do-not-cache-derived-quantities": {
+  "paths": [
+   "stock/models.py"
+  ],
+  "content": "quantity|qty|total|on_hand|cache|lru_cache|cached_property",
+  "command": "",
+  "situation": false
+ },
+ "r1-validate-whole-request-before-first": {
+  "paths": [
+   "stock/commands/*.py"
+  ],
+  "content": "put\\(|append|write|save|transaction",
+  "command": "",
+  "situation": false
+ },
+ "r1-aggregations-over-ledger-must-associative": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "sum\\(|total|aggregat|reduce|average|mean",
+  "command": "",
+  "situation": false
+ },
+ "r2-commit-avoid-add-all": {
+  "paths": [],
+  "content": "",
+  "command": "^git add (\\.|-A|--all)",
+  "situation": false
+ },
+ "r2-pr-discuss-first": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr create",
+  "situation": true
+ },
+ "r2-commit-builds-green": {
+  "paths": [],
+  "content": "",
+  "command": "^git (commit|push|merge)|^gh pr merge",
+  "situation": false
+ },
+ "r1-ledger-appendonly-correct-bad-movement": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)delete|remove|update|edit|del |movement|ledger",
+  "command": "",
+  "situation": false
+ },
+ "r2-pr-large-plan": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr create",
+  "situation": true
+ },
+ "r1-each-new-model-gets-short": {
+  "paths": [
+   "stock/models.py"
+  ],
+  "content": "(?m)^class ",
+  "command": "",
+  "situation": true
+ },
+ "r2-pr-one-approval-default": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (merge|review)",
+  "situation": false
+ },
+ "r1-data-directories-are-selfcontained-two": {
+  "paths": [
+   "stock/storage/*.py",
+   "stock/config.py"
+  ],
+  "content": "path|dir|file|open\\(",
+  "command": "",
+  "situation": false
+ },
+ "r2-pr-no-self-merge": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr merge",
+  "situation": false
+ },
+ "r2-review-praise": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr review",
+  "situation": false
+ },
+ "r2-pr-link-issue": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|edit)",
+  "situation": false
+ },
+ "r2-pr-draft-early": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|ready)",
+  "situation": false
+ },
+ "r1-keep-reports-separate-from-commands": {
+  "paths": [
+   "stock/**/report*.py",
+   "stock/reports/**/*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r2-pr-description-risk": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|edit)",
+  "situation": true
+ },
+ "r1-model-identity-sku-items-code": {
+  "paths": [
+   "stock/models.py"
+  ],
+  "content": "\\bid\\b|uuid|_id\\b|__eq__|__hash__",
+  "command": "",
+  "situation": false
+ },
+ "r1-avoid-hidden-io-properties-reading": {
+  "paths": [
+   "stock/models.py"
+  ],
+  "content": "@property|cached_property|__getattr__",
+  "command": "",
+  "situation": false
+ },
+ "r1-report-every-invalid-row-bulk": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)bulk|csv|rows|reader|batch",
+  "command": "",
+  "situation": false
+ },
+ "r1-normalise-sku-input-once-at": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)sku",
+  "command": "",
+  "situation": false
+ },
+ "r2-review-binary-diff": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (review|diff)",
+  "situation": false
+ },
+ "r1-status-changes-item-go-through": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "status|archived|active",
+  "command": "",
+  "situation": false
+ },
+ "r1-prefer-one-clear-source-truth": {
+  "paths": [
+   "stock/models.py",
+   "stock/storage/*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r1-model-fields-that-are-lists": {
+  "paths": [
+   "stock/models.py"
+  ],
+  "content": "list|List\\[|\\[\\]|default_factory",
+  "command": "",
+  "situation": false
+ },
+ "r1-never-migrate-data-silently-read": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "migrat|version|upgrade|schema",
+  "command": "",
+  "situation": false
+ },
+ "r1-item-merges-where-two-skus": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)merge",
+  "command": "",
+  "situation": false
+ },
+ "r2-review-timebox": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr review",
+  "situation": true
+ },
+ "r2-branch-name-lowercase": {
+  "paths": [],
+  "content": "",
+  "command": "^git (checkout -b|switch -c|branch|worktree add)",
+  "situation": false
+ },
+ "r1-snapshots-onhand-levels-are-cache": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "snapshot|on_hand|onhand|level",
+  "command": "",
+  "situation": false
+ },
+ "r1-use-fixed-set-reason-codes": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "reason",
+  "command": "",
+  "situation": false
+ },
+ "r1-read-first-then-write-never": {
+  "paths": [
+   "stock/commands/*.py",
+   "stock/storage/*.py"
+  ],
+  "content": "put\\(|append|write|save|transaction",
+  "command": "",
+  "situation": false
+ },
+ "log-args": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "_LOGGER\\.|logging\\.|\\.(debug|info|warning|error|exception|critical)\\(",
+  "command": "",
+  "situation": false
+ },
+ "r2-branch-one-per-pr": {
+  "paths": [],
+  "content": "",
+  "command": "git (checkout|switch)\\b|git branch\\b|gh pr create",
+  "situation": false
+ },
+ "r1-lots-are-identified-item-plus": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)\\blots?\\b|lot_code",
+  "command": "",
+  "situation": false
+ },
+ "r1-keep-row-numbers-from-source": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)\\brows?\\b|csv|import|load",
+  "command": "",
+  "situation": false
+ },
+ "r2-commit-no-wip-main": {
+  "paths": [],
+  "content": "",
+  "command": "git commit\\b.*\\b(wip|fixup|tmp)\\b|git commit\\b.*--(fixup|squash)|git (push|merge)\\b.*\\bmain\\b",
+  "situation": false
+ },
+ "r2-branch-name-issue": {
+  "paths": [],
+  "content": "",
+  "command": "git (checkout -b|switch -c|branch\\s+[^-])",
+  "situation": false
+ },
+ "r1-do-not-overload-one-field": {
+  "paths": [
+   "stock/models.py",
+   "stock/models/**/*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r1-unit-conversions-live-stockmodelsunitspy-do": {
+  "paths": [
+   "stock/commands/**/*.py"
+  ],
+  "content": "(?i)unit|convert|factor|\\b(kg|g|lb|oz|each)\\b|[*/]\\s*\\d",
+  "command": "",
+  "situation": false
+ },
+ "r1-nested-transactions-are-not-supported": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)transaction|atomic|begin\\(|commit\\(",
+  "command": "",
+  "situation": false
+ },
+ "r2-merge-freeze": {
+  "paths": [],
+  "content": "",
+  "command": "gh pr merge|git merge\\b",
+  "situation": false
+ },
+ "r2-commit-amend-local-only": {
+  "paths": [],
+  "content": "",
+  "command": "git commit\\b.*--amend|git rebase\\b|git push\\b.*(--force|-f\\b)",
+  "situation": false
+ },
+ "r2-pr-green-before-review": {
+  "paths": [],
+  "content": "",
+  "command": "gh pr (ready|create\\b.*--reviewer|edit\\b.*--add-reviewer)",
+  "situation": false
+ },
+ "r1-readonly-command-must-never-take": {
+  "paths": [
+   "stock/commands/**/*.py",
+   "stock/cli.py"
+  ],
+  "content": "(?i)lock",
+  "command": "",
+  "situation": false
+ },
+ "r1-stock-verify-checks-every-invariant": {
+  "paths": [
+   "stock/commands/**/*.py",
+   "stock/cli.py"
+  ],
+  "content": "(?i)verify",
+  "command": "",
+  "situation": false
+ },
+ "r2-pr-fork-maintainer-edits": {
+  "paths": [],
+  "content": "",
+  "command": "gh pr create",
+  "situation": false
+ },
+ "r1-never-reuse-retired-sku-new": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)sku|retire",
+  "command": "",
+  "situation": false
+ },
+ "r2-pr-revert-by-anyone": {
+  "paths": [],
+  "content": "",
+  "command": "git revert\\b|gh pr revert",
+  "situation": false
+ },
+ "r1-do-not-lazyload-related-records": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "@property|cached_property|__getattr__|(?i)lazy",
+  "command": "",
+  "situation": false
+ },
+ "r2-review-summary-comment": {
+  "paths": [],
+  "content": "",
+  "command": "gh pr review",
+  "situation": false
+ },
+ "encoding": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\bopen\\(|read_text\\(|write_text\\(",
+  "command": "",
+  "situation": false
+ },
+ "r1-writes-go-temporary-file-first": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "\\bopen\\(|write_text\\(|\\.write\\(|\\.dump\\(|rename|replace\\(",
+  "command": "",
+  "situation": false
+ },
+ "r1-hold-datadirectory-lock-whole-readmodifywrite": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)lock|save|write|load",
+  "command": "",
+  "situation": false
+ },
+ "r1-sample-data-uses-obviously-fake": {
+  "paths": [
+   "examples/**",
+   "tests/**/*.py",
+   "README.md"
+  ],
+  "content": "(?i)supplier|vendor|sku|code",
+  "command": "",
+  "situation": false
+ },
+ "r1-archived-items-cannot-receive-new": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)archiv|receive|receipt",
+  "command": "",
+  "situation": false
+ },
+ "module-docstring": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r2-commit-large-binary": {
+  "paths": [],
+  "content": "",
+  "command": "^git (add|commit)\\b",
+  "situation": false
+ },
+ "r1-reorder-quantity-suggestions-respect-suppliers": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)reorder|pack|moq|min(imum)?_order",
+  "command": "",
+  "situation": false
+ },
+ "r1-when-feature-needs-new-domain": {
+  "paths": [
+   "stock/models.py",
+   "stock/models/**/*.py"
+  ],
+  "content": "class \\w+",
+  "command": "",
+  "situation": true
+ },
+ "r2-pr-sample-data-update": {
+  "paths": [
+   "examples/**"
+  ],
+  "content": "",
+  "command": "gh pr (create|edit)",
+  "situation": true
+ },
+ "r1-migrations-live-stockstoragemigrations-as-numbered": {
+  "paths": [
+   "stock/storage/**/*.py"
+  ],
+  "content": "(?i)migrat",
+  "command": "",
+  "situation": false
+ },
+ "r1-cycle-counts-produce-adjustment-movements": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)cycle|count|adjust|on_hand",
+  "command": "",
+  "situation": false
+ },
+ "r1-add-capability-storage-interface-only": {
+  "paths": [
+   "stock/storage/base.py"
+  ],
+  "content": "def \\w+",
+  "command": "",
+  "situation": false
+ },
+ "json-format": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "json\\.dumps?\\(",
+  "command": "",
+  "situation": false
+ },
+ "r2-merge-delete-branch": {
+  "paths": [],
+  "content": "",
+  "command": "gh pr merge|git merge\\b",
+  "situation": false
+ },
+ "r2-commit-present-tense-body": {
+  "paths": [],
+  "content": "",
+  "command": "^git commit",
+  "situation": false
+ },
+ "r1-do-not-remove-rename-stored": {
+  "paths": [
+   "stock/models.py",
+   "stock/models/**/*.py",
+   "stock/storage/**/*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r2-pr-description-no-ai-filler": {
+  "paths": [],
+  "content": "",
+  "command": "gh pr (create|edit)",
+  "situation": false
+ },
+ "r1-consuming-reservation-writing-shipment-movement": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)reserv|ship",
+  "command": "",
+  "situation": false
+ },
+ "r1-storage-layer-returns-model-instances": {
+  "paths": [
+   "stock/storage/**/*.py"
+  ],
+  "content": "return|dict|row",
+  "command": "",
+  "situation": false
+ },
+ "r2-pr-self-review": {
+  "paths": [],
+  "content": "",
+  "command": "gh pr (create|ready|edit\\b.*--add-reviewer)",
+  "situation": false
+ },
+ "r2-pr-no-ping-spam": {
+  "paths": [],
+  "content": "",
+  "command": "gh pr comment|gh pr edit\\b.*--add-reviewer|gh api\\b.*requested_reviewers",
+  "situation": false
+ },
+ "r2-merge-edit-squash-message": {
+  "paths": [],
+  "content": "",
+  "command": "gh pr merge",
+  "situation": false
+ },
+ "store-names": {
+  "paths": [
+   "stock/storage/**/*.py"
+  ],
+  "content": "class \\w+|Store",
+  "command": "",
+  "situation": false
+ },
+ "r1-reject-conversion-between-units-different": {
+  "paths": [
+   "stock/models.py",
+   "stock/models/**/*.py"
+  ],
+  "content": "(?i)unit|convert|dimension",
+  "command": "",
+  "situation": false
+ },
+ "r1-every-movement-records-item-location": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)movement",
+  "command": "",
+  "situation": false
+ },
+ "r1-keep-picking-strategy-plain-function": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)pick",
+  "command": "",
+  "situation": false
+ },
+ "r2-pr-no-version-bump": {
+  "paths": [
+   "pyproject.toml",
+   "setup.py",
+   "setup.cfg",
+   "stock/__init__.py",
+   "stock/const.py"
+  ],
+  "content": "(?i)version",
+  "command": "",
+  "situation": false
+ },
+ "r1-keep-dependency-graph-between-packages": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "^\\s*(from|import)\\s",
+  "command": "",
+  "situation": false
+ },
+ "r1-reorder-points-are-per-item": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)reorder",
+  "command": "",
+  "situation": false
+ },
+ "r1-name-domain-concepts-after-words": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "class \\w+|def \\w+",
+  "command": "",
+  "situation": false
+ },
+ "r1-when-write-affects-many-items": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)for \\w+ in .*(items|skus)|bulk|batch|many",
+  "command": "",
+  "situation": false
+ },
+ "r1-reads-never-mutate-stored-state": {
+  "paths": [
+   "stock/commands/**/*.py",
+   "stock/storage/**/*.py"
+  ],
+  "content": "(?i)def (get|list|load|read|find|verify|report)|save|write|delete",
+  "command": "",
+  "situation": false
+ },
+ "r2-rebase-no-rebase-main": {
+  "paths": [],
+  "content": "",
+  "command": "git rebase\\b|git push\\b.*(--force|-f\\b)",
+  "situation": false
+ },
+ "r1-design-notes-are-numbered-never": {
+  "paths": [
+   "docs/**",
+   "design/**"
+  ],
+  "content": "",
+  "command": "git rm\\b.*(docs|design)|rm\\b.*(docs|design)",
+  "situation": false
+ },
+ "r1-after-merge-retired-sku-resolves": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)merge|retire|alias|resolve",
+  "command": "",
+  "situation": false
+ },
+ "r1-storage-depends-models-build-instances": {
+  "paths": [
+   "stock/models.py",
+   "stock/models/**/*.py"
+  ],
+  "content": "storage",
+  "command": "",
+  "situation": false
+ },
+ "r1-reports-must-not-call-each": {
+  "paths": [
+   "stock/reports/**/*.py"
+  ],
+  "content": "reports|^\\s*(from|import)\\s",
+  "command": "",
+  "situation": false
+ },
+ "r1-prefer-simplest-design-that-solves": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "class \\w+|ABC|abstract|Protocol",
+  "command": "",
+  "situation": true
+ },
+ "r2-review-ask-not-tell": {
+  "paths": [],
+  "content": "",
+  "command": "gh pr (review|comment)|gh api\\b.*comments",
+  "situation": false
+ },
+ "r1-round-only-at-display-edge": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "round\\(|float|Decimal|quantize|:\\.\\d+f",
+  "command": "",
+  "situation": false
+ },
+ "r1-pass-randomness-as-argument-as": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "\\brandom\\b",
+  "command": "",
+  "situation": false
+ },
+ "r1-when-you-add-new-invariant": {
+  "paths": [
+   "stock/models.py",
+   "stock/storage/*.py"
+  ],
+  "content": "raise\\s|__post_init__|assert\\s",
+  "command": "",
+  "situation": true
+ },
+ "r2-rebase-preserve-authorship": {
+  "paths": [],
+  "content": "",
+  "command": "^git (rebase|cherry-pick)",
+  "situation": false
+ },
+ "r1-keep-location-hierarchy-shallow-warehouse": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)zone|aisle|shelf|rack",
+  "command": "",
+  "situation": false
+ },
+ "help-text": {
+  "paths": [
+   "stock/cli.py",
+   "stock/commands/*.py"
+  ],
+  "content": "help\\s*=",
+  "command": "",
+  "situation": false
+ },
+ "r1-keep-backendspecific-shortcuts-inside-backend": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)isinstance\\([^)]*Store|json_store|JsonStore|backend",
+  "command": "",
+  "situation": false
+ },
+ "r2-review-scope": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (review|comment)",
+  "situation": true
+ },
+ "r1-pick-from-lots-firstexpiryfirstout-order": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)\\blots?\\b|pick|fifo|fefo|received",
+  "command": "",
+  "situation": false
+ },
+ "r2-commit-rename-separate": {
+  "paths": [],
+  "content": "",
+  "command": "^git (mv|commit)",
+  "situation": true
+ },
+ "r1-migration-runs-forward-only-write": {
+  "paths": [
+   "**/migrations/**"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r2-commit-small-diffs": {
+  "paths": [],
+  "content": "",
+  "command": "^git commit",
+  "situation": false
+ },
+ "r2-commit-signed-gpg": {
+  "paths": [],
+  "content": "",
+  "command": "^git (tag|commit)",
+  "situation": false
+ },
+ "frozen": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "@dataclass",
+  "command": "",
+  "situation": false
+ },
+ "r2-review-dead-code": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (review|comment)",
+  "situation": true
+ },
+ "r2-review-names-domain": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (review|comment)",
+  "situation": true
+ },
+ "r1-keep-model-attributes-plain-strings": {
+  "paths": [
+   "stock/models.py"
+  ],
+  "content": "(?i)\\bIO\\b|TextIO|BinaryIO|file|handle|connection|socket|lock|Path",
+  "command": "",
+  "situation": false
+ },
+ "r1-reserved-quantity-can-never-exceed": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)reserv",
+  "command": "",
+  "situation": false
+ },
+ "r1-item-can-have-many-suppliers": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)supplier",
+  "command": "",
+  "situation": false
+ },
+ "r1-bulk-loads-are-allornothing-per": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)bulk|load_|csv|\\brows?\\b|batch",
+  "command": "",
+  "situation": false
+ },
+ "r1-use-none-only-unknown-use": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "None|Optional",
+  "command": "",
+  "situation": false
+ },
+ "r1-expired-reservations-are-released-stock": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)expir|sweep",
+  "command": "",
+  "situation": false
+ },
+ "r2-branch-rebase-before-review": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|ready|edit)",
+  "situation": false
+ },
+ "exit-codes": {
+  "paths": [
+   "stock/cli.py",
+   "stock/commands/*.py"
+  ],
+  "content": "return\\s+-?\\d|exit\\(|EXIT_",
+  "command": "",
+  "situation": false
+ },
+ "r1-keep-snapshot-rebuild-cheap-enough": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)snapshot|rebuild|verify",
+  "command": "",
+  "situation": false
+ },
+ "r2-branch-name-type": {
+  "paths": [],
+  "content": "",
+  "command": "^git (checkout -b|switch -c|branch\\s+\\S|worktree add)",
+  "situation": false
+ },
+ "r2-rebase-conflict-rerun": {
+  "paths": [],
+  "content": "",
+  "command": "^git (rebase --continue|push)",
+  "situation": false
+ },
+ "absolute-imports": {
+  "paths": [
+   "stock/**/*.py",
+   "tests/**/*.py"
+  ],
+  "content": "from\\s+\\.",
+  "command": "",
+  "situation": false
+ },
+ "r1-release-every-lock-every-path": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)lock|acquire",
+  "command": "",
+  "situation": false
+ },
+ "r2-commit-sample-data-fake": {
+  "paths": [
+   "**/*.json",
+   "**/*.csv",
+   "tests/**/*.py",
+   "**/fixtures/**",
+   "**/samples/**"
+  ],
+  "content": "(?i)sku|supplier",
+  "command": "",
+  "situation": false
+ },
+ "r1-when-you-move-public-model": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "@dataclass|class\\s+\\w+",
+  "command": "^git mv .*stock/",
+  "situation": true
+ },
+ "r1-sequence-numbers-are-per-data": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)\\bseq|sequence",
+  "command": "",
+  "situation": false
+ },
+ "r1-pass-current-moment-into-domain": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)warehouse|\\bglobal\\s",
+  "command": "",
+  "situation": false
+ },
+ "r2-pr-push-back-politely": {
+  "paths": [],
+  "content": "",
+  "command": "^gh (pr (comment|review)|api .*comments)",
+  "situation": true
+ },
+ "r1-keep-purchases-out-core-model": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)purchas|procure|\\bPO\\b",
+  "command": "",
+  "situation": false
+ },
+ "r1-take-locks-fixed-order-data": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)lock",
+  "command": "",
+  "situation": false
+ },
+ "r1-pagination-list-calls-uses-opaque": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)offset|cursor|page|limit",
+  "command": "",
+  "situation": false
+ },
+ "r2-review-license-header": {
+  "paths": [
+   "**/*.py",
+   "NOTICE"
+  ],
+  "content": "(?i)copyright|licen[sc]e|SPDX",
+  "command": "^gh pr (review|comment)",
+  "situation": true
+ },
+ "r1-adjustment-records-counted-quantity-expected": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)adjust|variance|counted",
+  "command": "",
+  "situation": false
+ },
+ "r1-keep-rowtomodel-mapping-one-module": {
+  "paths": [
+   "stock/commands/*.py",
+   "stock/storage/*.py",
+   "stock/cli.py"
+  ],
+  "content": "(?i)\\brows?\\b|from_dict|to_dict|asdict|\\[\\s*['\"]\\w+['\"]\\s*\\]",
+  "command": "",
+  "situation": false
+ },
+ "r2-pr-draft-no-review": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|edit).*(--draft|--reviewer|--add-reviewer)",
+  "situation": false
+ },
+ "r1-bulk-loads-go-through-same": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)bulk|load_|csv|batch|skip|validate",
+  "command": "",
+  "situation": false
+ },
+ "r1-each-item-has-exactly-one": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)\\bunit|uom|pack|case_size",
+  "command": "",
+  "situation": false
+ },
+ "r2-branch-protected-release": {
+  "paths": [],
+  "content": "",
+  "command": "^git (push|checkout|switch).*release/",
+  "situation": false
+ },
+ "r2-pr-demo-command": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr create",
+  "situation": false
+ },
+ "r2-commit-one-concern": {
+  "paths": [],
+  "content": "",
+  "command": "^git commit",
+  "situation": false
+ },
+ "r2-commit-format-separate": {
+  "paths": [
+   ".git-blame-ignore-revs"
+  ],
+  "content": "",
+  "command": "^git commit|^(ruff format|black|isort)\\b",
+  "situation": false
+ },
+ "r1-model-module-may-depend-another": {
+  "paths": [
+   "stock/models.py",
+   "stock/models/**/*.py"
+  ],
+  "content": "(from|import)\\s+stock\\.models",
+  "command": "",
+  "situation": false
+ },
+ "r1-unit-cost-belongs-movement-that": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)cost|price",
+  "command": "",
+  "situation": false
+ },
+ "own-errors": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "raise\\s",
+  "command": "",
+  "situation": false
+ },
+ "r1-field-names-stored-data-match": {
+  "paths": [
+   "stock/models.py",
+   "stock/storage/*.py"
+  ],
+  "content": "\\w+\\s*:\\s*\\w|['\"]\\w+['\"]\\s*:",
+  "command": "",
+  "situation": true
+ },
+ "r2-commit-message-english": {
+  "paths": [],
+  "content": "",
+  "command": "^git commit",
+  "situation": false
+ },
+ "r1-lot-serial-tracking-optin-per": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)\\blots?\\b|serial",
+  "command": "",
+  "situation": false
+ },
+ "r2-commit-no-emoji": {
+  "paths": [],
+  "content": "",
+  "command": "^git commit",
+  "situation": false
+ },
+ "r2-commit-scope-optional": {
+  "paths": [],
+  "content": "",
+  "command": "^git commit",
+  "situation": false
+ },
+ "r2-pr-small": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr create",
+  "situation": false
+ },
+ "r1-migrations-must-not-call-domain": {
+  "paths": [
+   "**/migrations/**"
+  ],
+  "content": "(from|import)\\s+stock\\.(models|commands)",
+  "command": "",
+  "situation": false
+ },
+ "r2-review-todo-tracked": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)TODO|FIXME",
+  "command": "^gh pr (review|comment)",
+  "situation": false
+ },
+ "r1-when-two-reports-disagree-number": {
+  "paths": [
+   "stock/commands/*.py"
+  ],
+  "content": "(?i)report|total|sum\\(",
+  "command": "",
+  "situation": true
+ },
+ "no-print": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "print\\(",
+  "command": "",
+  "situation": false
+ },
+ "r1-adding-enum-member-compatible-change": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)enum",
+  "command": "",
+  "situation": false
+ },
+ "r1-do-not-pass-storage-object": {
+  "paths": [
+   "stock/models.py",
+   "stock/models/**/*.py"
+  ],
+  "content": "(?i)storage|store|backend",
+  "command": "",
+  "situation": false
+ },
+ "r1-when-command-module-grows-past": {
+  "paths": [
+   "stock/commands/**/*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r1-keep-identifiers-stored-data-stable": {
+  "paths": [
+   "stock/models.py",
+   "stock/models/**/*.py",
+   "stock/storage/**/*.py"
+  ],
+  "content": "(?i)sku|\\bbin|location",
+  "command": "",
+  "situation": false
+ },
+ "r1-treat-stale-lock-as-real": {
+  "paths": [
+   "stock/storage/**/*.py"
+  ],
+  "content": "(?i)lock|pid|stale",
+  "command": "",
+  "situation": false
+ },
+ "r1-location-identified-warehouse-bin-eg": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)warehouse|\\bbin\\b|bin_|location",
+  "command": "",
+  "situation": false
+ },
+ "r1-each-report-lives-stockreports-takes": {
+  "paths": [
+   "stock/reports/**/*.py",
+   "stock/**/*report*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r1-keep-item-record-small-sku": {
+  "paths": [
+   "stock/models.py",
+   "stock/models/**/*.py"
+  ],
+  "content": "(?i)item",
+  "command": "",
+  "situation": false
+ },
+ "r2-review-no-bikeshed": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (review|comment)|^gh api .*/(comments|reviews)",
+  "situation": false
+ },
+ "r1-backend-may-add-index-speed": {
+  "paths": [
+   "stock/storage/**/*.py"
+  ],
+  "content": "(?i)index",
+  "command": "",
+  "situation": false
+ },
+ "r1-reservations-reference-order-callersupplied-key": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)reserv|release",
+  "command": "",
+  "situation": false
+ },
+ "r2-pr-assign-self": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|edit)",
+  "situation": false
+ },
+ "r1-assign-each-movement-monotonically-increasing": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)movement|\\bseq|sequence",
+  "command": "",
+  "situation": false
+ },
+ "r1-change-stored-data-layout-needs": {
+  "paths": [
+   "stock/storage/**/*.py",
+   "stock/models.py",
+   "stock/models/**/*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r2-pr-description-what-why": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|edit)",
+  "situation": false
+ },
+ "r2-branch-no-force-shared": {
+  "paths": [],
+  "content": "",
+  "command": "^git push.*(--force|-f\\b)",
+  "situation": false
+ },
+ "r1-keep-perlocation-stock-view-peritem": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)location|per_item|on_hand|stock_(by|for|view)",
+  "command": "",
+  "situation": false
+ },
+ "r2-commit-conventional-prefix": {
+  "paths": [],
+  "content": "",
+  "command": "^git commit",
+  "situation": false
+ },
+ "r2-merge-squash-default": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr merge",
+  "situation": false
+ },
+ "r1-when-model-needs-computed-property": {
+  "paths": [
+   "stock/models.py",
+   "stock/models/**/*.py"
+  ],
+  "content": "@property|cached_property",
+  "command": "",
+  "situation": false
+ },
+ "r1-rollback-must-leave-data-directory": {
+  "paths": [
+   "stock/storage/**/*.py"
+  ],
+  "content": "(?i)rollback|transaction|abort|commit",
+  "command": "",
+  "situation": false
+ },
+ "r2-merge-queue": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr merge|^git rebase|^git pull --rebase",
+  "situation": false
+ },
+ "r2-pr-description-follow-ups": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|edit)",
+  "situation": false
+ },
+ "r2-pr-cross-link": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|edit)",
+  "situation": false
+ },
+ "r1-do-not-widen-what-model": {
+  "paths": [
+   "stock/models.py",
+   "stock/models/**/*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r2-commit-coauthor-trailer": {
+  "paths": [],
+  "content": "",
+  "command": "^git commit",
+  "situation": false
+ },
+ "r1-do-not-add-new-abstraction": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?m)^\\s*class \\w+|ABC|Protocol",
+  "command": "",
+  "situation": false
+ },
+ "r1-every-write-must-converge-running": {
+  "paths": [
+   "stock/storage/**/*.py",
+   "stock/commands/**/*.py"
+  ],
+  "content": "(?i)write|save|dump|append|put",
+  "command": "",
+  "situation": false
+ },
+ "r2-merge-author-merges": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr merge",
+  "situation": false
+ },
+ "r1-new-backends-start-under-stockstoragecontrib": {
+  "paths": [
+   "stock/storage/**/*.py"
+  ],
+  "content": "(?m)^\\s*class \\w+",
+  "command": "",
+  "situation": false
+ },
+ "r2-branch-from-main": {
+  "paths": [],
+  "content": "",
+  "command": "^git (switch -c|checkout -b|branch )",
+  "situation": false
+ },
+ "r1-group-related-writes-one-storage": {
+  "paths": [
+   "stock/storage/**/*.py",
+   "stock/commands/**/*.py"
+  ],
+  "content": "(?i)write|save|transaction|dump",
+  "command": "",
+  "situation": false
+ },
+ "r2-commit-subject-imperative": {
+  "paths": [],
+  "content": "",
+  "command": "^git commit",
+  "situation": false
+ },
+ "r1-large-data-directories-keep-peritem": {
+  "paths": [
+   "stock/storage/**/*.py"
+  ],
+  "content": "(?i)index|offset|seek|read|load",
+  "command": "",
+  "situation": false
+ },
+ "r1-do-not-use-metaclasses-class": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?m)metaclass|__init_subclass__|^@\\w+.*\\n\\s*class ",
+  "command": "",
+  "situation": false
+ },
+ "r1-do-not-invent-synonym-existing": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?m)^\\s*(class|def) \\w+",
+  "command": "",
+  "situation": false
+ },
+ "r2-pr-no-unrelated": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|ready)|^gh pr edit.*--add-reviewer",
+  "situation": false
+ },
+ "r2-commit-breaking-footer": {
+  "paths": [],
+  "content": "",
+  "command": "^git commit",
+  "situation": false
+ },
+ "r1-reorder-suggestion-readonly-report-must": {
+  "paths": [
+   "stock/reports/**/*.py",
+   "stock/**/*reorder*.py"
+  ],
+  "content": "(?i)reorder",
+  "command": "",
+  "situation": false
+ },
+ "r2-pr-revert-link": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr create.*[Rr]evert|^git revert",
+  "situation": false
+ },
+ "r2-review-tone": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (review|comment)|^gh api .*/(comments|reviews)",
+  "situation": false
+ },
+ "r2-pr-update-description": {
+  "paths": [],
+  "content": "",
+  "command": "^git push|^gh pr edit",
+  "situation": true
+ },
+ "r2-merge-announce-breaking": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr merge",
+  "situation": true
+ },
+ "r2-review-comment-on-line": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (review|comment)|^gh api .*/(comments|reviews)",
+  "situation": false
+ },
+ "r1-enumerated-values-such-as-reason": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)reason|status|kind|Enum",
+  "command": "",
+  "situation": false
+ },
+ "r1-stored-record-must-readable-without": {
+  "paths": [
+   "stock/storage/**/*.py"
+  ],
+  "content": "pickle|marshal|shelve|struct|\\.dump",
+  "command": "",
+  "situation": false
+ },
+ "r2-commit-no-merge-commits-branch": {
+  "paths": [],
+  "content": "",
+  "command": "^git merge .*main|^git pull(?!.*--rebase)",
+  "situation": false
+ },
+ "error-text": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(Error|Exception)\\(\\s*f?['\"]",
+  "command": "",
+  "situation": false
+ },
+ "r1-lead-time-stored-whole-days": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)lead_?time|days|timedelta|duration",
+  "command": "",
+  "situation": false
+ },
+ "r1-each-migration-ships-with-fixture": {
+  "paths": [
+   "stock/**/*migrat*",
+   "stock/migrations/**/*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r2-commit-no-generated-noise": {
+  "paths": [],
+  "content": "",
+  "command": "^git (commit|add)",
+  "situation": false
+ },
+ "r2-review-public-api": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (review|comment)|^gh api .*/(comments|reviews)",
+  "situation": false
+ },
+ "r2-pr-rerequest-review": {
+  "paths": [],
+  "content": "",
+  "command": "^git push|^gh pr comment",
+  "situation": true
+ },
+ "r1-make-storage-reads-streaming-where": {
+  "paths": [
+   "stock/storage/**/*.py"
+  ],
+  "content": "(?i)read|load|open\\(",
+  "command": "",
+  "situation": false
+ },
+ "r1-keep-public-surface-stock-small": {
+  "paths": [
+   "stock/__init__.py",
+   "docs/api.md"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r1-internal-modules-start-with-underscore": {
+  "paths": [
+   "stock/**/*.py",
+   "tests/**/*.py"
+  ],
+  "content": "(?m)^\\s*(from|import)\\s+stock",
+  "command": "",
+  "situation": false
+ },
+ "type-hints": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?m)^\\s*(async\\s+)?def ",
+  "command": "",
+  "situation": false
+ },
+ "settings": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "os\\.environ|getenv",
+  "command": "",
+  "situation": false
+ },
+ "r2-pr-close-superseded": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|close)",
+  "situation": true
+ },
+ "r1-prefer-composition-over-inheritance-models": {
+  "paths": [
+   "stock/models.py",
+   "stock/models/**/*.py"
+  ],
+  "content": "(?m)^\\s*class \\w+\\(",
+  "command": "",
+  "situation": false
+ },
+ "r2-review-correctness-first": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (review|comment)|^gh api .*/(comments|reviews)",
+  "situation": false
+ },
+ "r2-merge-check-target": {
+  "paths": [],
+  "content": "",
+  "command": "gh pr merge|^git merge",
+  "situation": false
+ },
+ "r2-pr-perf-numbers": {
+  "paths": [],
+  "content": "",
+  "command": "gh pr (create|edit)",
+  "situation": false
+ },
+ "r1-stock-levels-are-derived-from": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "quantity|qty|on_hand|level|movement|ledger",
+  "command": "",
+  "situation": false
+ },
+ "r1-command-that-needs-two-backends": {
+  "paths": [
+   "stock/commands/**/*.py",
+   "stock/cli.py"
+  ],
+  "content": "storage|[Ss]tore|backend|data_dir",
+  "command": "",
+  "situation": false
+ },
+ "subprocess": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "subprocess|os\\.system|os\\.popen|shell=True",
+  "command": "",
+  "situation": false
+ },
+ "r2-pr-no-issue-small": {
+  "paths": [],
+  "content": "",
+  "command": "gh pr create",
+  "situation": false
+ },
+ "r1-model-change-that-alters-what": {
+  "paths": [
+   "stock/models.py",
+   "stock/models/**/*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r2-commit-no-personal-paths": {
+  "paths": [],
+  "content": "",
+  "command": "^git (add|commit)",
+  "situation": false
+ },
+ "r2-review-perf-loops": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "for .* in |while ",
+  "command": "gh pr (review|diff)",
+  "situation": false
+ },
+ "r1-models-know-nothing-about-storage": {
+  "paths": [
+   "stock/models.py",
+   "stock/models/**/*.py"
+  ],
+  "content": "storage|json_store|json|open\\(",
+  "command": "",
+  "situation": false
+ },
+ "r2-pr-no-giant-renames": {
+  "paths": [],
+  "content": "",
+  "command": "^git commit|gh pr create",
+  "situation": false
+ },
+ "r1-transaction-holds-model-instances-not": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "[Tt]ransaction|def commit|rows?\\b",
+  "command": "",
+  "situation": false
+ },
+ "r2-pr-drive-by-separate": {
+  "paths": [],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r2-review-dependency-add": {
+  "paths": [
+   "pyproject.toml",
+   "requirements*.txt",
+   "setup.py",
+   "setup.cfg"
+  ],
+  "content": "",
+  "command": "(pip|uv|poetry) (install|add)",
+  "situation": false
+ },
+ "r2-rebase-keep-review-commits": {
+  "paths": [],
+  "content": "",
+  "command": "git (rebase|commit .*--amend|push .*(--force|-f\\b))",
+  "situation": false
+ },
+ "r1-each-data-file-carries-schema": {
+  "paths": [
+   "stock/storage/**/*.py"
+  ],
+  "content": "schema|version|json\\.(load|dump)|open\\(",
+  "command": "",
+  "situation": false
+ },
+ "r1-incoming-stock-from-open-purchases": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "incoming|purchase|on_hand|reorder|availab",
+  "command": "",
+  "situation": false
+ },
+ "r1-never-ship-real-customer-inventory": {
+  "paths": [
+   "examples/**",
+   "tests/**",
+   "**/fixtures/**"
+  ],
+  "content": "",
+  "command": "gh issue (create|comment)",
+  "situation": false
+ },
+ "constants": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?m)^[A-Z][A-Z0-9_]*\\s*[:=]",
+  "command": "",
+  "situation": false
+ },
+ "r1-keep-glossary-domain-terms-docsglossarymd": {
+  "paths": [
+   "stock/models.py",
+   "stock/models/**/*.py"
+  ],
+  "content": "class ",
+  "command": "",
+  "situation": true
+ },
+ "r1-do-not-add-new-required": {
+  "paths": [
+   "stock/models.py",
+   "stock/models/**/*.py"
+  ],
+  "content": "def [a-z]",
+  "command": "",
+  "situation": false
+ },
+ "r2-review-second-opinion": {
+  "paths": [],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r1-treat-stored-data-layout-as": {
+  "paths": [
+   "stock/storage/**/*.py",
+   "stock/models.py",
+   "stock/models/**/*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r2-review-no-rubber-stamp": {
+  "paths": [],
+  "content": "",
+  "command": "gh pr review.*(--approve|-a\\b)",
+  "situation": false
+ },
+ "r2-pr-revert-fast": {
+  "paths": [],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r2-commit-no-period": {
+  "paths": [],
+  "content": "",
+  "command": "^git commit",
+  "situation": false
+ },
+ "r2-commit-mention-data-impact": {
+  "paths": [],
+  "content": "",
+  "command": "^git commit",
+  "situation": false
+ },
+ "r2-commit-wrap-body": {
+  "paths": [],
+  "content": "",
+  "command": "^git commit",
+  "situation": false
+ },
+ "r1-treat-storage-interface-as-contract": {
+  "paths": [
+   "stock/storage/**/*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "readme-commands": {
+  "paths": [
+   "stock/commands/**/*.py",
+   "stock/cli.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "builtin-generics": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "typing|List\\[|Dict\\[|Optional|Union",
+  "command": "",
+  "situation": false
+ },
+ "r1-keep-domain-deterministic-same-inputs": {
+  "paths": [
+   "stock/models.py",
+   "stock/models/**/*.py"
+  ],
+  "content": "random|datetime|time\\.|uuid|now\\(|environ",
+  "command": "",
+  "situation": false
+ },
+ "r1-migration-touches-data-only-do": {
+  "paths": [
+   "**/migrat*/**",
+   "**/migrat*.py"
+  ],
+  "content": "",
+  "command": "^git commit",
+  "situation": true
+ },
+ "r2-merge-friday": {
+  "paths": [],
+  "content": "",
+  "command": "gh pr merge|^git merge",
+  "situation": false
+ },
+ "r2-commit-lockfile-own": {
+  "paths": [
+   "*.lock",
+   "requirements*.txt"
+  ],
+  "content": "",
+  "command": "(uv|poetry|pdm) lock|pip-compile",
+  "situation": false
+ },
+ "r1-when-you-add-new-invariant-2": {
+  "paths": [
+   "stock/models.py",
+   "stock/models/**/*.py"
+  ],
+  "content": "raise|assert|invariant|validat",
+  "command": "",
+  "situation": true
+ },
+ "r1-do-not-hold-storage-lock": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "input\\(|prompt|confirm|[Ll]ock",
+  "command": "",
+  "situation": false
+ },
+ "changelog": {
+  "paths": [
+   "CHANGELOG.md"
+  ],
+  "content": "",
+  "command": "^git commit",
+  "situation": true
+ },
+ "r2-pr-reland": {
+  "paths": [],
+  "content": "",
+  "command": "gh pr create",
+  "situation": false
+ },
+ "r2-pr-ready-checklist": {
+  "paths": [],
+  "content": "",
+  "command": "gh pr (ready|create)",
+  "situation": false
+ },
+ "r1-do-not-depend-file-modification": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "mtime|getmtime|\\.stat\\(",
+  "command": "",
+  "situation": false
+ },
+ "r2-review-rerun-flaky": {
+  "paths": [],
+  "content": "",
+  "command": "gh run rerun|gh pr checks",
+  "situation": false
+ },
+ "r1-avoid-mixins-domain-layer-shared": {
+  "paths": [
+   "stock/models.py",
+   "stock/models/**/*.py"
+  ],
+  "content": "Mixin|class \\w+\\([^)]*,",
+  "command": "",
+  "situation": false
+ },
+ "r2-pr-split-refactor": {
+  "paths": [],
+  "content": "",
+  "command": "gh pr create",
+  "situation": true
+ },
+ "r1-bin-that-holds-stock-cannot": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "[Bb]in\\b|bins",
+  "command": "",
+  "situation": false
+ },
+ "r2-review-run-it": {
+  "paths": [],
+  "content": "",
+  "command": "gh pr review.*(--approve|-a\\b)",
+  "situation": false
+ },
+ "r1-keep-package-three-layers-stockmodels": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "import ",
+  "command": "",
+  "situation": false
+ },
+ "keyword-bools": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": ":\\s*bool",
+  "command": "",
+  "situation": false
+ },
+ "r1-archive-items-instead-deleting-them": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "delete|remove|del |\\.pop\\(",
+  "command": "",
+  "situation": false
+ },
+ "r2-review-readme-commands": {
+  "paths": [],
+  "content": "",
+  "command": "gh pr (review|checkout)",
+  "situation": false
+ },
+ "r1-concurrent-writers-from-two-processes": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "[Ll]ock|fcntl|thread|multiprocessing|semaphore",
+  "command": "",
+  "situation": false
+ },
+ "future": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r2-pr-description-template": {
+  "paths": [],
+  "content": "",
+  "command": "gh pr (create|edit)",
+  "situation": false
+ },
+ "r2-review-data-migration": {
+  "paths": [],
+  "content": "",
+  "command": "gh pr (review|checkout|diff)",
+  "situation": false
+ },
+ "r1-lock-files-record-owning-process": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "[Ll]ock",
+  "command": "",
+  "situation": false
+ },
+ "r2-pr-generated-marked": {
+  "paths": [
+   ".gitattributes"
+  ],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "test-files": {
+  "paths": [
+   "tests/**/*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r2-review-check-sample-files": {
+  "paths": [],
+  "content": "",
+  "command": "gh pr (review|checkout|diff)",
+  "situation": false
+ },
+ "r2-pr-stale-close": {
+  "paths": [],
+  "content": "",
+  "command": "gh pr reopen",
+  "situation": true
+ },
+ "r2-review-concurrency": {
+  "paths": [],
+  "content": "",
+  "command": "gh pr (review|checkout|diff)",
+  "situation": false
+ },
+ "pathlib": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "os\\.path|import os\\b|from os import",
+  "command": "",
+  "situation": false
+ },
+ "r2-commit-body-why": {
+  "paths": [],
+  "content": "",
+  "command": "^git commit",
+  "situation": false
+ },
+ "r2-pr-description-steps": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|edit)",
+  "situation": false
+ },
+ "r1-use-same-term-concept-code": {
+  "paths": [
+   "**/*.py",
+   "**/*.json",
+   "README.md",
+   "docs/**/*.md"
+  ],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r2-branch-stale-cleanup": {
+  "paths": [],
+  "content": "",
+  "command": "^git branch|^git push .*--delete",
+  "situation": true
+ },
+ "r1-minimum-order-quantity-pack-multiple": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)min(imum)?_?order|\\bmoq\\b|pack_?(multiple|size)",
+  "command": "",
+  "situation": false
+ },
+ "r2-review-suggest-change": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (review|comment)|^gh api .*(comments|reviews)",
+  "situation": true
+ },
+ "r1-keep-examples-data-small-realistic": {
+  "paths": [
+   "examples/**"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r1-indexes-are-rebuildable-from-primary": {
+  "paths": [
+   "**/storage/**/*.py",
+   "**/*index*.py"
+  ],
+  "content": "(?i)index",
+  "command": "",
+  "situation": false
+ },
+ "r1-bins-belong-exactly-one-warehouse": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)\\bbins?\\b|bin_id|warehouse",
+  "command": "",
+  "situation": false
+ },
+ "r2-commit-issue-ref": {
+  "paths": [],
+  "content": "",
+  "command": "^git commit",
+  "situation": false
+ },
+ "r2-commit-link-discussion": {
+  "paths": [],
+  "content": "",
+  "command": "^git commit",
+  "situation": false
+ },
+ "r2-pr-label": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|edit)",
+  "situation": false
+ },
+ "r1-do-not-store-same-movement": {
+  "paths": [
+   "**/storage/**/*.py"
+  ],
+  "content": "(?i)movement",
+  "command": "",
+  "situation": false
+ },
+ "r2-branch-short-lived": {
+  "paths": [],
+  "content": "",
+  "command": "^git (push|checkout -b|switch -c)",
+  "situation": false
+ },
+ "r1-item-attributes-that-vary-warehouse": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)reorder|default_?bin|bin_?default|per_?location|location",
+  "command": "",
+  "situation": false
+ },
+ "r1-every-migration-must-safe-run": {
+  "paths": [
+   "**/migrations/**",
+   "**/*migrat*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r2-review-docs-match": {
+  "paths": [
+   "README.md",
+   "stock/cli.py",
+   "stock/commands/*.py"
+  ],
+  "content": "",
+  "command": "^gh pr review",
+  "situation": true
+ },
+ "r2-review-tests-match": {
+  "paths": [
+   "tests/**/*.py"
+  ],
+  "content": "",
+  "command": "^gh pr review",
+  "situation": true
+ },
+ "r2-review-blocking-clear": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr review",
+  "situation": false
+ },
+ "line-length": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "[^\\n]{80,}",
+  "command": "",
+  "situation": false
+ },
+ "r2-review-approve-stale": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr review",
+  "situation": true
+ },
+ "r2-pr-reviewers-codeowners": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|edit)",
+  "situation": false
+ },
+ "r2-pr-docs-same-pr": {
+  "paths": [
+   "stock/cli.py",
+   "stock/commands/*.py",
+   "README.md",
+   "docs/**/*.md"
+  ],
+  "content": "",
+  "command": "^gh pr create",
+  "situation": true
+ },
+ "r1-domain-invariants-are-checked-model": {
+  "paths": [
+   "**/commands/**/*.py"
+  ],
+  "content": "raise\\s|if\\s",
+  "command": "",
+  "situation": false
+ },
+ "r1-csv-exports-use-fixed-column": {
+  "paths": [
+   "**/*.py",
+   "docs/formats.md"
+  ],
+  "content": "(?i)csv|fieldnames|writerow",
+  "command": "",
+  "situation": false
+ },
+ "r1-filtering-sorting-happen-domain-layer": {
+  "paths": [
+   "**/storage/**/*.py",
+   "**/commands/**/*.py"
+  ],
+  "content": "sort|filter|key=|(?i)order by|where",
+  "command": "",
+  "situation": false
+ },
+ "r1-reservation-has-own-lifecycle-held": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)reserv",
+  "command": "",
+  "situation": false
+ },
+ "r2-pr-two-approvals-storage": {
+  "paths": [
+   "**/storage/**"
+  ],
+  "content": "",
+  "command": "^gh pr (create|merge)",
+  "situation": true
+ },
+ "r1-strategies-are-swapped-passing-different": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)picker|strateg|pick",
+  "command": "",
+  "situation": false
+ },
+ "r2-branch-no-direct-main": {
+  "paths": [],
+  "content": "",
+  "command": "^git push",
+  "situation": false
+ },
+ "r1-domain-code-pure-python-must": {
+  "paths": [
+   "stock/models.py",
+   "**/domain/**/*.py"
+  ],
+  "content": "open\\(|Path\\(|pathlib|\\bos\\.|\\bsys\\.|environ|requests|urllib|socket|input\\(",
+  "command": "",
+  "situation": false
+ },
+ "r1-valuation-reports-read-cost-from": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)cost|valuation",
+  "command": "",
+  "situation": false
+ },
+ "r2-commit-signoff": {
+  "paths": [],
+  "content": "",
+  "command": "^git commit",
+  "situation": false
+ },
+ "r2-review-quantity-math": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)quantity|qty|transfer",
+  "command": "^gh pr review",
+  "situation": false
+ },
+ "r1-convert-enum-members-their-string": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\.value\\b|Enum|str\\(",
+  "command": "",
+  "situation": false
+ },
+ "r1-copying-data-between-backends-replays": {
+  "paths": [
+   "**/storage/**/*.py",
+   "**/*.py"
+  ],
+  "content": "(?i)copy|migrat|transfer_backend|snapshot|backend",
+  "command": "",
+  "situation": false
+ },
+ "r2-merge-no-merge-commits": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr merge|^git merge",
+  "situation": false
+ },
+ "r2-merge-wait-checks": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr merge",
+  "situation": false
+ },
+ "r1-sku-opaque-identifier-do-not": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)sku",
+  "command": "",
+  "situation": false
+ },
+ "r1-listing-methods-return-items-stable": {
+  "paths": [
+   "**/storage/**/*.py",
+   "**/commands/list_items.py"
+  ],
+  "content": "def (list|all|iter|find)|sorted|\\.sort\\(",
+  "command": "",
+  "situation": false
+ },
+ "utc": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "datetime|utcnow|today\\(",
+  "command": "",
+  "situation": false
+ },
+ "r2-commit-no-secrets": {
+  "paths": [],
+  "content": "",
+  "command": "^git (commit|add)",
+  "situation": false
+ },
+ "r1-never-break-lock-automatically-write": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)lock",
+  "command": "",
+  "situation": false
+ },
+ "logger-name": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "logging|getLogger|_LOGGER",
+  "command": "",
+  "situation": false
+ },
+ "r1-do-not-round-quantities-when": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)round\\(|split|pack|//|math\\.(floor|ceil)",
+  "command": "",
+  "situation": false
+ },
+ "r1-model-item-lifecycle-as-small": {
+  "paths": [
+   "stock/models.py",
+   "**/models.py",
+   "docs/architecture.md"
+  ],
+  "content": "(?i)state|status|lifecycle|transition",
+  "command": "",
+  "situation": true
+ },
+ "r2-review-ci-skipped": {
+  "paths": [
+   ".github/workflows/**"
+  ],
+  "content": "",
+  "command": "^gh pr (review|checks)",
+  "situation": true
+ },
+ "r2-review-security-input": {
+  "paths": [
+   "**/storage/**/*.py"
+  ],
+  "content": "json\\.loads?|open\\(|read_text|csv\\.",
+  "command": "^gh pr review",
+  "situation": false
+ },
+ "r1-do-not-let-report-silently": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)report|unknown",
+  "command": "",
+  "situation": false
+ },
+ "r2-rebase-interactive-cleanup": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr ready|^git rebase",
+  "situation": false
+ },
+ "r1-supplier-record-holds-identity-contact": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)supplier|vendor",
+  "command": "",
+  "situation": false
+ },
+ "r1-inmemory-backend-exists-fast-checks": {
+  "paths": [
+   "**/storage/**/*.py"
+  ],
+  "content": "(?i)memory",
+  "command": "",
+  "situation": false
+ },
+ "r1-onhand-quantity-must-never-go": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)on_?hand|quantity|qty|backorder",
+  "command": "",
+  "situation": false
+ },
+ "r2-review-small-batches": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr review",
+  "situation": true
+ },
+ "r1-commands-never-touch-storage-files": {
+  "paths": [
+   "**/commands/**/*.py"
+  ],
+  "content": "open\\(|json\\.|Path\\(|read_text|write_text|\\.json",
+  "command": "",
+  "situation": false
+ },
+ "test-classes": {
+  "paths": [
+   "tests/**/*.py",
+   "**/test_*.py"
+  ],
+  "content": "class\\s",
+  "command": "",
+  "situation": false
+ },
+ "r2-pr-bot-prs": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (merge|review)",
+  "situation": false
+ },
+ "r2-branch-delete-after-merge": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr merge",
+  "situation": false
+ },
+ "r2-pr-title-squash": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|edit|merge)",
+  "situation": false
+ },
+ "r1-splits-one-sku-into-two": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "split|sku",
+  "command": "",
+  "situation": true
+ },
+ "r1-do-not-create-cyclic-dependencies": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "^\\s*(from|import)\\s",
+  "command": "",
+  "situation": false
+ },
+ "r2-pr-annotate-diff": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|ready)",
+  "situation": false
+ },
+ "r1-put-domain-rules-model-that": {
+  "paths": [
+   "stock/commands/*.py",
+   "stock/models.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r1-model-negative-stock-as-visible": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "max\\(\\s*0|negative|< ?0|clamp",
+  "command": "",
+  "situation": false
+ },
+ "r2-merge-close-issues": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr merge",
+  "situation": false
+ },
+ "r1-available-quantity-onhand-minus-reserved": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "available|reserved",
+  "command": "",
+  "situation": false
+ },
+ "r1-store-quantities-as-integers-smallest": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "float|quantity|qty|Decimal",
+  "command": "",
+  "situation": false
+ },
+ "r1-if-snapshot-ledger-disagree-ledger": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "snapshot|ledger",
+  "command": "",
+  "situation": false
+ },
+ "r1-do-not-perform-slow-work": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "transaction|BEGIN|commit\\(|with .*(lock|conn)",
+  "command": "",
+  "situation": false
+ },
+ "r1-do-not-add-backend-features": {
+  "paths": [
+   "stock/storage/*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r2-pr-respond-promptly": {
+  "paths": [],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r2-backport-label": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (merge|edit)",
+  "situation": true
+ },
+ "r1-keep-backend-selection-one-factory": {
+  "paths": [
+   "stock/cli.py",
+   "stock/commands/*.py",
+   "stock/config.py"
+  ],
+  "content": "Store|backend|storage",
+  "command": "",
+  "situation": false
+ },
+ "raise-from": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "raise\\s",
+  "command": "",
+  "situation": false
+ },
+ "r2-pr-resolve-own-threads": {
+  "paths": [],
+  "content": "",
+  "command": "gh api .*(resolveReviewThread|threads)",
+  "situation": true
+ },
+ "r1-keep-stored-files-humanreadable-where": {
+  "paths": [
+   "stock/storage/*.py"
+  ],
+  "content": "dump|write|open\\(|indent",
+  "command": "",
+  "situation": false
+ },
+ "no-assert": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "\\bassert\\b",
+  "command": "",
+  "situation": false
+ },
+ "r2-review-copy-pasta": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (review|diff)",
+  "situation": true
+ },
+ "r1-make-every-write-operation-idempotent": {
+  "paths": [
+   "stock/commands/*.py",
+   "stock/storage/*.py"
+  ],
+  "content": "request_key|def (add|remove|write|save|append)",
+  "command": "",
+  "situation": false
+ },
+ "r1-keep-reorder-calculation-pure-function": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "reorder",
+  "command": "",
+  "situation": false
+ },
+ "r2-pr-wip-prefix": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|edit).*WIP",
+  "situation": false
+ },
+ "r1-backends-must-preserve-order-which": {
+  "paths": [
+   "stock/storage/*.py"
+  ],
+  "content": "movement|append|sort|set\\(",
+  "command": "",
+  "situation": false
+ },
+ "r1-prefer-explicit-fields-over-positional": {
+  "paths": [
+   "stock/storage/*.py",
+   "stock/models.py"
+  ],
+  "content": "tuple|\\(.*,.*\\)|\\[.*,.*\\]",
+  "command": "",
+  "situation": false
+ },
+ "r1-tags-are-freeform-lowercase-labels": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "tag",
+  "command": "",
+  "situation": false
+ },
+ "r1-treat-csv-column-order-as": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "csv|CSV",
+  "command": "",
+  "situation": false
+ },
+ "r2-branch-personal-prefix": {
+  "paths": [],
+  "content": "",
+  "command": "^git (checkout -b|switch -c|branch)\\s",
+  "situation": false
+ },
+ "r1-supplier-codes-are-stable-renaming": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "supplier",
+  "command": "",
+  "situation": false
+ },
+ "r1-keep-transactions-short-gather-input": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "transaction|BEGIN|commit\\(",
+  "command": "",
+  "situation": false
+ },
+ "r2-commit-subject-short": {
+  "paths": [],
+  "content": "",
+  "command": "^git commit",
+  "situation": false
+ },
+ "r2-commit-revert-subject": {
+  "paths": [],
+  "content": "",
+  "command": "^git (revert|commit)",
+  "situation": false
+ },
+ "r2-pr-title-format": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|edit)",
+  "situation": false
+ },
+ "r1-transfer-between-two-locations-one": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "transfer|location|leg",
+  "command": "",
+  "situation": false
+ },
+ "r1-do-not-use-pickle-marshal": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "pickle|marshal|shelve",
+  "command": "",
+  "situation": false
+ },
+ "r2-pr-one-purpose": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr create",
+  "situation": true
+ },
+ "r1-side-effects-live-at-edges": {
+  "paths": [
+   "stock/models.py",
+   "stock/commands/*.py"
+  ],
+  "content": "open\\(|print\\(|input\\(|os\\.|sys\\.|requests|json\\.(dump|load)",
+  "command": "",
+  "situation": false
+ },
+ "r4-report-sort-sql": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "fetchall|sorted\\(|\\.sort\\(",
+  "command": "",
+  "situation": false
+ },
+ "r4-lock-holder-hint": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)lock|timeout",
+  "command": "",
+  "situation": false
+ },
+ "r4-perf-issue-template": {
+  "paths": [
+   ".github/ISSUE_TEMPLATE/**"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r3-adr-index": {
+  "paths": [
+   "docs/adr/*.md"
+  ],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r5-pkg-hash-artifacts": {
+  "paths": [
+   ".github/workflows/*.yml",
+   ".github/workflows/*.yaml"
+  ],
+  "content": "(?i)release|publish|upload",
+  "command": "",
+  "situation": false
+ },
+ "r2-agent-disclose": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|edit)",
+  "situation": false
+ },
+ "r3-readme-link-guide": {
+  "paths": [
+   "README.md"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-short-names-short-scope": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\b(for|lambda|as) [a-z]\\b|(?m)^\\s*[a-z]\\s*=[^=]",
+  "command": "",
+  "situation": false
+ },
+ "r3-org-models-pure": {
+  "paths": [
+   "stock/models.py",
+   "stock/models/**/*.py"
+  ],
+  "content": "open\\(|import (os|sys|pathlib|json|sqlite3|shutil)|from (os|pathlib|sys)|print\\(|input\\(|Path\\(",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-no-argument-mutation": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\.(append|extend|insert|pop|remove|update|clear|setdefault|sort)\\(|\\]\\s*=[^=]|\\bdel ",
+  "command": "",
+  "situation": false
+ },
+ "r5-deps-typosquat": {
+  "paths": [
+   "pyproject.toml",
+   "requirements*.txt",
+   "**/requirements*.txt"
+  ],
+  "content": "",
+  "command": "\\b(pip|pip3|uv|poetry|pipx|pdm) (install|add)\\b",
+  "situation": false
+ },
+ "r5-deps-pin-dev-exact": {
+  "paths": [
+   "pyproject.toml",
+   "*.lock",
+   "requirements*.txt"
+  ],
+  "content": "",
+  "command": "\\b(uv|poetry|pdm) (add|lock)\\b",
+  "situation": false
+ },
+ "r5-sec-verify-backup": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)backup|restore",
+  "command": "sqlite3 .*(\\.restore|<)",
+  "situation": false
+ },
+ "r4-bench-scenarios": {
+  "paths": [
+   "benchmarks/**/*.py",
+   "bench/**/*.py",
+   "**/bench_*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r4-heapq-top-n": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "sorted\\(|\\.sort\\(",
+  "command": "",
+  "situation": false
+ },
+ "r4-lock-pid": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)lock|O_EXCL",
+  "command": "",
+  "situation": false
+ },
+ "r5-perms-export-umask": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "chmod|umask|0o[0-7]{3}",
+  "command": "",
+  "situation": false
+ },
+ "r4-no-perf-in-unit": {
+  "paths": [
+   "tests/**/*.py"
+  ],
+  "content": "time\\.(time|perf_counter|monotonic)|timeit|elapsed|duration",
+  "command": "",
+  "situation": false
+ },
+ "r4-skip-unused-columns": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "SELECT|row\\[|columns|Decimal\\(|fromisoformat|strptime",
+  "command": "",
+  "situation": false
+ },
+ "r4-perf-docs": {
+  "paths": [
+   "docs/performance.md"
+  ],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r3-readable-sort-keys-named": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "key=lambda",
+  "command": "",
+  "situation": false
+ },
+ "r3-md-numbered-steps": {
+  "paths": [
+   "**/*.md"
+  ],
+  "content": "(?m)^\\s*([-*+]|\\d+\\.)\\s",
+  "command": "",
+  "situation": false
+ },
+ "r4-no-partial-files": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "open\\(|\\.write|dump\\(|write_text|write_bytes",
+  "command": "",
+  "situation": false
+ },
+ "r4-avoid-premature": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "cache|heapq|bisect|__slots__|memo",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-no-else-after-return": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\belse\\s*:|\\belif\\b",
+  "command": "",
+  "situation": false
+ },
+ "r5-deps-lock-commit": {
+  "paths": [
+   "pyproject.toml"
+  ],
+  "content": "dependencies|requires",
+  "command": "^git commit",
+  "situation": true
+ },
+ "r5-untrusted-empty-file": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)import|load|read|open\\(",
+  "command": "",
+  "situation": false
+ },
+ "r5-pkg-license-file": {
+  "paths": [
+   "LICENSE*",
+   "pyproject.toml"
+  ],
+  "content": "(?i)licen[cs]e",
+  "command": "\\b(mv|rm)\\b.*LICENSE",
+  "situation": false
+ },
+ "r3-examples-readme-index": {
+  "paths": [
+   "examples/**"
+  ],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r5-deps-no-prerelease": {
+  "paths": [
+   "pyproject.toml",
+   "*.lock",
+   "requirements*.txt"
+  ],
+  "content": "\\d(a|b|rc|\\.dev)\\d+",
+  "command": "",
+  "situation": false
+ },
+ "r3-docs-no-emoji": {
+  "paths": [
+   "**/*.md",
+   "**/*.py",
+   "**/*.rst"
+  ],
+  "content": "[\\U0001F300-\\U0001FAFF\\u2600-\\u27BF]",
+  "command": "^git commit",
+  "situation": false
+ },
+ "r5-untrusted-control-chars": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "print\\(|echo\\(|\\bname\\b|\\bnotes?\\b|report",
+  "command": "",
+  "situation": false
+ },
+ "r5-untrusted-no-shelve": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "shelve",
+  "command": "",
+  "situation": false
+ },
+ "r5-pkg-editable-not-ci": {
+  "paths": [
+   ".github/workflows/*.yml",
+   ".github/workflows/*.yaml"
+  ],
+  "content": "pip install|uv (pip|sync)|-e |editable",
+  "command": "",
+  "situation": false
+ },
+ "r2-agent-summarize-diff": {
+  "paths": [],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r5-pkg-wheel-pure": {
+  "paths": [
+   "pyproject.toml",
+   "setup.py",
+   "setup.cfg",
+   "**/*.c",
+   "**/*.pyx",
+   "**/*.rs"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r5-sec-docs-safe-examples": {
+  "paths": [
+   "docs/**/*.md",
+   "README.md",
+   "examples/**"
+  ],
+  "content": "/(etc|usr|var|opt|tmp)/|[A-Z]:\\\\|~/|--(db|path|out|output|file)",
+  "command": "",
+  "situation": false
+ },
+ "r5-sec-sample-db-clean": {
+  "paths": [
+   "examples/**/*.db",
+   "examples/**/*.sqlite*",
+   "examples/**/*.json"
+  ],
+  "content": "",
+  "command": "sqlite3 .*examples/",
+  "situation": false
+ },
+ "r3-readme-badges-few": {
+  "paths": [
+   "README.md"
+  ],
+  "content": "(?i)badge|shields\\.io",
+  "command": "",
+  "situation": false
+ },
+ "r4-fsync-dir": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "os\\.replace|os\\.rename|\\.replace\\(|\\.rename\\(",
+  "command": "",
+  "situation": false
+ },
+ "r5-deps-stdlib-runtime": {
+  "paths": [
+   "pyproject.toml",
+   "stock/**/*.py"
+  ],
+  "content": "dependencies|(?m)^\\s*(import|from) \\w",
+  "command": "\\b(pip|uv|poetry|pdm) (install|add)\\b",
+  "situation": false
+ },
+ "r4-bounded-caches": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)cache|memo",
+  "command": "",
+  "situation": false
+ },
+ "r3-adr-short": {
+  "paths": [
+   "docs/adr/*.md"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-avoid-negated-ranges": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "[<>]=?[^\\n]*\\b(and|or)\\b[^\\n]*[<>]=?",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-domain-names": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-no-double-negative": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\bnot\\s+\\w*(not|no|non)_|_not_|\\bnot\\s+not\\b",
+  "command": "",
+  "situation": false
+ },
+ "r4-threads-not-default": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)thread|concurrent\\.futures|multiprocessing|asyncio",
+  "command": "",
+  "situation": false
+ },
+ "r4-retry-safe": {
+  "paths": [
+   "stock/commands/*.py",
+   "stock/storage/*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r4-bench-fixture-size": {
+  "paths": [
+   "benchmarks/**/*.py",
+   "bench/**/*.py",
+   "**/bench_*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r3-docs-upgrade-steps": {
+  "paths": [
+   "docs/**/*upgrad*.md",
+   "**/UPGRADING*.md"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r5-untrusted-decimal-price": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "float|cost|price",
+  "command": "",
+  "situation": false
+ },
+ "r5-pkg-yank-not-delete": {
+  "paths": [],
+  "content": "",
+  "command": "gh release delete|twine",
+  "situation": true
+ },
+ "r3-readable-avoid-global-state": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?m)^[A-Za-z_]\\w*\\s*(:[^=\\n]*)?=\\s*(\\[|\\{|set\\(|dict\\(|list\\()|\\bglobal\\b",
+  "command": "",
+  "situation": false
+ },
+ "r5-pkg-sdist-exclude": {
+  "paths": [
+   "pyproject.toml",
+   "MANIFEST.in"
+  ],
+  "content": "sdist|exclude|include",
+  "command": "",
+  "situation": false
+ },
+ "r5-pkg-version-semver": {
+  "paths": [
+   "pyproject.toml",
+   "stock/__init__.py",
+   "CHANGELOG.md"
+  ],
+  "content": "version|(?m)^## ",
+  "command": "^git tag",
+  "situation": false
+ },
+ "r3-readable-no-monkeypatch": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "setattr\\(|(?m)^\\s*[a-z_]\\w*\\.[A-Za-z_]\\w*\\s*=[^=]",
+  "command": "",
+  "situation": false
+ },
+ "r3-guide-define-before-use": {
+  "paths": [
+   "docs/**/*.md",
+   "README.md"
+  ],
+  "content": "(?i)reservation|\\bbin\\b|reorder|on.hand|reserved",
+  "command": "",
+  "situation": false
+ },
+ "r3-comments-workaround-exit": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)workaround|hack|xxx|fixme",
+  "command": "",
+  "situation": false
+ },
+ "r5-path-case-collide": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)export|sku|filename|Path\\(",
+  "command": "",
+  "situation": false
+ },
+ "r5-sql-foreign-keys-on": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "sqlite3\\.connect|connect\\(",
+  "command": "",
+  "situation": false
+ },
+ "r4-sqlite-pragma-place": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)pragma",
+  "command": "",
+  "situation": false
+ },
+ "r4-snapshot-for-reports": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)lock",
+  "command": "",
+  "situation": false
+ },
+ "r5-perms-lock-file": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)lock|chmod|os\\.open|0o[0-7]{3}",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-pure-functions": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "def ",
+  "command": "",
+  "situation": false
+ },
+ "r5-deps-stdlib-first": {
+  "paths": [
+   "pyproject.toml",
+   "setup.py",
+   "setup.cfg",
+   "requirements*.txt",
+   "**/*.py"
+  ],
+  "content": "^\\s*(import|from) |\\n\\s*(import|from) |dependencies|install_requires",
+  "command": "pip install|poetry add|uv add|uv pip install",
+  "situation": false
+ },
+ "r4-no-n-plus-one": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)execute\\(|select ",
+  "command": "",
+  "situation": false
+ },
+ "r2-agent-commit-ask": {
+  "paths": [],
+  "content": "",
+  "command": "^git commit",
+  "situation": false
+ },
+ "r5-sec-sample-db-small": {
+  "paths": [
+   "**/*.db",
+   "**/*.sqlite",
+   "**/*.sqlite3"
+  ],
+  "content": "",
+  "command": "git add .*\\.(db|sqlite3?)\\b",
+  "situation": false
+ },
+ "r3-readme-license-footer": {
+  "paths": [
+   "README.md"
+  ],
+  "content": "(?i)licen[cs]e",
+  "command": "",
+  "situation": false
+ },
+ "r3-links-pin-permalinks": {
+  "paths": [
+   "**/*.md",
+   "**/*.py"
+  ],
+  "content": "github\\.com/[^\\s)]+/(blob|tree)/",
+  "command": "",
+  "situation": false
+ },
+ "r2-codeowners-storage": {
+  "paths": [
+   "stock/storage/**",
+   "docs/**format*"
+  ],
+  "content": "",
+  "command": "^gh pr (create|merge)",
+  "situation": false
+ },
+ "r3-org-consistent-order": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "class |def __init__",
+  "command": "",
+  "situation": false
+ },
+ "r3-comments-update-with-code": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r3-comments-full-sentences": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "#",
+  "command": "",
+  "situation": false
+ },
+ "r5-untrusted-dup-keys": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)sku|batch",
+  "command": "",
+  "situation": false
+ },
+ "r5-pkg-drop-python": {
+  "paths": [
+   "pyproject.toml",
+   "setup.py",
+   "setup.cfg",
+   "tox.ini",
+   ".github/workflows/*.yml",
+   ".github/workflows/*.yaml"
+  ],
+  "content": "(?i)requires-python|python_requires|python-version|Programming Language :: Python",
+  "command": "",
+  "situation": false
+ },
+ "r5-sec-branch-protect": {
+  "paths": [],
+  "content": "",
+  "command": "gh api .*protection|gh pr merge .*--admin",
+  "situation": true
+ },
+ "r3-docs-limits-page": {
+  "paths": [
+   "docs/**/*.md",
+   "README.md"
+  ],
+  "content": "(?i)limit|largest|maximum|tested",
+  "command": "",
+  "situation": false
+ },
+ "r3-org-no-utils-module": {
+  "paths": [
+   "**/utils.py",
+   "**/misc.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r2-backport-fixes-only": {
+  "paths": [],
+  "content": "",
+  "command": "git cherry-pick|backport",
+  "situation": true
+ },
+ "r2-stack-independent-green": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr create",
+  "situation": true
+ },
+ "r5-secrets-fake-fixtures": {
+  "paths": [
+   "tests/**"
+  ],
+  "content": "(?i)password|passwd|token|secret|api_?key|credential",
+  "command": "",
+  "situation": false
+ },
+ "r5-path-sanitise-name": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "Path\\(|os\\.path|(?i)file_?name",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-small-diffs": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr create",
+  "situation": true
+ },
+ "r3-md-trailing-whitespace": {
+  "paths": [
+   "**/*.md"
+  ],
+  "content": "[ \\t]\\n|[ \\t]$",
+  "command": "",
+  "situation": false
+ },
+ "r4-windows-replace": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "os\\.replace|os\\.rename|\\.replace\\(|\\.rename\\(",
+  "command": "",
+  "situation": false
+ },
+ "r5-sec-actions-permissions": {
+  "paths": [
+   ".github/workflows/*.yml",
+   ".github/workflows/*.yaml"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-no-implicit-truthy-numbers": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)\\b(if|while|not|and|or)\\b.*(qty|quantity|count|on_hand|amount)",
+  "command": "",
+  "situation": false
+ },
+ "r4-generator-over-list": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "def (iter_|list_|get_|read_|load_|all_)|return \\[",
+  "command": "",
+  "situation": false
+ },
+ "r5-perms-check-group": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "chmod|chown|umask",
+  "command": "chmod|chown",
+  "situation": false
+ },
+ "r5-sql-no-identifier-from-user": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)select |insert |update |delete |create table|execute\\(",
+  "command": "",
+  "situation": false
+ },
+ "r4-stream-report-rows": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)report|\\.join\\(",
+  "command": "",
+  "situation": false
+ },
+ "r3-guide-remove-stale-notes": {
+  "paths": [
+   "**/*.md",
+   "**/*.rst"
+  ],
+  "content": "New in",
+  "command": "",
+  "situation": true
+ },
+ "r3-readable-ids-suffix": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)id\\b",
+  "command": "",
+  "situation": false
+ },
+ "r4-sqlite-one-conn": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "connect\\(",
+  "command": "",
+  "situation": false
+ },
+ "r4-join-in-sql": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)reorder|on_hand|select ",
+  "command": "",
+  "situation": false
+ },
+ "r3-md-fenced-blocks": {
+  "paths": [
+   "**/*.md"
+  ],
+  "content": "```|\\n    \\S",
+  "command": "",
+  "situation": false
+ },
+ "r3-org-no-nested-classes": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(^|\\n)[ \\t]+class \\w",
+  "command": "",
+  "situation": false
+ },
+ "r4-entry-point-thin": {
+  "paths": [
+   "stock/cli.py",
+   "stock/__main__.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r3-comments-no-banner": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "#{4,}|#\\s*[=\\-]{4,}",
+  "command": "",
+  "situation": false
+ },
+ "r3-docs-alt-text": {
+  "paths": [
+   "**/*.md",
+   "docs/**"
+  ],
+  "content": "!\\[|<img",
+  "command": "",
+  "situation": false
+ },
+ "r3-todo-no-orphans": {
+  "paths": [
+   "**/*"
+  ],
+  "content": "TODO|FIXME",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-guard-clauses": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\bif\\b",
+  "command": "",
+  "situation": false
+ },
+ "r2-codeowners-ci": {
+  "paths": [
+   ".github/workflows/**"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r3-comments-above-code": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\S[ \\t]+#",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-none-check": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "None|if not |\\bor\\b",
+  "command": "",
+  "situation": false
+ },
+ "r4-idempotent-apply": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)batch|apply|movement",
+  "command": "",
+  "situation": false
+ },
+ "r5-sec-pii-none": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)email|phone|address|customer|birth|personal",
+  "command": "",
+  "situation": true
+ },
+ "r5-pkg-version-dev-suffix": {
+  "paths": [
+   "pyproject.toml",
+   "setup.cfg",
+   "setup.py",
+   "stock/__init__.py",
+   "stock/const.py"
+  ],
+  "content": "(?i)version",
+  "command": "",
+  "situation": true
+ },
+ "r2-backport-merge-main-first": {
+  "paths": [],
+  "content": "",
+  "command": "git cherry-pick|backport",
+  "situation": true
+ },
+ "r3-comments-link-issue": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)workaround|work around|upstream|hack",
+  "command": "",
+  "situation": false
+ },
+ "r5-untrusted-row-cap": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)batch|rows|csv|reader|import",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-short-functions": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "def ",
+  "command": "",
+  "situation": false
+ },
+ "r2-hooks-pre-commit-install": {
+  "paths": [],
+  "content": "",
+  "command": "^git clone",
+  "situation": true
+ },
+ "r3-readable-no-walrus-nesting": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": ":=",
+  "command": "",
+  "situation": false
+ },
+ "r3-comments-english": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "#|\"\"\"",
+  "command": "",
+  "situation": false
+ },
+ "r4-no-break-live-lock": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)lock.*(unlink|remove|rmtree)|(unlink|remove|rmtree).*lock",
+  "command": "rm .*lock",
+  "situation": false
+ },
+ "r5-secrets-redact-shared": {
+  "paths": [],
+  "content": "",
+  "command": "gh (issue|pr) (create|comment|edit)",
+  "situation": false
+ },
+ "r4-dict-default": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": " not in | in \\w+:|(?i)group",
+  "command": "",
+  "situation": false
+ },
+ "r2-codeowners-teams": {
+  "paths": [
+   "CODEOWNERS",
+   ".github/CODEOWNERS",
+   "docs/CODEOWNERS"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r3-examples-sample-data": {
+  "paths": [
+   "examples/**/*.py",
+   "examples/**/*.md"
+  ],
+  "content": "open\\(|Path\\(|\\.json|\\.csv|\\.db|\\.sqlite|/",
+  "command": "",
+  "situation": false
+ },
+ "r3-examples-no-cleverness": {
+  "paths": [
+   "examples/**/*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r3-todo-no-in-release": {
+  "paths": [
+   "CHANGELOG.md"
+  ],
+  "content": "",
+  "command": "^git tag\\b|^gh release create|\\b(twine|hatch|flit|uv) (upload|publish)",
+  "situation": true
+ },
+ "r5-vuln-credit-reporter": {
+  "paths": [
+   "SECURITY.md",
+   "**/advisories/**"
+  ],
+  "content": "",
+  "command": "^gh api .*security-advisories",
+  "situation": true
+ },
+ "r3-docs-upgrade-guide": {
+  "paths": [
+   "stock/storage/**/*.py",
+   "stock/models.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r3-readable-intermediate-names": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r3-org-move-then-change": {
+  "paths": [],
+  "content": "",
+  "command": "^git commit",
+  "situation": true
+ },
+ "r5-deps-no-curl-install": {
+  "paths": [
+   ".github/workflows/*.yml",
+   ".github/workflows/*.yaml"
+  ],
+  "content": "(curl|wget)[^\\n]*\\|\\s*(sudo\\s+)?(sh|bash|zsh|python3?)\\b",
+  "command": "",
+  "situation": false
+ },
+ "r3-guide-cross-links": {
+  "paths": [
+   "docs/**/*.md"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r5-sec-cve-dev-only": {
+  "paths": [
+   "pyproject.toml",
+   "requirements*.txt",
+   "**/requirements*.txt"
+  ],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r4-warm-cache-cost": {
+  "paths": [
+   "**/bench*/**/*.py",
+   "**/*bench*.py"
+  ],
+  "content": "cache|lru_cache|memo",
+  "command": "",
+  "situation": false
+ },
+ "r5-path-overwrite-confirm": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "export|write_text|write_bytes|open\\([^)]*['\"]w",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-no-side-effect-lookups": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "def (get|find|lookup|list|count|has|is|show|search)\\w*\\(",
+  "command": "",
+  "situation": false
+ },
+ "r2-codeowners-update": {
+  "paths": [
+   "*/__init__.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r2-agent-branch-first": {
+  "paths": [],
+  "content": "",
+  "command": "^git commit",
+  "situation": false
+ },
+ "r4-fixture-generation": {
+  "paths": [
+   "tests/fixtures/**",
+   "tests/data/**"
+  ],
+  "content": "",
+  "command": "^git (add|commit)",
+  "situation": false
+ },
+ "r4-cold-path-ok": {
+  "paths": [
+   "stock/commands/init.py",
+   "stock/cli.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r5-pkg-readme-relative-links": {
+  "paths": [
+   "README.md"
+  ],
+  "content": "\\]\\((?!https?://|#|mailto:)",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-no-metaclasses": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "metaclass|__getattr__|__getattribute__",
+  "command": "",
+  "situation": false
+ },
+ "r4-bench-same-machine": {
+  "paths": [
+   "**/bench*/**"
+  ],
+  "content": "",
+  "command": "bench|asv |pytest-benchmark",
+  "situation": true
+ },
+ "r4-reread-under-lock": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)lock",
+  "command": "",
+  "situation": false
+ },
+ "r3-org-local-reasoning": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r5-sec-fork-secrets": {
+  "paths": [
+   ".github/workflows/*.yml",
+   ".github/workflows/*.yaml"
+  ],
+  "content": "pull_request|secrets\\.",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-plural-collections": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r4-no-copy-rows": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "\\.copy\\(\\)|dict\\(|\\{\\*\\*",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-no-long-parameter-lists": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "def \\w+\\(([^,)]*,){5,}",
+  "command": "",
+  "situation": false
+ },
+ "r4-backup-before-migrate": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)migrat|schema|alter table|user_version",
+  "command": "",
+  "situation": false
+ },
+ "r4-append-only-ledger": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)ledger|movement",
+  "command": "",
+  "situation": false
+ },
+ "r4-csv-dictreader-cost": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "DictReader",
+  "command": "",
+  "situation": false
+ },
+ "r2-tag-never-move": {
+  "paths": [],
+  "content": "",
+  "command": "^git (tag .*(-d|-f|--delete|--force)|push .*(--delete|--force|-f\\b|:refs/tags/|\\s:v?\\d))",
+  "situation": false
+ },
+ "r4-stream-rows": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "fetchall|readlines|json\\.load\\b|\\.read\\(\\)|list\\(",
+  "command": "",
+  "situation": false
+ },
+ "r3-readme-sections-order": {
+  "paths": [
+   "README.md"
+  ],
+  "content": "(?m)^#{1,3} ",
+  "command": "",
+  "situation": false
+ },
+ "r4-perf-label": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|edit)",
+  "situation": true
+ },
+ "r4-parity-test": {
+  "paths": [
+   "stock/storage/**/*.py",
+   "tests/**/*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r4-lock-tests-tmpdir": {
+  "paths": [
+   "tests/**/*.py"
+  ],
+  "content": "(?i)lock|thread|process|concurren",
+  "command": "",
+  "situation": false
+ },
+ "r5-pkg-metadata-urls": {
+  "paths": [
+   "pyproject.toml"
+  ],
+  "content": "\\[project\\.urls\\]|version",
+  "command": "^git tag\\b|^gh release create",
+  "situation": true
+ },
+ "r4-explain-query": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)\\b(select|insert|update|delete)\\b",
+  "command": "",
+  "situation": false
+ },
+ "r5-sec-release-secrets": {
+  "paths": [
+   ".github/workflows/*.yml",
+   ".github/workflows/*.yaml"
+  ],
+  "content": "(?i)pypi|id-token|environment|publish|secrets\\.",
+  "command": "",
+  "situation": false
+ },
+ "r4-compact-ledger": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)compact|opening.?balance",
+  "command": "",
+  "situation": false
+ },
+ "r3-org-no-dead-code": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r4-reproduce-scale": {
+  "paths": [],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r4-cache-invalidate-on-write": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)cache|movement",
+  "command": "",
+  "situation": false
+ },
+ "r5-deps-licence-no-gpl-vendor": {
+  "paths": [
+   "**/vendor/**",
+   "**/_vendor/**",
+   "**/third_party/**"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r2-triage-pr-labels-bot": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|edit).*--(add-|remove-)?label",
+  "situation": false
+ },
+ "r4-bench-regression-gate": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|edit)",
+  "situation": true
+ },
+ "r4-memory-ceiling": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "fetchall|readlines|json\\.load\\b|\\.read\\(\\)|list\\(",
+  "command": "",
+  "situation": true
+ },
+ "r4-perf-comment": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "sys\\.intern|__slots__|lru_cache|cache|memoryview|bisect|struct",
+  "command": "",
+  "situation": false
+ },
+ "r4-intern-skus": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)ledger|movement|load",
+  "command": "",
+  "situation": false
+ },
+ "r4-case-fold-once": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)casefold|\\.lower\\(|\\.upper\\(|sku",
+  "command": "",
+  "situation": false
+ },
+ "r4-stale-lock": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)lock|pid",
+  "command": "",
+  "situation": false
+ },
+ "r5-vuln-no-public-repro": {
+  "paths": [],
+  "content": "",
+  "command": "^gh (issue|pr) (create|comment|edit|review)|^gh api",
+  "situation": true
+ },
+ "r5-sec-wal-files": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)sqlite|chmod|backup|-wal|-shm",
+  "command": "",
+  "situation": false
+ },
+ "r2-backport-conflict-note": {
+  "paths": [],
+  "content": "",
+  "command": "^git cherry-pick|^gh pr create.*backport",
+  "situation": true
+ },
+ "r3-links-no-click-here": {
+  "paths": [
+   "**/*.md",
+   "**/*.rst"
+  ],
+  "content": "(?i)\\[(click )?(here|this link)\\]",
+  "command": "",
+  "situation": false
+ },
+ "r3-adr-folder": {
+  "paths": [
+   "docs/adr/**"
+  ],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r4-row-factory-cost": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "row_factory|sqlite3\\.Row",
+  "command": "",
+  "situation": false
+ },
+ "r5-sec-temp-secure": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "/tmp|tempfile|gettempdir|mktemp",
+  "command": "",
+  "situation": false
+ },
+ "r3-guide-version-notes": {
+  "paths": [
+   "docs/**/*.md"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r2-agent-keep-diff-focused": {
+  "paths": [],
+  "content": "",
+  "command": "^git (add|commit)",
+  "situation": true
+ },
+ "r4-lookup-get": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "\\bif\\b[^\\n]*\\bin\\b",
+  "command": "",
+  "situation": false
+ },
+ "r3-todo-limit-per-pr": {
+  "paths": [
+   "**/*"
+  ],
+  "content": "TODO",
+  "command": "^gh pr create",
+  "situation": false
+ },
+ "r5-deps-docs-tools-separate": {
+  "paths": [
+   "pyproject.toml",
+   "requirements*.txt"
+  ],
+  "content": "(?i)mkdocs|sphinx|docs",
+  "command": "^(uv|poetry|pdm) add|^pip install",
+  "situation": false
+ },
+ "r5-untrusted-regex-redos": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "re\\.(compile|match|search|fullmatch|findall|finditer|sub|split)\\(",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-no-premature-abstraction": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\bdef ",
+  "command": "",
+  "situation": false
+ },
+ "r4-gzip-exports": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)export|gzip|\\.gz",
+  "command": "",
+  "situation": false
+ },
+ "r3-docs-api-reference-scope": {
+  "paths": [
+   "docs/**",
+   "mkdocs.yml"
+  ],
+  "content": ":::|automodule|autoapi|(?i)reference",
+  "command": "",
+  "situation": false
+ },
+ "r2-stack-number-titles": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|edit)",
+  "situation": false
+ },
+ "r4-flush-before-rename": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "os\\.(replace|rename)|\\.rename\\(|tempfile|NamedTemporaryFile|\\.tmp",
+  "command": "",
+  "situation": false
+ },
+ "r4-no-global-state": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?m)^[A-Za-z_]\\w*\\s*(:[^=\\n]+)?=\\s*(\\[|\\{|dict\\(|list\\(|set\\()|^\\s*global\\s",
+  "command": "",
+  "situation": false
+ },
+ "r3-guide-present-tense": {
+  "paths": [
+   "**/*.md",
+   "docs/**"
+  ],
+  "content": "(?i)\\bwill\\b",
+  "command": "",
+  "situation": false
+ },
+ "r5-deps-audit-pr": {
+  "paths": [
+   "*.lock",
+   "uv.lock",
+   "poetry.lock",
+   "pdm.lock",
+   "requirements*.txt"
+  ],
+  "content": "",
+  "command": "^(uv|poetry|pdm) (lock|add|remove)",
+  "situation": false
+ },
+ "r5-deps-dev-group": {
+  "paths": [
+   "pyproject.toml",
+   "requirements*.txt"
+  ],
+  "content": "(?i)pytest|ruff|mypy|black|flake8|coverage|pre-commit|tox|nox|isort|pylint",
+  "command": "^(uv|poetry|pdm) add|^pip install",
+  "situation": false
+ },
+ "r3-adr-immutable": {
+  "paths": [
+   "**/adr/**",
+   "**/adrs/**",
+   "**/decisions/**"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r3-links-no-bare-urls": {
+  "paths": [
+   "**/*.md",
+   "docs/**"
+  ],
+  "content": "https?://",
+  "command": "",
+  "situation": false
+ },
+ "r2-stack-small-prs": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr create",
+  "situation": true
+ },
+ "r3-comments-no-commented-code": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?m)^\\s*#\\s*(def |class |import |from \\w|return\\b|if |for |while |print\\(|\\w+(\\.\\w+)*\\s*=[^=]|\\w+(\\.\\w+)*\\()",
+  "command": "",
+  "situation": false
+ },
+ "r3-md-heading-levels": {
+  "paths": [
+   "**/*.md"
+  ],
+  "content": "(?m)^#",
+  "command": "",
+  "situation": false
+ },
+ "r4-prefix-index": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)\\bLIKE\\b|startswith|prefix",
+  "command": "",
+  "situation": false
+ },
+ "r3-md-no-html": {
+  "paths": [
+   "**/*.md"
+  ],
+  "content": "<[a-zA-Z/][^>]*>",
+  "command": "",
+  "situation": false
+ },
+ "r4-in-list-cap": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)\\bIN\\s*\\(",
+  "command": "",
+  "situation": false
+ },
+ "r5-untrusted-int-parse": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)\\bint\\(|\\bfloat\\(|quantity|\\bqty\\b",
+  "command": "",
+  "situation": false
+ },
+ "r4-fetchmany": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "fetchall|fetchmany",
+  "command": "",
+  "situation": false
+ },
+ "r5-sec-no-update-check": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)pypi\\.org|latest.?version|update.?check|check_for_update|urllib|requests|httpx",
+  "command": "",
+  "situation": false
+ },
+ "r4-batch-writes": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "commit\\(|executemany|\\.execute\\(|(?i)BEGIN",
+  "command": "",
+  "situation": false
+ },
+ "r4-free-space-check": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)export|disk_usage",
+  "command": "",
+  "situation": false
+ },
+ "r5-pkg-package-data": {
+  "paths": [
+   "**/*.py",
+   "pyproject.toml",
+   "MANIFEST.in"
+  ],
+  "content": "__file__|\\.sql\\b|(?i)migration|importlib\\.resources|package.data",
+  "command": "",
+  "situation": false
+ },
+ "r3-org-small-modules": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?m)^(class|def) ",
+  "command": "",
+  "situation": false
+ },
+ "r5-secrets-gitignore-local": {
+  "paths": [
+   ".env*",
+   "**/*.pem",
+   "**/*.key",
+   "**/*credentials*",
+   "**/*secret*",
+   ".gitignore"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r4-sqlite-short-tx": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)BEGIN|commit\\(|isolation_level|sqlite3",
+  "command": "",
+  "situation": false
+ },
+ "r4-batch-size": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)executemany|bulk|batch|commit\\(",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-delete-wrappers": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "return \\w[\\w.]*\\(",
+  "command": "",
+  "situation": false
+ },
+ "r3-md-one-sentence-per-line": {
+  "paths": [
+   "**/*.md"
+  ],
+  "content": "[.!?] +[A-Z`]",
+  "command": "",
+  "situation": false
+ },
+ "r4-perf-revert": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)perf|cache|optimi|fast",
+  "command": "",
+  "situation": true
+ },
+ "r4-sqlite-busy": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "sqlite3\\.connect|busy_timeout|timeout=",
+  "command": "",
+  "situation": false
+ },
+ "r4-cursor-stable": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)\\bOFFSET\\b|\\bLIMIT\\b|cursor|page",
+  "command": "",
+  "situation": false
+ },
+ "r4-sqlite-checkpoint": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)checkpoint",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-blank-lines": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\n[ \\t]*\\n[ \\t]*\\n[ \\t]+\\S",
+  "command": "",
+  "situation": false
+ },
+ "r3-md-tables-small": {
+  "paths": [
+   "**/*.md"
+  ],
+  "content": "\\|.*\\|",
+  "command": "",
+  "situation": false
+ },
+ "r3-glossary-one-word-one-meaning": {
+  "paths": [
+   "**/*.md",
+   "**/*.py"
+  ],
+  "content": "(?i)\\bsites?\\b",
+  "command": "",
+  "situation": false
+ },
+ "r5-path-symlink-follow": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)export|open\\(|write_text|write_bytes|symlink|O_NOFOLLOW",
+  "command": "",
+  "situation": false
+ },
+ "r4-lock-wait-bounded": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)lock|acquire|busy_timeout",
+  "command": "",
+  "situation": false
+ },
+ "r4-deque-not-list-pop0": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\.pop\\(0\\)",
+  "command": "",
+  "situation": false
+ },
+ "r4-lock-reentrant-no": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)lock|acquire",
+  "command": "",
+  "situation": false
+ },
+ "r3-links-checker": {
+  "paths": [
+   "**/*.md",
+   "docs/**"
+  ],
+  "content": "https?://",
+  "command": "",
+  "situation": false
+ },
+ "r2-codeowners-no-catchall-person": {
+  "paths": [
+   "CODEOWNERS",
+   ".github/CODEOWNERS",
+   "docs/CODEOWNERS"
+  ],
+  "content": "(?m)^\\*\\s",
+  "command": "",
+  "situation": false
+ },
+ "r3-org-public-first": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?m)^def ",
+  "command": "",
+  "situation": false
+ },
+ "r5-vuln-triage-days": {
+  "paths": [
+   "SECURITY.md"
+  ],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r3-readme-example-runs": {
+  "paths": [
+   "README.md"
+  ],
+  "content": "```|\\$ |\\bstock ",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-trailing-commas": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "[\\[\\(\\{][ \\t]*\\n",
+  "command": "",
+  "situation": false
+ },
+ "r5-deps-no-runtime-add": {
+  "paths": [
+   "pyproject.toml",
+   "requirements*.txt",
+   "setup.py",
+   "setup.cfg"
+  ],
+  "content": "",
+  "command": "^(uv|poetry|pdm) add|^pip install",
+  "situation": false
+ },
+ "r3-docs-no-internal-jargon": {
+  "paths": [
+   "**/*.md",
+   "docs/**"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r3-org-no-nested-functions": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\n[ \\t]+def ",
+  "command": "",
+  "situation": false
+ },
+ "r3-noqa-reason": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "noqa",
+  "command": "",
+  "situation": false
+ },
+ "r3-docs-preview-link": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|edit)",
+  "situation": false
+ },
+ "r4-normalise-on-write": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)sku|location|INSERT|UPDATE",
+  "command": "",
+  "situation": false
+ },
+ "r5-sql-executescript-static": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "executescript",
+  "command": "",
+  "situation": false
+ },
+ "r2-tag-from-main": {
+  "paths": [],
+  "content": "",
+  "command": "^git tag|^git push.*--tags|^gh release create",
+  "situation": false
+ },
+ "r5-secrets-no-real-skus": {
+  "paths": [
+   "tests/**",
+   "**/fixtures/**",
+   "**/*.json",
+   "**/*.csv",
+   "docs/**",
+   "README.md"
+  ],
+  "content": "(?i)sku",
+  "command": "",
+  "situation": false
+ },
+ "r3-comments-neutral-tone": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "#",
+  "command": "",
+  "situation": false
+ },
+ "r3-readme-contributing-pointer": {
+  "paths": [
+   "README.md"
+  ],
+  "content": "(?i)contribut|pull request|\\bfork\\b",
+  "command": "",
+  "situation": false
+ },
+ "r2-backport-owner": {
+  "paths": [],
+  "content": "",
+  "command": "git cherry-pick",
+  "situation": true
+ },
+ "r5-sec-least-data": {
+  "paths": [
+   "stock/models.py",
+   "stock/storage/**/*.py"
+  ],
+  "content": "(?i)name|address|buyer|customer|email|phone|column|field",
+  "command": "",
+  "situation": false
+ },
+ "r3-links-anchors-stable": {
+  "paths": [
+   "**/*.md"
+  ],
+  "content": "(?m)^#{1,6} ",
+  "command": "",
+  "situation": false
+ },
+ "r4-avoid-repeated-parse": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)parse|split\\(|csv\\.|reader|row|int\\(|float\\(|Decimal\\(",
+  "command": "",
+  "situation": false
+ },
+ "r5-pkg-requires-python": {
+  "paths": [
+   "pyproject.toml",
+   ".github/workflows/*.yml",
+   ".github/workflows/*.yaml"
+  ],
+  "content": "requires-python|python-version",
+  "command": "",
+  "situation": false
+ },
+ "r5-secrets-examples-placeholder": {
+  "paths": [
+   "**/*.md",
+   "docs/**",
+   "examples/**"
+  ],
+  "content": "(?i)token|api.?key|secret|password|credential",
+  "command": "",
+  "situation": false
+ },
+ "r4-disk-full": {
+  "paths": [
+   "stock/storage/**/*.py"
+  ],
+  "content": "open\\(|write|replace|rename|dump|flush|fsync",
+  "command": "",
+  "situation": false
+ },
+ "r2-contrib-first-pr-welcome": {
+  "paths": [],
+  "content": "",
+  "command": "gh pr (review|comment)",
+  "situation": true
+ },
+ "r5-untrusted-no-pickle": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "pickle|marshal",
+  "command": "",
+  "situation": false
+ },
+ "r4-bulk-api": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "def (add|remove|update|move)\\w*\\(",
+  "command": "",
+  "situation": false
+ },
+ "r4-decimal-parse-once": {
+  "paths": [
+   "stock/storage/**/*.py",
+   "stock/models.py",
+   "stock/commands/*.py"
+  ],
+  "content": "Decimal\\(|float\\(|int\\(|quantity|cost",
+  "command": "",
+  "situation": false
+ },
+ "r3-docs-build-warnings": {
+  "paths": [
+   "docs/**",
+   "mkdocs.yml"
+  ],
+  "content": "",
+  "command": "mkdocs build|sphinx-build|make docs",
+  "situation": false
+ },
+ "r3-examples-realistic-names": {
+  "paths": [
+   "**/*.md",
+   "examples/**",
+   "tests/**/*.py",
+   "stock/**/*.py"
+  ],
+  "content": "\\b(foo|bar|baz|qux)\\b",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-no-chained-calls": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\)\\.\\w+\\(.*\\)\\.\\w+\\(.*\\)\\.\\w+\\(",
+  "command": "",
+  "situation": false
+ },
+ "r4-count-cheap": {
+  "paths": [
+   "stock/commands/**/*.py",
+   "stock/storage/**/*.py",
+   "stock/cli.py"
+  ],
+  "content": "(?i)count|len\\(",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-counts-suffix": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)count|\\bnum_\\w+|\\bn_\\w+|total|quantity|qty",
+  "command": "",
+  "situation": false
+ },
+ "r4-bench-in-ci": {
+  "paths": [
+   ".github/workflows/*.yml",
+   ".github/workflows/*.yaml"
+  ],
+  "content": "(?i)bench",
+  "command": "",
+  "situation": false
+ },
+ "r3-guide-short-paragraphs": {
+  "paths": [
+   "docs/**/*.md",
+   "README.md"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r3-docs-dev-architecture": {
+  "paths": [
+   "docs/dev/architecture.md"
+  ],
+  "content": "",
+  "command": "^git (rm|mv)",
+  "situation": true
+ },
+ "r3-readable-no-shadowing": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\b(id|list|type|input|dict|str|set|filter|map|format|hash|sum|min|max|object|range|vars|iter|next|all|any|len|bytes)\\s*(=(?!=)|:\\s*\\w|\\s+in\\b)",
+  "command": "",
+  "situation": false
+ },
+ "r3-guide-no-future-features": {
+  "paths": [
+   "README.md",
+   "docs/**/*.md"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r4-no-quadratic-scans": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?s)for .*\\n\\s+for |for .* in .* for .* in ",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-review-read-aloud": {
+  "paths": [],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r4-no-c-ext": {
+  "paths": [
+   "setup.py",
+   "setup.cfg",
+   "pyproject.toml",
+   "**/*.pyx",
+   "**/*.pxd",
+   "**/*.c"
+  ],
+  "content": "(?i)ext_modules|Extension|cython|cffi|pybind|mypyc|cdef|#include",
+  "command": "",
+  "situation": false
+ },
+ "r2-hooks-fast": {
+  "paths": [
+   ".pre-commit-config.yaml"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r4-ledger-growth": {
+  "paths": [
+   "stock/storage/**/*.py",
+   "stock/commands/*.py"
+  ],
+  "content": "(?i)ledger|movement|history|for .* in |read|load",
+  "command": "",
+  "situation": false
+ },
+ "r5-pkg-check-wheel": {
+  "paths": [
+   "pyproject.toml",
+   "stock/__init__.py"
+  ],
+  "content": "(?i)version",
+  "command": "git tag|gh release|twine upload|python -m build|make (dist|release)",
+  "situation": false
+ },
+ "r4-materialise-once": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "list\\(|yield|iter\\(|tuple\\(",
+  "command": "",
+  "situation": false
+ },
+ "r4-migration-scale": {
+  "paths": [
+   "**/migrations/**",
+   "stock/storage/**/*.py"
+  ],
+  "content": "(?i)migrat|ALTER TABLE|schema_version|user_version",
+  "command": "",
+  "situation": false
+ },
+ "r4-avoid-attribute-chains": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "for .* in ",
+  "command": "",
+  "situation": false
+ },
+ "r5-deps-audit-weekly": {
+  "paths": [
+   ".github/workflows/*.yml",
+   ".github/workflows/*.yaml"
+  ],
+  "content": "pip-audit",
+  "command": "pip-audit",
+  "situation": false
+ },
+ "r5-perms-no-chmod-777": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "chmod|0o?777|0o?666|umask|mode=|S_IW(OTH|GRP)",
+  "command": "chmod",
+  "situation": false
+ },
+ "r5-secrets-no-status": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)secret|token|password|api.?key|credential",
+  "command": "",
+  "situation": false
+ },
+ "r4-context-managers": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "open\\(|connect\\(|Lock\\(|acquire\\(|NamedTemporaryFile|mkstemp|TemporaryDirectory|mkdtemp",
+  "command": "",
+  "situation": false
+ },
+ "r5-secrets-scan-before-push": {
+  "paths": [],
+  "content": "",
+  "command": "^git push",
+  "situation": false
+ },
+ "r4-csv-append-only": {
+  "paths": [
+   "stock/storage/**/*.py"
+  ],
+  "content": "(?i)csv|movement|on.?hand|compact",
+  "command": "",
+  "situation": false
+ },
+ "r2-agent-no-push": {
+  "paths": [],
+  "content": "",
+  "command": "git push|gh pr (create|merge)|git merge",
+  "situation": false
+ },
+ "r4-bench-results-file": {
+  "paths": [
+   "bench/**"
+  ],
+  "content": "",
+  "command": "git (add|commit).*bench",
+  "situation": false
+ },
+ "r3-readable-ternary-simple": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\S.*\\bif\\b.+\\belse\\b",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-no-dynamic-attrs": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "setattr\\(",
+  "command": "",
+  "situation": false
+ },
+ "r3-md-file-names": {
+  "paths": [
+   "**/*.md"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r3-comments-units": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)weight|gram|kg|kilo|cost|price|cents|seconds|timeout|size|length|\\bms\\b|bytes|quantity",
+  "command": "",
+  "situation": false
+ },
+ "r3-glossary-alphabetical": {
+  "paths": [
+   "**/glossary*.md"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r5-untrusted-validate-rows": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)import|csv|reader|json\\.load|row",
+  "command": "",
+  "situation": false
+ },
+ "r5-pkg-no-data-outside": {
+  "paths": [
+   "pyproject.toml",
+   "MANIFEST.in",
+   "setup.cfg",
+   "setup.py"
+  ],
+  "content": "(?i)package[-_]data|data[-_]files|include|force-include|shared-data",
+  "command": "",
+  "situation": false
+ },
+ "r5-untrusted-unicode-normalise": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)name|sku|normali[sz]e|unicodedata",
+  "command": "",
+  "situation": false
+ },
+ "r5-pkg-source-date": {
+  "paths": [
+   ".github/workflows/*.yml",
+   ".github/workflows/*.yaml",
+   "Makefile"
+  ],
+  "content": "(?i)SOURCE_DATE_EPOCH|release|build|sdist|wheel",
+  "command": "",
+  "situation": false
+ },
+ "r3-md-lists-parallel": {
+  "paths": [
+   "**/*.md"
+  ],
+  "content": "(?m)^\\s*([-*+]|\\d+\\.)\\s",
+  "command": "",
+  "situation": false
+ },
+ "r4-no-sleep-in-tests": {
+  "paths": [
+   "tests/**/*.py"
+  ],
+  "content": "sleep",
+  "command": "",
+  "situation": false
+ },
+ "r5-untrusted-csv-formula": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)csv|export|writerow",
+  "command": "",
+  "situation": false
+ },
+ "r3-comments-no-dates": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "#.*(?i:\\b(added|since|as of|updated|changed)\\b|\\b(january|february|march|april|may|june|july|august|september|october|november|december)\\b|\\b20\\d\\d\\b)",
+  "command": "",
+  "situation": false
+ },
+ "r4-string-join": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\+=",
+  "command": "",
+  "situation": false
+ },
+ "r5-pkg-entry-point": {
+  "paths": [
+   "pyproject.toml",
+   "setup.py",
+   "setup.cfg"
+  ],
+  "content": "(?i)scripts|entry[-_]points|console_scripts",
+  "command": "",
+  "situation": false
+ },
+ "r4-prepared-reuse": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)execute|SELECT|INSERT|UPDATE|DELETE",
+  "command": "",
+  "situation": false
+ },
+ "r5-pkg-main-module": {
+  "paths": [
+   "stock/__main__.py",
+   "stock/cli.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r5-deps-major-bump-issue": {
+  "paths": [
+   "requirements*.txt",
+   "pyproject.toml",
+   ".pre-commit-config.yaml",
+   "*.lock"
+  ],
+  "content": "(?i)ruff|black|mypy|flake8|pylint|isort|pytest|rev:|==|>=",
+  "command": "pip install -U|pip install --upgrade|uv lock --upgrade|pre-commit autoupdate|poetry update",
+  "situation": false
+ },
+ "r3-examples-ci-run": {
+  "paths": [
+   "examples/**"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r3-org-module-header": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)license|copyright|SPDX",
+  "command": "",
+  "situation": false
+ },
+ "r4-sqlite-sync-normal": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)sqlite|PRAGMA|synchronous|journal_mode",
+  "command": "",
+  "situation": false
+ },
+ "r4-avoid-regex-simple": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\bre\\.|import re\\b",
+  "command": "",
+  "situation": false
+ },
+ "r3-md-code-spans": {
+  "paths": [
+   "**/*.md"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-order-parameters": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "^\\s*def \\w+\\(",
+  "command": "",
+  "situation": false
+ },
+ "r5-deps-provenance": {
+  "paths": [
+   "pyproject.toml",
+   "setup.py",
+   "setup.cfg",
+   "**/requirements*.txt"
+  ],
+  "content": "",
+  "command": "^(pip3?|uv|poetry|pipenv|pdm)\\b.*\\b(install|add)\\b",
+  "situation": false
+ },
+ "r4-plugin-discovery-lazy": {
+  "paths": [
+   "stock/**/*.py",
+   "pyproject.toml"
+  ],
+  "content": "entry_points|importlib\\.metadata|entry-points",
+  "command": "",
+  "situation": false
+ },
+ "r5-secrets-rotate-leak": {
+  "paths": [],
+  "content": "",
+  "command": "^git (push .*(-f|--force)|filter-branch|filter-repo)|^git (commit|push)",
+  "situation": true
+ },
+ "r3-glossary-avoid-synonyms": {
+  "paths": [
+   "**/*.md",
+   "docs/**"
+  ],
+  "content": "(?i)\\b(products?|articles?)\\b",
+  "command": "",
+  "situation": false
+ },
+ "r5-pkg-add-python": {
+  "paths": [
+   "pyproject.toml",
+   "setup.py",
+   "setup.cfg"
+  ],
+  "content": "Programming Language :: Python :: 3",
+  "command": "",
+  "situation": false
+ },
+ "r5-pkg-no-namespace": {
+  "paths": [
+   "pyproject.toml",
+   "setup.py",
+   "setup.cfg"
+  ],
+  "content": "(?i)namespace",
+  "command": "\\b(rm|git rm|mv|git mv)\\b.*__init__\\.py",
+  "situation": false
+ },
+ "r4-compute-outside-lock": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)lock",
+  "command": "",
+  "situation": false
+ },
+ "r4-durability-test": {
+  "paths": [
+   "stock/storage/**/*.py",
+   "stock/commands/**/*.py"
+  ],
+  "content": "open\\([^)]*['\"][wax]|write_text|write_bytes|json\\.dump\\(|os\\.(replace|rename)|fsync",
+  "command": "",
+  "situation": true
+ },
+ "r3-org-group-by-feature": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?m)^(class|def) ",
+  "command": "",
+  "situation": true
+ },
+ "r3-readable-vertical-alignment": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\S {2,}[=:]|[=:] {2,}\\S",
+  "command": "",
+  "situation": false
+ },
+ "r4-gc-tuning-no": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\bgc\\.|import gc\\b",
+  "command": "",
+  "situation": false
+ },
+ "r3-examples-folder": {
+  "paths": [
+   "examples/**"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r5-deps-lock-no-hand-edit": {
+  "paths": [
+   "**/*.lock",
+   "**/requirements*.lock"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r3-diagrams-caption": {
+  "paths": [
+   "**/*.md",
+   "docs/**"
+  ],
+  "content": "```(mermaid|plantuml|dot)|!\\[|\\.(svg|png)\\b",
+  "command": "",
+  "situation": false
+ },
+ "r4-atomic-write": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "open\\([^)]*['\"][wax]b?\\+?['\"]|write_text|write_bytes|json\\.dump\\(",
+  "command": "",
+  "situation": false
+ },
+ "r2-stack-no-deep": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr create.*--base|^gt |^git town",
+  "situation": true
+ },
+ "r4-durability-docs": {
+  "paths": [
+   "stock/storage/**/*.py",
+   "docs/storage.md"
+  ],
+  "content": "fsync|os\\.(replace|rename)|(?i)durab",
+  "command": "",
+  "situation": true
+ },
+ "r3-org-no-god-class": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?m)^\\s*class ",
+  "command": "",
+  "situation": false
+ },
+ "r4-fault-injection": {
+  "paths": [
+   "tests/**/*.py"
+  ],
+  "content": "(?i)crash|fsync|rename|fault|kill",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-avoid-generic-names": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\b(data|info|obj|tmp)\\b\\s*[=:,)]",
+  "command": "",
+  "situation": false
+ },
+ "r5-untrusted-files-data": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "open\\(|json\\.loads?\\(|read_text\\(|read_bytes\\(|csv\\.|(?i)import",
+  "command": "",
+  "situation": false
+ },
+ "r5-sec-rm-guard": {
+  "paths": [
+   "stock/commands/**/*.py",
+   "stock/cli.py"
+  ],
+  "content": "(?i)purge|remove|delete|unlink|rmtree|clear|drop",
+  "command": "",
+  "situation": false
+ },
+ "r4-sorted-once": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "sorted\\(|\\.sort\\(",
+  "command": "",
+  "situation": false
+ },
+ "r4-same-dir-temp": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "tempfile|mkstemp|NamedTemporaryFile|gettempdir|/tmp",
+  "command": "",
+  "situation": false
+ },
+ "r4-aggregate-in-sql": {
+  "paths": [
+   "stock/storage/**/*.py"
+  ],
+  "content": "(?i)sqlite|select|fetchall|group by|sum\\(",
+  "command": "",
+  "situation": false
+ },
+ "r4-short-circuit": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(any|all|len|bool)\\(\\[|\\[[^\\]]* for [^\\]]* in |for \\w+ in ",
+  "command": "",
+  "situation": false
+ },
+ "r5-pkg-version-single": {
+  "paths": [
+   "**/*.py",
+   "pyproject.toml",
+   "setup.cfg"
+  ],
+  "content": "__version__|(?m)^\\s*version\\s*=",
+  "command": "",
+  "situation": false
+ },
+ "r3-adr-template": {
+  "paths": [
+   "**/adr/**/*.md",
+   "**/decisions/**/*.md"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r5-vuln-cve-request": {
+  "paths": [],
+  "content": "",
+  "command": "security-advisories|^gh pr create",
+  "situation": true
+ },
+ "r3-readable-one-job": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "^\\s*def ",
+  "command": "",
+  "situation": false
+ },
+ "r5-sql-like-escape": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)\\bLIKE\\b",
+  "command": "",
+  "situation": false
+ },
+ "r4-rename-atomic-note": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "os\\.(rename|replace)|\\.rename\\(|\\.replace\\(|tempfile|mkstemp",
+  "command": "",
+  "situation": false
+ },
+ "r3-comments-no-ticket-only": {
+  "paths": [
+   "**/*"
+  ],
+  "content": "(?m)(#|//|<!--)\\s*(\\(?#\\d+\\)?|[A-Z][A-Z0-9]+-\\d+|https?://\\S+/issues/\\d+)\\s*(-->)?\\s*$",
+  "command": "",
+  "situation": false
+ },
+ "r3-noqa-narrow": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "#\\s*noqa(?!\\s*:)|type:\\s*ignore(?!\\[)|disable=all",
+  "command": "",
+  "situation": false
+ },
+ "r4-tracemalloc": {
+  "paths": [],
+  "content": "",
+  "command": "tracemalloc|memray|memory_profiler|guppy",
+  "situation": true
+ },
+ "r3-todo-specific": {
+  "paths": [
+   "**/*"
+  ],
+  "content": "TODO|FIXME|XXX",
+  "command": "",
+  "situation": false
+ },
+ "r3-docs-owner-review": {
+  "paths": [
+   "docs/guide/**"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r5-path-no-dotdot": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)output|out_?path|dest|export|filename",
+  "command": "",
+  "situation": false
+ },
+ "r5-untrusted-regex-anchor": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)sku.*re\\.|re\\..*sku|sku_?(re|pattern|regex)",
+  "command": "",
+  "situation": false
+ },
+ "r4-prefer-builtins": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "for .+ in .+:",
+  "command": "",
+  "situation": false
+ },
+ "r5-vuln-private-report": {
+  "paths": [],
+  "content": "",
+  "command": "^gh issue create",
+  "situation": true
+ },
+ "r3-org-no-reformat-unrelated": {
+  "paths": [],
+  "content": "",
+  "command": "^(black|ruff format|isort|autopep8|yapf)\\b|pre-commit run --all",
+  "situation": true
+ },
+ "r4-movement-size": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)movement|ledger",
+  "command": "",
+  "situation": false
+ },
+ "r3-org-no-wildcard-modules": {
+  "paths": [
+   "**/__init__.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-no-magic-indices": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\w\\[-?\\d+\\]",
+  "command": "",
+  "situation": false
+ },
+ "r4-cprofile-entry": {
+  "paths": [],
+  "content": "",
+  "command": "cProfile|py-spy|pyinstrument|\\btime\\b.*stock",
+  "situation": true
+ },
+ "r4-export-order": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)export",
+  "command": "",
+  "situation": false
+ },
+ "r3-guide-task-oriented": {
+  "paths": [
+   "docs/guide/**"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r5-sec-hash-compare": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)(hash|digest|checksum|token|secret|signature)\\w*\\s*[!=]=|[!=]=\\s*\\w*(hash|digest|checksum|token|secret|signature)",
+  "command": "",
+  "situation": false
+ },
+ "r5-deps-lock-diff-review": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (review|merge|diff)|^git diff.*\\.lock",
+  "situation": true
+ },
+ "r5-sec-review-boundary": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "open\\(|read_text\\(|read_bytes\\(|json\\.loads?\\(|Path\\(",
+  "command": "^gh pr create",
+  "situation": false
+ },
+ "r5-sec-db-integrity": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)doctor|integrity_check|repair",
+  "command": "",
+  "situation": false
+ },
+ "r4-bulk-move": {
+  "paths": [
+   "stock/commands/**/*.py",
+   "stock/cli.py"
+  ],
+  "content": "(?i)move|batch|ledger",
+  "command": "(stock move.*){2,}|for .* in .*stock move",
+  "situation": false
+ },
+ "r4-writes-declare": {
+  "paths": [
+   "stock/commands/**/*.py",
+   "stock/cli.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r5-pkg-version-tag-format": {
+  "paths": [],
+  "content": "",
+  "command": "^git tag|^gh release create|^git push.*--tags",
+  "situation": false
+ },
+ "r4-lock-module-one": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "fcntl|msvcrt|flock|lockf",
+  "command": "",
+  "situation": false
+ },
+ "r4-no-work-at-load": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?m)^(?!def |class |\\s|#|@).*(open\\(|read_text\\(|read_bytes\\(|re\\.compile\\(|json\\.loads?\\(|urlopen\\(|requests\\.)",
+  "command": "",
+  "situation": false
+ },
+ "r5-deps-renovate-group": {
+  "paths": [
+   "renovate.json",
+   "renovate.json5",
+   ".github/renovate.json",
+   ".github/dependabot.yml"
+  ],
+  "content": "",
+  "command": "^gh pr merge",
+  "situation": false
+ },
+ "r5-sec-lock-stale": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)lock.*(unlink|remove|rmtree)|(unlink|remove|rmtree).*lock",
+  "command": "\\brm\\b.*\\.lock\\b|\\brm\\b.*lock",
+  "situation": false
+ },
+ "r5-deps-stdlib-new-module": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?m)^\\s*(import|from)\\s+\\w+",
+  "command": "",
+  "situation": false
+ },
+ "r4-cleanup-temp": {
+  "paths": [
+   "stock/storage/**/*.py",
+   "stock/**/*.py"
+  ],
+  "content": "\\.tmp|tempfile|mkstemp|os\\.replace|\\.rename\\(",
+  "command": "",
+  "situation": false
+ },
+ "r4-buffered-writes": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)export|buffering|\\.flush\\(|\\.write\\(",
+  "command": "",
+  "situation": false
+ },
+ "r4-fixture-seeded": {
+  "paths": [
+   "tests/**/*.py",
+   "benchmarks/**/*.py",
+   "**/conftest.py"
+  ],
+  "content": "\\brandom\\b|[Ff]aker|fixture|seed",
+  "command": "",
+  "situation": false
+ },
+ "r5-deps-licence-allow": {
+  "paths": [
+   "pyproject.toml",
+   "requirements*.txt",
+   ".pre-commit-config.yaml"
+  ],
+  "content": "",
+  "command": "(pip|uv|poetry)\\s+(install|add)",
+  "situation": false
+ },
+ "r3-org-commands-thin": {
+  "paths": [
+   "stock/commands/*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r3-comments-why-not-what": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "#",
+  "command": "",
+  "situation": false
+ },
+ "r3-links-relative": {
+  "paths": [
+   "docs/**/*.md"
+  ],
+  "content": "\\]\\((https?://|/)",
+  "command": "",
+  "situation": false
+ },
+ "r4-csv-writer-stream": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\bcsv\\.|\\.join\\(",
+  "command": "",
+  "situation": false
+ },
+ "r5-untrusted-yaml-none": {
+  "paths": [
+   "**/*.py",
+   "pyproject.toml",
+   "requirements*.txt"
+  ],
+  "content": "(?i)yaml",
+  "command": "(pip|uv|poetry)\\s+(install|add).*yaml",
+  "situation": false
+ },
+ "r3-docs-inclusive-terms": {
+  "paths": [
+   "**/*.md",
+   "**/*.py"
+  ],
+  "content": "(?i)white-?list|black-?list",
+  "command": "",
+  "situation": false
+ },
+ "r3-org-private-prefix": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?<!\\w)__[A-Za-z]\\w*?[A-Za-z0-9](?=\\W|$)",
+  "command": "",
+  "situation": false
+ },
+ "r4-bulk-same-rules": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)bulk|batch|_many\\b|many\\(",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-match-statements": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?m)^\\s*(match\\s+.+:|elif\\b)",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-units-in-names": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)weight|days|lead|timeout|delay|size|duration|age",
+  "command": "",
+  "situation": false
+ },
+ "r5-deps-cache-key": {
+  "paths": [
+   ".github/workflows/*.yml",
+   ".github/workflows/*.yaml"
+  ],
+  "content": "cache",
+  "command": "",
+  "situation": false
+ },
+ "r4-decimal-cost": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)cost|price|Decimal|float\\(",
+  "command": "",
+  "situation": false
+ },
+ "r4-regex-compile": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\bre\\.",
+  "command": "",
+  "situation": false
+ },
+ "r2-agent-no-review-own": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (review|merge)",
+  "situation": true
+ },
+ "r2-backport-cherry-pick": {
+  "paths": [],
+  "content": "",
+  "command": "^git cherry-pick",
+  "situation": true
+ },
+ "r3-readable-no-catchall-params": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\*\\*?[A-Za-z_]\\w*",
+  "command": "",
+  "situation": false
+ },
+ "r4-lock-per-backend": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)lock|fcntl|msvcrt",
+  "command": "",
+  "situation": false
+ },
+ "r5-pkg-name-reserved": {
+  "paths": [
+   "pyproject.toml",
+   "stock/cli.py"
+  ],
+  "content": "",
+  "command": "^git mv\\s+stock\\b",
+  "situation": false
+ },
+ "r3-guide-screenshots-none": {
+  "paths": [
+   "docs/**/*.md",
+   "README.md"
+  ],
+  "content": "!\\[|\\.(png|jpe?g|gif|svg|webp)\\b",
+  "command": "",
+  "situation": false
+ },
+ "r5-sec-no-telemetry": {
+  "paths": [
+   "**/*.py",
+   "pyproject.toml",
+   "requirements*.txt"
+  ],
+  "content": "(?i)telemetry|sentry|analytics|tracking|posthog|crash.?report|bugsnag|rollbar",
+  "command": "",
+  "situation": false
+ },
+ "r4-comprehension-over-map": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\bmap\\(|\\bfilter\\(|\\.append\\(",
+  "command": "",
+  "situation": false
+ },
+ "r4-fifo-layers": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)fifo|layer|deque|pop\\(0\\)",
+  "command": "",
+  "situation": false
+ },
+ "r4-single-writer": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)\\.write\\(|open\\(|dump\\(|os\\.replace|\\.rename\\(",
+  "command": "",
+  "situation": false
+ },
+ "r4-warm-vs-cold": {
+  "paths": [
+   "stock/cli.py",
+   "stock/__init__.py",
+   "stock/config.py"
+  ],
+  "content": "import",
+  "command": "hyperfine|importtime|timeit",
+  "situation": true
+ },
+ "r3-glossary-new-term": {
+  "paths": [],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r5-path-tempfile-module": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "/tmp|\\.tmp\\b|tempfile",
+  "command": "",
+  "situation": false
+ },
+ "r3-guide-prerequisites": {
+  "paths": [
+   "docs/guides/**/*.md",
+   "docs/guide/**/*.md"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r4-avoid-pandas": {
+  "paths": [
+   "**/*.py",
+   "pyproject.toml",
+   "requirements*.txt"
+  ],
+  "content": "pandas|numpy",
+  "command": "(pip|uv|poetry)\\s+(install|add).*(pandas|numpy)",
+  "situation": false
+ },
+ "r4-profile-flamegraph": {
+  "paths": [],
+  "content": "",
+  "command": "py-spy|cProfile|profile",
+  "situation": true
+ },
+ "r4-concurrency-test": {
+  "paths": [
+   "stock/storage/**/*.py",
+   "tests/**/*.py"
+  ],
+  "content": "(?i)lock|concurren|multiprocess|subprocess",
+  "command": "",
+  "situation": true
+ },
+ "r5-secrets-no-url-tokens": {
+  "paths": [
+   "docs/**/*.md",
+   "README.md",
+   "examples/**"
+  ],
+  "content": "(?i)[?&](token|api_?key|access_token|secret|key)=|https?://[^\\s/@]+:[^\\s/@]+@",
+  "command": "",
+  "situation": false
+ },
+ "r5-pkg-testpypi-first": {
+  "paths": [],
+  "content": "",
+  "command": "twine upload|uv publish|flit publish|poetry publish|hatch publish",
+  "situation": false
+ },
+ "r3-docs-build-local": {
+  "paths": [],
+  "content": "",
+  "command": "^git push",
+  "situation": true
+ },
+ "r3-readme-no-roadmap": {
+  "paths": [
+   "README.md"
+  ],
+  "content": "(?i)roadmap|planned|coming soon|future|todo",
+  "command": "",
+  "situation": false
+ },
+ "r5-sec-backup-perms": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)backup|chmod|0o6",
+  "command": "",
+  "situation": false
+ },
+ "r4-timeit-micro": {
+  "paths": [
+   "tests/**/*.py",
+   "benchmarks/**/*.py"
+  ],
+  "content": "timeit|perf_counter",
+  "command": "timeit",
+  "situation": false
+ },
+ "r4-lazy-backend": {
+  "paths": [
+   "stock/cli.py",
+   "stock/commands/*.py",
+   "stock/config.py",
+   "stock/storage/**/*.py"
+  ],
+  "content": "(?i)backend|store|connect",
+  "command": "",
+  "situation": false
+ },
+ "r3-guide-expected-result": {
+  "paths": [
+   "docs/guides/**/*.md",
+   "docs/guide/**/*.md"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r3-glossary-sku-term": {
+  "paths": [
+   "**/*.md"
+  ],
+  "content": "\\b(sku|Sku)s?\\b",
+  "command": "",
+  "situation": false
+ },
+ "r4-lru-cache-pure": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "lru_cache|functools\\.cache|@cache\\b",
+  "command": "",
+  "situation": false
+ },
+ "r5-path-windows-reserved": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)export|file_?name|Path\\(",
+  "command": "",
+  "situation": false
+ },
+ "r5-path-export-inside": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)export|output_?dir|out_?dir|\\.resolve\\(",
+  "command": "",
+  "situation": false
+ },
+ "r5-sec-threat-note": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|edit)",
+  "situation": true
+ },
+ "r3-adr-when": {
+  "paths": [
+   "stock/storage/**/*.py",
+   "stock/models.py",
+   "stock/__init__.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r3-adr-rejected-kept": {
+  "paths": [
+   "docs/adr/**"
+  ],
+  "content": "",
+  "command": "\\b(git rm|rm)\\b.*adr",
+  "situation": false
+ },
+ "r4-set-membership": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\bnot\\s+in\\b|\\bif\\s+.+\\s+in\\s+",
+  "command": "",
+  "situation": false
+ },
+ "r4-python-version-perf": {
+  "paths": [
+   "benchmarks/**"
+  ],
+  "content": "",
+  "command": "bench|pyperf|asv|timeit",
+  "situation": true
+ },
+ "r5-pkg-reproducible": {
+  "paths": [
+   "pyproject.toml"
+  ],
+  "content": "build-system|build-backend|SOURCE_DATE_EPOCH",
+  "command": "python -m build|uv build|hatch build",
+  "situation": false
+ },
+ "r5-pkg-pyproject-only": {
+  "paths": [
+   "setup.py",
+   "setup.cfg"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r4-lock-short": {
+  "paths": [
+   "stock/storage/**/*.py"
+  ],
+  "content": "(?i)lock",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-enum-over-strings": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)kind|status|type|==\\s*['\"]",
+  "command": "",
+  "situation": false
+ },
+ "r5-pkg-sdist-contents": {
+  "paths": [
+   "pyproject.toml",
+   "MANIFEST.in"
+  ],
+  "content": "(?i)sdist|include|exclude|packages",
+  "command": "",
+  "situation": false
+ },
+ "r3-guide-troubleshooting-page": {
+  "paths": [
+   "docs/**/*.md",
+   "README.md"
+  ],
+  "content": "(?i)corrupt|recover|repair|restore",
+  "command": "",
+  "situation": false
+ },
+ "r3-guide-faq-limit": {
+  "paths": [
+   "**/faq*.md",
+   "**/FAQ*.md",
+   "docs/**/faq*.md"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r4-readers-no-lock": {
+  "paths": [
+   "stock/storage/**/*.py"
+  ],
+  "content": "(?i)lock|sqlite",
+  "command": "",
+  "situation": false
+ },
+ "r5-pkg-sign-attest": {
+  "paths": [
+   ".github/workflows/*.yml",
+   ".github/workflows/*.yaml"
+  ],
+  "content": "(?i)attest|provenance",
+  "command": "",
+  "situation": false
+ },
+ "r2-worktree-parallel": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr checkout|^git (checkout|switch|stash)\\b",
+  "situation": false
+ },
+ "r3-todo-format": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "TODO",
+  "command": "",
+  "situation": false
+ },
+ "r5-sec-checksum-exports": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)backup|export|dump",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-no-type-in-name": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\b[a-z]\\w*_(list|dict|set|tuple|array|map)\\b",
+  "command": "",
+  "situation": false
+ },
+ "r2-backport-same-title": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr create.*(?i)(backport|\\[\\d+\\.\\d+\\])",
+  "situation": true
+ },
+ "r3-docs-page-rename": {
+  "paths": [
+   "docs/**",
+   "mkdocs.yml"
+  ],
+  "content": "",
+  "command": "^(git mv|mv) .*docs/",
+  "situation": true
+ },
+ "r4-on-hand-rebuild": {
+  "paths": [
+   "stock/cli.py",
+   "stock/commands/**/*.py",
+   "stock/storage/**/*.py"
+  ],
+  "content": "(?i)rebuild|ledger|on_hand",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-positive-conditions": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\bif not \\w*(out_of|no_|not_|un|dis|in)",
+  "command": "",
+  "situation": false
+ },
+ "r3-comments-section-split": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "^\\s*#+\\s*[-=#*]{3,}|^\\s*#\\s*(Section|Helpers|Public|Private)\\b",
+  "command": "",
+  "situation": false
+ },
+ "r4-report-chunking": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)report",
+  "command": "",
+  "situation": false
+ },
+ "r2-history-bisect": {
+  "paths": [],
+  "content": "",
+  "command": "^git bisect",
+  "situation": true
+ },
+ "r4-bench-compare": {
+  "paths": [
+   "bench*/**",
+   "**/bench_*.py"
+  ],
+  "content": "",
+  "command": "make bench",
+  "situation": true
+ },
+ "r4-backend-parity": {
+  "paths": [
+   "stock/storage/**/*.py"
+  ],
+  "content": "(?i)SELECT|SUM\\(|GROUP BY|execute\\(",
+  "command": "",
+  "situation": false
+ },
+ "r5-pkg-no-build-time-data": {
+  "paths": [
+   "pyproject.toml",
+   "setup.py",
+   "hatch_build.py",
+   "stock/**/*.py"
+  ],
+  "content": "getuser|gethostname|platform\\.node|datetime\\.now|time\\.time|BUILD_|USER|HOSTNAME",
+  "command": "",
+  "situation": false
+ },
+ "r4-memory-backend-fast": {
+  "paths": [
+   "stock/storage/*memory*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r4-close-connections": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "connect\\(|\\.close\\(|cursor\\(",
+  "command": "",
+  "situation": false
+ },
+ "r3-comments-no-names": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "#.*((?i)author|\\b[A-Z]{2,3}:|\\bby [A-Z][a-z]+|--\\s*[A-Z][a-z]+)",
+  "command": "",
+  "situation": false
+ },
+ "r4-validate-before-lock": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)lock",
+  "command": "",
+  "situation": false
+ },
+ "r3-md-admonitions": {
+  "paths": [
+   "**/*.md"
+  ],
+  "content": "!!!",
+  "command": "",
+  "situation": false
+ },
+ "r3-todo-no-fixme": {
+  "paths": [
+   "**/*"
+  ],
+  "content": "FIXME|XXX|HACK",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-explicit-loops": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "map\\(\\s*lambda",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-early-return": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "^\\s+if\\b.*:\\s*$",
+  "command": "",
+  "situation": false
+ },
+ "r3-md-lint": {
+  "paths": [],
+  "content": "",
+  "command": "^git push",
+  "situation": false
+ },
+ "r2-history-blame-before-change": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r4-lazy-heavy-modules": {
+  "paths": [
+   "stock/__init__.py",
+   "stock/cli.py",
+   "stock/commands/**/*.py"
+  ],
+  "content": "^\\s*(import|from)\\s",
+  "command": "",
+  "situation": false
+ },
+ "r5-deps-justify-dev": {
+  "paths": [
+   "pyproject.toml",
+   "requirements*.txt",
+   ".pre-commit-config.yaml"
+  ],
+  "content": "(?i)dev|lint|test|ruff|mypy|black|pytest",
+  "command": "^(pip|uv|poetry) (install|add)",
+  "situation": false
+ },
+ "r3-readme-first-screen": {
+  "paths": [
+   "README.md"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r4-no-lock-across-prompt": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "input\\(|(?i)prompt|confirm",
+  "command": "",
+  "situation": false
+ },
+ "r5-perms-db-owner-only": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "sqlite3\\.connect|open\\(|\\.db\\b|touch\\(|chmod|0o\\d+",
+  "command": "",
+  "situation": false
+ },
+ "r5-untrusted-size-cap": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "\\.read\\(|read_text|read_bytes|json\\.load|readlines",
+  "command": "",
+  "situation": false
+ },
+ "r3-guide-one-topic-per-page": {
+  "paths": [
+   "docs/guide/**"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r5-untrusted-quantity-range": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)quantity|qty",
+  "command": "",
+  "situation": false
+ },
+ "r2-tag-annotated": {
+  "paths": [],
+  "content": "",
+  "command": "^git tag\\b",
+  "situation": false
+ },
+ "r5-deps-vendor-avoid": {
+  "paths": [
+   "stock/_vendor/**",
+   "**/vendor/**",
+   "**/third_party/**"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r3-docs-numbers-style": {
+  "paths": [
+   "**/*.md",
+   "docs/**"
+  ],
+  "content": "\\b\\d\\b|(?i)\\b(one|two|three|four|five|six|seven|eight|nine)\\b",
+  "command": "",
+  "situation": false
+ },
+ "r3-docs-spelling": {
+  "paths": [
+   "**/*.md",
+   "**/*.py"
+  ],
+  "content": "(?i)colour|centre|behaviour|licence|favour|honour|organis|initialis|normalis|analys|catalogue|grey",
+  "command": "",
+  "situation": false
+ },
+ "r3-readme-install-section": {
+  "paths": [
+   "README.md"
+  ],
+  "content": "(?i)install|pip",
+  "command": "",
+  "situation": false
+ },
+ "r5-pkg-trusted-publish": {
+  "paths": [
+   ".github/workflows/*.yml",
+   ".github/workflows/*.yaml"
+  ],
+  "content": "(?i)pypi|publish|twine",
+  "command": "twine upload|(uv|poetry|flit|hatch) publish",
+  "situation": false
+ },
+ "r4-vacuum-manual": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)vacuum",
+  "command": "",
+  "situation": false
+ },
+ "r4-pagination-api": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "def (list|all|find|query|search|iter)\\w*\\(|fetchall",
+  "command": "",
+  "situation": false
+ },
+ "r4-temp-tables": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)\\bIN\\s*\\(",
+  "command": "",
+  "situation": false
+ },
+ "r4-sqlite-wal": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "sqlite3|journal_mode|connect\\(",
+  "command": "",
+  "situation": false
+ },
+ "r3-md-console-prompt": {
+  "paths": [
+   "**/*.md"
+  ],
+  "content": "```(console|bash|sh|shell)|^\\$ ",
+  "command": "",
+  "situation": false
+ },
+ "r3-adr-status-values": {
+  "paths": [
+   "**/adr/**/*.md"
+  ],
+  "content": "(?i)status",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-no-deep-indexing": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\[[^\\]]*\\]\\[[^\\]]*\\]\\[",
+  "command": "",
+  "situation": false
+ },
+ "r3-docs-command-examples-sample": {
+  "paths": [
+   "docs/**",
+   "README.md"
+  ],
+  "content": "\\$ stock|stock (add|list|remove)",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-no-hungarian": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\b(str|int|lst|list|dict|arr|obj|flt|bool|tpl|set)_[a-z]",
+  "command": "",
+  "situation": false
+ },
+ "r4-read-only-mode": {
+  "paths": [
+   "stock/commands/**/*.py",
+   "stock/storage/**/*.py"
+  ],
+  "content": "connect\\(|mode=ro|sqlite",
+  "command": "",
+  "situation": false
+ },
+ "r5-pkg-src-layout": {
+  "paths": [
+   "pyproject.toml",
+   "setup.py",
+   "setup.cfg"
+  ],
+  "content": "packages|package-dir|where|src",
+  "command": "^git mv .*stock",
+  "situation": true
+ },
+ "r2-contrib-cla": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (review|checkout|merge)",
+  "situation": true
+ },
+ "r5-pkg-version-zero": {
+  "paths": [
+   "CHANGELOG.md",
+   "pyproject.toml",
+   "stock/__init__.py"
+  ],
+  "content": "(?i)version|break|remov|renam|migrat",
+  "command": "",
+  "situation": true
+ },
+ "r4-no-cache-on-methods": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "lru_cache|@cache\\b|@functools\\.cache",
+  "command": "",
+  "situation": false
+ },
+ "r4-export-resume": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)export",
+  "command": "",
+  "situation": false
+ },
+ "r3-md-wrap-units": {
+  "paths": [
+   "**/*.md"
+  ],
+  "content": "\\d\\s?(kg|g|pcs|cm|mm|m|l|ml)\\b",
+  "command": "",
+  "situation": false
+ },
+ "r4-nfs-warning": {
+  "paths": [
+   "docs/**",
+   "README.md",
+   "stock/config.py",
+   "stock/storage/**/*.py"
+  ],
+  "content": "(?i)lock|data_dir|data folder|nfs|network",
+  "command": "",
+  "situation": false
+ },
+ "r2-backport-minimal": {
+  "paths": [],
+  "content": "",
+  "command": "^git cherry-pick|^git (checkout|switch) .*(release|backport|\\d+\\.\\d+)",
+  "situation": true
+ },
+ "r4-scale-note": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|edit)",
+  "situation": true
+ },
+ "r3-docs-copyable-blocks": {
+  "paths": [
+   "**/*.md",
+   "docs/**"
+  ],
+  "content": "```",
+  "command": "",
+  "situation": false
+ },
+ "r4-mtime-cache": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "cache|st_size|st_ino|os\\.stat",
+  "command": "",
+  "situation": false
+ },
+ "r3-docs-generated-pages": {
+  "paths": [
+   "docs/reference/**"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r4-replay-ledger": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "on_hand|quantity|ledger|movement",
+  "command": "",
+  "situation": false
+ },
+ "r4-csv-readers-lock": {
+  "paths": [
+   "stock/storage/**/*.py"
+  ],
+  "content": "csv|flock|lock",
+  "command": "",
+  "situation": false
+ },
+ "r2-history-no-rewrite-public": {
+  "paths": [],
+  "content": "",
+  "command": "^git (filter-branch|filter-repo|rebase|push\\s.*(--force|-f\\b))|^bfg",
+  "situation": false
+ },
+ "r3-comments-no-apology": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)#.*\\b(sorry|hack)\\b",
+  "command": "",
+  "situation": false
+ },
+ "r5-path-home-expand": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "expanduser|~",
+  "command": "",
+  "situation": false
+ },
+ "r3-guide-active-voice": {
+  "paths": [
+   "**/*.md",
+   "docs/**"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r3-todo-cleanup": {
+  "paths": [],
+  "content": "",
+  "command": "^gh issue close",
+  "situation": true
+ },
+ "r3-readable-nesting-depth": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\n\\s{16,}\\S",
+  "command": "",
+  "situation": false
+ },
+ "r3-docs-decision-history": {
+  "paths": [
+   "docs/**/adr/**",
+   "docs/**/*.md"
+  ],
+  "content": "(?i)adr",
+  "command": "",
+  "situation": true
+ },
+ "r4-location-tree-cache": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "parent|location",
+  "command": "",
+  "situation": false
+ },
+ "r4-reorder-scan": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)reorder",
+  "command": "",
+  "situation": false
+ },
+ "r4-memo-per-run": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "lru_cache|functools\\.cache|global |_cache|memo",
+  "command": "",
+  "situation": false
+ },
+ "r4-measure-first": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr create",
+  "situation": true
+ },
+ "r5-pkg-classifiers": {
+  "paths": [
+   "pyproject.toml"
+  ],
+  "content": "requires-python",
+  "command": "",
+  "situation": false
+ },
+ "r3-docs-contributing-short": {
+  "paths": [
+   "CONTRIBUTING.md"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r5-path-no-absolute-from-data": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "open\\(|Path\\(|os\\.path\\.join|/ ",
+  "command": "",
+  "situation": false
+ },
+ "r4-no-mmap": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "mmap",
+  "command": "",
+  "situation": false
+ },
+ "r5-sec-no-network": {
+  "paths": [
+   "**/*.py",
+   "pyproject.toml"
+  ],
+  "content": "socket|urllib|requests|http|httpx|aiohttp",
+  "command": "",
+  "situation": false
+ },
+ "r5-untrusted-zip-avoid": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "zipfile|tarfile|extractall|shutil\\.unpack_archive",
+  "command": "",
+  "situation": false
+ },
+ "r4-no-write-on-read": {
+  "paths": [
+   "stock/commands/list_items.py",
+   "stock/commands/**/*.py",
+   "stock/storage/**/*.py"
+  ],
+  "content": "write|save|dump|open\\(.*['\"][wa]",
+  "command": "",
+  "situation": false
+ },
+ "r5-untrusted-nan-reject": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "float\\(|json\\.load|Decimal\\(|csv",
+  "command": "",
+  "situation": false
+ },
+ "r4-executemany": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "execute\\(",
+  "command": "",
+  "situation": false
+ },
+ "r4-no-offset-paging": {
+  "paths": [
+   "**/*.py",
+   "**/*.sql"
+  ],
+  "content": "(?i)\\bOFFSET\\b",
+  "command": "",
+  "situation": false
+ },
+ "r3-org-callers-above-callees": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "def ",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-sku-short-name": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "def |class |=",
+  "command": "",
+  "situation": false
+ },
+ "r5-vuln-security-md-current": {
+  "paths": [
+   "SECURITY.md",
+   "CHANGELOG.md",
+   "pyproject.toml"
+  ],
+  "content": "",
+  "command": "^git tag|^gh release create",
+  "situation": true
+ },
+ "r5-pkg-install-smoke": {
+  "paths": [
+   ".github/workflows/*.yml",
+   ".github/workflows/*.yaml"
+  ],
+  "content": "smoke|wheel|venv",
+  "command": "",
+  "situation": false
+ },
+ "r5-path-temp-same-dir": {
+  "paths": [
+   "stock/storage/**/*.py",
+   "**/*.py"
+  ],
+  "content": "open\\(.*['\"]w|write_text|write_bytes|json\\.dump",
+  "command": "",
+  "situation": false
+ },
+ "r5-vuln-advisory-draft": {
+  "paths": [],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r5-pkg-build-backend": {
+  "paths": [
+   "pyproject.toml"
+  ],
+  "content": "build-backend|\\[build-system\\]",
+  "command": "",
+  "situation": false
+ },
+ "r2-stack-base-branch": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|edit).*--base",
+  "situation": true
+ },
+ "r5-pkg-readme-render": {
+  "paths": [
+   "README.md"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r3-docs-agent-instructions-sync": {
+  "paths": [
+   "AGENTS.md",
+   "CLAUDE.md",
+   ".github/workflows/**",
+   "Makefile"
+  ],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r2-history-lfs-no": {
+  "paths": [
+   ".gitattributes"
+  ],
+  "content": "(?i)lfs",
+  "command": "^git lfs",
+  "situation": false
+ },
+ "r5-deps-vendor-version": {
+  "paths": [
+   "**/vendor/**",
+   "**/_vendor/**",
+   "**/VENDORED"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r5-sec-dependabot-alerts": {
+  "paths": [
+   "CHANGELOG.md"
+  ],
+  "content": "",
+  "command": "^git tag|^gh release create",
+  "situation": false
+ },
+ "r5-sec-actions-pr-target": {
+  "paths": [
+   ".github/workflows/*.yml",
+   ".github/workflows/*.yaml"
+  ],
+  "content": "pull_request_target",
+  "command": "",
+  "situation": false
+ },
+ "r4-migrate-in-tx": {
+  "paths": [
+   "**/*.py",
+   "**/migrations/**"
+  ],
+  "content": "(?i)migrat|ALTER TABLE|CREATE TABLE",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-explicit-over-implicit": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "def ",
+  "command": "",
+  "situation": false
+ },
+ "r3-org-one-concept-file": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "",
+  "command": "^(git mv|mv) ",
+  "situation": true
+ },
+ "r4-algorithm-first": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "for |while ",
+  "command": "",
+  "situation": false
+ },
+ "r2-agent-no-amend-others": {
+  "paths": [],
+  "content": "",
+  "command": "^git (commit\\s.*--amend|rebase|reset)",
+  "situation": false
+ },
+ "r4-valuation-cost": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)valu",
+  "command": "",
+  "situation": false
+ },
+ "r5-untrusted-no-eval": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\beval\\(|\\bexec\\(",
+  "command": "",
+  "situation": false
+ },
+ "r4-column-index-once": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "csv|header|\\.index\\(",
+  "command": "",
+  "situation": false
+ },
+ "r2-stack-merge-order": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr merge",
+  "situation": false
+ },
+ "r4-hot-path-list": {
+  "paths": [
+   "stock/storage/**/*.py",
+   "stock/models.py",
+   "stock/commands/add.py",
+   "stock/commands/remove.py",
+   "stock/commands/list_items.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r3-md-emphasis-sparing": {
+  "paths": [
+   "**/*.md"
+  ],
+  "content": "\\*\\*|__",
+  "command": "",
+  "situation": false
+ },
+ "r4-sigint-safe": {
+  "paths": [
+   "stock/storage/**/*.py",
+   "stock/commands/**/*.py"
+  ],
+  "content": "write|batch|commit|KeyboardInterrupt|signal",
+  "command": "",
+  "situation": false
+ },
+ "r5-pkg-typed-marker": {
+  "paths": [
+   "stock/py.typed",
+   "pyproject.toml",
+   "MANIFEST.in"
+  ],
+  "content": "",
+  "command": "^git rm .*py\\.typed",
+  "situation": false
+ },
+ "r4-early-filter": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)location|sku|startswith|filter",
+  "command": "",
+  "situation": false
+ },
+ "r5-vuln-backport": {
+  "paths": [],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r5-sql-no-load-extension": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "enable_load_extension|load_extension",
+  "command": "",
+  "situation": false
+ },
+ "r3-comments-no-restating": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "#",
+  "command": "",
+  "situation": false
+ },
+ "r4-no-disk-cache-default": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)cache|pickle|shelve",
+  "command": "",
+  "situation": false
+ },
+ "r4-sqlite-indexes": {
+  "paths": [
+   "**/*.py",
+   "**/*.sql"
+  ],
+  "content": "(?i)WHERE|CREATE TABLE|CREATE INDEX",
+  "command": "",
+  "situation": false
+ },
+ "r5-sql-readonly-uri": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "sqlite3\\.connect|mode=ro",
+  "command": "",
+  "situation": false
+ },
+ "r4-gzip-level": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "gzip",
+  "command": "",
+  "situation": false
+ },
+ "r5-secrets-synthetic-data": {
+  "paths": [
+   "examples/**",
+   "tests/**",
+   "docs/**",
+   "**/*.md"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r5-deps-deprecated-stdlib": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "\\b(import|from)\\s+(cgi|cgitb|imghdr|sndhdr|asynchat|asyncore|smtpd|nntplib|telnetlib|audioop|aifc|chunk|crypt|mailcap|msilib|nis|ossaudiodev|pipes|spwd|sunau|uu|xdrlib|distutils)\\b",
+  "command": "",
+  "situation": false
+ },
+ "r5-deps-no-git-urls": {
+  "paths": [
+   "pyproject.toml",
+   "requirements*.txt",
+   "setup.py",
+   "setup.cfg"
+  ],
+  "content": "git\\+|file:|\\s@\\s|path\\s*=|-e\\s",
+  "command": "(pip|uv|poetry)\\s.*(add|install).*(git\\+|file:|\\s\\.{0,2}/)",
+  "situation": false
+ },
+ "r4-on-hand-table": {
+  "paths": [
+   "stock/storage/**",
+   "stock/commands/**",
+   "stock/models.py"
+  ],
+  "content": "(?i)movement|on_hand|ledger",
+  "command": "",
+  "situation": false
+ },
+ "r4-crash-mid-batch": {
+  "paths": [
+   "stock/commands/**",
+   "stock/storage/**"
+  ],
+  "content": "(?i)batch|bulk|executemany|import",
+  "command": "",
+  "situation": false
+ },
+ "r3-examples-self-contained": {
+  "paths": [
+   "examples/**"
+  ],
+  "content": "\\b(import|from)\\s",
+  "command": "",
+  "situation": false
+ },
+ "r5-pkg-codeowners-release": {
+  "paths": [
+   "pyproject.toml",
+   "setup.py",
+   "setup.cfg",
+   "MANIFEST.in",
+   "CHANGELOG.md",
+   ".github/workflows/*release*",
+   "stock/__init__.py"
+  ],
+  "content": "",
+  "command": "^gh pr (create|ready)",
+  "situation": false
+ },
+ "r3-md-sentence-case": {
+  "paths": [
+   "**/*.md"
+  ],
+  "content": "(?m)^#{1,6} \\S+.* [A-Z][a-z]",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-avoid-inheritance-depth": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "class \\w+\\(",
+  "command": "",
+  "situation": false
+ },
+ "r3-diagrams-as-text": {
+  "paths": [
+   "**/*.md",
+   "docs/**"
+  ],
+  "content": "\\.(png|svg|jpe?g|gif)\\b|```mermaid",
+  "command": "",
+  "situation": false
+ },
+ "r5-sec-random-seeded-tests": {
+  "paths": [
+   "tests/**/*.py"
+  ],
+  "content": "\\brandom\\b",
+  "command": "",
+  "situation": false
+ },
+ "r5-sec-supplier-contacts": {
+  "paths": [
+   "stock/**/*.py",
+   "tests/**",
+   "examples/**"
+  ],
+  "content": "(?i)supplier|phone|email|contact",
+  "command": "",
+  "situation": false
+ },
+ "r5-vuln-scope-note": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|edit)",
+  "situation": true
+ },
+ "r3-diagrams-small": {
+  "paths": [
+   "**/*.md",
+   "docs/**"
+  ],
+  "content": "```mermaid|-->",
+  "command": "",
+  "situation": false
+ },
+ "r4-index-by-sku": {
+  "paths": [
+   "stock/commands/**",
+   "stock/storage/**"
+  ],
+  "content": "(?i)for\\s+\\w+.*\\s+in\\s|sku",
+  "command": "",
+  "situation": false
+ },
+ "r5-sec-random-ids": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "\\brandom\\b|uuid|token|_id\\b",
+  "command": "",
+  "situation": false
+ },
+ "r4-process-pool-reports": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)thread|multiprocessing|concurrent|pool|asyncio",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-no-abbreviations": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?<![A-Za-z])(qty|loc|amt|cnt|num|tmp|cfg|mgr|addr|desc|idx|val)(?![A-Za-z])",
+  "command": "",
+  "situation": false
+ },
+ "r4-local-bindings": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "\\.append\\(",
+  "command": "",
+  "situation": false
+ },
+ "r4-rewrite-threshold": {
+  "paths": [
+   "stock/storage/**"
+  ],
+  "content": "(?i)csv|delta|rewrite|on_hand",
+  "command": "",
+  "situation": false
+ },
+ "r3-comments-invariant": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r5-sql-params-only": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)execute|sqlite|\\bselect\\s|\\binsert\\s|\\bupdate\\s|\\bdelete\\s",
+  "command": "",
+  "situation": false
+ },
+ "r4-cache-keys": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)cache|memo",
+  "command": "",
+  "situation": false
+ },
+ "r5-secrets-missing-ask": {
+  "paths": [
+   "**/*.py",
+   "**/*.toml",
+   "**/*.cfg",
+   "**/*.yml",
+   "**/*.yaml",
+   "**/.env*"
+  ],
+  "content": "(?i)api_?key|token|password|secret|credential",
+  "command": "",
+  "situation": true
+ },
+ "r4-checksum-file": {
+  "paths": [
+   "stock/storage/**"
+  ],
+  "content": "(?i)csv|open\\(|load|read",
+  "command": "",
+  "situation": false
+ },
+ "r4-fcntl-windows": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "fcntl|msvcrt|flock|sys\\.platform|os\\.name",
+  "command": "",
+  "situation": false
+ },
+ "r5-deps-remove-unused": {
+  "paths": [
+   "pyproject.toml",
+   "requirements*.txt",
+   "setup.cfg",
+   "Makefile",
+   ".pre-commit-config.yaml",
+   ".github/workflows/*"
+  ],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r3-readable-symmetric-code": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "def \\w+",
+  "command": "",
+  "situation": false
+ },
+ "r4-no-recursion-deep": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)location|tree|children|parent|walk",
+  "command": "",
+  "situation": false
+ },
+ "r4-derived-not-stored": {
+  "paths": [
+   "stock/models.py",
+   "stock/storage/**"
+  ],
+  "content": "(?i)ledger|total|field|dataclass",
+  "command": "",
+  "situation": false
+ },
+ "r4-batch-id": {
+  "paths": [
+   "stock/commands/**",
+   "stock/storage/**"
+  ],
+  "content": "(?i)bulk|batch|import|load",
+  "command": "",
+  "situation": false
+ },
+ "r5-sec-actions-third-party": {
+  "paths": [
+   ".github/workflows/*.yml",
+   ".github/workflows/*.yaml",
+   ".github/actions/**"
+  ],
+  "content": "uses:",
+  "command": "",
+  "situation": false
+ },
+ "r5-untrusted-xml-avoid": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)xml|ElementTree|minidom|sax|expat",
+  "command": "",
+  "situation": false
+ },
+ "r4-reports-incremental": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)valuation|report|total",
+  "command": "",
+  "situation": false
+ },
+ "r5-deps-licence-record": {
+  "paths": [
+   "pyproject.toml",
+   "requirements*.txt",
+   "setup.cfg"
+  ],
+  "content": "",
+  "command": "(pip|uv|poetry)\\s.*(add|install)",
+  "situation": true
+ },
+ "r4-library-callers": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "open\\(|connect\\(|(?i:cache)|global |Lock\\(|atexit|signal",
+  "command": "",
+  "situation": false
+ },
+ "r2-agent-pr-draft": {
+  "paths": [],
+  "content": "",
+  "command": "^gh pr (create|ready)",
+  "situation": false
+ },
+ "r4-compact-verify": {
+  "paths": [
+   "stock/storage/**"
+  ],
+  "content": "(?i)compact",
+  "command": "",
+  "situation": false
+ },
+ "r4-consistency-check": {
+  "paths": [
+   ".github/workflows/*.yml",
+   "tests/fixtures/**",
+   "Makefile"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r3-docs-pr-separate": {
+  "paths": [
+   "**/*.md",
+   "docs/**"
+  ],
+  "content": "",
+  "command": "^(gh pr create|git commit)",
+  "situation": true
+ },
+ "r3-diagrams-update": {
+  "paths": [],
+  "content": "",
+  "command": "^(git mv|mv)\\b",
+  "situation": true
+ },
+ "r4-derived-files-ignored": {
+  "paths": [
+   ".gitignore",
+   "stock/**/*.py"
+  ],
+  "content": "(?i)cache",
+  "command": "^git add",
+  "situation": false
+ },
+ "r4-bench-script": {
+  "paths": [],
+  "content": "",
+  "command": "^(?!make bench).*(\\bbench|timeit|pyperf|hyperfine)",
+  "situation": false
+ },
+ "r3-docs-nav-update": {
+  "paths": [
+   "docs/**/*.md",
+   "mkdocs.yml"
+  ],
+  "content": "",
+  "command": "",
+  "situation": true
+ },
+ "r4-cpu-bound-note": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)thread|asyncio|multiprocessing|concurrent|lru_cache",
+  "command": "",
+  "situation": true
+ },
+ "r4-avoid-deepcopy": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "deepcopy",
+  "command": "",
+  "situation": false
+ },
+ "r4-bench-baseline": {
+  "paths": [],
+  "content": "",
+  "command": "\\bbench|timeit|pyperf|hyperfine",
+  "situation": false
+ },
+ "r3-diagrams-no-colour-meaning": {
+  "paths": [
+   "**/*.md",
+   "docs/**"
+  ],
+  "content": "(?i)classDef|style |fill:|color:|colour",
+  "command": "",
+  "situation": false
+ },
+ "r4-bench-variance": {
+  "paths": [
+   "benchmarks/**",
+   "bench/**"
+  ],
+  "content": "",
+  "command": "\\bbench|timeit|pyperf|hyperfine",
+  "situation": false
+ },
+ "r4-counter-sums": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "\\+=|sum\\(|(?i:quantity)",
+  "command": "",
+  "situation": false
+ },
+ "r3-guide-second-person": {
+  "paths": [
+   "docs/**/*.md",
+   "README.md",
+   "**/*guide*.md"
+  ],
+  "content": "(?i)\\b(we|we're|we'll|let's|our)\\b",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-no-clever": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "lambda|reduce\\(|:=|\\bfor\\b.*\\bfor\\b|\\bif\\b.*\\belse\\b|[\\[{(].*\\bfor\\b",
+  "command": "",
+  "situation": false
+ },
+ "r3-readable-comprehension-limit": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "[\\[{(][^\\]})]*\\bfor\\b[^\\]})]*\\b(for|if)\\b",
+  "command": "",
+  "situation": false
+ },
+ "r3-links-external-sparingly": {
+  "paths": [
+   "**/*.md",
+   "docs/**"
+  ],
+  "content": "https?://",
+  "command": "",
+  "situation": false
+ },
+ "r2-codeowners-last-match": {
+  "paths": [
+   "CODEOWNERS",
+   ".github/CODEOWNERS",
+   "docs/CODEOWNERS"
+  ],
+  "content": "",
+  "command": "",
+  "situation": false
+ },
+ "r4-like-avoid": {
+  "paths": [
+   "**/*.py"
+  ],
+  "content": "(?i)\\bLIKE\\b",
+  "command": "",
+  "situation": false
+ },
+ "r4-bisect-ranges": {
+  "paths": [
+   "stock/**/*.py"
+  ],
+  "content": "(?i)sku|sorted|range|between",
+  "command": "",
+  "situation": false
+ },
+ "r3-readme-no-marketing": {
+  "paths": [
+   "README.md",
+   "docs/**/*.md"
+  ],
+  "content": "(?i)blazing|powerful|seamless|lightning|robust|effortless|cutting[- ]edge|revolutionary|world[- ]class|best[- ]in[- ]class|amazing|awesome",
+  "command": "",
+  "situation": false
+ },
+ "r4-write-amplification": {
+  "paths": [
+   "stock/storage/**"
+  ],
+  "content": "(?i)csv|open\\(|write",
+  "command": "",
+  "situation": false
+ },
+ "r5-deps-actions-sha": {
+  "paths": [
+   ".github/workflows/*.yml",
+   ".github/workflows/*.yaml",
+   "**/action.yml",
+   "**/action.yaml"
+  ],
+  "content": "uses:",
+  "command": "",
+  "situation": false
+ }
+}

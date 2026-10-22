@@ -38,7 +38,11 @@ impl<'a> Place<'a> {
         let cwd = cwd.canonicalize().unwrap_or_else(|_| cwd.to_path_buf());
         let top = top.canonicalize().unwrap_or_else(|_| top.to_path_buf());
         let joined = cwd.join(path);
-        let joined = joined.canonicalize().unwrap_or(joined);
+        let parent = joined
+            .parent()
+            .zip(joined.file_name())
+            .and_then(|(folder, name)| Some(folder.canonicalize().ok()?.join(name)));
+        let joined = joined.canonicalize().ok().or(parent).unwrap_or(joined);
         let mut full = PathBuf::new();
         for part in joined.components() {
             match part {

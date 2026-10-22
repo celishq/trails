@@ -86,6 +86,9 @@ impl Bench {
             scope: Scope::Trail(trail.to_string()),
             replaces: None,
             content: text.to_string(),
+            paths: vec![],
+            situation: false,
+            promoted: false,
         };
         let id = self.trails.decide(rule, None).unwrap().records[0]
             .id

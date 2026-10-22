@@ -13,6 +13,9 @@ pub(crate) struct Args {
     pub demo: bool,
     pub new: bool,
     pub planned: bool,
+    pub situation: bool,
+    pub promoted: bool,
+    pub diff: bool,
     pub words: Vec<String>,
     pub text: Option<String>,
     pub places: Vec<String>,
@@ -26,6 +29,7 @@ pub(crate) struct Args {
     pub session: Option<String>,
     pub project: Option<String>,
     pub limit: Option<String>,
+    pub paths: Vec<String>,
 }
 
 impl Args {
@@ -62,6 +66,9 @@ impl Args {
                 "--demo" => parsed.demo = true,
                 "--new" => parsed.new = true,
                 "--as-planned" => parsed.planned = true,
+                "--situation" => parsed.situation = true,
+                "--promoted" => parsed.promoted = true,
+                "--diff" => parsed.diff = true,
                 "--at" => parsed.places.push(value(arg, rest.next())?),
                 "--under" => parsed.under = Some(value(arg, rest.next())?),
                 "--scope" => parsed.scope = Some(value(arg, rest.next())?),
@@ -73,6 +80,7 @@ impl Args {
                 "--session" => parsed.session = Some(value(arg, rest.next())?),
                 "--project" => parsed.project = Some(value(arg, rest.next())?),
                 "--limit" => parsed.limit = Some(value(arg, rest.next())?),
+                "--path" => parsed.paths.push(value(arg, rest.next())?),
                 flag if flag.starts_with("--") => {
                     bad.get_or_insert(Failure::usage(format!("{flag} is not a flag")));
                 }
