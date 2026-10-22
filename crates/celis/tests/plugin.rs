@@ -348,6 +348,33 @@ fn each_manifest_carries_one_version() {
     }
 }
 
+/// The Claude and Cursor manifests give their directory listings the same links and logo, and the Claude
+/// manifest gives the pages its directory asks for.
+#[test]
+fn each_listed_manifest_carries_its_links() {
+    let claude = read("plugins/celis/.claude-plugin/plugin.json");
+    let cursor = read("plugins/celis/.cursor-plugin/plugin.json");
+    assert_eq!(claude["homepage"], "https://celis.ai");
+    assert_eq!(claude["repository"], "https://github.com/celishq/trails");
+    for field in ["homepage", "repository", "license"] {
+        assert_eq!(cursor[field], claude[field], "{field}");
+    }
+    let icon = claude["icon"].as_str().expect("icon");
+    assert_eq!(cursor["logo"], icon);
+    assert!(
+        checkout().join("plugins/celis").join(icon).is_file(),
+        "{icon}"
+    );
+    for (field, page) in [
+        ("documentationUrl", "docs"),
+        ("supportUrl", "support"),
+        ("privacyPolicyUrl", "privacy"),
+        ("termsOfServiceUrl", "terms"),
+    ] {
+        assert_eq!(claude[field], format!("https://celis.ai/{page}"), "{field}");
+    }
+}
+
 /// With no `celis` on PATH, each agent's session start says to install it from celis.ai, and each prompt
 /// hook prints nothing.
 #[test]
