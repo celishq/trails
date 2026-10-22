@@ -3,11 +3,8 @@
 use super::level::Level;
 use super::row::Row;
 use super::{Item, RuleNote, Summary, Tree, RULES};
-use crate::terminal::bar::bar;
 use crate::terminal::canvas::{paint, Styled, BOLD, DIM};
-use crate::terminal::look::{lane, look, SPINNER};
-use crate::text::clock::{stride, took};
-use crate::text::line::plural;
+use crate::terminal::look::look;
 use celis_trails::{State, Step, Trail};
 use ratatui::text::Span;
 
@@ -52,69 +49,67 @@ impl Tree<'_> {
         }
     }
 
-    /// Adds `note` as a block: `▾`, its mark and title, its project with no grouping or while active off
-    /// a watch, a bar of its steps with done/all and its worked time at the right; then the lines
-    /// `--full` prints but its grade; then a rail from its mark down to its tree: its active steps, its
-    /// rules, then its closed steps.
+    /// Adds `note` as a block: `▾` when something opens under it, its mark and title, wrapped with the tree
+    /// line down from its mark when it has, its project with no grouping or while active off a watch, and
+    /// done/all or its counts at the right; with full, the lines
+    /// `--full` prints but its grade; then its tree: its steps, its rules, and its closed steps folded when
+    /// many.
     pub(super) fn block(&self, note: Step, lines: &mut Vec<Row>) {
         let step = note.record();
         let state = note.state();
         let work = self.work(note);
         let summary = self.summary(note, work);
-        let colour = match self.spins(note) {
-            true => SPINNER,
-            false => lane(state),
-        };
-        let hair = Styled::from(vec![Span::raw("  "), paint(colour, "│ ")]);
+        let level = Level::of(Trail::new(note).parts());
+        let under =
+            !(level.active.is_empty() && level.ended.is_empty() && summary.rules.is_empty());
         let first = lines.len();
         let mut meta = vec![];
         if !self.grouped || (state.active() && !self.view.watch) {
             meta.push(vec![paint(DIM, &step.anchor.name)]);
         }
         meta.extend(came(state, &summary));
-        if let Some(worked) = summary.worked {
-            meta.push(vec![paint(DIM, &took(worked))]);
-        }
         lines.push(Row::Lined {
-            lead: Styled::from(vec![paint(DIM, "▾"), Span::raw(" ")]),
+            lead: Styled::from(vec![
+                paint(DIM, if under { "▾" } else { " " }),
+                Span::raw(" "),
+            ]),
             marks: self.marked(note),
             title: step.title().to_string(),
-            tone: self.tone(BOLD, note.newest()),
+            tone: self.tone(trail_tone(state), note.newest()),
             meta: joined(meta),
-            whole: Some(hair.clone()),
+            whole: Some(match under {
+                true => Styled::from(vec![Span::raw("  "), paint(self.lane(), "│")]),
+                false => Styled::from("  "),
+            }),
         });
         self.pick(self.item(note, true, &summary.rules), lines, first);
-        if self.view.spin && state.active() {
-            let seconds = self.steps.now().saturating_sub(note.newest());
-            self.until(self.steps.now() + stride(seconds));
+        let rail = Styled::from("  ");
+        if self.view.full {
+            let hair = Styled::from(vec![Span::raw("  "), paint(self.lane(), "│ ")]);
+            self.closing(work, &hair, false, lines);
+            self.followed(work, &hair, lines);
         }
-        self.closing(work, &hair, false, lines);
-        self.followed(work, &hair, lines);
-        let level = Level::of(Trail::new(note).parts());
-        if !(level.active.is_empty() && level.ended.is_empty() && summary.rules.is_empty()) {
-            let rail = vec![Span::raw("  "), paint(colour, "│")];
-            lines.push(Row::Text(Styled::from(rail)));
-        }
-        self.level(level, summary.rules, &Styled::from("  "), note.id(), lines);
+        self.level(level, summary.rules, &rail, note.id(), lines);
     }
 
-    /// Adds `note` as one row: `▸`, its mark and title, and at the right what it came to: a bar of its
-    /// steps with done/all while active, else its steps, how many were done, its state; then its time.
+    /// Adds `note` as one row: `▸` when something opens under it, its mark and title, and at the right
+    /// done/all while active, else its steps counted by state.
     pub(super) fn line(&self, note: Step, lines: &mut Vec<Row>) {
         let step = note.record();
         let state = note.state();
         let work = self.work(note);
         let summary = self.summary(note, work);
-        let mut meta: Vec<_> = came(state, &summary).into_iter().collect();
-        if let Some(worked) = summary.worked {
-            meta.push(vec![paint(DIM, &took(worked))]);
-        }
+        let under = !(Trail::new(note).parts().is_empty() && summary.rules.is_empty());
+        let meta: Vec<_> = came(state, &summary).into_iter().collect();
         let first = lines.len();
         lines.push(Row::Lined {
-            lead: Styled::from(vec![paint(DIM, "▸"), Span::raw(" ")]),
+            lead: Styled::from(vec![
+                paint(DIM, if under { "▸" } else { " " }),
+                Span::raw(" "),
+            ]),
             marks: self.marked(note),
             title: step.title().to_string(),
-            tone: self.tone(look(state).title, note.newest()),
+            tone: self.tone(trail_tone(state), note.newest()),
             meta: joined(meta),
             whole: None,
         });
@@ -122,19 +117,20 @@ impl Tree<'_> {
     }
 }
 
-/// What a trail's steps came to: a bar of them with done/all while `active`, else their count when all
-/// are done, else their count by state.
+/// The look of a trail's title in `state`: bold while active, else as its state's titles look.
+fn trail_tone(state: State) -> ratatui::style::Style {
+    match state.active() {
+        true => BOLD,
+        false => look(state).title,
+    }
+}
+
+/// What a trail's steps came to: done/all while `active`, else their count by state; none with no
+/// steps.
 fn came(state: State, summary: &Summary) -> Option<Vec<Span<'static>>> {
-    let (all, done) = (summary.all, summary.done);
-    let share = |n: usize| n as f64 / all as f64;
-    match (state.active(), all) {
+    match (state.active(), summary.all) {
         (_, 0) => None,
-        (true, _) => {
-            let mut spans = bar(share(done), share(summary.working), 20).spans;
-            spans.push(paint(DIM, &format!("  {done}/{all}")));
-            Some(spans)
-        }
-        (false, _) if all == done => Some(vec![paint(DIM, &plural(all, "step"))]),
+        (true, all) => Some(vec![paint(DIM, &format!("{}/{all}", summary.done))]),
         (false, _) => Some(fold::counts(summary.tally)),
     }
 }
@@ -152,5 +148,6 @@ fn joined(parts: Vec<Vec<Span<'static>>>) -> Styled {
 }
 
 mod fold;
+pub(super) use fold::counts;
 mod note;
 mod steps;

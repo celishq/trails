@@ -199,7 +199,9 @@ impl Watch {
     /// out of their day's box.
     pub fn rows(&mut self) -> Vec<String> {
         let rows = self.screen_rows();
-        let said = rows.get(1).is_some_and(|r| r.starts_with("  │ ▄"));
+        let said = rows
+            .get(1)
+            .is_some_and(|r| r.starts_with("  │ ") && !r.contains("📅"));
         let rows = rows.into_iter().skip(if said { 7 } else { 0 });
         rows.filter_map(unboxed).collect()
     }

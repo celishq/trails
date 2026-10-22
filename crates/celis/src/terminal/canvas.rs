@@ -25,8 +25,6 @@ pub(crate) const RED: Style = Style::new().fg(Color::Rgb(251, 113, 133));
 pub(crate) const FRAME: Style = Style::new().fg(Color::Rgb(30, 48, 76));
 /// The border of celis's card and the line after its headline, lighter than a day's box.
 pub(crate) const EDGE: Style = Style::new().fg(Color::Rgb(44, 66, 104));
-/// A link the person opens, like `Show more`: a soft blue.
-pub(crate) const LINK: Style = Style::new().fg(Color::Rgb(96, 165, 250));
 /// A second share beside cyan, like a second project's time: a quiet slate.
 pub(crate) const SLATE: Style = Style::new().fg(Color::Rgb(86, 120, 168));
 /// What the person selected: the text's light.
@@ -37,15 +35,24 @@ pub(crate) fn paint(style: Style, text: &str) -> Span<'static> {
     Span::styled(text.to_string(), style)
 }
 
-/// The cells of `text` a terminal shows: a wide character counts 2, a colour code none.
+/// The cells of `text` a terminal shows: a wide character counts 2, a narrow one an emoji selector
+/// makes wide counts 2 too, a colour code none.
 pub(crate) fn visible(text: &str) -> usize {
     let mut count = 0;
     let mut code = false;
+    let mut before = 0;
     for c in text.chars() {
         match (code, c) {
             (false, '\x1b') => code = true,
             (true, 'm') => code = false,
-            (false, c) => count += cells(c),
+            (false, '\u{fe0f}') if before == 1 => {
+                count += 1;
+                before = 2;
+            }
+            (false, c) => {
+                before = cells(c);
+                count += before;
+            }
             _ => {}
         }
     }

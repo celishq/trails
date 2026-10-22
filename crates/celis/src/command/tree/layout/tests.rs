@@ -31,13 +31,12 @@ fn step(under: Option<&Note>, uses: &[&Note], at: u64) -> Note {
     .unwrap()
 }
 
-/// Prints every trail of `records` by day into `layout`, as a watch shows all of them.
+/// Prints every trail of `records` by day into `layout`, as `--all` shows them.
 fn print(records: &[Note], layout: &Layout) {
     let steps = Steps::new(records, NOW);
     let rules = Rules::new(records);
     let reuse = Reuse::new(&steps);
     let view = View {
-        watch: true,
         all: true,
         ..View::default()
     };

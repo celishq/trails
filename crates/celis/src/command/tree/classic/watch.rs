@@ -99,7 +99,7 @@ impl Live for Watch<'_> {
             copy,
             markdown,
             spun: frame.spun,
-            remarks: vec![],
+            scene: false,
             again: frame.next.map(until),
         };
         self.frame = Some(frame);

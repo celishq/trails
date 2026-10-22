@@ -1,23 +1,15 @@
-//! A row of a tree, and how a titled row and the notes under it lay out.
+//! A row of a tree, and how a lined row and the notes under it lay out.
 
 use super::{cut, visible};
 use crate::terminal::canvas::{paint, width as chars, Styled, BOLD, DIM};
 use ratatui::style::Style;
 
-/// A row of the tree: text as it is; a titled row, its title in the look `tone` after `lead` and its
-/// `marks`, wrapped with its next lines after `rest`; a lined row, its title cut to one line after
-/// `lead` and its `marks`, with `meta` at the right, or whole, wrapped after `whole`, when it has one; a
-/// note under a row, after `rail` and `label`, in
-/// the look `tone`; or the start of a selected element's lines, or of lines no element holds.
+/// A row of the tree: text as it is; a lined row, its title cut to one line after `lead` and its
+/// `marks`, with `meta` at the right, or whole, wrapped after `whole`, when it has one; a note under a
+/// row, after `rail` and `label`, in the look `tone`; or the start of a selected element's lines, or of
+/// lines no element holds.
 pub(super) enum Row {
     Text(Styled),
-    Titled {
-        lead: Styled,
-        marks: Styled,
-        title: String,
-        tone: Style,
-        rest: Styled,
-    },
     Lined {
         lead: Styled,
         marks: Styled,
@@ -39,9 +31,26 @@ impl Row {
     /// Its marks when it is a row, also when it is selected.
     pub fn marks(&self) -> Option<&Styled> {
         match self {
-            Row::Titled { marks, .. } | Row::Lined { marks, .. } => Some(marks),
+            Row::Lined { marks, .. } => Some(marks),
             Row::Mark(_, line) => line.marks(),
             _ => None,
+        }
+    }
+
+    /// It moved right by `inset`: each lead, rail and text starts with it, a blank line kept blank.
+    pub fn indent(&mut self, inset: &str) {
+        let before = |line: &mut Styled| line.spans.insert(0, inset.to_string().into());
+        match self {
+            Row::Text(text) if text.spans.is_empty() => {}
+            Row::Text(text) => before(text),
+            Row::Lined { lead, whole, .. } => {
+                before(lead);
+                if let Some(whole) = whole {
+                    before(whole);
+                }
+            }
+            Row::Note { rail, .. } => before(rail),
+            Row::Mark(_, line) => line.indent(inset),
         }
     }
 
@@ -72,23 +81,6 @@ impl Row {
                     meta,
                     width,
                 )
-            }
-            Row::Titled {
-                lead,
-                marks,
-                title,
-                tone,
-                rest,
-            } => {
-                let pad = " ".repeat(slot.saturating_sub(chars(&marks)));
-                let tone = match picked && tone != DIM {
-                    true => BOLD,
-                    false => tone,
-                };
-                let mut first = lead;
-                first.spans.extend(marks.spans);
-                first.push_span(format!("{pad} "));
-                (first, under(rest, 0), title, tone)
             }
             Row::Note {
                 rail,
@@ -124,8 +116,8 @@ impl Row {
 /// The fewest free cells a title keeps before a row drops its meta.
 const ROOM: usize = 16;
 
-/// One line: `lead`, `marks` padded to `slot` and two spaces, the title in its look, bold when `picked`
-/// unless dim, cut with … to fit `width`, then `meta` at the right edge; with less than `ROOM` cells for
+/// One line: `lead`, `marks` padded to `slot` and two spaces, at least one, none with no marks, the title in its look,
+/// bold when `picked` unless dim, cut with … to fit `width`, then `meta` at the right edge; with less than `ROOM` cells for
 /// the title, no meta. With a `whole` lead, the title wrapped instead, its next lines after that lead.
 fn lined(
     (lead, whole): (Styled, Option<Styled>),
@@ -140,9 +132,12 @@ fn lined(
         false => tone,
     };
     let mut line = lead;
-    let pad = slot.saturating_sub(chars(&marks));
+    let gap = match chars(&marks) {
+        0 => 0,
+        wide => (slot + 2).saturating_sub(wide).max(1),
+    };
     line.spans.extend(marks.spans);
-    line.push_span(" ".repeat(pad + 2));
+    line.push_span(" ".repeat(gap));
     let Some(width) = width else {
         line.push_span(paint(tone, title));
         if chars(&meta) > 0 {

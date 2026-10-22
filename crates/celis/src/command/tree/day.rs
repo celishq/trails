@@ -3,12 +3,16 @@
 
 use super::layout::{self, Group, Key};
 use super::row::Row;
-use super::{live, Frame, Tree, PROJECT};
+use super::trail::counts;
+use super::{live, Frame, Item, Tree, DAY, PROJECT, TRAILS};
 use crate::failure::Failure;
-use crate::terminal::canvas::{clip, paint, visible, Styled, BOLD, DIM, FRAME};
-use crate::text::clock::weekday;
+use crate::progress::Tally;
+use crate::terminal::canvas::{paint, Styled, BOLD, DIM};
+use crate::terminal::look::look;
+use crate::text::clock::{day, weekday};
 use celis_trails::step::steps::LIFE;
-use celis_trails::Step;
+use celis_trails::{State, Step};
+use ratatui::style::Style;
 use ratatui::text::Span;
 use std::cell::{Cell, RefCell};
 use std::collections::HashSet;
@@ -18,7 +22,6 @@ impl Tree<'_> {
     pub(super) fn frame(self, text: Vec<Styled>) -> Frame {
         Frame {
             text,
-            remarks: vec![],
             next: self.next.get(),
             spun: self.spun.get(),
             order: self.order.take(),
@@ -106,8 +109,8 @@ impl Tree<'_> {
     }
 
     /// Prints the day group of `trails` from the day of `at`: a line with the day and its counts, then
-    /// its active trails and the rest by project; in a watch, in a box under a rule, each project under
-    /// its 📁 heading.
+    /// its active trails and the rest by project; in a watch, after `🗓️`, each project under its 📁
+    /// heading under the date.
     pub(super) fn day(
         &self,
         at: u64,
@@ -120,28 +123,19 @@ impl Tree<'_> {
         }
         let active = trails.iter().filter(|s| self.lively(**s)).count();
         let counts = format!(" · {active} active · {} done", trails.len() - active);
-        let boxed = self.view.watch;
         let mut head = vec![paint(BOLD, &weekday(at)), paint(DIM, &counts)];
-        if boxed {
-            head.insert(0, Span::raw("📅 "));
+        if self.view.watch {
+            head.insert(0, Span::raw(CALENDAR));
         }
         let mut lines = vec![Row::Mark(false, Box::new(Row::Text(Styled::from(head))))];
-        if boxed {
-            lines.push(Row::Mark(false, Box::new(Row::Text(Styled::from(RULED)))));
+        match self.view.watch {
+            true => {
+                self.projects(trails, &mut lines);
+                nest(&mut lines[1..], DATED);
+            }
+            false => self.active_first(trails, &mut lines),
         }
-        if boxed {
-            self.projects(trails, &mut lines);
-        } else {
-            self.active_first(trails, &mut lines);
-        }
-        if !boxed {
-            return self.show(lines, out);
-        }
-        self.put(out, edge("╭", "╮", self.width))?;
-        let mut body = vec![];
-        self.show(lines, &mut body)?;
-        out.extend(body.into_iter().map(|line| boxed_line(line, self.width)));
-        self.put(out, edge("╰", "╯", self.width))
+        self.show(lines, out)
     }
 
     /// Adds `trails` as `day` does off a box: its active trails, then the rest by project.
@@ -170,8 +164,8 @@ impl Tree<'_> {
         }
     }
 
-    /// Adds `trails` in a day's box by project, a project with a live trail first: each after a blank
-    /// line, `📁` and its name, and a blank line, its live trails as blocks first.
+    /// Adds `trails` by project, a project with a live trail first: each after a blank line, `📁` and its
+    /// name, and a blank line, then one level in its live trails as blocks and the rest folded into one line.
     fn projects(&self, trails: Vec<Step>, lines: &mut Vec<Row>) {
         let mut projects = by_project(trails);
         projects.sort_by_key(|(_, trails)| !trails.iter().any(|s| self.lively(*s)));
@@ -179,17 +173,123 @@ impl Tree<'_> {
             let (active, rest): (Vec<Step>, Vec<Step>) =
                 trails.into_iter().partition(|s| self.lively(*s));
             lines.push(self.gap());
-            let title = vec![Span::raw("📁 "), paint(PROJECT, &name)];
-            lines.push(Row::Mark(false, Box::new(Row::Text(Styled::from(title)))));
+            lines.push(project(&name, PROJECT));
             lines.push(self.gap());
-            let mut after = false;
+            let (start, mut after) = (lines.len(), false);
             for note in active {
                 self.trail(note, true, &mut after, lines);
             }
-            for note in rest {
-                self.trail(note, self.view.full, &mut after, lines);
+            if !rest.is_empty() {
+                if after {
+                    lines.push(self.gap());
+                }
+                self.closed_trails(rest, lines);
+            }
+            nest(&mut lines[start..], FILED);
+        }
+    }
+
+    /// Adds the line `▸ ✓ <n> closed` of the closed `trails` of a project, their count by state at the
+    /// right; open, each of them as a line one level in that opens as a block.
+    fn closed_trails(&self, trails: Vec<Step>, lines: &mut Vec<Row>) {
+        let id = format!("{TRAILS}{}", trails[0].id());
+        let open = self.view.flipped.contains(&id);
+        let first = lines.len();
+        let done = look(State::Done);
+        lines.push(Row::Lined {
+            lead: arrow(open),
+            marks: Styled::from(paint(done.text, done.mark)),
+            title: format!("{} closed", trails.len()),
+            tone: Style::new(),
+            meta: Styled::from(counts(Tally::of(&trails))),
+            whole: None,
+        });
+        let item = Item {
+            id: id.clone(),
+            open,
+            parent: None,
+            under: trails.iter().map(|s| s.id().to_string()).collect(),
+        };
+        self.pick(item, lines, first);
+        if !open {
+            return;
+        }
+        let mut after = false;
+        for note in trails {
+            let start = lines.len();
+            self.trail(note, self.view.full, &mut after, lines);
+            nest(&mut lines[start..], FOLDED);
+            after = false;
+        }
+    }
+
+    /// Prints the days before today with trails not among `shown`, the `EARLIER` newest of them or with
+    /// all every one, packed: each one line `▸ <day>` with its trails counted by state; open, after a
+    /// blank line, its trails by project, each project under its date and its trails under its name, each
+    /// a line that opens as a block. Whether more days lie past those it printed.
+    pub(super) fn earlier(&self, shown: &[Step], out: &mut Vec<Styled>) -> Result<bool, Failure> {
+        let today = day(self.steps.now());
+        let most = match self.view.all {
+            true => usize::MAX,
+            false => EARLIER,
+        };
+        let mut days: Vec<(u64, String, Vec<Step>)> = vec![];
+        let mut more = false;
+        for note in self.steps.roots().into_iter().rev() {
+            let at = note.note().created_at;
+            let name = day(at);
+            if name == today || shown.iter().any(|s| s.id() == note.id()) {
+                continue;
+            }
+            match days.iter().position(|(_, n, _)| *n == name) {
+                Some(found) => days[found].2.push(note),
+                None if days.len() < most => days.push((at, name, vec![note])),
+                None => more = true,
             }
         }
+        let mut lines = vec![];
+        let mut before = None;
+        for (at, name, trails) in days {
+            let id = format!("{DAY}{name}");
+            let open = self.view.flipped.contains(&id);
+            if before.is_none_or(|b| b) || open {
+                lines.push(self.gap());
+            }
+            before = Some(open);
+            let first = lines.len();
+            lines.push(Row::Lined {
+                lead: dated(open),
+                marks: Styled::default(),
+                title: weekday(at),
+                tone: DIM.patch(BOLD),
+                meta: Styled::from(counts(Tally::of(&trails))),
+                whole: None,
+            });
+            let item = Item {
+                id,
+                open,
+                parent: None,
+                under: trails.iter().map(|s| s.id().to_string()).collect(),
+            };
+            self.pick(item, &mut lines, first);
+            if !open {
+                continue;
+            }
+            for (name, trails) in by_project(trails) {
+                lines.push(self.gap());
+                let start = lines.len();
+                lines.push(project(&name, DIM.patch(BOLD)));
+                let inner = lines.len();
+                for note in trails {
+                    let mut after = false;
+                    self.trail(note, self.view.full, &mut after, &mut lines);
+                }
+                nest(&mut lines[inner..], FILED);
+                nest(&mut lines[start..], DATED);
+            }
+        }
+        self.show(lines, out)?;
+        Ok(more)
     }
 
     /// Whether `note` heads its day: in a watch while it is a live session, else while it is active.
@@ -206,39 +306,49 @@ impl Tree<'_> {
     }
 }
 
-/// What stands for the rule under a day's line until its box draws it.
-const RULED: &str = "\u{E010}";
+/// The calendar before today in a watch, where an earlier day's arrow stands: one with no date on it,
+/// two spaces after it.
+const CALENDAR: &str = "🗓\u{fe0f}  ";
 
-/// A day box's top or bottom border, from `left` to `right`, round a line `width` wide.
-fn edge(left: &str, right: &str, width: Option<usize>) -> Styled {
-    let across = "─".repeat(width.unwrap_or(0) + 2);
+/// What a row under a day starts with in a watch, so its icon stands under the date.
+const DATED: &str = "    ";
+
+/// What a trail under a project's heading starts with, so its mark stands under the project's name.
+const FILED: &str = "  ";
+
+/// What a trail under a fold of closed trails starts with, so its mark stands under the fold's text.
+const FOLDED: &str = "   ";
+
+/// The most days before today a watch lists, each folded, until Show more lists them all.
+const EARLIER: usize = 5;
+
+/// `rows` moved right by `inset`.
+fn nest(rows: &mut [Row], inset: &str) {
+    for row in rows {
+        row.indent(inset);
+    }
+}
+
+/// The arrow before a line that opens, `▾` when `open`, and a space.
+fn arrow(open: bool) -> Styled {
     Styled::from(vec![
-        Span::raw("  "),
-        paint(FRAME, &format!("{left}{across}{right}")),
+        paint(DIM, if open { "▾" } else { "▸" }),
+        Span::raw(" "),
     ])
 }
 
-/// `line` in a day's box `width` wide: its cursor column, then `│ `, its text cut and padded to the width, and
-/// ` │`; the rule under the day's line as `├─…─┤`.
-fn boxed_line(line: Styled, width: Option<usize>) -> Styled {
-    let width = width.unwrap_or(0);
-    let mut spans = line.spans.into_iter();
-    let cursor = spans.next().unwrap_or_else(|| Span::raw("  "));
-    let text: Vec<Span<'static>> = spans.collect();
-    if text.iter().any(|s| s.content == RULED) {
-        let rule = vec![
-            cursor,
-            paint(FRAME, &format!("├{}┤", "─".repeat(width + 2))),
-        ];
-        return Styled::from(rule);
-    }
-    let text = clip(&Styled::from(text), width).spans;
-    let used: usize = text.iter().map(|s| visible(&s.content)).sum();
-    let mut row = vec![cursor, paint(FRAME, "│ ")];
-    row.extend(text);
-    row.push(Span::raw(" ".repeat(width.saturating_sub(used))));
-    row.push(paint(FRAME, " │"));
-    Styled::from(row)
+/// The arrow before a day or Show more, `▾` when `open`, and as many spaces as the calendar before
+/// today leaves, so its text starts where today's date does.
+pub(super) fn dated(open: bool) -> Styled {
+    let mut lead = arrow(open);
+    lead.push_span("  ");
+    lead
+}
+
+/// The heading of the project `name` in the look `tone`: `📁` and two spaces.
+fn project(name: &str, tone: Style) -> Row {
+    let title = vec![Span::raw("📁  "), paint(tone, name)];
+    Row::Mark(false, Box::new(Row::Text(Styled::from(title))))
 }
 
 /// `trails` by project, each project's name with its trails, in the order they first come.

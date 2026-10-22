@@ -2,7 +2,6 @@
 
 use super::canvas::{clip, line, Styled, DIM};
 use super::legend::legend;
-use super::remark::Remark;
 use super::wake::{keys, signals, Key, Wake};
 use crate::command::Command;
 use crate::failure::Failure;
@@ -66,10 +65,8 @@ impl Command {
 /// What a watch shows of its tree: whether in colour, the first line in view, whether the view moves to
 /// the selected line on the next draw, the lines a page holds, the rows on the screen, what the last
 /// key did when it has something to say, when it was first drawn, when it first drew the checks it
-/// draws now, the remark it shows with when it changed to it, the remark it showed before, every
-/// remark it showed and since when it shows the newest of them, whether the terminal
-/// was resized since it last drew, the second it started, whether it held the scene when it
-/// started, and when it last wrote a frame.
+/// draws now, whether the terminal was resized since it last drew, whether it held the scene when it
+/// started, when it last wrote a frame, whether it may draw the opening scene, and whether it drew it.
 #[derive(Default)]
 pub(crate) struct Screen {
     pub colour: bool,
@@ -80,14 +77,11 @@ pub(crate) struct Screen {
     pub said: Option<String>,
     pub opened: Option<std::time::Instant>,
     pub checked: Option<std::time::Instant>,
-    pub remark: Option<(Remark, Option<std::time::Instant>)>,
-    pub former: Option<Remark>,
-    pub seen: Vec<Remark>,
-    pub since: Option<std::time::Instant>,
     pub resized: bool,
-    pub started: Option<u64>,
     pub played: Option<bool>,
     pub wrote: Option<std::time::Instant>,
+    pub scene: bool,
+    pub drew_scene: bool,
 }
 
 impl Screen {

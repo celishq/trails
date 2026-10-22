@@ -184,10 +184,10 @@ fn the_closed_resources_bar_splits_the_time_as_allocation() {
     assert!(!looks.contains(&SLATE.fg), "{looks:?}");
 }
 
-/// Closed, Output draws its days in first pass green, as Quality draws first pass, never in link blue.
+/// Closed, Output draws its days in first pass green, as Quality draws first pass.
 #[test]
 fn the_closed_output_sparkline_is_first_pass_green() {
-    use crate::terminal::canvas::{GREEN, LINK};
+    use crate::terminal::canvas::GREEN;
     let month = shop().month();
     let m = Moment {
         month: &month,
@@ -214,7 +214,6 @@ fn the_closed_output_sparkline_is_first_pass_green() {
         !bars.is_empty() && bars.iter().all(|fg| *fg == GREEN.fg),
         "{bars:?}"
     );
-    assert!(!bars.contains(&LINK.fg));
 }
 
 /// Opened, Resolved steps by week draws all four weeks' bars in one colour, none grey, and every week's

@@ -12,7 +12,8 @@ fn lined_row(title: &str, meta: &str) -> Row {
     }
 }
 
-/// A lined row is one line as wide as the width: its title, then its meta at the right edge.
+/// A lined row is one line as wide as the width: its title two spaces after its mark, then its meta at
+/// the right edge.
 #[test]
 fn a_lined_row_puts_its_meta_at_the_right_edge() {
     let lines = lined_row("the step", "3fa2c1d0 · 4m").lines(1, Some(40), false);
