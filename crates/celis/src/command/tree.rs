@@ -27,7 +27,7 @@ use std::io::{IsTerminal, Write};
 impl Command {
     /// Prints the step `args` names with every step under it, or with no id each trail of every project
     /// that is active or has a record from today, newest first, else `EMPTY`; on a terminal with no
-    /// `--json`, again on each change. Writes no record.
+    /// `--json`, again on each change. Prints as v0.0.11 did unless `--next`. Writes no record.
     pub(crate) fn tree(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let id = args.words.get(1);
         if args.all && id.is_some() {
@@ -41,6 +41,9 @@ impl Command {
         }
         if args.graph {
             return self.graph(args, out);
+        }
+        if !args.next {
+            return self.classic_tree(args, out);
         }
         if std::io::stdout().is_terminal() && !args.json {
             return self.watch(args, out);
@@ -547,6 +550,7 @@ fn working(steps: &[Step]) -> usize {
 }
 
 mod agent;
+mod classic;
 mod day;
 mod json;
 mod layout;

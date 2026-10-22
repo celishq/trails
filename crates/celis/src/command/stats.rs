@@ -15,7 +15,7 @@ const NOTHING: &str = "Nothing was reused yet.";
 impl Command {
     /// Prints the step `args` names with the steps it follows and the steps that follow it, or with no id
     /// each followed step, each used rule and the total; on a terminal with no `--json`, draws them
-    /// as cards. Writes no record.
+    /// as cards, or as the board with `--next`. Writes no record.
     pub(crate) fn stats(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let id = args.words.get(1);
         if args.demo && id.is_some() {
@@ -25,7 +25,10 @@ impl Command {
             return self.demo(args, out);
         }
         if std::io::stdout().is_terminal() && !args.json {
-            return self.board(args, out);
+            return match args.next {
+                true => self.board(args, out),
+                false => self.cards(args, out),
+            };
         }
         if !self.held()? {
             return match id {
@@ -114,6 +117,7 @@ fn took(step: Step) -> String {
 
 mod allocation;
 mod board;
+mod classic;
 mod daily;
 mod head;
 mod kind;

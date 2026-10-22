@@ -41,7 +41,7 @@ impl Command {
             return shown;
         }
         let written = match args.words[0].as_str() {
-            "stats" => demo.month().map(|_| String::new()),
+            "stats" if args.next => demo.month().map(|_| String::new()),
             _ => demo.write(),
         };
         let shown = written.and_then(|tier| {

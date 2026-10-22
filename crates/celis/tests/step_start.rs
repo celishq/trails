@@ -15,7 +15,7 @@ fn state(repo: &Repo, trail: &str, id: &str) -> String {
 }
 
 /// A step is open, then working once a `start` names it, then done; a `start` does not close it, and
-/// `tree` marks a working step with the spinner's last frame, `⠏` (`spec/03-steps.md`, "Starting").
+/// `tree` marks a working step `◐` (`spec/03-steps.md`, "Starting").
 #[test]
 fn a_started_step_is_working_until_it_closes() {
     let repo = Repo::new();
@@ -28,7 +28,7 @@ fn a_started_step_is_working_until_it_closes() {
     let tree = out(&cli(&repo, &["tree", &trail[..8]]));
     assert!(
         tree.lines()
-            .any(|l| l.starts_with(&format!("  ⠏ {} the step", &step[..8]))),
+            .any(|l| l.starts_with(&format!("  ◐ {} the step", &step[..8]))),
         "{tree}"
     );
     finish(&repo, &step[..8]);
