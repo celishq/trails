@@ -3,5 +3,10 @@
   "version": "0.0.11",
   "description": "Stop telling your agent the same thing twice. Celis turns your corrections into rules that Claude Code, Codex, Cursor and Gemini remember in every project.",
   "author": { "name": "Celis" },
+  "homepage": "https://celis.ai",
+  "repository": "https://github.com/celishq/trails",
+  "license": "MIT",
+  "keywords": ["memory", "rules", "agents", "skills"],
+  "logo": "./.claude-plugin/icon.png",
   "hooks": "./hooks/hooks-cursor.json"
 }
