@@ -146,7 +146,10 @@ impl Agent {
             .stderr(Stdio::piped())
             .spawn()
             .unwrap();
-        std::io::Write::write_all(&mut child.stdin.take().unwrap(), stdin.as_bytes()).unwrap();
+        let written = std::io::Write::write_all(&mut child.stdin.take().unwrap(), stdin.as_bytes());
+        if let Err(e) = written {
+            assert_eq!(e.kind(), std::io::ErrorKind::BrokenPipe, "{e}");
+        }
         let o = child.wait_with_output().unwrap();
         assert!(o.status.success(), "{} {event}: {}", self.name, err(&o));
         out(&o)
