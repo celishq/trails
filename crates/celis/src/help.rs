@@ -129,6 +129,14 @@ pub const GROUPS: &[Group] = &[
             ("phrase", "Show your recovery phrase"),
         ],
     ),
+    (
+        "hook",
+        "What the plugin's hooks run. Each reads the hook's JSON from stdin.",
+        &[
+            ("start", "Print what the agent reads at a session start"),
+            ("ask", "Record a prompt and print the note the agent reads"),
+        ],
+    ),
 ];
 
 /// The page of a group: its usage, what it holds, and each of its commands with what it does.
@@ -351,6 +359,23 @@ pub const VERBS: &[Verb] = &[
         summary: "Read a hook's JSON from stdin, and record the prompt on the open trail of its session. The plugin runs this on each prompt.",
         args: &[],
         examples: &["celis prompt < hook.json"],
+    },
+    Verb {
+        command: "hook start",
+        usage: &["celis hook start <agent> <plugin folder>"],
+        summary: "Read a session start hook's JSON from stdin, and print what the agent reads: the card, the named trails, and a notice when celis and the plugin differ in version. The plugin runs this.",
+        args: &[
+            ("<agent>", "claude, codex, cursor, gemini or antigravity"),
+            ("<plugin folder>", "The folder of the celis plugin"),
+        ],
+        examples: &["celis hook start claude ~/.claude/plugins/celis < hook.json"],
+    },
+    Verb {
+        command: "hook ask",
+        usage: &["celis hook ask <agent>"],
+        summary: "Read a prompt hook's JSON from stdin, record the prompt as `celis prompt` does, and print the note the agent reads. The plugin runs this on each prompt.",
+        args: &[("<agent>", "claude, codex, cursor, gemini or antigravity")],
+        examples: &["celis hook ask codex < hook.json"],
     },
     Verb {
         command: "auth login",

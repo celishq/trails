@@ -121,9 +121,14 @@ impl Agent {
 
     /// Runs the hook of `event` with `stdin`, as the agent does, with `celis` on PATH.
     fn run(&self, repo: &Repo, event: &str, stdin: &str) -> String {
+        let celis = Path::new(env!("CARGO_BIN_EXE_celis")).parent().unwrap();
+        self.run_from(repo, event, stdin, celis)
+    }
+
+    /// Runs the hook of `event` with `stdin`, as the agent does, with `bin` first on PATH.
+    fn run_from(&self, repo: &Repo, event: &str, stdin: &str, bin: &Path) -> String {
         let root = checkout().join(self.root.1);
         let variable = Some(self.root.0).filter(|v| !v.is_empty());
-        let celis = Path::new(env!("CARGO_BIN_EXE_celis")).parent().unwrap();
         let folder = if self.in_root {
             root.clone()
         } else {
@@ -133,7 +138,7 @@ impl Agent {
             .args(["-c", &self.command(event)])
             .current_dir(folder)
             .env_clear()
-            .env("PATH", format!("{}:/usr/bin:/bin", celis.display()))
+            .env("PATH", format!("{}:/usr/bin:/bin", bin.display()))
             .env("CELIS_HOME", repo.home())
             .envs(variable.map(|v| (v, &root)))
             .stdin(Stdio::piped())
@@ -340,60 +345,75 @@ fn each_manifest_carries_one_version() {
     }
 }
 
-/// What Claude Code's session start gives when `celis --version` prints `celis` and the manifest carries
-/// `plugin`, run from a copy of the plugin with a `celis` that only prints its version.
-fn start_with_versions(celis: &str, plugin: &str) -> String {
-    let dir = tempfile::tempdir().unwrap();
-    let root = dir.path().join("celis");
-    for rel in [
-        "hooks/start.sh",
-        "hooks/out.sh",
-        "card.md",
-        ".claude-plugin/plugin.json",
-    ] {
-        let to = root.join(rel);
-        std::fs::create_dir_all(to.parent().unwrap()).unwrap();
-        std::fs::copy(checkout().join("plugins/celis").join(rel), &to).unwrap();
+/// With no `celis` on PATH, each agent's session start says to install it from celis.ai, and each prompt
+/// hook prints nothing.
+#[test]
+fn each_agents_hooks_say_how_to_install_a_missing_celis() {
+    let repo = Repo::new();
+    let empty = tempfile::tempdir().unwrap();
+    for agent in AGENTS {
+        let stdout = agent.run_from(
+            &repo,
+            agent.start,
+            &agent.payload("s1", &repo.path(), ""),
+            empty.path(),
+        );
+        let context = agent.context(&stdout);
+        assert!(
+            context.contains("install it from https://celis.ai"),
+            "{}: {context}",
+            agent.name
+        );
+        if !agent.ask.is_empty() {
+            let payload = agent.payload("s1", &repo.path(), "make it blue");
+            let said = agent.run_from(&repo, agent.ask, &payload, empty.path());
+            assert_eq!(said, "", "{}", agent.name);
+        }
     }
-    let manifest = serde_json::json!({"name": "celis", "version": plugin});
-    std::fs::write(
-        root.join(".claude-plugin/plugin.json"),
-        manifest.to_string(),
-    )
-    .unwrap();
-    let bin = dir.path().join("bin");
-    std::fs::create_dir(&bin).unwrap();
-    let fake =
-        format!("#!/bin/sh\n[ \"$1\" = --version ] && echo 'celis {celis} (abcd1234)'\nexit 0\n");
-    std::fs::write(bin.join("celis"), fake).unwrap();
-    Command::new("chmod")
-        .arg("755")
-        .arg(bin.join("celis"))
-        .status()
-        .unwrap();
-    let o = Command::new("sh")
-        .arg(root.join("hooks/start.sh"))
-        .env_clear()
-        .env("PATH", format!("{}:/usr/bin:/bin", bin.display()))
-        .stdin(Stdio::null())
-        .output()
-        .unwrap();
-    assert!(o.status.success(), "{}", err(&o));
-    out(&o)
 }
 
-/// The session start names both versions when the plugin and `celis` differ, and nothing when they match
-/// or one is a build from the repo.
+/// Claude Code's session start says to update a `celis` that has no `hook` command.
 #[test]
-fn session_start_names_a_version_mismatch() {
-    let notice = "celis 1.4.0 is installed, and the celis plugin is 1.3.0.";
-    assert!(start_with_versions("1.4.0", "1.3.0").contains(notice));
-    for (celis, plugin) in [("1.4.0", "1.4.0"), ("0.0.0", "1.4.0"), ("1.4.0", "0.0.0")] {
-        let context = start_with_versions(celis, plugin);
-        assert!(context.starts_with("How to do an ask"), "{context}");
-        assert!(
-            !context.contains("is installed, and the celis plugin"),
-            "{celis} {plugin}: {context}"
-        );
+fn claudes_session_start_says_to_update_an_older_celis() {
+    let repo = Repo::new();
+    let bin = tempfile::tempdir().unwrap();
+    let old = bin.path().join("celis");
+    std::fs::write(
+        &old,
+        "#!/bin/sh\necho 'celis: no command \"hook\"' >&2\nexit 2\n",
+    )
+    .unwrap();
+    Command::new("chmod").arg("755").arg(&old).status().unwrap();
+    let claude = &AGENTS[0];
+    let said = claude.run_from(
+        &repo,
+        claude.start,
+        &claude.payload("s1", &repo.path(), ""),
+        bin.path(),
+    );
+    assert!(said.contains("run: celis update"), "{said}");
+}
+
+/// Claude Code's hooks name each script by a literal path under `${CLAUDE_PLUGIN_ROOT}`, and each script
+/// uses no variable but `CLAUDE_PLUGIN_ROOT` and no substitution, so the plugin directory follows them.
+#[test]
+fn claudes_hook_scripts_compute_no_path() {
+    let claude = &AGENTS[0];
+    for (event, script) in [(claude.start, "start.sh"), (claude.ask, "ask.sh")] {
+        let named = format!("\"${{CLAUDE_PLUGIN_ROOT}}/hooks/{script}\"");
+        assert_eq!(claude.command(event), named);
+        let text =
+            std::fs::read_to_string(checkout().join("plugins/celis/hooks").join(script)).unwrap();
+        for line in text.lines().filter(|l| !l.starts_with('#')) {
+            assert!(
+                !line.contains("$(") && !line.contains('`'),
+                "{script}: {line}"
+            );
+            let rest: Vec<&str> = line.split('$').skip(1).collect();
+            assert!(
+                rest.iter().all(|r| r.starts_with("CLAUDE_PLUGIN_ROOT\"")),
+                "{script}: {line}"
+            );
+        }
     }
 }

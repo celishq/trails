@@ -63,7 +63,7 @@ fn usages() -> Vec<(String, String)> {
         let usage = line.split("   ").next().unwrap().trim().to_string();
         let words: Vec<&str> = usage.split(' ').collect();
         let command = match words[1] {
-            "step" | "auth" => format!("{} {}", words[1], words[2]),
+            "step" | "auth" | "hook" => format!("{} {}", words[1], words[2]),
             word => word.to_string(),
         };
         found.push((command, usage));
@@ -100,7 +100,7 @@ fn celis_and_celis_help_print_the_page() {
 #[test]
 fn help_anywhere_prints_the_command_page_its_words_name() {
     let commands = usages();
-    assert_eq!(commands.len(), 20, "{commands:?}");
+    assert_eq!(commands.len(), 22, "{commands:?}");
     for (command, usage) in &commands {
         let mut args: Vec<&str> = command.split(' ').collect();
         args.extend(["4c1d22e0", "--help", "--json"]);

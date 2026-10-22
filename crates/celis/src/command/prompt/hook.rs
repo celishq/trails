@@ -33,7 +33,7 @@ impl Hook {
 
     /// The hook `json` holds: its session is `conversation_id`, else `session_id`; its text is the
     /// prompt's first line, cut to 200 characters; a task names a step with `celis step <id>`.
-    fn of(json: &Value) -> Hook {
+    pub(super) fn of(json: &Value) -> Hook {
         let session = json["conversation_id"]
             .as_str()
             .or(json["session_id"].as_str())
