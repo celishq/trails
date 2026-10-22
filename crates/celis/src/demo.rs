@@ -1,16 +1,17 @@
 //! `--demo` of `tree`, `stats` and `report`: made-up trails in every state, with four weeks of history,
-//! in a folder of their own.
+//! in a folder of their own; and of `tree --graph`, eleven trails of today that move live.
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use celis_trails::{Anchor, Draft, Rule, Scope, Store, Trails};
 use std::cell::{RefCell, RefMut};
-use std::io::Write;
+use std::io::{IsTerminal, Write};
 use std::path::PathBuf;
 
 impl Command {
     /// Runs the command `args` names, `tree`, `stats` or `report`, on made-up trails written to a folder
-    /// of their own, and removes the folder at the end; `report` reports the trail with every state.
+    /// of their own, and removes the folder at the end; `report` reports the trail with every state, and
+    /// `tree --graph` shows the trails of the graph's demo, written live on a terminal.
     pub(crate) fn demo(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let home = std::env::temp_dir().join(format!("celis-demo-{}", std::process::id()));
         let demo = Demo {
@@ -18,7 +19,32 @@ impl Command {
             now: crate::command::now(),
             trails: RefCell::new(None),
         };
-        let shown = demo.write().and_then(|tier| {
+        if args.graph {
+            let play = graph::Play::start(&home, demo.now, std::io::stdout().is_terminal());
+            let shown = play.and_then(|play| {
+                let mut env = self.env.clone();
+                env.insert("CELIS_HOME".to_string(), home.display().to_string());
+                let command = Command {
+                    args: self.args.clone(),
+                    env,
+                    folder: self.folder.clone(),
+                };
+                let args = Args {
+                    demo: false,
+                    ..args.clone()
+                };
+                let shown = command.tree(&args, out);
+                play.stop();
+                shown
+            });
+            let _ = std::fs::remove_dir_all(&home);
+            return shown;
+        }
+        let written = match args.words[0].as_str() {
+            "stats" => demo.month().map(|_| String::new()),
+            _ => demo.write(),
+        };
+        let shown = written.and_then(|tier| {
             let mut env = self.env.clone();
             env.insert("CELIS_HOME".to_string(), home.display().to_string());
             let command = Command {
@@ -494,3 +520,6 @@ fn anchor(name: &str) -> Anchor {
         name: name.to_string(),
     }
 }
+
+mod graph;
+mod month;

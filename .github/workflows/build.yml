@@ -11,7 +11,6 @@ on:
         required: true
         type: string
 
-# The compiler the release builds with.
 env:
   RUST_TOOLCHAIN: "1.96.0"
 
@@ -25,8 +24,6 @@ jobs:
         with:
           toolchain: ${{ env.RUST_TOOLCHAIN }}
           targets: x86_64-unknown-linux-musl,aarch64-unknown-linux-musl
-      # Zig is the C compiler and linker for both musl targets, so the bundled SQLite and `ring` build
-      # without a cross toolchain, and the binaries run on any Linux.
       - name: Install cargo-zigbuild
         run: pip3 install --break-system-packages ziglang cargo-zigbuild
       - name: Build

@@ -163,6 +163,18 @@ impl Watch {
         }
     }
 
+    /// Waits until the newest tree holds `text`, each spinner frame in it read as `⠿`.
+    pub fn until_spun(&mut self, text: &str) {
+        let start = Instant::now();
+        while start.elapsed() < Duration::from_secs(5) {
+            let last = self.trees(Duration::from_millis(50)).pop();
+            if last.is_some_and(|t| still(&t).contains(text)) {
+                return;
+            }
+        }
+        panic!("no {text:?} in {:?}", still(&self.shown(Duration::ZERO)));
+    }
+
     /// Waits until the newest tree holds `text`; the time it took.
     pub fn until(&mut self, text: &str) -> Duration {
         let start = Instant::now();
@@ -183,8 +195,17 @@ impl Watch {
         self.screens(wait).pop().unwrap_or_default()
     }
 
-    /// The lines of the newest tree, each with no codes, above the key line.
+    /// The lines of the newest tree, each with no codes, above the key line and under what celis says,
+    /// out of their day's box.
     pub fn rows(&mut self) -> Vec<String> {
+        let rows = self.screen_rows();
+        let said = rows.get(1).is_some_and(|r| r.starts_with("  │ ▄"));
+        let rows = rows.into_iter().skip(if said { 7 } else { 0 });
+        rows.filter_map(unboxed).collect()
+    }
+
+    /// The lines of the newest screen, each with no codes, above the key line.
+    pub fn screen_rows(&mut self) -> Vec<String> {
         let last = self.trees(Duration::ZERO).pop().unwrap_or_default();
         let body = last.split("\x1b[").next().unwrap_or("").to_string();
         body.split("\r\n").map(str::to_string).collect()
@@ -264,4 +285,27 @@ pub fn plain(text: &str) -> String {
         }
     }
     out + rest
+}
+
+/// `row` out of its day's box: its cursor column and its text with no border; none for a border.
+fn unboxed(row: String) -> Option<String> {
+    let cursor: String = row.chars().take(2).collect();
+    let rest: String = row.chars().skip(2).collect();
+    match rest.chars().next() {
+        Some('╭' | '╰' | '├') => None,
+        Some('│') => {
+            let inner = rest.trim_start_matches('│').strip_prefix(' ').unwrap_or("");
+            let inner = inner.trim_end().trim_end_matches('│').trim_end();
+            Some(format!("{cursor}{inner}"))
+        }
+        _ => Some(row),
+    }
+}
+
+/// `text` with each spinner frame read as `⠿`, so a spinning mark compares whatever its frame.
+pub fn still(text: &str) -> String {
+    let frames = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏";
+    text.chars()
+        .map(|c| if frames.contains(c) { '⠿' } else { c })
+        .collect()
 }

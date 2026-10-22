@@ -99,6 +99,7 @@ impl Live for Watch<'_> {
             copy,
             markdown,
             spun: frame.spun,
+            remarks: std::mem::take(&mut frame.remarks),
             again: frame.next.map(until),
         };
         self.frame = Some(frame);
@@ -107,8 +108,8 @@ impl Live for Watch<'_> {
 
     /// Moves the selection, or opens or closes lines.
     fn press(&mut self, key: Key, _: &Model, screen: &mut Screen) -> Result<(), Failure> {
-        let order = self.frame.as_ref().map_or(&[][..], |f| &f.order);
         let before = self.view.selected.clone();
+        let order = self.frame.as_ref().map_or(&[][..], |f| &f.order);
         press(key, &mut self.view, order, self.named);
         screen.follow |= self.view.selected != before;
         Ok(())
@@ -166,7 +167,10 @@ fn press(key: Key, view: &mut View, order: &[Item], named: bool) {
             | Key::Top
             | Key::End
             | Key::Copy
-            | Key::Markdown,
+            | Key::Markdown
+            | Key::Char(_)
+            | Key::Erase
+            | Key::Quit,
             _,
         ) => {}
         (Key::Full, _) => view.full = !view.full,

@@ -245,13 +245,14 @@ impl<'a> Step<'a> {
         self.entry.newest
     }
 
-    /// Whether, as a trail, it is open and ended: steps sit under it and none is open, or 30 minutes passed
-    /// after the newest record of its tree.
+    /// Whether, as a trail, it is open and ended: steps sit under it, none is open and no prompt came
+    /// after the last of them closed, or 30 minutes passed after the newest record of its tree.
     pub fn ended(self) -> bool {
         if self.closed().is_some() {
             return false;
         }
-        let idle = !self.entry.children.is_empty() && !self.entry.loose;
+        let asked = self.entry.asked > self.entry.shut;
+        let idle = !self.entry.children.is_empty() && !self.entry.loose && !asked;
         idle || self.steps.now().saturating_sub(self.newest()) >= LIFE
     }
 

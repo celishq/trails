@@ -112,6 +112,23 @@ fn took(step: Step) -> String {
     crate::text::line::grade(step).map_or(String::new(), |g| format!(" · {g}"))
 }
 
+mod allocation;
 mod board;
-pub(crate) mod card;
+mod daily;
+mod head;
+mod kind;
+mod learning;
+mod moment;
+mod month;
+mod outcomes;
+mod output;
+mod panel;
+mod project;
+mod quality;
+mod section;
+mod sheet;
 mod table;
+mod total;
+
+#[cfg(test)]
+mod tests;

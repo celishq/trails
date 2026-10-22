@@ -1,6 +1,11 @@
 //! CIP-02, "Help".
 
+mod support;
+
 use std::process::{Command, Output};
+use std::time::Duration;
+use support::watch::Watch;
+use support::Repo;
 
 const CLI: &str = include_str!("../../../spec/02-cli.md");
 const CARD: &str = include_str!("../../../plugins/celis/card.md");
@@ -58,7 +63,7 @@ fn usages() -> Vec<(String, String)> {
         let usage = line.split("   ").next().unwrap().trim().to_string();
         let words: Vec<&str> = usage.split(' ').collect();
         let command = match words[1] {
-            "step" | "auth" => format!("{} {}", words[1], words[2]),
+            "step" | "auth" | "hook" => format!("{} {}", words[1], words[2]),
             word => word.to_string(),
         };
         found.push((command, usage));
@@ -95,7 +100,7 @@ fn celis_and_celis_help_print_the_page() {
 #[test]
 fn help_anywhere_prints_the_command_page_its_words_name() {
     let commands = usages();
-    assert_eq!(commands.len(), 21, "{commands:?}");
+    assert_eq!(commands.len(), 23, "{commands:?}");
     for (command, usage) in &commands {
         let mut args: Vec<&str> = command.split(' ').collect();
         args.extend(["4c1d22e0", "--help", "--json"]);
@@ -275,4 +280,21 @@ fn the_card_names_each_commands_flags() {
             .unwrap_or_else(|| panic!("{command} is no command"));
         assert_eq!(flags(line), flags(usage), "{line}");
     }
+}
+
+/// On a terminal, the page prints in celis's looks: the command names bold, each state's mark in its
+/// colour; the same text as off a terminal.
+#[test]
+fn on_a_terminal_the_page_prints_in_celis_looks() {
+    let repo = Repo::plain();
+    let mut watch = Watch::start(&repo, &["help"]);
+    watch.shown(Duration::from_secs(2));
+    let shown = String::from_utf8_lossy(&watch.seen).to_string();
+    for code in ["\x1b[1mcelis", "\x1b[1mstep add", "\x1b[38;2;52;230;140m✓"] {
+        assert!(shown.contains(code), "{code:?} in {shown:?}");
+    }
+    let plain = support::watch::plain(&shown).replace("\r\n", "\n");
+    let lines: Vec<&str> = plain.lines().collect();
+    let page: Vec<&str> = PAGE.lines().collect();
+    assert_eq!(lines, page);
 }

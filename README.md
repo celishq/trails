@@ -1,8 +1,9 @@
 <h1 align="center">Celis</h1>
 
-<p align="center">A small CLI and a plugin that remembers every step your AI agent takes and turns its mistakes
-and your corrections into rules. The next session starts with them, so it knows what you already did,
-and it doesn't make the same mistake twice.</p>
+<h3 align="center">No more "You're absolutely right!"</h3>
+
+<p align="center">Stop telling your agent the same thing twice. Celis turns your corrections into rules that
+Claude Code, Codex, Cursor and Gemini remember in every project.</p>
 
 <p align="center">
   <a href="https://github.com/celishq/trails/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/celishq/trails"></a>
@@ -65,7 +66,7 @@ Here's a trail halfway through a job:
 ```
 Job: seniors pay 20% less
 ├─ ✓ Find where prices are set
-├─ ◐ Change how the price is worked out     ← not sure how yet, so it's split up
+├─ ⠏ Change how the price is worked out     ← not sure how yet, so it's split up
 │  ├─ ✗ Change the price in the cart           dropped: the cart doesn't know the age
 │  │                                           rule: set prices in prices.py, not the cart
 │  ├─ ✓ Write a test: seniors pay 80%          proof: passes, once SHELF_OFFLINE=1 was set
@@ -73,7 +74,7 @@ Job: seniors pay 20% less
 │  └─ ○ Use the new price in prices.py      ← up next
 └─ ○ Show the senior price on the page      ← will split this later
 
-✓ done   ◐ in progress   ○ to do   ✗ dropped
+✓ done   ⠏ in progress   ○ to do   ✗ dropped
 ```
 
 A week later, you ask for a student discount. This is what the agent sees first:
@@ -183,6 +184,31 @@ sh install.sh
 ```
 
 To update it later, run `celis update`.
+
+<details>
+<summary>Read the script first, and check the download</summary>
+
+The script puts `celis` in `~/.local/bin`, with no `sudo`. When that folder isn't on your PATH, it
+adds one `export PATH=…` line to `~/.profile` and to your shell's rc file. To read it before it
+runs:
+
+```bash
+curl -fsSL https://celis.ai/install.sh -o install.sh
+less install.sh
+sh install.sh
+```
+
+Each archive on [GitHub Releases](https://github.com/celishq/trails/releases) has a checksum, which
+the script checks, and a build attestation, which proves that this repo's release workflow built
+it. To check an archive yourself with the [GitHub CLI](https://cli.github.com):
+
+```bash
+gh attestation verify celis-aarch64-apple-darwin.tar.gz -R celishq/trails
+```
+
+[SECURITY.md](SECURITY.md) says what celis keeps, sends and runs.
+
+</details>
 
 **2. Add the plugin to your agent:**
 

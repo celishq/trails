@@ -37,6 +37,8 @@ celis step drop <id> -- <reason>                      end a step, a done trail o
 celis step edit <id> [--at <place>]... [--check <command>] [-- <text>]
                                                        give a step a new title, places or check
 celis prompt                                          a person's prompt, from a hook
+celis hook start <agent> <plugin folder>              what an agent reads at a session start
+celis hook ask <agent>                                a person's prompt, and what the agent reads on it
 celis auth login                                      keep the phrase stdin gives
 celis auth status                                     the account's npub
 celis auth phrase                                     print the phrase
@@ -93,7 +95,7 @@ celis decide --path "**/prices*.py" -- "When you change prices: keep them in cen
 - A command that writes records MUST print the id of each, its main record first.
 - With `--json`, a command but `grep` MUST print one JSON object a line, and nothing else, to stdout. A
   printed id is `{"id"}`.
-- Only `decide`, `name`, `step` and `prompt` MAY write a record. A command that refuses MUST write nothing.
+- Only `decide`, `name`, `step`, `prompt` and `hook ask` MAY write a record. A command that refuses MUST write nothing.
 - A command MUST NOT ask a question, but `auth login` on a terminal.
 - A command MUST exit 0 when done, 2 on a usage error, and 1 on any other error.
 - An error MUST be named `usage`, `no-decision`, `no-trail`, `no-step`, `closed`, `open-steps`,
@@ -243,8 +245,8 @@ index    <n> live rules. Their words, by how many rules use each:
 
 **Rules**
 
-- Each `<file>` MUST count as that file. A `<file>` that is a folder MUST count as each file that `git ls-files --cached --others --exclude-standard
-  -- <folder>` gives in the project. `--diff` MUST count as each file that `git diff
+- Each `<file>` MUST count as that file. A `<file>` that is a folder MUST count as each file that
+  `git ls-files --cached --others --exclude-standard -- <folder>` gives in the project. `--diff` MUST count as each file that `git diff
   --name-only HEAD` and `git ls-files --others --exclude-standard` give in the working folder, and that
   exists.
 - With no file, `rules` MUST print the index of the live rules in scope: each word that
@@ -260,7 +262,33 @@ index    <n> live rules. Their words, by how many rules use each:
 celis rules
 celis rules shelf/prices.py
 celis rules --diff
-celis rules shelf/prices.py -- "pytest shelf/test_prices.py"
+```
+
+## Hooks
+
+Each agent's hooks give their JSON to `hook`, and the agent reads what it prints.
+
+```
+claude, codex   <text>
+cursor          {"additional_context": "<text>"}; on ask, {"continue": true}
+gemini          {"hookSpecificOutput": {"hookEventName": "SessionStart" | "BeforeAgent", "additionalContext": "<text>"}}
+antigravity     {"injectSteps": [{"ephemeralMessage": "<text>"}]}
+```
+
+**Rules**
+
+- `hook` MUST read the hook's JSON on stdin, as `prompt` does, and act on it as `prompt` does. `hook ask`
+  MUST act in the folder the JSON names in `cwd`, else in the first of `workspace_roots`.
+- `hook start` MUST read the card from `card.md` and the plugin's version from `.claude-plugin/plugin.json`
+  in `<plugin folder>`.
+- `hook` MUST print in the shape of `<agent>`, and nothing when it has no text, but Cursor's ask.
+- `hook` MUST exit 0 on any error but a usage error.
+
+**Examples**
+
+```
+echo '{"session_id": "95e9be99", "cwd": "/repo"}' | celis hook start claude ~/.claude/plugins/celis
+echo '{"session_id": "95e9be99", "cwd": "/repo", "prompt": "Use the shared Badge."}' | celis hook ask codex
 ```
 
 ## Grep

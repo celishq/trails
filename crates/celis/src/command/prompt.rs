@@ -21,7 +21,28 @@ impl Command {
         err: &mut dyn Write,
         project: &Project,
     ) -> Result<(), Failure> {
-        match Hook::read()? {
+        self.act(Hook::read()?, args, out, err, project)
+    }
+
+    /// Acts on the hook `json` holds, as `prompt` acts on the hook on stdin.
+    pub(super) fn act_on(
+        &self,
+        json: &serde_json::Value,
+        out: &mut dyn Write,
+        err: &mut dyn Write,
+    ) -> Result<(), Failure> {
+        self.act(Hook::of(json), &Args::default(), out, err, &self.project())
+    }
+
+    fn act(
+        &self,
+        hook: Hook,
+        args: &Args,
+        out: &mut dyn Write,
+        err: &mut dyn Write,
+        project: &Project,
+    ) -> Result<(), Failure> {
+        match hook {
             Hook::Compaction { session } => {
                 let _ = std::fs::remove_file(self.asked(&session)?);
                 Ok(())

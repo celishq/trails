@@ -1,26 +1,76 @@
-celis remembers how your agents do your tasks. Each task you give becomes a
-trail: the steps your agents take and the rules they learn along the way.
-Your agents use celis through the celis plugin.
+celis remembers how your agents do your tasks.
 
-Record work (your agents run these)
-  step     Add, start, finish, drop, or edit a step
-  decide   Record a rule
-  name     Name a trail, so other work can use it by its name
+  ◆ trail   each task you give
+  ○ step    each piece of work your agents do in it
+  § rule    each lesson they learn, kept for later work
+
+Your agents record them through the celis plugin.
+
+Usage
+  celis <command> [<args>] [flags]
 
 Read
-  tree     Show a trail and its steps
-  names    Show the named trails, most used first
-  grep     Search every trail with grep
-  rules    Show the rules of the files you will touch
-  stats    Show what later work reused
-  report   Show trails as Markdown for a pull request
+  tree [<id>]         Show your trails and their steps
+  ├ --graph           Show today's trails as live graphs of cards
+  ├ --full            Show each step's proof, grade, and reason
+  ├ --all             Show every trail of every project, by day
+  └ --demo            Show sample trails in every state
+
+  names               Show the named trails, most used first
+  └ --limit <n>       Show the first <n> only
+
+  grep <pattern>      Search every trail with grep
+  rules [<file>]...   Show the rules of the files you will touch
+  └ --diff            Each file git shows changed or new
+
+  stats [<id>]        Show what later work reused, and how work went
+  └ --demo            Show four weeks of sample trails
+
+  report <id>...      Show trails as Markdown for a pull request
+  └ --demo            Show a sample trail
+
+Record work · your agents run these
+  step add            Add a step to a trail, or start a new trail
+  ├ --under <id>      The open step this step is part of
+  ├ --replaces <id>   A step this one takes over, or a finished step it fixes
+  ├ --uses <id>       A rule or a past step it follows, or a trail's name
+  ├ --at <place>      Where the work happens: a file:line, a URL, or any text
+  ├ --check <command> A command that proves the work
+  ├ --new             Start a new trail, not a step of the session's trail
+  └ --project <id>    skill:<name>, or the id of a project in the store
+
+  step start <id>     Start a step and show the rules its plan links
+  step done <id>      Finish a step with proof that it works
+  ├ --changed <text>  How the result differs from its expect line
+  ├ --as-planned      The result matches its expect line; else use --changed
+  └ --pitfall <text>  A rule from what went wrong, kept at the step's places
+
+  step drop <id>      Drop a step and the open steps under it
+  step edit <id>      Change a step's title, where it works, or its check
+  ├ --at <place>      Where the work happens, in place of the old places
+  └ --check <command> A command that proves the work, in place of the old one
+
+  decide              Record a rule that later work must keep
+  ├ --scope <scope>   Where it applies: at:<place>, trail:<id>, me, or project
+  ├ --replaces <id>   The rule this one replaces
+  ├ --path <glob>     A file it acts on; * and ? within a folder, ** across
+  ├ --situation       No file shows it ahead
+  ├ --promoted        A tool of the place, like a linter, now checks it
+  └ --project <id>    skill:<name>, or the id of a project in the store
+
+  name <trail> <name> Name a trail, so other work can use it by its name
 
 Set up
-  link     Keep this project's trails in a folder, like the repo or a drive
-  unlink   Stop keeping this project's trails in a folder
-  auth     Manage your recovery phrase
-  update   Update celis to the latest version, or to the one you choose
-  issue    Write a problem report for the celis team
+  link [<folder>]     Keep this project's trails in a folder to commit or share
+  unlink [<folder>]   Stop keeping this project's trails in a folder
+  auth login          Save a recovery phrase and use its account
+  auth status         Show your account and where its phrase is kept
+  auth phrase         Show your recovery phrase
+  update [<version>]  Update celis to the latest version, or to one you choose
+  issue [<id>]...     Write a problem report for the celis team
+
+Marks
+  ○ open  ⠏ working  ✓ done  ✗ dropped  ◌ expired  ↻ revised  ~ changed  § rule
 
 celis keeps your recovery phrase and records in $CELIS_HOME.
 

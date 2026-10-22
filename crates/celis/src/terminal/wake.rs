@@ -78,6 +78,9 @@ pub(crate) enum Key {
     All,
     Copy,
     Markdown,
+    Char(char),
+    Erase,
+    Quit,
 }
 
 impl Key {
@@ -88,11 +91,31 @@ impl Key {
             Key::Enter | Key::Right | Key::Left | Key::Star | Key::Full | Key::All
         )
     }
+
+    /// The character it types into a search: its own for a key that names a letter or a sign.
+    pub(crate) fn typed(&self) -> Option<char> {
+        let c = match self {
+            Key::Char(c) => *c,
+            Key::Space => ' ',
+            Key::Star => '*',
+            Key::Back => '[',
+            Key::Forth => ']',
+            Key::Top => 'g',
+            Key::End => 'G',
+            Key::Full => 'f',
+            Key::All => 'a',
+            Key::Copy => 'c',
+            Key::Markdown => 'm',
+            Key::Quit => 'q',
+            _ => return None,
+        };
+        Some(c)
+    }
 }
 
 /// When stdin is a terminal, turns its echo and line mode off and sends each key it reads to `send`,
-/// `q` as a `Quit` and an escape that comes alone as an `Escape`; the terminal's settings before, to
-/// set back.
+/// an escape that comes alone as an `Escape` and any other sign as a `Char`; the terminal's settings
+/// before, to set back.
 pub(crate) fn keys(send: Sender<Wake>) -> Option<libc::termios> {
     let mut before: libc::termios = unsafe { std::mem::zeroed() };
     if unsafe { libc::tcgetattr(libc::STDIN_FILENO, &mut before) } != 0 {
@@ -133,7 +156,9 @@ pub(crate) fn keys(send: Sender<Wake>) -> Option<libc::termios> {
                     [b'a'] => Wake::Key(Key::All),
                     [b'c'] => Wake::Key(Key::Copy),
                     [b'm'] => Wake::Key(Key::Markdown),
-                    [b'q'] => Wake::Quit,
+                    [b'q'] => Wake::Key(Key::Quit),
+                    [0x7f] | [0x08] => Wake::Key(Key::Erase),
+                    [c @ 0x20..=0x7e] => Wake::Key(Key::Char(char::from(*c))),
                     _ => {
                         typed.clear();
                         continue;

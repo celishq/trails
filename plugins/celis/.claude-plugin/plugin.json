@@ -1,8 +1,9 @@
 {
   "name": "celis",
   "version": "0.0.11",
-  "description": "The celis trail for agents: your tasks as trails of graded steps, and the rules learned at each place, loaded at the start of each session.",
+  "description": "Stop telling your agent the same thing twice. Celis turns your corrections into rules that Claude Code, Codex, Cursor and Gemini remember in every project.",
   "author": {
     "name": "Celis"
-  }
+  },
+  "license": "MIT"
 }
