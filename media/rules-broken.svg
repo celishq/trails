@@ -1,8 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 410" width="880" height="410">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 466" width="880" height="466">
 <style>
   .board { fill: #fff } .ink { fill: #23262e } .secondary { fill: rgb(35 38 46 / 0.6) }
-  .grid { stroke: rgb(35 38 46 / 0.08) } .claude { fill: #d97757 } .celis { fill: #517499 }
-  .worse { fill: #b4492f }
+  .grid { stroke: rgb(35 38 46 / 0.08) } .rule { stroke: rgb(35 38 46 / 0.3) }
+  .claude { fill: #d97757 } .celis { fill: #517499 } .worse { fill: #b4492f }
   text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
          font-variant-numeric: tabular-nums }
   .title { font-size: 20px; font-weight: 600 } .body { font-size: 13px } .value { font-size: 13px; font-weight: 600 }
@@ -10,12 +10,13 @@
   .mark { font-size: 11px }
   @media (prefers-color-scheme: dark) {
     .board { fill: #0d1117 } .ink { fill: #e6edf5 } .secondary { fill: rgb(230 237 245 / 0.6) }
-    .grid { stroke: rgb(230 237 245 / 0.1) } .celis { fill: #6b9bd1 } .worse { fill: #e07a62 }
+    .grid { stroke: rgb(230 237 245 / 0.1) } .rule { stroke: rgb(230 237 245 / 0.35) }
+    .celis { fill: #6b9bd1 } .worse { fill: #e07a62 }
   }
 </style>
-<rect class="board" width="880" height="410" rx="12"/>
+<rect class="board" width="880" height="466" rx="12"/>
 <text class="title ink" x="64" y="40">Rules the agent broke, as its memory grows</text>
-<text class="body secondary" x="64" y="62">Claude Code with Opus, 8 tasks at each size. Lower is better.</text>
+<text class="body secondary" x="64" y="62">Of the rules each task checks, how many the code broke. Lower is better. Claude Code with Opus, 8 tasks at each size.</text>
 <rect class="claude" x="64" y="76" width="12" height="12" rx="3"/>
 <text class="body ink" x="82" y="86">CLAUDE.md with every rule</text>
 <rect class="celis" x="274" y="76" width="12" height="12" rx="3"/>
@@ -35,29 +36,39 @@
 <rect class="celis" x="145.4" y="297.5" width="44" height="40.5" rx="4"/>
 <text class="value ink" x="167.4" y="289.5" text-anchor="middle">14%</text>
 <text class="size ink" x="142.4" y="362.0" text-anchor="middle">40 rules</text>
-<text class="delta celis" x="142.4" y="384.0" text-anchor="middle">−15 pts</text>
+<text class="delta celis" x="142.4" y="382.0" text-anchor="middle">−15 pts</text>
 <rect class="claude" x="252.2" y="255.4" width="44" height="82.6" rx="4"/>
 <text class="value ink" x="274.2" y="247.4" text-anchor="middle">28%</text>
 <rect class="celis" x="302.2" y="268.8" width="44" height="69.2" rx="4"/>
 <text class="value ink" x="324.2" y="260.8" text-anchor="middle">24%</text>
 <text class="size ink" x="299.2" y="362.0" text-anchor="middle">100 rules</text>
-<text class="delta celis" x="299.2" y="384.0" text-anchor="middle">−5 pts</text>
+<text class="delta celis" x="299.2" y="382.0" text-anchor="middle">−5 pts</text>
 <rect class="claude" x="409.0" y="231.0" width="44" height="107.0" rx="4"/>
 <text class="value ink" x="431.0" y="223.0" text-anchor="middle">37%</text>
 <rect class="celis" x="459.0" y="248.6" width="44" height="89.4" rx="4"/>
 <text class="value ink" x="481.0" y="240.6" text-anchor="middle">31%</text>
 <text class="size ink" x="456.0" y="362.0" text-anchor="middle">400 rules</text>
-<text class="delta celis" x="456.0" y="384.0" text-anchor="middle">−6 pts</text>
+<text class="delta celis" x="456.0" y="382.0" text-anchor="middle">−6 pts</text>
 <rect class="claude" x="565.8" y="197.2" width="44" height="140.8" rx="4"/>
 <text class="value ink" x="587.8" y="189.2" text-anchor="middle">48%</text>
 <rect class="celis" x="615.8" y="189.6" width="44" height="148.4" rx="4"/>
 <text class="value ink" x="637.8" y="181.6" text-anchor="middle">51%</text>
 <text class="size ink" x="612.8" y="362.0" text-anchor="middle">1,000 rules</text>
-<text class="delta worse" x="612.8" y="384.0" text-anchor="middle">+3 pts</text>
+<text class="delta worse" x="612.8" y="382.0" text-anchor="middle">+3 pts</text>
 <rect class="claude" x="722.6" y="132.8" width="44" height="205.2" rx="4"/>
 <text class="value ink" x="744.6" y="124.8" text-anchor="middle">70%</text>
 <rect class="celis" x="772.6" y="170.5" width="44" height="167.5" rx="4"/>
 <text class="value ink" x="794.6" y="162.5" text-anchor="middle">57%</text>
 <text class="size ink" x="769.6" y="362.0" text-anchor="middle">1,600 rules</text>
-<text class="delta celis" x="769.6" y="384.0" text-anchor="middle">−13 pts</text>
+<text class="delta celis" x="769.6" y="382.0" text-anchor="middle">−13 pts</text>
+<line class="rule" x1="142.4" y1="404.0" x2="769.6" y2="404.0"/>
+<text class="mark secondary" x="132.4" y="408.0" text-anchor="end">AGENTS.md of</text>
+<line class="rule" x1="258.9" y1="400.0" x2="258.9" y2="408.0"/>
+<text class="mark secondary" x="258.9" y="422.0" text-anchor="middle">VS Code 79</text>
+<line class="rule" x1="322.6" y1="400.0" x2="322.6" y2="424.0"/>
+<text class="mark secondary" x="322.6" y="438.0" text-anchor="middle">Next.js 123</text>
+<line class="rule" x1="352.4" y1="400.0" x2="352.4" y2="408.0"/>
+<text class="mark secondary" x="352.4" y="422.0" text-anchor="middle">PostHog 160</text>
+<line class="rule" x1="416.5" y1="400.0" x2="416.5" y2="424.0"/>
+<text class="mark secondary" x="416.5" y="438.0" text-anchor="middle">kube-router 282</text>
 </svg>

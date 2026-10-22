@@ -110,23 +110,37 @@ We grow the memory from 40 to 1,600 rules, and compare three setups in Claude Co
 
 ### What we found
 
-![Rules broken by the agent, CLAUDE.md against celis, from 40 to 1,600 rules in memory](media/claude-md-vs-celis.svg)
-
 A CLAUDE.md works well while it is small, and degrades as it grows. celis broke fewer rules at most
-sizes, and it rarely followed a rule that had changed, because the old version is gone from what the
-agent sees.
+sizes. When a rule changed, celis rarely followed its old version, because the new rule replaces the
+old one; a CLAUDE.md keeps both, and the agent often picks the old one.
 
-How big does a real CLAUDE.md get? Counted as bullet points, the root agent file holds 79 rules in
-VS Code, 123 in Next.js, 160 in PostHog and 282 in kube-router. Most repos have more agent files in
-their folders, and you add the rules you keep for your own work, so one file soon holds hundreds.
+![Outdated rules the agent followed, CLAUDE.md against celis, from 40 to 1,600 rules in memory](media/outdated-rules.svg)
 
-| Rules in memory | Rules broken, CLAUDE.md | Rules broken, celis | Outdated rules followed, CLAUDE.md | Outdated rules followed, celis | Cost per task, CLAUDE.md | Cost per task, celis |
-| --------------- | ----------------------- | ------------------- | ---------------------------------- | ------------------------------ | ------------------------ | -------------------- |
-| 40              | 29%                     | **14%**             | 61%                                | **0%**                         | $0.31                    | $0.43                |
-| 100             | 28%                     | **24%**             | 71%                                | **11%**                        | $0.35                    | $0.49                |
-| 400             | 37%                     | **31%**             | 83%                                | **23%**                        | $0.55                    | $0.61                |
-| 1,000           | **48%**                 | 51%                 | 79%                                | **41%**                        | $0.84                    | **$0.66**            |
-| 1,600           | 70%                     | **57%**             | 100%                               | **52%**                        | $1.04                    | **$0.73**            |
+![Rules the agent broke, CLAUDE.md against celis, from 40 to 1,600 rules in memory](media/rules-broken.svg)
+
+| Rules in memory | Outdated rules followed, CLAUDE.md | Outdated rules followed, celis | Rules broken, CLAUDE.md | Rules broken, celis | Cost per task, CLAUDE.md | Cost per task, celis |
+| --------------- | ---------------------------------- | ------------------------------ | ----------------------- | ------------------- | ------------------------ | -------------------- |
+| 40              | 61%                                | **0%**                         | 29%                     | **14%**             | $0.31                    | $0.43                |
+| 100             | 71%                                | **11%**                        | 28%                     | **24%**             | $0.35                    | $0.49                |
+| 400             | 83%                                | **23%**                        | 37%                     | **31%**             | $0.55                    | $0.61                |
+| 1,000           | 79%                                | **41%**                        | **48%**                 | 51%                 | $0.84                    | **$0.66**            |
+| 1,600           | 100%                               | **52%**                        | 70%                     | **57%**             | $1.04                    | **$0.73**            |
+
+With no memory, the agent broke 95% of the rules.
+
+**How many rules does a real repo have?** The marks under each chart show where these repos fall: the
+bullet points in their root agent file today. Most repos have more agent files in their folders, and
+you add the rules you keep for your own work, so one file soon holds hundreds.
+
+| Repo                                                          | Rules in its root agent file |
+| ------------------------------------------------------------- | ---------------------------- |
+| [VS Code](https://github.com/microsoft/vscode)                | 79                           |
+| [LangChain](https://github.com/langchain-ai/langchain)        | 94                           |
+| [Airflow](https://github.com/apache/airflow)                  | 110                          |
+| [Next.js](https://github.com/vercel/next.js)                  | 123                          |
+| [PostHog](https://github.com/PostHog/posthog)                 | 160                          |
+| [Kiali](https://github.com/kiali/kiali)                       | 229                          |
+| [kube-router](https://github.com/cloudnativelabs/kube-router) | 282                          |
 
 > [!NOTE]
 > Each size is 8 tasks. celis ran twice, CLAUDE.md once, and two runs of the same setup can differ by
