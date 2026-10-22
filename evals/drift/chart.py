@@ -1,43 +1,43 @@
 #!/usr/bin/env python3
-"""Draws two charts in media/: the outdated rules the agent followed, and the rules it broke, at each memory size,
-a CLAUDE.md that holds every rule against celis, as pairs of bars with the gap under each pair.
+"""Draws two benchmark cards in media/: the outdated rules the agent followed, and the rules it broke, at each
+memory size, a CLAUDE.md that holds every rule against Celis.
 
   chart.py [model] [celis arm]    opus and final when none is named
 
-Each bar pools every task of every run at that size; habits are left out as report.py leaves them out. Marks
-under the sizes show where the root agent file of some well-known repos falls.
+Each bar pools every task of every run at that size; habits are left out as report.py leaves them out. The
+cards embed Anton and JetBrains Mono from data/fonts (SIL Open Font License), so they look the same anywhere.
 """
 
+import base64
 import json
+import random
 import sys
-from math import log
 from pathlib import Path
 
 import report
 
 HERE = Path(__file__).resolve().parent
 MEDIA = HERE.parents[1] / "media"
-W, H, LEFT, RIGHT, TOP, BOTTOM, BAR, PAIR = 880, 480, 64, 32, 104, 142, 44, 6
+FONTS = HERE / "data" / "fonts"
+W, M, BAR_X, BAR_W, VALUE_X, ROW, HEAD = 880, 56, 210, 470, 824, 50, 44
+BG, INK, ORANGE, GREY = "#e8e7e1", "#1e1e1e", "#e85d2f", "#8a8a86"
 REPOS = {"VS Code": 79, "Next.js": 123, "PostHog": 160, "kube-router": 282}
-CHARTS = (("old", "outdated-rules.svg", "Outdated rules the agent followed",
-           "When a rule changed, how often the agent followed its old version.", 1.0),
-          ("broken", "rules-broken.svg", "Rules the agent broke, as its memory grows",
-           "Of the rules each task checks, how many the code broke.", 0.8))
+CARDS = (("old", "outdated-rules.svg", "Outdated rules followed",
+          "When a rule changed, how often the agent followed its old version."),
+         ("broken", "rules-broken.svg", "Rules broken",
+          "Of the rules each task checks, how many the code broke."))
 STYLE = """
-  .board { fill: #fff } .ink { fill: #23262e } .secondary { fill: rgb(35 38 46 / 0.6) }
-  .grid { stroke: rgb(35 38 46 / 0.08) } .rule { stroke: rgb(35 38 46 / 0.3) }
-  .claude { fill: #d97757 } .celis { fill: #517499 } .worse { fill: #b4492f }
-  text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-         font-variant-numeric: tabular-nums }
-  .title { font-size: 20px; font-weight: 600 } .body { font-size: 13px } .value { font-size: 13px; font-weight: 600 }
-  .size { font-size: 14px; font-weight: 600 } .delta { font-size: 13px; font-weight: 700 }
-  .mark { font-size: 11px } .better { font-size: 16px; font-weight: 600 }
-  @media (prefers-color-scheme: dark) {
-    .board { fill: #0d1117 } .ink { fill: #e6edf5 } .secondary { fill: rgb(230 237 245 / 0.6) }
-    .grid { stroke: rgb(230 237 245 / 0.1) } .rule { stroke: rgb(230 237 245 / 0.35) }
-    .celis { fill: #6b9bd1 } .worse { fill: #e07a62 }
-  }
+  .head { font-family: Anton, Impact, 'Arial Narrow', sans-serif; text-transform: uppercase }
+  .mono { font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace }
+  .caps { text-transform: uppercase; letter-spacing: 0.12em; font-weight: 700 }
 """
+
+
+def fonts():
+    """The @font-face rules of the embedded fonts."""
+    face = lambda name, file: (f"@font-face {{ font-family: '{name}'; src: url(data:font/woff2;base64,"
+                               f"{base64.b64encode((FONTS / file).read_bytes()).decode()}) format('woff2'); }}")
+    return face("Anton", "Anton-Regular.woff2") + "\n" + face("JetBrains Mono", "JetBrainsMono.woff2")
 
 
 def shares(arm, model, key, skip, replaced):
@@ -48,59 +48,72 @@ def shares(arm, model, key, skip, replaced):
     return dict(sorted(found.items()))
 
 
-def draw(model, title, note, top, md, celis):
-    """One chart: a pair of bars at each memory size, the gap under it, and the marks of the repos."""
+def ornament(y):
+    """The top rule of the card: crosses, a line, ticks, three squares and a barcode."""
+    parts = [f'<path d="M{M} {y}h16M{M + 8} {y - 8}v16M{W - M - 16} {y}h16M{W - M - 8} {y - 8}v16" '
+             f'stroke="{INK}" stroke-width="2.5"/>',
+             f'<line x1="{M + 26}" y1="{y}" x2="{W - 380}" y2="{y}" stroke="{INK}" stroke-width="2.5"/>']
+    parts += [f'<line x1="{x}" y1="{y - 7}" x2="{x}" y2="{y + 7}" stroke="{INK}" stroke-width="1.5"/>'
+              for x in range(W - 365, W - 205, 9)]
+    parts += [f'<rect x="{W - 192 + 15 * k}" y="{y - 6}" width="11" height="12" '
+              f'fill="{ORANGE if k == 2 else INK}"/>' for k in range(3)]
+    pick, x = random.Random(7), W - 135
+    while x < W - M - 30:
+        width = pick.choice((1.5, 1.5, 3))
+        parts.append(f'<rect x="{x}" y="{y - 7}" width="{width}" height="14" fill="{INK}"/>')
+        x += width + pick.choice((2, 3))
+    return parts
+
+
+def card(model, title, note, md, celis):
+    """One card: the headline, the legend, a pair of bars at each memory size, the repos, and the footer."""
     sizes = list(md)
-    y = lambda v: TOP + (1 - v / top) * (H - TOP - BOTTOM)
-    slot = (W - LEFT - RIGHT) / len(sizes)
-    centre = lambda i: LEFT + slot * (i + 0.5)
-    parts = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}">',
-             f"<style>{STYLE}</style>", f'<rect class="board" width="{W}" height="{H}" rx="12"/>',
-             f'<text class="title ink" x="{LEFT}" y="40">{title}</text>',
-             f'<text class="better celis" x="{W - RIGHT}" y="40" text-anchor="end">↓ Lower is better</text>',
-             f'<text class="body secondary" x="{LEFT}" y="62">{note} Claude Code with {model.capitalize()}, 8 '
-             f'tasks at each size.</text>',
-             f'<rect class="claude" x="{LEFT}" y="76" width="12" height="12" rx="3"/>',
-             f'<text class="body ink" x="{LEFT + 18}" y="86">CLAUDE.md with every rule</text>',
-             f'<rect class="celis" x="{LEFT + 210}" y="76" width="12" height="12" rx="3"/>',
-             f'<text class="body ink" x="{LEFT + 228}" y="86">Celis</text>']
-    for step in range(5):
-        v = top * step / 4
-        parts.append(f'<line class="grid" x1="{LEFT}" y1="{y(v):.1f}" x2="{W - RIGHT}" y2="{y(v):.1f}"/>')
-        parts.append(f'<text class="mark secondary" x="{LEFT - 10}" y="{y(v) + 4:.1f}" text-anchor="end">'
-                     f'{v:.0%}</text>')
-    for i, n in enumerate(sizes):
-        for cls, value, dx in (("claude", md[n], -BAR - PAIR / 2), ("celis", celis[n], PAIR / 2)):
-            x = centre(i) + dx
-            parts.append(f'<rect class="{cls}" x="{x:.1f}" y="{y(value):.1f}" width="{BAR}" '
-                         f'height="{max(y(0) - y(value), 1.5):.1f}" rx="4"/>')
-            parts.append(f'<text class="value ink" x="{x + BAR / 2:.1f}" y="{y(value) - 8:.1f}" '
-                         f'text-anchor="middle">{value:.0%}</text>')
+    last = sizes[-1]
+    gap = round((md[last] - celis[last]) * 100)
+    top = 310
+    height = top + len(sizes) * (HEAD + 2 * ROW) + 120
+    parts = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {height}" width="{W}" height="{height}">',
+             f"<style>{fonts()}{STYLE}</style>", f'<rect width="{W}" height="{height}" fill="{BG}"/>']
+    parts += ornament(64)
+    parts += [f'<text class="head" x="{M}" y="160" font-size="66" fill="{INK}"><tspan fill="{ORANGE}">{gap} pts'
+              f'</tspan> fewer</text>',
+              f'<text class="head" x="{M}" y="230" font-size="66" fill="{INK}">{title}</text>',
+              f'<text class="mono" x="{M}" y="262" font-size="13" fill="{GREY}">{note}</text>',
+              f'<text class="mono" x="{M}" y="280" font-size="13" fill="{GREY}">Claude Code with '
+              f'{model.capitalize()}, 8 tasks at each size. The headline gap is at {last:,} rules.</text>']
+    for k, (name, colour) in enumerate((("CLAUDE.md", INK), ("Celis", ORANGE))):
+        parts += [f'<text class="mono caps" x="{W - M - 26}" y="{132 + 30 * k}" font-size="14" fill="{INK}" '
+                  f'text-anchor="end">{name}</text>',
+                  f'<rect x="{W - M - 16}" y="{120 + 30 * k}" width="16" height="14" fill="{colour}"/>']
+    parts.append(f'<text class="mono caps" x="{W - M}" y="{top + 22}" font-size="14" fill="{ORANGE}" '
+                 f'text-anchor="end">↓ Lower is better</text>')
+    y = top
+    for n in sizes:
+        parts += [f'<text class="mono caps" x="{M}" y="{y + 22}" font-size="14" fill="{INK}">{n:,} rules in memory'
+                  f'</text>',
+                  f'<rect x="{M}" y="{y + HEAD - 6}" width="{W - 2 * M}" height="3.5" fill="{INK}"/>']
+        y += HEAD
         delta = round((celis[n] - md[n]) * 100)
-        text = f"{'−' if delta < 0 else '+'}{abs(delta)} pts" if delta else "even"
-        parts.append(f'<text class="size ink" x="{centre(i):.1f}" y="{y(0) + 24:.1f}" text-anchor="middle">'
-                     f'{n:,} rules</text>')
-        parts.append(f'<text class="delta {"celis" if delta <= 0 else "worse"}" x="{centre(i):.1f}" '
-                     f'y="{y(0) + 44:.1f}" text-anchor="middle">{text}</text>')
-    row = y(0) + 66
-    parts.append(f'<line class="rule" x1="{centre(0)}" y1="{row}" x2="{centre(len(sizes) - 1)}" y2="{row}"/>')
-    parts.append(f'<text class="mark secondary" x="{centre(0) - 10}" y="{row + 4}" text-anchor="end">'
-                 f'AGENTS.md of</text>')
-    placed = []
-    for name, n in REPOS.items():
-        i = max(k for k, size in enumerate(sizes[:-1]) if size <= n)
-        x = centre(i) + (log(n) - log(sizes[i])) / (log(sizes[i + 1]) - log(sizes[i])) * slot
-        half = len(f"{name} {n}") * 3.1 + 4
-        free = lambda level: all(
-            (r != level or abs(x - other) >= half + w) and (r >= level or abs(x - other) >= w)
-            and (r <= level or abs(other - x) >= half) for other, w, r in placed)
-        level = next((level for level in range(3) if free(level)), 2)
-        placed.append((x, half, level))
-        drop = row + 6 + 16 * level
-        parts.append(f'<line class="rule" x1="{x:.1f}" y1="{row - 4}" x2="{x:.1f}" y2="{drop}"/>')
-        parts.append(f'<text class="mark secondary" x="{x:.1f}" y="{drop + 13}" text-anchor="middle">'
-                     f'{name} {n}</text>')
-    parts.append("</svg>")
+        gain = f"{'−' if delta < 0 else '+'}{abs(delta)} pts" if delta else "even"
+        for name, value, colour, under in (("CLAUDE.md", md[n], INK, ""), ("Celis", celis[n], ORANGE, gain)):
+            parts += [f'<text class="mono" x="{M}" y="{y + ROW / 2 + 5}" font-size="15" font-weight="500" '
+                      f'fill="{INK}">{name}</text>',
+                      f'<rect x="{BAR_X}" y="{y + 12}" width="{max(value * BAR_W, 2):.1f}" height="{ROW - 24}" '
+                      f'fill="{colour}"/>',
+                      f'<text class="head" x="{VALUE_X}" y="{y + ROW / 2 + 11}" font-size="30" fill="{colour}" '
+                      f'text-anchor="end">{value:.0%}</text>']
+            if under:
+                parts.append(f'<text class="mono" x="{VALUE_X - 70}" y="{y + ROW / 2 + 5}" font-size="12" '
+                             f'font-weight="700" fill="{ORANGE if delta <= 0 else INK}" text-anchor="end">{under}'
+                             f'</text>')
+            y += ROW
+            parts.append(f'<line x1="{M}" y1="{y}" x2="{W - M}" y2="{y}" stroke="{INK}" stroke-width="1"/>')
+    repos = " · ".join(f"{name} {n}" for name, n in REPOS.items())
+    parts += [f'<text class="mono" x="{M}" y="{y + 40}" font-size="12" fill="{GREY}">Rules in the root agent file '
+              f'of real repos: {repos}</text>',
+              f'<text class="mono caps" x="{M}" y="{height - 34}" font-size="15" fill="{GREY}">Benchmark</text>',
+              f'<text class="mono caps" x="{W - M}" y="{height - 34}" font-size="15" fill="{GREY}" '
+              f'text-anchor="end">celis.ai</text>', "</svg>"]
     return "\n".join(parts) + "\n"
 
 
@@ -110,10 +123,10 @@ def main():
     targets = json.loads((HERE / "data" / "targets.json").read_text())
     replaced = {t["id"] for t in targets if "old" in t}
     skip = report.habits(report.lines(f"plain-{model}"))
-    for key, name, title, note, top in CHARTS:
+    for key, name, title, note in CARDS:
         md = shares("oracle", model, key, skip, replaced)
         celis = shares(arm, model, key, skip, replaced)
-        (MEDIA / name).write_text(draw(model, title, note, top, md, celis))
+        (MEDIA / name).write_text(card(model, title, note, md, celis))
         print(name, "  ".join(f"{n}: {md[n]:.0%} vs {celis[n]:.0%}" for n in md))
 
 
