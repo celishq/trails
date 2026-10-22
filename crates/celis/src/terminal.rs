@@ -3,6 +3,7 @@
 pub mod background;
 pub mod bar;
 pub mod canvas;
+pub mod classic;
 pub mod dude;
 pub mod frame;
 pub mod glyph;

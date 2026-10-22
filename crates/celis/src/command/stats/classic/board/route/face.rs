@@ -1,9 +1,9 @@
 //! The step of a route as its card: its time big, and how often it was revised.
 
 use crate::terminal::canvas::Styled;
+use crate::terminal::classic::look;
 use crate::terminal::frame::Frame;
 use crate::terminal::ink::Ink;
-use crate::terminal::look::look;
 use crate::text::line::time;
 use celis_trails::Step;
 

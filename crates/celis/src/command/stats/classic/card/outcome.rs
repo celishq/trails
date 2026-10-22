@@ -6,8 +6,8 @@ use super::super::Period;
 use super::{nothing, Card};
 use crate::progress::Tally;
 use crate::terminal::canvas::Styled;
+use crate::terminal::classic::look;
 use crate::terminal::ink::Ink;
-use crate::terminal::look::look;
 use celis_trails::State;
 
 /// The outcome: the steps closed in the last 14 days by how they ended, as a strip of shares, with the

@@ -465,9 +465,9 @@ fn tree_demo_prints_every_state_and_writes_nothing() {
     let o = repo.run(&repo.path(), &["tree", "--demo"], &env, "");
     assert!(o.status.success(), "{}", err(&o));
     let text = out(&o);
-    let working = text.lines().filter(|l| l.starts_with("⠏ ")).count();
+    let working = text.lines().filter(|l| l.starts_with("◐ ")).count();
     assert!(working >= 2, "{text}");
-    for mark in ["○ ", "⠏ ", "✓ ", "✓↻ ", "✗ ", "◌ "] {
+    for mark in ["○ ", "◐ ", "✓ ", "✓↻ ", "✗ ", "◌ "] {
         assert!(
             text.lines().any(|l| l.trim_start().starts_with(mark)),
             "{mark}: {text}"
@@ -556,4 +556,52 @@ fn unnamed(line: &str) -> String {
             },
         );
     words.collect::<Vec<_>>().join(" ")
+}
+
+/// With `--next`, `tree --demo` prints made-up trails of two projects with a step or a trail in each state, a change,
+/// rules and a dropped reason, `--all` a past day too, in a folder it removes, and writes nothing to
+/// the store; with an id it refuses.
+#[test]
+fn next_tree_demo_prints_every_state_and_writes_nothing() {
+    let repo = Repo::new();
+    let temp = tempfile::tempdir().unwrap();
+    let zone = noon();
+    let env = [("TMPDIR", temp.path().to_str().unwrap()), ("TZ", &zone)];
+    let o = repo.run(&repo.path(), &["tree", "--next", "--demo"], &env, "");
+    assert!(o.status.success(), "{}", err(&o));
+    let text = out(&o);
+    let working = text.lines().filter(|l| l.starts_with("⠏ ")).count();
+    assert!(working >= 2, "{text}");
+    for mark in ["○ ", "⠏ ", "✓ ", "✓↻ ", "✗ ", "◌ "] {
+        assert!(
+            text.lines().any(|l| l.trim_start().starts_with(mark)),
+            "{mark}: {text}"
+        );
+    }
+    for part in ["\nshop\n", "\ncrm\n", "  § ", " ~ ", " dropped "] {
+        assert!(text.contains(part), "{part:?}: {text}");
+    }
+    let all = out(&repo.run(
+        &repo.path(),
+        &["tree", "--next", "--demo", "--all"],
+        &env,
+        "",
+    ));
+    let days = all.lines().filter(|l| l.contains(" active · ")).count();
+    assert!(days >= 2, "{all}");
+    assert_eq!(std::fs::read_dir(temp.path()).unwrap().count(), 0);
+    assert!(
+        !repo.store().exists()
+            || std::fs::read_dir(repo.store().join("shared"))
+                .unwrap()
+                .count()
+                == 0
+    );
+    let o = repo.run(
+        &repo.path(),
+        &["tree", "--next", "--demo", "abcd", "--json"],
+        &env,
+        "",
+    );
+    refusal(&o, 2, "usage");
 }

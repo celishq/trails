@@ -2,7 +2,7 @@
 
 use crate::command::stats::classic::table::Row;
 use crate::terminal::canvas::{cut, paint, visible, Styled, DIM};
-use crate::terminal::look::look;
+use crate::terminal::classic::look;
 use crate::text::line::time;
 use celis_trails::Step;
 use ratatui::text::Span;
