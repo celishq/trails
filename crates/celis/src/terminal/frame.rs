@@ -27,7 +27,7 @@ impl Frame {
     }
 
     /// Draws it over `area` of `buf`.
-    fn render(&self, area: Rect, buf: &mut Buffer) {
+    pub(crate) fn render(&self, area: Rect, buf: &mut Buffer) {
         let (border, frame, [left, edge, right]) = match self.picked {
             true => (BorderType::Thick, BOLD, ["┣", "━", "┫"]),
             false => (BorderType::Plain, DIM, ["├", "─", "┤"]),

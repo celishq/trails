@@ -103,6 +103,17 @@ impl<'a> Reuse<'a> {
         self.sources.values().map(Vec::len).sum()
     }
 
+    /// The follows `steps` made.
+    pub fn follows_of(&self, steps: &[Step<'a>]) -> usize {
+        steps.iter().map(|s| self.sources(*s).len()).sum()
+    }
+
+    /// The uses of a live rule of `rules` that `steps` made.
+    pub fn uses_of(&self, steps: &[Step<'a>], rules: &Rules<'a>) -> usize {
+        let ruled = steps.iter().filter_map(|s| self.ruled.get(s.id()));
+        ruled.flatten().filter(|id| rules.get(id).is_some()).count()
+    }
+
     /// Each step that a step follows, most followed at any depth first, then newest first, then by id.
     pub fn followed(&self) -> &[Step<'a>] {
         &self.followed
