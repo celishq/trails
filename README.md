@@ -161,6 +161,13 @@ project. And every agent gets them, whichever instruction file it reads.
 curl -fsSL https://celis.ai/install.sh | sh
 ```
 
+Or download the script first, read it, then run it:
+
+```bash
+curl -fsSLO https://celis.ai/install.sh
+sh install.sh
+```
+
 To update it later, run `celis update`.
 
 **2. Add the plugin to your agent:**
