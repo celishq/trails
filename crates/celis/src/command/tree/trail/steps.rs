@@ -98,8 +98,9 @@ impl Tree<'_> {
     }
 
     /// The lead of a line of a level after `rail`: `├`, or `└` when it is the `last`, in the look
-    /// `colour` of the line it hangs from, then `─ `, or `▸ ` or `▾ ` as `open` says when it opens; and
-    /// the rail of the level under it, whose corners stand under this line's mark.
+    /// `colour` of the line it hangs from, then `── `, or ` ▸ ` or ` ▾ ` as `open` says when it opens,
+    /// the arrow where the line's last dash stands; and the rail of the level under it, whose corners
+    /// stand under this line's mark.
     pub(super) fn branch(
         &self,
         rail: &Styled,
@@ -108,14 +109,14 @@ impl Tree<'_> {
         colour: Style,
     ) -> (Styled, Styled) {
         let (corner, under) = match last {
-            true => ("└", "   "),
-            false => ("├", "│  "),
+            true => ("└", "    "),
+            false => ("├", "│   "),
         };
         let mut lead = after(rail, paint(colour, corner));
         match open {
-            None => lead.push_span(paint(colour, "─")),
-            Some(false) => lead.push_span(paint(DIM, "▸")),
-            Some(true) => lead.push_span(paint(DIM, "▾")),
+            None => lead.push_span(paint(colour, "──")),
+            Some(false) => lead.push_span(paint(DIM, " ▸")),
+            Some(true) => lead.push_span(paint(DIM, " ▾")),
         }
         lead.push_span(" ");
         (lead, after(rail, paint(colour, under)))

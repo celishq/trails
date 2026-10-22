@@ -316,8 +316,9 @@ const DATED: &str = "    ";
 /// What a trail under a project's heading starts with, so its mark stands under the project's name.
 const FILED: &str = "  ";
 
-/// What a trail under a fold of closed trails starts with, so its mark stands under the fold's text.
-const FOLDED: &str = "   ";
+/// What a trail under a fold of closed trails starts with, so its mark stands a level, four cells, right
+/// of the fold's.
+const FOLDED: &str = "    ";
 
 /// The most days before today a watch lists, each folded, until Show more lists them all.
 const EARLIER: usize = 5;

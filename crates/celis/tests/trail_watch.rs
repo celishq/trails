@@ -1191,13 +1191,15 @@ fn next_watch_holds_expired_steps_in_the_closed_line() {
     watch.size(24, 80);
     watch.until("6 closed");
     let rows = watch.rows();
-    assert_eq!(rows[1], "    └▸ ✓  6 closed", "{rows:?}");
+    assert_eq!(rows[1], "    └ ▸ ✓  6 closed", "{rows:?}");
     assert!(rows[0].ends_with("✓ 5 · ◌ 1"), "{rows:?}");
     assert!(!rows.join("\n").contains("left part"), "{rows:?}");
     watch.press("\x1b[B\x1b[B\x1b[C");
     watch.until("left part");
     assert!(
-        watch.rows().contains(&"       └─ ◌  left part".to_string()),
+        watch
+            .rows()
+            .contains(&"        └── ◌  left part".to_string()),
         "{:?}",
         watch.rows()
     );
@@ -1282,11 +1284,11 @@ fn next_watch_draws_a_block_with_tree_lines_and_colour_anchors() {
         "{rows:?}"
     );
     assert!(
-        rows[1].starts_with("    ├▸ ⠿  done part ") && rows[1].ends_with("0/1"),
+        rows[1].starts_with("    ├ ▸ ⠿  done part ") && rows[1].ends_with("0/1"),
         "{rows:?}"
     );
-    assert_eq!(rows[2], "    ├─ ○  the fix", "{rows:?}");
-    assert_eq!(rows[3], "    └▸ §  1 rule", "{rows:?}");
+    assert_eq!(rows[2], "    ├── ○  the fix", "{rows:?}");
+    assert_eq!(rows[3], "    └ ▸ §  1 rule", "{rows:?}");
     let all = rows.join("\n");
     for gone in ["prices.py", "deeper part", &trail[..8], &fix[..8]] {
         assert!(!all.contains(gone), "{gone:?} in {rows:?}");
@@ -1318,10 +1320,14 @@ fn next_watch_folds_closed_steps_and_done_branches() {
     watch.until("next");
     let rows = watch.rows();
     assert!(
-        rows[1].starts_with("    ├▸ ✓  parent ") && rows[1].ends_with("1/1"),
+        rows[1].starts_with("    ├ ▸ ✓  parent ") && rows[1].ends_with("1/1"),
         "{rows:?}"
     );
-    assert_eq!(rows[2..4], ["    ├─ ✗  gone", "    └─ ○  next"], "{rows:?}");
+    assert_eq!(
+        rows[2..4],
+        ["    ├── ✗  gone", "    └── ○  next"],
+        "{rows:?}"
+    );
     let all = rows.join("\n");
     assert!(
         !all.contains("child") && !all.contains("not needed"),
@@ -1330,7 +1336,7 @@ fn next_watch_folds_closed_steps_and_done_branches() {
     watch.press("\x1b[B\x1b[B\x1b[C");
     watch.until("child");
     assert!(
-        watch.rows().contains(&"    │  └─ ✓  child".to_string()),
+        watch.rows().contains(&"    │   └── ✓  child".to_string()),
         "{:?}",
         watch.rows()
     );
@@ -1373,12 +1379,12 @@ fn next_watch_prints_a_trail_lines_details_under_its_title() {
     let row = |what: &str| rows.iter().find(|l| l.contains(what)).unwrap();
     let first = row("first");
     assert!(
-        first.starts_with("           ▸ ✓  first ") && first.ends_with(" ✓ 1"),
+        first.starts_with("            ▸ ✓  first ") && first.ends_with(" ✓ 1"),
         "{rows:?}"
     );
     let second = row("second");
     assert!(
-        second.starts_with("           ▸ ✓  second ") && second.ends_with(" ✓ 12"),
+        second.starts_with("            ▸ ✓  second ") && second.ends_with(" ✓ 12"),
         "{rows:?}"
     );
     assert!(!rows.join("\n").contains("rule"), "{rows:?}");
@@ -1416,10 +1422,10 @@ fn next_watch_prints_open_steps_then_rules_then_closed_steps() {
     };
     let rows = tree(watch.rows());
     let starts = [
-        "    ├─ ✓  finished",
-        "    ├▸ ○  parent",
-        "    ├─ ○  newest",
-        "    └▸ §  1 rule",
+        "    ├── ✓  finished",
+        "    ├ ▸ ○  parent",
+        "    ├── ○  newest",
+        "    └ ▸ §  1 rule",
     ];
     assert_eq!(rows.len(), starts.len(), "{rows:?}");
     for (row, start) in rows.iter().zip(starts) {
@@ -1431,7 +1437,7 @@ fn next_watch_prints_open_steps_then_rules_then_closed_steps() {
     let rows = tree(watch.rows());
     assert_eq!(
         rows[2..4],
-        ["    │  ├─ ✓  old child", "    │  └─ ○  new child"],
+        ["    │   ├── ✓  old child", "    │   └── ○  new child"],
         "{rows:?}"
     );
 }
@@ -1502,7 +1508,7 @@ fn next_watch_marks_a_change_and_prints_no_place() {
     };
     assert_eq!(column(" next"), column(" the part"), "{rows:?}");
     assert!(
-        rows.iter().any(|r| r.ends_with("─ ✓˜ the part")),
+        rows.iter().any(|r| r.ends_with("── ✓˜ the part")),
         "{rows:?}"
     );
     assert!(!rows.join("\n").contains("shelf/a.py"), "{rows:?}");
@@ -1600,7 +1606,7 @@ fn next_watch_opens_a_step_and_copies_its_id() {
     let mut watch = Watch::start(&repo, &["tree", "--next", &trail[..8]]);
     watch.until("the part");
     watch.press("\x1b[B\x1b[B");
-    watch.until("\r\n▌   └─ ✓  the part");
+    watch.until("\r\n▌   └── ✓  the part");
     watch.until(&format!("c copy {}", &part[..8]));
     assert!(!watch.rows().join("\n").contains("it works"));
     watch.press("c");
@@ -1631,17 +1637,17 @@ fn next_watch_opens_the_rules_line() {
     assert!(o.status.success(), "{}", err(&o));
     let mut watch = Watch::start(&repo, &["tree", "--next", &trail[..8]]);
     watch.size(24, 80);
-    watch.until("└▸ §  1 rule");
+    watch.until("└ ▸ §  1 rule");
     let tree = watch.rows().join("\n");
     assert!(
         !tree.contains("When you price") && !tree.contains(&trail[..8]),
         "{tree:?}"
     );
     watch.press("\x1b[B\x1b[B\x1b[B");
-    watch.until("\r\n▌   └▸ §  1 rule");
+    watch.until("\r\n▌   └ ▸ §  1 rule");
     watch.press("\x1b[C");
-    watch.until("└▾ §  1 rule");
-    watch.until("       └─ §  When you price a senior");
+    watch.until("└ ▾ §  1 rule");
+    watch.until("        └── §  When you price a senior");
     watch.until("the receipt.");
     assert!(
         !watch.rows().join("\n").contains(&scope),
@@ -1663,18 +1669,18 @@ fn next_watch_opens_and_closes_with_arrows_and_star() {
     watch.until("parent");
     assert!(!watch.rows().join("\n").contains("child"));
     watch.press("\x1b[B\x1b[B");
-    watch.until("▌   └▸ ○  parent");
+    watch.until("▌   └ ▸ ○  parent");
     watch.press("*");
     watch.until("grandchild");
     watch.press("*");
     watch.without("child");
     watch.press("\x1b[C");
-    watch.until("└▸ ○  child");
+    watch.until("└ ▸ ○  child");
     assert!(!watch.rows().join("\n").contains("grandchild"));
     watch.press("\x1b[B");
-    watch.until("▌      └▸ ○  child");
+    watch.until("▌       └ ▸ ○  child");
     watch.press("\x1b[D");
-    watch.until("▌   └▾ ○  parent");
+    watch.until("▌   └ ▾ ○  parent");
     watch.press("\x1b[D");
     watch.without("child");
 }
@@ -1778,7 +1784,7 @@ fn next_watch_selects_a_trail_and_opens_it_with_enter() {
     watch.press("\r");
     watch.until("an ended trail");
     watch.press("\x1b[B");
-    watch.until("\r\n▌          ▸ ✓  an ended trail");
+    watch.until("\r\n▌           ▸ ✓  an ended trail");
     std::thread::sleep(Duration::from_millis(300));
     let raw = watch.coloured(Duration::ZERO);
     assert!(raw.contains("\x1b[1man ended trail"), "{raw:?}");
@@ -1923,7 +1929,7 @@ fn next_watch_keeps_a_trails_rows_still_as_it_opens_and_closes() {
         .position(|r| r.contains("the first trail"))
         .unwrap();
     assert!(!rows.join("\n").contains("expect"), "{rows:?}");
-    assert_eq!(rows[at + 1], "          └─ ○  its step", "{rows:?}");
+    assert_eq!(rows[at + 1], "          └── ○  its step", "{rows:?}");
     assert_eq!(column(&rows[at], "the first trail"), 13, "{rows:?}");
     let meta = |row: &str| {
         row.split("the first trail")
@@ -2006,5 +2012,5 @@ fn next_watch_carries_the_line_down_a_wrapped_title() {
     for row in &rows[1..step] {
         assert!(row.starts_with("    │  "), "{rows:?}");
     }
-    assert!(rows[step].starts_with("    └─ "), "{rows:?}");
+    assert!(rows[step].starts_with("    └── "), "{rows:?}");
 }
