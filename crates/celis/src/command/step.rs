@@ -168,6 +168,12 @@ impl Command {
                 short(ask),
                 short(trail)
             ),
+            Notice::Ask(ask) => format!(
+                "celis: when {0} holds more than one job, a part a person can check alone such as an item \
+                 of its list, add only its first job with step add --under {0}, and each next job after \
+                 you close one.",
+                short(ask)
+            ),
             Notice::Joined(trail) => format!(
                 "celis: the step joined the trail {}; edit its title when it no longer covers the work.",
                 short(trail)
