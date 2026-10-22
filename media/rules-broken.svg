@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 466" width="880" height="466">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 480" width="880" height="480">
 <style>
   .board { fill: #fff } .ink { fill: #23262e } .secondary { fill: rgb(35 38 46 / 0.6) }
   .grid { stroke: rgb(35 38 46 / 0.08) } .rule { stroke: rgb(35 38 46 / 0.3) }
@@ -7,16 +7,17 @@
          font-variant-numeric: tabular-nums }
   .title { font-size: 20px; font-weight: 600 } .body { font-size: 13px } .value { font-size: 13px; font-weight: 600 }
   .size { font-size: 14px; font-weight: 600 } .delta { font-size: 13px; font-weight: 700 }
-  .mark { font-size: 11px }
+  .mark { font-size: 11px } .better { font-size: 16px; font-weight: 600 }
   @media (prefers-color-scheme: dark) {
     .board { fill: #0d1117 } .ink { fill: #e6edf5 } .secondary { fill: rgb(230 237 245 / 0.6) }
     .grid { stroke: rgb(230 237 245 / 0.1) } .rule { stroke: rgb(230 237 245 / 0.35) }
     .celis { fill: #6b9bd1 } .worse { fill: #e07a62 }
   }
 </style>
-<rect class="board" width="880" height="466" rx="12"/>
+<rect class="board" width="880" height="480" rx="12"/>
 <text class="title ink" x="64" y="40">Rules the agent broke, as its memory grows</text>
-<text class="body secondary" x="64" y="62">Of the rules each task checks, how many the code broke. Lower is better. Claude Code with Opus, 8 tasks at each size.</text>
+<text class="better celis" x="848" y="40" text-anchor="end">↓ Lower is better</text>
+<text class="body secondary" x="64" y="62">Of the rules each task checks, how many the code broke. Claude Code with Opus, 8 tasks at each size.</text>
 <rect class="claude" x="64" y="76" width="12" height="12" rx="3"/>
 <text class="body ink" x="82" y="86">CLAUDE.md with every rule</text>
 <rect class="celis" x="274" y="76" width="12" height="12" rx="3"/>
@@ -63,12 +64,12 @@
 <text class="delta celis" x="769.6" y="382.0" text-anchor="middle">−13 pts</text>
 <line class="rule" x1="142.4" y1="404.0" x2="769.6" y2="404.0"/>
 <text class="mark secondary" x="132.4" y="408.0" text-anchor="end">AGENTS.md of</text>
-<polyline class="rule" points="258.9,400.0 258.9,410.0 213.5,420.0" fill="none"/>
-<text class="mark secondary" x="213.5" y="434.0" text-anchor="middle">VS Code 79</text>
-<polyline class="rule" points="322.6,400.0 322.6,410.0 292.6,420.0" fill="none"/>
-<text class="mark secondary" x="292.6" y="434.0" text-anchor="middle">Next.js 123</text>
-<polyline class="rule" points="352.4,400.0 352.4,410.0 374.8,420.0" fill="none"/>
-<text class="mark secondary" x="374.8" y="434.0" text-anchor="middle">PostHog 160</text>
-<polyline class="rule" points="416.5,400.0 416.5,410.0 469.4,420.0" fill="none"/>
-<text class="mark secondary" x="469.4" y="434.0" text-anchor="middle">kube-router 282</text>
+<line class="rule" x1="258.9" y1="400.0" x2="258.9" y2="410.0"/>
+<text class="mark secondary" x="258.9" y="423.0" text-anchor="middle">VS Code 79</text>
+<line class="rule" x1="322.6" y1="400.0" x2="322.6" y2="426.0"/>
+<text class="mark secondary" x="322.6" y="439.0" text-anchor="middle">Next.js 123</text>
+<line class="rule" x1="352.4" y1="400.0" x2="352.4" y2="442.0"/>
+<text class="mark secondary" x="352.4" y="455.0" text-anchor="middle">PostHog 160</text>
+<line class="rule" x1="416.5" y1="400.0" x2="416.5" y2="410.0"/>
+<text class="mark secondary" x="416.5" y="423.0" text-anchor="middle">kube-router 282</text>
 </svg>

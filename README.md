@@ -149,6 +149,23 @@ their folders, and you add the rules you keep for your own work, so one file soo
 > Each size is 8 tasks. Celis ran twice, CLAUDE.md once, and two runs of the same setup can differ by
 > up to 15 points, so take the small gaps as a tie. The bench is in [evals/drift](evals/drift).
 
+### Why a big CLAUDE.md fails, and how Celis helps
+
+The rules fit in the context window. What fails is attention. The agent reads every rule on every
+turn, so the one rule that matters for the file it is changing competes with hundreds of others, and
+with its own old version. The more rules there are, the less weight each one gets at the moment it
+counts.
+
+Celis doesn't try to fit more into the prompt. It puts the right context in front of the agent at the
+right time: the rules and past steps of a job when the job starts, the rules of a file when the agent
+is about to change it, and a check of the changed files before the job is done. Everything else stays
+out of the way.
+
+We treat the agent as a capable collaborator that owns its work. Celis doesn't tell it how to do a
+task. It gives the agent what it needs to do the task well, and the agent decides when to ask for
+more. In our tests, each step we forced on the agent made it do worse, and each tool it could call on
+its own made it do better.
+
 ### It works across agents
 
 The rules live in Celis, not in one agent's files, so a rule one agent learns is there for the next.

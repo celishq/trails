@@ -17,12 +17,12 @@ import report
 
 HERE = Path(__file__).resolve().parent
 MEDIA = HERE.parents[1] / "media"
-W, H, LEFT, RIGHT, TOP, BOTTOM, BAR, PAIR = 880, 466, 64, 32, 104, 128, 44, 6
+W, H, LEFT, RIGHT, TOP, BOTTOM, BAR, PAIR = 880, 480, 64, 32, 104, 142, 44, 6
 REPOS = {"VS Code": 79, "Next.js": 123, "PostHog": 160, "kube-router": 282}
 CHARTS = (("old", "outdated-rules.svg", "Outdated rules the agent followed",
-           "When a rule changed, how often the agent followed its old version. Lower is better.", 1.0),
+           "When a rule changed, how often the agent followed its old version.", 1.0),
           ("broken", "rules-broken.svg", "Rules the agent broke, as its memory grows",
-           "Of the rules each task checks, how many the code broke. Lower is better.", 0.8))
+           "Of the rules each task checks, how many the code broke.", 0.8))
 STYLE = """
   .board { fill: #fff } .ink { fill: #23262e } .secondary { fill: rgb(35 38 46 / 0.6) }
   .grid { stroke: rgb(35 38 46 / 0.08) } .rule { stroke: rgb(35 38 46 / 0.3) }
@@ -31,7 +31,7 @@ STYLE = """
          font-variant-numeric: tabular-nums }
   .title { font-size: 20px; font-weight: 600 } .body { font-size: 13px } .value { font-size: 13px; font-weight: 600 }
   .size { font-size: 14px; font-weight: 600 } .delta { font-size: 13px; font-weight: 700 }
-  .mark { font-size: 11px }
+  .mark { font-size: 11px } .better { font-size: 16px; font-weight: 600 }
   @media (prefers-color-scheme: dark) {
     .board { fill: #0d1117 } .ink { fill: #e6edf5 } .secondary { fill: rgb(230 237 245 / 0.6) }
     .grid { stroke: rgb(230 237 245 / 0.1) } .rule { stroke: rgb(230 237 245 / 0.35) }
@@ -57,6 +57,7 @@ def draw(model, title, note, top, md, celis):
     parts = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}">',
              f"<style>{STYLE}</style>", f'<rect class="board" width="{W}" height="{H}" rx="12"/>',
              f'<text class="title ink" x="{LEFT}" y="40">{title}</text>',
+             f'<text class="better celis" x="{W - RIGHT}" y="40" text-anchor="end">↓ Lower is better</text>',
              f'<text class="body secondary" x="{LEFT}" y="62">{note} Claude Code with {model.capitalize()}, 8 '
              f'tasks at each size.</text>',
              f'<rect class="claude" x="{LEFT}" y="76" width="12" height="12" rx="3"/>',
@@ -85,22 +86,20 @@ def draw(model, title, note, top, md, celis):
     parts.append(f'<line class="rule" x1="{centre(0)}" y1="{row}" x2="{centre(len(sizes) - 1)}" y2="{row}"/>')
     parts.append(f'<text class="mark secondary" x="{centre(0) - 10}" y="{row + 4}" text-anchor="end">'
                  f'AGENTS.md of</text>')
-    marks = []
+    placed = []
     for name, n in REPOS.items():
         i = max(k for k, size in enumerate(sizes[:-1]) if size <= n)
-        marks.append((centre(i) + (log(n) - log(sizes[i])) / (log(sizes[i + 1]) - log(sizes[i])) * slot,
-                      f"{name} {n}"))
-    widths = [len(label) * 6.2 for _, label in marks]
-    spots = [x for x, _ in marks]
-    for k in range(1, len(spots)):
-        spots[k] = max(spots[k], spots[k - 1] + (widths[k - 1] + widths[k]) / 2 + 14)
-    shift = sum(x - spot for (x, _), spot in zip(marks, spots)) / len(spots)
-    spots = [spot + shift for spot in spots]
-    for (x, label), spot in zip(marks, spots):
-        parts.append(f'<polyline class="rule" points="{x:.1f},{row - 4} {x:.1f},{row + 6} {spot:.1f},{row + 16}" '
-                     f'fill="none"/>')
-        parts.append(f'<text class="mark secondary" x="{spot:.1f}" y="{row + 30}" text-anchor="middle">'
-                     f'{label}</text>')
+        x = centre(i) + (log(n) - log(sizes[i])) / (log(sizes[i + 1]) - log(sizes[i])) * slot
+        half = len(f"{name} {n}") * 3.1 + 4
+        free = lambda level: all(
+            (r != level or abs(x - other) >= half + w) and (r >= level or abs(x - other) >= w)
+            and (r <= level or abs(other - x) >= half) for other, w, r in placed)
+        level = next((level for level in range(3) if free(level)), 2)
+        placed.append((x, half, level))
+        drop = row + 6 + 16 * level
+        parts.append(f'<line class="rule" x1="{x:.1f}" y1="{row - 4}" x2="{x:.1f}" y2="{drop}"/>')
+        parts.append(f'<text class="mark secondary" x="{x:.1f}" y="{drop + 13}" text-anchor="middle">'
+                     f'{name} {n}</text>')
     parts.append("</svg>")
     return "\n".join(parts) + "\n"
 
