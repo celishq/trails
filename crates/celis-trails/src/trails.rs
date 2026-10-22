@@ -121,11 +121,15 @@ impl Trails {
         written.notices.extend(ahead(under).map(Notice::NotStarted));
         let note = self.sign(|account, now| record.record(account, now))?;
         let reason = format!("replaced by {}", short(&note.id));
+        let ask = under
+            .is_some_and(|u| u.is_trail())
+            .then(|| StepId::new(&note.id));
         written.records.push(note);
         if let Some(old) = moved {
             written.records.extend(self.drop_open(old, &reason)?);
         }
         written.notices.extend(joined.map(Notice::Joined));
+        written.notices.extend(ask.map(Notice::Ask));
         Ok(written)
     }
 
@@ -145,10 +149,13 @@ impl Trails {
         };
         let ask = self.sign(|account, now| ask.record(account, now))?;
         Ok(Written {
-            notices: vec![Notice::Started {
-                ask: StepId::new(&ask.id),
-                trail: StepId::new(&trail.id),
-            }],
+            notices: vec![
+                Notice::Started {
+                    ask: StepId::new(&ask.id),
+                    trail: StepId::new(&trail.id),
+                },
+                Notice::Ask(StepId::new(&ask.id)),
+            ],
             records: vec![ask, trail],
             ..Written::default()
         })

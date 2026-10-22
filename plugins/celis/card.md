@@ -25,9 +25,11 @@ celis tree [<id>] [--graph] [--full] [--all] [--demo]
    step or named trail it follows. `--uses` takes a trail's name.
 3. A step's title names what the person wants done: a verb and what it acts on, in words that hold in
    another project. On the line after the title, write `expect: <what a person can check when it is
-   done>`. A simple ask is one step. Only a hard ask gets 2 to 5 steps under it: split first the step
-   with the most doubt, one level at a time, until a step is one action. Only the step you take next
-   gets `--at` and a `--check` that proves it. Add the next step after you close this one.
+   done>`. Split an ask by its jobs: a job is a part of the ask that a person can check alone, such as
+   an item of its list or a module. An ask with one job, such as a function and its test, is one step. Add the jobs as the work
+   goes: the first job when you start, the next job after you close one, and steps under a job only when
+   you take it and it holds more than one job. Only the step you take next gets `--at` and a `--check`
+   that proves it.
 4. For each step: `start`, and keep the rules it prints. Run `celis rules <files>` before each change,
    and before `done`, check your change against `celis rules --diff`. Read all
    that celis prints: never cut it with `head` or `grep`. Then `done` with a proof a person can check,
