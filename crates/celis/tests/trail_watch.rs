@@ -1102,7 +1102,8 @@ fn next_watch_cuts_long_titles_to_the_width() {
 }
 
 /// With `--next`, With no id, the watch boxes today under a line with 📅, the day and its counts, groups the trails by
-/// project under a 📁 heading, its active trails first, and ends with `Show more`, which `enter` turns into every trail by day and `Show less`.
+/// project under a 📁 heading, its active trails first, and ends with `Show more`, which `enter` turns into every trail by day and `Show less`,
+/// the selection on the first trail it revealed.
 #[test]
 fn next_watch_groups_today_by_project_and_shows_more() {
     let repo = Repo::new();
@@ -1132,8 +1133,16 @@ fn next_watch_groups_today_by_project_and_shows_more() {
     watch.press("\x1b[B\x1b[B");
     watch.until("▌ ▸ Show more");
     watch.press("\r");
-    watch.until("▾ Show less");
     watch.until("an old trail");
+    let start = std::time::Instant::now();
+    let picked = |rows: &[String]| {
+        rows.iter()
+            .any(|r| r.starts_with('▌') && r.contains("an old trail"))
+    };
+    while !picked(&watch.screen_rows()) && start.elapsed() < Duration::from_secs(5) {
+        watch.trees(Duration::from_millis(50));
+    }
+    assert!(picked(&watch.screen_rows()), "{:?}", watch.screen_rows());
 }
 
 /// With `--next`, A row many levels deep cuts its title with `…` within the width.
@@ -1948,4 +1957,55 @@ fn next_watch_with_no_id_prints_what_tree_prints() {
     watch.until("the shop trail");
     finish(&repo, &first[..8]);
     watch.until_spun("⠿  the first trail");
+}
+
+/// With `--next`, a trail keeps the blank row after it and the same meta at its right whether it is open
+/// or closed, and the lines under it start in its title's column.
+#[test]
+fn next_watch_keeps_a_trails_rows_still_as_it_opens_and_closes() {
+    let repo = Repo::new();
+    let first = add(
+        &repo,
+        &["--new", "--", "the first trail\nexpect: it reads well"],
+    );
+    add(&repo, &["--under", &first[..8], "--", "its step"]);
+    std::thread::sleep(Duration::from_millis(1100));
+    add(&repo, &["--new", "--", "the second trail"]);
+    let mut watch = Watch::start(&repo, &["tree", "--next"]);
+    watch.size(30, 80);
+    watch.until("its step");
+    let rows = watch.rows();
+    let column = |row: &str, text: &str| row[..row.find(text).unwrap()].chars().count();
+    let at = rows
+        .iter()
+        .position(|r| r.contains("the first trail"))
+        .unwrap();
+    let expect = rows.iter().find(|r| r.contains("expect")).unwrap();
+    assert_eq!(
+        column(expect, "expect"),
+        column(&rows[at], "the first trail"),
+        "{rows:?}"
+    );
+    let meta = |row: &str| {
+        row.split("the first trail")
+            .nth(1)
+            .unwrap()
+            .trim()
+            .to_string()
+    };
+    let open = meta(&rows[at]);
+    watch.press("\x1b[B");
+    watch.until_spun("▌ │ ▾ ⠿  the second trail");
+    watch.press("\x1b[B");
+    watch.until_spun("▌ │ ▾ ⠿  the first trail");
+    watch.press("\x1b[D");
+    watch.until_spun("▌ │ ▸ ⠿  the first trail");
+    let rows = watch.rows();
+    let closed = rows
+        .iter()
+        .position(|r| r.contains("the first trail"))
+        .unwrap();
+    assert_eq!(closed, at, "{rows:?}");
+    assert!(rows[at - 1].trim().is_empty(), "{rows:?}");
+    assert_eq!(meta(&rows[at]), open, "{rows:?}");
 }

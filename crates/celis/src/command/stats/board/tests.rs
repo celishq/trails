@@ -91,7 +91,8 @@ fn opened_sections_show_their_details() {
         "§ 1 rule kept  ·  1 applied  ·  +1 new",
         "TOP RULES · most hits",
         "RESOLVED STEPS · how they ended",
-        "4 resolved = 3 successful (2 first pass + 1 reworked) + 1 dropped + 0 expired",
+        "4 resolved  ▲ 3  ·  2 first pass  ▼ 50 pp  ·  1 reworked  ▲ 25 pp  ·  1 dropped  ▲ 25 pp",
+        "0 expired",
         "RESOLVED STEPS · by week",
         "STEP TIME · successful steps, start to done",
         "DAILY ACTIVITY",
@@ -147,4 +148,114 @@ fn the_total_block_stands_over_the_14_day_board() {
     ] {
         assert!(text.contains(part), "{part:?} in\n{text}");
     }
+}
+
+/// Closed, Resources splits its bar as Allocation splits the time: productive green, rework amber and
+/// dropped rose, and no colour a project.
+#[test]
+fn the_closed_resources_bar_splits_the_time_as_allocation() {
+    use crate::terminal::canvas::{GREEN, RED, SLATE, YELLOW};
+    let month = shop().month();
+    let m = Moment {
+        month: &month,
+        total: &Total::default(),
+        t: 9.0,
+        width: 108,
+        day: DAYS - 1,
+        focus: 0,
+        open: [false; 4],
+    };
+    let (sheet, length, _) = frame(&m);
+    let lines = sheet.lines(0, length);
+    let at = lines
+        .iter()
+        .position(|l| l.to_string().contains("lost to rework"))
+        .unwrap();
+    let block = |c: char| ('\u{2580}'..='\u{259F}').contains(&c);
+    let looks: Vec<_> = lines[at..at + 2]
+        .iter()
+        .flat_map(|l| &l.spans)
+        .filter(|s| s.content.chars().any(block))
+        .map(|s| s.style.fg)
+        .collect();
+    for look in [GREEN, YELLOW, RED] {
+        assert!(looks.contains(&look.fg), "{looks:?}");
+    }
+    assert!(!looks.contains(&SLATE.fg), "{looks:?}");
+}
+
+/// Closed, Output draws its days in first pass green, as Quality draws first pass, never in link blue.
+#[test]
+fn the_closed_output_sparkline_is_first_pass_green() {
+    use crate::terminal::canvas::{GREEN, LINK};
+    let month = shop().month();
+    let m = Moment {
+        month: &month,
+        total: &Total::default(),
+        t: 9.0,
+        width: 108,
+        day: DAYS - 1,
+        focus: 0,
+        open: [false; 4],
+    };
+    let (sheet, length, _) = frame(&m);
+    let lines = sheet.lines(0, length);
+    let output = lines
+        .iter()
+        .find(|l| l.to_string().contains("under 5m"))
+        .unwrap();
+    let bars: Vec<_> = output
+        .spans
+        .iter()
+        .filter(|s| s.content.contains('█'))
+        .map(|s| s.style.fg)
+        .collect();
+    assert!(
+        !bars.is_empty() && bars.iter().all(|fg| *fg == GREEN.fg),
+        "{bars:?}"
+    );
+    assert!(!bars.contains(&LINK.fg));
+}
+
+/// Opened, Resolved steps by week draws all four weeks' bars in one colour, none grey, and every week's
+/// label in the text's own look, none bold or dim.
+#[test]
+fn every_weeks_bar_is_one_colour() {
+    use crate::terminal::canvas::CYAN;
+    let month = shop().month();
+    let m = Moment {
+        month: &month,
+        total: &Total::default(),
+        t: 9.0,
+        width: 108,
+        day: DAYS - 1,
+        focus: 0,
+        open: [false, false, true, false],
+    };
+    let (sheet, length, _) = frame(&m);
+    let lines = sheet.lines(0, length);
+    let at = lines
+        .iter()
+        .position(|l| {
+            let text = l.to_string().to_lowercase();
+            text.contains("resolved steps") && text.contains("by week")
+        })
+        .unwrap();
+    let block = |c: char| ('\u{2580}'..='\u{259F}').contains(&c);
+    let bars: Vec<_> = lines[at + 2..at + 6]
+        .iter()
+        .flat_map(|l| &l.spans)
+        .filter(|s| s.content.chars().any(block))
+        .map(|s| s.style)
+        .collect();
+    assert!(bars.len() >= 4, "{bars:?}");
+    assert!(bars.iter().all(|look| look.fg == CYAN.fg), "{bars:?}");
+    let labels: Vec<_> = lines[at + 2..at + 6]
+        .iter()
+        .flat_map(|l| &l.spans)
+        .filter(|s| s.content.contains(" – "))
+        .map(|s| (s.content.to_string(), s.style.add_modifier))
+        .collect();
+    assert_eq!(labels.len(), 4, "{labels:?}");
+    assert!(labels.iter().all(|(_, m)| m.is_empty()), "{labels:?}");
 }

@@ -42,13 +42,14 @@ impl Command {
                 },
                 layout: Layout::default(),
                 frame: None,
+                revealed: false,
             })
         })
     }
 }
 
 /// A watch of the tree `args` names: whether it names an id, what it prints with no trail, how it shows
-/// the tree, the day groups it laid out, and the frame it last drew.
+/// the tree, the day groups it laid out, the frame it last drew, and whether Show more just opened.
 struct Watch<'a> {
     command: &'a Command,
     args: &'a Args,
@@ -57,6 +58,7 @@ struct Watch<'a> {
     view: View,
     layout: Layout,
     frame: Option<Frame>,
+    revealed: bool,
 }
 
 impl Live for Watch<'_> {
@@ -65,12 +67,25 @@ impl Live for Watch<'_> {
     }
 
     /// The tree of `model`, its spinner turning, drawn again when a time it shows changes; the
-    /// selection moves to the nearest line still shown when its line left.
+    /// selection moves to the nearest line still shown when its line left, and to the first trail Show
+    /// more revealed when it just opened.
     fn page(&mut self, model: &Model, screen: &mut Screen) -> Result<Page, Failure> {
         let width = self.command.columns().map(|c| c.saturating_sub(1));
         let mut frame =
             self.command
                 .frame(model, Some(&self.layout), self.args, width, &self.view)?;
+        if std::mem::take(&mut self.revealed) {
+            let known = self.frame.as_ref().map_or(&[][..], |f| &f.order);
+            let fresh = frame
+                .order
+                .iter()
+                .find(|i| i.id != MORE && !known.iter().any(|k| k.id == i.id));
+            if let Some(item) = fresh {
+                self.view.selected = Some(item.id.clone());
+                screen.follow = true;
+                return self.page(model, screen);
+            }
+        }
         if let Some(id) = self.view.selected.clone() {
             if !frame.order.iter().any(|i| i.id == id) {
                 let known = self.frame.as_ref().map_or(&[][..], |f| &f.order);
@@ -106,11 +121,13 @@ impl Live for Watch<'_> {
         Ok(page)
     }
 
-    /// Moves the selection, or opens or closes lines.
+    /// Moves the selection, or opens or closes lines; notes when Show more opens.
     fn press(&mut self, key: Key, _: &Model, screen: &mut Screen) -> Result<(), Failure> {
         let before = self.view.selected.clone();
+        let all = self.view.all;
         let order = self.frame.as_ref().map_or(&[][..], |f| &f.order);
         press(key, &mut self.view, order, self.named);
+        self.revealed = !all && self.view.all && before.as_deref() == Some(MORE);
         screen.follow |= self.view.selected != before;
         Ok(())
     }

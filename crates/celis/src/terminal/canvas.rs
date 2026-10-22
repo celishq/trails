@@ -157,7 +157,7 @@ pub(crate) fn line(line: &Styled, colour: bool) -> String {
     let mut runs: Vec<(Option<String>, String)> = Vec::new();
     for span in &line.spans {
         let codes = colour
-            .then(|| codes(line.style.patch(span.style)))
+            .then(|| codes(line.style.patch(span.style), graphic(&span.content)))
             .flatten();
         match runs.last_mut() {
             Some((last, text)) if *last == codes => *text += &span.content,
@@ -171,8 +171,16 @@ pub(crate) fn line(line: &Styled, colour: bool) -> String {
     runs.into_iter().map(run).collect()
 }
 
-/// The escape codes of `style`, its looks then its colours; `None` for the plain look.
-fn codes(style: Style) -> Option<String> {
+/// Whether `text` draws lines and blocks, not words: box and block characters, `■` and spaces only.
+fn graphic(text: &str) -> bool {
+    let drawn = |c: char| ('\u{2500}'..='\u{259F}').contains(&c) || c == '■';
+    text.chars().any(drawn) && text.chars().all(|c| c == ' ' || drawn(c))
+}
+
+/// The escape codes of `style` as it reads on the terminal's background, a `graphic`'s or a text's,
+/// its looks then its colours; `None` for the plain look.
+fn codes(style: Style, graphic: bool) -> Option<String> {
+    let style = super::contrast::legible(style, super::background::background(), graphic);
     let looks = [
         (Modifier::BOLD, "1"),
         (Modifier::DIM, "2"),

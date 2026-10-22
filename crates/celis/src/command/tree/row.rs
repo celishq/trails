@@ -50,7 +50,7 @@ impl Row {
     pub fn lines(self, slot: usize, width: Option<usize>, picked: bool) -> Vec<Styled> {
         let under = |rail: Styled, pad: usize| {
             let mut rail = rail;
-            rail.push_span(" ".repeat(slot.saturating_sub(1) + pad));
+            rail.push_span(" ".repeat(slot + pad));
             rail
         };
         let (first, next, text, tone) = match self {

@@ -6,10 +6,11 @@ use super::learning::most;
 use super::moment::{minutes, plural, Moment};
 use super::month::HALF;
 use super::panel::pair;
+use super::project::Project;
 use super::sheet::{place, Group, Sheet, SPARK};
 use super::{allocation, daily, learning, output, quality};
 use crate::terminal::canvas::{
-    paint, BOLD, CYAN, DIM, EDGE, FRAME, LIGHT, MAGENTA, RED, SLATE, YELLOW,
+    paint, BOLD, CYAN, DIM, EDGE, FRAME, GREEN, LIGHT, MAGENTA, RED, YELLOW,
 };
 use ratatui::style::Style;
 
@@ -184,7 +185,7 @@ impl Section {
     }
 
     /// Its small picture at `x`, `y`: the weekly reuse rate, the outcomes as one bar, the steps resolved
-    /// each day, or each project's share of the time.
+    /// each day, or the active time as productive, rework and dropped.
     fn mini(self, s: &mut Sheet, m: &Moment, x: u16, y: u16) {
         let (now, month) = (m.now(), m.month);
         match self {
@@ -200,7 +201,7 @@ impl Section {
             }
             Section::Quality => {
                 let parts = [
-                    (now.first_pass() as f64, CYAN),
+                    (now.first_pass() as f64, GREEN),
                     (now.reworked as f64, YELLOW),
                     (now.dropped as f64, RED),
                     (now.expired as f64, DIM),
@@ -227,14 +228,14 @@ impl Section {
                 s.put(end + 1, y, "a day", DIM);
             }
             Section::Resources => {
-                let shades = [CYAN, SLATE, EDGE];
-                let parts: Vec<(f64, Style)> = month
-                    .projects
-                    .iter()
-                    .enumerate()
-                    .map(|(n, p)| (p.active as f64 / 60.0, shades[n.min(2)]))
-                    .collect();
-                if !parts.is_empty() {
+                let sum = |part: fn(&Project) -> u64| month.projects.iter().map(part).sum::<u64>();
+                let parts = [
+                    (sum(Project::productive), GREEN),
+                    (sum(|p| p.rework), YELLOW),
+                    (sum(|p| p.dropped), RED),
+                ];
+                let parts = parts.map(|(v, look)| (v as f64 / 60.0, look));
+                if parts.iter().any(|(v, _)| *v > 0.0) {
                     s.stack(x, y, &parts, 16);
                 }
             }

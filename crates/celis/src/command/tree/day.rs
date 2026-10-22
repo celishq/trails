@@ -148,13 +148,13 @@ impl Tree<'_> {
     fn active_first(&self, trails: Vec<Step>, lines: &mut Vec<Row>) {
         let (active, rest): (Vec<Step>, Vec<Step>) =
             trails.into_iter().partition(|s| s.state().active());
-        let mut last = None;
+        let mut after = false;
         if !active.is_empty() {
             lines.push(self.gap());
         }
         for note in active {
             let block = self.view.full || !self.view.all;
-            self.trail(note, block, &mut last, lines);
+            self.trail(note, block, &mut after, lines);
         }
         for (name, trails) in by_project(rest) {
             lines.push(self.gap());
@@ -162,10 +162,10 @@ impl Tree<'_> {
                 false,
                 Box::new(Row::Text(Styled::from(paint(PROJECT, &name)))),
             ));
-            let mut last = None;
+            let mut after = false;
             for note in trails {
                 let block = self.view.full || (!self.view.all && !self.view.watch);
-                self.trail(note, block, &mut last, lines);
+                self.trail(note, block, &mut after, lines);
             }
         }
     }
@@ -182,12 +182,12 @@ impl Tree<'_> {
             let title = vec![Span::raw("📁 "), paint(PROJECT, &name)];
             lines.push(Row::Mark(false, Box::new(Row::Text(Styled::from(title)))));
             lines.push(self.gap());
-            let mut last = None;
+            let mut after = false;
             for note in active {
-                self.trail(note, true, &mut last, lines);
+                self.trail(note, true, &mut after, lines);
             }
             for note in rest {
-                self.trail(note, self.view.full, &mut last, lines);
+                self.trail(note, self.view.full, &mut after, lines);
             }
         }
     }

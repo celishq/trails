@@ -307,6 +307,11 @@ fn drawn(at: Instant) -> usize {
 /// The time between two frames while rows arrive.
 const FRAME: Duration = Duration::from_millis(16);
 
+/// The rest of a frame since a screen last `wrote` one; none when it wrote none.
+fn pace(wrote: Option<Instant>) -> Duration {
+    wrote.map_or(Duration::ZERO, |at| FRAME.saturating_sub(at.elapsed()))
+}
+
 /// The fewest columns a screen needs to show celis's card.
 const CARD: usize = 44;
 
@@ -314,8 +319,9 @@ const CARD: usize = 44;
 const TREE: usize = 8;
 
 /// The run of wakes from `wake` on, with the wakes that wait in `events` up to a key that changes what
-/// a page shows; records wait 50 ms for more. Each key copies from `drawn`, the page last drawn, or
-/// moves `screen` and `page` on `model`. `None` on an interrupt.
+/// a page shows; records wait 50 ms for more, other wakes the rest of a frame since `screen` last wrote
+/// one. Each key copies from `drawn`, the page last drawn, or moves `screen` and `page` on `model`.
+/// `None` on an interrupt.
 fn drain(
     mut wake: Result<Wake, RecvTimeoutError>,
     events: &Receiver<Wake>,
@@ -351,7 +357,7 @@ fn drain(
         }
         wake = match (batch.landed, laid) {
             (true, _) => events.recv_timeout(Duration::from_millis(50)),
-            (false, false) => events.recv_timeout(Duration::ZERO),
+            (false, false) => events.recv_timeout(pace(screen.wrote)),
             (false, true) => return Ok(Some(batch)),
         };
     }

@@ -68,8 +68,8 @@ impl Command {
 /// key did when it has something to say, when it was first drawn, when it first drew the checks it
 /// draws now, the remark it shows with when it changed to it, the remark it showed before, every
 /// remark it showed and since when it shows the newest of them, whether the terminal
-/// was resized since it last drew, the second it started, and whether it held the scene when it
-/// started.
+/// was resized since it last drew, the second it started, whether it held the scene when it
+/// started, and when it last wrote a frame.
 #[derive(Default)]
 pub(crate) struct Screen {
     pub colour: bool,
@@ -87,6 +87,7 @@ pub(crate) struct Screen {
     pub resized: bool,
     pub started: Option<u64>,
     pub played: Option<bool>,
+    pub wrote: Option<std::time::Instant>,
 }
 
 impl Screen {
@@ -151,6 +152,7 @@ impl Screen {
             .and_then(|_| out.flush())
             .map_err(anyhow::Error::from)?;
         self.shown = screen;
+        self.wrote = Some(std::time::Instant::now());
         Ok(())
     }
 

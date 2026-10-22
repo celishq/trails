@@ -13,17 +13,11 @@ use ratatui::text::Span;
 
 impl Tree<'_> {
     /// Adds the trail `note` as a block when `block`, else as one line, the other way when the view
-    /// flipped it, in the agent view off a watch; a blank line comes between it and a `last` trail when
-    /// either is a block in a watch.
-    pub(super) fn trail(
-        &self,
-        note: Step,
-        block: bool,
-        last: &mut Option<bool>,
-        lines: &mut Vec<Row>,
-    ) {
+    /// flipped it, in the agent view off a watch; in a watch, a blank line comes before it `after` a
+    /// trail.
+    pub(super) fn trail(&self, note: Step, block: bool, after: &mut bool, lines: &mut Vec<Row>) {
         let block = block != self.view.flipped.contains(note.id());
-        if self.view.watch && last.is_some_and(|last| last || block) {
+        if self.view.watch && *after {
             lines.push(self.gap());
         }
         match (self.view.watch, block) {
@@ -32,7 +26,7 @@ impl Tree<'_> {
             (false, true) => self.agent_block(note, lines),
             (false, false) => self.agent_line(note, lines),
         }
-        *last = Some(block);
+        *after = true;
     }
 
     /// Adds `item` to the order of the lines a watch selects, and starts at `first` of `lines` the lines
@@ -105,14 +99,14 @@ impl Tree<'_> {
     }
 
     /// Adds `note` as one row: `▸`, its mark and title, and at the right what it came to: a bar of its
-    /// steps with done/all while active, else its steps, how many were done, its state and its time.
+    /// steps with done/all while active, else its steps, how many were done, its state; then its time.
     pub(super) fn line(&self, note: Step, lines: &mut Vec<Row>) {
         let step = note.record();
         let state = note.state();
         let work = self.work(note);
         let summary = self.summary(note, work);
         let mut meta: Vec<_> = came(state, &summary).into_iter().collect();
-        if let (Some(worked), false) = (summary.worked, state.active()) {
+        if let Some(worked) = summary.worked {
             meta.push(vec![paint(DIM, &took(worked))]);
         }
         let first = lines.len();

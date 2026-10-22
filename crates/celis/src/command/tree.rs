@@ -253,9 +253,9 @@ impl Tree<'_> {
             return self.show(lines, out);
         }
         if !self.grouped {
-            let (mut lines, mut last) = (vec![], None);
+            let (mut lines, mut after) = (vec![], false);
             for &note in notes {
-                self.trail(note, true, &mut last, &mut lines);
+                self.trail(note, true, &mut after, &mut lines);
             }
             return self.show(lines, out);
         }
