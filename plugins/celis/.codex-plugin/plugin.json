@@ -1,6 +1,6 @@
 {
   "name": "celis",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "Stop telling your agent the same thing twice. Celis turns your corrections into rules that Claude Code, Codex, Cursor and Gemini remember in every project.",
   "author": { "name": "Celis" },
   "skills": "./skills/",
