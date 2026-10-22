@@ -85,13 +85,22 @@ def draw(model, title, note, top, md, celis):
     parts.append(f'<line class="rule" x1="{centre(0)}" y1="{row}" x2="{centre(len(sizes) - 1)}" y2="{row}"/>')
     parts.append(f'<text class="mark secondary" x="{centre(0) - 10}" y="{row + 4}" text-anchor="end">'
                  f'AGENTS.md of</text>')
-    for k, (name, n) in enumerate(REPOS.items()):
+    marks = []
+    for name, n in REPOS.items():
         i = max(k for k, size in enumerate(sizes[:-1]) if size <= n)
-        x = centre(i) + (log(n) - log(sizes[i])) / (log(sizes[i + 1]) - log(sizes[i])) * slot
-        drop = 4 + 16 * (k % 2)
-        parts.append(f'<line class="rule" x1="{x:.1f}" y1="{row - 4}" x2="{x:.1f}" y2="{row + drop}"/>')
-        parts.append(f'<text class="mark secondary" x="{x:.1f}" y="{row + drop + 14}" text-anchor="middle">'
-                     f'{name} {n}</text>')
+        marks.append((centre(i) + (log(n) - log(sizes[i])) / (log(sizes[i + 1]) - log(sizes[i])) * slot,
+                      f"{name} {n}"))
+    widths = [len(label) * 6.2 for _, label in marks]
+    spots = [x for x, _ in marks]
+    for k in range(1, len(spots)):
+        spots[k] = max(spots[k], spots[k - 1] + (widths[k - 1] + widths[k]) / 2 + 14)
+    shift = sum(x - spot for (x, _), spot in zip(marks, spots)) / len(spots)
+    spots = [spot + shift for spot in spots]
+    for (x, label), spot in zip(marks, spots):
+        parts.append(f'<polyline class="rule" points="{x:.1f},{row - 4} {x:.1f},{row + 6} {spot:.1f},{row + 16}" '
+                     f'fill="none"/>')
+        parts.append(f'<text class="mark secondary" x="{spot:.1f}" y="{row + 30}" text-anchor="middle">'
+                     f'{label}</text>')
     parts.append("</svg>")
     return "\n".join(parts) + "\n"
 

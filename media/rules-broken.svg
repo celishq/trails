@@ -63,12 +63,12 @@
 <text class="delta celis" x="769.6" y="382.0" text-anchor="middle">−13 pts</text>
 <line class="rule" x1="142.4" y1="404.0" x2="769.6" y2="404.0"/>
 <text class="mark secondary" x="132.4" y="408.0" text-anchor="end">AGENTS.md of</text>
-<line class="rule" x1="258.9" y1="400.0" x2="258.9" y2="408.0"/>
-<text class="mark secondary" x="258.9" y="422.0" text-anchor="middle">VS Code 79</text>
-<line class="rule" x1="322.6" y1="400.0" x2="322.6" y2="424.0"/>
-<text class="mark secondary" x="322.6" y="438.0" text-anchor="middle">Next.js 123</text>
-<line class="rule" x1="352.4" y1="400.0" x2="352.4" y2="408.0"/>
-<text class="mark secondary" x="352.4" y="422.0" text-anchor="middle">PostHog 160</text>
-<line class="rule" x1="416.5" y1="400.0" x2="416.5" y2="424.0"/>
-<text class="mark secondary" x="416.5" y="438.0" text-anchor="middle">kube-router 282</text>
+<polyline class="rule" points="258.9,400.0 258.9,410.0 213.5,420.0" fill="none"/>
+<text class="mark secondary" x="213.5" y="434.0" text-anchor="middle">VS Code 79</text>
+<polyline class="rule" points="322.6,400.0 322.6,410.0 292.6,420.0" fill="none"/>
+<text class="mark secondary" x="292.6" y="434.0" text-anchor="middle">Next.js 123</text>
+<polyline class="rule" points="352.4,400.0 352.4,410.0 374.8,420.0" fill="none"/>
+<text class="mark secondary" x="374.8" y="434.0" text-anchor="middle">PostHog 160</text>
+<polyline class="rule" points="416.5,400.0 416.5,410.0 469.4,420.0" fill="none"/>
+<text class="mark secondary" x="469.4" y="434.0" text-anchor="middle">kube-router 282</text>
 </svg>
