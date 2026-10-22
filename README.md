@@ -96,11 +96,11 @@ New job: students pay 10% less
 No public benchmark measures work that is split into jobs the way Celis splits it. So we test the part
 we can count: does the agent keep the rules it has been given as its memory grows?
 
-To find out, we took 1,600 coding rules from the agent instruction files of 13 large open-source repos, among them
-VS Code, Next.js, PostHog, Airflow, Grafana, ruff, LangChain and n8n, and rewrote them for one small
-Python app. The agent then does 8 everyday tasks on that app, like a CSV export, a backup or a SQLite
-store. After each task, a script checks 34 of the rules in the code it wrote. 4 of those rules changed
-over time: an older version says one thing, the newer one replaces it.
+To find out, we took 1,600 coding rules from the agent instruction files of 13 large open-source
+repos, among them VS Code, Next.js, PostHog, Airflow, Grafana, ruff, LangChain and n8n, and rewrote
+them for one small Python app. The agent then does 8 everyday tasks on that app, like a CSV export, a
+backup or a SQLite store. After each task, a script checks 34 of the rules in the code it wrote. 4 of
+those rules changed over time: an older version says one thing, and a newer one replaces it.
 
 We then grow the memory from 40 to 1,600 rules and compare three setups in Claude Code with Opus:
 
