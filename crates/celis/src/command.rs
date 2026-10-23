@@ -14,6 +14,7 @@ pub(crate) mod report;
 mod review;
 mod rule;
 mod rules;
+mod search;
 mod stats;
 mod step;
 pub(crate) mod tree;
