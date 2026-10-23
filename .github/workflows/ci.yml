@@ -106,3 +106,19 @@ jobs:
         run: |
           [ "$VERSION" = success ] || { echo "::error::Release version is $VERSION."; exit 1; }
           case "$BUILDS" in success | skipped) ;; *) echo "::error::Release builds are $BUILDS."; exit 1 ;; esac
+
+  # Passes a PR into any branch but main, and a PR into main only when it is the release PR from this repo's dev.
+  release-source:
+    name: Release source
+    needs: release-version
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          BASE: ${{ github.base_ref }}
+          HEAD: ${{ github.event.pull_request.head.repo.full_name }}:${{ github.head_ref }}
+          REPO: ${{ github.repository }}
+          VERSION: ${{ needs.release-version.outputs.version }}
+        run: |
+          [ "$BASE" = main ] || exit 0
+          [ "$HEAD" = "$REPO:dev" ] || { echo "::error::Open this PR into dev. Only the release PR from dev goes into main."; exit 1; }
+          [ -n "$VERSION" ] || { echo "::error::This PR has no new version. Run make release V=<version> on dev to open the release PR."; exit 1; }
