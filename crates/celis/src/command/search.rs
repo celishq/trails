@@ -2,4 +2,5 @@
 
 mod decoder;
 mod encoder;
+mod index;
 mod model;
