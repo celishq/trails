@@ -45,7 +45,8 @@ To try the plugin from this checkout for one session, run `claude --plugin-dir p
 
 ## Open a pull request
 
-- Branch from `main`, and keep one change in one pull request.
+- Branch from `dev`, open the pull request into `dev`, and keep one change in one pull request. A fix goes
+  to `dev` too. `main` takes only the release PR from `dev`.
 - Write the commit title as `<type>: <what changed>`, where the type is `feat`, `fix`, `docs`, `refactor`
   or `chore`.
 - Say in the description which CIP the change follows, and how you checked it.
@@ -54,14 +55,17 @@ By contributing, you agree that your work is licensed under the [MIT License](LI
 
 ## Release
 
-Only maintainers release. A release PR needs a branch in this repo, so a fork cannot open one.
+Only maintainers release. Agents install the plugin from `main`, so `main` moves only by a release: the
+"Release source" check fails any other PR into `main`.
 
-1. On an up-to-date `main`, run `make release V=1.2.3`. It checks the version and your checkout, then opens
-   a release PR. If it stops, its message tells you what to fix.
-2. Wait for the checks, including "Release builds", then squash-merge the PR.
+1. On an up-to-date `dev`, run `make release V=1.2.3`. It checks the version and your checkout, commits the
+   version on `dev`, and opens the release PR from `dev` into `main`. If it stops, its message tells you what
+   to fix.
+2. Wait for the checks, including "Release builds", then merge the PR with a merge commit. Do not squash it,
+   because a squash makes `main` and `dev` differ.
 3. The merge builds `celis` from the merge commit, tags it `v1.2.3`, publishes the GitHub release, and
    installs it on clean runners. Agents see the new plugin version when you merge; the release follows a few
    minutes later.
 
 If the Release run fails before it publishes, re-run it from the Actions tab. If it fails after it publishes,
-fix the problem in a new PR and release the next version.
+fix the problem in a new PR into `dev` and release the next version.
