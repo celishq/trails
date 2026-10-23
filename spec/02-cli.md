@@ -226,7 +226,7 @@ Each agent's hooks give their JSON to `prompt`.
 - On a prompt, it MUST write it as CIP-04 "Sessions" states, and print the record's id. On a compaction,
   it MUST write no record and print nothing.
 - A prompt that names a step with `celis step <id>` is a task for that step. With no open trail, `prompt`
-  MUST NOT ask for the past agent on it.
+  MUST NOT ask for a search on it.
 
 **Examples**
 

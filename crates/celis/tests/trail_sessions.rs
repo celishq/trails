@@ -318,7 +318,7 @@ const RULES: &str = "When this prompt states how the work must be done (review f
                      convention, a correction), write each point as a rule with celis decide before you \
                      change a file; give it --scope me when it holds for that kind of work in any project.";
 
-/// After the past agent was asked for, a later prompt with no open trail gives the hint to join a trail
+/// After a search was asked for, a later prompt with no open trail gives the hint to join a trail
 /// of today, of any project; with no trail of today, it asks for a new trail.
 #[test]
 fn a_later_prompt_with_no_open_trail_hints_at_todays_trails() {
@@ -333,7 +333,7 @@ fn a_later_prompt_with_no_open_trail_hints_at_todays_trails() {
     let shop = repo.other("shop");
     let o = repo.run(&shop, &["step", "add", "--", "a shop trail"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
-    assert!(hook("s9").contains("celis:past agent"));
+    assert!(hook("s9").contains("run celis search"));
     assert_eq!(hook("s9"), format!("{}\n", joins(None)));
     let o = repo.run(
         &repo.path(),
@@ -342,7 +342,7 @@ fn a_later_prompt_with_no_open_trail_hints_at_todays_trails() {
         "",
     );
     assert!(o.status.success(), "{}", err(&o));
-    assert!(hook("s8").contains("celis:past agent"));
+    assert!(hook("s8").contains("run celis search"));
     assert_eq!(hook("s8"), format!("{}\n", joins(None)));
 }
 
@@ -366,9 +366,9 @@ fn prompt_skips_a_harness_message() {
 }
 
 /// With no open trail in the session, `prompt` writes nothing, and prints on stderr one line that asks for
-/// the past agent once the store holds any record, and for a new trail before.
+/// a search once the store holds any record, and for a new trail before.
 #[test]
-fn a_prompt_with_no_open_trail_asks_for_the_past_agent() {
+fn a_prompt_with_no_open_trail_asks_for_a_search() {
     let repo = Repo::new();
     let hook = |prompt: &str| {
         let json = serde_json::json!({"session_id": "s9", "prompt": prompt}).to_string();
@@ -387,11 +387,11 @@ fn a_prompt_with_no_open_trail_asks_for_the_past_agent() {
     assert!(o.status.success(), "{}", err(&o));
     let said = hook("Build a Vendors table");
     assert_eq!(said.lines().count(), 1, "{said}");
-    assert!(said.contains("celis:past agent"), "{said}");
+    assert!(said.contains("run celis search"), "{said}");
     assert!(said.contains("before any other tool"), "{said}");
-    assert!(said.contains("wait for its answer"), "{said}");
+    assert!(said.contains("celis grep"), "{said}");
     assert!(
-        said.contains("it brings the rules the ask must keep and the steps of past asks like it"),
+        said.contains("find the rules the ask must keep and the steps of past asks like it"),
         "{said}"
     );
     assert!(
@@ -403,7 +403,7 @@ fn a_prompt_with_no_open_trail_asks_for_the_past_agent() {
     assert!(marks(&repo, "prompt").is_empty());
 }
 
-/// `prompt` asks for the past agent once in a session, and again after a compaction's
+/// `prompt` asks for a search once in a session, and again after a compaction's
 /// `SessionStart`.
 #[test]
 fn a_session_asks_for_the_past_agent_once_until_a_compaction() {
@@ -422,10 +422,10 @@ fn a_session_asks_for_the_past_agent_once_until_a_compaction() {
         err(&o)
     };
     let ask = serde_json::json!({"session_id": "s9", "prompt": "Build a Vendors table"});
-    assert!(hook(ask.clone()).contains("celis:past agent"));
+    assert!(hook(ask.clone()).contains("run celis search"));
     assert_eq!(hook(ask.clone()), format!("{NEW}\n"));
     let other = serde_json::json!({"session_id": "s8", "prompt": "Build a Vendors table"});
-    assert!(hook(other).contains("celis:past agent"));
+    assert!(hook(other).contains("run celis search"));
     assert_eq!(
         hook(serde_json::json!({"session_id": "s9", "source": "startup"})),
         ""
@@ -435,7 +435,7 @@ fn a_session_asks_for_the_past_agent_once_until_a_compaction() {
         hook(serde_json::json!({"session_id": "s9", "source": "compact"})),
         ""
     );
-    assert!(hook(ask).contains("celis:past agent"));
+    assert!(hook(ask).contains("run celis search"));
 }
 
 /// The steps `tree <trail>` shows.
@@ -521,7 +521,7 @@ fn a_sessions_first_ask_names_its_ids() {
 }
 
 /// A session's first prompt that names a step, as a worker gets it, writes nothing and does not ask for
-/// the past agent (`spec/02-cli.md`, "Prompt").
+/// a search (`spec/02-cli.md`, "Prompt").
 #[test]
 fn a_first_prompt_that_names_its_step_skips_the_past_agent() {
     let repo = Repo::new();
@@ -531,5 +531,5 @@ fn a_first_prompt_that_names_its_step_skips_the_past_agent() {
     let o = repo.run(&repo.path(), &["prompt"], &[], &json.to_string());
     assert!(o.status.success(), "{}", err(&o));
     assert_eq!(out(&o), "");
-    assert!(!err(&o).contains("celis:past"), "{}", err(&o));
+    assert!(!err(&o).contains("run celis search"), "{}", err(&o));
 }

@@ -23,7 +23,11 @@ fn off_a_terminal_setup_prints_the_list() {
 #[test]
 fn setup_refuses_a_model_not_in_the_list() {
     let repo = Repo::new();
-    refusal(&cli(&repo, &["setup", "--json", "--model", "gpt"]), 2, "usage");
+    refusal(
+        &cli(&repo, &["setup", "--json", "--model", "gpt"]),
+        2,
+        "usage",
+    );
 }
 
 /// `none` turns search off and removes the downloaded models (`spec/02-cli.md`, "Setup").
@@ -35,7 +39,11 @@ fn none_turns_search_off() {
     assert!(o.status.success(), "{}", err(&o));
     assert!(!repo.home().join("models").exists());
     let o = cli(&repo, &["search", "--", "prices"]);
-    assert!(out(&o).starts_with("celis search has no model"), "{}", out(&o));
+    assert!(
+        out(&o).starts_with("celis search has no model"),
+        "{}",
+        out(&o)
+    );
 }
 
 /// When a download or its sha256 check fails, `setup` keeps the model it had
@@ -59,7 +67,10 @@ fn a_failed_download_or_check_keeps_the_model_there_was() {
     let o = repo.run(&repo.path(), &["setup", "--model", "qwen3"], &env, "");
     assert_eq!(o.status.code(), Some(1), "{}", err(&o));
     assert!(err(&o).contains("does not match its sha256"), "{}", err(&o));
-    assert!(repo.home().join("models/e5-small/model.safetensors").exists());
+    assert!(repo
+        .home()
+        .join("models/e5-small/model.safetensors")
+        .exists());
     assert!(!repo.home().join("models/qwen3").exists());
     let o = cli(&repo, &["search", "--", "rust"]);
     assert!(o.status.success(), "{}", err(&o));

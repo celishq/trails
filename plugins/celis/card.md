@@ -2,6 +2,7 @@ celis keeps each ask as a trail: its steps, their proofs, and the rules that lat
 
 ```
 celis rules [<file>]... [--diff]
+celis search [--kind <kind>] [--limit <n>] -- "<text>"
 celis grep <grep option>... "<pattern>"
 celis decide [--scope at:<place> | trail:<id> | me] [--replaces <id>] [--path <glob>]... [--situation] [--promoted] [--project <id>] -- "<rule>"
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>] [--check <command>] [--new] [--session <id>] [--project <id>] -- "<title>"
@@ -13,10 +14,13 @@ celis name <trail id> <name>
 celis tree [<id>] [--graph] [--full] [--all] [--demo]
 ```
 
-1. At a new ask, run the `celis:past` agent when celis asks for it, even for a simple ask: it brings
-   the rules of the ask and past steps like it. To find more rules, run `celis rules` for the words the
-   rules use, and search them with `celis grep -i -E " rule [0-9a-f]{8} live .*(<word>|<word>)"`. Keep
-   each rule in your own context. When the ask conflicts with a rule, the ask wins: replace the rule.
+1. At a new ask, even a simple one, find the rules of the ask and past asks like it yourself: run
+   `celis search -- "<the ask in your words>"`, and `celis grep` for exact words such as a file name or
+   an id. When search says it has no model, search with grep alone:
+   `celis grep -i -E " rule [0-9a-f]{8} live .*(<word>|<word>)"` for rules, and
+   `celis grep -i -E "(trail|step) [0-9a-f]{8} done .*(<word>|<word>)"` for past asks.
+   Search again when the work reaches a new part. Keep each rule in your own context. When the ask
+   conflicts with a rule, the ask wins: replace the rule.
 2. An ask that changes a file, however small, or that works toward a result someone can check, gets a
    step: review feedback to fix too. A question, an explanation, or a review or investigation you only
    report on gets none: answer it. Add the ask with `step add` where the prompt hook says. With no hint,
