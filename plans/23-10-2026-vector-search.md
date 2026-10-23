@@ -146,6 +146,24 @@ Fourth run, `lean`: the past agent reads `celis rules --all` (pages of 24 KB) an
 - The past agent made 5-7 calls in place of 12-15, but kept fewer of the rules that apply. The old agent
   read pages of 50 lines; the new one reads pages of about 120 lines, and Haiku picks worse from a long
   page.
+- **But the main cause was async runs.** Haiku ran the past agent in the background in 5 of 8 `final` and
+  6 of 8 `lean` tasks, and worked before its answer came (Sonnet: 0 and 1 of 8). In `lean`, tasks that
+  waited broke 15% (habits counted), those that did not 34%.
+
+Fifth run: the prompt hook and the card say to run the past agent in the foreground, never in the
+background, and to wait for its answer. Both arms use this branch's binary.
+
+| Arm   | Async runs (Haiku / Sonnet) | Haiku broken | Haiku $/task | Haiku s/task | Sonnet broken | Sonnet $/task | Sonnet s/task | Past agent calls | Applicable rules in the answer (Haiku / Sonnet) |
+| ----- | --------------------------- | ------------ | ------------ | ------------ | ------------- | ------------- | ------------- | ---------------- | ----------------------------------------------- |
+| final | 0 / 0                       | 24%          | 0.045        | 201          | 36%           | 0.19          | 125           | 12-14            | 176 of 196 / 169 of 202                         |
+| lean  | 1 / 0                       | 32%          | 0.039        | 178          | 24%           | 0.17          | 105           | 5-6              | 156 of 203 / 176 of 203                         |
+
+- The wait fix works: async runs fell from 5-6 to 0-1 of 8.
+- The two agents tie within the bench's noise: `final` wins on Haiku by 8 points, `lean` on Sonnet by
+  12. `final` on Sonnet moved from 23% to 36% between two runs with the same past agent, which shows the
+  noise.
+- `lean` makes half the calls, and costs 10-15% less and takes 10-15% less time on this store of 400
+  rules. On a store like the real one (1,025 lines, 456 in scope), it reads only the rules in scope.
 
 ## Risks
 
