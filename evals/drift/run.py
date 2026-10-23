@@ -36,7 +36,9 @@ checked; 4 of those replaced an older version that the memory may still hold.
          triggers of paths only: no content and no command), final (the design that ships: paths only,
          no notes, and the past agent bringing rules; from $CELIS_BIN and $CELIS_PLUGIN), grepped (final,
          with a plugin whose card has the agent search with celis search and celis grep itself, and no
-         model), searched (grepped, with the EmbeddingGemma folder $CELIS_SEARCH_MODEL set up and indexed)
+         model), searched (grepped, with the EmbeddingGemma folder $CELIS_SEARCH_MODEL set up and indexed),
+         lean (final, with a past agent that reads celis rules --all and finds past asks with celis search,
+         and the model of searched)
 
 Each task starts from a new copy of seed/ and a new copy of the memory, so tasks are independent and run in
 parallel. Each task appends one line to results/<arm>-<model>-r<N>.jsonl; with --again the lines join those of the
@@ -72,7 +74,7 @@ PICKS = ("picked", "pickers", "pickers50", "merged", "staged")
 JITS = ("jit", "narrow", "ranked", "scoped", "scopedrank", *PICKS)
 OWN = ("pull",)
 TRIGGERED = ("taught", "delegated", "coordinated", "reminded", "sized", "tooled", "full", "checked", "words", "quiet",
-             "nodiff", "paths", "final", "grepped", "searched")
+             "nodiff", "paths", "final", "grepped", "searched", "lean")
 UNTRIGGERED = ("words",)
 STORED = ("celis", "placed", *JITS, *OWN, *TRIGGERED)
 FIXED = {"GIT_AUTHOR_DATE": "2026-01-01T00:00:00Z", "GIT_COMMITTER_DATE": "2026-01-01T00:00:00Z"}
@@ -155,7 +157,7 @@ def seed(arm, home, rules, targets):
             out = sh("celis", "decide", "--scope", scope, *extra, "--", line, cwd=where, env=env)
             if old:
                 ids[old["id"]] = out.split()[-1][:8]
-        if arm == "searched":
+        if arm in ("searched", "lean"):
             (home / "celis" / "models").mkdir()
             (home / "celis" / "models" / "embeddinggemma").symlink_to(os.environ["CELIS_SEARCH_MODEL"])
             sh("celis", "search", "--", "index", cwd=place, env=env)
@@ -229,7 +231,7 @@ def agent(arm, model, work, home, prompt, log):
         env["CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD"] = "1"
         flags += ["--add-dir", str(home / "user")]
     if arm in ("celis", "placed", *JITS, "delegated", "coordinated", "reminded", "sized", "tooled", "full", "checked", "words",
-               "quiet", "nodiff", "paths", "final", "grepped", "searched"):
+               "quiet", "nodiff", "paths", "final", "grepped", "searched", "lean"):
         flags += ["--plugin-dir", str(plugin(home, arm)) if arm in PICKS
                   else os.environ.get("CELIS_PLUGIN", str(ROOT / "plugins" / "celis"))]
     start = time.time()

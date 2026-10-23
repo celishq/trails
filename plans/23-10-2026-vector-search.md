@@ -135,6 +135,18 @@ Third run, with the main agent reading `celis rules --all` at the ask, then `cel
 - The past agent gives the main agent a short list of the rules that apply. A dump of every rule leaves
   that choice to the main agent, among its other work, and it keeps fewer of them.
 
+Fourth run, `lean`: the past agent reads `celis rules --all` (pages of 24 KB) and finds past asks with
+`celis search`; the main agent does not search.
+
+| Arm   | Haiku broken | Haiku s/task | Sonnet broken | Sonnet $/task | Sonnet s/task | Applicable rules in the answer (Haiku / Sonnet) |
+| ----- | ------------ | ------------ | ------------- | ------------- | ------------- | ----------------------------------------------- |
+| final | 26%          | 193          | 23%           | 0.25          | 130           | 73 / 184 of about 200                           |
+| lean  | 46%          | 142          | 31%           | 0.20          | 115           | 45 / 146 of about 200                           |
+
+- The past agent made 5-7 calls in place of 12-15, but kept fewer of the rules that apply. The old agent
+  read pages of 50 lines; the new one reads pages of about 120 lines, and Haiku picks worse from a long
+  page.
+
 ## Risks
 
 | Risk                                                         | Mitigation                                                        |
