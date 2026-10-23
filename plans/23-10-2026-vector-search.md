@@ -86,6 +86,25 @@ Measured on 2026-10-23 on an M-series Mac, CPU, f32, one text at a time.
 EmbeddingGemma stays Recommended. Its encoder embeds one text with no padding and at most 256 tokens,
 so its 512-token sliding window never applies and it needs no mask.
 
+## Bench 6a result
+
+`evals/drift`, 400 rules, 8 tasks, 1 run each arm, 2026-10-23. `final` is v0.0.12 with the past agent;
+`grepped` and `searched` are this branch, with the main agent searching itself, with no model and with
+EmbeddingGemma. Broken counts the rules a task applies to, habits left out.
+
+| Arm      | Haiku broken | Haiku old | Haiku $/task | Haiku s/task | Sonnet broken | Sonnet old | Sonnet $/task | Sonnet s/task |
+| -------- | ------------ | --------- | ------------ | ------------ | ------------- | ---------- | ------------- | ------------- |
+| final    | 26%          | 3%        | 0.05         | 193          | 23%           | 7%         | 0.25          | 130           |
+| grepped  | 38%          | 11%       | 0.03         | 130          | 43%           | 20%        | 0.19          | 54            |
+| searched | 36%          | 14%       | 0.03         | 121          | 55%           | 54%        | 0.17          | 46            |
+
+- The main agent searched once per task in every arm (8 searches in 8 tasks) and did not search again
+  later in the work. The past agent ran 106 greps per 8 tasks: it read every rule.
+- Steps were not skipped: every task added its ask, but 2 Sonnet `searched` tasks.
+- The main agent's search costs 25-35% less and takes 30-65% less time, but breaks more rules. Haiku's gap
+  (10-12 points) is within the bench's noise of 15 points; Sonnet's (20-32 points) is not.
+- So 6b does not hold: the past agent stays until a change closes the gap.
+
 ## Risks
 
 | Risk                                                         | Mitigation                                                        |
