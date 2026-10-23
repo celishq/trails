@@ -9,7 +9,6 @@ mod issue;
 mod link;
 mod name;
 mod names;
-mod past;
 mod prompt;
 pub(crate) mod report;
 mod review;
@@ -97,7 +96,6 @@ impl Command {
             "rules" => self.rules(args, out),
             "grep" => self.grep(&self.args[1..], out),
             "search" => self.search(args, out, err),
-            "past" => self.past(args, out, err),
             "stats" => self.stats(args, out),
             "report" => self.report(args, out),
             "issue" => self.issue(args, out),

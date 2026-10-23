@@ -430,16 +430,6 @@ pub const VERBS: &[Verb] = &[
         examples: &["celis auth phrase"],
     },
     Verb {
-        command: "past",
-        usage: &["celis past [--page <n>] -- <ask>"],
-        summary: "Show what the past agent reads at a new ask: the rules of this project, 50 a page, and on the first page the trails most alike in meaning to the ask, with their steps. Changes nothing.",
-        args: &[
-            ("--page", "Page <n> of the rules; the first when not given"),
-            ("<ask>", "The ask, in your words"),
-        ],
-        examples: &["celis past -- \"make retrieval faster\"", "celis past --page 2"],
-    },
-    Verb {
         command: "setup",
         usage: &["celis setup [--model <model>]"],
         summary: "Choose the model that celis search uses, download it from Hugging Face, and index your records. On a terminal with no model, ask for one from the list; else print the list. none turns search off and removes the downloaded models.",

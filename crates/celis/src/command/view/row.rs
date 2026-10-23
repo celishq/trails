@@ -4,7 +4,6 @@ use super::kind::Kind;
 
 /// One line of the view: the day of its record, its trail, `None` for a rule with no trail, its
 /// project, its kind, its record's id, its fields, and its text.
-#[derive(Clone)]
 pub(crate) struct Row {
     pub trail: Option<String>,
     pub kind: Kind,

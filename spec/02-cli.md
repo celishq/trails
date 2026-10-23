@@ -26,7 +26,6 @@ celis grep <grep option>... <pattern>                 every trail, through the s
 celis search [--kind <kind>] [--limit <n>] -- <text>
                                                        the rules and steps most alike in meaning
 celis setup [--model <model>]                         the model that search uses
-celis past [--page <n>] -- <ask>                      what the past agent reads at a new ask
 celis stats [<id>] [--demo]                           what later work reused
 celis report <id>... [--demo]                         the trails as Markdown, for a pull request
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
@@ -396,33 +395,4 @@ list     <model> <download size> <speed> <license>[ recommended] <note>
 celis setup
 celis setup --model embeddinggemma
 celis setup --model none
-```
-
-## Past
-
-`past` gives what the plugin's `past.md` reads at a new ask: the live rules in scope in the working
-folder's project (CIP-05), and on the first page the trails most alike in meaning to the ask, by the model
-that `setup` chose.
-
-```
-page     rules, page <n> of <pages>
-           <rules line>                 each rule of the page, as `rules` prints it
-past     past                           on the first page
-           <grep view line>             each line of a trail most alike: its own, its steps, their changes
-           celis search has no model: find past asks with celis grep.      with no model
-next     celis: read pages 2 to <pages> with celis past --page <n>, all in one message.
-```
-
-**Rules**
-
-- A page MUST hold at most 50 rules. `past` MUST print page `--page`, else the first, and MUST refuse a
-  `--page` that is no page as a usage error.
-- The first page MUST show the lines of the 3 trails most alike, the most alike first, and end with the
-  `next` line when there are more pages. It MUST refuse an empty ask as a usage error.
-
-**Examples**
-
-```
-celis past -- "make retrieval faster"
-celis past --page 2
 ```
