@@ -14,8 +14,8 @@ const AGENTS: [&str; 5] = ["claude", "codex", "cursor", "gemini", "antigravity"]
 
 /// What the prompt note asks of an agent that loads the past agent, and of one that does not.
 const PAST: (&str, &str) = (
-    "run the celis:past agent in the foreground with the ask and the places it may touch, and wait for its \
-     answer",
+    "run the celis:past agent in the foreground with the ask and the places it may touch, never in the \
+     background, and wait for its answer before any other tool",
     "do what past.md says, yourself, for the ask and the places it may touch",
 );
 
