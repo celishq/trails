@@ -7,6 +7,9 @@ The cases that the card does not cover, and that no command prints. Do not run `
 A place is a file, a `file:line`, a folder, or a URL. A rule that holds at one place takes the scope
 `at:<place>`.
 
+To find more rules than the past agent brought, run `celis rules` for the words the rules use, and
+search them with `celis grep -i -E " rule [0-9a-f]{8} live .*(<word>|<word>)"`.
+
 When you move a file: write each rule of its old place again for the new place, with
 `decide --replaces <id>` and the new place as its scope or `--path`. Run `celis rules <old place>` to
 see them.
@@ -23,7 +26,7 @@ with `--uses <its id>`, so that later work can see which steps were reused.
 
 A step that uses a named trail keeps its rules, and the rules of each named trail that it uses.
 
-- When the person names a named trail, or runs `/celis:use <name>`, add the ask with `--uses <name>`.
+- When the person names a named trail, add the ask with `--uses <name>`.
 - When the person wants a named trail's rule to work another way in this project, write the new rule
   with `decide --replaces <its id>`. It holds in this project only, and the trail keeps its rule
   elsewhere.
@@ -51,40 +54,39 @@ tell the person that `/celis:tidy` tidies them.
 
 When a subagent or another agent takes work, add a step for it under your working step, and put in its
 task, beside its rules: "celis step <id>: run celis step start <id> first and celis step done <id>
-last." `start` prints the rules at the step's places, and the agent adds its own
-steps `--under <id>`. To go on with another session's trail, add your first step `--under <its id>`.
+last." The agent adds its own steps `--under <id>`. To go on with another session's trail, add your first step `--under <its id>`.
+
+## Taste
+
+A taste block is a rule with a good and a bad step, which `celis rules <file>` gives with their proofs
+and blobs: an example shows what a rule means better than more words. In Build it binds as any rule;
+in creative work it guides, and a variant that breaks it on purpose keeps it. Keep a block from:
+
+- a pick: `decide --good <pick> --bad <the other> --path <the file>`, in the person's words, or
+  "because the person picked it" when they gave no reason; never your own choice;
+- a correction: the hunk it replaced and the fix in the fix's proof, a few lines each, and
+  `--good <the fix>`;
+- the person's own rewrite, as `git log` shows at the next ask: a step that `--replaces` yours, closed
+  `--by person` with both hunks.
+
+When 3 blocks make the same point, or the picks of a creative ask share one, propose one rule that says
+it, and replace them when the person agrees.
 
 ## Creative work
 
 Creative work, such as an image, a sound, a level or a text, has no check that proves it good: the
-person's taste does. Rules and taste blocks guide it and do not bind it, and a variant that breaks one
-on purpose keeps the rule. A taste block is a rule that `celis rules <file>` gives with a good and a bad
-step: open their blobs, and see what the person chose.
+person's taste does. Before the outer layer, open the blobs of its taste blocks and see what the person
+chose. The outer layer has 2 variants as steps under it, unless the person names another number: one
+follows the blocks and the past picks, one explores away from them and names the rule it breaks. Close
+each with `--file` for its result, so that its blob stays when the next variant writes the same file;
+when the last one closes, celis prints the blobs beside it.
 
-The outer layer has 2 variants as steps under it, unless the person names another number. One follows
-the taste blocks and the past picks; one explores away from them and names the rule it breaks. Close
-each with `--file` for its result, so that its blob stays when the next variant writes the same file.
-When the last one closes, celis prints the blobs beside it.
-
-Go as far as you can: choose the variant closer to the taste blocks, give the next layer `--uses <it>`,
-and finish the work. Name your choice in "Took", with the blob of each other variant, so the person can
-pick after. When the person picks another variant, keep the pair with `decide --good <pick> --bad
-<the other> --path <the file>`, in the person's words or "because the person picked it" when they gave
-no reason, and redo the next layers from the pick. Your own choice is never a pair. A note, such as
-"move it left", is not a fix of done work. Only the outer layer has variants, unless the person asks.
-At the end, name in one line what the person's picks share, and ask if it is a rule.
-
-When the person wants to choose at each layer, `/celis:steer` does one ask that way; when they want it
+Go as far as you can: choose the variant closer to the blocks, give the next layer `--uses <it>`, and
+finish. Name your choice in "Took", with the blob of each other variant, so the person can pick after.
+When they pick another, keep it as a block and redo the next layers from the pick. Only the outer layer
+has variants, unless the person asks. A note, such as "move it left", is not a fix of done work. When
+the person wants to choose at each layer, `/celis:steer` does one ask that way; when they want it
 always, write it as a `me` rule.
-
-## Taste
-
-A rule with a pair shows what it means by example, which words alone do not. When the person corrects
-done work, put the hunk it replaced and the fix in the fix's proof, a few lines each, and give its rule
-`--good <the fix>`. When `git log` shows at the next ask that the person rewrote your code themselves,
-add the rewrite as a step that `--replaces` yours, close it `--by person` with both hunks, and keep its
-rule the same way. When 3 rules with a pair make the same point, propose one rule that says it, and
-replace them when the person agrees.
 
 ## Links
 
