@@ -262,13 +262,48 @@ fn prompt_with_no_store_asks_to_link() {
     assert!(!repo.store().exists());
 }
 
-/// The README of `.celis/` says how to install celis.
+/// The README of `.celis/trails/` says how to install celis and its plugin, and tells no agent what to say.
 #[test]
 fn the_readme_says_how_to_install_celis() {
     let repo = Repo::new();
     run(&repo, &["link"]);
     let readme = std::fs::read_to_string(repo.path().join(".celis/trails/README.md")).unwrap();
     assert!(readme.contains("https://celis.ai/install.sh"), "{readme}");
+    assert!(
+        readme.contains("https://github.com/celishq/trails"),
+        "{readme}"
+    );
+    assert!(!readme.contains("Tell the person"), "{readme}");
+    assert!(readme.lines().count() <= 12, "{readme}");
+}
+
+/// `link` keeps a README that the folder has already.
+#[test]
+fn link_keeps_a_readme_that_exists() {
+    let repo = Repo::new();
+    std::fs::create_dir_all(linked(&repo)).unwrap();
+    std::fs::write(linked(&repo).join("README.md"), "Our own words.\n").unwrap();
+    run(&repo, &["link"]);
+    let readme = std::fs::read_to_string(linked(&repo).join("README.md")).unwrap();
+    assert_eq!(readme, "Our own words.\n");
+}
+
+/// A file of the linked folder that is not a record breaks no read, and does not come into the store
+/// (`spec/01-records.md`, "Links").
+#[test]
+fn a_file_that_is_not_a_record_is_ignored() {
+    let repo = Repo::new();
+    run(&repo, &["link"]);
+    std::fs::write(linked(&repo).join("notes.txt"), "not a record\n").unwrap();
+    let note = strangers_step(&repo);
+    let shown = run(&repo, &["link"]);
+    assert_eq!(shown.trim(), ".celis/trails · 0 out · 1 in");
+    let tree = run(&repo, &["tree", "--all"]);
+    assert!(tree.contains("Ben's step"), "{tree}");
+    let shared = repo.store().join("shared");
+    assert!(!shared.join("README.md").exists());
+    assert!(!shared.join("notes.txt").exists());
+    assert_eq!(ids(&shared), vec![note.id]);
 }
 
 /// `link <folder>` links a folder outside the repo by its full path; records go to it and come from it,

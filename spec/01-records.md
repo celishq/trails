@@ -140,3 +140,4 @@ $CELIS_HOME/links                   one link a line: `<project id>\t<folder>`
 
 - While a link is on, a reader MUST read its folder with the store, and copy into the store each record
   the store lacks. While it is not on, a reader MUST NOT read the folder.
+- A reader MUST ignore a file of the folder that is not a `.json` record, such as a `README.md`.

@@ -3,7 +3,7 @@
 verify:
 	cd crates && cargo fmt --check
 	cd crates && cargo clippy --workspace --all-targets -- -D warnings
-	cd crates && cargo test --workspace
+	cd crates && cargo test --workspace --no-fail-fast
 
 fmt:
 	cd crates && cargo fmt
