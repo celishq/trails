@@ -143,6 +143,10 @@ key, and Celis never sends it anywhere. To use another folder, set `CELIS_HOME` 
 agent. Run `celis auth phrase` to see your recovery phrase, and `celis auth login` on another
 computer.
 
+**Can agents find past work by meaning?** Run `celis setup` and choose a model. It downloads the model
+from Hugging Face (0.5 to 1.2 GB) and indexes your trails on your machine. Then `celis search` finds rules
+and past asks by meaning, in any language. With no model, agents search with `celis grep`.
+
 **What else can I run?** `celis help` lists every command, such as `celis grep` to search your trails
 and `celis report` to turn a trail into Markdown for a pull request.
 
