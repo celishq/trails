@@ -1,11 +1,12 @@
 //! How a done step went against its plan.
 
+use super::Gap;
 use celis_nostr::Note;
 use celis_trails::{Mark, Step, StepId};
 
 /// How a done step went against its plan: its expect line and its own changed, the steps under it planned
 /// before the first started, added after, dropped with their reasons and changed, the person's prompts on
-/// its tree, and the open steps beside it under `under`, each as an id and a title.
+/// its tree, and the open steps beside it under `under`, each as an id and a title; on an ask, its gap.
 pub struct Review {
     pub step: StepId,
     pub under: Option<StepId>,
@@ -18,12 +19,19 @@ pub struct Review {
     pub changed: Vec<(StepId, String)>,
     pub asked: Vec<String>,
     pub open: Vec<(StepId, String)>,
+    pub gap: Option<Gap>,
 }
 
 impl Review {
-    /// How `step`, just done with `changed`, went against its plan; `records` are the store's before
-    /// the done.
-    pub fn of(records: &[Note], step: Step, changed: Option<&str>) -> Review {
+    /// How `step`, just done with `changed` and its proof `by` at `now`, went against its plan; `records`
+    /// are the store's before the done.
+    pub fn of(
+        records: &[Note],
+        step: Step,
+        changed: Option<&str>,
+        by: Option<&str>,
+        now: u64,
+    ) -> Review {
         let tree = step.tree();
         let parts = &tree[1..];
         let began = parts
@@ -83,6 +91,7 @@ impl Review {
                 .map(line)
                 .collect(),
             under: under.map(|u| u.step_id()),
+            gap: ask.then(|| Gap::of(records, step, by, now)),
         }
     }
 }

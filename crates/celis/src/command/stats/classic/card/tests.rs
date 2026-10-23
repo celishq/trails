@@ -35,7 +35,7 @@ fn worked(later: u64) -> (TempDir, Trails) {
     trails.start(&part).unwrap();
     trails.at(AT);
     trails
-        .done(&part, "it works".into(), None, None, home.path())
+        .done(&part, "it works".into(), None, None, None, home.path())
         .unwrap();
     trails.at(AT + later);
     (home, trails)
@@ -221,7 +221,7 @@ fn the_projects_card_aligns_its_times() {
     trails.start(&part).unwrap();
     trails.at(long);
     trails
-        .done(&part, "it took long".into(), None, None, home.path())
+        .done(&part, "it took long".into(), None, None, None, home.path())
         .unwrap();
     trails.at(long + 60);
     let face = face(&trails, "06 PROJECTS");

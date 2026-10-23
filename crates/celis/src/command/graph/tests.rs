@@ -64,7 +64,7 @@ impl Bench {
         let changed = changed.then(|| "another way".to_string());
         let home = self.home.path().to_path_buf();
         self.trails
-            .done(id, "it works".into(), changed, None, &home)
+            .done(id, "it works".into(), changed, None, None, &home)
             .unwrap();
         self.trails.at(self.at);
     }

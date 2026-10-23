@@ -78,6 +78,7 @@ fn the_tree_changes_next_when_its_first_time_changes() {
     let proof = Mark::Done {
         proof: "proof".into(),
         changed: None,
+        by: None,
     }
     .record(&account(), &past.id, now - 3 * 86_400)
     .unwrap();

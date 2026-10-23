@@ -28,6 +28,7 @@ fn done(id: &str, proof: &str, at: u64) -> Note {
     let mark = Mark::Done {
         proof: proof.into(),
         changed: None,
+        by: None,
     };
     mark.record(&account(), id, at).unwrap()
 }

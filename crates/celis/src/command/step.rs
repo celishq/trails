@@ -72,7 +72,8 @@ impl Command {
         self.print(written, args, out, err)
     }
 
-    /// Closes the open step `args` names, done with its proof and what changed from its plan, and prints
+    /// Closes the open step `args` names, done with its proof, what changed from its plan and who gave the
+    /// proof, and prints
     /// the id of the done record, then of its pitfall's rule, and its review.
     fn step_close(
         &self,
@@ -92,11 +93,32 @@ impl Command {
                     "step done needs one of --changed <what differs from the plan> or --as-planned",
                 )),
             };
+        let by = match args.by.as_deref() {
+            None | Some("judge" | "person") => args.by.clone(),
+            Some(other) => {
+                return Err(Failure::usage(format!(
+                    "step done --by takes judge or person, not {other}"
+                )))
+            }
+        };
         let pitfall = args.pitfall.clone();
-        let written = trails.done(id, proof, changed.clone(), pitfall, &project.folder)?;
+        let written = trails.done(
+            id,
+            proof,
+            changed.clone(),
+            by.clone(),
+            pitfall,
+            &project.folder,
+        )?;
         self.print(written, args, out, err)?;
         let steps = trails.steps();
-        let review = Review::of(trails.records(), steps.find(id)?, changed.as_deref());
+        let review = Review::of(
+            trails.records(),
+            steps.find(id)?,
+            changed.as_deref(),
+            by.as_deref(),
+            super::now(),
+        );
         self.review(&review, err)
     }
 

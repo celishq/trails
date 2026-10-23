@@ -60,7 +60,7 @@ impl Desk {
         self.trails.at(noon() - ago);
         let home = self.home.path().to_path_buf();
         self.trails
-            .done(id, "it works".into(), None, None, &home)
+            .done(id, "it works".into(), None, None, None, &home)
             .unwrap();
         self.trails.at(noon() - ago);
     }

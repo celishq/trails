@@ -5,8 +5,8 @@ use anyhow::Result;
 use celis_nostr::{Account, Note};
 use std::collections::HashMap;
 
-/// What an agent does to a step: takes it up, closes it done with its proof and what changed from its
-/// plan, or drops it with the reason its work is no longer wanted. It gives a step a new title or text,
+/// What an agent does to a step: takes it up, closes it done with its proof, what changed from its plan
+/// and who gave the proof, or drops it with the reason its work is no longer wanted. It gives a step a new title or text,
 /// places or check. On a trail, the hook records the person's prompt, and a name lets other work use it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Mark {
@@ -14,6 +14,7 @@ pub enum Mark {
     Done {
         proof: String,
         changed: Option<String>,
+        by: Option<String>,
     },
     Drop {
         reason: String,
@@ -47,12 +48,13 @@ impl Mark {
             vec!["l".to_string(), label.to_string(), NAMESPACE.to_string()],
             vec!["e".to_string(), step.to_string()],
         ];
-        if let Mark::Done {
-            changed: Some(changed),
-            ..
-        } = self
-        {
-            tags.push(vec!["changed".to_string(), changed.clone()]);
+        if let Mark::Done { changed, by, .. } = self {
+            tags.extend(
+                changed
+                    .iter()
+                    .map(|c| vec!["changed".to_string(), c.clone()]),
+            );
+            tags.extend(by.iter().map(|b| vec!["by".to_string(), b.clone()]));
         }
         if let Mark::Edit { places, check, .. } = self {
             tags.extend(places.iter().map(|p| vec!["at".to_string(), p.clone()]));
@@ -91,6 +93,7 @@ impl Mark {
             "done" => Mark::Done {
                 proof: note.content.clone(),
                 changed: note.tag("changed").map(str::to_string),
+                by: note.tag("by").map(str::to_string),
             },
             "drop" => Mark::Drop {
                 reason: note.content.clone(),

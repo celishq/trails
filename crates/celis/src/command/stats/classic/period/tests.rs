@@ -30,6 +30,7 @@ fn done(id: &str, changed: Option<&str>, at: u64) -> Note {
     let mark = Mark::Done {
         proof: "proof".into(),
         changed: changed.map(str::to_string),
+        by: None,
     };
     mark.record(&account(), id, at).unwrap()
 }

@@ -57,7 +57,7 @@ Every change of `spec/` MUST keep these rules:
 | 1111 with `step` in `celis.step` | kind: a step (NIP-22) | 03 |
 | `under` · `replaces` · `at` · `check` | step tags | 03 |
 | 1985 with `start` · `done` · `drop` · `edit` in `celis.step` | kinds: a start, a done, a drop, an edit (NIP-32) | 03 |
-| `changed` | done tag | 03 |
+| `changed` · `by` | done tags | 03 |
 | `session` | step tag | 04 |
 | 1985 with `prompt` in `celis.step` | kind: a person's prompt, on the trail (NIP-32) | 04 |
 | 1111 with `decision` in `celis.decision` | kind: a rule (NIP-22) | 05 |

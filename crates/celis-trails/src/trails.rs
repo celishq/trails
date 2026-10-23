@@ -178,14 +178,15 @@ impl Trails {
         Ok(written)
     }
 
-    /// Closes the open step `id` done, with its proof and what changed from its plan, once nothing under
-    /// it is open and its check passes in `folder`; a pitfall becomes a rule at its place, else on its
-    /// trail.
+    /// Closes the open step `id` done, with its proof, what changed from its plan and who gave the proof,
+    /// once nothing under it is open and its check passes in `folder`; a pitfall becomes a rule at its
+    /// place, else on its trail.
     pub fn done(
         &self,
         id: &str,
         proof: String,
         changed: Option<String>,
+        by: Option<String>,
         pitfall: Option<String>,
         folder: &Path,
     ) -> Result<Written, Refusal> {
@@ -198,7 +199,7 @@ impl Trails {
         if let Some(check) = &step.check {
             self.check(check, folder)?;
         }
-        let mark = Mark::Done { proof, changed };
+        let mark = Mark::Done { proof, changed, by };
         let mut written = Written::default();
         written
             .records
