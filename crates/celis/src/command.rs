@@ -90,6 +90,7 @@ impl Command {
             "tree" => self.tree(args, out),
             "rules" => self.rules(args, out),
             "grep" => self.grep(&self.args[1..], out),
+            "search" => self.search(args, out, err),
             "past" => self.past(out),
             "stats" => self.stats(args, out),
             "report" => self.report(args, out),

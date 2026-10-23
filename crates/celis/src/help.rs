@@ -262,6 +262,20 @@ pub const VERBS: &[Verb] = &[
         ],
     },
     Verb {
+        command: "search",
+        usage: &["celis search [--kind <kind>] [--limit <n>] -- <text>"],
+        summary: "Show the rules of this project and the trails and steps of every project most alike in meaning to a text, by the model celis setup chose, the most alike first with their score. Reads new records into the model's index first. With no model, says to use celis grep. Changes nothing.",
+        args: &[
+            ("--kind", "Only rule, step, or trail"),
+            ("--limit", "Show the first <n> only; 20 when not given"),
+            ("<text>", "What to find, in any words and any language"),
+        ],
+        examples: &[
+            "celis search -- \"make retrieval faster\"",
+            "celis search --kind rule --limit 10 -- \"release for linux\"",
+        ],
+    },
+    Verb {
         command: "stats",
         usage: &["celis stats [<id>] [--demo]"],
         summary: "Show each step that later work reused and how often, then each rule that steps followed, then the total. With an id, show what that step reused and what reused it. On a terminal, show the totals of all time, then the last 14 days against the 14 before: reuse rate, first-pass success, resolved steps and median step time, then Learning, Quality, Output and speed, and Resources, each opened with enter, updating as work lands. Changes nothing.",
@@ -414,6 +428,17 @@ pub const VERBS: &[Verb] = &[
         summary: "Show your recovery phrase, so you can add it to the Celis app or another computer.",
         args: &[],
         examples: &["celis auth phrase"],
+    },
+    Verb {
+        command: "setup",
+        usage: &["celis setup [--model <model>]"],
+        summary: "Choose the model that celis search uses, download it from Hugging Face, and index your records. On a terminal with no model, ask for one from the list; else print the list. none turns search off and removes the downloaded models.",
+        args: &[("--model", "embeddinggemma, qwen3, e5-small, or none")],
+        examples: &[
+            "celis setup",
+            "celis setup --model embeddinggemma",
+            "celis setup --model none",
+        ],
     },
     Verb {
         command: "update",

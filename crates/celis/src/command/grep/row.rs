@@ -4,7 +4,7 @@ use super::kind::Kind;
 
 /// One line of the view: the day of its record, its trail, `None` for a rule with no trail, its
 /// project, its kind, then its id with its fields, and its text.
-pub(super) struct Row {
+pub(crate) struct Row {
     pub trail: Option<String>,
     pub kind: Kind,
     pub day: String,
@@ -28,6 +28,11 @@ impl Row {
             (Some(_), _) => self.rest(),
             (None, _) => format!("[{}] {}", self.project, self.rest()),
         }
+    }
+
+    /// The id of the row's record: the first word of its head.
+    pub fn id(&self) -> &str {
+        self.head.split(' ').next().unwrap_or("")
     }
 
     /// `<kind> <head> <text>`.

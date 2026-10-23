@@ -13,7 +13,7 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 /// Every trail of every project with its rules and steps, and each rule with no trail, newest made
 /// first; with the header of each trail.
 #[derive(Default)]
-pub(super) struct View {
+pub(crate) struct View {
     rows: Vec<Row>,
     lines: HashMap<u64, usize>,
     headers: HashMap<String, Header>,
@@ -56,6 +56,10 @@ impl View {
         }
     }
 
+    pub fn rows(&self) -> &[Row] {
+        &self.rows
+    }
+
     /// The lines, one a row.
     pub fn text(&self) -> String {
         let lines: Vec<String> = self.rows.iter().map(Row::line).collect();
@@ -79,7 +83,7 @@ impl View {
     }
 
     /// The header of the trail `id`.
-    pub fn header(&self, id: &str) -> Option<&Header> {
+    pub(super) fn header(&self, id: &str) -> Option<&Header> {
         self.headers.get(id)
     }
 }

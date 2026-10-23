@@ -23,7 +23,8 @@ celis names [--limit <n>]                             the named trails, most use
 celis tree [<id>] [--graph] [--full] [--all] [--demo]
                                                        a trail and its steps; again on each change
 celis grep <grep option>... <pattern>                 every trail, through the system grep
-celis search [--kind <kind>] [--limit <n>] -- <text>  the rules and steps most alike in meaning
+celis search [--kind <kind>] [--limit <n>] -- <text>
+                                                       the rules and steps most alike in meaning
 celis setup [--model <model>]                         the model that search uses
 celis stats [<id>] [--demo]                           what later work reused
 celis report <id>... [--demo]                         the trails as Markdown, for a pull request

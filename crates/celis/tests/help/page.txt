@@ -20,6 +20,10 @@ Read
   └ --limit <n>       Show the first <n> only
 
   grep <pattern>      Search every trail with grep
+  search <text>       Find the rules and steps alike in meaning to a text
+  ├ --kind <kind>     Only rule, step, or trail
+  └ --limit <n>       Show the first <n> only; 20 when not given
+
   rules [<file>]...   Show the rules of the files you will touch
   └ --diff            Each file git shows changed or new
 
@@ -66,6 +70,9 @@ Set up
   auth login          Save a recovery phrase and use its account
   auth status         Show your account and where its phrase is kept
   auth phrase         Show your recovery phrase
+  setup               Choose and download the model that search uses
+  └ --model <model>   embeddinggemma, qwen3, e5-small, or none
+
   update [<version>]  Update celis to the latest version, or to one you choose
   issue [<id>]...     Write a problem report for the celis team
 

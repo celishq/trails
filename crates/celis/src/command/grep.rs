@@ -2,9 +2,9 @@
 
 mod found;
 mod header;
-mod kind;
-mod row;
-mod view;
+pub(super) mod kind;
+pub(super) mod row;
+pub(super) mod view;
 
 use super::Command;
 use crate::failure::Failure;

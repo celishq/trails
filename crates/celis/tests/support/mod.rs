@@ -559,3 +559,27 @@ pub fn links(step: &serde_json::Value, kind: &str) -> Vec<String> {
         .map(|l| l["to"].as_str().unwrap().to_string())
         .collect()
 }
+
+/// A BERT model with random weights, set up in the home of `repo` as `e5-small`. Its vocabulary
+/// holds the words `keep prices in cents rust release`; any other word, such as a prefix, is one
+/// unknown token, so a query and a record of the same words get the same vector.
+pub fn tiny_model(repo: &Repo) {
+    use candle_core::{DType, Device};
+    use candle_nn::{VarBuilder, VarMap};
+    use candle_transformers::models::bert::{BertModel, Config};
+    let folder = repo.home().join("models/e5-small");
+    std::fs::create_dir_all(&folder).unwrap();
+    let config = r#"{"vocab_size": 8, "hidden_size": 8, "num_hidden_layers": 1,
+        "num_attention_heads": 2, "intermediate_size": 16, "hidden_act": "gelu",
+        "hidden_dropout_prob": 0.0, "max_position_embeddings": 300, "type_vocab_size": 2,
+        "initializer_range": 0.02, "layer_norm_eps": 1e-12, "pad_token_id": 0, "model_type": "bert"}"#;
+    let tokenizer = r#"{"version": "1.0", "pre_tokenizer": {"type": "Whitespace"},
+        "model": {"type": "WordLevel", "unk_token": "[UNK]", "vocab": {"[UNK]": 0, "keep": 1,
+        "prices": 2, "in": 3, "cents": 4, "rust": 5, "release": 6, "linux": 7}}}"#;
+    std::fs::write(folder.join("config.json"), config).unwrap();
+    std::fs::write(folder.join("tokenizer.json"), tokenizer).unwrap();
+    let map = VarMap::new();
+    let vb = VarBuilder::from_varmap(&map, DType::F32, &Device::Cpu);
+    BertModel::load(vb, &serde_json::from_str::<Config>(config).unwrap()).unwrap();
+    map.save(folder.join("model.safetensors")).unwrap();
+}
