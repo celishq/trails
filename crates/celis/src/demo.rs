@@ -451,12 +451,7 @@ impl Demo {
         let changed = changed.map(str::to_string);
         self.trails(ago)?.done(
             id,
-            celis_trails::Mark::Done {
-                proof: proof.to_string(),
-                changed,
-                by: None,
-                files: vec![],
-            },
+            celis_trails::Done::new(proof.to_string(), changed),
             None,
             &self.home,
         )?;

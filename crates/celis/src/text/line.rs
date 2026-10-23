@@ -4,7 +4,7 @@ use super::clock::took;
 use crate::progress::Grade;
 use celis_nostr::Note;
 use celis_trails::records::id::short;
-use celis_trails::{Rule, Step};
+use celis_trails::{ProofFile, Rule, Step, Trails};
 
 /// `<id, first 8> <scope> <text>` of the rule that `note` holds.
 pub(crate) fn rule(note: &Note, rule: &Rule) -> String {
@@ -36,5 +36,13 @@ pub(crate) fn plural(n: usize, word: &str) -> String {
     match n {
         1 => format!("1 {word}"),
         n => format!("{n} {word}s"),
+    }
+}
+
+/// Where `trails` keeps the blob of `file`; its place and sha256 when the store lacks it.
+pub(crate) fn blob(file: &ProofFile, trails: &Trails) -> String {
+    match trails.blob(&file.sha256) {
+        Some(path) => path.display().to_string(),
+        None => format!("{} · {} missing", file.place, file.sha256),
     }
 }

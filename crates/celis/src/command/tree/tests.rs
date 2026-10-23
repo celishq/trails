@@ -75,13 +75,8 @@ fn the_tree_changes_next_when_its_first_time_changes() {
     assert_eq!(next(&[idle, open], now), Some(now - 600 + LIFE));
 
     let past = step(None, now - 3 * 86_400, "trail");
-    let proof = Mark::Done {
-        proof: "proof".into(),
-        changed: None,
-        by: None,
-        files: vec![],
-    }
-    .record(&account(), &past.id, now - 3 * 86_400)
-    .unwrap();
+    let proof = Mark::Done(celis_trails::Done::new("proof".into(), None))
+        .record(&account(), &past.id, now - 3 * 86_400)
+        .unwrap();
     assert_eq!(next(&[past, proof], now), None);
 }

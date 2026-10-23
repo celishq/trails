@@ -66,12 +66,7 @@ impl Bench {
         self.trails
             .done(
                 id,
-                celis_trails::Mark::Done {
-                    proof: "it works".into(),
-                    changed,
-                    by: None,
-                    files: vec![],
-                },
+                celis_trails::Done::new("it works".into(), changed),
                 None,
                 &home,
             )

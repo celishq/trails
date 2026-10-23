@@ -4,7 +4,7 @@ use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::progress::Review;
 use celis_trails::records::id::short;
-use celis_trails::{Draft, Link, Mark, Notice, Place, Project, Written};
+use celis_trails::{By, Done, Draft, Link, Notice, Place, Project, Written};
 use std::io::Write;
 
 impl Command {
@@ -94,31 +94,29 @@ impl Command {
                 )),
             };
         let by = match args.by.as_deref() {
-            None | Some("judge" | "person") => args.by.clone(),
-            Some(other) => {
-                return Err(Failure::usage(format!(
-                    "step done --by takes judge or person, not {other}"
-                )))
-            }
+            None => None,
+            Some(text) => Some(By::parse(text).ok_or_else(|| {
+                Failure::usage(format!("step done --by takes judge or person, not {text}"))
+            })?),
         };
         let mut files = Vec::new();
         for file in &args.files {
             let place = Place::resolve(file, &project.folder, &self.folder);
             files.push(trails.keep(place, &self.folder.join(file))?);
         }
-        let mark = Mark::Done {
+        let done = Done {
             proof,
             changed,
             by,
             files,
         };
         let pitfall = args.pitfall.clone();
-        let written = trails.done(id, mark.clone(), pitfall, &project.folder)?;
+        let written = trails.done(id, done.clone(), pitfall, &project.folder)?;
         self.print(written, args, out, err)?;
         let steps = trails.steps();
-        let review = Review::of(trails.records(), steps.find(id)?, &mark, super::now());
+        let review = Review::of(trails.records(), steps.find(id)?, &done, super::now());
         let linked = !Link::all(&self.home()?, &project.folder).is_empty();
-        self.review(&review, &|sha| trails.blob(sha), linked, err)
+        self.review(&review, &trails, linked, err)
     }
 
     /// Drops the open step `args` names and each open step under it, and prints each drop's id.

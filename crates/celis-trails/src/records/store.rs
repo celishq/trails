@@ -1,7 +1,7 @@
 //! The records of every project on this machine.
 
 use crate::records::verified::Verified;
-use crate::{Link, Phrase, Refusal};
+use crate::{Link, Phrase, ProofFile, Refusal};
 use anyhow::Result;
 use celis_nostr::{Account, Note};
 use sha2::{Digest, Sha256};
@@ -85,7 +85,7 @@ impl Store {
 
     /// Keeps `bytes` as a blob in `blobs/` and in each linked folder, unless it is there; its sha256.
     pub fn keep(&self, bytes: &[u8]) -> Result<String> {
-        let sha = format!("{:x}", Sha256::digest(bytes));
+        let sha = sha256(bytes);
         put_blob(&self.root.join("blobs"), &sha, bytes)?;
         for link in &self.links {
             put_blob(&link.folder.join("blobs"), &sha, bytes)?;
@@ -97,7 +97,7 @@ impl Store {
     pub fn blob(&self, sha256: &str) -> Option<PathBuf> {
         let path = self.root.join("blobs").join(sha256);
         let bytes = std::fs::read(&path).ok()?;
-        (format!("{:x}", Sha256::digest(&bytes)) == sha256).then_some(path)
+        (self::sha256(&bytes) == sha256).then_some(path)
     }
 
     /// Copies each record a linked folder holds and lacks into it, with the blobs its files name, and
@@ -111,9 +111,13 @@ impl Store {
         for link in &self.links {
             for record in kept.iter().filter(|r| link.holds(r, &all)) {
                 went += usize::from(put(&link.folder, record)?.1);
-                for sha in files(record) {
-                    if let Some(path) = self.blob(sha) {
-                        put_blob(&link.folder.join("blobs"), sha, &std::fs::read(path)?)?;
+                for file in record.tags.iter().filter_map(|t| ProofFile::read(t)) {
+                    if let Some(path) = self.blob(&file.sha256) {
+                        put_blob(
+                            &link.folder.join("blobs"),
+                            &file.sha256,
+                            &std::fs::read(path)?,
+                        )?;
                     }
                 }
             }
@@ -208,7 +212,7 @@ impl Store {
                 continue;
             }
             let bytes = std::fs::read(entry.path())?;
-            if format!("{:x}", Sha256::digest(&bytes)) == name {
+            if sha256(&bytes) == name {
                 put_blob(&self.root.join("blobs"), &name, &bytes)?;
             }
         }
@@ -216,43 +220,39 @@ impl Store {
     }
 }
 
-/// The sha256 of each file that an `imeta` of `record` names.
-fn files(record: &Note) -> impl Iterator<Item = &str> {
-    record
-        .tags
-        .iter()
-        .filter(|t| t.first().is_some_and(|n| n == "imeta"))
-        .filter_map(|t| t.iter().find_map(|f| f.strip_prefix("x ")))
+/// Writes `bytes` to `folder` as the file `name` at once, unless it is there; its path, and whether it
+/// wrote it.
+fn put_bytes(folder: &Path, name: &str, bytes: &[u8]) -> Result<(PathBuf, bool)> {
+    let path = folder.join(name);
+    if path.exists() {
+        return Ok((path, false));
+    }
+    let temp = folder.join(format!(".{name}.{}", std::process::id()));
+    std::fs::write(&temp, bytes)
+        .and_then(|()| std::fs::rename(&temp, &path))
+        .map_err(|e| unwritten(folder, e))?;
+    Ok((path, true))
 }
 
 /// Writes `bytes` to `folder` as the blob `sha256`, unless it is there.
 fn put_blob(folder: &Path, sha256: &str, bytes: &[u8]) -> Result<()> {
-    let path = folder.join(sha256);
-    if path.exists() {
-        return Ok(());
-    }
     std::fs::create_dir_all(folder).map_err(|e| unwritten(folder, e))?;
-    let temp = folder.join(format!(".{sha256}.{}", std::process::id()));
-    std::fs::write(&temp, bytes)
-        .and_then(|()| std::fs::rename(&temp, &path))
-        .map_err(|e| unwritten(folder, e))?;
-    Ok(())
+    put_bytes(folder, sha256, bytes).map(|_| ())
 }
 
 /// Writes `record` to `folder` as `<created_at>-<id>.json`, unless it is there; the path, and whether it
 /// wrote it.
 fn put(folder: &Path, record: &Note) -> Result<(PathBuf, bool)> {
-    let name = name(record);
-    let path = folder.join(&name);
-    if path.exists() {
-        return Ok((path, false));
-    }
-    let temp = folder.join(format!(".{name}.{}", std::process::id()));
-    let written = std::fs::write(&temp, serde_json::to_string(record)?);
-    written
-        .and_then(|()| std::fs::rename(&temp, &path))
-        .map_err(|e| unwritten(folder, e))?;
-    Ok((path, true))
+    put_bytes(
+        folder,
+        &name(record),
+        serde_json::to_string(record)?.as_bytes(),
+    )
+}
+
+/// The sha256 of `bytes`, in lower-case hex.
+fn sha256(bytes: &[u8]) -> String {
+    format!("{:x}", Sha256::digest(bytes))
 }
 
 /// A failed write in `folder`: it names the folder, and when the system refused the write, how to let an

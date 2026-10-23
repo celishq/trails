@@ -361,12 +361,10 @@ fn the_view_and_the_cards_rule_search_match_the_fixture() {
     let mark = |mark: Mark, step: &str, at: u64| put(&repo, &mark.record(&by, step, at).unwrap());
     let trail = step(None, &[], "Build the Vendors page", t);
     let table = step(Some(&trail.id), &["src/vendors.rs"], "Add the table", t + 1);
-    let done = Mark::Done {
-        proof: "the table shows".into(),
-        changed: Some("a list, not a table".into()),
-        by: None,
-        files: vec![],
-    };
+    let done = Mark::Done(celis_trails::Done::new(
+        "the table shows".into(),
+        Some("a list, not a table".into()),
+    ));
     mark(done, &table.id, t + 2);
     let chart = step(Some(&trail.id), &[], "Add the chart", t + 3);
     mark(

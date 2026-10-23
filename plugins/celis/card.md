@@ -18,7 +18,7 @@ celis tree [<id>]... [--graph] [--full] [--all] [--markdown] [--demo]
    wait for its answer before any other tool. To find more rules, run `celis rules` for the words the
    rules use, and search them with `celis grep -i -E " rule [0-9a-f]{8} live .*(<word>|<word>)"`. Keep
    each rule in your own context. When the ask conflicts with a rule, the ask wins: replace the rule.
-   In a creative result, rules guide and do not bind: a variant that breaks one on purpose keeps it.
+   In creative work, rules guide and do not bind (`steps.md`, "Creative work").
 2. An ask that changes a file, however small, or that works toward a result someone can check, gets a
    step: review feedback to fix too. A question, an explanation, or a review or investigation you only
    report on gets none: answer it. Add the ask with `step add` where the prompt hook says. With no hint,
@@ -36,24 +36,10 @@ celis tree [<id>]... [--graph] [--full] [--all] [--markdown] [--demo]
    you take it and it holds more than one job. Only the step you take next gets `--at` and a `--check`
    that proves it.
 
-   A feature or a creative result, such as an image, a level or a text, splits by layers, each one job:
-   the outer layer makes the whole result at low detail, such as a skeleton that runs end to end, a
-   greybox or an outline, and each next layer adds detail to all of it. A wrong turn is cheap to see at
-   the outer layer and costly on the final. When a layer closes, show the person its result; for a
-   creative result, wait for `go` or notes before the next layer. A note, such as "move it left", is not
-   a fix of done work. The outer layer of a creative result has 2 variants as steps under it, unless
-   the person names another number. Before you make them, read the rules that `celis rules <file>`
-   gives with a good and a bad step: open their blobs, and see what the person chose. One variant
-   follows them and the past picks, and one explores away from them and names the rule it breaks; put
-   the one closer to the person's picks first. You never accept or reject a result on taste: the
-   person picks. Close each with `--file` for its result, so that its blob
-   stays when the next variant writes the same file. When the last one closes, celis prints the blobs
-   beside it: open them side by side, and say in one line how they differ. When the person picks, keep
-   the pair: `decide --good <pick> --bad <each other variant> --path <the file>` with the person's
-   reason in their words, or "because the person picked it" when they gave none; never invent one. The
-   next layer takes `--uses <pick>`: the pick is its reference. The next layers have no variants unless
-   the person asks. At the end of a creative ask, name in one line what the person's picks share, and
-   ask if it is a rule.
+   A feature or creative work, such as an image, a level or a text, splits by layers, each one job:
+   the outer layer makes the whole result at low detail first, such as a skeleton that runs end to end,
+   a greybox or an outline, and each next layer adds detail to all of it. In creative work, read
+   "Creative work" in `steps.md` before the outer layer.
 4. For each step: `start`, and keep the rules it prints. Run `celis rules <files>` before each change,
    and before `done`, check your change against `celis rules --diff`. Read all
    that celis prints: never cut it with `head` or `grep`. Then `done` with a proof a person can check,
@@ -67,12 +53,8 @@ celis tree [<id>]... [--graph] [--full] [--all] [--markdown] [--demo]
    with `decide`, before you go on. Give it `--path` for the files it acts on, as narrow as the rule
    allows, and `--situation` only when no file shows it ahead. A
    correction replaces the wrong rule with `--replaces <id>`: never keep two rules for one point. When
-   the person corrects done work, the fix's proof holds the hunk it replaced and the fix, a few lines
-   each, and its rule takes `--good <the fix>`: an example shows what a rule means better than more
-   words. When the person rewrote your code themselves, as `git log` shows at the next ask, add the
-   rewrite as a step that `--replaces` yours, close it `--by person` with both hunks, and keep its
-   rule the same way. When 3 rules with a pair make the same point, propose one rule that says it, and
-   replace them when the person agrees.
+   the person corrects done work, put the hunk it replaced and the fix in the fix's proof, and give its
+   rule `--good <the fix>` (`steps.md`, "Taste").
 6. Do what celis prints after each command. It names the next move.
 7. Act, and tell after. When you can write the `expect` of an ask without a guess, show its intent and
    start. Ask before the work only when you cannot, and during the work only at a one-way door: a
@@ -80,19 +62,17 @@ celis tree [<id>]... [--graph] [--full] [--all] [--markdown] [--demo]
    choice yourself, and name it in the end. Between steps, write nothing but such a question: the
    person reads the end, not the work.
 8. Close the ask, never the trail. Before you close it, run the `celis:judge` agent with the ask's
-   intent, where the result is, and its checks; where your agent has no subagents, do what
-   `agents/judge.md` beside `steps.md` says. You cannot see your own blind spots; the judge reads the
-   result with fresh eyes, only against the intent. "Could not check" is an honest answer: then go as
-   far as you can, such as a run or a screenshot, and ask the person. Close the ask with the judge's
-   verdict and `--by judge`, or with the person's answer and `--by person`. Then tell the person the
-   end from what `done` prints, each line only when it is not empty:
+   intent, where the result is, and its checks; with no subagents, do what `agents/judge.md` beside
+   `steps.md` says. What the judge could not check, take as far as you can, such as a run or a
+   screenshot, then ask the person. Close the ask `--by judge` with its verdict, or `--by person` with
+   the person's answer. Then tell the person the end, each line only when it is not empty:
 
    ```
    Done:       <what was done, in one line>
-   Turn:       <where the plan or the intent changed, and why>
-   Took:       <the choices you took yourself>
-   Not proven: <the claims, and what the judge could not check>
-   Outside:    <the files git diff --stat shows changed outside the places of the steps>
+   Turn:       <each changed and edited line that done prints, and why>
+   Took:       <the choices you took yourself, such as the variant you chose>
+   Not proven: <each claim line that done prints, and what the judge could not check>
+   Outside:    <the files git diff --stat shows changed outside the places line>
    Needs you:  <the decisions>
    <the total line that done prints>
    ```

@@ -62,12 +62,7 @@ impl Desk {
         self.trails
             .done(
                 id,
-                celis_trails::Mark::Done {
-                    proof: "it works".into(),
-                    changed: None,
-                    by: None,
-                    files: vec![],
-                },
+                celis_trails::Done::new("it works".into(), None),
                 None,
                 &home,
             )

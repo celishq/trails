@@ -2,7 +2,7 @@
 
 use super::Gap;
 use celis_nostr::Note;
-use celis_trails::{Mark, ProofFile, Step, StepId};
+use celis_trails::{Done, Mark, ProofFile, Step, StepId};
 
 /// How a done step went against its plan: its expect line and its own changed, the steps under it planned
 /// before the first started, added after, dropped with their reasons and changed, the person's prompts on
@@ -26,15 +26,10 @@ pub struct Review {
 }
 
 impl Review {
-    /// How `step`, just closed with the done `mark` at `now`, went against its plan; `records` are the
-    /// store's before the done.
-    pub fn of(records: &[Note], step: Step, mark: &Mark, now: u64) -> Review {
-        let (changed, by, files) = match mark {
-            Mark::Done {
-                changed, by, files, ..
-            } => (changed.as_deref(), by.as_deref(), files.clone()),
-            _ => (None, None, Vec::new()),
-        };
+    /// How `step`, just closed `done` at `now`, went against its plan; `records` are the store's before
+    /// the done.
+    pub fn of(records: &[Note], step: Step, done: &Done, now: u64) -> Review {
+        let changed = done.changed.as_deref();
         let tree = step.tree();
         let parts = &tree[1..];
         let began = parts
@@ -44,7 +39,7 @@ impl Review {
             .min()
             .unwrap_or(u64::MAX);
         let line = |s: &Step| (s.step_id(), s.title().to_string());
-        let done = parts.iter().filter_map(|s| {
+        let turns = parts.iter().filter_map(|s| {
             let changed = s.done()?.tag("changed")?;
             Some((s.step_id(), changed.to_string()))
         });
@@ -92,16 +87,13 @@ impl Review {
                     Some((s.step_id(), s.title().to_string(), drop.content.clone()))
                 })
                 .collect(),
-            changed: done.chain(own).collect(),
+            changed: turns.chain(own).collect(),
             asked: asked.collect(),
             open: open.iter().map(line).collect(),
             beside: match open.is_empty() {
                 true => others
                     .iter()
-                    .filter_map(|s| match Mark::read(s.done()?)? {
-                        (_, Mark::Done { files, .. }) => Some((s, files)),
-                        _ => None,
-                    })
+                    .filter_map(|s| Some((s, s.closing()?.files)))
                     .flat_map(|(s, files)| {
                         files
                             .into_iter()
@@ -110,9 +102,9 @@ impl Review {
                     .collect(),
                 false => Vec::new(),
             },
-            files,
+            files: done.files.clone(),
             under: under.map(|u| u.step_id()),
-            gap: ask.then(|| Gap::of(records, step, by, now)),
+            gap: ask.then(|| Gap::of(records, step, done, now)),
         }
     }
 }

@@ -5,7 +5,7 @@ mod index;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use celis_nostr::Note;
-use celis_trails::{Fit, Mark, Place, Project, Rule};
+use celis_trails::{Done, Fit, Place, Project, Rule};
 use index::Index;
 use serde_json::json;
 use std::io::Write;
@@ -52,17 +52,14 @@ impl Command {
                 let Some(step) = id.as_deref().and_then(|id| steps.find(id).ok()) else {
                     continue;
                 };
-                let (proof, files) = match step.done().and_then(Mark::read) {
-                    Some((_, Mark::Done { proof, files, .. })) => (proof, files),
-                    _ => (String::new(), Vec::new()),
-                };
-                let proof = proof.lines().next().unwrap_or("").to_string();
+                let done = step.closing().unwrap_or(Done::new(String::new(), None));
+                let proof = done.proof.lines().next().unwrap_or("");
                 let short = &step.id()[..8];
                 lines.push(format!("  {word}    {short} {} · {proof}", step.title()));
-                lines.extend(files.iter().map(|f| match trails.blob(&f.sha256) {
-                    Some(path) => format!("          {}", path.display()),
-                    None => format!("          {} · {} missing", f.place, f.sha256),
-                }));
+                let blobs = done.files.iter();
+                lines.extend(
+                    blobs.map(|f| format!("          {}", crate::text::line::blob(f, &trails))),
+                );
             }
             let text = if args.json {
                 object.to_string()

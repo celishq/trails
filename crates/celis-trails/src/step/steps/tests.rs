@@ -25,12 +25,7 @@ fn step(text: &str, at: u64) -> Note {
 }
 
 fn done(id: &str, proof: &str, at: u64) -> Note {
-    let mark = Mark::Done {
-        proof: proof.into(),
-        changed: None,
-        by: None,
-        files: vec![],
-    };
+    let mark = Mark::Done(crate::Done::new(proof.into(), None));
     mark.record(&account(), id, at).unwrap()
 }
 

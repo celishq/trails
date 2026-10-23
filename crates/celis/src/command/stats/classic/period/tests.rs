@@ -27,12 +27,10 @@ fn step(text: &str, at: u64, under: Option<&Note>, uses: &[&str], replaces: Opti
 }
 
 fn done(id: &str, changed: Option<&str>, at: u64) -> Note {
-    let mark = Mark::Done {
-        proof: "proof".into(),
-        changed: changed.map(str::to_string),
-        by: None,
-        files: vec![],
-    };
+    let mark = Mark::Done(celis_trails::Done::new(
+        "proof".into(),
+        changed.map(str::to_string),
+    ));
     mark.record(&account(), id, at).unwrap()
 }
 

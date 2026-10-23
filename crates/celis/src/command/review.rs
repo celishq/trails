@@ -2,26 +2,23 @@
 
 use super::Command;
 use crate::failure::Failure;
-use crate::progress::{Gap, Review};
+use crate::progress::{Gap, Proof, Review};
 use celis_trails::records::id::short;
+use celis_trails::{ProofFile, Trails};
 use std::io::Write;
-use std::path::PathBuf;
 
 impl Command {
     /// Prints `review` on `err`: the step's plan against what it did, the open steps beside it, the blobs
-    /// that `blob` finds for its files and the files beside it, an ask's gap, then the next move; with
-    /// no `linked` folder, its blobs are local only.
+    /// of `trails` for its files and the files beside it, an ask's gap, then the next move; with no
+    /// `linked` folder, its blobs are local only.
     pub(crate) fn review(
         &self,
         review: &Review,
-        blob: &dyn Fn(&str) -> Option<PathBuf>,
+        trails: &Trails,
         linked: bool,
         err: &mut dyn Write,
     ) -> Result<(), Failure> {
-        let kept = |sha: &str| match blob(sha) {
-            Some(path) => path.display().to_string(),
-            None => format!("{sha} missing"),
-        };
+        let kept = |file: &ProofFile| crate::text::line::blob(file, trails);
         let mut lines = vec![format!(
             "celis: {} is done; compare the result with its plan:",
             short(&review.step)
@@ -48,22 +45,14 @@ impl Command {
         }
         let local = if linked { "" } else { " · local only" };
         for file in &review.files {
-            lines.push(format!(
-                "  file    {} · {}{local}",
-                file.place,
-                kept(&file.sha256)
-            ));
+            lines.push(format!("  file    {} · {}{local}", file.place, kept(file)));
         }
         for (id, title, file) in &review.beside {
-            lines.push(format!(
-                "  beside  {} {title} · {}",
-                short(id),
-                kept(&file.sha256)
-            ));
+            lines.push(format!("  beside  {} {title} · {}", short(id), kept(file)));
         }
         if let Some(gap) = &review.gap {
             lines.extend(gap.edited.iter().map(|e| format!("  edited  {e}")));
-            for (id, title) in &gap.claims {
+            for (id, title, _) in gap.proofs.iter().filter(|(.., p)| *p == Proof::Claim) {
                 lines.push(format!("  claim   {} {title}", short(id)));
             }
             if !gap.places.is_empty() {
@@ -84,21 +73,22 @@ impl Command {
 
 /// The total line of `gap` with its `turns`: each count that is not zero, then the minutes.
 fn total(gap: &Gap, turns: usize) -> String {
-    let counts = [
-        (gap.steps, "step", "steps"),
-        (turns, "turn", "turns"),
-        (gap.checked, "checked", "checked"),
-        (gap.judged, "judged", "judged"),
-        (gap.person, "person", "person"),
-        (gap.claim, "claim", "claims"),
-    ];
+    let steps = gap.proofs.len();
     let mut parts = vec!["celis".to_string()];
+    let step = if steps == 1 { "step" } else { "steps" };
+    let turn = if turns == 1 { "turn" } else { "turns" };
     parts.extend(
-        counts
+        [(steps, step), (turns, turn)]
             .iter()
-            .filter(|(n, ..)| *n > 0)
-            .map(|(n, one, many)| format!("{n} {}", if *n == 1 { one } else { many })),
+            .filter(|(n, _)| *n > 0)
+            .map(|(n, w)| format!("{n} {w}")),
     );
+    for proof in Proof::ALL {
+        let n = gap.count(proof);
+        if n > 0 {
+            parts.push(format!("{n} {}", proof.word(n)));
+        }
+    }
     parts.push(format!("{}m", gap.minutes));
     parts.join(" · ")
 }

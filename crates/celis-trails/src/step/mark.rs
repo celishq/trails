@@ -1,24 +1,18 @@
 //! What an agent does to a step.
 
-use crate::step::proof_file::ProofFile;
 use crate::step::step_record::NAMESPACE;
+use crate::{By, Done, ProofFile};
 use anyhow::Result;
 use celis_nostr::{Account, Note};
 use std::collections::HashMap;
 
-/// What an agent does to a step: takes it up, closes it done with its proof, what changed from its plan,
-/// who gave the proof and the files it keeps, or drops it with the reason its work is no longer wanted.
-/// It gives a step a new title or text, places or check. On a trail, the hook records the person's
+/// What an agent does to a step: takes it up, closes it done, or drops it with the reason its work is no
+/// longer wanted. It gives a step a new title or text, places or check. On a trail, the hook records the person's
 /// prompt, and a name lets other work use it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Mark {
     Start,
-    Done {
-        proof: String,
-        changed: Option<String>,
-        by: Option<String>,
-        files: Vec<ProofFile>,
-    },
+    Done(Done),
     Drop {
         reason: String,
     },
@@ -40,7 +34,7 @@ impl Mark {
     pub fn record(&self, signer: &Account, step: &str, at: u64) -> Result<Note> {
         let (label, content) = match self {
             Mark::Start => ("start", ""),
-            Mark::Done { proof, .. } => ("done", proof.as_str()),
+            Mark::Done(done) => ("done", done.proof.as_str()),
             Mark::Drop { reason } => ("drop", reason.as_str()),
             Mark::Edit { text, .. } => ("edit", text.as_str()),
             Mark::Prompt { text } => ("prompt", text.as_str()),
@@ -53,27 +47,20 @@ impl Mark {
             vec!["l".to_string(), label.to_string(), NAMESPACE.to_string()],
             vec!["e".to_string(), step.to_string()],
         ];
-        if let Mark::Done {
-            changed, by, files, ..
-        } = self
-        {
-            tags.extend(
-                changed
-                    .iter()
-                    .map(|c| vec!["changed".to_string(), c.clone()]),
-            );
-            tags.extend(by.iter().map(|b| vec!["by".to_string(), b.clone()]));
-            for file in files {
-                let url = file.url(&pubkey);
-                content.push_str(&format!("\n{url}"));
-                tags.push(vec![
-                    "imeta".to_string(),
-                    format!("url {url}"),
-                    format!("x {}", file.sha256),
-                    format!("m {}", file.media),
-                    format!("size {}", file.size),
-                    format!("path {}", file.place),
-                ]);
+        if let Mark::Done(done) = self {
+            let changed = done
+                .changed
+                .iter()
+                .map(|c| vec!["changed".to_string(), c.clone()]);
+            tags.extend(changed);
+            let by = done
+                .by
+                .iter()
+                .map(|b| vec!["by".to_string(), b.text().to_string()]);
+            tags.extend(by);
+            for file in &done.files {
+                content.push_str(&format!("\n{}", file.url(&pubkey)));
+                tags.push(file.tag(&pubkey));
             }
         }
         if let Mark::Edit { places, check, .. } = self {
@@ -110,12 +97,19 @@ impl Mark {
         let mark = match label[1].as_str() {
             "start" => Mark::Start,
             "done" | "drop" if note.content.trim().is_empty() => return None,
-            "done" => Mark::Done {
-                proof: proof(note),
-                changed: note.tag("changed").map(str::to_string),
-                by: note.tag("by").map(str::to_string),
-                files: files(note),
-            },
+            "done" => {
+                let files: Vec<ProofFile> = note
+                    .tags
+                    .iter()
+                    .filter_map(|t| ProofFile::read(t))
+                    .collect();
+                Mark::Done(Done {
+                    proof: proof(&note.content, &files),
+                    changed: note.tag("changed").map(str::to_string),
+                    by: note.tag("by").and_then(By::parse),
+                    files,
+                })
+            }
             "drop" => Mark::Drop {
                 reason: note.content.clone(),
             },
@@ -141,40 +135,19 @@ impl Mark {
     }
 }
 
-/// The files of the done `note`, from each `imeta` with `x`.
-fn files(note: &Note) -> Vec<ProofFile> {
-    note.tags
-        .iter()
-        .filter(|t| t.first().is_some_and(|n| n == "imeta"))
-        .filter_map(|t| {
-            let field = |key: &str| {
-                t.iter()
-                    .find_map(|f| f.strip_prefix(key)?.strip_prefix(' '))
-                    .map(str::to_string)
-            };
-            Some(ProofFile {
-                place: field("path").unwrap_or_default(),
-                sha256: field("x")?,
-                size: field("size").and_then(|s| s.parse().ok()).unwrap_or(0),
-                media: field("m").unwrap_or_default(),
-            })
-        })
-        .collect()
-}
-
-/// The proof of the done `note`: its content without the file URLs its `imeta` tags name.
-fn proof(note: &Note) -> String {
-    let urls: Vec<&str> = note
-        .tags
-        .iter()
-        .filter(|t| t.first().is_some_and(|n| n == "imeta"))
-        .filter_map(|t| t.iter().find_map(|f| f.strip_prefix("url ")))
-        .collect();
-    if urls.is_empty() {
-        return note.content.clone();
+/// The proof of a done whose `content` ends with the URL of each of its `files`: the content without
+/// them.
+fn proof(content: &str, files: &[ProofFile]) -> String {
+    if files.is_empty() {
+        return content.to_string();
     }
-    let lines: Vec<&str> = note.content.lines().collect();
-    let kept = lines.len() - lines.iter().rev().take_while(|l| urls.contains(l)).count();
+    let lines: Vec<&str> = content.lines().collect();
+    let url = |line: &&&str| {
+        files
+            .iter()
+            .any(|f| line.starts_with(&format!("blossom:{}.", f.sha256)))
+    };
+    let kept = lines.len() - lines.iter().rev().take_while(url).count();
     lines[..kept].join("\n")
 }
 

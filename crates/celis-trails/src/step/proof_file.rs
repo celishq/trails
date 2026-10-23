@@ -51,6 +51,36 @@ impl ProofFile {
         format!("blossom:{}.{ext}?as={pubkey}&sz={}", self.sha256, self.size)
     }
 
+    /// Its `imeta` tag (NIP-92), with `pubkey` as the account that keeps it.
+    pub fn tag(&self, pubkey: &str) -> Vec<String> {
+        vec![
+            "imeta".to_string(),
+            format!("url {}", self.url(pubkey)),
+            format!("x {}", self.sha256),
+            format!("m {}", self.media),
+            format!("size {}", self.size),
+            format!("path {}", self.place),
+        ]
+    }
+
+    /// The file an `imeta` `tag` names; none when it is another tag or has no `x`.
+    pub fn read(tag: &[String]) -> Option<ProofFile> {
+        if tag.first()? != "imeta" {
+            return None;
+        }
+        let field = |key: &str| {
+            tag.iter()
+                .find_map(|f| f.strip_prefix(key)?.strip_prefix(' '))
+                .map(str::to_string)
+        };
+        Some(ProofFile {
+            place: field("path").unwrap_or_default(),
+            sha256: field("x")?,
+            size: field("size").and_then(|s| s.parse().ok()).unwrap_or(0),
+            media: field("m").unwrap_or_default(),
+        })
+    }
+
     /// The lower-case extension of `place`; empty when it has none.
     fn extension(place: &str) -> String {
         std::path::Path::new(place)

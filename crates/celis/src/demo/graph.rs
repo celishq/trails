@@ -272,12 +272,7 @@ impl Written {
                             .then(|| "it took another way".to_string());
                         store.done(
                             &id,
-                            celis_trails::Mark::Done {
-                                proof: "it works".to_string(),
-                                changed,
-                                by: None,
-                                files: vec![],
-                            },
+                            celis_trails::Done::new("it works".to_string(), changed),
                             None,
                             home,
                         )?;

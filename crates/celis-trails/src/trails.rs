@@ -7,8 +7,8 @@ pub mod written;
 
 use crate::records::id::short;
 use crate::{
-    Anchor, Check, Draft, Mark, Name, Notice, ProofFile, Refusal, Rule, RuleId, Rules, Scope, Step,
-    StepId, StepRecord, Steps, Store, Trail, Written,
+    Anchor, Check, Done, Draft, Mark, Name, Notice, ProofFile, Refusal, Rule, RuleId, Rules, Scope,
+    Step, StepId, StepRecord, Steps, Store, Trail, Written,
 };
 use celis_nostr::{Account, Note};
 use std::path::{Path, PathBuf};
@@ -191,12 +191,12 @@ impl Trails {
         self.store.blob(sha256)
     }
 
-    /// Closes the open step `id` with the done `mark`, once nothing under it is open and its check passes
+    /// Closes the open step `id` `done`, once nothing under it is open and its check passes
     /// in `folder`; a pitfall becomes a rule at its place, else on its trail.
     pub fn done(
         &self,
         id: &str,
-        mark: Mark,
+        done: Done,
         pitfall: Option<String>,
         folder: &Path,
     ) -> Result<Written, Refusal> {
@@ -210,9 +210,9 @@ impl Trails {
             self.check(check, folder)?;
         }
         let mut written = Written::default();
-        written
-            .records
-            .push(self.sign(|account, now| mark.record(account, note.id(), now))?);
+        written.records.push(
+            self.sign(|account, now| Mark::Done(done.clone()).record(account, note.id(), now))?,
+        );
         if let Some(pitfall) = pitfall {
             let scope = match step.at() {
                 Some(at) => Scope::At(at.to_string()),

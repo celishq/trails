@@ -37,12 +37,7 @@ fn worked(later: u64) -> (TempDir, Trails) {
     trails
         .done(
             &part,
-            celis_trails::Mark::Done {
-                proof: "it works".into(),
-                changed: None,
-                by: None,
-                files: vec![],
-            },
+            celis_trails::Done::new("it works".into(), None),
             None,
             home.path(),
         )
@@ -235,12 +230,7 @@ fn the_projects_card_aligns_its_times() {
     trails
         .done(
             &part,
-            celis_trails::Mark::Done {
-                proof: "it took long".into(),
-                changed: None,
-                by: None,
-                files: vec![],
-            },
+            celis_trails::Done::new("it took long".into(), None),
             None,
             home.path(),
         )
