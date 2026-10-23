@@ -2,6 +2,7 @@
 
 pub mod check;
 pub mod mark;
+pub mod proof_file;
 pub mod state;
 pub mod step_record;
 pub mod steps;

@@ -7,8 +7,8 @@ pub mod written;
 
 use crate::records::id::short;
 use crate::{
-    Anchor, Check, Draft, Mark, Name, Notice, Refusal, Rule, RuleId, Rules, Scope, Step, StepId,
-    StepRecord, Steps, Store, Trail, Written,
+    Anchor, Check, Draft, Mark, Name, Notice, ProofFile, Refusal, Rule, RuleId, Rules, Scope, Step,
+    StepId, StepRecord, Steps, Store, Trail, Written,
 };
 use celis_nostr::{Account, Note};
 use std::path::{Path, PathBuf};
@@ -178,15 +178,29 @@ impl Trails {
         Ok(written)
     }
 
-    /// Closes the open step `id` done, with its proof, what changed from its plan and who gave the proof,
-    /// once nothing under it is open and its check passes in `folder`; a pitfall becomes a rule at its
-    /// place, else on its trail.
+    /// Keeps the file at `path` as a blob, as a file of a proof at `place`.
+    pub fn keep(&self, place: String, path: &Path) -> Result<ProofFile, Refusal> {
+        let bytes = std::fs::read(path)
+            .map_err(|_| Refusal::Usage(format!("no file {}", path.display())))?;
+        let sha256 = self.store.keep(&bytes)?;
+        Ok(ProofFile {
+            place,
+            sha256,
+            size: bytes.len() as u64,
+        })
+    }
+
+    /// The blob `sha256` of the store, when its bytes hash to its name.
+    pub fn blob(&self, sha256: &str) -> Option<PathBuf> {
+        self.store.blob(sha256)
+    }
+
+    /// Closes the open step `id` with the done `mark`, once nothing under it is open and its check passes
+    /// in `folder`; a pitfall becomes a rule at its place, else on its trail.
     pub fn done(
         &self,
         id: &str,
-        proof: String,
-        changed: Option<String>,
-        by: Option<String>,
+        mark: Mark,
         pitfall: Option<String>,
         folder: &Path,
     ) -> Result<Written, Refusal> {
@@ -199,7 +213,6 @@ impl Trails {
         if let Some(check) = &step.check {
             self.check(check, folder)?;
         }
-        let mark = Mark::Done { proof, changed, by };
         let mut written = Written::default();
         written
             .records

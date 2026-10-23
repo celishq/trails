@@ -43,6 +43,7 @@ Record work · your agents run these
   ├ --changed <text>  How the result differs from its expect line
   ├ --as-planned      The result matches its expect line; else use --changed
   ├ --by <who>        judge, a reader that did not do the work, or person
+  ├ --file <path>     A file of the proof, kept as it is now
   └ --pitfall <text>  A rule from what went wrong, kept at the step's places
 
   step drop <id>      Drop a step and the open steps under it

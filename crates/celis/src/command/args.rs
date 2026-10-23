@@ -37,6 +37,7 @@ pub(crate) struct Args {
     pub model: Option<String>,
     pub page: Option<String>,
     pub paths: Vec<String>,
+    pub files: Vec<String>,
 }
 
 impl Args {
@@ -95,6 +96,7 @@ impl Args {
                 "--model" => parsed.model = Some(value(arg, rest.next())?),
                 "--page" => parsed.page = Some(value(arg, rest.next())?),
                 "--path" => parsed.paths.push(value(arg, rest.next())?),
+                "--file" => parsed.files.push(value(arg, rest.next())?),
                 flag if flag.starts_with("--") => {
                     bad.get_or_insert(Failure::usage(format!("{flag} is not a flag")));
                 }

@@ -43,6 +43,7 @@ Every change of `spec/` MUST keep these rules:
 | 05 | Rules | the rule and its scope | CIP-01 |
 | 06 | Reuse | the steps and rules a step uses, revisions | CIP-03, 04, 05 |
 | 07 | Names | the name of a trail, skill projects, the rules of a name, overrides | CIP-01, 03, 04, 05, 06 |
+| 08 | Files | the files of a done, and their blobs | CIP-01, 03 |
 
 ## Names
 
@@ -67,6 +68,8 @@ Every change of `spec/` MUST keep these rules:
 | `me` · `project` · `trail:<id>` · `at:<place>` | the scopes of a rule | 05 |
 | `uses` | step tag | 06 |
 | 1985 with `name` in `celis.step` | kind: the name of a trail (NIP-32) | 07 |
+| `file` | done tag: a file of the proof | 08 |
+| `$CELIS_HOME/trails/blobs/` · `<folder>/blobs/` | the blobs of the store and of a linked folder | 08 |
 
 **Deprecated.** A reader ignores each of these. Older versions wrote them.
 
@@ -96,5 +99,6 @@ Every change of `spec/` MUST keep these rules:
 | `rule` | one sentence that holds in its scope until another replaces it |
 | `live` | a rule no other rule replaces and no drop names |
 | `revised` | done work that a later step replaces |
+| `blob` | the bytes of a file, named by their sha256 |
 | `named trail` | a trail that holds a name |
 | `override` | a rule that replaces a trail's rule of another project, in its own project only |

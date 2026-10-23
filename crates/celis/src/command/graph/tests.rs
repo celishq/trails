@@ -64,7 +64,17 @@ impl Bench {
         let changed = changed.then(|| "another way".to_string());
         let home = self.home.path().to_path_buf();
         self.trails
-            .done(id, "it works".into(), changed, None, None, &home)
+            .done(
+                id,
+                celis_trails::Mark::Done {
+                    proof: "it works".into(),
+                    changed,
+                    by: None,
+                    files: vec![],
+                },
+                None,
+                &home,
+            )
             .unwrap();
         self.trails.at(self.at);
     }

@@ -449,8 +449,17 @@ impl Demo {
     ) -> Result<(), Failure> {
         self.trails(ago + took)?.start(id)?;
         let changed = changed.map(str::to_string);
-        self.trails(ago)?
-            .done(id, proof.to_string(), changed, None, None, &self.home)?;
+        self.trails(ago)?.done(
+            id,
+            celis_trails::Mark::Done {
+                proof: proof.to_string(),
+                changed,
+                by: None,
+                files: vec![],
+            },
+            None,
+            &self.home,
+        )?;
         Ok(())
     }
 

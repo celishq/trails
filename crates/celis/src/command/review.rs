@@ -5,11 +5,23 @@ use crate::failure::Failure;
 use crate::progress::{Gap, Review};
 use celis_trails::records::id::short;
 use std::io::Write;
+use std::path::PathBuf;
 
 impl Command {
-    /// Prints `review` on `err`: the step's plan against what it did, the open steps beside it, an ask's
-    /// gap, then the next move.
-    pub(crate) fn review(&self, review: &Review, err: &mut dyn Write) -> Result<(), Failure> {
+    /// Prints `review` on `err`: the step's plan against what it did, the open steps beside it, the blobs
+    /// that `blob` finds for its files and the files beside it, an ask's gap, then the next move; with
+    /// no `linked` folder, its blobs are local only.
+    pub(crate) fn review(
+        &self,
+        review: &Review,
+        blob: &dyn Fn(&str) -> Option<PathBuf>,
+        linked: bool,
+        err: &mut dyn Write,
+    ) -> Result<(), Failure> {
+        let kept = |sha: &str| match blob(sha) {
+            Some(path) => path.display().to_string(),
+            None => format!("{sha} missing"),
+        };
         let mut lines = vec![format!(
             "celis: {} is done; compare the result with its plan:",
             short(&review.step)
@@ -33,6 +45,21 @@ impl Command {
         }
         for (id, title) in &review.open {
             lines.push(format!("  open    {} {title}", short(id)));
+        }
+        let local = if linked { "" } else { " · local only" };
+        for file in &review.files {
+            lines.push(format!(
+                "  file    {} · {}{local}",
+                file.place,
+                kept(&file.sha256)
+            ));
+        }
+        for (id, title, file) in &review.beside {
+            lines.push(format!(
+                "  beside  {} {title} · {}",
+                short(id),
+                kept(&file.sha256)
+            ));
         }
         if let Some(gap) = &review.gap {
             lines.extend(gap.edited.iter().map(|e| format!("  edited  {e}")));

@@ -29,6 +29,7 @@ fn done(id: &str, proof: &str, at: u64) -> Note {
         proof: proof.into(),
         changed: None,
         by: None,
+        files: vec![],
     };
     mark.record(&account(), id, at).unwrap()
 }

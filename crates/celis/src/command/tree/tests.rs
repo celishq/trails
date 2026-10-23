@@ -79,6 +79,7 @@ fn the_tree_changes_next_when_its_first_time_changes() {
         proof: "proof".into(),
         changed: None,
         by: None,
+        files: vec![],
     }
     .record(&account(), &past.id, now - 3 * 86_400)
     .unwrap();

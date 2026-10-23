@@ -31,6 +31,7 @@ pub use rule::scope::Scope;
 pub use rule::Rule;
 pub use step::check::Check;
 pub use step::mark::Mark;
+pub use step::proof_file::ProofFile;
 pub use step::state::State;
 pub use step::step_record::StepRecord;
 pub use step::steps::Steps;

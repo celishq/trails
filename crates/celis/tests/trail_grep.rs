@@ -365,6 +365,7 @@ fn the_view_and_the_cards_rule_search_match_the_fixture() {
         proof: "the table shows".into(),
         changed: Some("a list, not a table".into()),
         by: None,
+        files: vec![],
     };
     mark(done, &table.id, t + 2);
     let chart = step(Some(&trail.id), &[], "Add the chart", t + 3);

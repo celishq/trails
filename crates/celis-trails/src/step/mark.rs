@@ -1,13 +1,15 @@
 //! What an agent does to a step.
 
+use crate::step::proof_file::ProofFile;
 use crate::step::step_record::NAMESPACE;
 use anyhow::Result;
 use celis_nostr::{Account, Note};
 use std::collections::HashMap;
 
-/// What an agent does to a step: takes it up, closes it done with its proof, what changed from its plan
-/// and who gave the proof, or drops it with the reason its work is no longer wanted. It gives a step a new title or text,
-/// places or check. On a trail, the hook records the person's prompt, and a name lets other work use it.
+/// What an agent does to a step: takes it up, closes it done with its proof, what changed from its plan,
+/// who gave the proof and the files it keeps, or drops it with the reason its work is no longer wanted.
+/// It gives a step a new title or text, places or check. On a trail, the hook records the person's
+/// prompt, and a name lets other work use it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Mark {
     Start,
@@ -15,6 +17,7 @@ pub enum Mark {
         proof: String,
         changed: Option<String>,
         by: Option<String>,
+        files: Vec<ProofFile>,
     },
     Drop {
         reason: String,
@@ -48,13 +51,24 @@ impl Mark {
             vec!["l".to_string(), label.to_string(), NAMESPACE.to_string()],
             vec!["e".to_string(), step.to_string()],
         ];
-        if let Mark::Done { changed, by, .. } = self {
+        if let Mark::Done {
+            changed, by, files, ..
+        } = self
+        {
             tags.extend(
                 changed
                     .iter()
                     .map(|c| vec!["changed".to_string(), c.clone()]),
             );
             tags.extend(by.iter().map(|b| vec!["by".to_string(), b.clone()]));
+            tags.extend(files.iter().map(|f| {
+                vec![
+                    "file".to_string(),
+                    f.place.clone(),
+                    f.sha256.clone(),
+                    f.size.to_string(),
+                ]
+            }));
         }
         if let Mark::Edit { places, check, .. } = self {
             tags.extend(places.iter().map(|p| vec!["at".to_string(), p.clone()]));
@@ -94,6 +108,18 @@ impl Mark {
                 proof: note.content.clone(),
                 changed: note.tag("changed").map(str::to_string),
                 by: note.tag("by").map(str::to_string),
+                files: note
+                    .tags
+                    .iter()
+                    .filter(|t| t.len() >= 4 && t[0] == "file")
+                    .filter_map(|t| {
+                        Some(ProofFile {
+                            place: t[1].clone(),
+                            sha256: t[2].clone(),
+                            size: t[3].parse().ok()?,
+                        })
+                    })
+                    .collect(),
             },
             "drop" => Mark::Drop {
                 reason: note.content.clone(),

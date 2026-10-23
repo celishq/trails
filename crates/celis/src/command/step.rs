@@ -4,7 +4,7 @@ use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::progress::Review;
 use celis_trails::records::id::short;
-use celis_trails::{Draft, Notice, Place, Project, Written};
+use celis_trails::{Draft, Link, Mark, Notice, Place, Project, Written};
 use std::io::Write;
 
 impl Command {
@@ -72,8 +72,8 @@ impl Command {
         self.print(written, args, out, err)
     }
 
-    /// Closes the open step `args` names, done with its proof, what changed from its plan and who gave the
-    /// proof, and prints
+    /// Closes the open step `args` names, done with its proof, what changed from its plan, who gave the
+    /// proof and the files it keeps, and prints
     /// the id of the done record, then of its pitfall's rule, and its review.
     fn step_close(
         &self,
@@ -101,25 +101,24 @@ impl Command {
                 )))
             }
         };
-        let pitfall = args.pitfall.clone();
-        let written = trails.done(
-            id,
+        let mut files = Vec::new();
+        for file in &args.files {
+            let place = Place::resolve(file, &project.folder, &self.folder);
+            files.push(trails.keep(place, &self.folder.join(file))?);
+        }
+        let mark = Mark::Done {
             proof,
-            changed.clone(),
-            by.clone(),
-            pitfall,
-            &project.folder,
-        )?;
+            changed,
+            by,
+            files,
+        };
+        let pitfall = args.pitfall.clone();
+        let written = trails.done(id, mark.clone(), pitfall, &project.folder)?;
         self.print(written, args, out, err)?;
         let steps = trails.steps();
-        let review = Review::of(
-            trails.records(),
-            steps.find(id)?,
-            changed.as_deref(),
-            by.as_deref(),
-            super::now(),
-        );
-        self.review(&review, err)
+        let review = Review::of(trails.records(), steps.find(id)?, &mark, super::now());
+        let linked = !Link::all(&self.home()?, &project.folder).is_empty();
+        self.review(&review, &|sha| trails.blob(sha), linked, err)
     }
 
     /// Drops the open step `args` names and each open step under it, and prints each drop's id.

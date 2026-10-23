@@ -270,7 +270,17 @@ impl Written {
                             .changed
                             .contains(&title)
                             .then(|| "it took another way".to_string());
-                        store.done(&id, "it works".to_string(), changed, None, None, home)?;
+                        store.done(
+                            &id,
+                            celis_trails::Mark::Done {
+                                proof: "it works".to_string(),
+                                changed,
+                                by: None,
+                                files: vec![],
+                            },
+                            None,
+                            home,
+                        )?;
                     }
                     false => {
                         store.drop(&id, "no longer needed")?;

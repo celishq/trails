@@ -6,7 +6,7 @@ celis grep <grep option>... "<pattern>"
 celis decide [--scope at:<place> | trail:<id> | me] [--replaces <id>] [--path <glob>]... [--situation] [--promoted] [--project <id>] -- "<rule>"
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>] [--check <command>] [--new] [--session <id>] [--project <id>] -- "<title>"
 celis step start <id>
-celis step done <id> [--changed "<what differs>"] [--as-planned] [--by <who>] [--pitfall "<rule>"] -- "<proof>"
+celis step done <id> [--changed "<what differs>"] [--as-planned] [--by <who>] [--file <path>]... [--pitfall "<rule>"] -- "<proof>"
 celis step drop <id> -- "<why>"
 celis step edit <id> [--at <place>]... [--check <command>] [-- "<new title>"]
 celis name [<trail id> <name>] [--limit <n>]
@@ -18,6 +18,7 @@ celis tree [<id>]... [--graph] [--full] [--all] [--markdown] [--demo]
    wait for its answer before any other tool. To find more rules, run `celis rules` for the words the
    rules use, and search them with `celis grep -i -E " rule [0-9a-f]{8} live .*(<word>|<word>)"`. Keep
    each rule in your own context. When the ask conflicts with a rule, the ask wins: replace the rule.
+   In a creative result, rules guide and do not bind: a variant that breaks one on purpose keeps it.
 2. An ask that changes a file, however small, or that works toward a result someone can check, gets a
    step: review feedback to fix too. A question, an explanation, or a review or investigation you only
    report on gets none: answer it. Add the ask with `step add` where the prompt hook says. With no hint,
@@ -34,6 +35,20 @@ celis tree [<id>]... [--graph] [--full] [--all] [--markdown] [--demo]
    goes: the first job when you start, the next job after you close one, and steps under a job only when
    you take it and it holds more than one job. Only the step you take next gets `--at` and a `--check`
    that proves it.
+
+   A feature or a creative result, such as an image, a level or a text, splits by layers, each one job:
+   the outer layer makes the whole result at low detail, such as a skeleton that runs end to end, a
+   greybox or an outline, and each next layer adds detail to all of it. A wrong turn is cheap to see at
+   the outer layer and costly on the final. When a layer closes, show the person its result; for a
+   creative result, wait for `go` or notes before the next layer. A note, such as "move it left", is not
+   a fix of done work. The outer layer of a creative result has 2 variants as steps under it, unless
+   the person names another number: one follows the rules and the past picks, and one explores away
+   from them and names the rule it breaks. Close each with `--file` for its result, so that its blob
+   stays when the next variant writes the same file. When the last one closes, celis prints the blobs
+   beside it: open them side by side, and say in one line how they differ. Drop each variant the person
+   did not pick with `step drop <id> -- "not picked"`, and add the person's words when they gave a
+   reason; never invent one. The pick is the reference of the next layers, which have no variants
+   unless the person asks.
 4. For each step: `start`, and keep the rules it prints. Run `celis rules <files>` before each change,
    and before `done`, check your change against `celis rules --diff`. Read all
    that celis prints: never cut it with `head` or `grep`. Then `done` with a proof a person can check,
@@ -71,8 +86,7 @@ celis tree [<id>]... [--graph] [--full] [--all] [--markdown] [--demo]
    <the total line that done prints>
    ```
 
-   Add each rule you wrote. When another plugin writes its own end report, put these lines in it, so
-   the person reads one report. When the person changes the intent, `step edit` the ask with the new
+   Add each rule you wrote. When the person changes the intent, `step edit` the ask with the new
    lines.
 
 A rule reads "When <what you see>: <what to do>, because <the reason>." The "When" names the work the rule

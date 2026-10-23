@@ -2,11 +2,12 @@
 
 use super::Gap;
 use celis_nostr::Note;
-use celis_trails::{Mark, Step, StepId};
+use celis_trails::{Mark, ProofFile, Step, StepId};
 
 /// How a done step went against its plan: its expect line and its own changed, the steps under it planned
 /// before the first started, added after, dropped with their reasons and changed, the person's prompts on
-/// its tree, and the open steps beside it under `under`, each as an id and a title; on an ask, its gap.
+/// its tree, and the open steps beside it under `under`, each as an id and a title; the files of its
+/// proof, and when no step beside it is open, those of the done steps beside it; on an ask, its gap.
 pub struct Review {
     pub step: StepId,
     pub under: Option<StepId>,
@@ -19,19 +20,21 @@ pub struct Review {
     pub changed: Vec<(StepId, String)>,
     pub asked: Vec<String>,
     pub open: Vec<(StepId, String)>,
+    pub files: Vec<ProofFile>,
+    pub beside: Vec<(StepId, String, ProofFile)>,
     pub gap: Option<Gap>,
 }
 
 impl Review {
-    /// How `step`, just done with `changed` and its proof `by` at `now`, went against its plan; `records`
-    /// are the store's before the done.
-    pub fn of(
-        records: &[Note],
-        step: Step,
-        changed: Option<&str>,
-        by: Option<&str>,
-        now: u64,
-    ) -> Review {
+    /// How `step`, just closed with the done `mark` at `now`, went against its plan; `records` are the
+    /// store's before the done.
+    pub fn of(records: &[Note], step: Step, mark: &Mark, now: u64) -> Review {
+        let (changed, by, files) = match mark {
+            Mark::Done {
+                changed, by, files, ..
+            } => (changed.as_deref(), by.as_deref(), files.clone()),
+            _ => (None, None, Vec::new()),
+        };
         let tree = step.tree();
         let parts = &tree[1..];
         let began = parts
@@ -62,6 +65,12 @@ impl Review {
             .map(|e| e.trim().to_string());
         let under = step.under();
         let beside = under.map_or(Vec::new(), |u| u.children());
+        let others: Vec<Step> = beside.into_iter().filter(|s| s.id() != step.id()).collect();
+        let open: Vec<Step> = others
+            .iter()
+            .copied()
+            .filter(|s| s.closed().is_none())
+            .collect();
         Review {
             step: step.step_id(),
             ask,
@@ -85,11 +94,23 @@ impl Review {
                 .collect(),
             changed: done.chain(own).collect(),
             asked: asked.collect(),
-            open: beside
-                .iter()
-                .filter(|s| s.id() != step.id() && s.closed().is_none())
-                .map(line)
-                .collect(),
+            open: open.iter().map(line).collect(),
+            beside: match open.is_empty() {
+                true => others
+                    .iter()
+                    .filter_map(|s| match Mark::read(s.done()?)? {
+                        (_, Mark::Done { files, .. }) => Some((s, files)),
+                        _ => None,
+                    })
+                    .flat_map(|(s, files)| {
+                        files
+                            .into_iter()
+                            .map(move |f| (s.step_id(), s.title().to_string(), f))
+                    })
+                    .collect(),
+                false => Vec::new(),
+            },
+            files,
             under: under.map(|u| u.step_id()),
             gap: ask.then(|| Gap::of(records, step, by, now)),
         }
