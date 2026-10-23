@@ -1,4 +1,4 @@
-//! `celis report`: the trails that ids name, as Markdown for a pull request.
+//! `celis tree --markdown`: the trails that ids name, as Markdown for a pull request.
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
