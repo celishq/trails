@@ -1,9 +1,9 @@
 <h1 align="center">Celis</h1>
 
-<h3 align="center">No more "You're absolutely right!"</h3>
+<h3 align="center">Stop babysitting your coding agent.</h3>
 
-<p align="center">Stop telling your agent the same thing twice. Celis turns your corrections into rules that
-Claude Code, Codex, Cursor and Gemini remember in every project.</p>
+<p align="center">Celis keeps your rules and gives your agent the discipline to follow them, in every project
+and every agent.</p>
 
 <p align="center">
   <a href="https://github.com/celishq/trails/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/celishq/trails"></a>
@@ -17,18 +17,24 @@ https://github.com/user-attachments/assets/8cb59450-fb36-4fa6-82ae-5bcd59b1384b
 
 ## Why
 
-- **Your agent stops repeating mistakes.** Correct it once, in chat or in a code review, and it remembers,
-  even in another project.
-- **Skills that build themselves.** When your agent starts something new, it finds similar work it did
-  before and reuses what worked.
-- **All your agents learn together.** What Claude Code learns, Codex and Cursor know too.
-- **You can see what happened.** Every step comes with proof, like a passing test or a command's output.
+- **Your agent follows through.** It gets the rule that matters right before it acts, not buried in a
+  manual it read an hour ago. You stop catching the same mistake twice.
+- **Correct it once.** A correction in chat or a code review becomes a rule that Celis keeps, in every
+  project. On a new job, your agent also starts from similar work that went well.
+- **Every agent keeps the same rules.** What you tell Claude Code, Codex and Cursor follow too.
+- **You can check its work.** Every step comes with proof, like a passing test or a command's output, on
+  a trail you can watch.
 
 ## How it works
 
-Your agent splits each job into small steps, proves each one works, and keeps what it learned as
-rules. The next time it works on something similar, Celis brings it those rules and the steps that
-worked, from every project.
+A CLAUDE.md is a manual. Your agent reads it once at the start, and by the time it edits a file, the
+one rule that matters is lost among hundreds of others. Celis is a checklist. It hands your agent the
+few rules that apply right now: when a job starts, before it changes a file, and before it says it's
+done.
+
+Those rules come from your corrections and code reviews. Your agent works one step at a time, tries
+the part it's least sure of first, proves each step works, and keeps what it learned as a rule. Each
+step lands on a trail you can watch, so you see what your agent did and why.
 
 ```
 Job: seniors pay 20% less

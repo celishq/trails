@@ -2,6 +2,6 @@
   "name": "celis",
   "owner": { "name": "Celis" },
   "plugins": [
-    { "name": "celis", "source": "plugins/celis", "description": "Stop telling your agent the same thing twice. Celis turns your corrections into rules that Claude Code, Codex, Cursor and Gemini remember in every project." }
+    { "name": "celis", "source": "plugins/celis", "description": "Stop babysitting your coding agent. Celis keeps your rules and gives your agent the discipline to follow them, in every project and every agent." }
   ]
 }
