@@ -109,6 +109,18 @@ impl Args {
             .ok_or_else(|| Failure::usage(format!("{command} needs an id")))
     }
 
+    /// The positive number `value` of `flag`; none when the flag is absent, and a usage error when it
+    /// is not a positive number.
+    pub fn number(flag: &str, value: &Option<String>) -> Result<Option<usize>, Failure> {
+        match value.as_deref().map(|v| (v, v.parse::<usize>())) {
+            None => Ok(None),
+            Some((_, Ok(n))) if n > 0 => Ok(Some(n)),
+            Some((v, _)) => Err(Failure::usage(format!(
+                "{flag} takes a positive number, not {v}"
+            ))),
+        }
+    }
+
     /// The text after `--`; a usage error with `missing` when it is absent or blank.
     pub fn required_text(&self, missing: &str) -> Result<String, Failure> {
         match &self.text {

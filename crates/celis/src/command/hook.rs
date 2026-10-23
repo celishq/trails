@@ -12,12 +12,8 @@ mod tests;
 /// The agents whose hooks run `celis hook`.
 const AGENTS: [&str; 5] = ["claude", "codex", "cursor", "gemini", "antigravity"];
 
-/// What the prompt note asks of an agent that loads the past agent, and of one that does not.
-const PAST: (&str, &str) = (
-    "run the celis:past agent in the foreground with the ask and the places it may touch, never in the \
-     background, and wait for its answer before any other tool",
-    "do what past.md says, yourself, for the ask and the places it may touch",
-);
+/// What the prompt note asks, in place of the past agent, of an agent that does not load it.
+const ALONE: &str = "do what past.md says, yourself, for the ask and the places it may touch";
 
 impl Command {
     /// Acts on the hook's JSON on stdin for `hook start <agent> <plugin folder>` or `hook ask <agent>`,
@@ -118,7 +114,7 @@ impl Command {
         }
         let note = String::from_utf8_lossy(&note).trim_end().to_string();
         match agent {
-            "codex" | "gemini" => note.replace(PAST.0, PAST.1),
+            "codex" | "gemini" => note.replace(super::prompt::PAST, ALONE),
             _ => note,
         }
     }

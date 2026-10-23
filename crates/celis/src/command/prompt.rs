@@ -130,11 +130,9 @@ impl Command {
             return Ok(false);
         }
         let line = format!(
-            "celis: a new ask in this session; before any other tool, run the celis:past agent in the \
-             foreground with the ask and the places it may touch, never in the background, and wait for \
-             its answer before any other tool; it brings the rules the ask must keep and the steps of \
-             past asks like it; add the ask with --uses <id> for each rule and past step the ask follows. \
-             {RULES}"
+            "celis: a new ask in this session; before any other tool, {PAST}; it brings the rules the \
+             ask must keep and the steps of past asks like it; add the ask with --uses <id> for each rule \
+             and past step the ask follows. {RULES}"
         );
         super::put(err, &line)?;
         mark(asked)?;
@@ -195,6 +193,11 @@ fn joins(open: Option<&str>) -> String {
 fn fresh() -> String {
     format!("celis: when this prompt is a new ask, add it with --new. {RULES}")
 }
+
+/// What a new ask's line asks of the agent before any other tool.
+pub(super) const PAST: &str =
+    "run the celis:past agent in the foreground with the ask and the places it \
+     may touch, never in the background, and wait for its answer before any other tool";
 
 /// The sentence of a new ask's line that asks to write the rules the prompt states.
 const RULES: &str = "When this prompt states how the work must be done (review feedback, a \

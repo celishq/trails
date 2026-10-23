@@ -33,7 +33,7 @@ impl Command {
             let lines: Vec<String> = live
                 .map(|(note, rule)| crate::text::line::rule(note, &rule))
                 .collect();
-            return page(&lines, args.page.as_deref(), out);
+            return page(&lines, Args::number("--page", &args.page)?, out);
         }
         if files.is_empty() && !args.diff {
             let index = Index::of(live.map(|(_, rule)| rule.content));
@@ -59,7 +59,7 @@ impl Command {
 
 /// Prints the page `asked` of `lines`, the first when none is asked, and the line that names the next
 /// page when there is one.
-fn page(lines: &[String], asked: Option<&str>, out: &mut dyn Write) -> Result<(), Failure> {
+fn page(lines: &[String], asked: Option<usize>, out: &mut dyn Write) -> Result<(), Failure> {
     let mut pages: Vec<Vec<&String>> = vec![vec![]];
     let mut size = 0;
     for line in lines {
@@ -70,9 +70,9 @@ fn page(lines: &[String], asked: Option<&str>, out: &mut dyn Write) -> Result<()
         size += line.len() + 1;
         pages.last_mut().expect("a page").push(line);
     }
-    let n = match asked.map(str::parse::<usize>) {
+    let n = match asked {
         None => 1,
-        Some(Ok(n)) if (1..=pages.len()).contains(&n) => n,
+        Some(n) if n <= pages.len() => n,
         Some(_) => {
             return Err(Failure::usage(format!(
                 "--page takes a number from 1 to {}",

@@ -43,11 +43,7 @@ impl Command {
                 )))
             }
         };
-        let limit = match args.limit.as_deref().map(str::parse::<usize>) {
-            None => 20,
-            Some(Ok(n)) if n > 0 => n,
-            Some(_) => return Err(Failure::usage("--limit takes a positive number")),
-        };
+        let limit = Args::number("--limit", &args.limit)?.unwrap_or(20);
         let Some(model) = Model::chosen(&self.home()?) else {
             return super::put(out, NONE);
         };

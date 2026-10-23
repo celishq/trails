@@ -12,12 +12,7 @@ impl Command {
     /// Prints each named trail of every project, most used first, then newest, up to `--limit`.
     /// Writes no record.
     pub(crate) fn names(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
-        let limit = match &args.limit {
-            Some(text) => text
-                .parse()
-                .map_err(|_| Failure::usage(format!("--limit takes a number, not {text}")))?,
-            None => usize::MAX,
-        };
+        let limit = Args::number("--limit", &args.limit)?.unwrap_or(usize::MAX);
         if !self.held()? {
             return Ok(());
         }
