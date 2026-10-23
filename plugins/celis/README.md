@@ -1,9 +1,9 @@
 # celis
 
-No more "You're absolutely right!"
+Stop babysitting your coding agent.
 
-Stop telling your agent the same thing twice. Celis turns your corrections into rules that Claude Code, Codex,
-Cursor and Gemini remember in every project. Your trails and rules stay on your machine.
+Celis keeps your rules and gives your agent the discipline to follow them, in every project and every agent.
+Your trails and rules stay on your machine.
 
 ## Before you install
 
