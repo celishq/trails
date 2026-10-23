@@ -3,6 +3,7 @@
 
 use super::background::background;
 use super::canvas::{width, Styled};
+use super::contrast::ground;
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::Span;
 use unicode_width::UnicodeWidthChar;
@@ -127,7 +128,7 @@ pub(crate) fn mix(from: Color, to: Color, k: f64) -> Color {
 /// The colour `alpha` of the way from the background to `to`.
 fn blend((r, g, b): (u8, u8, u8), alpha: f64) -> Color {
     let mix = |from: u8, to: u8| (from as f64 + (to as f64 - from as f64) * alpha).round() as u8;
-    let (br, bg, bb) = background();
+    let (br, bg, bb) = ground(background());
     Color::Rgb(mix(br, r), mix(bg, g), mix(bb, b))
 }
 
@@ -143,13 +144,13 @@ fn rgb(colour: Option<Color>, dim: bool, text: bool) -> (u8, u8, u8) {
         Some(Color::Cyan | Color::LightCyan | Color::Blue | Color::LightBlue) => (90, 200, 220),
         Some(Color::White) => (244, 245, 247),
         Some(Color::Gray | Color::DarkGray) => (120, 126, 142),
-        Some(Color::Black) => background(),
+        Some(Color::Black) => ground(background()),
         _ if text => (220, 223, 230),
-        _ => background(),
+        _ => ground(background()),
     };
     match dim {
         true => {
-            let (r, g, b) = background();
+            let (r, g, b) = ground(background());
             let half = |a: u8, b: u8| ((a as u16 + b as u16) / 2) as u8;
             (half(full.0, r), half(full.1, g), half(full.2, b))
         }

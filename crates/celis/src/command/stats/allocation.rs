@@ -4,7 +4,7 @@ use super::moment::{minutes, Moment};
 use super::outcomes::percent;
 use super::panel::Panel;
 use super::sheet::{Group, Sheet};
-use crate::terminal::canvas::{cut, paint, BOLD, CYAN, DIM, RED, YELLOW};
+use crate::terminal::canvas::{cut, paint, BOLD, DIM, GREEN, RED, YELLOW};
 use crate::terminal::unfold::ease;
 use ratatui::style::Style;
 
@@ -50,7 +50,7 @@ fn allocation(s: &mut Sheet, m: &Moment, _: u16, y: u16, w: u16) -> u16 {
         ],
     ];
     let legend: Vec<Group> = [
-        ("productive   ", CYAN),
+        ("productive   ", GREEN),
         ("rework   ", YELLOW),
         ("dropped", RED),
     ]
@@ -75,7 +75,7 @@ fn allocation(s: &mut Sheet, m: &Moment, _: u16, y: u16, w: u16) -> u16 {
             .round_ties_even() as u16)
             .max(1);
         let parts: Vec<(f64, Style)> = [
-            (project.productive(), CYAN),
+            (project.productive(), GREEN),
             (project.rework, YELLOW),
             (project.dropped, RED),
         ]

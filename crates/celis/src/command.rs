@@ -187,6 +187,13 @@ impl Command {
         Ok(Store::exists(&self.home()?))
     }
 
+    /// The file whose presence says the opening scene was shown: `$CELIS_OPENING`, else `opening` in
+    /// `home`; none without a home.
+    pub(crate) fn opening(&self) -> Option<PathBuf> {
+        let named = self.env.get("CELIS_OPENING").map(PathBuf::from);
+        named.or_else(|| self.home().ok().map(|home| home.join("opening")))
+    }
+
     /// `$CELIS_HOME`, else its default under `$HOME`.
     pub(crate) fn home(&self) -> Result<PathBuf, Failure> {
         let home = self

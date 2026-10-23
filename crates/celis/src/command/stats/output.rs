@@ -4,7 +4,7 @@ use super::moment::Moment;
 use super::month::{DAYS, SPANS};
 use super::panel::Panel;
 use super::sheet::Sheet;
-use crate::terminal::canvas::{BOLD, CYAN, DIM};
+use crate::terminal::canvas::{CYAN, DIM};
 use crate::terminal::unfold::ease;
 use ratatui::style::Style;
 
@@ -26,34 +26,28 @@ pub(super) fn panels() -> [Panel; 2] {
     ]
 }
 
-/// Resolved steps by week: each of the four weeks as a bar with its count, the last two bright; the rows
-/// it takes. The count of the 14 days stands on its tile.
+/// Resolved steps by week: each of the four weeks as a bar in one colour with its label and count in the
+/// text's colour; the rows it takes. The count of the 14 days stands on its tile.
 fn resolved(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
     let row = y + 2;
     let weeks = m.month.weeks();
     let most = weeks.iter().map(|w| w.resolved()).max().unwrap_or(0).max(1);
     let label = if w >= 44 { 17 } else { 8 };
     for (k, week) in weeks.iter().enumerate() {
-        let recent = k >= 2;
         let name = match w >= 44 {
             true => format!("{} – {}", m.date(7 * k), m.date((6 + 7 * k).min(DAYS - 1))),
             false => m.date(7 * k),
         };
         let r = row + k as u16;
-        let look = match (recent, k == 3) {
-            (_, true) => BOLD,
-            (true, false) => Style::new(),
-            (false, false) => DIM,
-        };
+        let look = Style::new();
         s.put(x + 2, r, &name, look);
         let share = week.resolved() as f64 / most as f64 * ease(m.t - 0.8 - k as f64 * 0.08);
-        let tone = if recent { CYAN } else { DIM };
         s.bar(
             x + 3 + label,
             r,
             share,
             w.saturating_sub(label + 11).max(3),
-            tone,
+            CYAN,
         );
         s.put(x + w - 6, r, &format!("{:>3}", week.resolved()), look);
     }

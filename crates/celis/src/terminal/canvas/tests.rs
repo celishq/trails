@@ -55,3 +55,11 @@ fn a_line_prints_its_own_look_on_each_run() {
     let line = Styled::styled("Usage", BOLD);
     assert_eq!(super::line(&line, true), "\x1b[1mUsage\x1b[0m");
 }
+
+/// An emoji a selector makes wide counts as wide as the terminal and ratatui count it.
+#[test]
+fn an_emoji_selector_makes_a_narrow_symbol_wide() {
+    let calendar = "🗓\u{fe0f} Thu";
+    assert_eq!(visible(calendar), width(&Styled::from(calendar)));
+    assert_eq!(visible(calendar), 6);
+}

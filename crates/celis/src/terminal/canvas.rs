@@ -25,8 +25,6 @@ pub(crate) const RED: Style = Style::new().fg(Color::Rgb(251, 113, 133));
 pub(crate) const FRAME: Style = Style::new().fg(Color::Rgb(30, 48, 76));
 /// The border of celis's card and the line after its headline, lighter than a day's box.
 pub(crate) const EDGE: Style = Style::new().fg(Color::Rgb(44, 66, 104));
-/// A link the person opens, like `Show more`: a soft blue.
-pub(crate) const LINK: Style = Style::new().fg(Color::Rgb(96, 165, 250));
 /// A second share beside cyan, like a second project's time: a quiet slate.
 pub(crate) const SLATE: Style = Style::new().fg(Color::Rgb(86, 120, 168));
 /// What the person selected: the text's light.
@@ -37,15 +35,24 @@ pub(crate) fn paint(style: Style, text: &str) -> Span<'static> {
     Span::styled(text.to_string(), style)
 }
 
-/// The cells of `text` a terminal shows: a wide character counts 2, a colour code none.
+/// The cells of `text` a terminal shows: a wide character counts 2, a narrow one an emoji selector
+/// makes wide counts 2 too, a colour code none.
 pub(crate) fn visible(text: &str) -> usize {
     let mut count = 0;
     let mut code = false;
+    let mut before = 0;
     for c in text.chars() {
         match (code, c) {
             (false, '\x1b') => code = true,
             (true, 'm') => code = false,
-            (false, c) => count += cells(c),
+            (false, '\u{fe0f}') if before == 1 => {
+                count += 1;
+                before = 2;
+            }
+            (false, c) => {
+                before = cells(c);
+                count += before;
+            }
             _ => {}
         }
     }
@@ -157,7 +164,7 @@ pub(crate) fn line(line: &Styled, colour: bool) -> String {
     let mut runs: Vec<(Option<String>, String)> = Vec::new();
     for span in &line.spans {
         let codes = colour
-            .then(|| codes(line.style.patch(span.style)))
+            .then(|| codes(line.style.patch(span.style), graphic(&span.content)))
             .flatten();
         match runs.last_mut() {
             Some((last, text)) if *last == codes => *text += &span.content,
@@ -171,8 +178,16 @@ pub(crate) fn line(line: &Styled, colour: bool) -> String {
     runs.into_iter().map(run).collect()
 }
 
-/// The escape codes of `style`, its looks then its colours; `None` for the plain look.
-fn codes(style: Style) -> Option<String> {
+/// Whether `text` draws lines and blocks, not words: box and block characters, `■` and spaces only.
+fn graphic(text: &str) -> bool {
+    let drawn = |c: char| ('\u{2500}'..='\u{259F}').contains(&c) || c == '■';
+    text.chars().any(drawn) && text.chars().all(|c| c == ' ' || drawn(c))
+}
+
+/// The escape codes of `style` as it reads on the terminal's background, a `graphic`'s or a text's,
+/// its looks then its colours; `None` for the plain look.
+fn codes(style: Style, graphic: bool) -> Option<String> {
+    let style = super::contrast::legible(style, super::background::background(), graphic);
     let looks = [
         (Modifier::BOLD, "1"),
         (Modifier::DIM, "2"),

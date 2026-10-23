@@ -24,6 +24,9 @@ impl Command {
             let shown = play.and_then(|play| {
                 let mut env = self.env.clone();
                 env.insert("CELIS_HOME".to_string(), home.display().to_string());
+                if let Some(opening) = self.opening() {
+                    env.insert("CELIS_OPENING".to_string(), opening.display().to_string());
+                }
                 let command = Command {
                     args: self.args.clone(),
                     env,
@@ -47,6 +50,9 @@ impl Command {
         let shown = written.and_then(|tier| {
             let mut env = self.env.clone();
             env.insert("CELIS_HOME".to_string(), home.display().to_string());
+            if let Some(opening) = self.opening() {
+                env.insert("CELIS_OPENING".to_string(), opening.display().to_string());
+            }
             let command = Command {
                 args: self.args.clone(),
                 env,

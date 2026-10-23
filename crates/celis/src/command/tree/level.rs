@@ -3,17 +3,24 @@
 use super::CLOSED;
 use celis_trails::Step;
 
-/// The steps of one level of a tree: the active ones, then the ended ones, each newest first.
+/// The steps of one level of a tree: the active ones, then the ended ones, each newest first, and every
+/// one in the order they came.
 pub(super) struct Level<'a> {
     pub active: Vec<Step<'a>>,
     pub ended: Vec<Step<'a>>,
+    pub order: Vec<Step<'a>>,
 }
 
 impl<'a> Level<'a> {
     /// The level of `notes`, given oldest first.
     pub fn of(notes: Vec<Step<'a>>) -> Level<'a> {
+        let order = notes.clone();
         let (ended, active) = notes.into_iter().rev().partition(|s| s.state().ended());
-        Level { active, ended }
+        Level {
+            active,
+            ended,
+            order,
+        }
     }
 
     /// The ids of the lines a watch prints for it under the line `above`, at any depth: its closed

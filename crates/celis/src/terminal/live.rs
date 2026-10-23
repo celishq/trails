@@ -3,10 +3,9 @@
 
 use super::canvas::Styled;
 use super::look::{spin, spinner, DRAWN, TURN};
-use super::remark::{self, Remark};
 use super::scene::{self, scene, FADE, PLAYS};
 use super::screen::{clipboard, Screen};
-use super::unfold::{fade, length, smooth, unfold};
+use super::unfold::{fade, length, unfold};
 use super::wake::{Key, Wake};
 use crate::command::Command;
 use crate::failure::Failure;
@@ -19,8 +18,8 @@ use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender};
 use std::time::{Duration, Instant};
 
 /// One drawn page: its lines, the line to keep in view, its key line, the id `c` copies, the Markdown
-/// `m` copies, whether its lines hold a spinner that turns, what celis says above it in turn, and how long
-/// until it is drawn again with no wake.
+/// `m` copies, whether its lines hold a spinner that turns, whether the trail scene opens above it, and
+/// how long until it is drawn again with no wake.
 #[derive(Default)]
 pub(crate) struct Page {
     pub lines: Vec<Styled>,
@@ -29,7 +28,7 @@ pub(crate) struct Page {
     pub copy: Option<String>,
     pub markdown: Option<String>,
     pub spun: bool,
-    pub remarks: Vec<Remark>,
+    pub scene: bool,
     pub again: Option<Duration>,
 }
 
@@ -62,17 +61,20 @@ struct Batch {
 }
 
 impl Command {
-    /// Draws the page `start` makes from the store on the alternate screen, live; with no store, draws
-    /// `empty` and writes nothing until one is made. Ends on an interrupt or a `q` it does not type.
+    /// Draws the page `start` makes from the store on the alternate screen, live, its opening scene only
+    /// while the opening file is missing, and makes that file once it drew the scene; with no store,
+    /// draws `empty` and writes nothing until one is made. Ends on an interrupt or a `q` it does not type.
     pub(crate) fn live<P: Live>(
         &self,
         out: &mut dyn Write,
         empty: Page,
         start: impl FnOnce(&Trails) -> Result<P, Failure>,
     ) -> Result<(), Failure> {
+        let opening = self.opening();
         self.screen(out, |out, wakes| {
             let mut screen = Screen {
                 colour: self.colour(),
+                scene: opening.as_ref().is_some_and(|file| !file.exists()),
                 ..Screen::default()
             };
             if !self.held()? {
@@ -86,7 +88,11 @@ impl Command {
             }
             let trails = self.trails()?;
             let mut page = start(&trails)?;
-            self.follow(&mut page, trails, &mut screen, out, wakes)
+            let done = self.follow(&mut page, trails, &mut screen, out, wakes);
+            if let (true, Some(file)) = (screen.drew_scene, &opening) {
+                let _ = std::fs::write(file, "");
+            }
+            done
         })
     }
 
@@ -134,11 +140,10 @@ impl Command {
     }
 }
 
-/// Draws `page` on `screen`, under what celis says when it has a remark, the screen prints in colour and
-/// leaves `TREE` rows under it, and under the trail scene too when the screen holds it whole: the scene
-/// alone while it plays its opening when it held it from the start, then the card fading in and the rows
-/// unfolding; else the scene still. Draws again each turn of its spinner or the dude, until a wake comes
-/// or its time to draw again passes; that wake.
+/// Draws `page` on `screen`, under the trail scene when it may draw it, the screen prints in colour and
+/// holds the scene whole with `TREE` rows under it: the scene alone while it plays its opening when it
+/// held it from the start, then the rows unfolding; else the scene still. Draws again each turn of its
+/// spinner or the scene, until a wake comes or its time to draw again passes; that wake.
 fn show(
     page: &Page,
     screen: &mut Screen,
@@ -159,12 +164,12 @@ fn show(
     let room = size.map(|s| usize::from(s.ws_row).saturating_sub(1));
     let width = size.map_or(0, |s| usize::from(s.ws_col).saturating_sub(1));
     let fits = |rows: usize| room.is_some_and(|r| r >= rows + TREE);
-    let says = !page.remarks.is_empty() && screen.colour && fits(remark::ROWS) && width >= CARD;
     let wide = width >= 2 + scene::COLUMNS + 2;
-    let scenery = says && wide && fits(scene::ROWS + remark::ROWS);
+    let scenery = page.scene && screen.scene && screen.colour && wide && fits(scene::ROWS);
+    screen.drew_scene |= scenery;
     let opened = *screen.opened.get_or_insert_with(Instant::now);
     let still = !*screen.played.get_or_insert(scenery);
-    let turns = page.spun || says;
+    let turns = page.spun || scenery;
     let mut arriving;
     loop {
         let lines = match page.spun {
@@ -172,44 +177,26 @@ fn show(
             false => page.lines.clone(),
         };
         let opening = opened.elapsed().as_secs_f64();
-        let mut head = match (scenery, still) {
+        let head = match (scenery, still) {
             (true, false) => fade(&scene(drawn(opened), width), opening, FADE),
             (true, true) => scene(PLAYS + drawn(opened), width),
             (false, _) => vec![],
-        };
-        let started = *screen.started.get_or_insert_with(crate::command::now);
-        let fresh = news(&page.remarks, started);
-        if let Some(remark) = turned(screen, &fresh).filter(|_| says) {
-            if screen.remark.as_ref().map(|(shown, _)| shown) != Some(&remark) {
-                let changed = screen.remark.is_some().then(Instant::now);
-                screen.former = screen.remark.take().map(|(shown, _)| shown);
-                screen.remark = Some((remark, changed));
-            }
-        }
-        let (card, moving) = match says {
-            true => said(screen, width),
-            false => (vec![], false),
         };
         let since = match still {
             true => f64::MAX,
             false => opened.elapsed().as_secs_f64() - (PLAYS as u32 * TURN).as_secs_f64(),
         };
         let fading = opening < FADE;
-        arriving =
-            scenery && (fading || (0.0..length(card.len() + room.unwrap_or(0))).contains(&since));
+        arriving = scenery && (fading || (0.0..length(room.unwrap_or(0))).contains(&since));
         match (scenery, since) {
             (true, ..0.0) => screen.draw(out, &head, &[], None, "")?,
             (true, at) if at >= 0.0 && arriving => {
-                head.extend(fade(&card, at, IN));
                 screen.draw(out, &head, &unfold(&lines, at), page.picked, &page.keys)?;
             }
-            _ => {
-                head.extend(card);
-                screen.draw(out, &head, &lines, page.picked, &page.keys)?;
-            }
+            _ => screen.draw(out, &head, &lines, page.picked, &page.keys)?,
         }
         let left = due.map(|due| due.saturating_duration_since(Instant::now()));
-        let turn = if arriving || moving { FRAME } else { TURN };
+        let turn = if arriving { FRAME } else { TURN };
         let wait = match turns {
             true => left.map_or(turn, |left| left.min(turn)),
             false => left.unwrap_or(Duration::MAX),
@@ -221,84 +208,6 @@ fn show(
     }
 }
 
-/// What the card may show of `remarks`: the values that landed since `started`, else how the trail
-/// stands.
-fn news(remarks: &[Remark], started: u64) -> Vec<Remark> {
-    let fresh: Vec<Remark> = remarks
-        .iter()
-        .filter(|r| r.at >= started)
-        .cloned()
-        .collect();
-    match fresh.is_empty() {
-        true => remarks.iter().filter(|r| r.at == 0).cloned().collect(),
-        false => fresh,
-    }
-}
-
-/// The remark the card shows now: the one it shows until it held it `HOLD`, or at once when that one
-/// only says how the trail stands, then the oldest of `remarks` it has not shown yet; once none is
-/// left, still the one it shows. It shows each once.
-fn turned(screen: &mut Screen, remarks: &[Remark]) -> Option<Remark> {
-    let standing = screen
-        .remark
-        .as_ref()
-        .is_some_and(|(remark, _)| remark.at == 0);
-    let held = standing || screen.since.is_none_or(|since| since.elapsed() >= HOLD);
-    let next = remarks
-        .iter()
-        .filter(|r| !screen.seen.contains(r))
-        .min_by_key(|r| r.at)
-        .filter(|_| held)
-        .cloned();
-    if let Some(next) = next {
-        screen.seen.push(next.clone());
-        screen.since = Some(Instant::now());
-        return Some(next);
-    }
-    let shown = screen.remark.as_ref().map(|(remark, _)| remark.clone());
-    shown.or_else(|| remarks.last().cloned())
-}
-
-/// The seconds the card holds a remark at least before it shows the next new one.
-const HOLD: Duration = Duration::from_secs(7);
-
-/// The card of the remark `screen` shows, `width` wide, and whether it moves: once it changed, the
-/// headline before fades out, then this one fades in while its words type in behind a caret that blinks a
-/// while after them, then goes.
-fn said(screen: &Screen, width: usize) -> (Vec<Styled>, bool) {
-    let Some((remark, changed)) = &screen.remark else {
-        return (vec![], false);
-    };
-    let Some(changed) = changed else {
-        return (remark.rows(spin(), (None, false, 1.0), width), false);
-    };
-    let at = changed.elapsed().as_secs_f64();
-    if let (Some(former), true) = (&screen.former, at < OUT) {
-        let rows = former.rows(spin(), (None, false, 1.0 - smooth(at / OUT)), width);
-        return (rows, true);
-    }
-    let at = at - OUT;
-    let typed = (at * PACE) as usize;
-    let caret = at < CARET && (typed < remark.length() || ((at * 2.5) as usize).is_multiple_of(2));
-    let shown = smooth(at / IN);
-    (
-        remark.rows(spin(), (Some(typed), caret, shown), width),
-        at < CARET,
-    )
-}
-
-/// The seconds the headline before takes to fade out.
-const OUT: f64 = 0.3;
-
-/// The seconds a headline takes to fade in.
-const IN: f64 = 0.45;
-
-/// The characters a changed remark types each second.
-const PACE: f64 = 45.0;
-
-/// The seconds a changed remark shows its caret.
-const CARET: f64 = 3.5;
-
 /// The frames of the spinner since `at`.
 fn drawn(at: Instant) -> usize {
     (at.elapsed().as_millis() / TURN.as_millis()) as usize
@@ -307,15 +216,18 @@ fn drawn(at: Instant) -> usize {
 /// The time between two frames while rows arrive.
 const FRAME: Duration = Duration::from_millis(16);
 
-/// The fewest columns a screen needs to show celis's card.
-const CARD: usize = 44;
+/// The rest of a frame since a screen last `wrote` one; none when it wrote none.
+fn pace(wrote: Option<Instant>) -> Duration {
+    wrote.map_or(Duration::ZERO, |at| FRAME.saturating_sub(at.elapsed()))
+}
 
-/// The fewest rows a screen keeps for the tree under what celis says.
+/// The fewest rows a screen keeps for the tree under the scene.
 const TREE: usize = 8;
 
 /// The run of wakes from `wake` on, with the wakes that wait in `events` up to a key that changes what
-/// a page shows; records wait 50 ms for more. Each key copies from `drawn`, the page last drawn, or
-/// moves `screen` and `page` on `model`. `None` on an interrupt.
+/// a page shows; records wait 50 ms for more, other wakes the rest of a frame since `screen` last wrote
+/// one. Each key copies from `drawn`, the page last drawn, or moves `screen` and `page` on `model`.
+/// `None` on an interrupt.
 fn drain(
     mut wake: Result<Wake, RecvTimeoutError>,
     events: &Receiver<Wake>,
@@ -351,7 +263,7 @@ fn drain(
         }
         wake = match (batch.landed, laid) {
             (true, _) => events.recv_timeout(Duration::from_millis(50)),
-            (false, false) => events.recv_timeout(Duration::ZERO),
+            (false, false) => events.recv_timeout(pace(screen.wrote)),
             (false, true) => return Ok(Some(batch)),
         };
     }

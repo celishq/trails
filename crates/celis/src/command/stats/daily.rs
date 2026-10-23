@@ -6,7 +6,7 @@ use super::month::{Month, DAYS};
 use super::outcomes::Outcomes;
 use super::panel::Panel;
 use super::sheet::{Group, Sheet, SPARK};
-use crate::terminal::canvas::{paint, BOLD, CYAN, DIM, LINK, RED, SLATE, YELLOW};
+use crate::terminal::canvas::{paint, BOLD, DIM, GREEN, RED, SLATE, YELLOW};
 use crate::terminal::unfold::{ease, mix};
 use crate::text::clock::{day, weekday};
 use ratatui::style::{Color, Style};
@@ -26,14 +26,14 @@ pub(super) fn panel(m: &Moment) -> Panel {
 
 /// How a resolved step ended, each step one: its name and look.
 pub(super) const OUTCOMES: [(&str, Style); 4] = [
-    ("first pass", LINK),
+    ("first pass", GREEN),
     ("reworked", YELLOW),
     ("dropped", RED),
     ("expired", DIM),
 ];
 
 /// Where a successful step's approach came from: its name and look.
-const SOURCES: [(&str, Style); 2] = [("reused", CYAN), ("new", SLATE)];
+const SOURCES: [(&str, Style); 2] = [("reused", GREEN), ("new", SLATE)];
 
 /// The counts of `day` by outcome: first pass, reworked, dropped, expired.
 pub(super) fn outcomes(day: Outcomes) -> [usize; 4] {
@@ -93,7 +93,7 @@ impl Columns {
 /// outcome, first pass at the bottom, growing, every column and every gap one width, the whole chart
 /// centred, the day picked marked, the dates, and the outcome legend under them. Source of successful
 /// steps: its title with the picked day's reused and new steps beside it, a square a day from slate to
-/// cyan by the share reused, and its legend under the squares. The rows it takes.
+/// green by the share reused, and its legend under the squares. The rows it takes.
 fn daily(s: &mut Sheet, m: &Moment, _: u16, y: u16, w: u16) -> u16 {
     let month = m.month;
     let top = top(month);
@@ -121,7 +121,7 @@ fn daily(s: &mut Sheet, m: &Moment, _: u16, y: u16, w: u16) -> u16 {
             vec![dot(), paint(DIM, &format!("{done} successful"))],
             vec![
                 dot(),
-                paint(CYAN.patch(BOLD), &format!("{} reused", day_of.reused)),
+                paint(GREEN.patch(BOLD), &format!("{} reused", day_of.reused)),
             ],
             vec![dot(), paint(DIM, &format!("{} new", done - day_of.reused))],
         ]),
@@ -168,7 +168,7 @@ fn daily(s: &mut Sheet, m: &Moment, _: u16, y: u16, w: u16) -> u16 {
                 .iter()
                 .find(|(edge, _)| middle <= *edge)
                 .or(edges.last())
-                .map_or(LINK, |(_, look)| *look);
+                .map_or(GREEN, |(_, look)| *look);
             let glyph = SPARK[fill].repeat(usize::from(columns.wide));
             s.put(x, row + TALL - 1 - r as u16, &glyph, look);
         }
@@ -194,7 +194,7 @@ fn daily(s: &mut Sheet, m: &Moment, _: u16, y: u16, w: u16) -> u16 {
     row = axis + 4;
     row += s.flow(4, row, w - 4, &legend(&OUTCOMES)) + 1;
     row += s.flow(4, row, w - 4, &source) + 1;
-    let (slate, cyan) = (colour(SLATE), colour(CYAN));
+    let (slate, green) = (colour(SLATE), colour(GREEN));
     for d in columns.first..DAYS {
         let x = columns.column(d);
         let (mark, at) = match wide >= 2 {
@@ -207,7 +207,7 @@ fn daily(s: &mut Sheet, m: &Moment, _: u16, y: u16, w: u16) -> u16 {
             continue;
         }
         let share = day.reused as f64 / day.successful() as f64;
-        s.put(at, row, mark, Style::new().fg(mix(slate, cyan, share)));
+        s.put(at, row, mark, Style::new().fg(mix(slate, green, share)));
     }
     row += 2;
     row += s.flow(4, row, w - 4, &legend(&SOURCES));
