@@ -1,7 +1,7 @@
-//! `celis prompt`: what a session's hook writes on the trail it works on.
+//! The prompt hook: what a session's prompt writes on the trail it works on.
 
 use super::tree::today;
-use crate::command::{Args, Command};
+use crate::command::Command;
 use crate::failure::Failure;
 use celis_trails::{Link, Project, State, Trails};
 use hook::{Hook, Prompt};
@@ -11,57 +11,28 @@ use std::path::Path;
 mod hook;
 
 impl Command {
-    /// Acts on a hook: a prompt goes on its session's open trail, with notes on `err` about the work;
-    /// with no open trail, it names the past agent, once a session, unless the prompt is a task. A
-    /// compaction lets the session name the past agent again.
-    pub(crate) fn prompt(
-        &self,
-        args: &Args,
-        out: &mut dyn Write,
-        err: &mut dyn Write,
-        project: &Project,
-    ) -> Result<(), Failure> {
-        self.act(Hook::read()?, args, out, err, project)
-    }
-
-    /// Acts on the hook `json` holds, as `prompt` acts on the hook on stdin.
+    /// Acts on the hook `json` holds: a prompt goes on its session's open trail, with notes on `err`
+    /// about the work; with no open trail, it names the past agent, once a session, unless the prompt
+    /// is a task. A compaction lets the session name the past agent again.
     pub(super) fn act_on(
         &self,
         json: &serde_json::Value,
-        out: &mut dyn Write,
         err: &mut dyn Write,
     ) -> Result<(), Failure> {
-        self.act(Hook::of(json), &Args::default(), out, err, &self.project())
-    }
-
-    fn act(
-        &self,
-        hook: Hook,
-        args: &Args,
-        out: &mut dyn Write,
-        err: &mut dyn Write,
-        project: &Project,
-    ) -> Result<(), Failure> {
-        match hook {
+        let project = self.project();
+        match Hook::of(json) {
             Hook::Compaction { session } => {
                 let _ = std::fs::remove_file(self.asked(&session)?);
                 Ok(())
             }
-            Hook::Prompt(prompt) => self.ask(args, out, err, project, prompt),
+            Hook::Prompt(prompt) => self.ask(err, &project, prompt),
             Hook::Nothing => Ok(()),
         }
     }
 
-    /// Writes `prompt` on its session's open trail, signed now; prints its id, then names on `err` the
-    /// oldest working step, every done step, and how a new ask joins a trail.
-    fn ask(
-        &self,
-        args: &Args,
-        out: &mut dyn Write,
-        err: &mut dyn Write,
-        project: &Project,
-        prompt: Prompt,
-    ) -> Result<(), Failure> {
+    /// Writes `prompt` on its session's open trail, signed now; then names on `err` the oldest working
+    /// step, every done step, and how a new ask joins a trail.
+    fn ask(&self, err: &mut dyn Write, project: &Project, prompt: Prompt) -> Result<(), Failure> {
         let asked = self.asked(&prompt.session)?;
         if !self.held()? {
             if !prompt.task {
@@ -77,8 +48,7 @@ impl Command {
             }
             return Ok(());
         };
-        let record = trails.prompt(trail, prompt.text)?;
-        self.id(out, args, &record)?;
+        trails.prompt(trail, prompt.text)?;
         let working = trail.tree().into_iter().skip(1);
         if let Some(on) = working.into_iter().find(|s| s.state() == State::Working) {
             let line = format!(
@@ -130,10 +100,9 @@ impl Command {
             return Ok(false);
         }
         let line = format!(
-            "celis: a new ask in this session; before any other tool, run the celis:past agent in the \
-             foreground with the ask and the places it may touch, and wait for its answer; it brings the \
-             rules the ask must keep and the steps of past asks like it; add the ask with --uses <id> for \
-             each rule and past step the ask follows. {RULES}"
+            "celis: a new ask in this session; before any other tool, {PAST}; it brings the rules the \
+             ask must keep and the steps of past asks like it; add the ask with --uses <id> for each rule \
+             and past step the ask follows. {RULES}"
         );
         super::put(err, &line)?;
         mark(asked)?;
@@ -194,6 +163,11 @@ fn joins(open: Option<&str>) -> String {
 fn fresh() -> String {
     format!("celis: when this prompt is a new ask, add it with --new. {RULES}")
 }
+
+/// What a new ask's line asks of the agent before any other tool.
+pub(super) const PAST: &str =
+    "run the celis:past agent in the foreground with the ask and the places it \
+     may touch, never in the background, and wait for its answer before any other tool";
 
 /// The sentence of a new ask's line that asks to write the rules the prompt states.
 const RULES: &str = "When this prompt states how the work must be done (review feedback, a \

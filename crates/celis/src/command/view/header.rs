@@ -5,10 +5,10 @@ use celis_trails::records::id::short;
 use celis_trails::Step;
 
 /// The header of the lines of no trail.
-pub(super) const NONE: &str = "- rules of no trail";
+pub(crate) const NONE: &str = "- rules of no trail";
 
 /// The header of a trail's lines: its id, its project, its title and the day it was made.
-pub(super) struct Header {
+pub(crate) struct Header {
     id: String,
     project: String,
     title: String,

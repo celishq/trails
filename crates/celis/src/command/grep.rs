@@ -1,17 +1,13 @@
 //! `celis grep`: every trail of every project as lines, through the system `grep`.
 
 mod found;
-mod header;
-mod kind;
-mod row;
-mod view;
 
+use super::view::View;
 use super::Command;
 use crate::failure::Failure;
 use found::Found;
 use std::io::Write;
 use std::process::Stdio;
-use view::View;
 
 impl Command {
     /// Gives `words` to the system `grep` with the view on its stdin, and prints what it found,
@@ -31,14 +27,6 @@ impl Command {
             Some(lines) => super::put(out, &lines.text(&self.project().anchor.name)),
             None => super::put(out, &found),
         }
-    }
-
-    /// Prints that `celis past` is gone, for a plugin from before. Writes no record.
-    pub(crate) fn past(&self, out: &mut dyn Write) -> Result<(), Failure> {
-        super::put(
-            out,
-            "celis past is gone: update the celis plugin, whose past.md searches the trails with celis grep.",
-        )
     }
 }
 

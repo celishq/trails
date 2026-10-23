@@ -18,16 +18,16 @@ celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--situation
                                                        a rule, in its scope
 celis rules [<file>]... [--diff]
                                                        the rules of some files
-celis name <trail id> <name>                          give a trail a name
-celis names [--limit <n>]                             the named trails, most used first
-celis tree [<id>] [--graph] [--full] [--all] [--demo]
+celis name [<trail id> <name>] [--limit <n>]          name a trail; with none, the named trails
+celis tree [<id>]... [--graph] [--full] [--all] [--markdown] [--demo]
                                                        a trail and its steps; again on each change
 celis grep <grep option>... <pattern>                 every trail, through the system grep
+celis search [--kind <kind>] [--limit <n>] -- <text>
+                                                       the rules and steps most alike in meaning
+celis setup [--model <model>]                         the model that search uses
 celis stats [<id>] [--demo]                           what later work reused
-celis report <id>... [--demo]                         the trails as Markdown, for a pull request
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
-celis link [<folder>]                                 keep this project's trails in a folder
-celis unlink [<folder>]                               stop keeping them in a folder
+celis link [<folder>] [--off]                         keep this project's trails in a folder, or stop
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>]... [--check <command>] [--new] [--session <id>] [--project <id>] -- <text>
                                                        leave a step
 celis step start <id>                                 take up a step, and see the rules its plan links
@@ -36,7 +36,6 @@ celis step done <id> [--changed <text>] [--as-planned] [--pitfall <text>] -- <pr
 celis step drop <id> -- <reason>                      end a step, a done trail or a rule no longer wanted
 celis step edit <id> [--at <place>]... [--check <command>] [-- <text>]
                                                        give a step a new title, places or check
-celis prompt                                          a person's prompt, from a hook
 celis hook start <agent> <plugin folder>              what an agent reads at a session start
 celis hook ask <agent>                                a person's prompt, and what the agent reads on it
 celis auth login                                      keep the phrase stdin gives
@@ -95,8 +94,8 @@ celis decide --path "**/prices*.py" -- "When you change prices: keep them in cen
 - A command that writes records MUST print the id of each, its main record first.
 - With `--json`, a command but `grep` MUST print one JSON object a line, and nothing else, to stdout. A
   printed id is `{"id"}`.
-- Only `decide`, `name`, `step`, `prompt` and `hook ask` MAY write a record. A command that refuses MUST write nothing.
-- A command MUST NOT ask a question, but `auth login` on a terminal.
+- Only `decide`, `name`, `step` and `hook ask` MAY write a record. A command that refuses MUST write nothing.
+- A command MUST NOT ask a question, but `auth login` and `setup` on a terminal.
 - A command MUST exit 0 when done, 2 on a usage error, and 1 on any other error.
 - An error MUST be named `usage`, `no-decision`, `no-trail`, `no-step`, `closed`, `open-steps`,
   `check-failed`, else `error`. With `--json`, it MUST be one object on stderr,
@@ -189,6 +188,8 @@ celis name 9b0e11aa review
 
 ## Names
 
+`name` with no trail lists the named trails.
+
 ```
 line    <name> <trail id8> <the trail's title>
 json    {"name", "id", "title", "uses"}
@@ -198,18 +199,18 @@ json    {"name", "id", "title", "uses"}
 
 **Rules**
 
-- `names` MUST print one line for each named trail of every project, most `uses` first, then newest.
+- `name` with no trail MUST print one line for each named trail of every project, most `uses` first, then newest.
 - `--limit <n>` MUST print the first `<n>` lines only.
 
 **Examples**
 
 ```
-celis names --limit 20
+celis name --limit 20
 ```
 
 ## Prompt
 
-Each agent's hooks give their JSON to `prompt`.
+Each agent's hooks give `hook` the JSON of a prompt or of a session start.
 
 ```
 {"session_id", "prompt"}                 a prompt; Cursor names the session `conversation_id`
@@ -218,18 +219,10 @@ Each agent's hooks give their JSON to `prompt`.
 
 **Rules**
 
-- `prompt` MUST read the hook's JSON on stdin, with `conversation_id` in place of `session_id` when it
-  has one.
-- On a prompt, it MUST write it as CIP-04 "Sessions" states, and print the record's id. On a compaction,
-  it MUST write no record and print nothing.
-- A prompt that names a step with `celis step <id>` is a task for that step. With no open trail, `prompt`
+- `hook` MUST read the session from `conversation_id` when the JSON has one, else from `session_id`.
+- On a prompt, it MUST write it as CIP-04 "Sessions" states. On a compaction, it MUST write no record.
+- A prompt that names a step with `celis step <id>` is a task for that step. With no open trail, `hook`
   MUST NOT ask for the past agent on it.
-
-**Examples**
-
-```
-echo '{"session_id": "95e9be99", "prompt": "Use the shared Badge."}' | celis prompt
-```
 
 ## Rules
 
@@ -277,7 +270,7 @@ antigravity     {"injectSteps": [{"ephemeralMessage": "<text>"}]}
 
 **Rules**
 
-- `hook` MUST read the hook's JSON on stdin, as `prompt` does, and act on it as `prompt` does. `hook ask`
+- `hook` MUST read the hook's JSON on stdin, and act on it as "Prompt" states. `hook ask`
   MUST act in the folder the JSON names in `cwd`, else in the first of `workspace_roots`.
 - `hook start` MUST read the card from `card.md` and the plugin's version from `.claude-plugin/plugin.json`
   in `<plugin folder>`.
@@ -335,4 +328,61 @@ end     project [<project name>]
 celis grep -i -E "price|cents"
 celis grep " live {me} "
 celis grep -A3 9b0e11aa
+```
+
+## Search
+
+`search` gives the records most alike in meaning to a text, by the model that `setup` chose. It searches
+the live rules in scope in the working folder's project (CIP-05), and every trail and step of every
+project.
+
+```
+line     <score> <grep view line>
+json     {"id", "kind", "score", "project", "content"}
+none     celis search has no model: search with celis grep, or run celis setup.
+```
+
+`<score>` is the cosine of the text and the record, with two decimals. `<kind>` is `rule`, `step` or
+`trail`.
+
+**Rules**
+
+- `search` MUST print at most `--limit` records, 20 when not given, highest score first.
+- With `--kind`, `search` MUST give only the records of that kind.
+- With no model, `search` MUST print the `none` line and exit 0.
+- `search` MUST refuse empty text, a `--kind` that is not a kind, and a `--limit` that is not a positive
+  number, as a usage error.
+
+**Examples**
+
+```
+celis search -- "make retrieval faster"
+celis search --kind rule --limit 10 -- "release for linux"
+```
+
+## Setup
+
+`setup` chooses the model that `search` uses, downloads it, and builds its index.
+
+```
+model    embeddinggemma | e5-small | none
+list     <model> <download size> <speed> <license>[ recommended] <note>
+```
+
+**Rules**
+
+- On a terminal with no `--model`, `setup` MUST ask for the model from the list. Else with no `--model`,
+  it MUST print the list.
+- With a model, `setup` MUST download it from Hugging Face at a pinned revision, check its sha256, and
+  index every record that `search` gives. When the download or the check fails, it MUST keep the model
+  it had.
+- `none` MUST turn `search` off and remove the downloaded models.
+- `setup` MUST refuse a model that is not in the list as a usage error.
+
+**Examples**
+
+```
+celis setup
+celis setup --model embeddinggemma
+celis setup --model none
 ```

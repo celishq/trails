@@ -14,10 +14,16 @@ pub(crate) mod report;
 mod review;
 mod rule;
 mod rules;
+#[cfg(feature = "search")]
+mod search;
+#[cfg(not(feature = "search"))]
+#[path = "command/search/off.rs"]
+mod search;
 mod stats;
 mod step;
 pub(crate) mod tree;
 mod update;
+mod view;
 
 use crate::failure::Failure;
 use crate::help::{self, VERBS};
@@ -85,19 +91,16 @@ impl Command {
             "step" => self.step(args, out, err, &self.project_of(args)?),
             "decide" => self.decide(args, out, err, &self.project_of(args)?),
             "name" => self.name(args, out),
-            "names" => self.names(args, out),
             "tree" => self.tree(args, out),
             "rules" => self.rules(args, out),
             "grep" => self.grep(&self.args[1..], out),
-            "past" => self.past(out),
+            "search" => self.search(args, out, err),
             "stats" => self.stats(args, out),
-            "report" => self.report(args, out),
             "issue" => self.issue(args, out),
             "link" => self.link(args, out, &self.project()),
-            "unlink" => self.unlink(args, out, &self.project()),
-            "prompt" => self.prompt(args, out, err, &self.project()),
             "hook" => self.hook(args, out),
             "auth" => self.auth(args, out, err),
+            "setup" => self.setup(args, out, err),
             "update" => self.update(args),
             "" => Err(Failure::usage("expected: celis <command>")),
             verb => Err(help::unknown(verb, verbs())),

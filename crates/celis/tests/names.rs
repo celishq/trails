@@ -186,7 +186,7 @@ fn project_writes_into_a_skill_project() {
     }
 }
 
-/// `names` prints each named trail, most used first, then newest; `--limit` cuts the list, and
+/// `name` with no trail prints each named trail, most used first, then newest; `--limit` cuts the list, and
 /// `--json` gives the name, id, title and uses (`spec/02-cli.md`, "Names").
 #[test]
 fn names_lists_the_named_trails_most_used_first() {
@@ -207,7 +207,7 @@ fn names_lists_the_named_trails_most_used_first() {
             "Review it",
         ],
     );
-    let o = cli(&repo, &["names"]);
+    let o = cli(&repo, &["name"]);
     assert!(o.status.success(), "{}", err(&o));
     let text = out(&o);
     let lines: Vec<&str> = text.lines().collect();
@@ -218,19 +218,15 @@ fn names_lists_the_named_trails_most_used_first() {
             format!("changelog {} Write a changelog", &newer[..8]),
         ],
     );
-    let limited = out(&cli(&repo, &["names", "--limit", "1"]));
+    let limited = out(&cli(&repo, &["name", "--limit", "1"]));
     assert_eq!(limited.lines().count(), 1, "{limited}");
-    let json = objects(&repo, &["names"]);
+    let json = objects(&repo, &["name"]);
     assert_eq!(json[0]["name"], "review");
     assert_eq!(json[0]["id"], used.as_str());
     assert_eq!(json[0]["title"], "Review a pull request");
     assert_eq!(json[0]["uses"], 1);
     assert_eq!(json[1]["uses"], 0);
-    refusal(
-        &cli(&repo, &["names", "--json", "--limit", "x"]),
-        2,
-        "usage",
-    );
+    refusal(&cli(&repo, &["name", "--json", "--limit", "x"]), 2, "usage");
 }
 
 /// A drop of a done trail keeps it done and frees its name for another trail (`spec/03-steps.md`,
@@ -249,7 +245,7 @@ fn a_dropped_trail_keeps_its_state_and_frees_its_name() {
         "no longer holds",
         now() + 1,
     );
-    assert_eq!(out(&cli(&repo, &["names"])), "");
+    assert_eq!(out(&cli(&repo, &["name"])), "");
     let state = &objects(&repo, &["tree", &old[..8]])[0]["trail"]["state"];
     assert_eq!(state, "done");
     let grep = out(&cli(&repo, &["grep", &old[..8]]));
@@ -259,7 +255,7 @@ fn a_dropped_trail_keeps_its_state_and_frees_its_name() {
     );
     let new = add(&repo, &["--new", "--", "Review a design"]);
     name(&repo, &new, "review");
-    let lines = out(&cli(&repo, &["names"]));
+    let lines = out(&cli(&repo, &["name"]));
     assert_eq!(
         lines.trim(),
         format!("review {} Review a design", &new[..8])

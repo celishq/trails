@@ -12,7 +12,7 @@ fn short(id: &str) -> &str {
 
 /// What `celis report <args>` prints in the main checkout; it must succeed.
 fn report(repo: &Repo, args: &[&str]) -> String {
-    let mut all = vec!["report"];
+    let mut all = vec!["tree", "--markdown"];
     all.extend(args);
     let o = cli(repo, &all);
     assert!(o.status.success(), "{}", err(&o));
@@ -193,8 +193,12 @@ fn report_leaves_out_the_ask_with_the_trails_text() {
 fn report_refuses_an_unknown_id_and_no_id() {
     let repo = Repo::new();
     add(&repo, &["--", "a task"]);
-    refusal(&cli(&repo, &["report", "ffffffff", "--json"]), 1, "no-step");
-    refusal(&cli(&repo, &["report", "--json"]), 2, "usage");
+    refusal(
+        &cli(&repo, &["tree", "--markdown", "ffffffff", "--json"]),
+        1,
+        "no-step",
+    );
+    refusal(&cli(&repo, &["tree", "--markdown", "--json"]), 2, "usage");
 }
 
 /// With `--json`, `report` prints its text as one object, and it writes no record.
@@ -203,7 +207,7 @@ fn report_with_json_prints_the_text_and_writes_no_record() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "a task"]);
     let before = objects(&repo, &["tree", short(&trail)]);
-    let printed = objects(&repo, &["report", short(&trail)]);
+    let printed = objects(&repo, &["tree", "--markdown", short(&trail)]);
     assert_eq!(printed.len(), 1, "{printed:?}");
     let text = printed[0]["report"].as_str().unwrap();
     assert!(text.starts_with("## a task\n"), "{text}");
@@ -251,7 +255,7 @@ fn report_on_a_terminal_prints_a_card() {
             "list shows",
         ],
     );
-    let mut watch = Watch::start(&repo, &["report", t]);
+    let mut watch = Watch::start(&repo, &["tree", "--markdown", t]);
     let shown = shown_with(&mut watch, "m copy markdown · any key to leave");
     for text in [
         &format!("REPORT · {t} · repo"),
@@ -276,14 +280,14 @@ fn report_on_a_terminal_copies_its_markdown_with_m() {
     std::fs::write(&copy, "#!/bin/sh\ncat > \"$CELIS_HOME/copied\"\n").unwrap();
     std::fs::set_permissions(&copy, std::os::unix::fs::PermissionsExt::from_mode(0o755)).unwrap();
     let trail = add(&repo, &["--", "a task"]);
-    let mut watch = Watch::start(&repo, &["report", short(&trail)]);
+    let mut watch = Watch::start(&repo, &["tree", "--markdown", short(&trail)]);
     shown_with(&mut watch, "any key to leave");
     watch.press("m");
     shown_with(&mut watch, "copied markdown");
     assert_eq!(watch.child.wait().unwrap().code(), Some(0));
     let copied = std::fs::read_to_string(repo.home().join("copied")).unwrap();
     assert!(copied.starts_with("## a task\n"), "{copied}");
-    let mut watch = Watch::start(&repo, &["report", short(&trail)]);
+    let mut watch = Watch::start(&repo, &["tree", "--markdown", short(&trail)]);
     shown_with(&mut watch, "any key to leave");
     watch.press("x");
     assert_eq!(watch.child.wait().unwrap().code(), Some(0));
@@ -298,7 +302,7 @@ fn report_demo_prints_a_made_up_trail_and_writes_nothing() {
     let repo = Repo::new();
     let temp = tempfile::tempdir().unwrap();
     let env = [("TMPDIR", temp.path().to_str().unwrap())];
-    let o = repo.run(&repo.path(), &["report", "--demo"], &env, "");
+    let o = repo.run(&repo.path(), &["tree", "--markdown", "--demo"], &env, "");
     assert!(o.status.success(), "{}", err(&o));
     let text = out(&o);
     assert!(
@@ -322,7 +326,7 @@ fn report_demo_prints_a_made_up_trail_and_writes_nothing() {
     );
     let o = repo.run(
         &repo.path(),
-        &["report", "--demo", "abcd", "--json"],
+        &["tree", "--markdown", "--demo", "abcd", "--json"],
         &env,
         "",
     );

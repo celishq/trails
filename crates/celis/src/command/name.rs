@@ -1,12 +1,16 @@
-//! `celis name`: give a trail a name.
+//! `celis name`: give a trail a name, or list the named trails.
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use std::io::Write;
 
 impl Command {
-    /// Names the trail `args` names with the word after its id, and prints the id of the name record.
+    /// Names the trail `args` names with the word after its id, and prints the id of the name record;
+    /// with no trail, prints the named trails.
     pub(crate) fn name(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
+        if args.words.len() == 1 {
+            return self.names(args, out);
+        }
         let id = args.id("name")?;
         let name = args
             .words

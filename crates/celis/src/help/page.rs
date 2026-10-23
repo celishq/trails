@@ -15,11 +15,10 @@ const SECTIONS: &[(&str, &str, &[&str])] = &[
         "",
         &[
             "tree [<id>]",
-            "names",
             "grep <pattern>",
+            "search <text>",
             "rules [<file>]...",
             "stats [<id>]",
-            "report <id>...",
         ],
     ),
     (
@@ -40,10 +39,10 @@ const SECTIONS: &[(&str, &str, &[&str])] = &[
         "",
         &[
             "link [<folder>]",
-            "unlink [<folder>]",
             "auth login",
             "auth status",
             "auth phrase",
+            "setup",
             "update [<version>]",
             "issue [<id>]...",
         ],
@@ -53,18 +52,20 @@ const SECTIONS: &[(&str, &str, &[&str])] = &[
 /// What each command of one word does, in a phrase.
 const PHRASES: &[(&str, &str)] = &[
     ("tree", "Show your trails and their steps"),
-    ("names", "Show the named trails, most used first"),
     ("name", "Name a trail, so other work can use it by its name"),
     ("grep", "Search every trail with grep"),
+    (
+        "search",
+        "Find the rules and steps alike in meaning to a text",
+    ),
+    ("setup", "Choose and download the model that search uses"),
     ("rules", "Show the rules of the files you will touch"),
     ("stats", "Show what later work reused, and how work went"),
-    ("report", "Show trails as Markdown for a pull request"),
     ("decide", "Record a rule that later work must keep"),
     (
         "link",
         "Keep this project's trails in a folder to commit or share",
     ),
-    ("unlink", "Stop keeping this project's trails in a folder"),
     (
         "update",
         "Update celis to the latest version, or to one you choose",

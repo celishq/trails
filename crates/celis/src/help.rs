@@ -262,6 +262,20 @@ pub const VERBS: &[Verb] = &[
         ],
     },
     Verb {
+        command: "search",
+        usage: &["celis search [--kind <kind>] [--limit <n>] -- <text>"],
+        summary: "Show the rules of this project and the trails and steps of every project most alike in meaning to a text, by the model celis setup chose, the most alike first with their score. Reads new records into the model's index first. With no model, says to use celis grep. Changes nothing.",
+        args: &[
+            ("--kind", "Only rule, step, or trail"),
+            ("--limit", "Show the first <n> only; 20 when not given"),
+            ("<text>", "What to find, in any words and any language"),
+        ],
+        examples: &[
+            "celis search -- \"make retrieval faster\"",
+            "celis search --kind rule --limit 10 -- \"release for linux\"",
+        ],
+    },
+    Verb {
         command: "stats",
         usage: &["celis stats [<id>] [--demo]"],
         summary: "Show each step that later work reused and how often, then each rule that steps followed, then the total. With an id, show what that step reused and what reused it. On a terminal, show the totals of all time, then the last 14 days against the 14 before: reuse rate, first-pass success, resolved steps and median step time, then Learning, Quality, Output and speed, and Resources, each opened with enter, updating as work lands. Changes nothing.",
@@ -272,16 +286,6 @@ pub const VERBS: &[Verb] = &[
         examples: &["celis stats", "celis stats 9b0e11aa", "celis stats --demo"],
     },
     Verb {
-        command: "report",
-        usage: &["celis report <id>... [--demo]"],
-        summary: "Show the trail of each step as Markdown for a pull request: a table of the trail, a table of its steps with their proofs, then their places and checks, and its rules. On a terminal, show a card for each trail, and press m to copy the Markdown. Changes nothing.",
-        args: &[
-            ("<id>", "A step id, or its first 4 or more characters"),
-            ("--demo", "Show a sample trail"),
-        ],
-        examples: &["celis report 3fa2c1d0", "celis report 3fa2c1d0 9e717e6f", "celis report --demo"],
-    },
-    Verb {
         command: "issue",
         usage: &["celis issue [<id>]... [-- <text>]"],
         summary: "Write a problem report for the celis team as Markdown. It includes your text, the version, system, project, and store, the end of the log, and the trail of each step you name. Changes nothing.",
@@ -290,23 +294,19 @@ pub const VERBS: &[Verb] = &[
             ("<text>", "What went wrong"),
         ],
         examples: &[
-            "celis issue -- \"celis prompt fails in each Cursor session\"",
+            "celis issue -- \"celis hook ask fails in each Cursor session\"",
             "celis issue 3fa2c1d0 -- \"The tree shows the step as open after done.\"",
         ],
     },
     Verb {
         command: "link",
-        usage: &["celis link [<folder>]"],
-        summary: "Keep this project's trails in a folder, and keep the folder in sync with the store. Use .celis/trails/ in the repo to commit them, or any folder, like a synced drive. Rules with the me scope stay private.",
-        args: &[("<folder>", "The folder (default: .celis/trails at the repo root)")],
-        examples: &["celis link", "celis link ~/Drive/celis/shop"],
-    },
-    Verb {
-        command: "unlink",
-        usage: &["celis unlink [<folder>]"],
-        summary: "Stop keeping this project's trails in a folder on this computer. The folder and its records aren't deleted.",
-        args: &[("<folder>", "The folder (default: .celis/trails at the repo root)")],
-        examples: &["celis unlink", "celis unlink ~/Drive/celis/shop"],
+        usage: &["celis link [<folder>] [--off]"],
+        summary: "Keep this project's trails in a folder, and keep the folder in sync with the store. Use .celis/trails/ in the repo to commit them, or any folder, like a synced drive. Rules with the me scope stay private. With --off, stop keeping them there; the folder and its records stay.",
+        args: &[
+            ("<folder>", "The folder (default: .celis/trails at the repo root)"),
+            ("--off", "Stop keeping the trails in the folder"),
+        ],
+        examples: &["celis link", "celis link ~/Drive/celis/shop", "celis link --off"],
     },
     Verb {
         command: "decide",
@@ -342,40 +342,28 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "name",
-        usage: &["celis name <trail id> <name>"],
-        summary: "Give a trail a name, so work in any project can use it: step add --uses <name> keeps its rules. The first trail with a name keeps it.",
+        usage: &["celis name [<trail id> <name>] [--limit <n>]"],
+        summary: "Give a trail a name, so work in any project can use it: step add --uses <name> keeps its rules. The first trail with a name keeps it. With no trail, show each named trail of every project, most used first.",
         args: &[
             ("<trail id>", "A trail id, or its first 4 or more characters"),
             ("<name>", "A lowercase letter, then lowercase letters, digits, and -"),
+            ("--limit <n>", "Show the first <n> named trails only"),
         ],
-        examples: &["celis name 3fa2c1d0 review"],
-    },
-    Verb {
-        command: "names",
-        usage: &["celis names [--limit <n>]"],
-        summary: "Show each named trail of every project, as its name, id, and title, most used first. Changes nothing.",
-        args: &[("--limit <n>", "Show the first <n> only")],
-        examples: &["celis names --limit 20"],
+        examples: &["celis name 3fa2c1d0 review", "celis name --limit 20"],
     },
     Verb {
         command: "tree",
-        usage: &["celis tree [<id>] [--graph] [--full] [--all] [--demo]"],
-        summary: "Show a trail with its state, rules, and steps. With no id, show the active trails and today's trails of every project.",
+        usage: &["celis tree [<id>]... [--graph] [--full] [--all] [--markdown] [--demo]"],
+        summary: "Show a trail with its state, rules, and steps. With no id, show the active trails and today's trails of every project. With --markdown, show the trail of each id as Markdown for a pull request; on a terminal, a card for each trail, and press m to copy the Markdown.",
         args: &[
             ("<id>", "A step id, or its first 4 or more characters"),
             ("--graph", "Show today's trails as live graphs of cards"),
             ("--full", "Show each step's proof, grade, and reason"),
             ("--all", "Show every trail of every project, by day"),
+            ("--markdown", "Show the trails as Markdown for a pull request"),
             ("--demo", "Show sample trails in every state"),
         ],
-        examples: &["celis tree 3fa2c1d0 --full", "celis tree --all"],
-    },
-    Verb {
-        command: "prompt",
-        usage: &["celis prompt"],
-        summary: "Read a hook's JSON from stdin, and record the prompt on the open trail of its session. The plugin runs this on each prompt.",
-        args: &[],
-        examples: &["celis prompt < hook.json"],
+        examples: &["celis tree 3fa2c1d0 --full", "celis tree --all", "celis tree 3fa2c1d0 9e717e6f --markdown"],
     },
     Verb {
         command: "hook start",
@@ -390,7 +378,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "hook ask",
         usage: &["celis hook ask <agent>"],
-        summary: "Read a prompt hook's JSON from stdin, record the prompt as `celis prompt` does, and print the note the agent reads. The plugin runs this on each prompt.",
+        summary: "Read a prompt hook's JSON from stdin, record the prompt on the open trail of its session, and print the note the agent reads. The plugin runs this on each prompt.",
         args: &[("<agent>", "claude, codex, cursor, gemini or antigravity")],
         examples: &["celis hook ask codex < hook.json"],
     },
@@ -414,6 +402,17 @@ pub const VERBS: &[Verb] = &[
         summary: "Show your recovery phrase, so you can add it to the Celis app or another computer.",
         args: &[],
         examples: &["celis auth phrase"],
+    },
+    Verb {
+        command: "setup",
+        usage: &["celis setup [--model <model>]"],
+        summary: "Choose the model that celis search uses, download it from Hugging Face, and index your records. On a terminal with no model, ask for one from the list; else print the list. none turns search off and removes the downloaded models.",
+        args: &[("--model", "embeddinggemma, e5-small, or none")],
+        examples: &[
+            "celis setup",
+            "celis setup --model embeddinggemma",
+            "celis setup --model none",
+        ],
     },
     Verb {
         command: "update",

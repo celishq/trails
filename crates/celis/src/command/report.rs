@@ -1,4 +1,4 @@
-//! `celis report`: the trails that ids name, as Markdown for a pull request.
+//! `celis tree --markdown`: the trails that ids name, as Markdown for a pull request.
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
@@ -23,13 +23,15 @@ impl Command {
     pub(crate) fn report(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let ids = &args.words[1..];
         if args.demo && !ids.is_empty() {
-            return Err(Failure::usage("report takes ids or --demo, not both"));
+            return Err(Failure::usage(
+                "tree --markdown takes ids or --demo, not both",
+            ));
         }
         if args.demo {
             return self.demo(args, out);
         }
         if ids.is_empty() {
-            return Err(Failure::usage("report needs an id"));
+            return Err(Failure::usage("tree --markdown needs an id"));
         }
         if !self.held()? {
             return Err(Failure::no_step(&ids[0]));

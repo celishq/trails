@@ -67,7 +67,7 @@ text>"`: celis keeps it, and knows that the place checks it.
 Find groups of 4 or more done trails, of any project, that did the same work in any words. Leave out
 named trails and trails dropped after done.
 
-- When `celis names` shows a named trail that does this work, add to it: add an ask under its trail with
+- When `celis name` shows a named trail that does this work, add to it: add an ask under its trail with
   `--project <its project id>`, write each new rule, write each changed rule with `--replaces <its id>`,
   and close the ask.
 - Else write a named trail as `steps.md` says, under "Named trails". Give the ask `--uses` with the id

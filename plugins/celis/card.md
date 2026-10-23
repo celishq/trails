@@ -9,12 +9,13 @@ celis step start <id>
 celis step done <id> [--changed "<what differs>"] [--as-planned] [--pitfall "<rule>"] -- "<proof>"
 celis step drop <id> -- "<why>"
 celis step edit <id> [--at <place>]... [--check <command>] [-- "<new title>"]
-celis name <trail id> <name>
-celis tree [<id>] [--graph] [--full] [--all] [--demo]
+celis name [<trail id> <name>] [--limit <n>]
+celis tree [<id>]... [--graph] [--full] [--all] [--markdown] [--demo]
 ```
 
 1. At a new ask, run the `celis:past` agent when celis asks for it, even for a simple ask: it brings
-   the rules of the ask and past steps like it. To find more rules, run `celis rules` for the words the
+   the rules of the ask and past steps like it. Run it in the foreground, never in the background, and
+   wait for its answer before any other tool. To find more rules, run `celis rules` for the words the
    rules use, and search them with `celis grep -i -E " rule [0-9a-f]{8} live .*(<word>|<word>)"`. Keep
    each rule in your own context. When the ask conflicts with a rule, the ask wins: replace the rule.
 2. An ask that changes a file, however small, or that works toward a result someone can check, gets a

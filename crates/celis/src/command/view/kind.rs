@@ -2,7 +2,7 @@
 
 /// What a line of the view holds.
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub(super) enum Kind {
+pub(crate) enum Kind {
     Trail,
     Rule,
     Step,

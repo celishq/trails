@@ -1,4 +1,4 @@
-//! `celis link` and `celis unlink`: keep the project's trails in a folder.
+//! `celis link`: keep the project's trails in a folder, or stop.
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
@@ -8,13 +8,16 @@ use std::io::Write;
 
 impl Command {
     /// Links `project` to the folder `args` names, else to `.celis/trails`, syncs it with the store, and
-    /// prints the counts copied out and in.
+    /// prints the counts copied out and in; with `--off`, unlinks it.
     pub(crate) fn link(
         &self,
         args: &Args,
         out: &mut dyn Write,
         project: &Project,
     ) -> Result<(), Failure> {
+        if args.off {
+            return self.unlink(args, out, project);
+        }
         let home = self.home()?;
         if let Some(given) = args.words.get(1) {
             std::fs::create_dir_all(self.folder.join(given)).map_err(anyhow::Error::from)?;
@@ -30,12 +33,7 @@ impl Command {
 
     /// Takes the link of `project` to the folder `args` names, else to `.celis/trails`, out of
     /// `$CELIS_HOME/links`; the folder stays.
-    pub(crate) fn unlink(
-        &self,
-        args: &Args,
-        out: &mut dyn Write,
-        project: &Project,
-    ) -> Result<(), Failure> {
+    fn unlink(&self, args: &Args, out: &mut dyn Write, project: &Project) -> Result<(), Failure> {
         let link = Link::new(project, &self.link_path(args, project));
         link.turn_off(&self.home()?)?;
         let value = json!({"folder": link.path, "unlinked": true});

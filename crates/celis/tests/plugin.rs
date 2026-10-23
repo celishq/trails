@@ -186,7 +186,7 @@ fn each_agents_session_start_gives_the_card_and_its_session() {
     }
 }
 
-/// Each agent's session start lists the named trails that `celis names --limit 20` prints, under the
+/// Each agent's session start lists the named trails that `celis name --limit 20` prints, under the
 /// line that says how to use one; with none, it lists none.
 #[test]
 fn each_agents_session_start_lists_the_named_trails() {

@@ -1,8 +1,8 @@
 //! What `grep` prints of the lines it found.
 
-use super::header::{self, Header};
-use super::row::Row;
-use super::view::View;
+use crate::command::view::header::{self, Header};
+use crate::command::view::row::Row;
+use crate::command::view::View;
 
 /// The lines found of one trail, `None` for those of no trail, each with what `grep` put before it.
 struct Group<'a> {

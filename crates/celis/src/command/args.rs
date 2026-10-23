@@ -17,6 +17,8 @@ pub(crate) struct Args {
     pub promoted: bool,
     pub diff: bool,
     pub next: bool,
+    pub off: bool,
+    pub markdown: bool,
     pub words: Vec<String>,
     pub text: Option<String>,
     pub places: Vec<String>,
@@ -30,6 +32,9 @@ pub(crate) struct Args {
     pub session: Option<String>,
     pub project: Option<String>,
     pub limit: Option<String>,
+    pub kind: Option<String>,
+    pub model: Option<String>,
+    pub page: Option<String>,
     pub paths: Vec<String>,
 }
 
@@ -71,6 +76,8 @@ impl Args {
                 "--promoted" => parsed.promoted = true,
                 "--diff" => parsed.diff = true,
                 "--next" => parsed.next = true,
+                "--off" => parsed.off = true,
+                "--markdown" => parsed.markdown = true,
                 "--at" => parsed.places.push(value(arg, rest.next())?),
                 "--under" => parsed.under = Some(value(arg, rest.next())?),
                 "--scope" => parsed.scope = Some(value(arg, rest.next())?),
@@ -82,6 +89,9 @@ impl Args {
                 "--session" => parsed.session = Some(value(arg, rest.next())?),
                 "--project" => parsed.project = Some(value(arg, rest.next())?),
                 "--limit" => parsed.limit = Some(value(arg, rest.next())?),
+                "--kind" => parsed.kind = Some(value(arg, rest.next())?),
+                "--model" => parsed.model = Some(value(arg, rest.next())?),
+                "--page" => parsed.page = Some(value(arg, rest.next())?),
                 "--path" => parsed.paths.push(value(arg, rest.next())?),
                 flag if flag.starts_with("--") => {
                     bad.get_or_insert(Failure::usage(format!("{flag} is not a flag")));
@@ -101,6 +111,18 @@ impl Args {
             .get(command.split(' ').count())
             .map(String::as_str)
             .ok_or_else(|| Failure::usage(format!("{command} needs an id")))
+    }
+
+    /// The positive number `value` of `flag`; none when the flag is absent, and a usage error when it
+    /// is not a positive number.
+    pub fn number(flag: &str, value: &Option<String>) -> Result<Option<usize>, Failure> {
+        match value.as_deref().map(|v| (v, v.parse::<usize>())) {
+            None => Ok(None),
+            Some((_, Ok(n))) if n > 0 => Ok(Some(n)),
+            Some((v, _)) => Err(Failure::usage(format!(
+                "{flag} takes a positive number, not {v}"
+            ))),
+        }
     }
 
     /// The text after `--`; a usage error with `missing` when it is absent or blank.

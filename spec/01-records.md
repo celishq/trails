@@ -132,7 +132,7 @@ $CELIS_HOME/links                   one link a line: `<project id>\t<folder>`
 
 **Writers**
 
-- Only `celis link` and `celis unlink` (CIP-02) MAY write `$CELIS_HOME/links`. A project MAY have more than
+- Only `celis link` (CIP-02) MAY write `$CELIS_HOME/links`. A project MAY have more than
   one link.
 - While a link is on, a writer MUST write each record the folder holds to the folder too.
 
