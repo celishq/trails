@@ -342,16 +342,19 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "rules",
-        usage: &["celis rules [<file>]... [--diff]"],
-        summary: "Show every rule of the files you will read or change, the most important first. With no file, show the words the rules use, the most used first. Changes nothing.",
+        usage: &["celis rules [<file>]... [--diff] [--all] [--page <n>]"],
+        summary: "Show every rule of the files you will read or change, the most important first. With --all, show every rule, a page at a time. With no file, show the words the rules use, the most used first. Changes nothing.",
         args: &[
             ("<file>", "A file you will read or change"),
             ("--diff", "Each file git shows changed or new"),
+            ("--all", "Every rule, not only those of some files"),
+            ("--page", "Page <n> of --all; the first when not given"),
         ],
         examples: &[
             "celis rules",
             "celis rules shelf/prices.py",
             "celis rules --diff",
+            "celis rules --all --page 2",
         ],
     },
     Verb {

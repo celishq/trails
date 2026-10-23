@@ -130,9 +130,10 @@ impl Command {
         }
         let line = format!(
             "celis: a new ask in this session; before any other tool, find the rules the ask must keep \
-             and the steps of past asks like it: run celis search -- \"<the ask in your words>\", and \
-             celis grep for exact words such as a file name; when search has no model, search with celis \
-             grep alone; add the ask with --uses <id> for each rule and past step the ask follows. {RULES}"
+             and the steps of past asks like it: read every rule with celis rules --all and each page it \
+             names, then run celis search -- \"<the ask in your words>\", and celis grep for exact words \
+             such as a file name; when search has no model, search with celis grep alone; add the ask \
+             with --uses <id> for each rule and past step the ask follows. {RULES}"
         );
         super::put(err, &line)?;
         mark(asked)?;

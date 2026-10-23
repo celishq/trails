@@ -25,7 +25,9 @@ Read
   └ --limit <n>       Show the first <n> only; 20 when not given
 
   rules [<file>]...   Show the rules of the files you will touch
-  └ --diff            Each file git shows changed or new
+  ├ --diff            Each file git shows changed or new
+  ├ --all             Every rule, not only those of some files
+  └ --page <n>        Page <n> of --all; the first when not given
 
   stats [<id>]        Show what later work reused, and how work went
   └ --demo            Show four weeks of sample trails

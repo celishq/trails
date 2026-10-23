@@ -16,8 +16,8 @@ read. What a command shows a person is not part of it.
 ```
 celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--situation] [--promoted] [--project <id>] -- <text>
                                                        a rule, in its scope
-celis rules [<file>]... [--diff]
-                                                       the rules of some files
+celis rules [<file>]... [--diff] [--all] [--page <n>]
+                                                       the rules of some files, or every rule
 celis name <trail id> <name>                          give a trail a name
 celis names [--limit <n>]                             the named trails, most used first
 celis tree [<id>] [--graph] [--full] [--all] [--demo]
@@ -237,13 +237,15 @@ echo '{"session_id": "95e9be99", "prompt": "Use the shared Badge."}' | celis pro
 ## Rules
 
 `rules` gives the live rules in scope in the working folder's project (CIP-05) that some files match
-(CIP-05, "Triggers"). With no file, it gives the words of those rules.
+(CIP-05, "Triggers"); with `--all`, every live rule in scope. With no file, it gives the words of those
+rules.
 
 ```
 line     <id8> <scope> <rule>
 json     {"id", "scope", "content"}
 index    <n> live rules. Their words, by how many rules use each:
          <word> <n>, …
+page     celis: page <n> of <pages>; read each next page with celis rules --all --page <n>.
 ```
 
 **Rules**
@@ -252,6 +254,9 @@ index    <n> live rules. Their words, by how many rules use each:
   `git ls-files --cached --others --exclude-standard -- <folder>` gives in the project. `--diff` MUST count as each file that `git diff
   --name-only HEAD` and `git ls-files --others --exclude-standard` give in the working folder, and that
   exists.
+- With `--all`, `rules` MUST print each live rule in scope as its `line`, in pages of at most 24,000
+  bytes, page `--page` or else the first, and end a page that has a next one with the `page` line. It
+  MUST refuse a `--page` that is no page as a usage error.
 - With no file, `rules` MUST print the index of the live rules in scope: each word that
   they use before their "because", with how many use it, most used first.
 - A rule with no trigger and no `at:<place>` scope MUST NOT come.
@@ -265,6 +270,7 @@ index    <n> live rules. Their words, by how many rules use each:
 celis rules
 celis rules shelf/prices.py
 celis rules --diff
+celis rules --all --page 2
 ```
 
 ## Hooks

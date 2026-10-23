@@ -32,6 +32,7 @@ pub(crate) struct Args {
     pub limit: Option<String>,
     pub kind: Option<String>,
     pub model: Option<String>,
+    pub page: Option<String>,
     pub paths: Vec<String>,
 }
 
@@ -86,6 +87,7 @@ impl Args {
                 "--limit" => parsed.limit = Some(value(arg, rest.next())?),
                 "--kind" => parsed.kind = Some(value(arg, rest.next())?),
                 "--model" => parsed.model = Some(value(arg, rest.next())?),
+                "--page" => parsed.page = Some(value(arg, rest.next())?),
                 "--path" => parsed.paths.push(value(arg, rest.next())?),
                 flag if flag.starts_with("--") => {
                     bad.get_or_insert(Failure::usage(format!("{flag} is not a flag")));

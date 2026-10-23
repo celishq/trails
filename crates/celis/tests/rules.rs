@@ -174,3 +174,36 @@ fn a_reader_ignores_cairns_ratings_outcomes_source_records_and_splits_from_befor
     );
     assert_eq!(live_ids(&repo, &repo.path(), "repo"), [short(&kept.id)]);
 }
+
+/// With `--all`, `rules` prints every live rule in scope, in pages of at most 24,000 bytes, each but
+/// the last ending with the `page` line (`spec/02-cli.md`, "Rules").
+#[test]
+fn rules_all_prints_every_live_rule_in_pages() {
+    let repo = Repo::plain();
+    let id = repo.project_id();
+    let project = (id.as_str(), "repo");
+    let long = "x".repeat(200);
+    for n in 0..150 {
+        let text = format!("When rule {n} holds: {long}.");
+        stored_rule(&repo, project, &account(), (None, None), &text, now() - DAY);
+    }
+    let pages: Vec<String> = ["1", "2"]
+        .iter()
+        .map(|n| {
+            let o = repo.run(&repo.path(), &["rules", "--all", "--page", n], &[], "");
+            assert!(o.status.success(), "{}", support::err(&o));
+            out(&o)
+        })
+        .collect();
+    assert!(pages[0].len() <= 24_200, "{}", pages[0].len());
+    let last = pages[0].lines().last().unwrap();
+    assert!(last.starts_with("celis: page 1 of 2;"), "{last}");
+    assert!(!pages[1].contains("celis: page"), "{}", pages[1]);
+    let rules = pages
+        .iter()
+        .flat_map(|p| p.lines())
+        .filter(|l| l.contains("When rule"));
+    assert_eq!(rules.count(), 150);
+    let o = repo.run(&repo.path(), &["rules", "--all", "--page", "3"], &[], "");
+    assert_eq!(o.status.code(), Some(2), "{}", out(&o));
+}
