@@ -105,6 +105,22 @@ EmbeddingGemma. Broken counts the rules a task applies to, habits left out.
   (10-12 points) is within the bench's noise of 15 points; Sonnet's (20-32 points) is not.
 - So 6b does not hold: the past agent stays until a change closes the gap.
 
+Second run, with `step start` naming a `celis search` for each step:
+
+| Arm      | Haiku broken | Haiku old | Sonnet broken | Sonnet old |
+| -------- | ------------ | --------- | ------------- | ---------- |
+| final    | 26%          | 3%        | 23%           | 7%         |
+| grepped  | 34%          | 25%       | 46%           | 32%        |
+| searched | 39%          | 14%       | 48%           | 31%        |
+
+- Drift tasks have one step each, so the agents still searched about once a task.
+- **Recall is the cause.** A task applies 20-28 of the rules. Ranked by the agent's own query, those rules
+  spread over all 400 ranks: recall is 14% in the top 20, 25% in the top 50, and 38% in the top 100. A
+  rule found was mostly kept (Sonnet broke 3 of 36 found, 60 of 164 missed).
+- Drift's rules are conventions for all code, such as absolute imports or module docstrings. Their words
+  are not alike to the task's words, so no query of the task finds them. Only reading every rule, as the
+  past agent does, finds them.
+
 ## Risks
 
 | Risk                                                         | Mitigation                                                        |
