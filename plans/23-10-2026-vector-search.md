@@ -121,6 +121,20 @@ Second run, with `step start` naming a `celis search` for each step:
   are not alike to the task's words, so no query of the task finds them. Only reading every rule, as the
   past agent does, finds them.
 
+Third run, with the main agent reading `celis rules --all` at the ask, then `celis search`:
+
+| Arm      | Haiku broken | Haiku $/task | Haiku s/task | Sonnet broken | Sonnet $/task | Sonnet s/task |
+| -------- | ------------ | ------------ | ------------ | ------------- | ------------- | ------------- |
+| final    | 26%          | 0.05         | 193          | 23%           | 0.25          | 130           |
+| grepped  | 40%          | 0.03         | 130          | 33%           | 0.24          | 57            |
+| searched | 35%          | 0.04         | 149          | 35%           | 0.23          | 63            |
+
+- Every task read both pages of the rules; Sonnet cut a page with `head` in 4 of 8 tasks.
+- Sonnet's gap fell from 20-32 points to 10-12; Haiku's stays at 9-14. The cost is the same as the past
+  agent's; the time is half of it on Sonnet.
+- The past agent gives the main agent a short list of the rules that apply. A dump of every rule leaves
+  that choice to the main agent, among its other work, and it keeps fewer of them.
+
 ## Risks
 
 | Risk                                                         | Mitigation                                                        |
