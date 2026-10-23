@@ -165,6 +165,26 @@ background, and to wait for its answer. Both arms use this branch's binary.
 - `lean` makes half the calls, and costs 10-15% less and takes 10-15% less time on this store of 400
   rules. On a store like the real one (1,025 lines, 456 in scope), it reads only the rules in scope.
 
+## Full benches (release candidate)
+
+The lean past agent with the wait fix, 2026-10-23.
+
+Plugin evals (`claude plugin eval .`, 17 cases, 3 runs per arm, judge Sonnet): every case 1.00 with the
+plugin; mean delta +0.43; $19.15. 02-larger-feature and 05-secret, at 0.71 and 0.90 before, are 1.00.
+
+Drift, Opus, rules broken (lean 1 run, final of v0.0.12 2 runs):
+
+| Rules | lean | final (v0.0.12) | CLAUDE.md | $/task lean / final |
+| ----- | ---- | --------------- | --------- | ------------------- |
+| 40    | 11%  | 14%             | 29%       | 0.45 / 0.43         |
+| 100   | 14%  | 24%             | 28%       | 0.51 / 0.49         |
+| 400   | 31%  | 31%             | 37%       | 0.61 / 0.61         |
+| 1000  | 62%  | 51%             | 48%       | 0.56 / 0.66         |
+| 1600  | 56%  | 57%             | 70%       | 0.70 / 0.73         |
+
+At 1000 rules lean is 11 points worse than final, near the noise of 15 points; a second run would show
+whether it holds.
+
 ## Risks
 
 | Risk                                                         | Mitigation                                                        |
