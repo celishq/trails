@@ -29,9 +29,9 @@ Models (one table in the code: repo, pinned revision, sha256, dimensions, prefix
 
 | Model                  | Download | Speed   | Note                                      | License      |
 | ---------------------- | -------- | ------- | ----------------------------------------- | ------------ |
-| EmbeddingGemma 300M    | ~300 MB  | fast    | Recommended: best quality for its size    | Gemma terms  |
-| Qwen3-Embedding 0.6B   | ~600 MB  | medium  | strong on code and many languages         | Apache 2.0   |
-| multilingual-e5-small  | ~120 MB  | fastest | lower quality                             | MIT          |
+| EmbeddingGemma 300M    | ~1.2 GB  | fast    | Recommended: best quality for its size    | Gemma terms  |
+| Qwen3-Embedding 0.6B   | ~1.2 GB  | slow    | strong on code and many languages         | Apache 2.0   |
+| multilingual-e5-small  | ~480 MB  | fastest | lower quality                             | MIT          |
 | none                   | 0        | —       | grep only                                 | —            |
 
 ## Phases
@@ -60,6 +60,31 @@ All phases ship in one release.
    - **6b. Remove the past agent** only when B and C are not worse than A.
 7. **Release.** CI builds for `aarch64/x86_64-apple-darwin` and `aarch64/x86_64-unknown-linux-musl`;
    the model is not in the binary. Run the costly benches once. → verify: the release workflow passes.
+
+## Spike result
+
+Measured on 2026-10-23 on an M-series Mac, CPU, f32, one text at a time.
+
+- **Runtime:** `candle` 0.11 (`candle-core`, `candle-nn`, `candle-transformers`) and `tokenizers` with
+  `fancy-regex`, all pure Rust. The ONNX builds of Gemma and Qwen use `com.microsoft` operators
+  (`MultiHeadAttention`, `RotaryEmbedding`), so `tract` cannot run them.
+- **Builds:** the spike builds for `aarch64/x86_64-apple-darwin` and, with `cargo zigbuild`, for
+  `aarch64/x86_64-unknown-linux-musl` as static binaries. It adds about 1.5-2 MB to the binary. The musl
+  binaries are built, not yet run.
+- **Sources (safetensors, pinned):** `google/embeddinggemma-300m` is gated, so Gemma comes from the ungated
+  `unsloth/embeddinggemma-300m` (`bfa3c846`); Qwen from `Qwen/Qwen3-Embedding-0.6B` (`97b0c614`); e5 from
+  `intfloat/multilingual-e5-small` (`614241f6`).
+- **Match with the ONNX Runtime reference:** cosine 0.99998 or more for each model on 3 texts (English,
+  Russian, short).
+
+| Model   | Load  | Per text (8-18 tokens) | Code                                                                  |
+| ------- | ----- | ---------------------- | --------------------------------------------------------------------- |
+| Gemma   | 2.3 s | 40 ms                  | own encoder (~150 lines): Gemma 3 layers, no mask, mean pool, 2 dense |
+| Qwen3   | <1 s  | 0.5-0.7 s              | `candle_transformers::models::qwen3`, last token                      |
+| e5      | 0.7 s | 10-17 ms               | `candle_transformers::models::bert`, mean pool                        |
+
+EmbeddingGemma stays Recommended. Its encoder embeds one text with no padding and at most 256 tokens,
+so its 512-token sliding window never applies and it needs no mask.
 
 ## Risks
 
