@@ -216,13 +216,13 @@ impl Store {
     }
 }
 
-/// The sha256 of each file that `record` names.
+/// The sha256 of each file that an `imeta` of `record` names.
 fn files(record: &Note) -> impl Iterator<Item = &str> {
     record
         .tags
         .iter()
-        .filter(|t| t.len() >= 3 && t[0] == "file")
-        .map(|t| t[2].as_str())
+        .filter(|t| t.first().is_some_and(|n| n == "imeta"))
+        .filter_map(|t| t.iter().find_map(|f| f.strip_prefix("x ")))
 }
 
 /// Writes `bytes` to `folder` as the blob `sha256`, unless it is there.

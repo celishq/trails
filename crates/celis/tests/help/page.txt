@@ -57,6 +57,10 @@ Record work · your agents run these
   ├ --path <glob>     A file it acts on; * and ? within a folder, ** across
   ├ --situation       No file shows it ahead
   ├ --promoted        A tool of the place, like a linter, now checks it
+  ├ --good <id>       A step whose result shows the rule, such as a pick or a
+  │                   fix
+  ├ --bad <id>        A step whose result breaks it, such as a variant not
+  │                   picked
   └ --project <id>    skill:<name>, or the id of a project in the store
 
   name <trail> <name> Name a trail, so other work can use it by its name

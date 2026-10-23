@@ -131,6 +131,8 @@ fn reused(later: u64) -> (TempDir, Trails) {
         paths: vec![],
         situation: false,
         promoted: false,
+        good: None,
+        bad: None,
     };
     trails.at(AT);
     let rule = trails.decide(rule, None).unwrap().records[0].id.clone();

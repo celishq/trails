@@ -64,11 +64,12 @@ Every change of `spec/` MUST keep these rules:
 | 1111 with `decision` in `celis.decision` | kind: a rule (NIP-22) | 05 |
 | `scope` · `replaces` | rule tags | 05 |
 | `path` | rule tag: the trigger | 05 |
+| `good` · `bad` | rule tags: the steps of a pair | 05 |
 | `situation` · `promoted` in `celis.decision` | rule labels | 05 |
 | `me` · `project` · `trail:<id>` · `at:<place>` | the scopes of a rule | 05 |
 | `uses` | step tag | 06 |
 | 1985 with `name` in `celis.step` | kind: the name of a trail (NIP-32) | 07 |
-| `file` | done tag: a file of the proof | 08 |
+| `imeta` with `url` · `x` · `m` · `size` · `path` | done tag: a file of the proof (NIP-92, BUD-10) | 08 |
 | `$CELIS_HOME/trails/blobs/` · `<folder>/blobs/` | the blobs of the store and of a linked folder | 08 |
 
 **Deprecated.** A reader ignores each of these. Older versions wrote them.

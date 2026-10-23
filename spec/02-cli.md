@@ -14,7 +14,7 @@ read. What a command shows a person is not part of it.
 ## Commands
 
 ```
-celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--situation] [--promoted] [--project <id>] -- <text>
+celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--situation] [--promoted] [--good <id>] [--bad <id>] [--project <id>] -- <text>
                                                        a rule, in its scope
 celis rules [<file>]... [--diff]
                                                        the rules of some files
@@ -58,7 +58,8 @@ decision  json  {"id", "created_at", "project", "scope", "replaces", "content",
 - A flag no command takes is a usage error.
 - `decide` MUST write a rule of the working folder's project (CIP-05), with `--scope` and
   `--replaces` as its tags, and no `scope` tag for `project`; each `--path`, from the project's top
-  folder, as a `path` tag, and `--situation` and `--promoted` as their labels.
+  folder, as a `path` tag, `--situation` and `--promoted` as their labels, and `--good` and `--bad` as
+  the whole ids of their steps (CIP-05, "Pairs"), refusing a step the store lacks with `no-step`.
 - `--project` on `decide` and `step add` MUST write the records of the project it names in place of the
   working folder's: `skill:<name>` (CIP-07, "Skill projects"), or a project id that a record of the store
   has, with that record's project name. It MUST refuse any other id as a usage error.
@@ -157,9 +158,9 @@ step  json  {"id", "created_at", "project", "links": [{"to", "kind": "under | re
 - `done` MUST run the step's `check` in the project's top folder, and refuse with `check-failed` when it
   fails or runs past `CELIS_CHECK_SECONDS`, 600 when not set.
 - `done --changed` MUST write its text as `changed`, and `done --by` its value as `by`; a `--by` other
-  than `judge` or `person` is a usage error. Each `done --file` MUST be kept as a blob and named by a
-  `file` tag (CIP-08), and a file that is not there is a usage error. `done --pitfall` MUST also write a rule, at
-  `at:<the step's at>`, else `trail:<the step's trail id>`.
+  than `judge` or `person` is a usage error. Each `done --file` MUST be kept as a blob and named by an
+  `imeta` tag (CIP-08), and a file that is not there is a usage error. `done --pitfall` MUST also write
+  a rule, at `at:<the step's at>`, else `trail:<the step's trail id>`.
 - `drop` MUST refuse an empty reason, and `edit` one with no text, `--at` or `--check`, as usage errors.
 
 **Examples**
@@ -233,7 +234,11 @@ Each agent's hooks give `hook` the JSON of a prompt or of a session start.
 
 ```
 line     <id8> <scope> <rule>
-json     {"id", "scope", "content"}
+           good    <id8> <title> · <the first line of its proof>    a step of the rule's pair (CIP-05, "Pairs")
+                   <the path of each blob of its files>
+           bad     <id8> <title> · <the first line of its proof>
+                   <the path of each blob of its files>
+json     {"id", "scope", "content"}, with "good" and "bad" when the rule has them
 index    <n> live rules. Their words, by how many rules use each:
          <word> <n>, …
 ```

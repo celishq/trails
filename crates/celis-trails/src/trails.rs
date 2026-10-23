@@ -183,11 +183,7 @@ impl Trails {
         let bytes = std::fs::read(path)
             .map_err(|_| Refusal::Usage(format!("no file {}", path.display())))?;
         let sha256 = self.store.keep(&bytes)?;
-        Ok(ProofFile {
-            place,
-            sha256,
-            size: bytes.len() as u64,
-        })
+        Ok(ProofFile::new(place, sha256, bytes.len() as u64))
     }
 
     /// The blob `sha256` of the store, when its bytes hash to its name.
@@ -230,6 +226,8 @@ impl Trails {
                 paths: vec![],
                 situation: false,
                 promoted: false,
+                good: None,
+                bad: None,
             };
             written
                 .records

@@ -3,7 +3,7 @@ celis keeps each ask as a trail: its steps, their proofs, and the rules that lat
 ```
 celis rules [<file>]... [--diff]
 celis grep <grep option>... "<pattern>"
-celis decide [--scope at:<place> | trail:<id> | me] [--replaces <id>] [--path <glob>]... [--situation] [--promoted] [--project <id>] -- "<rule>"
+celis decide [--scope at:<place> | trail:<id> | me] [--replaces <id>] [--path <glob>]... [--situation] [--promoted] [--good <id>] [--bad <id>] [--project <id>] -- "<rule>"
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>] [--check <command>] [--new] [--session <id>] [--project <id>] -- "<title>"
 celis step start <id>
 celis step done <id> [--changed "<what differs>"] [--as-planned] [--by <who>] [--file <path>]... [--pitfall "<rule>"] -- "<proof>"
@@ -42,13 +42,18 @@ celis tree [<id>]... [--graph] [--full] [--all] [--markdown] [--demo]
    the outer layer and costly on the final. When a layer closes, show the person its result; for a
    creative result, wait for `go` or notes before the next layer. A note, such as "move it left", is not
    a fix of done work. The outer layer of a creative result has 2 variants as steps under it, unless
-   the person names another number: one follows the rules and the past picks, and one explores away
-   from them and names the rule it breaks. Close each with `--file` for its result, so that its blob
+   the person names another number. Before you make them, read the rules that `celis rules <file>`
+   gives with a good and a bad step: open their blobs, and see what the person chose. One variant
+   follows them and the past picks, and one explores away from them and names the rule it breaks; put
+   the one closer to the person's picks first. You never accept or reject a result on taste: the
+   person picks. Close each with `--file` for its result, so that its blob
    stays when the next variant writes the same file. When the last one closes, celis prints the blobs
-   beside it: open them side by side, and say in one line how they differ. Drop each variant the person
-   did not pick with `step drop <id> -- "not picked"`, and add the person's words when they gave a
-   reason; never invent one. The pick is the reference of the next layers, which have no variants
-   unless the person asks.
+   beside it: open them side by side, and say in one line how they differ. When the person picks, keep
+   the pair: `decide --good <pick> --bad <each other variant> --path <the file>` with the person's
+   reason in their words, or "because the person picked it" when they gave none; never invent one. The
+   next layer takes `--uses <pick>`: the pick is its reference. The next layers have no variants unless
+   the person asks. At the end of a creative ask, name in one line what the person's picks share, and
+   ask if it is a rule.
 4. For each step: `start`, and keep the rules it prints. Run `celis rules <files>` before each change,
    and before `done`, check your change against `celis rules --diff`. Read all
    that celis prints: never cut it with `head` or `grep`. Then `done` with a proof a person can check,
@@ -61,7 +66,13 @@ celis tree [<id>]... [--graph] [--full] [--all] [--markdown] [--demo]
 5. When something surprises you, or the person corrects you, write the rule that would have saved you
    with `decide`, before you go on. Give it `--path` for the files it acts on, as narrow as the rule
    allows, and `--situation` only when no file shows it ahead. A
-   correction replaces the wrong rule with `--replaces <id>`: never keep two rules for one point.
+   correction replaces the wrong rule with `--replaces <id>`: never keep two rules for one point. When
+   the person corrects done work, the fix's proof holds the hunk it replaced and the fix, a few lines
+   each, and its rule takes `--good <the fix>`: an example shows what a rule means better than more
+   words. When the person rewrote your code themselves, as `git log` shows at the next ask, add the
+   rewrite as a step that `--replaces` yours, close it `--by person` with both hunks, and keep its
+   rule the same way. When 3 rules with a pair make the same point, propose one rule that says it, and
+   replace them when the person agrees.
 6. Do what celis prints after each command. It names the next move.
 7. Act, and tell after. When you can write the `expect` of an ask without a guess, show its intent and
    start. Ask before the work only when you cannot, and during the work only at a one-way door: a

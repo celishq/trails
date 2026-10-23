@@ -46,6 +46,8 @@ impl Mark {
             Mark::Prompt { text } => ("prompt", text.as_str()),
             Mark::Name { name } => ("name", name.as_str()),
         };
+        let pubkey = signer.pubkey().hex();
+        let mut content = content.to_string();
         let mut tags = vec![
             vec!["L".to_string(), NAMESPACE.to_string()],
             vec!["l".to_string(), label.to_string(), NAMESPACE.to_string()],
@@ -61,20 +63,24 @@ impl Mark {
                     .map(|c| vec!["changed".to_string(), c.clone()]),
             );
             tags.extend(by.iter().map(|b| vec!["by".to_string(), b.clone()]));
-            tags.extend(files.iter().map(|f| {
-                vec![
-                    "file".to_string(),
-                    f.place.clone(),
-                    f.sha256.clone(),
-                    f.size.to_string(),
-                ]
-            }));
+            for file in files {
+                let url = file.url(&pubkey);
+                content.push_str(&format!("\n{url}"));
+                tags.push(vec![
+                    "imeta".to_string(),
+                    format!("url {url}"),
+                    format!("x {}", file.sha256),
+                    format!("m {}", file.media),
+                    format!("size {}", file.size),
+                    format!("path {}", file.place),
+                ]);
+            }
         }
         if let Mark::Edit { places, check, .. } = self {
             tags.extend(places.iter().map(|p| vec!["at".to_string(), p.clone()]));
             tags.extend(check.iter().map(|c| vec!["check".to_string(), c.clone()]));
         }
-        Note::write(signer, 1985u16, at, tags, content)
+        Note::write(signer, 1985u16, at, tags, &content)
     }
 
     /// The first drop of each record id that `records` holds, by when it was written, then by id.
@@ -105,21 +111,10 @@ impl Mark {
             "start" => Mark::Start,
             "done" | "drop" if note.content.trim().is_empty() => return None,
             "done" => Mark::Done {
-                proof: note.content.clone(),
+                proof: proof(note),
                 changed: note.tag("changed").map(str::to_string),
                 by: note.tag("by").map(str::to_string),
-                files: note
-                    .tags
-                    .iter()
-                    .filter(|t| t.len() >= 4 && t[0] == "file")
-                    .filter_map(|t| {
-                        Some(ProofFile {
-                            place: t[1].clone(),
-                            sha256: t[2].clone(),
-                            size: t[3].parse().ok()?,
-                        })
-                    })
-                    .collect(),
+                files: files(note),
             },
             "drop" => Mark::Drop {
                 reason: note.content.clone(),
@@ -144,6 +139,43 @@ impl Mark {
         };
         Some((note.tag("e")?.to_string(), mark))
     }
+}
+
+/// The files of the done `note`, from each `imeta` with `x`.
+fn files(note: &Note) -> Vec<ProofFile> {
+    note.tags
+        .iter()
+        .filter(|t| t.first().is_some_and(|n| n == "imeta"))
+        .filter_map(|t| {
+            let field = |key: &str| {
+                t.iter()
+                    .find_map(|f| f.strip_prefix(key)?.strip_prefix(' '))
+                    .map(str::to_string)
+            };
+            Some(ProofFile {
+                place: field("path").unwrap_or_default(),
+                sha256: field("x")?,
+                size: field("size").and_then(|s| s.parse().ok()).unwrap_or(0),
+                media: field("m").unwrap_or_default(),
+            })
+        })
+        .collect()
+}
+
+/// The proof of the done `note`: its content without the file URLs its `imeta` tags name.
+fn proof(note: &Note) -> String {
+    let urls: Vec<&str> = note
+        .tags
+        .iter()
+        .filter(|t| t.first().is_some_and(|n| n == "imeta"))
+        .filter_map(|t| t.iter().find_map(|f| f.strip_prefix("url ")))
+        .collect();
+    if urls.is_empty() {
+        return note.content.clone();
+    }
+    let lines: Vec<&str> = note.content.lines().collect();
+    let kept = lines.len() - lines.iter().rev().take_while(|l| urls.contains(l)).count();
+    lines[..kept].join("\n")
 }
 
 #[cfg(test)]

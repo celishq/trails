@@ -28,6 +28,15 @@ impl Command {
             Scope::At(place) => Scope::At(Place::resolve(&place, &project.folder, &self.folder)),
             scope => scope,
         };
+        let trails = self.trails()?;
+        let steps = trails.steps();
+        let step = |id: &Option<String>| -> Result<Option<String>, Failure> {
+            match id {
+                Some(id) => Ok(Some(steps.find(id)?.id().to_string())),
+                None => Ok(None),
+            }
+        };
+        let (good, bad) = (step(&args.good)?, step(&args.bad)?);
         let rule = Rule {
             anchor: project.anchor.clone(),
             scope,
@@ -40,8 +49,10 @@ impl Command {
                 .collect(),
             situation: args.situation,
             promoted: args.promoted,
+            good,
+            bad,
         };
-        let written = self.trails()?.decide(rule, args.replaces.as_deref())?;
+        let written = trails.decide(rule, args.replaces.as_deref())?;
         self.print(written, args, out, err)
     }
 }

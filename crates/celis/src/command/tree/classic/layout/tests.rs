@@ -106,6 +106,8 @@ fn a_record_forgets_only_the_group_of_its_trail() {
         paths: vec![],
         situation: false,
         promoted: false,
+        good: None,
+        bad: None,
     }
     .record(&account(), NOW)
     .unwrap();

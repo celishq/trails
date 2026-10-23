@@ -99,6 +99,8 @@ impl Bench {
             paths: vec![],
             situation: false,
             promoted: false,
+            good: None,
+            bad: None,
         };
         let id = self.trails.decide(rule, None).unwrap().records[0]
             .id

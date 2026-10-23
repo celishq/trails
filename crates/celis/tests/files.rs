@@ -23,8 +23,8 @@ fn done_with(repo: &Repo, id: &str, rel: &str) -> String {
     err(&o)
 }
 
-/// `done --file` keeps the file as a blob of the store and names it on the done, by its place, sha256
-/// and size; the review gives the blob, local only with no link (`spec/08-files.md`, "Files of a done";
+/// `done --file` keeps the file as a blob of the store and names it on the done by an `imeta` and its
+/// Blossom URI; the review gives the blob, local only with no link (`spec/08-files.md`, "Files of a done";
 /// "Blobs").
 #[test]
 fn done_with_a_file_keeps_it_as_a_blob() {
@@ -41,15 +41,21 @@ fn done_with_a_file_keeps_it_as_a_blob() {
         .filter_map(|e| {
             serde_json::from_str(&std::fs::read_to_string(e.unwrap().path()).ok()?).ok()
         })
-        .find(|n: &celis_nostr::Note| n.kind == 1985 && n.tags.iter().any(|t| t[0] == "file"))
+        .find(|n: &celis_nostr::Note| n.kind == 1985 && n.tags.iter().any(|t| t[0] == "imeta"))
         .unwrap();
-    let tags = done.tags;
-    assert!(tags.contains(&vec![
-        "file".to_string(),
-        "art/logo.svg".to_string(),
-        sha.clone(),
-        "7".to_string()
+    let url = format!(
+        "blossom:{sha}.svg?as={}&sz=7",
+        support::account().pubkey().hex()
+    );
+    assert!(done.tags.contains(&vec![
+        "imeta".to_string(),
+        format!("url {url}"),
+        format!("x {sha}"),
+        "m image/svg+xml".to_string(),
+        "size 7".to_string(),
+        "path art/logo.svg".to_string(),
     ]));
+    assert_eq!(done.content, format!("the logo\n{url}"));
     assert!(
         said.contains(&format!(
             "  file    art/logo.svg · {} · local only",

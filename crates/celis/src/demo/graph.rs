@@ -299,6 +299,8 @@ impl Written {
                     paths: vec![],
                     situation: false,
                     promoted: false,
+                    good: None,
+                    bad: None,
                 };
                 store.at(at);
                 store.decide(rule, None)?;

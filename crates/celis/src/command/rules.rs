@@ -5,14 +5,15 @@ mod index;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use celis_nostr::Note;
-use celis_trails::{Fit, Place, Project, Rule};
+use celis_trails::{Fit, Mark, Place, Project, Rule};
 use index::Index;
 use serde_json::json;
 use std::io::Write;
 use std::path::Path;
 
 impl Command {
-    /// Prints every live rule in scope that the files of `args` match, by `rank`.
+    /// Prints every live rule in scope that the files of `args` match, by `rank`, each with the proof and
+    /// the blobs of the good and the bad step of its pair.
     /// With no file, prints the index of the live rules in scope. Writes no record.
     pub(crate) fn rules(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let mut files = args.words[1..].to_vec();
@@ -37,11 +38,38 @@ impl Command {
             .filter_map(|(note, rule)| Some((rule.fit(&paths)?, note, rule)))
             .collect();
         found.sort_by_key(|(fit, _, rule)| rank(rule, *fit));
+        let steps = trails.steps();
         for (_, note, rule) in &found {
-            let object =
+            let mut object =
                 json!({"id": note.id, "scope": rule.scope.text(), "content": rule.content});
-            let line = crate::text::line::rule(note, rule);
-            super::put(out, &if args.json { object.to_string() } else { line })?;
+            for (key, id) in [("good", &rule.good), ("bad", &rule.bad)] {
+                if let Some(id) = id {
+                    object[key] = json!(id);
+                }
+            }
+            let mut lines = vec![crate::text::line::rule(note, rule)];
+            for (word, id) in [("good", &rule.good), ("bad ", &rule.bad)] {
+                let Some(step) = id.as_deref().and_then(|id| steps.find(id).ok()) else {
+                    continue;
+                };
+                let (proof, files) = match step.done().and_then(Mark::read) {
+                    Some((_, Mark::Done { proof, files, .. })) => (proof, files),
+                    _ => (String::new(), Vec::new()),
+                };
+                let proof = proof.lines().next().unwrap_or("").to_string();
+                let short = &step.id()[..8];
+                lines.push(format!("  {word}    {short} {} · {proof}", step.title()));
+                lines.extend(files.iter().map(|f| match trails.blob(&f.sha256) {
+                    Some(path) => format!("          {}", path.display()),
+                    None => format!("          {} · {} missing", f.place, f.sha256),
+                }));
+            }
+            let text = if args.json {
+                object.to_string()
+            } else {
+                lines.join("\n")
+            };
+            super::put(out, &text)?;
         }
         Ok(())
     }

@@ -38,6 +38,8 @@ pub(crate) struct Args {
     pub page: Option<String>,
     pub paths: Vec<String>,
     pub files: Vec<String>,
+    pub good: Option<String>,
+    pub bad: Option<String>,
 }
 
 impl Args {
@@ -97,6 +99,8 @@ impl Args {
                 "--page" => parsed.page = Some(value(arg, rest.next())?),
                 "--path" => parsed.paths.push(value(arg, rest.next())?),
                 "--file" => parsed.files.push(value(arg, rest.next())?),
+                "--good" => parsed.good = Some(value(arg, rest.next())?),
+                "--bad" => parsed.bad = Some(value(arg, rest.next())?),
                 flag if flag.starts_with("--") => {
                     bad.get_or_insert(Failure::usage(format!("{flag} is not a flag")));
                 }

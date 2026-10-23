@@ -11,8 +11,8 @@ use crate::{Anchor, Fit, Glob, Place, RuleId, Scope};
 use anyhow::Result;
 use celis_nostr::{Account, Note};
 
-/// One rule, written on a project, that holds in its scope; with the globs of the files it acts on,
-/// and its `situation` and `promoted` labels.
+/// One rule, written on a project, that holds in its scope; with the globs of the files it acts on, its
+/// `situation` and `promoted` labels, and the good and the bad step of its pair.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Rule {
     pub anchor: Anchor,
@@ -22,6 +22,8 @@ pub struct Rule {
     pub paths: Vec<String>,
     pub situation: bool,
     pub promoted: bool,
+    pub good: Option<String>,
+    pub bad: Option<String>,
 }
 
 impl Rule {
@@ -30,7 +32,12 @@ impl Rule {
         let mut tags = self.anchor.tags();
         let scope = (self.scope != Scope::Project).then(|| self.scope.text());
         let replaces = self.replaces.as_ref().map(|r| r.to_string());
-        let optional = [("scope", &scope), ("replaces", &replaces)];
+        let optional = [
+            ("scope", &scope),
+            ("replaces", &replaces),
+            ("good", &self.good),
+            ("bad", &self.bad),
+        ];
         tags.extend(
             optional
                 .into_iter()
@@ -79,6 +86,8 @@ impl Rule {
                 .collect(),
             situation: labelled(note, "situation"),
             promoted: labelled(note, "promoted"),
+            good: owned("good"),
+            bad: owned("bad"),
         })
     }
 
