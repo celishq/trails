@@ -34,7 +34,8 @@ celis tree [<id>] [--graph] [--full] [--all] [--demo]
    goes: the first job when you start, the next job after you close one, and steps under a job only when
    you take it and it holds more than one job. Only the step you take next gets `--at` and a `--check`
    that proves it.
-4. For each step: `start`, and keep the rules it prints. Run `celis rules <files>` before each change,
+4. For each step: `start`, and keep the rules it prints. Search for the step's rules with the
+   `celis search` line that `start` prints. Run `celis rules <files>` before each change,
    and before `done`, check your change against `celis rules --diff`. Read all
    that celis prints: never cut it with `head` or `grep`. Then `done` with a proof a person can check,
    such as a command and its result: `--as-planned` when the result matches `expect`, else
