@@ -235,6 +235,19 @@ fn every_help_page_fits_80_columns_and_names_no_spec() {
     }
 }
 
+/// No argument or flag text says "optional" or "zero or more", because the usage line shows them.
+#[test]
+fn no_help_page_says_optional_or_zero_or_more() {
+    for (command, _) in usages() {
+        let mut args: Vec<&str> = command.split(' ').collect();
+        args.push("--help");
+        let shown = page(&args).to_lowercase();
+        for word in ["optional", "zero or more"] {
+            assert!(!shown.contains(word), "{command}: {word:?}:\n{shown}");
+        }
+    }
+}
+
 /// `celis --version` prints `celis <version>` and the first 8 characters of the commit the build came
 /// from (`spec/02-cli.md`, "Help").
 #[test]
