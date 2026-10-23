@@ -1,10 +1,8 @@
-//! A hook's JSON, as `celis prompt` reads it.
+//! A hook's JSON, as `celis hook` reads it.
 
-use crate::failure::Failure;
 use serde_json::Value;
-use std::io::Read;
 
-/// What a hook gives `prompt`: a session start after a compaction, a person's prompt, or nothing to
+/// What a hook gives: a session start after a compaction, a person's prompt, or nothing to
 /// act on, such as a harness message or a hook with no session.
 pub(super) enum Hook {
     Compaction { session: String },
@@ -20,17 +18,6 @@ pub(super) struct Prompt {
 }
 
 impl Hook {
-    /// The hook on stdin; a usage error when it is no JSON.
-    pub(super) fn read() -> Result<Hook, Failure> {
-        let mut input = String::new();
-        std::io::stdin()
-            .read_to_string(&mut input)
-            .map_err(anyhow::Error::from)?;
-        let json: Value = serde_json::from_str(&input)
-            .map_err(|_| Failure::usage("expected a hook's JSON on stdin"))?;
-        Ok(Hook::of(&json))
-    }
-
     /// The hook `json` holds: its session is `conversation_id`, else `session_id`; its text is the
     /// prompt's first line, cut to 200 characters; a task names a step with `celis step <id>`.
     pub(super) fn of(json: &Value) -> Hook {

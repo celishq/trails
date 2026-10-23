@@ -107,9 +107,9 @@ fn marks(repo: &Repo, label: &str) -> Vec<(String, String)> {
         .collect()
 }
 
-/// The hook `hook` reads `json` on stdin.
-fn hook(repo: &Repo, hook: &str, json: serde_json::Value) -> std::process::Output {
-    let o = repo.run(&repo.path(), &[hook], &[], &json.to_string());
+/// The prompt hook reads `json` on stdin.
+fn hook(repo: &Repo, json: serde_json::Value) -> std::process::Output {
+    let o = support::prompt(repo, &repo.path(), &[], &json.to_string());
     assert!(o.status.success(), "{}", err(&o));
     o
 }
@@ -122,7 +122,7 @@ fn prompt_writes_the_prompt_as_a_prompt_mark_on_the_sessions_trail() {
     let repo = Repo::new();
     let hook = |session: &str, prompt: &str| {
         let json = serde_json::json!({"session_id": session, "prompt": prompt}).to_string();
-        repo.run(&repo.path(), &["prompt"], &[], &json)
+        support::prompt(&repo, &repo.path(), &[], &json)
     };
     let o = hook("s1", "before any trail");
     assert!(o.status.success(), "{}", err(&o));
@@ -130,7 +130,6 @@ fn prompt_writes_the_prompt_as_a_prompt_mark_on_the_sessions_trail() {
     let trail = start(&repo, "s1", "the trail");
     let o = hook("s1", "make it blue\nand more");
     assert!(o.status.success(), "{}", err(&o));
-    assert_eq!(out(&o).trim().len(), 64, "{}", out(&o));
     let step = add(&repo, Some("s1"), "a step");
     let o = repo.run(&repo.path(), &["step", "start", &step[..8]], &[], "");
     assert!(o.status.success(), "{}", err(&o));
@@ -157,7 +156,6 @@ fn a_trail_asked_twice_is_reached() {
     let trail = &written[1];
     hook(
         &repo,
-        "prompt",
         serde_json::json!({"session_id": "s1", "prompt": "and more"}),
     );
     support::finish(&repo, &written[0][..8]);
@@ -231,7 +229,7 @@ fn the_prompt_hook_names_the_working_step() {
     let repo = Repo::new();
     let hook = |prompt: &str| {
         let json = serde_json::json!({"session_id": "s1", "prompt": prompt}).to_string();
-        repo.run(&repo.path(), &["prompt"], &[], &json)
+        support::prompt(&repo, &repo.path(), &[], &json)
     };
     let trail = start(&repo, "s1", "the trail");
     let o = hook("first");
@@ -276,7 +274,7 @@ fn the_prompt_hook_names_the_done_steps() {
         assert!(o.status.success(), "{}", err(&o));
     }
     let json = serde_json::json!({"session_id": "s1", "prompt": "make them red"}).to_string();
-    let o = repo.run(&repo.path(), &["prompt"], &[], &json);
+    let o = support::prompt(&repo, &repo.path(), &[], &json);
     assert!(o.status.success(), "{}", err(&o));
     assert_eq!(
         err(&o).lines().collect::<Vec<_>>(),
@@ -325,7 +323,7 @@ fn a_later_prompt_with_no_open_trail_hints_at_todays_trails() {
     let repo = Repo::new();
     let hook = |session: &str| {
         let json = serde_json::json!({"session_id": session, "prompt": "Add a filter"});
-        let o = repo.run(&repo.path(), &["prompt"], &[], &json.to_string());
+        let o = support::prompt(&repo, &repo.path(), &[], &json.to_string());
         assert!(o.status.success(), "{}", err(&o));
         err(&o)
     };
@@ -357,7 +355,7 @@ fn prompt_skips_a_harness_message() {
         "<agent-message from=\"a1\">\nThe report.\n</agent-message>",
     ] {
         let json = serde_json::json!({"session_id": "s1", "prompt": prompt}).to_string();
-        let o = repo.run(&repo.path(), &["prompt"], &[], &json);
+        let o = support::prompt(&repo, &repo.path(), &[], &json);
         assert!(o.status.success(), "{}", err(&o));
         assert_eq!(out(&o), "", "{prompt}");
         assert_eq!(err(&o), "", "{prompt}");
@@ -372,7 +370,7 @@ fn a_prompt_with_no_open_trail_asks_for_the_past_agent() {
     let repo = Repo::new();
     let hook = |prompt: &str| {
         let json = serde_json::json!({"session_id": "s9", "prompt": prompt}).to_string();
-        let o = repo.run(&repo.path(), &["prompt"], &[], &json);
+        let o = support::prompt(&repo, &repo.path(), &[], &json);
         assert!(o.status.success(), "{}", err(&o));
         assert_eq!(out(&o), "");
         err(&o)
@@ -416,7 +414,7 @@ fn a_session_asks_for_the_past_agent_once_until_a_compaction() {
     );
     assert!(o.status.success(), "{}", err(&o));
     let hook = |json: serde_json::Value| {
-        let o = repo.run(&repo.path(), &["prompt"], &[], &json.to_string());
+        let o = support::prompt(&repo, &repo.path(), &[], &json.to_string());
         assert!(o.status.success(), "{}", err(&o));
         assert_eq!(out(&o), "");
         err(&o)
@@ -483,7 +481,6 @@ fn prompt_takes_the_conversation_id_first() {
     let trail = start(&repo, "c1", "the trail");
     hook(
         &repo,
-        "prompt",
         serde_json::json!({"conversation_id": "c1", "session_id": "c9", "prompt": "make it blue"}),
     );
     assert_eq!(
@@ -528,7 +525,7 @@ fn a_first_prompt_that_names_its_step_skips_the_past_agent() {
     let ask = add(&repo, Some("s1"), "the trail");
     let said = format!("Fix it. celis step {}", &ask[..8]);
     let json = serde_json::json!({"session_id": "w1", "prompt": said});
-    let o = repo.run(&repo.path(), &["prompt"], &[], &json.to_string());
+    let o = support::prompt(&repo, &repo.path(), &[], &json.to_string());
     assert!(o.status.success(), "{}", err(&o));
     assert_eq!(out(&o), "");
     assert!(!err(&o).contains("celis:past"), "{}", err(&o));

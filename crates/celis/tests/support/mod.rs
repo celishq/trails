@@ -583,3 +583,11 @@ pub fn tiny_model(repo: &Repo) {
     BertModel::load(vb, &serde_json::from_str::<Config>(config).unwrap()).unwrap();
     map.save(folder.join("model.safetensors")).unwrap();
 }
+
+/// What the prompt hook gives for `json` in `folder`, through `celis hook ask claude`: the note the agent
+/// reads, moved to stderr, and nothing on stdout.
+pub fn prompt(repo: &Repo, folder: &Path, env: &[(&str, &str)], json: &str) -> Output {
+    let mut o = repo.run(folder, &["hook", "ask", "claude"], env, json);
+    o.stderr = std::mem::take(&mut o.stdout);
+    o
+}

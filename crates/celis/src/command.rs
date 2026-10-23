@@ -101,7 +101,6 @@ impl Command {
             "issue" => self.issue(args, out),
             "link" => self.link(args, out, &self.project()),
             "unlink" => self.unlink(args, out, &self.project()),
-            "prompt" => self.prompt(args, out, err, &self.project()),
             "hook" => self.hook(args, out),
             "auth" => self.auth(args, out, err),
             "setup" => self.setup(args, out, err),

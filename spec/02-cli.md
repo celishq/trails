@@ -39,7 +39,6 @@ celis step done <id> [--changed <text>] [--as-planned] [--pitfall <text>] -- <pr
 celis step drop <id> -- <reason>                      end a step, a done trail or a rule no longer wanted
 celis step edit <id> [--at <place>]... [--check <command>] [-- <text>]
                                                        give a step a new title, places or check
-celis prompt                                          a person's prompt, from a hook
 celis hook start <agent> <plugin folder>              what an agent reads at a session start
 celis hook ask <agent>                                a person's prompt, and what the agent reads on it
 celis auth login                                      keep the phrase stdin gives
@@ -98,7 +97,7 @@ celis decide --path "**/prices*.py" -- "When you change prices: keep them in cen
 - A command that writes records MUST print the id of each, its main record first.
 - With `--json`, a command but `grep` MUST print one JSON object a line, and nothing else, to stdout. A
   printed id is `{"id"}`.
-- Only `decide`, `name`, `step`, `prompt` and `hook ask` MAY write a record. A command that refuses MUST write nothing.
+- Only `decide`, `name`, `step` and `hook ask` MAY write a record. A command that refuses MUST write nothing.
 - A command MUST NOT ask a question, but `auth login` and `setup` on a terminal.
 - A command MUST exit 0 when done, 2 on a usage error, and 1 on any other error.
 - An error MUST be named `usage`, `no-decision`, `no-trail`, `no-step`, `closed`, `open-steps`,
@@ -212,7 +211,7 @@ celis names --limit 20
 
 ## Prompt
 
-Each agent's hooks give their JSON to `prompt`.
+Each agent's hooks give `hook` the JSON of a prompt or of a session start.
 
 ```
 {"session_id", "prompt"}                 a prompt; Cursor names the session `conversation_id`
@@ -221,18 +220,10 @@ Each agent's hooks give their JSON to `prompt`.
 
 **Rules**
 
-- `prompt` MUST read the hook's JSON on stdin, with `conversation_id` in place of `session_id` when it
-  has one.
-- On a prompt, it MUST write it as CIP-04 "Sessions" states, and print the record's id. On a compaction,
-  it MUST write no record and print nothing.
-- A prompt that names a step with `celis step <id>` is a task for that step. With no open trail, `prompt`
+- `hook` MUST read the session from `conversation_id` when the JSON has one, else from `session_id`.
+- On a prompt, it MUST write it as CIP-04 "Sessions" states. On a compaction, it MUST write no record.
+- A prompt that names a step with `celis step <id>` is a task for that step. With no open trail, `hook`
   MUST NOT ask for the past agent on it.
-
-**Examples**
-
-```
-echo '{"session_id": "95e9be99", "prompt": "Use the shared Badge."}' | celis prompt
-```
 
 ## Rules
 
@@ -280,7 +271,7 @@ antigravity     {"injectSteps": [{"ephemeralMessage": "<text>"}]}
 
 **Rules**
 
-- `hook` MUST read the hook's JSON on stdin, as `prompt` does, and act on it as `prompt` does. `hook ask`
+- `hook` MUST read the hook's JSON on stdin, and act on it as "Prompt" states. `hook ask`
   MUST act in the folder the JSON names in `cwd`, else in the first of `workspace_roots`.
 - `hook start` MUST read the card from `card.md` and the plugin's version from `.claude-plugin/plugin.json`
   in `<plugin folder>`.

@@ -304,7 +304,7 @@ pub const VERBS: &[Verb] = &[
             ("<text>", "What went wrong"),
         ],
         examples: &[
-            "celis issue -- \"celis prompt fails in each Cursor session\"",
+            "celis issue -- \"celis hook ask fails in each Cursor session\"",
             "celis issue 3fa2c1d0 -- \"The tree shows the step as open after done.\"",
         ],
     },
@@ -385,13 +385,6 @@ pub const VERBS: &[Verb] = &[
         examples: &["celis tree 3fa2c1d0 --full", "celis tree --all"],
     },
     Verb {
-        command: "prompt",
-        usage: &["celis prompt"],
-        summary: "Read a hook's JSON from stdin, and record the prompt on the open trail of its session. The plugin runs this on each prompt.",
-        args: &[],
-        examples: &["celis prompt < hook.json"],
-    },
-    Verb {
         command: "hook start",
         usage: &["celis hook start <agent> <plugin folder>"],
         summary: "Read a session start hook's JSON from stdin, and print what the agent reads: the card, the named trails, and a notice when celis and the plugin differ in version. The plugin runs this.",
@@ -404,7 +397,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "hook ask",
         usage: &["celis hook ask <agent>"],
-        summary: "Read a prompt hook's JSON from stdin, record the prompt as `celis prompt` does, and print the note the agent reads. The plugin runs this on each prompt.",
+        summary: "Read a prompt hook's JSON from stdin, record the prompt on the open trail of its session, and print the note the agent reads. The plugin runs this on each prompt.",
         args: &[("<agent>", "claude, codex, cursor, gemini or antigravity")],
         examples: &["celis hook ask codex < hook.json"],
     },

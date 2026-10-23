@@ -51,7 +51,7 @@ impl Command {
     /// The card, where the plugin's files are, the named trails and a version notice; a compaction lets
     /// the session ask for the past agent again.
     fn start(&self, agent: &str, json: &Value, root: &Path) -> String {
-        let _ = self.act_on(json, &mut std::io::sink(), &mut std::io::sink());
+        let _ = self.act_on(json, &mut std::io::sink());
         let card = std::fs::read_to_string(root.join("card.md")).unwrap_or_default();
         let mut text = format!(
             "How to do an ask with the celis plugin:\n{}\n\n",
@@ -109,7 +109,7 @@ impl Command {
             folder,
         };
         let mut note = Vec::new();
-        if here.act_on(json, &mut std::io::sink(), &mut note).is_err() {
+        if here.act_on(json, &mut note).is_err() {
             return String::new();
         }
         let note = String::from_utf8_lossy(&note).trim_end().to_string();

@@ -196,7 +196,7 @@ fn prompt_asks_to_link_a_project_whose_folder_is_not_linked() {
     let hook = |session: &str| {
         let json =
             serde_json::json!({"session_id": session, "prompt": "Fix the cart."}).to_string();
-        repo.run(&repo.path(), &["prompt"], &[], &json)
+        support::prompt(&repo, &repo.path(), &[], &json)
     };
     let first = err(&hook("s1"));
     assert!(first.contains("celis:past"), "{first}");
@@ -222,7 +222,7 @@ fn prompt_does_not_ask_to_link_a_project_with_no_folder() {
     let repo = Repo::new();
     run(&repo, &["decide", "--", "Keep prices in cents."]);
     let json = serde_json::json!({"session_id": "s1", "prompt": "Fix the cart."}).to_string();
-    let said = err(&repo.run(&repo.path(), &["prompt"], &[], &json));
+    let said = err(&support::prompt(&repo, &repo.path(), &[], &json));
     assert!(!said.contains("celis link"), "{said}");
 }
 
@@ -257,7 +257,7 @@ fn prompt_with_no_store_asks_to_link() {
     let repo = Repo::new();
     std::fs::create_dir_all(linked(&repo)).unwrap();
     let json = serde_json::json!({"session_id": "s1", "prompt": "Fix the cart."}).to_string();
-    let said = err(&repo.run(&repo.path(), &["prompt"], &[], &json));
+    let said = err(&support::prompt(&repo, &repo.path(), &[], &json));
     assert!(said.contains("celis link"), "{said}");
     assert!(!repo.store().exists());
 }
