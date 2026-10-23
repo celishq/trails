@@ -1,19 +1,13 @@
 //! `celis search`: the rules and steps most alike in meaning to a text.
 
-mod encoder;
-mod gemma;
-mod index;
-mod model;
 mod setup;
-mod vectors;
 
 use super::view::kind::Kind;
 use super::view::row::Row;
 use super::view::View;
 use super::{Args, Command};
 use crate::failure::Failure;
-use index::Index;
-use model::Model;
+use celis_search::{Index, Model};
 use serde_json::json;
 use std::collections::HashSet;
 use std::io::{IsTerminal, Write};

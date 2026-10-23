@@ -14,6 +14,10 @@ pub(crate) mod report;
 mod review;
 mod rule;
 mod rules;
+#[cfg(feature = "search")]
+mod search;
+#[cfg(not(feature = "search"))]
+#[path = "command/search/off.rs"]
 mod search;
 mod stats;
 mod step;

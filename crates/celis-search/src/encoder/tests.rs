@@ -1,5 +1,5 @@
 use super::Encoder;
-use crate::command::search::model::Model;
+use crate::model::Model;
 
 /// Compares each model in `$CELIS_TEST_MODELS/<id>` with the document vectors of
 /// `$CELIS_TEST_MODELS/ref.json`; run with `--ignored`.

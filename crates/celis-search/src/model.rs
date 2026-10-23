@@ -12,13 +12,13 @@ pub(crate) enum Architecture {
 }
 
 /// A model `setup` can download from Hugging Face at a pinned revision, and how `search` uses it.
-pub(crate) struct Model {
+pub struct Model {
     pub id: &'static str,
     pub repo: &'static str,
     pub revision: &'static str,
     /// Each file with its sha256.
     pub files: &'static [(&'static str, &'static str)],
-    pub architecture: Architecture,
+    pub(crate) architecture: Architecture,
     /// The size its vectors are cut to.
     pub dimensions: usize,
     pub query: &'static str,
@@ -31,7 +31,7 @@ pub(crate) struct Model {
 }
 
 /// Every model, the recommended one first.
-pub(crate) const MODELS: &[Model] = &[
+pub const MODELS: &[Model] = &[
     Model {
         id: "embeddinggemma",
         repo: "unsloth/embeddinggemma-300m",

@@ -8,7 +8,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 
 /// The chosen model, loaded, with the file of the vectors it has read.
-pub(crate) struct Index {
+pub struct Index {
     encoder: Encoder,
     vectors: Vectors,
     file: PathBuf,

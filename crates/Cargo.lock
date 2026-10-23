@@ -273,6 +273,7 @@ dependencies = [
  "candle-nn",
  "candle-transformers",
  "celis-nostr",
+ "celis-search",
  "celis-trails",
  "libc",
  "notify",
@@ -281,7 +282,6 @@ dependencies = [
  "serde_json",
  "sha2",
  "tempfile",
- "tokenizers 0.23.2",
  "unicode-width",
 ]
 
@@ -304,6 +304,21 @@ dependencies = [
  "tracing",
  "tungstenite",
  "ureq",
+]
+
+[[package]]
+name = "celis-search"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "candle-core",
+ "candle-nn",
+ "candle-transformers",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "tokenizers 0.23.2",
 ]
 
 [[package]]

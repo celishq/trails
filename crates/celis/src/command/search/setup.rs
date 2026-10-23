@@ -1,9 +1,9 @@
 //! `celis setup`: the model that `search` uses.
 
-use super::model::{Model, MODELS};
 use crate::command::{put, Args, Command};
 use crate::failure::Failure;
 use anyhow::anyhow;
+use celis_search::{Model, MODELS};
 use sha2::{Digest, Sha256};
 use std::io::{BufRead, IsTerminal, Write};
 use std::path::Path;
