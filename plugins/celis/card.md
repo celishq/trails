@@ -1,7 +1,7 @@
 celis keeps each ask as a trail: its steps, their proofs, and the rules that later work must keep.
 
 ```
-celis rules [<file>]... [--diff] [--all] [--page <n>]
+celis rules [<file>]... [--diff]
 celis grep <grep option>... "<pattern>"
 celis decide [--scope at:<place> | trail:<id> | me] [--replaces <id>] [--path <glob>]... [--situation] [--promoted] [--project <id>] -- "<rule>"
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>] [--check <command>] [--new] [--session <id>] [--project <id>] -- "<title>"

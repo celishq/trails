@@ -342,19 +342,16 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "rules",
-        usage: &["celis rules [<file>]... [--diff] [--all] [--page <n>]"],
-        summary: "Show every rule of the files you will read or change, the most important first. With --all, show every rule, a page at a time. With no file, show the words the rules use, the most used first. Changes nothing.",
+        usage: &["celis rules [<file>]... [--diff]"],
+        summary: "Show every rule of the files you will read or change, the most important first. With no file, show the words the rules use, the most used first. Changes nothing.",
         args: &[
             ("<file>", "A file you will read or change"),
             ("--diff", "Each file git shows changed or new"),
-            ("--all", "Every rule, not only those of some files"),
-            ("--page", "Page <n> of --all; the first when not given"),
         ],
         examples: &[
             "celis rules",
             "celis rules shelf/prices.py",
             "celis rules --diff",
-            "celis rules --all --page 2",
         ],
     },
     Verb {
@@ -431,6 +428,16 @@ pub const VERBS: &[Verb] = &[
         summary: "Show your recovery phrase, so you can add it to the Celis app or another computer.",
         args: &[],
         examples: &["celis auth phrase"],
+    },
+    Verb {
+        command: "past",
+        usage: &["celis past [--page <n>] -- <ask>"],
+        summary: "Show what the past agent reads at a new ask: the rules of this project, 50 a page, and on the first page the trails most alike in meaning to the ask, with their steps. Changes nothing.",
+        args: &[
+            ("--page", "Page <n> of the rules; the first when not given"),
+            ("<ask>", "The ask, in your words"),
+        ],
+        examples: &["celis past -- \"make retrieval faster\"", "celis past --page 2"],
     },
     Verb {
         command: "setup",

@@ -28,14 +28,6 @@ impl Command {
             None => super::put(out, &found),
         }
     }
-
-    /// Prints that `celis past` is gone, for a plugin from before. Writes no record.
-    pub(crate) fn past(&self, out: &mut dyn Write) -> Result<(), Failure> {
-        super::put(
-            out,
-            "celis past is gone: update the celis plugin, whose past.md searches the trails with celis grep.",
-        )
-    }
 }
 
 /// What `grep` prints for `words` with `view` on its stdin; none when it exits 1, as it does when no line

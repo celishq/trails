@@ -316,25 +316,6 @@ fn grep_prints_numbered_lines_under_their_trail() {
     );
 }
 
-/// `past` writes nothing and prints that it is gone and that the plugin's `past.md` searches with
-/// `grep`.
-#[test]
-fn past_says_it_is_gone() {
-    let repo = Repo::new();
-    let o = cli(&repo, &["past", "--at", "src/a.rs"]);
-    assert!(o.status.success(), "{}", err(&o));
-    let text = out(&o);
-    assert!(
-        text.starts_with("celis past is gone: update the celis plugin"),
-        "{text}"
-    );
-    assert!(
-        text.contains("past.md searches the trails with celis grep"),
-        "{text}"
-    );
-    assert!(!repo.store().exists());
-}
-
 /// With `-q`, a match prints nothing, and no match still says so.
 #[test]
 fn grep_q_prints_nothing_on_a_match() {

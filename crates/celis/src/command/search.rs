@@ -59,6 +59,39 @@ impl Command {
         Ok(())
     }
 
+    /// The lines of the `n` trails most alike in meaning to `text`: each trail's own line, then its
+    /// steps and their changes; none when no model was set up.
+    pub(super) fn alike(
+        &self,
+        text: &str,
+        n: usize,
+        err: &mut dyn Write,
+    ) -> Result<Option<Vec<Row>>, Failure> {
+        let Some(model) = Model::chosen(&self.home()?) else {
+            return Ok(None);
+        };
+        let rows = self.searched()?;
+        let index = self.indexed(model, &rows, err)?;
+        let alike = index.alike(text)?;
+        let mut trails: Vec<(f32, &Row)> = rows
+            .iter()
+            .filter(|row| row.kind == Kind::Trail)
+            .filter_map(|row| Some((alike(&row.text)?, row)))
+            .collect();
+        trails.sort_by(|(a, _), (b, _)| b.total_cmp(a));
+        let all = match self.held()? {
+            true => View::of(&self.trails()?).into_rows(),
+            false => vec![],
+        };
+        let lines = trails.iter().take(n).flat_map(|(_, trail)| {
+            all.iter().filter(|row| {
+                row.trail.as_deref() == Some(trail.id.as_str())
+                    && matches!(row.kind, Kind::Trail | Kind::Step | Kind::Changed)
+            })
+        });
+        Ok(Some(lines.cloned().collect()))
+    }
+
     /// The rows `search` gives: each trail and step of every project, and each live rule in scope.
     fn searched(&self) -> Result<Vec<Row>, Failure> {
         if !self.held()? {

@@ -16,8 +16,8 @@ read. What a command shows a person is not part of it.
 ```
 celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--situation] [--promoted] [--project <id>] -- <text>
                                                        a rule, in its scope
-celis rules [<file>]... [--diff] [--all] [--page <n>]
-                                                       the rules of some files, or every rule
+celis rules [<file>]... [--diff]
+                                                       the rules of some files
 celis name <trail id> <name>                          give a trail a name
 celis names [--limit <n>]                             the named trails, most used first
 celis tree [<id>] [--graph] [--full] [--all] [--demo]
@@ -26,6 +26,7 @@ celis grep <grep option>... <pattern>                 every trail, through the s
 celis search [--kind <kind>] [--limit <n>] -- <text>
                                                        the rules and steps most alike in meaning
 celis setup [--model <model>]                         the model that search uses
+celis past [--page <n>] -- <ask>                      what the past agent reads at a new ask
 celis stats [<id>] [--demo]                           what later work reused
 celis report <id>... [--demo]                         the trails as Markdown, for a pull request
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
@@ -237,15 +238,13 @@ echo '{"session_id": "95e9be99", "prompt": "Use the shared Badge."}' | celis pro
 ## Rules
 
 `rules` gives the live rules in scope in the working folder's project (CIP-05) that some files match
-(CIP-05, "Triggers"); with `--all`, every live rule in scope. With no file, it gives the words of those
-rules.
+(CIP-05, "Triggers"). With no file, it gives the words of those rules.
 
 ```
 line     <id8> <scope> <rule>
 json     {"id", "scope", "content"}
 index    <n> live rules. Their words, by how many rules use each:
          <word> <n>, …
-page     celis: page <n> of <pages>; read each next page with celis rules --all --page <n>.
 ```
 
 **Rules**
@@ -254,9 +253,6 @@ page     celis: page <n> of <pages>; read each next page with celis rules --all 
   `git ls-files --cached --others --exclude-standard -- <folder>` gives in the project. `--diff` MUST count as each file that `git diff
   --name-only HEAD` and `git ls-files --others --exclude-standard` give in the working folder, and that
   exists.
-- With `--all`, `rules` MUST print each live rule in scope as its `line`, in pages of at most 24,000
-  bytes, page `--page` or else the first, and end a page that has a next one with the `page` line. It
-  MUST refuse a `--page` that is no page as a usage error.
 - With no file, `rules` MUST print the index of the live rules in scope: each word that
   they use before their "because", with how many use it, most used first.
 - A rule with no trigger and no `at:<place>` scope MUST NOT come.
@@ -270,7 +266,6 @@ page     celis: page <n> of <pages>; read each next page with celis rules --all 
 celis rules
 celis rules shelf/prices.py
 celis rules --diff
-celis rules --all --page 2
 ```
 
 ## Hooks
@@ -401,4 +396,33 @@ list     <model> <download size> <speed> <license>[ recommended] <note>
 celis setup
 celis setup --model embeddinggemma
 celis setup --model none
+```
+
+## Past
+
+`past` gives what the plugin's `past.md` reads at a new ask: the live rules in scope in the working
+folder's project (CIP-05), and on the first page the trails most alike in meaning to the ask, by the model
+that `setup` chose.
+
+```
+page     rules, page <n> of <pages>
+           <rules line>                 each rule of the page, as `rules` prints it
+past     past                           on the first page
+           <grep view line>             each line of a trail most alike: its own, its steps, their changes
+           celis search has no model: find past asks with celis grep.      with no model
+next     celis: read pages 2 to <pages> with celis past --page <n>, all in one message.
+```
+
+**Rules**
+
+- A page MUST hold at most 50 rules. `past` MUST print page `--page`, else the first, and MUST refuse a
+  `--page` that is no page as a usage error.
+- The first page MUST show the lines of the 3 trails most alike, the most alike first, and end with the
+  `next` line when there are more pages. It MUST refuse an empty ask as a usage error.
+
+**Examples**
+
+```
+celis past -- "make retrieval faster"
+celis past --page 2
 ```

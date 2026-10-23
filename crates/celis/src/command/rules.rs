@@ -11,13 +11,9 @@ use serde_json::json;
 use std::io::Write;
 use std::path::Path;
 
-/// The most bytes of rule lines one page of `rules --all` holds.
-const PAGE: usize = 24_000;
-
 impl Command {
-    /// Prints every live rule in scope that the files of `args` match, by `rank`; with `--all`, every
-    /// live rule in scope, a page at a time. With no file, prints the index of the live rules in scope.
-    /// Writes no record.
+    /// Prints every live rule in scope that the files of `args` match, by `rank`.
+    /// With no file, prints the index of the live rules in scope. Writes no record.
     pub(crate) fn rules(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let mut files = args.words[1..].to_vec();
         if args.diff {
@@ -29,12 +25,6 @@ impl Command {
         let project = self.project();
         let trails = self.trails()?;
         let live = trails.rules().live(&project.anchor.project).into_iter();
-        if args.all {
-            let lines: Vec<String> = live
-                .map(|(note, rule)| crate::text::line::rule(note, &rule))
-                .collect();
-            return page(&lines, Args::number("--page", &args.page)?, out);
-        }
         if files.is_empty() && !args.diff {
             let index = Index::of(live.map(|(_, rule)| rule.content));
             return super::put(out, &index.text());
@@ -55,42 +45,6 @@ impl Command {
         }
         Ok(())
     }
-}
-
-/// Prints the page `asked` of `lines`, the first when none is asked, and the line that names the next
-/// page when there is one.
-fn page(lines: &[String], asked: Option<usize>, out: &mut dyn Write) -> Result<(), Failure> {
-    let mut pages: Vec<Vec<&String>> = vec![vec![]];
-    let mut size = 0;
-    for line in lines {
-        if size + line.len() > PAGE && !pages.last().is_some_and(Vec::is_empty) {
-            pages.push(vec![]);
-            size = 0;
-        }
-        size += line.len() + 1;
-        pages.last_mut().expect("a page").push(line);
-    }
-    let n = match asked {
-        None => 1,
-        Some(n) if n <= pages.len() => n,
-        Some(_) => {
-            return Err(Failure::usage(format!(
-                "--page takes a number from 1 to {}",
-                pages.len()
-            )))
-        }
-    };
-    for line in &pages[n - 1] {
-        super::put(out, line)?;
-    }
-    if n < pages.len() {
-        let next = format!(
-            "celis: page {n} of {}; read each next page with celis rules --all --page <n>.",
-            pages.len()
-        );
-        super::put(out, &next)?;
-    }
-    Ok(())
 }
 
 /// Where a rule that fits a file by `fit` ranks, first first: made by a correction, then the rest;

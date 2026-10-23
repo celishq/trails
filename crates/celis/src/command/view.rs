@@ -60,6 +60,7 @@ impl View {
         }
     }
 
+    #[cfg_attr(not(feature = "search"), allow(dead_code))]
     pub fn into_rows(self) -> Vec<Row> {
         self.rows
     }
