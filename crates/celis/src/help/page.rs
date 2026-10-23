@@ -19,7 +19,6 @@ const SECTIONS: &[(&str, &str, &[&str])] = &[
             "search <text>",
             "rules [<file>]...",
             "stats [<id>]",
-            "report <id>...",
         ],
     ),
     (
@@ -62,7 +61,6 @@ const PHRASES: &[(&str, &str)] = &[
     ("setup", "Choose and download the model that search uses"),
     ("rules", "Show the rules of the files you will touch"),
     ("stats", "Show what later work reused, and how work went"),
-    ("report", "Show trails as Markdown for a pull request"),
     ("decide", "Record a rule that later work must keep"),
     (
         "link",

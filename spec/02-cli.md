@@ -19,14 +19,13 @@ celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--situation
 celis rules [<file>]... [--diff]
                                                        the rules of some files
 celis name [<trail id> <name>] [--limit <n>]          name a trail; with none, the named trails
-celis tree [<id>] [--graph] [--full] [--all] [--demo]
+celis tree [<id>]... [--graph] [--full] [--all] [--markdown] [--demo]
                                                        a trail and its steps; again on each change
 celis grep <grep option>... <pattern>                 every trail, through the system grep
 celis search [--kind <kind>] [--limit <n>] -- <text>
                                                        the rules and steps most alike in meaning
 celis setup [--model <model>]                         the model that search uses
 celis stats [<id>] [--demo]                           what later work reused
-celis report <id>... [--demo]                         the trails as Markdown, for a pull request
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
 celis link [<folder>] [--off]                         keep this project's trails in a folder, or stop
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>]... [--check <command>] [--new] [--session <id>] [--project <id>] -- <text>

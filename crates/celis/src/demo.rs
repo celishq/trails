@@ -64,9 +64,9 @@ impl Command {
             };
             match args.words[0].as_str() {
                 "stats" => command.stats(&args, out),
-                "report" => {
+                _ if args.markdown => {
                     args.words.push(tier);
-                    command.report(&args, out)
+                    command.tree(&args, out)
                 }
                 _ => command.tree(&args, out),
             }

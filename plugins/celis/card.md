@@ -10,7 +10,7 @@ celis step done <id> [--changed "<what differs>"] [--as-planned] [--pitfall "<ru
 celis step drop <id> -- "<why>"
 celis step edit <id> [--at <place>]... [--check <command>] [-- "<new title>"]
 celis name [<trail id> <name>] [--limit <n>]
-celis tree [<id>] [--graph] [--full] [--all] [--demo]
+celis tree [<id>]... [--graph] [--full] [--all] [--markdown] [--demo]
 ```
 
 1. At a new ask, run the `celis:past` agent when celis asks for it, even for a simple ask: it brings

@@ -96,7 +96,6 @@ impl Command {
             "grep" => self.grep(&self.args[1..], out),
             "search" => self.search(args, out, err),
             "stats" => self.stats(args, out),
-            "report" => self.report(args, out),
             "issue" => self.issue(args, out),
             "link" => self.link(args, out, &self.project()),
             "hook" => self.hook(args, out),

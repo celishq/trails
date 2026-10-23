@@ -286,16 +286,6 @@ pub const VERBS: &[Verb] = &[
         examples: &["celis stats", "celis stats 9b0e11aa", "celis stats --demo"],
     },
     Verb {
-        command: "report",
-        usage: &["celis report <id>... [--demo]"],
-        summary: "Show the trail of each step as Markdown for a pull request: a table of the trail, a table of its steps with their proofs, then their places and checks, and its rules. On a terminal, show a card for each trail, and press m to copy the Markdown. Changes nothing.",
-        args: &[
-            ("<id>", "A step id, or its first 4 or more characters"),
-            ("--demo", "Show a sample trail"),
-        ],
-        examples: &["celis report 3fa2c1d0", "celis report 3fa2c1d0 9e717e6f", "celis report --demo"],
-    },
-    Verb {
         command: "issue",
         usage: &["celis issue [<id>]... [-- <text>]"],
         summary: "Write a problem report for the celis team as Markdown. It includes your text, the version, system, project, and store, the end of the log, and the trail of each step you name. Changes nothing.",
@@ -363,16 +353,17 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "tree",
-        usage: &["celis tree [<id>] [--graph] [--full] [--all] [--demo]"],
-        summary: "Show a trail with its state, rules, and steps. With no id, show the active trails and today's trails of every project.",
+        usage: &["celis tree [<id>]... [--graph] [--full] [--all] [--markdown] [--demo]"],
+        summary: "Show a trail with its state, rules, and steps. With no id, show the active trails and today's trails of every project. With --markdown, show the trail of each id as Markdown for a pull request; on a terminal, a card for each trail, and press m to copy the Markdown.",
         args: &[
             ("<id>", "A step id, or its first 4 or more characters"),
             ("--graph", "Show today's trails as live graphs of cards"),
             ("--full", "Show each step's proof, grade, and reason"),
             ("--all", "Show every trail of every project, by day"),
+            ("--markdown", "Show the trails as Markdown for a pull request"),
             ("--demo", "Show sample trails in every state"),
         ],
-        examples: &["celis tree 3fa2c1d0 --full", "celis tree --all"],
+        examples: &["celis tree 3fa2c1d0 --full", "celis tree --all", "celis tree 3fa2c1d0 9e717e6f --markdown"],
     },
     Verb {
         command: "hook start",

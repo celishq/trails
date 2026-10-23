@@ -14,6 +14,7 @@ Read
   ├ --graph           Show today's trails as live graphs of cards
   ├ --full            Show each step's proof, grade, and reason
   ├ --all             Show every trail of every project, by day
+  ├ --markdown        Show the trails as Markdown for a pull request
   └ --demo            Show sample trails in every state
 
   grep <pattern>      Search every trail with grep
@@ -26,9 +27,6 @@ Read
 
   stats [<id>]        Show what later work reused, and how work went
   └ --demo            Show four weeks of sample trails
-
-  report <id>...      Show trails as Markdown for a pull request
-  └ --demo            Show a sample trail
 
 Record work · your agents run these
   step add            Add a step to a trail, or start a new trail
