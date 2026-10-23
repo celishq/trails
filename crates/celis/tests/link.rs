@@ -226,15 +226,15 @@ fn prompt_does_not_ask_to_link_a_project_with_no_folder() {
     assert!(!said.contains("celis link"), "{said}");
 }
 
-/// `unlink` takes the link out of `$CELIS_HOME/links` and keeps the folder; then nothing is
+/// `link --off` takes the link out of `$CELIS_HOME/links` and keeps the folder; then nothing is
 /// written to the folder or read from it.
 #[test]
 fn unlink_stops_the_sync_and_keeps_the_folder() {
     let repo = Repo::new();
     run(&repo, &["link"]);
-    let shown = run(&repo, &["unlink"]);
+    let shown = run(&repo, &["link", "--off"]);
     assert_eq!(shown.trim(), ".celis/trails · unlinked");
-    let json = run(&repo, &["unlink", "--json"]);
+    let json = run(&repo, &["link", "--off", "--json"]);
     let json: serde_json::Value = serde_json::from_str(json.trim()).unwrap();
     assert_eq!(
         json,
@@ -307,7 +307,7 @@ fn a_file_that_is_not_a_record_is_ignored() {
 }
 
 /// `link <folder>` links a folder outside the repo by its full path; records go to it and come from it,
-/// and `unlink <folder>` takes it out (`spec/01-records.md`, "Links").
+/// and `link <folder> --off` takes it out (`spec/01-records.md`, "Links").
 #[test]
 fn a_folder_outside_the_repo_links_by_its_full_path() {
     let repo = Repo::new();
@@ -327,7 +327,7 @@ fn a_folder_outside_the_repo_links_by_its_full_path() {
     let tree = repo.worktree("feat-a");
     let o = repo.run(&tree, &["decide", "--", "Round the price down."], &[], "");
     assert_eq!(ids(&folder).len(), 2, "{}", err(&o));
-    run(&repo, &["unlink", &place]);
+    run(&repo, &["link", &place, "--off"]);
     assert!(std::fs::read_to_string(repo.home().join("links"))
         .unwrap()
         .is_empty());

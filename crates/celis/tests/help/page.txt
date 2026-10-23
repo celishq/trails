@@ -16,9 +16,6 @@ Read
   ├ --all             Show every trail of every project, by day
   └ --demo            Show sample trails in every state
 
-  names               Show the named trails, most used first
-  └ --limit <n>       Show the first <n> only
-
   grep <pattern>      Search every trail with grep
   search <text>       Find the rules and steps alike in meaning to a text
   ├ --kind <kind>     Only rule, step, or trail
@@ -63,10 +60,12 @@ Record work · your agents run these
   └ --project <id>    skill:<name>, or the id of a project in the store
 
   name <trail> <name> Name a trail, so other work can use it by its name
+  └ --limit <n>       Show the first <n> named trails only
 
 Set up
   link [<folder>]     Keep this project's trails in a folder to commit or share
-  unlink [<folder>]   Stop keeping this project's trails in a folder
+  └ --off             Stop keeping the trails in the folder
+
   auth login          Save a recovery phrase and use its account
   auth status         Show your account and where its phrase is kept
   auth phrase         Show your recovery phrase

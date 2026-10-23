@@ -310,17 +310,13 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "link",
-        usage: &["celis link [<folder>]"],
-        summary: "Keep this project's trails in a folder, and keep the folder in sync with the store. Use .celis/trails/ in the repo to commit them, or any folder, like a synced drive. Rules with the me scope stay private.",
-        args: &[("<folder>", "The folder (default: .celis/trails at the repo root)")],
-        examples: &["celis link", "celis link ~/Drive/celis/shop"],
-    },
-    Verb {
-        command: "unlink",
-        usage: &["celis unlink [<folder>]"],
-        summary: "Stop keeping this project's trails in a folder on this computer. The folder and its records aren't deleted.",
-        args: &[("<folder>", "The folder (default: .celis/trails at the repo root)")],
-        examples: &["celis unlink", "celis unlink ~/Drive/celis/shop"],
+        usage: &["celis link [<folder>] [--off]"],
+        summary: "Keep this project's trails in a folder, and keep the folder in sync with the store. Use .celis/trails/ in the repo to commit them, or any folder, like a synced drive. Rules with the me scope stay private. With --off, stop keeping them there; the folder and its records stay.",
+        args: &[
+            ("<folder>", "The folder (default: .celis/trails at the repo root)"),
+            ("--off", "Stop keeping the trails in the folder"),
+        ],
+        examples: &["celis link", "celis link ~/Drive/celis/shop", "celis link --off"],
     },
     Verb {
         command: "decide",
@@ -356,20 +352,14 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "name",
-        usage: &["celis name <trail id> <name>"],
-        summary: "Give a trail a name, so work in any project can use it: step add --uses <name> keeps its rules. The first trail with a name keeps it.",
+        usage: &["celis name [<trail id> <name>] [--limit <n>]"],
+        summary: "Give a trail a name, so work in any project can use it: step add --uses <name> keeps its rules. The first trail with a name keeps it. With no trail, show each named trail of every project, most used first.",
         args: &[
             ("<trail id>", "A trail id, or its first 4 or more characters"),
             ("<name>", "A lowercase letter, then lowercase letters, digits, and -"),
+            ("--limit <n>", "Show the first <n> named trails only"),
         ],
-        examples: &["celis name 3fa2c1d0 review"],
-    },
-    Verb {
-        command: "names",
-        usage: &["celis names [--limit <n>]"],
-        summary: "Show each named trail of every project, as its name, id, and title, most used first. Changes nothing.",
-        args: &[("--limit <n>", "Show the first <n> only")],
-        examples: &["celis names --limit 20"],
+        examples: &["celis name 3fa2c1d0 review", "celis name --limit 20"],
     },
     Verb {
         command: "tree",

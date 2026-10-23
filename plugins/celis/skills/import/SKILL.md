@@ -8,7 +8,7 @@ that uses it. The import is the ask: add no other ask for it.
 
 1. Read the file the person gives, a path or a URL. Its name is the `name` of its frontmatter, else a
    short noun: a lowercase letter, then lowercase letters, digits and `-`.
-2. Run `celis names`. When another trail holds the name, read it with `celis tree <its id> --full`. When
+2. Run `celis name`. When another trail holds the name, read it with `celis tree <its id> --full`. When
    it came from this file, go to step 6. Else ask the person for another name.
 3. Split the file into rules and steps:
    - A rule for each thing the work must keep or avoid: "When <what you see>: <what to do>, because

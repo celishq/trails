@@ -9,7 +9,7 @@ celis step start <id>
 celis step done <id> [--changed "<what differs>"] [--as-planned] [--pitfall "<rule>"] -- "<proof>"
 celis step drop <id> -- "<why>"
 celis step edit <id> [--at <place>]... [--check <command>] [-- "<new title>"]
-celis name <trail id> <name>
+celis name [<trail id> <name>] [--limit <n>]
 celis tree [<id>] [--graph] [--full] [--all] [--demo]
 ```
 

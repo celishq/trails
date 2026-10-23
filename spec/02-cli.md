@@ -18,8 +18,7 @@ celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--situation
                                                        a rule, in its scope
 celis rules [<file>]... [--diff]
                                                        the rules of some files
-celis name <trail id> <name>                          give a trail a name
-celis names [--limit <n>]                             the named trails, most used first
+celis name [<trail id> <name>] [--limit <n>]          name a trail; with none, the named trails
 celis tree [<id>] [--graph] [--full] [--all] [--demo]
                                                        a trail and its steps; again on each change
 celis grep <grep option>... <pattern>                 every trail, through the system grep
@@ -29,8 +28,7 @@ celis setup [--model <model>]                         the model that search uses
 celis stats [<id>] [--demo]                           what later work reused
 celis report <id>... [--demo]                         the trails as Markdown, for a pull request
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
-celis link [<folder>]                                 keep this project's trails in a folder
-celis unlink [<folder>]                               stop keeping them in a folder
+celis link [<folder>] [--off]                         keep this project's trails in a folder, or stop
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>]... [--check <command>] [--new] [--session <id>] [--project <id>] -- <text>
                                                        leave a step
 celis step start <id>                                 take up a step, and see the rules its plan links
@@ -191,6 +189,8 @@ celis name 9b0e11aa review
 
 ## Names
 
+`name` with no trail lists the named trails.
+
 ```
 line    <name> <trail id8> <the trail's title>
 json    {"name", "id", "title", "uses"}
@@ -200,13 +200,13 @@ json    {"name", "id", "title", "uses"}
 
 **Rules**
 
-- `names` MUST print one line for each named trail of every project, most `uses` first, then newest.
+- `name` with no trail MUST print one line for each named trail of every project, most `uses` first, then newest.
 - `--limit <n>` MUST print the first `<n>` lines only.
 
 **Examples**
 
 ```
-celis names --limit 20
+celis name --limit 20
 ```
 
 ## Prompt

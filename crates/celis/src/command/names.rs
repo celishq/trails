@@ -1,4 +1,4 @@
-//! `celis names`: the named trails, most used first.
+//! The named trails, most used first, that `celis name` lists with no trail.
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;

@@ -60,7 +60,7 @@ A project can keep its trails in `.celis/trails/`, so that git carries them to t
 folder, such as a synced drive. When celis says the project has trails this machine does not link, ask
 the person whether to link this project to celis. When the person wants to keep the trails in the repo
 or in a folder, tell them to run `celis link [<folder>]` in the project themselves. Never run
-`celis link` or `celis unlink` yourself, and never write in a linked folder.
+`celis link` yourself, and never write in a linked folder.
 
 ## Stop
 
