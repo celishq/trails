@@ -68,7 +68,7 @@ impl Command {
     }
 
     /// The view of the records `search` gives: every trail and step, and the live rules in scope.
-    fn searched(&self) -> Result<Searched, Failure> {
+    pub(super) fn searched(&self) -> Result<Searched, Failure> {
         if !self.held()? {
             return Ok(Searched::default());
         }
@@ -86,7 +86,7 @@ impl Command {
 
     /// The model `model` loaded, and its index with a vector for each record of `searched`, saved;
     /// on a terminal, the count of records indexed so far goes to `err`.
-    fn indexed(
+    pub(super) fn indexed(
         &self,
         model: &'static Model,
         searched: &Searched,
@@ -120,7 +120,7 @@ impl Command {
 
 /// The view, and the ids of the live rules in scope.
 #[derive(Default)]
-struct Searched {
+pub(super) struct Searched {
     view: View,
     rules: HashSet<String>,
 }

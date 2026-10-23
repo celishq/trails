@@ -15,6 +15,7 @@ mod review;
 mod rule;
 mod rules;
 mod search;
+mod setup;
 mod stats;
 mod step;
 pub(crate) mod tree;
@@ -100,6 +101,7 @@ impl Command {
             "prompt" => self.prompt(args, out, err, &self.project()),
             "hook" => self.hook(args, out),
             "auth" => self.auth(args, out, err),
+            "setup" => self.setup(args, out, err),
             "update" => self.update(args),
             "" => Err(Failure::usage("expected: celis <command>")),
             verb => Err(help::unknown(verb, verbs())),
