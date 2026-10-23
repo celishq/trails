@@ -7,8 +7,6 @@ use std::path::{Path, PathBuf};
 pub(crate) enum Architecture {
     /// Gemma 3 layers that see every token, mean pooling, then two dense layers.
     Gemma,
-    /// Qwen3 layers that see only earlier tokens, and the last token's state.
-    Qwen,
     /// BERT layers and mean pooling.
     Bert,
 }
@@ -69,34 +67,6 @@ pub(crate) const MODELS: &[Model] = &[
         license: "Gemma terms (https://ai.google.dev/gemma/terms)",
         recommended: true,
         note: "the best quality for its size, 100+ languages",
-    },
-    Model {
-        id: "qwen3",
-        repo: "Qwen/Qwen3-Embedding-0.6B",
-        revision: "97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3",
-        files: &[
-            (
-                "config.json",
-                "b5bf1f51fc45be473a54718cef92448d90a1be001bf9b9a44b8c7f10a19feaa9",
-            ),
-            (
-                "tokenizer.json",
-                "def76fb086971c7867b829c23a26261e38d9d74e02139253b38aeb9df8b4b50a",
-            ),
-            (
-                "model.safetensors",
-                "0437e45c94563b09e13cb7a64478fc406947a93cb34a7e05870fc8dcd48e23fd",
-            ),
-        ],
-        architecture: Architecture::Qwen,
-        dimensions: 256,
-        query: "Instruct: Given a task, retrieve the rules and past work that apply to it\nQuery:",
-        document: "",
-        size: "1.2 GB",
-        speed: "slow",
-        license: "Apache 2.0",
-        recommended: false,
-        note: "strong on code and many languages",
     },
     Model {
         id: "e5-small",

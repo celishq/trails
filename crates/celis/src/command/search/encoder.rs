@@ -1,6 +1,6 @@
 //! A model loaded from its folder, that turns texts into vectors.
 
-use super::decoder::{Config, Decoder, MAX_TOKENS};
+use super::gemma::{Config, Gemma, MAX_TOKENS};
 use super::model::{Architecture, Model};
 use anyhow::{anyhow, Result};
 use candle_core::{DType, Device, Tensor};
@@ -11,7 +11,7 @@ use tokenizers::Tokenizer;
 
 /// The layers of a loaded model.
 enum Network {
-    Decoder(Decoder),
+    Gemma(Gemma),
     Bert(BertModel),
 }
 
@@ -39,19 +39,12 @@ impl Encoder {
                 weights("model.safetensors")?,
                 &serde_json::from_str::<bert::Config>(&config)?,
             )?),
-            architecture => {
-                let main = weights("model.safetensors")?
-                    .rename_f(|n: &str| n.strip_prefix("model.").unwrap_or(n).to_string());
-                let dense = match architecture {
-                    Architecture::Gemma => vec![
-                        weights("2_Dense/model.safetensors")?,
-                        weights("3_Dense/model.safetensors")?,
-                    ],
-                    _ => vec![],
-                };
-                let config: Config = serde_json::from_str(&config)?;
-                Network::Decoder(Decoder::new(&config, architecture, main, &dense)?)
-            }
+            Architecture::Gemma => Network::Gemma(Gemma::new(
+                &serde_json::from_str::<Config>(&config)?,
+                weights("model.safetensors")?,
+                weights("2_Dense/model.safetensors")?,
+                weights("3_Dense/model.safetensors")?,
+            )?),
         };
         Ok(Encoder {
             model,
@@ -75,7 +68,7 @@ impl Encoder {
         let encoding = self.tokenizer.encode(text, true).map_err(|e| anyhow!(e))?;
         let ids = &encoding.get_ids()[..encoding.len().min(MAX_TOKENS)];
         let mut vector = match &self.network {
-            Network::Decoder(decoder) => decoder.vector(ids, &self.device)?,
+            Network::Gemma(gemma) => gemma.vector(ids, &self.device)?,
             Network::Bert(bert) => {
                 let ids = Tensor::new(ids, &self.device)?.unsqueeze(0)?;
                 let states = bert.forward(&ids, &ids.zeros_like()?, None)?;

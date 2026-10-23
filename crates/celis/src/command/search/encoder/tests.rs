@@ -10,11 +10,7 @@ fn each_real_model_matches_its_reference() {
     let reference: serde_json::Value =
         serde_json::from_str(&std::fs::read_to_string(root.join("ref.json")).unwrap()).unwrap();
     let texts: Vec<String> = serde_json::from_value(reference["texts"].clone()).unwrap();
-    for (id, name) in [
-        ("embeddinggemma", "gemma"),
-        ("qwen3", "qwen"),
-        ("e5-small", "e5"),
-    ] {
+    for (id, name) in [("embeddinggemma", "gemma"), ("e5-small", "e5")] {
         let model = Model::named(id).unwrap();
         let encoder = Encoder::load(model, &root.join(id)).unwrap();
         for (i, text) in texts.iter().enumerate() {

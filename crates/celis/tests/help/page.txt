@@ -73,7 +73,7 @@ Set up
   auth status         Show your account and where its phrase is kept
   auth phrase         Show your recovery phrase
   setup               Choose and download the model that search uses
-  └ --model <model>   embeddinggemma, qwen3, e5-small, or none
+  └ --model <model>   embeddinggemma, e5-small, or none
 
   update [<version>]  Update celis to the latest version, or to one you choose
   issue [<id>]...     Write a problem report for the celis team

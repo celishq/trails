@@ -381,7 +381,7 @@ celis search --kind rule --limit 10 -- "release for linux"
 `setup` chooses the model that `search` uses, downloads it, and builds its index.
 
 ```
-model    embeddinggemma | qwen3 | e5-small | none
+model    embeddinggemma | e5-small | none
 list     <model> <download size> <speed> <license>[ recommended] <note>
 ```
 

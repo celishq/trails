@@ -436,7 +436,7 @@ pub const VERBS: &[Verb] = &[
         command: "setup",
         usage: &["celis setup [--model <model>]"],
         summary: "Choose the model that celis search uses, download it from Hugging Face, and index your records. On a terminal with no model, ask for one from the list; else print the list. none turns search off and removes the downloaded models.",
-        args: &[("--model", "embeddinggemma, qwen3, e5-small, or none")],
+        args: &[("--model", "embeddinggemma, e5-small, or none")],
         examples: &[
             "celis setup",
             "celis setup --model embeddinggemma",

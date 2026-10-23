@@ -30,7 +30,6 @@ Models (one table in the code: repo, pinned revision, sha256, dimensions, prefix
 | Model                  | Download | Speed   | Note                                      | License      |
 | ---------------------- | -------- | ------- | ----------------------------------------- | ------------ |
 | EmbeddingGemma 300M    | ~1.2 GB  | fast    | Recommended: best quality for its size    | Gemma terms  |
-| Qwen3-Embedding 0.6B   | ~1.2 GB  | slow    | strong on code and many languages         | Apache 2.0   |
 | multilingual-e5-small  | ~480 MB  | fastest | lower quality                             | MIT          |
 | none                   | 0        | —       | grep only                                 | —            |
 
@@ -198,6 +197,8 @@ whether it holds.
 | A tampered download                                          | Pin the revision and the sha256                                   |
 
 ## Decisions
+
+- Qwen3 is gone from the list: it was the slowest model, as large as Gemma, and no bench showed it better.
 
 - Qwen3 and e5-small are in the list beside EmbeddingGemma; the wizard marks one Recommended.
 - Models come from Hugging Face.

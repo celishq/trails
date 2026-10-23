@@ -46,7 +46,7 @@ impl Command {
         }
         let model = Model::named(&id).ok_or_else(|| {
             Failure::usage(format!(
-                "--model takes embeddinggemma, qwen3, e5-small or none, not {id}"
+                "--model takes embeddinggemma, e5-small or none, not {id}"
             ))
         })?;
         self.download(model, &home)?;

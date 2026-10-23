@@ -15,7 +15,7 @@ fn off_a_terminal_setup_prints_the_list() {
         .lines()
         .map(|l| l.split(' ').next().unwrap().to_string())
         .collect();
-    assert_eq!(ids, ["embeddinggemma", "qwen3", "e5-small", "none"]);
+    assert_eq!(ids, ["embeddinggemma", "e5-small", "none"]);
     assert!(out(&o).lines().next().unwrap().contains(" recommended "));
 }
 
@@ -55,23 +55,40 @@ fn a_failed_download_or_check_keeps_the_model_there_was() {
     let served = tempfile::tempdir().unwrap();
     let base = format!("file://{}", served.path().display());
     let env = [("CELIS_MODELS_BASE", base.as_str())];
-    let o = repo.run(&repo.path(), &["setup", "--model", "qwen3"], &env, "");
+    let o = repo.run(
+        &repo.path(),
+        &["setup", "--model", "embeddinggemma"],
+        &env,
+        "",
+    );
     assert_eq!(o.status.code(), Some(1), "{}", err(&o));
     let folder = served
         .path()
-        .join("Qwen/Qwen3-Embedding-0.6B/resolve/97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3");
+        .join("unsloth/embeddinggemma-300m/resolve/bfa3c846ac738e62aa61806ef9112d34acb1dc5a");
     std::fs::create_dir_all(&folder).unwrap();
-    for file in ["config.json", "tokenizer.json", "model.safetensors"] {
+    for file in [
+        "config.json",
+        "tokenizer.json",
+        "model.safetensors",
+        "2_Dense/model.safetensors",
+        "3_Dense/model.safetensors",
+    ] {
+        std::fs::create_dir_all(folder.join(file).parent().unwrap()).unwrap();
         std::fs::write(folder.join(file), "not the model").unwrap();
     }
-    let o = repo.run(&repo.path(), &["setup", "--model", "qwen3"], &env, "");
+    let o = repo.run(
+        &repo.path(),
+        &["setup", "--model", "embeddinggemma"],
+        &env,
+        "",
+    );
     assert_eq!(o.status.code(), Some(1), "{}", err(&o));
     assert!(err(&o).contains("does not match its sha256"), "{}", err(&o));
     assert!(repo
         .home()
         .join("models/e5-small/model.safetensors")
         .exists());
-    assert!(!repo.home().join("models/qwen3").exists());
+    assert!(!repo.home().join("models/embeddinggemma").exists());
     let o = cli(&repo, &["search", "--", "rust"]);
     assert!(o.status.success(), "{}", err(&o));
     assert!(!out(&o).starts_with("celis search has no model"));
