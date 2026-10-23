@@ -23,6 +23,8 @@ celis names [--limit <n>]                             the named trails, most use
 celis tree [<id>] [--graph] [--full] [--all] [--demo]
                                                        a trail and its steps; again on each change
 celis grep <grep option>... <pattern>                 every trail, through the system grep
+celis search [--kind <kind>] [--limit <n>] -- <text>  the rules and steps most alike in meaning
+celis setup [--model <model>]                         the model that search uses
 celis stats [<id>] [--demo]                           what later work reused
 celis report <id>... [--demo]                         the trails as Markdown, for a pull request
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
@@ -96,7 +98,7 @@ celis decide --path "**/prices*.py" -- "When you change prices: keep them in cen
 - With `--json`, a command but `grep` MUST print one JSON object a line, and nothing else, to stdout. A
   printed id is `{"id"}`.
 - Only `decide`, `name`, `step`, `prompt` and `hook ask` MAY write a record. A command that refuses MUST write nothing.
-- A command MUST NOT ask a question, but `auth login` on a terminal.
+- A command MUST NOT ask a question, but `auth login` and `setup` on a terminal.
 - A command MUST exit 0 when done, 2 on a usage error, and 1 on any other error.
 - An error MUST be named `usage`, `no-decision`, `no-trail`, `no-step`, `closed`, `open-steps`,
   `check-failed`, else `error`. With `--json`, it MUST be one object on stderr,
@@ -335,4 +337,61 @@ end     project [<project name>]
 celis grep -i -E "price|cents"
 celis grep " live {me} "
 celis grep -A3 9b0e11aa
+```
+
+## Search
+
+`search` gives the records most alike in meaning to a text, by the model that `setup` chose. It searches
+the live rules in scope in the working folder's project (CIP-05), and every trail and step of every
+project.
+
+```
+line     <score> <grep view line>
+json     {"id", "kind", "score", "project", "content"}
+none     celis search has no model: search with celis grep, or run celis setup.
+```
+
+`<score>` is the cosine of the text and the record, with two decimals. `<kind>` is `rule`, `step` or
+`trail`.
+
+**Rules**
+
+- `search` MUST print at most `--limit` records, 20 when not given, highest score first.
+- With `--kind`, `search` MUST give only the records of that kind.
+- With no model, `search` MUST print the `none` line and exit 0.
+- `search` MUST refuse empty text, a `--kind` that is not a kind, and a `--limit` that is not a positive
+  number, as a usage error.
+
+**Examples**
+
+```
+celis search -- "make retrieval faster"
+celis search --kind rule --limit 10 -- "release for linux"
+```
+
+## Setup
+
+`setup` chooses the model that `search` uses, downloads it, and builds its index.
+
+```
+model    embeddinggemma | qwen3 | e5-small | none
+list     <model> <download size> <speed> <license>[ recommended] <note>
+```
+
+**Rules**
+
+- On a terminal with no `--model`, `setup` MUST ask for the model from the list. Else with no `--model`,
+  it MUST print the list.
+- With a model, `setup` MUST download it from Hugging Face at a pinned revision, check its sha256, and
+  index every record that `search` gives. When the download or the check fails, it MUST keep the model
+  it had.
+- `none` MUST turn `search` off and remove the downloaded models.
+- `setup` MUST refuse a model that is not in the list as a usage error.
+
+**Examples**
+
+```
+celis setup
+celis setup --model embeddinggemma
+celis setup --model none
 ```
