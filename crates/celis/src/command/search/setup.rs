@@ -1,7 +1,7 @@
 //! `celis setup`: the model that `search` uses.
 
-use super::search::model::{Model, MODELS};
-use super::{Args, Command};
+use super::model::{Model, MODELS};
+use crate::command::{put, Args, Command};
 use crate::failure::Failure;
 use anyhow::anyhow;
 use sha2::{Digest, Sha256};
@@ -33,16 +33,16 @@ impl Command {
             },
             (None, false) => {
                 for model in MODELS {
-                    super::put(out, &model.line())?;
+                    put(out, &model.line())?;
                 }
-                return super::put(out, NONE);
+                return put(out, NONE);
             }
         };
         let home = self.home()?;
         if id == "none" {
             remove(&home.join("models"))?;
             remove(&home.join("index"))?;
-            return super::put(out, "celis search is off.");
+            return put(out, "celis search is off.");
         }
         let model = Model::named(&id).ok_or_else(|| {
             Failure::usage(format!(
@@ -50,9 +50,9 @@ impl Command {
             ))
         })?;
         self.download(model, &home)?;
-        let searched = self.searched()?;
-        self.indexed(model, &searched, err)?;
-        super::put(out, &format!("celis search uses {}.", model.id))
+        let rows = self.searched()?;
+        self.indexed(model, &rows, err)?;
+        put(out, &format!("celis search uses {}.", model.id))
     }
 
     /// Downloads the files of `model` and checks their sha256, then puts them in place of any other
@@ -107,7 +107,7 @@ fn ask(out: &mut dyn Write) -> Result<Option<String>, Failure> {
         .chain([NONE.into()])
         .collect();
     for (n, line) in choices.iter().enumerate() {
-        super::put(out, &format!("  {}. {line}", n + 1))?;
+        put(out, &format!("  {}. {line}", n + 1))?;
     }
     let answer = read(out, "Choose a model [1]: ")?;
     let n = match answer.trim() {

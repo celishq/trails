@@ -1,12 +1,16 @@
-//! The view `grep` searches: every trail of every project, one line an item.
+//! Every trail of every project, one line an item, that `grep` and `search` read.
 
-use super::header::Header;
-use super::kind::Kind;
-use super::row::Row;
+pub(super) mod header;
+pub(super) mod kind;
+pub(super) mod row;
+
 use crate::text::clock::date;
 use celis_nostr::Note;
 use celis_trails::records::id::short;
 use celis_trails::{Mark, RuleEnd, RuleEntry, Scope, Step, Trails};
+use header::Header;
+use kind::Kind;
+use row::Row;
 use std::collections::HashMap;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
@@ -56,8 +60,8 @@ impl View {
         }
     }
 
-    pub fn rows(&self) -> &[Row] {
-        &self.rows
+    pub fn into_rows(self) -> Vec<Row> {
+        self.rows
     }
 
     /// The lines, one a row.
@@ -83,7 +87,7 @@ impl View {
     }
 
     /// The header of the trail `id`.
-    pub(super) fn header(&self, id: &str) -> Option<&Header> {
+    pub fn header(&self, id: &str) -> Option<&Header> {
         self.headers.get(id)
     }
 }
@@ -98,7 +102,8 @@ fn level<'a>(root: Step<'a>, parent: Step<'a>, rows: &mut Vec<Row>) {
             kind,
             day: date(note.created_at),
             project: root.record().anchor.name.clone(),
-            head: short(child.id()),
+            id: short(child.id()),
+            fields: vec![],
             text: flat(text),
         };
         match child.close() {
@@ -116,18 +121,19 @@ fn level<'a>(root: Step<'a>, parent: Step<'a>, rows: &mut Vec<Row>) {
 /// The row of the step `step` of the trail `root`, as `kind`.
 fn step(root: Step, step: Step, kind: Kind) -> Row {
     let record = step.record();
-    let mut head = vec![short(step.id()), step.state_word().to_string()];
+    let mut fields = vec![step.state_word().to_string()];
     let by: Vec<String> = step.revised().iter().map(|s| short(s.id())).collect();
     if !by.is_empty() {
-        head.push(format!("revised-by {}", by.join(",")));
+        fields.push(format!("revised-by {}", by.join(",")));
     }
-    head.extend(record.places.iter().map(|p| format!("at:{p}")));
+    fields.extend(record.places.iter().map(|p| format!("at:{p}")));
     Row {
         trail: Some(short(root.id())),
         kind,
         day: date(step.note().created_at),
         project: root.record().anchor.name.clone(),
-        head: head.join(" "),
+        id: short(step.id()),
+        fields,
         text: flat(&record.content),
     }
 }
@@ -137,29 +143,30 @@ fn step(root: Step, step: Step, kind: Kind) -> Row {
 fn rule(entry: &RuleEntry, trail: Option<String>) -> Vec<Row> {
     let (note, rule) = (entry.note, &entry.rule);
     let state = entry.end.map_or("live".to_string(), RuleEnd::text);
-    let row = |kind: Kind, at: &Note, head: String, text: &str| Row {
+    let row = |kind: Kind, at: &Note, fields: Vec<String>, text: &str| Row {
         trail: trail.clone(),
         kind,
         day: date(at.created_at),
         project: rule.anchor.name.clone(),
-        head,
+        id: short(&note.id),
+        fields,
         text: flat(text),
     };
-    let mut head = format!("{} {state} {{{}}}", short(&note.id), rule.scope.short());
+    let mut fields = vec![state, format!("{{{}}}", rule.scope.short())];
     let marks = [
-        (!rule.paths.is_empty(), " trigger"),
-        (rule.situation, " situation"),
-        (rule.promoted, " promoted"),
+        (!rule.paths.is_empty(), "trigger"),
+        (rule.situation, "situation"),
+        (rule.promoted, "promoted"),
     ];
-    head.extend(
+    fields.extend(
         marks
             .into_iter()
             .filter(|(on, _)| *on)
-            .map(|(_, mark)| mark),
+            .map(|(_, mark)| mark.to_string()),
     );
-    let mut rows = vec![row(Kind::Rule, note, head, &rule.content)];
+    let mut rows = vec![row(Kind::Rule, note, fields, &rule.content)];
     if let Some(RuleEnd::Dropped(drop)) = entry.end {
-        rows.push(row(Kind::Dropped, drop, short(&note.id), &drop.content));
+        rows.push(row(Kind::Dropped, drop, vec![], &drop.content));
     }
     rows
 }

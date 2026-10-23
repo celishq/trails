@@ -1,85 +1,57 @@
-//! The vectors of the texts a model has read, kept in a file.
+//! A model and the vectors of the texts it has read.
 
+use super::encoder::Encoder;
+use super::model::Model;
+use super::vectors::Vectors;
 use anyhow::Result;
-use sha2::{Digest, Sha256};
-use std::collections::HashMap;
-use std::path::Path;
+use std::io::Write;
+use std::path::{Path, PathBuf};
 
-/// The vector of each text one model has read, by the hash of the text.
+/// The chosen model, loaded, with the file of the vectors it has read.
 pub(crate) struct Index {
-    model: String,
-    dimensions: usize,
-    rows: HashMap<u64, Vec<f32>>,
+    encoder: Encoder,
+    vectors: Vectors,
+    file: PathBuf,
 }
 
 impl Index {
-    /// The index in `file` of `model`; empty when the file is missing, bad, or of another model.
-    pub fn open(file: &Path, model: &str, dimensions: usize) -> Index {
-        let mut index = Index {
-            model: model.to_string(),
-            dimensions,
-            rows: HashMap::new(),
-        };
-        let bytes = std::fs::read(file).unwrap_or_default();
-        let head = index.head();
-        let Some(body) = bytes.strip_prefix(head.as_bytes()) else {
-            return index;
-        };
-        let size = 8 + 4 * dimensions;
-        if body.len() % size != 0 {
-            return index;
+    /// The model `model` set up in `home`, and its vectors.
+    pub fn open(model: &'static Model, home: &Path) -> Result<Index> {
+        let file = home.join("index").join(format!("{}.bin", model.id));
+        Ok(Index {
+            encoder: Encoder::load(model, &model.folder(home))?,
+            vectors: Vectors::open(&file, model.id, model.dimensions),
+            file,
+        })
+    }
+
+    /// Reads each of `texts` that has no vector yet, drops the vectors of other texts, and saves; with
+    /// `progress`, writes the count read so far to it.
+    pub fn refresh(&mut self, texts: &[&str], mut progress: Option<&mut dyn Write>) -> Result<()> {
+        let missing: Vec<&str> = texts
+            .iter()
+            .copied()
+            .filter(|t| self.vectors.get(t).is_none())
+            .collect();
+        for (n, text) in missing.iter().enumerate() {
+            self.vectors.insert(text, self.encoder.document(text)?);
+            if let Some(out) = progress.as_mut() {
+                let _ = write!(out, "\rcelis: indexing {}/{}", n + 1, missing.len());
+            }
         }
-        for row in body.chunks(size) {
-            let key = u64::from_le_bytes(row[..8].try_into().expect("8 bytes"));
-            let vector = row[8..]
-                .chunks(4)
-                .map(|b| f32::from_le_bytes(b.try_into().expect("4 bytes")))
-                .collect();
-            index.rows.insert(key, vector);
+        if let (Some(out), false) = (progress, missing.is_empty()) {
+            let _ = writeln!(out);
         }
-        index
+        self.vectors.keep(texts.iter().copied());
+        self.vectors.save(&self.file)
     }
 
-    /// Writes the index to `file`, whole or not at all.
-    pub fn save(&self, file: &Path) -> Result<()> {
-        let mut bytes = self.head().into_bytes();
-        for (key, vector) in &self.rows {
-            bytes.extend(key.to_le_bytes());
-            bytes.extend(vector.iter().flat_map(|x| x.to_le_bytes()));
-        }
-        if let Some(folder) = file.parent() {
-            std::fs::create_dir_all(folder)?;
-        }
-        let part = file.with_extension("part");
-        std::fs::write(&part, bytes)?;
-        std::fs::rename(part, file)?;
-        Ok(())
-    }
-
-    pub fn get(&self, text: &str) -> Option<&[f32]> {
-        self.rows.get(&key(text)).map(Vec::as_slice)
-    }
-
-    pub fn insert(&mut self, text: &str, vector: Vec<f32>) {
-        self.rows.insert(key(text), vector);
-    }
-
-    /// Keeps only the vectors of `texts`.
-    pub fn keep<'a>(&mut self, texts: impl IntoIterator<Item = &'a str>) {
-        let kept: std::collections::HashSet<u64> = texts.into_iter().map(key).collect();
-        self.rows.retain(|k, _| kept.contains(k));
-    }
-
-    fn head(&self) -> String {
-        format!("celis-index 1 {} {}\n", self.model, self.dimensions)
+    /// The cosine of `query` and each text read, none for a text not read.
+    pub fn alike(&self, query: &str) -> Result<impl Fn(&str) -> Option<f32> + '_> {
+        let query = self.encoder.query(query)?;
+        Ok(move |text: &str| {
+            let vector = self.vectors.get(text)?;
+            Some(query.iter().zip(vector).map(|(a, b)| a * b).sum())
+        })
     }
 }
-
-/// The first 8 bytes of the sha256 of `text`.
-fn key(text: &str) -> u64 {
-    let hash = Sha256::digest(text.as_bytes());
-    u64::from_le_bytes(hash[..8].try_into().expect("8 bytes"))
-}
-
-#[cfg(test)]
-mod tests;

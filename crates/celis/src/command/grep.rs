@@ -1,17 +1,13 @@
 //! `celis grep`: every trail of every project as lines, through the system `grep`.
 
 mod found;
-mod header;
-pub(super) mod kind;
-pub(super) mod row;
-pub(super) mod view;
 
+use super::view::View;
 use super::Command;
 use crate::failure::Failure;
 use found::Found;
 use std::io::Write;
 use std::process::Stdio;
-use view::View;
 
 impl Command {
     /// Gives `words` to the system `grep` with the view on its stdin, and prints what it found,

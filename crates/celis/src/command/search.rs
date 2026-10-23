@@ -3,14 +3,15 @@
 mod decoder;
 mod encoder;
 mod index;
-pub(super) mod model;
+mod model;
+mod setup;
+mod vectors;
 
-use super::grep::kind::Kind;
-use super::grep::row::Row;
-use super::grep::view::View;
+use super::view::kind::Kind;
+use super::view::row::Row;
+use super::view::View;
 use super::{Args, Command};
 use crate::failure::Failure;
-use encoder::Encoder;
 use index::Index;
 use model::Model;
 use serde_json::json;
@@ -50,16 +51,17 @@ impl Command {
         let Some(model) = Model::chosen(&self.home()?) else {
             return super::put(out, NONE);
         };
-        let searched = self.searched()?;
-        let (encoder, index) = self.indexed(model, &searched, err)?;
-        let query = encoder.query(&text)?;
-        let mut found: Vec<(f32, &Row)> = rows(&searched)
+        let rows = self.searched()?;
+        let index = self.indexed(model, &rows, err)?;
+        let alike = index.alike(&text)?;
+        let mut found: Vec<(f32, &Row)> = rows
+            .iter()
             .filter(|row| kinds.contains(&row.kind))
-            .filter_map(|row| Some((dot(&query, index.get(&row.text)?), row)))
+            .filter_map(|row| Some((alike(&row.text)?, row)))
             .collect();
         found.sort_by(|(a, _), (b, _)| b.total_cmp(a));
         for (score, row) in found.into_iter().take(limit) {
-            let object = json!({"id": row.id(), "kind": row.kind.text(), "score": score,
+            let object = json!({"id": row.id, "kind": row.kind.text(), "score": score,
                 "project": row.project, "content": row.text});
             let line = format!("{score:.2} {}", row.line());
             super::put(out, &if args.json { object.to_string() } else { line })?;
@@ -67,74 +69,39 @@ impl Command {
         Ok(())
     }
 
-    /// The view of the records `search` gives: every trail and step, and the live rules in scope.
-    pub(super) fn searched(&self) -> Result<Searched, Failure> {
+    /// The rows `search` gives: each trail and step of every project, and each live rule in scope.
+    fn searched(&self) -> Result<Vec<Row>, Failure> {
         if !self.held()? {
-            return Ok(Searched::default());
+            return Ok(vec![]);
         }
         let trails = self.trails()?;
         let project = self.project();
         let live = trails.rules().live(&project.anchor.project).into_iter();
-        let rules = live
+        let rules: HashSet<String> = live
             .map(|(note, _)| celis_trails::records::id::short(&note.id))
             .collect();
-        Ok(Searched {
-            view: View::of(&trails),
-            rules,
-        })
+        let rows = View::of(&trails).into_rows().into_iter();
+        Ok(rows
+            .filter(|row| match row.kind {
+                Kind::Trail | Kind::Step => true,
+                Kind::Rule => rules.contains(&row.id),
+                _ => false,
+            })
+            .collect())
     }
 
-    /// The model `model` loaded, and its index with a vector for each record of `searched`, saved;
-    /// on a terminal, the count of records indexed so far goes to `err`.
-    pub(super) fn indexed(
+    /// The index of `model`, refreshed with the text of each of `rows`; on a terminal, the count read
+    /// so far goes to `err`.
+    fn indexed(
         &self,
         model: &'static Model,
-        searched: &Searched,
+        rows: &[Row],
         err: &mut dyn Write,
-    ) -> Result<(Encoder, Index), Failure> {
-        let home = self.home()?;
-        let encoder = Encoder::load(model, &model.folder(&home))?;
-        let file = home.join("index").join(format!("{}.bin", model.id));
-        let mut index = Index::open(&file, model.id, model.dimensions);
-        let texts: Vec<&str> = rows(searched).map(|r| r.text.as_str()).collect();
-        let missing: Vec<&str> = texts
-            .iter()
-            .copied()
-            .filter(|t| index.get(t).is_none())
-            .collect();
-        let shown = std::io::stderr().is_terminal();
-        for (n, text) in missing.iter().enumerate() {
-            index.insert(text, encoder.document(text)?);
-            if shown {
-                let _ = write!(err, "\rcelis: indexing {}/{}", n + 1, missing.len());
-            }
-        }
-        if shown && !missing.is_empty() {
-            let _ = writeln!(err);
-        }
-        index.keep(texts);
-        index.save(&file)?;
-        Ok((encoder, index))
+    ) -> Result<Index, Failure> {
+        let mut index = Index::open(model, &self.home()?)?;
+        let texts: Vec<&str> = rows.iter().map(|r| r.text.as_str()).collect();
+        let progress = std::io::stderr().is_terminal().then_some(err);
+        index.refresh(&texts, progress)?;
+        Ok(index)
     }
-}
-
-/// The view, and the ids of the live rules in scope.
-#[derive(Default)]
-pub(super) struct Searched {
-    view: View,
-    rules: HashSet<String>,
-}
-
-/// The rows of `searched` that `search` gives: each trail and step, and each live rule in scope.
-fn rows(searched: &Searched) -> impl Iterator<Item = &Row> {
-    searched.view.rows().iter().filter(|row| match row.kind {
-        Kind::Trail | Kind::Step => true,
-        Kind::Rule => searched.rules.contains(row.id()),
-        _ => false,
-    })
-}
-
-/// The cosine of two unit vectors.
-fn dot(a: &[f32], b: &[f32]) -> f32 {
-    a.iter().zip(b).map(|(x, y)| x * y).sum()
 }

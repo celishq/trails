@@ -15,11 +15,11 @@ mod review;
 mod rule;
 mod rules;
 mod search;
-mod setup;
 mod stats;
 mod step;
 pub(crate) mod tree;
 mod update;
+mod view;
 
 use crate::failure::Failure;
 use crate::help::{self, VERBS};
