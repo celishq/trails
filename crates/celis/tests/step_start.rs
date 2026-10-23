@@ -96,7 +96,7 @@ fn start_prints_no_rule_at_the_steps_places() {
     assert!(!out(&o).contains("a.rs holds cents"), "{}", out(&o));
 }
 
-/// `start` does not run the step's check, and says only the search on stderr.
+/// `start` does not run the step's check, and says nothing on stderr.
 #[test]
 fn start_does_not_run_the_steps_check() {
     let repo = Repo::new();
@@ -114,8 +114,7 @@ fn start_does_not_run_the_steps_check() {
     );
     let o = cli(&repo, &["step", "start", &id[..8]]);
     assert!(o.status.success(), "{}", err(&o));
-    assert_eq!(err(&o).lines().count(), 1, "{}", err(&o));
-    assert!(err(&o).contains("celis search"), "{}", err(&o));
+    assert_eq!(err(&o), "");
     assert!(!repo.path().join("ran").exists());
 }
 
@@ -166,21 +165,4 @@ fn start_prints_the_trails_rules_and_the_rules_its_ask_uses() {
         assert!(text.contains(said), "{text}");
     }
     assert!(!text.contains("never deploy on friday"), "{text}");
-}
-
-/// `start` names the search for the step's rules, with its title.
-#[test]
-fn start_names_the_search_for_the_steps_rules() {
-    let repo = Repo::new();
-    let id = add(
-        &repo,
-        &["--new", "--", "Keep prices in cents\nexpect: totals add up"],
-    );
-    let o = cli(&repo, &["step", "start", &id]);
-    assert!(o.status.success(), "{}", err(&o));
-    assert!(
-        err(&o).contains("celis search -- \"Keep prices in cents\""),
-        "{}",
-        err(&o)
-    );
 }

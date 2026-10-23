@@ -59,8 +59,8 @@ impl Command {
         self.print(written, args, out, err)
     }
 
-    /// Starts the open step `args` names, and prints the id of its start, the rules its plan links,
-    /// and the search for its rules.
+    /// Starts the open step `args` names, and prints the id of its start, then the rules its plan
+    /// links.
     fn step_start(
         &self,
         args: &Args,
@@ -68,16 +68,8 @@ impl Command {
         err: &mut dyn Write,
     ) -> Result<(), Failure> {
         let id = args.id("step start")?;
-        let trails = self.trails()?;
-        let written = trails.start(id)?;
-        self.print(written, args, out, err)?;
-        let title = trails.steps().find(id)?.title().to_string();
-        let line = format!(
-            "celis: before you change a file for this step, search for its rules: celis search -- \"{}\", \
-             and celis rules <files>.",
-            title.replace('"', "'")
-        );
-        super::put(err, &line)
+        let written = self.trails()?.start(id)?;
+        self.print(written, args, out, err)
     }
 
     /// Closes the open step `args` names, done with its proof and what changed from its plan, and prints

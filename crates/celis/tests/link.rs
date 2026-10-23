@@ -199,7 +199,7 @@ fn prompt_asks_to_link_a_project_whose_folder_is_not_linked() {
         repo.run(&repo.path(), &["prompt"], &[], &json)
     };
     let first = err(&hook("s1"));
-    assert!(first.contains("run celis search"), "{first}");
+    assert!(first.contains("celis:past"), "{first}");
     assert!(!first.contains("celis link"), "{first}");
     run(
         &repo,

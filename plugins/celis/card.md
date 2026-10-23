@@ -2,7 +2,6 @@ celis keeps each ask as a trail: its steps, their proofs, and the rules that lat
 
 ```
 celis rules [<file>]... [--diff] [--all] [--page <n>]
-celis search [--kind <kind>] [--limit <n>] -- "<text>"
 celis grep <grep option>... "<pattern>"
 celis decide [--scope at:<place> | trail:<id> | me] [--replaces <id>] [--path <glob>]... [--situation] [--promoted] [--project <id>] -- "<rule>"
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>] [--check <command>] [--new] [--session <id>] [--project <id>] -- "<title>"
@@ -14,13 +13,10 @@ celis name <trail id> <name>
 celis tree [<id>] [--graph] [--full] [--all] [--demo]
 ```
 
-1. At a new ask, even a simple one, read every rule yourself with `celis rules --all`, and each page
-   it names, all pages in one message. Then find past asks like it and more rules: run
-   `celis search -- "<the ask in your words>"`, and `celis grep` for exact words, such as
-   `celis grep -i -E " rule [0-9a-f]{8} live .*(<word>|<word>)"` for rules. When search says it has no
-   model, find past asks with `celis grep -i -E "(trail|step) [0-9a-f]{8} done .*(<word>|<word>)"`.
-   Keep each rule that applies in your own context. When the ask conflicts with a rule, the ask wins:
-   replace the rule.
+1. At a new ask, run the `celis:past` agent when celis asks for it, even for a simple ask: it brings
+   the rules of the ask and past steps like it. To find more rules, run `celis rules` for the words the
+   rules use, and search them with `celis grep -i -E " rule [0-9a-f]{8} live .*(<word>|<word>)"`. Keep
+   each rule in your own context. When the ask conflicts with a rule, the ask wins: replace the rule.
 2. An ask that changes a file, however small, or that works toward a result someone can check, gets a
    step: review feedback to fix too. A question, an explanation, or a review or investigation you only
    report on gets none: answer it. Add the ask with `step add` where the prompt hook says. With no hint,
@@ -34,8 +30,7 @@ celis tree [<id>] [--graph] [--full] [--all] [--demo]
    goes: the first job when you start, the next job after you close one, and steps under a job only when
    you take it and it holds more than one job. Only the step you take next gets `--at` and a `--check`
    that proves it.
-4. For each step: `start`, and keep the rules it prints. Search for the step's rules with the
-   `celis search` line that `start` prints. Run `celis rules <files>` before each change,
+4. For each step: `start`, and keep the rules it prints. Run `celis rules <files>` before each change,
    and before `done`, check your change against `celis rules --diff`. Read all
    that celis prints: never cut it with `head` or `grep`. Then `done` with a proof a person can check,
    such as a command and its result: `--as-planned` when the result matches `expect`, else

@@ -12,6 +12,13 @@ mod tests;
 /// The agents whose hooks run `celis hook`.
 const AGENTS: [&str; 5] = ["claude", "codex", "cursor", "gemini", "antigravity"];
 
+/// What the prompt note asks of an agent that loads the past agent, and of one that does not.
+const PAST: (&str, &str) = (
+    "run the celis:past agent in the foreground with the ask and the places it may touch, and wait for its \
+     answer",
+    "do what past.md says, yourself, for the ask and the places it may touch",
+);
+
 impl Command {
     /// Acts on the hook's JSON on stdin for `hook start <agent> <plugin folder>` or `hook ask <agent>`,
     /// and prints what the agent reads. Only a usage error fails.
@@ -35,7 +42,7 @@ impl Command {
         let json: Value = serde_json::from_str(&input).unwrap_or(Value::Null);
         let text = match root {
             Some(root) => self.start(agent, &json, root),
-            None => self.note(&json),
+            None => self.note(agent, &json),
         };
         match (agent, event) {
             ("cursor", "ask") => super::put(out, r#"{"continue": true}"#),
@@ -93,8 +100,9 @@ impl Command {
         text
     }
 
-    /// The note on the prompt, after it is acted on in the project the JSON names.
-    fn note(&self, json: &Value) -> String {
+    /// The note on the prompt, after it is acted on in the project the JSON names; past.md in place of
+    /// the past agent for an agent that does not load it.
+    fn note(&self, agent: &str, json: &Value) -> String {
         let folder = json["cwd"]
             .as_str()
             .or(json["workspace_roots"][0].as_str())
@@ -108,7 +116,11 @@ impl Command {
         if here.act_on(json, &mut std::io::sink(), &mut note).is_err() {
             return String::new();
         }
-        String::from_utf8_lossy(&note).trim_end().to_string()
+        let note = String::from_utf8_lossy(&note).trim_end().to_string();
+        match agent {
+            "codex" | "gemini" => note.replace(PAST.0, PAST.1),
+            _ => note,
+        }
     }
 }
 
