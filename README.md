@@ -1,6 +1,6 @@
 <h1 align="center">Celis</h1>
 
-<h3 align="center">Stop babysitting your coding agent.</h3>
+<h3 align="center">Stop babysitting your coding agent</h3>
 
 <p align="center">Celis keeps your rules and gives your agent the discipline to follow them, in every project
 and every agent.</p>
