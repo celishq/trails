@@ -1,8 +1,8 @@
 //! `celis step`: leave, close and drop steps.
 
+use crate::command::close::Review;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use crate::progress::Review;
 use celis_trails::records::id::short;
 use celis_trails::{By, Done, Draft, Link, Notice, Place, Project, Written};
 use std::io::Write;
@@ -167,7 +167,7 @@ impl Command {
         if !written.rules.is_empty() {
             let trails = self.trails()?;
             for (said, rule) in &written.rules {
-                let line = super::rules::shown(said, rule, &trails);
+                let line = crate::text::line::rule(said, rule, &trails);
                 let json = crate::text::json::rule(said, rule);
                 super::show(out, args.json, "decision", json, &line)?;
             }

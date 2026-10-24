@@ -2,7 +2,7 @@
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use celis_trails::{Place, Project, Rule, Scope};
+use celis_trails::{Pair, Place, Project, Rule, Scope, StepId};
 use std::io::Write;
 
 impl Command {
@@ -30,13 +30,16 @@ impl Command {
         };
         let trails = self.trails()?;
         let steps = trails.steps();
-        let step = |id: &Option<String>| -> Result<Option<String>, Failure> {
+        let step = |id: &Option<String>| -> Result<Option<StepId>, Failure> {
             match id {
-                Some(id) => Ok(Some(steps.find(id)?.id().to_string())),
+                Some(id) => Ok(Some(steps.find(id)?.step_id())),
                 None => Ok(None),
             }
         };
-        let (good, bad) = (step(&args.good)?, step(&args.bad)?);
+        let pair = Pair {
+            good: step(&args.good)?,
+            bad: step(&args.bad)?,
+        };
         let rule = Rule {
             anchor: project.anchor.clone(),
             scope,
@@ -49,8 +52,7 @@ impl Command {
                 .collect(),
             situation: args.situation,
             promoted: args.promoted,
-            good,
-            bad,
+            pair,
         };
         let written = trails.decide(rule, args.replaces.as_deref())?;
         self.print(written, args, out, err)

@@ -235,7 +235,7 @@ pub(crate) fn markdown(steps: &Steps, rules: &Rules, ids: &[String]) -> Result<S
             lines.push(String::new());
             lines.extend(text.iter().map(|l| l.to_string()));
         }
-        if let Some(done) = trail.done() {
+        if let Some(done) = trail.done_record() {
             lines.push(String::new());
             lines.push(format!("done: {}", done.content));
         }

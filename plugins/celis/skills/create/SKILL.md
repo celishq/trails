@@ -14,7 +14,7 @@ in layers, with these changes:
    same file; when the last one closes, celis prints the blobs beside it.
 3. Go as far as you can: choose the variant closer to the blocks, name it in the next layer's title,
    and finish. Only the outer layer has variants, unless the person asks.
-4. In the end, name your choice on the "Took" line, with the blob of each other variant, so the person
+4. In the end, name your choice on the "I chose" line, with the blob of each other variant, so the person
    can pick after. When they pick another, keep the pick as a taste block (`steps.md`, "Taste") and redo
    the next layers from it. A note, such as "move it left", is not a fix of done work.
 

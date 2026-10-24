@@ -93,8 +93,7 @@ impl Desk {
             paths: vec![],
             situation: false,
             promoted: false,
-            good: None,
-            bad: None,
+            pair: Default::default(),
         };
         let id = self.trails.decide(rule, None).unwrap().records[0]
             .id

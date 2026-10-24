@@ -24,6 +24,7 @@ pub use records::store::Store;
 pub use refusal::Refusal;
 pub use rule::fit::Fit;
 pub use rule::glob::Glob;
+pub use rule::pair::Pair;
 pub use rule::rule_end::RuleEnd;
 pub use rule::rule_entry::RuleEntry;
 pub use rule::rules::Rules;

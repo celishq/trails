@@ -80,7 +80,7 @@ impl Trails {
         let steps = self.steps();
         let replaced = draft.replaces.as_deref().map(|id| replaced(&steps, id));
         let replaced = replaced.transpose()?;
-        let moved = replaced.filter(|s| s.done().is_none());
+        let moved = replaced.filter(|s| s.done_record().is_none());
         let under = parent(&steps, &draft, moved)?;
         let trail = under.map(|u| u.trail().id());
         let uses = draft
@@ -92,7 +92,7 @@ impl Trails {
         uses.retain(|id| seen.insert(id.clone()));
         let mut written = Written::default();
         if let Some(same) = same_open(&steps, &draft, under) {
-            if !uses.is_empty() || replaced.is_some_and(|r| r.done().is_some()) {
+            if !uses.is_empty() || replaced.is_some_and(|r| r.done_record().is_some()) {
                 return Err(Refusal::Usage(format!(
                     "the open step {} has the same text, and keeps its own links; give the new step other words",
                     short(same.id())
@@ -226,8 +226,7 @@ impl Trails {
                 paths: vec![],
                 situation: false,
                 promoted: false,
-                good: None,
-                bad: None,
+                pair: Default::default(),
             };
             written
                 .records

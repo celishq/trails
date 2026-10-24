@@ -1,17 +1,16 @@
 //! How a done step went against its plan.
 
-use super::Gap;
+use super::End;
 use celis_nostr::Note;
 use celis_trails::{Done, Mark, ProofFile, Step, StepId};
 
 /// How a done step went against its plan: its expect line and its own changed, the steps under it planned
 /// before the first started, added after, dropped with their reasons and changed, the person's prompts on
 /// its tree, and the open steps beside it under `under`, each as an id and a title; the files of its
-/// proof, and when no step beside it is open, those of the done steps beside it; on an ask, its gap.
-pub struct Review {
+/// proof, and when no step beside it is open, those of the done steps beside it; on an ask, its end.
+pub(crate) struct Review {
     pub step: StepId,
     pub under: Option<StepId>,
-    pub ask: bool,
     pub expect: Option<String>,
     pub as_planned: bool,
     pub planned: usize,
@@ -22,7 +21,7 @@ pub struct Review {
     pub open: Vec<(StepId, String)>,
     pub files: Vec<ProofFile>,
     pub beside: Vec<(StepId, String, ProofFile)>,
-    pub gap: Option<Gap>,
+    pub end: Option<End>,
 }
 
 impl Review {
@@ -40,7 +39,7 @@ impl Review {
             .unwrap_or(u64::MAX);
         let line = |s: &Step| (s.step_id(), s.title().to_string());
         let turns = parts.iter().filter_map(|s| {
-            let changed = s.done()?.tag("changed")?;
+            let changed = s.done_record()?.tag("changed")?;
             Some((s.step_id(), changed.to_string()))
         });
         let own = changed.map(|c| (step.step_id(), c.to_string()));
@@ -68,7 +67,6 @@ impl Review {
             .collect();
         Review {
             step: step.step_id(),
-            ask,
             expect,
             as_planned: changed.is_none(),
             planned: parts
@@ -93,7 +91,7 @@ impl Review {
             beside: match open.is_empty() {
                 true => others
                     .iter()
-                    .filter_map(|s| Some((s, s.closing()?.files)))
+                    .filter_map(|s| Some((s, s.done()?.files)))
                     .flat_map(|(s, files)| {
                         files
                             .into_iter()
@@ -104,7 +102,7 @@ impl Review {
             },
             files: done.files.clone(),
             under: under.map(|u| u.step_id()),
-            gap: ask.then(|| Gap::of(records, step, done, now)),
+            end: ask.then(|| End::of(records, step, done, now)),
         }
     }
 }

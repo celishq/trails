@@ -12,7 +12,7 @@ pub struct Grade {
 impl Grade {
     /// How the work of `step` went; `None` while it is not done.
     pub fn of(step: Step) -> Option<Grade> {
-        let done = step.done()?;
+        let done = step.done_record()?;
         let from = step.start().unwrap_or(step.note()).created_at;
         Some(Grade {
             took: done.created_at.saturating_sub(from),

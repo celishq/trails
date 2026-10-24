@@ -5,7 +5,7 @@ use celis_trails::{By, Done, Step};
 /// Who stands behind the proof of a done step: the check that celis ran, a judge that did not do the work,
 /// the person, or only the agent's word.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Proof {
+pub(crate) enum Proof {
     Checked,
     Judged,
     Person,
@@ -26,14 +26,13 @@ impl Proof {
         }
     }
 
-    /// Its word for `n` steps.
-    pub fn word(self, n: usize) -> &'static str {
-        match (self, n) {
-            (Proof::Checked, _) => "checked",
-            (Proof::Judged, _) => "judged",
-            (Proof::Person, _) => "person",
-            (Proof::Claim, 1) => "claim",
-            (Proof::Claim, _) => "claims",
+    /// Its word in the total line.
+    pub fn word(self) -> &'static str {
+        match self {
+            Proof::Checked => "checked",
+            Proof::Judged => "judged",
+            Proof::Person => "person",
+            Proof::Claim => "not proven",
         }
     }
 }

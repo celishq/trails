@@ -45,16 +45,18 @@ celis tree [<id>]...
    checks; with no subagents, do what `agents/judge.md` beside `steps.md` says. What the judge could not
    check, take as far as you can, such as a run or a screenshot, then ask the person. Close the ask
    `--by judge` with its verdict, or `--by person` with the person's answer, and never close the trail.
-   Then answer with this block alone, with no prose before it, each line only when it is not empty, and
-   add each rule you wrote:
+   Then answer with the end that celis prints, alone, with no prose before it. Fill each `<…>`, and
+   remove each line you do not need, so that an ask with all its steps checked ends in two lines.
+   Add each rule you wrote:
 
-   ```
-   Done:       <what was done, in one line>
-   Turn:       <each changed and edited line that done prints, and why>
-   Took:       <the choices you took yourself, such as the variant you chose>
-   Not proven: <each claim line that done prints, and what the judge could not check>
-   Outside:    <the files git diff --stat shows changed outside the places line>
-   Needs you:  <the decisions>
+   ```markdown
+   **<what was done, in one line>**
+
+   - [?] **Needs you:** <each decision only the person can take>
+   - [!] **Not proven:** <each claim step, and what the judge could not check>
+   - [~] **Changed:** <each step that went otherwise than planned, and why>
+   - [+] **I chose:** <each choice you took yourself, such as the variant you chose>
+
    <the total line that done prints>
    ```
 

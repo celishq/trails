@@ -175,15 +175,15 @@ impl<'a> Step<'a> {
     }
 
     /// What it was closed done with; none while it is not done.
-    pub fn closing(self) -> Option<Done> {
-        match Mark::read(self.done()?)? {
+    pub fn done(self) -> Option<Done> {
+        match Mark::read(self.done_record()?)? {
             (_, Mark::Done(done)) => Some(done),
             _ => None,
         }
     }
 
     /// The done record that closed it.
-    pub fn done(self) -> Option<&'a Note> {
+    pub fn done_record(self) -> Option<&'a Note> {
         match self.entry.close {
             Some((note, Close::Done)) => Some(note),
             _ => None,
@@ -214,7 +214,7 @@ impl<'a> Step<'a> {
 
     /// The steps that replace it after it was done, oldest first.
     pub fn revised(self) -> Vec<Step<'a>> {
-        let Some(done) = self.done() else {
+        let Some(done) = self.done_record() else {
             return Vec::new();
         };
         let later = self.entry.replaced.iter();
@@ -234,7 +234,7 @@ impl<'a> Step<'a> {
             Some(_) => self,
             None => Trail::new(self).work(),
         };
-        work.done()?.tag("changed")
+        work.done_record()?.tag("changed")
     }
 
     /// Where it stands at the time of its store.

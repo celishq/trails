@@ -480,8 +480,7 @@ impl Demo {
             paths: vec![],
             situation: false,
             promoted: false,
-            good: None,
-            bad: None,
+            pair: Default::default(),
         };
         let written = self.trails(ago)?.decide(rule, None)?;
         Ok(written.records[0].id.clone())

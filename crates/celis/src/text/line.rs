@@ -6,14 +6,29 @@ use celis_nostr::Note;
 use celis_trails::records::id::short;
 use celis_trails::{ProofFile, Rule, Step, Trails};
 
-/// `<id, first 8> <scope> <text>` of the rule that `note` holds.
-pub(crate) fn rule(note: &Note, rule: &Rule) -> String {
-    format!(
+/// `<id, first 8> <scope> <text>` of the rule that `note` holds, then the proof and the blobs of
+/// `trails` for the good and the bad step of its pair.
+pub(crate) fn rule(note: &Note, rule: &Rule, trails: &Trails) -> String {
+    let steps = trails.steps();
+    let head = format!(
         "{} {} {}",
         short(&note.id),
         rule.scope.short(),
         rule.content
-    )
+    );
+    let mut lines = vec![head];
+    for (side, id) in rule.pair.sides() {
+        let Ok(step) = steps.find(id) else {
+            continue;
+        };
+        let done = step.done();
+        let proof = done.as_ref().and_then(|d| d.proof.lines().next());
+        let head = format!("{} {}", short(step.id()), step.title());
+        lines.push(format!("  {side:<4}    {head} · {}", proof.unwrap_or("")));
+        let files = done.iter().flat_map(|d| d.files.iter());
+        lines.extend(files.map(|f| format!("          {}", blob(f, trails))));
+    }
+    lines.join("\n")
 }
 
 /// How long a done `step` took, as `46m 3s`; `None` while it is not done.

@@ -5,7 +5,7 @@ mod index;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use celis_nostr::Note;
-use celis_trails::{Done, Fit, Place, Project, Rule, Trails};
+use celis_trails::{Fit, Place, Project, Rule};
 use index::Index;
 use serde_json::json;
 use std::io::Write;
@@ -41,38 +41,18 @@ impl Command {
         for (_, note, rule) in &found {
             let mut object =
                 json!({"id": note.id, "scope": rule.scope.text(), "content": rule.content});
-            for (key, id) in [("good", &rule.good), ("bad", &rule.bad)] {
-                if let Some(id) = id {
-                    object[key] = json!(id);
-                }
+            for (side, id) in rule.pair.sides() {
+                object[side] = json!(id.to_string());
             }
             let text = if args.json {
                 object.to_string()
             } else {
-                shown(note, rule, &trails)
+                crate::text::line::rule(note, rule, &trails)
             };
             super::put(out, &text)?;
         }
         Ok(())
     }
-}
-
-/// The line of the rule `rule`, then the proof and the blobs of the good and the bad step of its pair.
-pub(crate) fn shown(note: &Note, rule: &Rule, trails: &Trails) -> String {
-    let steps = trails.steps();
-    let mut lines = vec![crate::text::line::rule(note, rule)];
-    for (word, id) in [("good", &rule.good), ("bad ", &rule.bad)] {
-        let Some(step) = id.as_deref().and_then(|id| steps.find(id).ok()) else {
-            continue;
-        };
-        let done = step.closing().unwrap_or(Done::new(String::new(), None));
-        let proof = done.proof.lines().next().unwrap_or("");
-        let short = &step.id()[..8];
-        lines.push(format!("  {word}    {short} {} · {proof}", step.title()));
-        let blobs = done.files.iter();
-        lines.extend(blobs.map(|f| format!("          {}", crate::text::line::blob(f, trails))));
-    }
-    lines.join("\n")
 }
 
 /// Where a rule that fits a file by `fit` ranks, first first: made by a correction, then the rest;

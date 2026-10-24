@@ -2,6 +2,7 @@
 
 mod args;
 mod auth;
+mod close;
 mod graph;
 mod grep;
 mod hook;
@@ -11,7 +12,6 @@ mod name;
 mod names;
 mod prompt;
 pub(crate) mod report;
-mod review;
 mod rule;
 mod rules;
 #[cfg(feature = "search")]

@@ -1,10 +1,12 @@
 //! The records of every project on this machine.
 
+mod blobs;
+
 use crate::records::verified::Verified;
 use crate::{Link, Phrase, ProofFile, Refusal};
 use anyhow::Result;
+use blobs::Blobs;
 use celis_nostr::{Account, Note};
-use sha2::{Digest, Sha256};
 use std::cell::{OnceCell, RefCell};
 use std::collections::{HashMap, HashSet};
 use std::io::ErrorKind;
@@ -21,6 +23,7 @@ pub struct Store {
     read: RefCell<Option<Vec<Note>>>,
     seen: RefCell<HashSet<String>>,
     verified: Verified,
+    blobs: Blobs,
 }
 
 impl Store {
@@ -34,13 +37,14 @@ impl Store {
         let root = Store::root(home);
         std::fs::create_dir_all(root.join("shared")).map_err(|e| unwritten(&root, e))?;
         Ok(Store {
-            root,
             phrase: Phrase::at(home),
             links: vec![],
             account: OnceCell::new(),
             read: RefCell::new(None),
             seen: RefCell::default(),
             verified: Verified::open(home.join("cache/verified")),
+            blobs: Blobs::at(root.join("blobs")),
+            root,
         })
     }
 
@@ -85,19 +89,16 @@ impl Store {
 
     /// Keeps `bytes` as a blob in `blobs/` and in each linked folder, unless it is there; its sha256.
     pub fn keep(&self, bytes: &[u8]) -> Result<String> {
-        let sha = sha256(bytes);
-        put_blob(&self.root.join("blobs"), &sha, bytes)?;
+        let sha = self.blobs.keep(bytes)?;
         for link in &self.links {
-            put_blob(&link.folder.join("blobs"), &sha, bytes)?;
+            link_blobs(link).keep(bytes)?;
         }
         Ok(sha)
     }
 
     /// The blob `sha256` of `blobs/`, when its bytes hash to its name.
     pub fn blob(&self, sha256: &str) -> Option<PathBuf> {
-        let path = self.root.join("blobs").join(sha256);
-        let bytes = std::fs::read(&path).ok()?;
-        (self::sha256(&bytes) == sha256).then_some(path)
+        self.blobs.get(sha256)
     }
 
     /// Copies each record a linked folder holds and lacks into it, with the blobs its files name, and
@@ -112,13 +113,7 @@ impl Store {
             for record in kept.iter().filter(|r| link.holds(r, &all)) {
                 went += usize::from(put(&link.folder, record)?.1);
                 for file in record.tags.iter().filter_map(|t| ProofFile::read(t)) {
-                    if let Some(path) = self.blob(&file.sha256) {
-                        put_blob(
-                            &link.folder.join("blobs"),
-                            &file.sha256,
-                            &std::fs::read(path)?,
-                        )?;
-                    }
+                    link_blobs(link).copy(&self.blobs, &file.sha256)?;
                 }
             }
         }
@@ -190,7 +185,7 @@ impl Store {
     /// each blob of them that `blobs/` lacks; the count of records.
     fn take_in(&self, all: &mut Vec<Note>) -> Result<usize> {
         for link in &self.links {
-            self.take_blobs(&link.folder.join("blobs"))?;
+            self.blobs.take(&link_blobs(link))?;
         }
         let mut came = 0;
         let linked = self.links.iter();
@@ -202,21 +197,6 @@ impl Store {
             }
         }
         Ok(came)
-    }
-
-    /// Copies each blob of `folder` that `blobs/` lacks, and whose bytes hash to its name, into it.
-    fn take_blobs(&self, folder: &Path) -> Result<()> {
-        for entry in std::fs::read_dir(folder).into_iter().flatten().flatten() {
-            let name = entry.file_name().to_string_lossy().to_string();
-            if name.starts_with('.') || self.root.join("blobs").join(&name).exists() {
-                continue;
-            }
-            let bytes = std::fs::read(entry.path())?;
-            if sha256(&bytes) == name {
-                put_blob(&self.root.join("blobs"), &name, &bytes)?;
-            }
-        }
-        Ok(())
     }
 }
 
@@ -234,10 +214,9 @@ fn put_bytes(folder: &Path, name: &str, bytes: &[u8]) -> Result<(PathBuf, bool)>
     Ok((path, true))
 }
 
-/// Writes `bytes` to `folder` as the blob `sha256`, unless it is there.
-fn put_blob(folder: &Path, sha256: &str, bytes: &[u8]) -> Result<()> {
-    std::fs::create_dir_all(folder).map_err(|e| unwritten(folder, e))?;
-    put_bytes(folder, sha256, bytes).map(|_| ())
+/// The blobs of the folder of `link`.
+fn link_blobs(link: &Link) -> Blobs {
+    Blobs::at(link.folder.join("blobs"))
 }
 
 /// Writes `record` to `folder` as `<created_at>-<id>.json`, unless it is there; the path, and whether it
@@ -248,11 +227,6 @@ fn put(folder: &Path, record: &Note) -> Result<(PathBuf, bool)> {
         &name(record),
         serde_json::to_string(record)?.as_bytes(),
     )
-}
-
-/// The sha256 of `bytes`, in lower-case hex.
-fn sha256(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
 }
 
 /// A failed write in `folder`: it names the folder, and when the system refused the write, how to let an

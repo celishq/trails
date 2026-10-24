@@ -2,12 +2,13 @@
 
 pub mod fit;
 pub mod glob;
+pub mod pair;
 pub mod rule_end;
 pub mod rule_entry;
 pub mod rules;
 pub mod scope;
 
-use crate::{Anchor, Fit, Glob, Place, RuleId, Scope};
+use crate::{Anchor, Fit, Glob, Pair, Place, RuleId, Scope};
 use anyhow::Result;
 use celis_nostr::{Account, Note};
 
@@ -22,8 +23,7 @@ pub struct Rule {
     pub paths: Vec<String>,
     pub situation: bool,
     pub promoted: bool,
-    pub good: Option<String>,
-    pub bad: Option<String>,
+    pub pair: Pair,
 }
 
 impl Rule {
@@ -32,17 +32,14 @@ impl Rule {
         let mut tags = self.anchor.tags();
         let scope = (self.scope != Scope::Project).then(|| self.scope.text());
         let replaces = self.replaces.as_ref().map(|r| r.to_string());
-        let optional = [
-            ("scope", &scope),
-            ("replaces", &replaces),
-            ("good", &self.good),
-            ("bad", &self.bad),
-        ];
+        let optional = [("scope", &scope), ("replaces", &replaces)];
         tags.extend(
             optional
                 .into_iter()
                 .filter_map(|(name, value)| Some(vec![name.to_string(), value.clone()?])),
         );
+        let pair = self.pair.sides();
+        tags.extend(pair.map(|(side, id)| vec![side.to_string(), id.to_string()]));
         let paths = self.paths.iter();
         tags.extend(paths.map(|p| vec!["path".to_string(), p.clone()]));
         tags.push(vec!["L".to_string(), NAMESPACE.to_string()]);
@@ -86,8 +83,7 @@ impl Rule {
                 .collect(),
             situation: labelled(note, "situation"),
             promoted: labelled(note, "promoted"),
-            good: owned("good"),
-            bad: owned("bad"),
+            pair: Pair::read(note),
         })
     }
 

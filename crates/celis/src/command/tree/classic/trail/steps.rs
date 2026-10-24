@@ -130,7 +130,7 @@ impl Tree<'_> {
     /// Whether opening `note` shows something: lines under it, or steps under a closed one.
     fn opens(&self, note: Step) -> bool {
         let lines = note.record().detail().next().is_some()
-            || note.done().is_some()
+            || note.done_record().is_some()
             || note.dropped().is_some()
             || !self.reuse.sources(note).is_empty()
             || self.reuse.followers(note) > 0;
