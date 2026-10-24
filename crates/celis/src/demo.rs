@@ -1,4 +1,4 @@
-//! `--demo` of `tree`, `stats` and `report`: made-up trails in every state, with four weeks of history,
+//! `--demo` of `tree` and `stats`: made-up trails in every state, with four weeks of history,
 //! in a folder of their own; and of `tree --graph`, eleven trails of today that move live.
 
 use crate::command::{Args, Command};
@@ -9,9 +9,8 @@ use std::io::{IsTerminal, Write};
 use std::path::PathBuf;
 
 impl Command {
-    /// Runs the command `args` names, `tree`, `stats` or `report`, on made-up trails written to a folder
-    /// of their own, and removes the folder at the end; `report` reports the trail with every state, and
-    /// `tree --graph` shows the trails of the graph's demo, written live on a terminal.
+    /// Runs the command `args` names, `tree` or `stats`, on made-up trails written to a folder of their
+    /// own, and removes the folder at the end; `tree --graph` shows the trails of the graph's demo, written live on a terminal.
     pub(crate) fn demo(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let home = std::env::temp_dir().join(format!("celis-demo-{}", std::process::id()));
         let demo = Demo {
@@ -44,10 +43,10 @@ impl Command {
             return shown;
         }
         let written = match args.words[0].as_str() {
-            "stats" if args.next => demo.month().map(|_| String::new()),
+            "stats" if args.next => demo.month().map(|_| ()),
             _ => demo.write(),
         };
-        let shown = written.and_then(|tier| {
+        let shown = written.and_then(|()| {
             let mut env = self.env.clone();
             env.insert("CELIS_HOME".to_string(), home.display().to_string());
             if let Some(opening) = self.opening() {
@@ -58,16 +57,12 @@ impl Command {
                 env,
                 folder: self.folder.clone(),
             };
-            let mut args = Args {
+            let args = Args {
                 demo: false,
                 ..args.clone()
             };
             match args.words[0].as_str() {
                 "stats" => command.stats(&args, out),
-                _ if args.markdown => {
-                    args.words.push(tier);
-                    command.tree(&args, out)
-                }
                 _ => command.tree(&args, out),
             }
         });
@@ -87,8 +82,8 @@ struct Demo {
 impl Demo {
     /// Writes the made-up trails: the history of four weeks; a done one of a past day; today, an active
     /// one with a step in each state, rules and a change, a revised one, and in a second project an
-    /// active, an expired and a dropped one. The id of the active one.
-    fn write(&self) -> Result<String, Failure> {
+    /// active, an expired and a dropped one.
+    fn write(&self) -> Result<(), Failure> {
         let (shop, crm) = (anchor("shop"), anchor("crm"));
         self.history(&shop, &crm)?;
         let day = 2 * 24 * 3600;
@@ -273,7 +268,7 @@ impl Demo {
             "Round the price down\nexpect: no price has a part of a cent",
             &[],
         )?;
-        Ok(tier)
+        Ok(())
     }
 
     /// Writes a trail of three steps each day from 27 days to 3 days ago, in turn in each project: the

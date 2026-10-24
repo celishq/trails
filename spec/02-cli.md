@@ -19,7 +19,7 @@ celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--situation
 celis rules [<file>]... [--diff]
                                                        the rules of some files
 celis name [<trail id> <name>] [--limit <n>]          name a trail; with none, the named trails
-celis tree [<id>]... [--graph] [--full] [--all] [--markdown] [--demo]
+celis tree [<id>]... [--graph] [--full] [--all] [--demo]
                                                        a trail and its steps; again on each change
 celis grep <grep option>... <pattern>                 every trail, through the system grep
 celis search [--kind <kind>] [--limit <n>] -- <text>

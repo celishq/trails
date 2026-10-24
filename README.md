@@ -153,8 +153,7 @@ computer.
 from Hugging Face (0.5 to 1.2 GB) and indexes your trails on your machine. Then `celis search` finds rules
 and past asks by meaning, in any language. With no model, agents search with `celis grep`.
 
-**What else can I run?** `celis help` lists every command, such as `celis grep` to search your trails
-and `celis tree <id> --markdown` to turn a trail into Markdown for a pull request.
+**What else can I run?** `celis help` lists every command, such as `celis grep` to search your trails.
 
 **Does it work on Windows?** Through WSL.
 

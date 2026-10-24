@@ -355,17 +355,16 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "tree",
-        usage: &["celis tree [<id>]... [--graph] [--full] [--all] [--markdown] [--demo]"],
-        summary: "Show a trail with its state, rules, and steps. With no id, show the active trails and today's trails of every project. With --markdown, show the trail of each id as Markdown for a pull request; on a terminal, a card for each trail, and press m to copy the Markdown.",
+        usage: &["celis tree [<id>]... [--graph] [--full] [--all] [--demo]"],
+        summary: "Show a trail with its state, rules, and steps. With no id, show the active trails and today's trails of every project.",
         args: &[
             ("<id>", "A step id, or its first 4 or more characters"),
             ("--graph", "Show today's trails as live graphs of cards"),
             ("--full", "Show each step's proof, grade, and reason"),
             ("--all", "Show every trail of every project, by day"),
-            ("--markdown", "Show the trails as Markdown for a pull request"),
             ("--demo", "Show sample trails in every state"),
         ],
-        examples: &["celis tree 3fa2c1d0 --full", "celis tree --all", "celis tree 3fa2c1d0 9e717e6f --markdown"],
+        examples: &["celis tree 3fa2c1d0 --full", "celis tree --all"],
     },
     Verb {
         command: "hook start",

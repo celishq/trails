@@ -14,7 +14,6 @@ Read
   ├ --graph           Show today's trails as live graphs of cards
   ├ --full            Show each step's proof, grade, and reason
   ├ --all             Show every trail of every project, by day
-  ├ --markdown        Show the trails as Markdown for a pull request
   └ --demo            Show sample trails in every state
 
   grep <pattern>      Search every trail with grep
