@@ -2,4 +2,4 @@
 type: regex
 target: trace
 ---
-"command":"(?:[^"\\]|\\.)*celis step add(?:[^"\\]|\\.)*for:(?:[^"\\]|\\.)*expect:
+"command":"(?:[^"\\]|\\.)*celis step add(?:[^"\\]|\\.)*expect:(?:[^"\\]|\\.)*for:

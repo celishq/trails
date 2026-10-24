@@ -6,4 +6,4 @@ model: opus
 runs: 3
 plugins: [../../plugins/celis]
 ---
-Add `discount(price_cents, percent)` to `shop.py`: it returns the price in integer cents after the discount, rounded down, and refuses a percent outside 0 to 100. Add a unittest test in `test_shop.py` and run it with `python3 -m unittest`.
+Add a cart to `shop.py`, so the shop can sell to a customer: `Cart.add(sku, price_cents, qty)`, `Cart.remove(sku)`, `Cart.total()` in integer cents, and `Cart.apply(code)` for the codes `TEN` (10% off, rounded down) and `SHIP` (free shipping; shipping is 500 cents under a 5000-cent total, else 0). An unknown code raises `ValueError`. Add unittest tests in `test_shop.py` and run them with `python3 -m unittest`.

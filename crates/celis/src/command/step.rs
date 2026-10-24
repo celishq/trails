@@ -164,15 +164,13 @@ impl Command {
         for record in &written.records {
             self.id(out, args, record)?;
         }
-        for (said, rule) in &written.rules {
-            let line = crate::text::line::rule(said, rule);
-            super::show(
-                out,
-                args.json,
-                "decision",
-                crate::text::json::rule(said, rule),
-                &line,
-            )?;
+        if !written.rules.is_empty() {
+            let trails = self.trails()?;
+            for (said, rule) in &written.rules {
+                let line = super::rules::shown(said, rule, &trails);
+                let json = crate::text::json::rule(said, rule);
+                super::show(out, args.json, "decision", json, &line)?;
+            }
         }
         for notice in &written.notices {
             self.notice(notice, err)?;
@@ -188,9 +186,9 @@ impl Command {
                 short(trail)
             ),
             Notice::Ask(ask) => format!(
-                "celis: when {0} holds more than one job, a part a person can check alone such as an item \
-                 of its list, add only its first job with step add --under {0}, and each next job after \
-                 you close one.",
+                "celis: show the person the expect and intent lines of {0} in one message, and start. When \
+                 {0} holds more than one job, a part a person can check alone such as an item of its list, \
+                 add only its first job with step add --under {0}, and each next job after you close one.",
                 short(ask)
             ),
             Notice::Joined(trail) => format!(

@@ -78,6 +78,44 @@ fn decide_names_the_good_and_the_bad_step() {
     );
 }
 
+/// `start` prints a rule its ask uses with the good step of its pair.
+#[test]
+fn start_prints_the_pair_of_a_rule_its_ask_uses() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the logo"]);
+    let a = add(&repo, &["--under", &trail[..8], "--", "a sharp logo"]);
+    repo.write("logo.svg", "<svg/>\n");
+    done(&repo, &a, "logo.svg", "sharp");
+    let o = cli(
+        &repo,
+        &[
+            "decide",
+            "--good",
+            &a[..8],
+            "--",
+            "When a logo is drawn: keep sharp corners, because the person picked them.",
+        ],
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let rule = out(&o).lines().next().unwrap().to_string();
+    let ask = add(
+        &repo,
+        &[
+            "--under",
+            &trail[..8],
+            "--uses",
+            &rule[..8],
+            "--",
+            "the icon",
+        ],
+    );
+    let said = out(&cli(&repo, &["step", "start", &ask[..8]]));
+    assert!(
+        said.contains(&format!("  good    {} a sharp logo · sharp", &a[..8])),
+        "{said}"
+    );
+}
+
 /// `decide --good` refuses a step that the store does not hold, with `no-step`.
 #[test]
 fn decide_refuses_an_unknown_step() {

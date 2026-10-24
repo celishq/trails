@@ -82,7 +82,7 @@ celis decide --path "**/prices*.py" -- "When you change prices: keep them in cen
 **Rules**
 
 - `celis <command> --help` MUST print a page that starts with the command's usage lines from "Commands".
-- Each command line of the plugin's card MUST name the flags its command's usage names, and no other.
+- Each command line of the plugin's card MUST name only flags its command's usage names.
 - The first line of `celis --version` MUST be `celis <version>`, then a space, or its end.
 
 ## Output and errors

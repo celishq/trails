@@ -129,7 +129,7 @@ impl Command {
             err,
             "celis: this project keeps its trails in .celis/trails/, and this machine does not link \
              them; ask the person whether to link this project to celis, and if so, to run celis \
-             link in it themselves.",
+             link in it themselves. Never run celis link yourself, and never write in a linked folder.",
         )?;
         mark(&offered)
     }

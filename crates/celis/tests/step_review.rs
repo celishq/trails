@@ -129,7 +129,7 @@ fn done_on_an_ask_reviews_its_plan_and_asks_for_rules() {
             format!("  claim   {} first part", short(&first)),
             format!("  claim   {} third part", short(&third)),
             "celis · 3 steps · 2 turns · 3 claims · 10m".to_string(),
-            "celis: write what a later plan should keep as rules with celis decide.".to_string(),
+            "celis: write what a later plan should keep as rules with celis decide, then answer the person with the end block of the card alone.".to_string(),
         ]
     );
 }
@@ -180,7 +180,7 @@ fn done_on_an_ask_prints_its_gap() {
             "  places  a.rs · b.rs".to_string(),
             "celis · 4 steps · 2 turns · 1 checked · 1 judged · 1 person · 1 claim · 10m"
                 .to_string(),
-            "celis: write what a later plan should keep as rules with celis decide.".to_string(),
+            "celis: write what a later plan should keep as rules with celis decide, then answer the person with the end block of the card alone.".to_string(),
         ]
     );
 }

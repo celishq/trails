@@ -3,4 +3,4 @@ type: regex
 target: trace
 match: count:0
 ---
-celis decide (?:[^"\\]|\\.)*--good
+"command":"(?:[^"\\]|\\.)*celis decide (?:[^"\\]|\\.)*--good

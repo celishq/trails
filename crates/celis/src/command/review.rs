@@ -62,7 +62,7 @@ impl Command {
         }
         let under = review.under.as_deref().map(short);
         lines.extend(match (review.ask, review.as_planned, under) {
-            (true, _, _) => Some("celis: write what a later plan should keep as rules with celis decide.".to_string()),
+            (true, _, _) => Some("celis: write what a later plan should keep as rules with celis decide, then answer the person with the end block of the card alone.".to_string()),
             (_, false, Some(u)) => Some(format!("celis: it went otherwise than planned; replace or drop each open step it voids, then add one step under {u}.")),
             (_, true, Some(u)) => Some(format!("celis: take an open step beside it, add one step under {u}, or close {u} when its work is done.")),
             (_, _, None) => None,

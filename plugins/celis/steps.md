@@ -45,16 +45,9 @@ To write a named trail `<name>` that work in every project can use:
 4. `celis step done <ask id> --as-planned -- "<what it was made from>"`, then
    `celis name <trail id> <name>`.
 
-## Tidy
+## Other sessions
 
-When a search brings rules that say the same thing or say to do different things, or many stale trails,
-tell the person that `/celis:tidy` tidies them.
-
-## Subagents and other sessions
-
-When a subagent or another agent takes work, add a step for it under your working step, and put in its
-task, beside its rules: "celis step <id>: run celis step start <id> first and celis step done <id>
-last." The agent adds its own steps `--under <id>`. To go on with another session's trail, add your first step `--under <its id>`.
+To go on with another session's trail, add your first step `--under <its id>`.
 
 ## Taste
 
@@ -72,29 +65,10 @@ in creative work it guides, and a variant that breaks it on purpose keeps it. Ke
 When 3 blocks make the same point, or the picks of a creative ask share one, propose one rule that says
 it, and replace them when the person agrees.
 
-## Creative work
-
-Creative work, such as an image, a sound, a level or a text, has no check that proves it good: the
-person's taste does. Before the outer layer, open the blobs of its taste blocks and see what the person
-chose. The outer layer has 2 variants as steps under it, unless the person names another number: one
-follows the blocks and the past picks, one explores away from them and names the rule it breaks. Close
-each with `--file` for its result, so that its blob stays when the next variant writes the same file;
-when the last one closes, celis prints the blobs beside it.
-
-Go as far as you can: choose the variant closer to the blocks, give the next layer `--uses <it>`, and
-finish. Name your choice in "Took", with the blob of each other variant, so the person can pick after.
-When they pick another, keep it as a block and redo the next layers from the pick. Only the outer layer
-has variants, unless the person asks. A note, such as "move it left", is not a fix of done work. When
-the person wants to choose at each layer, `/celis:steer` does one ask that way; when they want it
-always, write it as a `me` rule.
-
 ## Links
 
-A project can keep its trails in `.celis/trails/`, so that git carries them to the team, or in any
-folder, such as a synced drive. When celis says the project has trails this machine does not link, ask
-the person whether to link this project to celis. When the person wants to keep the trails in the repo
-or in a folder, tell them to run `celis link [<folder>]` in the project themselves. Never run
-`celis link` yourself, and never write in a linked folder.
+When the person wants to keep the trails in the repo or in a folder, tell them to run
+`celis link [<folder>]` in the project themselves.
 
 ## Stop
 
