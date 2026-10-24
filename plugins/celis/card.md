@@ -16,7 +16,8 @@ celis tree [<id>]...
    names what the person wants done: a verb and what it acts on, in words that hold in another
    project. On the lines after it, write `expect: <what a person can check when it is done>`,
    `for: <why the person wants it>`, `not: <its limits>` and `ask me: <the one-way doors you see
-   ahead>`. Give it the project's own check. Split it by its jobs: a job is a part a person can check
+   ahead>`. Write these lines to the person in one message, and start in the same turn. Give it the
+   project's own check. Split it by its jobs: a job is a part a person can check
    alone, such as an item of its list or a module; an ask with one job, such as a function and its test,
    is one step. A feature with more than one part, such as a tool with several commands, or creative
    work, is never one step: its jobs are layers. The outer layer makes the whole result at low detail,

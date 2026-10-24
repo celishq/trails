@@ -84,7 +84,7 @@ fn add_of_an_ask_says_to_add_its_first_job_under_it() {
     let repo = Repo::new();
     let hint = |o: &std::process::Output| {
         let id = out(o)[..8].to_string();
-        err(o).contains(&format!("When {id} holds more than one job"))
+        err(o).contains(&format!("celis: when {id} holds more than one job"))
     };
     let env = [("CLAUDE_CODE_SESSION_ID", "s1")];
     let o = repo.run(&repo.path(), &["step", "add", "--", "first ask"], &env, "");
