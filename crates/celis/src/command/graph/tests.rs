@@ -64,7 +64,12 @@ impl Bench {
         let changed = changed.then(|| "another way".to_string());
         let home = self.home.path().to_path_buf();
         self.trails
-            .done(id, "it works".into(), changed, None, &home)
+            .done(
+                id,
+                celis_trails::Done::new("it works".into(), changed),
+                None,
+                &home,
+            )
             .unwrap();
         self.trails.at(self.at);
     }
@@ -89,6 +94,8 @@ impl Bench {
             paths: vec![],
             situation: false,
             promoted: false,
+            good: None,
+            bad: None,
         };
         let id = self.trails.decide(rule, None).unwrap().records[0]
             .id

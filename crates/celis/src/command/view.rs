@@ -108,7 +108,7 @@ fn level<'a>(root: Step<'a>, parent: Step<'a>, rows: &mut Vec<Row>) {
             text: flat(text),
         };
         match child.close() {
-            Some((note, Mark::Done { proof, changed })) => {
+            Some((note, Mark::Done(celis_trails::Done { proof, changed, .. }))) => {
                 rows.push(row(note, Kind::Proof, &proof));
                 rows.extend(changed.map(|c| row(note, Kind::Changed, &c)));
             }

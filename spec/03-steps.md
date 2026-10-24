@@ -67,11 +67,14 @@ dropped   a `drop` names it
 ```json
 { "kind": 1985, "content": "<the proof>",
   "tags": [["L", "celis.step"], ["l", "done", "celis.step"], ["e", "<step id>"],
-           ["changed", "<how the work differs from the plan>"]] }
+           ["changed", "<how the work differs from the plan>"],
+           ["by", "judge"]] }
 ```
 
 - content: the proof, the check that failed before and passes now.
 - `changed`: optional; with none, the work went as planned.
+- `by`: optional; who gave the proof: `judge`, a reader that did not do the work, or `person`. With none,
+  the proof is the agent's own.
 
 **Writers**
 

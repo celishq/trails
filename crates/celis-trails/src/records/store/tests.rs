@@ -65,3 +65,21 @@ fn a_read_verifies_again_only_files_that_changed() {
         .collect();
     assert_eq!(texts, ["kelp"]);
 }
+
+/// A kept file is a blob in `blobs/`, named by the sha256 of its bytes, once; a blob whose bytes do not
+/// hash to its name reads as missing (`spec/08-files.md`, "Blobs").
+#[test]
+fn a_kept_file_is_a_blob_named_by_its_sha256() {
+    let home = tempfile::tempdir().unwrap();
+    let store = Store::open(home.path()).unwrap();
+    let sha = store.keep(b"abc").unwrap();
+    assert_eq!(
+        sha,
+        "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+    );
+    assert_eq!(store.keep(b"abc").unwrap(), sha);
+    let path = store.blob(&sha).unwrap();
+    assert_eq!(std::fs::read(&path).unwrap(), b"abc");
+    std::fs::write(&path, b"abd").unwrap();
+    assert_eq!(store.blob(&sha), None);
+}

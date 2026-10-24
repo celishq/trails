@@ -310,7 +310,7 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "decide",
-        usage: &["celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--situation] [--promoted] [--project <id>] -- <text>"],
+        usage: &["celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--situation] [--promoted] [--good <id>] [--bad <id>] [--project <id>] -- <text>"],
         summary: "Record a rule that later work must keep. With no --scope, it holds for the whole project. Its paths name the files it acts on, so celis rules gives it for them.",
         args: &[
             ("--scope <scope>", "Where it applies: at:<place>, trail:<id>, me, or project"),
@@ -318,6 +318,8 @@ pub const VERBS: &[Verb] = &[
             ("--path <glob>", "A file it acts on; * and ? within a folder, ** across"),
             ("--situation", "No file shows it ahead"),
             ("--promoted", "A tool of the place, like a linter, now checks it"),
+            ("--good <id>", "A step whose result shows the rule, such as a pick or a fix"),
+            ("--bad <id>", "A step whose result breaks it, such as a variant not picked"),
             ("--project <id>", "skill:<name>, or the id of a project in the store"),
             ("<text>", "When it applies, what to do, and why"),
         ],
@@ -452,12 +454,14 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "step done",
-        usage: &["celis step done <id> [--changed <text>] [--as-planned] [--pitfall <text>] -- <proof>"],
+        usage: &["celis step done <id> [--changed <text>] [--as-planned] [--by <who>] [--file <path>]... [--pitfall <text>] -- <proof>"],
         summary: "Finish a step with its proof and what changed. Finish the steps under it first.",
         args: &[
             ("<id>", "A step id, or its first 4 or more characters"),
             ("--changed", "How the result differs from its expect line"),
             ("--as-planned", "The result matches its expect line; else use --changed"),
+            ("--by", "judge, a reader that did not do the work, or person"),
+            ("--file", "A file of the proof, kept as it is now"),
             ("--pitfall", "A rule from what went wrong, kept at the step's places"),
             ("<proof>", "The check that failed before and passes now"),
         ],

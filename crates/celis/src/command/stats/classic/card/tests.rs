@@ -35,7 +35,12 @@ fn worked(later: u64) -> (TempDir, Trails) {
     trails.start(&part).unwrap();
     trails.at(AT);
     trails
-        .done(&part, "it works".into(), None, None, home.path())
+        .done(
+            &part,
+            celis_trails::Done::new("it works".into(), None),
+            None,
+            home.path(),
+        )
         .unwrap();
     trails.at(AT + later);
     (home, trails)
@@ -121,6 +126,8 @@ fn reused(later: u64) -> (TempDir, Trails) {
         paths: vec![],
         situation: false,
         promoted: false,
+        good: None,
+        bad: None,
     };
     trails.at(AT);
     let rule = trails.decide(rule, None).unwrap().records[0].id.clone();
@@ -221,7 +228,12 @@ fn the_projects_card_aligns_its_times() {
     trails.start(&part).unwrap();
     trails.at(long);
     trails
-        .done(&part, "it took long".into(), None, None, home.path())
+        .done(
+            &part,
+            celis_trails::Done::new("it took long".into(), None),
+            None,
+            home.path(),
+        )
         .unwrap();
     trails.at(long + 60);
     let face = face(&trails, "06 PROJECTS");

@@ -1,14 +1,17 @@
 //! CIP-03: a step, what it says, the marks agents leave on it, and how it stands.
 
+pub mod by;
 pub mod check;
+pub mod done;
 pub mod mark;
+pub mod proof_file;
 pub mod state;
 pub mod step_record;
 pub mod steps;
 pub mod used;
 
 use crate::step::steps::{Close, Entry, LIFE};
-use crate::{Mark, NamedTrail, State, StepId, StepRecord, Steps, Trail, Used};
+use crate::{Done, Mark, NamedTrail, State, StepId, StepRecord, Steps, Trail, Used};
 use celis_nostr::Note;
 use std::collections::HashSet;
 
@@ -167,6 +170,14 @@ impl<'a> Step<'a> {
         match (self.closed(), self.state()) {
             (Some(close), _) => Some(close.created_at),
             (None, State::Expired) => Some(self.trail().newest()),
+            _ => None,
+        }
+    }
+
+    /// What it was closed done with; none while it is not done.
+    pub fn closing(self) -> Option<Done> {
+        match Mark::read(self.done()?)? {
+            (_, Mark::Done(done)) => Some(done),
             _ => None,
         }
     }

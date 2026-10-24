@@ -42,6 +42,8 @@ Record work · your agents run these
   step done <id>      Finish a step with proof that it works
   ├ --changed <text>  How the result differs from its expect line
   ├ --as-planned      The result matches its expect line; else use --changed
+  ├ --by <who>        judge, a reader that did not do the work, or person
+  ├ --file <path>     A file of the proof, kept as it is now
   └ --pitfall <text>  A rule from what went wrong, kept at the step's places
 
   step drop <id>      Drop a step and the open steps under it
@@ -55,6 +57,10 @@ Record work · your agents run these
   ├ --path <glob>     A file it acts on; * and ? within a folder, ** across
   ├ --situation       No file shows it ahead
   ├ --promoted        A tool of the place, like a linter, now checks it
+  ├ --good <id>       A step whose result shows the rule, such as a pick or a
+  │                   fix
+  ├ --bad <id>        A step whose result breaks it, such as a variant not
+  │                   picked
   └ --project <id>    skill:<name>, or the id of a project in the store
 
   name <trail> <name> Name a trail, so other work can use it by its name

@@ -60,7 +60,12 @@ impl Desk {
         self.trails.at(noon() - ago);
         let home = self.home.path().to_path_buf();
         self.trails
-            .done(id, "it works".into(), None, None, &home)
+            .done(
+                id,
+                celis_trails::Done::new("it works".into(), None),
+                None,
+                &home,
+            )
             .unwrap();
         self.trails.at(noon() - ago);
     }
@@ -88,6 +93,8 @@ impl Desk {
             paths: vec![],
             situation: false,
             promoted: false,
+            good: None,
+            bad: None,
         };
         let id = self.trails.decide(rule, None).unwrap().records[0]
             .id

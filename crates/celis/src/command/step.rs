@@ -4,7 +4,7 @@ use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::progress::Review;
 use celis_trails::records::id::short;
-use celis_trails::{Draft, Notice, Place, Project, Written};
+use celis_trails::{By, Done, Draft, Link, Notice, Place, Project, Written};
 use std::io::Write;
 
 impl Command {
@@ -72,7 +72,8 @@ impl Command {
         self.print(written, args, out, err)
     }
 
-    /// Closes the open step `args` names, done with its proof and what changed from its plan, and prints
+    /// Closes the open step `args` names, done with its proof, what changed from its plan, who gave the
+    /// proof and the files it keeps, and prints
     /// the id of the done record, then of its pitfall's rule, and its review.
     fn step_close(
         &self,
@@ -92,12 +93,30 @@ impl Command {
                     "step done needs one of --changed <what differs from the plan> or --as-planned",
                 )),
             };
+        let by = match args.by.as_deref() {
+            None => None,
+            Some(text) => Some(By::parse(text).ok_or_else(|| {
+                Failure::usage(format!("step done --by takes judge or person, not {text}"))
+            })?),
+        };
+        let mut files = Vec::new();
+        for file in &args.files {
+            let place = Place::resolve(file, &project.folder, &self.folder);
+            files.push(trails.keep(place, &self.folder.join(file))?);
+        }
+        let done = Done {
+            proof,
+            changed,
+            by,
+            files,
+        };
         let pitfall = args.pitfall.clone();
-        let written = trails.done(id, proof, changed.clone(), pitfall, &project.folder)?;
+        let written = trails.done(id, done.clone(), pitfall, &project.folder)?;
         self.print(written, args, out, err)?;
         let steps = trails.steps();
-        let review = Review::of(trails.records(), steps.find(id)?, changed.as_deref());
-        self.review(&review, err)
+        let review = Review::of(trails.records(), steps.find(id)?, &done, super::now());
+        let linked = !Link::all(&self.home()?, &project.folder).is_empty();
+        self.review(&review, &trails, linked, err)
     }
 
     /// Drops the open step `args` names and each open step under it, and prints each drop's id.
@@ -145,15 +164,13 @@ impl Command {
         for record in &written.records {
             self.id(out, args, record)?;
         }
-        for (said, rule) in &written.rules {
-            let line = crate::text::line::rule(said, rule);
-            super::show(
-                out,
-                args.json,
-                "decision",
-                crate::text::json::rule(said, rule),
-                &line,
-            )?;
+        if !written.rules.is_empty() {
+            let trails = self.trails()?;
+            for (said, rule) in &written.rules {
+                let line = super::rules::shown(said, rule, &trails);
+                let json = crate::text::json::rule(said, rule);
+                super::show(out, args.json, "decision", json, &line)?;
+            }
         }
         for notice in &written.notices {
             self.notice(notice, err)?;
@@ -169,9 +186,8 @@ impl Command {
                 short(trail)
             ),
             Notice::Ask(ask) => format!(
-                "celis: when {0} holds more than one job, a part a person can check alone such as an item \
-                 of its list, add only its first job with step add --under {0}, and each next job after \
-                 you close one.",
+                "celis: when {0} holds more than one job, a part a person can check alone such as an item of its list, \
+                 add only its first job with step add --under {0}, and each next job after you close one.",
                 short(ask)
             ),
             Notice::Joined(trail) => format!(

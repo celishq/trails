@@ -87,12 +87,12 @@ fn a_trails_review_names_no_next_move() {
 }
 
 /// `done` on an ask reviews the steps under it: those planned before the work began, those added,
-/// dropped and changed, and the person's prompts since the ask; then it asks for rules.
+/// dropped and changed, the person's prompts since the ask, and its gap; then it asks for rules.
 #[test]
 fn done_on_an_ask_reviews_its_plan_and_asks_for_rules() {
     let repo = Repo::new();
     let by = &account();
-    let t = now() - 10 * 60;
+    let t = now() - 10 * 60 - 30;
     let trail = step_note(&repo, by, None, "the trail", t);
     mark(&repo, "prompt", &trail, "an older ask", None, t);
     let ask = step_note(&repo, by, Some(&trail), "the ask", t + 1);
@@ -125,7 +125,83 @@ fn done_on_an_ask_reviews_its_plan_and_asks_for_rules() {
             format!("  changed {} it reads the cache", short(&first)),
             format!("  changed {} one part fewer", short(&ask)),
             "  asked   use the cache".to_string(),
-            "celis: write what a later plan should keep as rules with celis decide.".to_string(),
+            format!("  claim   {} the ask", short(&ask)),
+            format!("  claim   {} first part", short(&first)),
+            format!("  claim   {} third part", short(&third)),
+            "celis · 3 steps · 2 turns · 3 claims · 10m".to_string(),
+            "celis: write what a later plan should keep as rules with celis decide, then answer the person with the end block of the card alone.".to_string(),
         ]
     );
+}
+
+/// `done` on an ask also prints its gap: each edit of the ask, each step whose proof is the agent's own
+/// claim, the places of its steps, and a total of its steps, turns, proofs by kind and minutes.
+#[test]
+fn done_on_an_ask_prints_its_gap() {
+    let repo = Repo::new();
+    let by = &account();
+    let began = now() - 10 * 60 - 30;
+    let trail = step_note(&repo, by, None, "the trail", began);
+    let ask = step_note(&repo, by, Some(&trail), "the ask", began);
+    let a = &ask.id[..8];
+    let checked = add(
+        &repo,
+        &[
+            "--under", a, "--at", "a.rs", "--check", "true", "--", "checked",
+        ],
+    );
+    let judged = add(&repo, &["--under", a, "--at", "b.rs", "--", "judged"]);
+    let claim = add(&repo, &["--under", a, "--", "claim"]);
+    let gone = add(&repo, &["--under", a, "--", "gone"]);
+    let edit = cli(
+        &repo,
+        &["step", "edit", a, "--", "the ask\nexpect: it ends"],
+    );
+    assert!(edit.status.success(), "{}", err(&edit));
+    done(&repo, &checked, &["--as-planned"]);
+    done(&repo, &judged, &["--as-planned", "--by", "judge"]);
+    done(&repo, &claim, &["--changed", "it took the cache"]);
+    assert!(
+        cli(&repo, &["step", "drop", &gone[..8], "--", "not wanted"])
+            .status
+            .success()
+    );
+    let lines = done(&repo, &ask.id, &["--as-planned", "--by", "person"]);
+    let gap: Vec<&str> = lines
+        .iter()
+        .map(String::as_str)
+        .skip_while(|l| !l.starts_with("  edited"))
+        .collect();
+    assert_eq!(
+        gap,
+        [
+            "  edited  the ask · expect: it ends".to_string(),
+            format!("  claim   {} claim", &claim[..8]),
+            "  places  a.rs · b.rs".to_string(),
+            "celis · 4 steps · 2 turns · 1 checked · 1 judged · 1 person · 1 claim · 10m"
+                .to_string(),
+            "celis: write what a later plan should keep as rules with celis decide, then answer the person with the end block of the card alone.".to_string(),
+        ]
+    );
+}
+
+/// `done --by` takes only `judge` or `person` (`spec/03-steps.md`, "Closing").
+#[test]
+fn done_by_takes_judge_or_person() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    let o = cli(
+        &repo,
+        &[
+            "step",
+            "done",
+            &trail[..8],
+            "--as-planned",
+            "--by",
+            "robot",
+            "--",
+            "p",
+        ],
+    );
+    assert_eq!(o.status.code(), Some(2), "{}", err(&o));
 }

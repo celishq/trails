@@ -7,8 +7,8 @@ pub mod written;
 
 use crate::records::id::short;
 use crate::{
-    Anchor, Check, Draft, Mark, Name, Notice, Refusal, Rule, RuleId, Rules, Scope, Step, StepId,
-    StepRecord, Steps, Store, Trail, Written,
+    Anchor, Check, Done, Draft, Mark, Name, Notice, ProofFile, Refusal, Rule, RuleId, Rules, Scope,
+    Step, StepId, StepRecord, Steps, Store, Trail, Written,
 };
 use celis_nostr::{Account, Note};
 use std::path::{Path, PathBuf};
@@ -178,14 +178,25 @@ impl Trails {
         Ok(written)
     }
 
-    /// Closes the open step `id` done, with its proof and what changed from its plan, once nothing under
-    /// it is open and its check passes in `folder`; a pitfall becomes a rule at its place, else on its
-    /// trail.
+    /// Keeps the file at `path` as a blob, as a file of a proof at `place`.
+    pub fn keep(&self, place: String, path: &Path) -> Result<ProofFile, Refusal> {
+        let bytes = std::fs::read(path)
+            .map_err(|_| Refusal::Usage(format!("no file {}", path.display())))?;
+        let sha256 = self.store.keep(&bytes)?;
+        Ok(ProofFile::new(place, sha256, bytes.len() as u64))
+    }
+
+    /// The blob `sha256` of the store, when its bytes hash to its name.
+    pub fn blob(&self, sha256: &str) -> Option<PathBuf> {
+        self.store.blob(sha256)
+    }
+
+    /// Closes the open step `id` `done`, once nothing under it is open and its check passes
+    /// in `folder`; a pitfall becomes a rule at its place, else on its trail.
     pub fn done(
         &self,
         id: &str,
-        proof: String,
-        changed: Option<String>,
+        done: Done,
         pitfall: Option<String>,
         folder: &Path,
     ) -> Result<Written, Refusal> {
@@ -198,11 +209,10 @@ impl Trails {
         if let Some(check) = &step.check {
             self.check(check, folder)?;
         }
-        let mark = Mark::Done { proof, changed };
         let mut written = Written::default();
-        written
-            .records
-            .push(self.sign(|account, now| mark.record(account, note.id(), now))?);
+        written.records.push(
+            self.sign(|account, now| Mark::Done(done.clone()).record(account, note.id(), now))?,
+        );
         if let Some(pitfall) = pitfall {
             let scope = match step.at() {
                 Some(at) => Scope::At(at.to_string()),
@@ -216,6 +226,8 @@ impl Trails {
                 paths: vec![],
                 situation: false,
                 promoted: false,
+                good: None,
+                bad: None,
             };
             written
                 .records
