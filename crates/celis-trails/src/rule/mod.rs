@@ -2,17 +2,18 @@
 
 pub mod fit;
 pub mod glob;
+pub mod pair;
 pub mod rule_end;
 pub mod rule_entry;
 pub mod rules;
 pub mod scope;
 
-use crate::{Anchor, Fit, Glob, Place, RuleId, Scope};
+use crate::{Anchor, Fit, Glob, Pair, Place, RuleId, Scope};
 use anyhow::Result;
 use celis_nostr::{Account, Note};
 
-/// One rule, written on a project, that holds in its scope; with the globs of the files it acts on,
-/// and its `situation` and `promoted` labels.
+/// One rule, written on a project, that holds in its scope; with the globs of the files it acts on, its
+/// `situation` and `promoted` labels, and the good and the bad step of its pair.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Rule {
     pub anchor: Anchor,
@@ -22,6 +23,7 @@ pub struct Rule {
     pub paths: Vec<String>,
     pub situation: bool,
     pub promoted: bool,
+    pub pair: Pair,
 }
 
 impl Rule {
@@ -36,6 +38,8 @@ impl Rule {
                 .into_iter()
                 .filter_map(|(name, value)| Some(vec![name.to_string(), value.clone()?])),
         );
+        let pair = self.pair.sides();
+        tags.extend(pair.map(|(side, id)| vec![side.to_string(), id.to_string()]));
         let paths = self.paths.iter();
         tags.extend(paths.map(|p| vec!["path".to_string(), p.clone()]));
         tags.push(vec!["L".to_string(), NAMESPACE.to_string()]);
@@ -79,6 +83,7 @@ impl Rule {
                 .collect(),
             situation: labelled(note, "situation"),
             promoted: labelled(note, "promoted"),
+            pair: Pair::read(note),
         })
     }
 

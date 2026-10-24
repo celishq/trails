@@ -7,6 +7,9 @@ The cases that the card does not cover, and that no command prints. Do not run `
 A place is a file, a `file:line`, a folder, or a URL. A rule that holds at one place takes the scope
 `at:<place>`.
 
+To find more rules than the past agent brought, run `celis rules` for the words the rules use, and
+search them with `celis grep -i -E " rule [0-9a-f]{8} live .*(<word>|<word>)"`.
+
 When you move a file: write each rule of its old place again for the new place, with
 `decide --replaces <id>` and the new place as its scope or `--path`. Run `celis rules <old place>` to
 see them.
@@ -23,7 +26,7 @@ with `--uses <its id>`, so that later work can see which steps were reused.
 
 A step that uses a named trail keeps its rules, and the rules of each named trail that it uses.
 
-- When the person names a named trail, or runs `/celis:use <name>`, add the ask with `--uses <name>`.
+- When the person names a named trail, add the ask with `--uses <name>`.
 - When the person wants a named trail's rule to work another way in this project, write the new rule
   with `decide --replaces <its id>`. It holds in this project only, and the trail keeps its rule
   elsewhere.
@@ -42,25 +45,30 @@ To write a named trail `<name>` that work in every project can use:
 4. `celis step done <ask id> --as-planned -- "<what it was made from>"`, then
    `celis name <trail id> <name>`.
 
-## Tidy
+## Other sessions
 
-When a search brings rules that say the same thing or say to do different things, or many stale trails,
-tell the person that `/celis:tidy` tidies them.
+To go on with another session's trail, add your first step `--under <its id>`.
 
-## Subagents and other sessions
+## Taste
 
-When a subagent or another agent takes work, add a step for it under your working step. Put in its task
-each rule of that work, as celis printed it, and: "celis step <id>: run celis step start <id> first and
-celis step done <id> last." `start` prints the rules at the step's places, and the agent adds its own
-steps `--under <id>`. To go on with another session's trail, add your first step `--under <its id>`.
+A taste block is a rule with a good and a bad step, which `celis rules <file>` gives with their proofs
+and blobs: an example shows what a rule means better than more words. In Build it binds as any rule;
+in creative work it guides, and a variant that breaks it on purpose keeps it. Keep a block from:
+
+- a pick: `decide --good <pick> --bad <the other> --path <the file>`, in the person's words, or
+  "because the person picked it" when they gave no reason; never your own choice;
+- a correction: the hunk it replaced and the fix in the fix's proof, a few lines each, and
+  `--good <the fix>`;
+- the person's own rewrite, as `git log` shows at the next ask: a step that `--replaces` yours, closed
+  `--by person` with both hunks.
+
+When 3 blocks make the same point, or the picks of a creative ask share one, propose one rule that says
+it, and replace them when the person agrees.
 
 ## Links
 
-A project can keep its trails in `.celis/trails/`, so that git carries them to the team, or in any
-folder, such as a synced drive. When celis says the project has trails this machine does not link, ask
-the person whether to link this project to celis. When the person wants to keep the trails in the repo
-or in a folder, tell them to run `celis link [<folder>]` in the project themselves. Never run
-`celis link` yourself, and never write in a linked folder.
+When the person wants to keep the trails in the repo or in a folder, tell them to run
+`celis link [<folder>]` in the project themselves.
 
 ## Stop
 

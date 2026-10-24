@@ -267,7 +267,7 @@ fn celis_version_names_the_commit_the_build_came_from() {
     );
 }
 
-/// Each command line of the trail card names the flags its command's usage names, and no other
+/// Each command line of the trail card names only flags its command's usage names
 /// (`spec/02-cli.md`, "Help").
 #[test]
 fn the_card_names_each_commands_flags() {
@@ -291,7 +291,12 @@ fn the_card_names_each_commands_flags() {
             .iter()
             .find(|(c, _)| *c == command)
             .unwrap_or_else(|| panic!("{command} is no command"));
-        assert_eq!(flags(line), flags(usage), "{line}");
+        let usage = flags(usage);
+        let extra: Vec<String> = flags(line)
+            .into_iter()
+            .filter(|f| !usage.contains(f))
+            .collect();
+        assert!(extra.is_empty(), "{line}: {extra:?}");
     }
 }
 

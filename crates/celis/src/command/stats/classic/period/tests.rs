@@ -27,10 +27,10 @@ fn step(text: &str, at: u64, under: Option<&Note>, uses: &[&str], replaces: Opti
 }
 
 fn done(id: &str, changed: Option<&str>, at: u64) -> Note {
-    let mark = Mark::Done {
-        proof: "proof".into(),
-        changed: changed.map(str::to_string),
-    };
+    let mark = Mark::Done(celis_trails::Done::new(
+        "proof".into(),
+        changed.map(str::to_string),
+    ));
     mark.record(&account(), id, at).unwrap()
 }
 
@@ -87,6 +87,7 @@ fn a_period_counts_its_done_steps_that_use_a_rule() {
         paths: vec![],
         situation: false,
         promoted: false,
+        pair: Default::default(),
     }
     .record(&account(), 5)
     .unwrap();

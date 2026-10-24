@@ -22,7 +22,7 @@ impl Tree<'_> {
                 None => self.labelled(out, rail, "", line),
             }
         }
-        if let (Some(done), Some(line)) = (note.done(), crate::text::line::grade(note)) {
+        if let (Some(done), Some(line)) = (note.done_record(), crate::text::line::grade(note)) {
             self.labelled(out, rail, "done", &done.content);
             if let Some(changed) = done.tag("changed") {
                 self.labelled(out, rail, "changed", changed);

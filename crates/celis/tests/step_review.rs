@@ -2,23 +2,7 @@
 
 mod support;
 
-use celis_nostr::Note;
-use support::{account, add, cli, err, now, put, step_note, Repo};
-
-/// A mark `label` on `step`, saying `content`, signed at `at`, put in the store; with `changed`, a done
-/// that says what changed.
-fn mark(repo: &Repo, label: &str, step: &Note, content: &str, changed: Option<&str>, at: u64) {
-    let mut tags: Vec<Vec<String>> = vec![
-        vec!["L".into(), "celis.step".into()],
-        vec!["l".into(), label.into(), "celis.step".into()],
-        vec!["e".into(), step.id.clone()],
-    ];
-    tags.extend(changed.map(|c| vec!["changed".to_string(), c.to_string()]));
-    put(
-        repo,
-        &Note::write(&account(), 1985u16, at, tags, content).unwrap(),
-    );
-}
+use support::{account, add, cli, err, now, step_note, Repo};
 
 /// The stderr lines of `celis step done <id> <how> -- proof`, which must succeed.
 fn done(repo: &Repo, id: &str, how: &[&str]) -> Vec<String> {
@@ -86,46 +70,96 @@ fn a_trails_review_names_no_next_move() {
     );
 }
 
-/// `done` on an ask reviews the steps under it: those planned before the work began, those added,
-/// dropped and changed, and the person's prompts since the ask; then it asks for rules.
+/// `done` on an ask prints the end to fill and give the person: a line for each decision, each step whose
+/// proof is the agent's own claim, what the judge could not check outside its places, each changed step,
+/// the new intent and each choice, then a total of its steps, proofs by kind and minutes.
 #[test]
-fn done_on_an_ask_reviews_its_plan_and_asks_for_rules() {
+fn done_on_an_ask_prints_the_end_to_fill() {
     let repo = Repo::new();
     let by = &account();
-    let t = now() - 10 * 60;
-    let trail = step_note(&repo, by, None, "the trail", t);
-    mark(&repo, "prompt", &trail, "an older ask", None, t);
-    let ask = step_note(&repo, by, Some(&trail), "the ask", t + 1);
-    let first = step_note(&repo, by, Some(&ask), "first part", t + 2);
-    let second = step_note(&repo, by, Some(&ask), "second part", t + 3);
-    mark(&repo, "start", &first, "", None, t + 10);
-    mark(&repo, "prompt", &trail, "use the cache", None, t + 15);
-    let third = step_note(&repo, by, Some(&ask), "third part", t + 20);
-    mark(&repo, "drop", &second, "not wanted", None, t + 25);
-    mark(
+    let began = now() - 10 * 60 - 30;
+    let trail = step_note(&repo, by, None, "the trail", began);
+    let ask = step_note(&repo, by, Some(&trail), "the ask", began);
+    let a = &ask.id[..8];
+    let checked = add(
         &repo,
-        "done",
-        &first,
-        "p",
-        Some("it reads the cache"),
-        t + 30,
+        &[
+            "--under", a, "--at", "a.rs", "--check", "true", "--", "checked",
+        ],
     );
-    done(&repo, &third.id, &["--as-planned"]);
-    let short = |n: &Note| n.id[..8].to_string();
+    let judged = add(&repo, &["--under", a, "--at", "b.rs", "--", "judged"]);
+    let claim = add(&repo, &["--under", a, "--", "claim"]);
+    let gone = add(&repo, &["--under", a, "--", "gone"]);
+    let edit = cli(
+        &repo,
+        &["step", "edit", a, "--", "the ask\nexpect: it ends"],
+    );
+    assert!(edit.status.success(), "{}", err(&edit));
+    done(&repo, &checked, &["--as-planned"]);
+    done(&repo, &judged, &["--as-planned", "--by", "judge"]);
+    done(&repo, &claim, &["--changed", "it took the cache"]);
+    assert!(
+        cli(&repo, &["step", "drop", &gone[..8], "--", "not wanted"])
+            .status
+            .success()
+    );
     assert_eq!(
-        done(&repo, &ask.id, &["--changed", "one part fewer"]),
+        done(&repo, &ask.id, &["--as-planned", "--by", "person"]),
         [
-            format!(
-                "celis: {} is done; compare the result with its plan:",
-                short(&ask)
-            ),
-            "  planned 2 steps".to_string(),
-            format!("  added   {} third part", short(&third)),
-            format!("  dropped {} second part · not wanted", short(&second)),
-            format!("  changed {} it reads the cache", short(&first)),
-            format!("  changed {} one part fewer", short(&ask)),
-            "  asked   use the cache".to_string(),
-            "celis: write what a later plan should keep as rules with celis decide.".to_string(),
+            format!("celis: the ask {a} is done. Write each rule a later plan must keep with celis decide. Then answer the person with the lines below alone: fill each <…>, and remove each line you do not need."),
+            String::new(),
+            "**<what was done, in one line>**".to_string(),
+            String::new(),
+            "- [?] **Needs you:** <each decision only the person can take>".to_string(),
+            "- [!] **Not proven:** claim".to_string(),
+            "- [!] **Not proven:** <what the judge could not check, and each file git diff --stat shows changed outside a.rs, b.rs>".to_string(),
+            "- [~] **Changed:** claim: it took the cache".to_string(),
+            "- [~] **Changed:** the intent now reads: expect: it ends".to_string(),
+            "- [+] **I chose:** <each choice you took yourself>".to_string(),
+            String::new(),
+            "celis · 4 steps · 1 checked · 1 judged · 1 person · 1 not proven · 10m".to_string(),
         ]
     );
+}
+
+/// The end of an ask whose steps share one kind of proof totals them as all of that kind.
+#[test]
+fn an_end_whose_steps_share_one_proof_totals_them_as_all() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    let ask = add(
+        &repo,
+        &["--under", &trail[..8], "--check", "true", "--", "the ask"],
+    );
+    let part = add(
+        &repo,
+        &["--under", &ask[..8], "--check", "true", "--", "part"],
+    );
+    done(&repo, &part, &["--as-planned"]);
+    let lines = done(&repo, &ask, &["--as-planned"]);
+    assert_eq!(
+        lines.last().map(String::as_str),
+        Some("celis · 2 steps · all checked · 0m")
+    );
+}
+
+/// `done --by` takes only `judge` or `person` (`spec/03-steps.md`, "Closing").
+#[test]
+fn done_by_takes_judge_or_person() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    let o = cli(
+        &repo,
+        &[
+            "step",
+            "done",
+            &trail[..8],
+            "--as-planned",
+            "--by",
+            "robot",
+            "--",
+            "p",
+        ],
+    );
+    assert_eq!(o.status.code(), Some(2), "{}", err(&o));
 }

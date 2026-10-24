@@ -270,7 +270,12 @@ impl Written {
                             .changed
                             .contains(&title)
                             .then(|| "it took another way".to_string());
-                        store.done(&id, "it works".to_string(), changed, None, home)?;
+                        store.done(
+                            &id,
+                            celis_trails::Done::new("it works".to_string(), changed),
+                            None,
+                            home,
+                        )?;
                     }
                     false => {
                         store.drop(&id, "no longer needed")?;
@@ -289,6 +294,7 @@ impl Written {
                     paths: vec![],
                     situation: false,
                     promoted: false,
+                    pair: Default::default(),
                 };
                 store.at(at);
                 store.decide(rule, None)?;

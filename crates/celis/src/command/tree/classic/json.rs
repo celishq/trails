@@ -32,7 +32,7 @@ impl Tree<'_> {
 
     /// Adds to `value` the state of `note`, and the proof, change, grade, reuse and reason of `work`.
     fn closing_value(&self, value: &mut serde_json::Value, note: Step, work: Step) {
-        let done = work.done();
+        let done = work.done_record();
         value["state"] = json!(note.state().text());
         value["proof"] = json!(done.map(|d| d.content.clone()));
         value["changed"] = json!(work.changed());

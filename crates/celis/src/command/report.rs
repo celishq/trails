@@ -235,7 +235,7 @@ pub(crate) fn markdown(steps: &Steps, rules: &Rules, ids: &[String]) -> Result<S
             lines.push(String::new());
             lines.extend(text.iter().map(|l| l.to_string()));
         }
-        if let Some(done) = trail.done() {
+        if let Some(done) = trail.done_record() {
             lines.push(String::new());
             lines.push(format!("done: {}", done.content));
         }
@@ -284,7 +284,7 @@ fn table(steps: Vec<Step>) -> Vec<String> {
         };
         let time = time(at).unwrap_or("—".to_string());
         let proof: Vec<String> = match at.close() {
-            Some((_, Mark::Done { proof, changed })) => {
+            Some((_, Mark::Done(celis_trails::Done { proof, changed, .. }))) => {
                 let changed = changed.map(|c| format!("~ changed: {c}"));
                 std::iter::once(proof).chain(changed).collect()
             }

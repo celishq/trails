@@ -12,7 +12,8 @@ use std::io::Write;
 use std::path::Path;
 
 impl Command {
-    /// Prints every live rule in scope that the files of `args` match, by `rank`.
+    /// Prints every live rule in scope that the files of `args` match, by `rank`, each with the proof and
+    /// the blobs of the good and the bad step of its pair.
     /// With no file, prints the index of the live rules in scope. Writes no record.
     pub(crate) fn rules(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let mut files = args.words[1..].to_vec();
@@ -38,10 +39,17 @@ impl Command {
             .collect();
         found.sort_by_key(|(fit, _, rule)| rank(rule, *fit));
         for (_, note, rule) in &found {
-            let object =
+            let mut object =
                 json!({"id": note.id, "scope": rule.scope.text(), "content": rule.content});
-            let line = crate::text::line::rule(note, rule);
-            super::put(out, &if args.json { object.to_string() } else { line })?;
+            for (side, id) in rule.pair.sides() {
+                object[side] = json!(id.to_string());
+            }
+            let text = if args.json {
+                object.to_string()
+            } else {
+                crate::text::line::rule(note, rule, &trails)
+            };
+            super::put(out, &text)?;
         }
         Ok(())
     }

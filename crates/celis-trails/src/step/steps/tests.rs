@@ -25,10 +25,7 @@ fn step(text: &str, at: u64) -> Note {
 }
 
 fn done(id: &str, proof: &str, at: u64) -> Note {
-    let mark = Mark::Done {
-        proof: proof.into(),
-        changed: None,
-    };
+    let mark = Mark::Done(crate::Done::new(proof.into(), None));
     mark.record(&account(), id, at).unwrap()
 }
 
@@ -47,7 +44,7 @@ fn the_first_done_with_a_proof_closes_its_step() {
     let later = done(&a.id, "later", 30);
     let records = vec![a.clone(), b.clone(), later, empty, first.clone()];
     let steps = Steps::new(&records, 0);
-    let done = steps.get(&a.id).and_then(|s| s.done());
+    let done = steps.get(&a.id).and_then(|s| s.done_record());
     assert_eq!(done.map(|n| n.id.clone()), Some(first.id));
     let open = steps.all().into_iter().filter(|s| s.closed().is_none());
     assert_eq!(ids(open.collect()), vec![b.id]);

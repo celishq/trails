@@ -449,8 +449,12 @@ impl Demo {
     ) -> Result<(), Failure> {
         self.trails(ago + took)?.start(id)?;
         let changed = changed.map(str::to_string);
-        self.trails(ago)?
-            .done(id, proof.to_string(), changed, None, &self.home)?;
+        self.trails(ago)?.done(
+            id,
+            celis_trails::Done::new(proof.to_string(), changed),
+            None,
+            &self.home,
+        )?;
         Ok(())
     }
 
@@ -476,6 +480,7 @@ impl Demo {
             paths: vec![],
             situation: false,
             promoted: false,
+            pair: Default::default(),
         };
         let written = self.trails(ago)?.decide(rule, None)?;
         Ok(written.records[0].id.clone())

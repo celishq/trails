@@ -329,14 +329,14 @@ fn grep_q_prints_nothing_on_a_match() {
 }
 
 /// The view and what `grep` prints of it match `spec/fixtures/grep-view.json`, and the rule search of
-/// the card prints exactly the lines it keeps (`spec/02-cli.md`, "Grep").
+/// `steps.md` prints exactly the lines it keeps (`spec/02-cli.md`, "Grep").
 #[test]
-fn the_view_and_the_cards_rule_search_match_the_fixture() {
+fn the_view_and_the_steps_rule_search_match_the_fixture() {
     use celis_trails::{Anchor, Mark, StepId, StepRecord};
     use support::{account, put, stored_rule, tagged_rule};
     let fixture: serde_json::Value =
         serde_json::from_str(include_str!("../../../spec/fixtures/grep-view.json")).unwrap();
-    let card = include_str!("../../../plugins/celis/card.md");
+    let steps = include_str!("../../../plugins/celis/steps.md");
     let repo = Repo::new();
     let (by, id) = (account(), repo.project_id());
     let t = 1_768_478_400;
@@ -361,10 +361,10 @@ fn the_view_and_the_cards_rule_search_match_the_fixture() {
     let mark = |mark: Mark, step: &str, at: u64| put(&repo, &mark.record(&by, step, at).unwrap());
     let trail = step(None, &[], "Build the Vendors page", t);
     let table = step(Some(&trail.id), &["src/vendors.rs"], "Add the table", t + 1);
-    let done = Mark::Done {
-        proof: "the table shows".into(),
-        changed: Some("a list, not a table".into()),
-    };
+    let done = Mark::Done(celis_trails::Done::new(
+        "the table shows".into(),
+        Some("a list, not a table".into()),
+    ));
     mark(done, &table.id, t + 2);
     let chart = step(Some(&trail.id), &[], "Add the chart", t + 3);
     mark(
@@ -465,7 +465,7 @@ fn the_view_and_the_cards_rule_search_match_the_fixture() {
         .map(fill)
         .collect();
     assert_eq!(lines(grep(&repo, &[""])), want);
-    let pattern = card
+    let pattern = steps
         .split("`celis grep -i -E \"")
         .nth(1)
         .unwrap()

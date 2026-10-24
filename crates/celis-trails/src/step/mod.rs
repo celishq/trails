@@ -1,14 +1,17 @@
 //! CIP-03: a step, what it says, the marks agents leave on it, and how it stands.
 
+pub mod by;
 pub mod check;
+pub mod done;
 pub mod mark;
+pub mod proof_file;
 pub mod state;
 pub mod step_record;
 pub mod steps;
 pub mod used;
 
 use crate::step::steps::{Close, Entry, LIFE};
-use crate::{Mark, NamedTrail, State, StepId, StepRecord, Steps, Trail, Used};
+use crate::{Done, Mark, NamedTrail, State, StepId, StepRecord, Steps, Trail, Used};
 use celis_nostr::Note;
 use std::collections::HashSet;
 
@@ -171,8 +174,16 @@ impl<'a> Step<'a> {
         }
     }
 
+    /// What it was closed done with; none while it is not done.
+    pub fn done(self) -> Option<Done> {
+        match Mark::read(self.done_record()?)? {
+            (_, Mark::Done(done)) => Some(done),
+            _ => None,
+        }
+    }
+
     /// The done record that closed it.
-    pub fn done(self) -> Option<&'a Note> {
+    pub fn done_record(self) -> Option<&'a Note> {
         match self.entry.close {
             Some((note, Close::Done)) => Some(note),
             _ => None,
@@ -203,7 +214,7 @@ impl<'a> Step<'a> {
 
     /// The steps that replace it after it was done, oldest first.
     pub fn revised(self) -> Vec<Step<'a>> {
-        let Some(done) = self.done() else {
+        let Some(done) = self.done_record() else {
             return Vec::new();
         };
         let later = self.entry.replaced.iter();
@@ -223,7 +234,7 @@ impl<'a> Step<'a> {
             Some(_) => self,
             None => Trail::new(self).work(),
         };
-        work.done()?.tag("changed")
+        work.done_record()?.tag("changed")
     }
 
     /// Where it stands at the time of its store.

@@ -79,3 +79,21 @@ me                in every project
 
 - A rule matches a file when one of its `path` globs matches the file's path.
 - A rule `at:<place>` counts as a rule with that place as its `path`, which matches as "Reading" states.
+
+## Pairs
+
+```json
+{ "kind": 1111,
+  "tags": [ …, ["good", "<step id>"], ["bad", "<step id>"] ],
+  "content": "When a logo is drawn: keep sharp corners, because the person picked them." }
+```
+
+- `good`: optional; a done step whose result the rule shows as better (CIP-03).
+- `bad`: optional; a step whose result the rule shows as worse.
+
+A rule with a `good` shows by example what its text means: a pick and a variant not picked, or a fix
+whose proof holds the result it replaced and the fix.
+
+**Writers**
+
+- A writer MUST write the whole id of each step, and only of a step the store holds.

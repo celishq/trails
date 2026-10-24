@@ -1,8 +1,11 @@
 //! The records of every project on this machine.
 
+mod blobs;
+
 use crate::records::verified::Verified;
-use crate::{Link, Phrase, Refusal};
+use crate::{Link, Phrase, ProofFile, Refusal};
 use anyhow::Result;
+use blobs::Blobs;
 use celis_nostr::{Account, Note};
 use std::cell::{OnceCell, RefCell};
 use std::collections::{HashMap, HashSet};
@@ -11,7 +14,7 @@ use std::path::{Path, PathBuf};
 
 /// The records in `$CELIS_HOME/trails/`, and the account of `$CELIS_HOME/phrase` that signs new ones. It
 /// reads the records from disk once, keeps those it writes after, and the names of the files of
-/// `shared/` it holds. It reads and writes its linked folders too.
+/// `shared/` it holds, and the blobs of `blobs/`. It reads and writes its linked folders too.
 pub struct Store {
     root: PathBuf,
     phrase: Phrase,
@@ -20,6 +23,7 @@ pub struct Store {
     read: RefCell<Option<Vec<Note>>>,
     seen: RefCell<HashSet<String>>,
     verified: Verified,
+    blobs: Blobs,
 }
 
 impl Store {
@@ -33,13 +37,14 @@ impl Store {
         let root = Store::root(home);
         std::fs::create_dir_all(root.join("shared")).map_err(|e| unwritten(&root, e))?;
         Ok(Store {
-            root,
             phrase: Phrase::at(home),
             links: vec![],
             account: OnceCell::new(),
             read: RefCell::new(None),
             seen: RefCell::default(),
             verified: Verified::open(home.join("cache/verified")),
+            blobs: Blobs::at(root.join("blobs")),
+            root,
         })
     }
 
@@ -82,8 +87,23 @@ impl Store {
         Ok(path)
     }
 
-    /// Copies each record a linked folder holds and lacks into it, and each record of a linked folder
-    /// the store lacks into `shared/`. Returns the counts copied out and in.
+    /// Keeps `bytes` as a blob in `blobs/` and in each linked folder, unless it is there; its sha256.
+    pub fn keep(&self, bytes: &[u8]) -> Result<String> {
+        let sha = self.blobs.keep(bytes)?;
+        for link in &self.links {
+            link_blobs(link).keep(bytes)?;
+        }
+        Ok(sha)
+    }
+
+    /// The blob `sha256` of `blobs/`, when its bytes hash to its name.
+    pub fn blob(&self, sha256: &str) -> Option<PathBuf> {
+        self.blobs.get(sha256)
+    }
+
+    /// Copies each record a linked folder holds and lacks into it, with the blobs its files name, and
+    /// each record of a linked folder the store lacks into `shared/`. Returns the counts of records
+    /// copied out and in.
     pub fn sync(&self) -> Result<(usize, usize)> {
         let mut kept = read(&self.root.join("shared"), |_| true, &self.verified);
         let came = self.take_in(&mut kept)?;
@@ -92,6 +112,9 @@ impl Store {
         for link in &self.links {
             for record in kept.iter().filter(|r| link.holds(r, &all)) {
                 went += usize::from(put(&link.folder, record)?.1);
+                for file in record.tags.iter().filter_map(|t| ProofFile::read(t)) {
+                    link_blobs(link).copy(&self.blobs, &file.sha256)?;
+                }
             }
         }
         *self.read.borrow_mut() = None;
@@ -158,9 +181,12 @@ impl Store {
         fresh
     }
 
-    /// Copies each record of the linked folders that `shared/` lacks into it, and adds it to `all`; the
-    /// count.
+    /// Copies each record of the linked folders that `shared/` lacks into it, and adds it to `all`, and
+    /// each blob of them that `blobs/` lacks; the count of records.
     fn take_in(&self, all: &mut Vec<Note>) -> Result<usize> {
+        for link in &self.links {
+            self.blobs.take(&link_blobs(link))?;
+        }
         let mut came = 0;
         let linked = self.links.iter();
         for record in linked.flat_map(|l| read(&l.folder, |_| true, &self.verified)) {
@@ -174,20 +200,33 @@ impl Store {
     }
 }
 
-/// Writes `record` to `folder` as `<created_at>-<id>.json`, unless it is there; the path, and whether it
+/// Writes `bytes` to `folder` as the file `name` at once, unless it is there; its path, and whether it
 /// wrote it.
-fn put(folder: &Path, record: &Note) -> Result<(PathBuf, bool)> {
-    let name = name(record);
-    let path = folder.join(&name);
+fn put_bytes(folder: &Path, name: &str, bytes: &[u8]) -> Result<(PathBuf, bool)> {
+    let path = folder.join(name);
     if path.exists() {
         return Ok((path, false));
     }
     let temp = folder.join(format!(".{name}.{}", std::process::id()));
-    let written = std::fs::write(&temp, serde_json::to_string(record)?);
-    written
+    std::fs::write(&temp, bytes)
         .and_then(|()| std::fs::rename(&temp, &path))
         .map_err(|e| unwritten(folder, e))?;
     Ok((path, true))
+}
+
+/// The blobs of the folder of `link`.
+fn link_blobs(link: &Link) -> Blobs {
+    Blobs::at(link.folder.join("blobs"))
+}
+
+/// Writes `record` to `folder` as `<created_at>-<id>.json`, unless it is there; the path, and whether it
+/// wrote it.
+fn put(folder: &Path, record: &Note) -> Result<(PathBuf, bool)> {
+    put_bytes(
+        folder,
+        &name(record),
+        serde_json::to_string(record)?.as_bytes(),
+    )
 }
 
 /// A failed write in `folder`: it names the folder, and when the system refused the write, how to let an

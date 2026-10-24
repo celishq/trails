@@ -29,6 +29,7 @@ pub(crate) struct Args {
     pub check: Option<String>,
     pub pitfall: Option<String>,
     pub changed: Option<String>,
+    pub by: Option<String>,
     pub session: Option<String>,
     pub project: Option<String>,
     pub limit: Option<String>,
@@ -36,6 +37,9 @@ pub(crate) struct Args {
     pub model: Option<String>,
     pub page: Option<String>,
     pub paths: Vec<String>,
+    pub files: Vec<String>,
+    pub good: Option<String>,
+    pub bad: Option<String>,
 }
 
 impl Args {
@@ -86,6 +90,7 @@ impl Args {
                 "--check" => parsed.check = Some(value(arg, rest.next())?),
                 "--pitfall" => parsed.pitfall = Some(value(arg, rest.next())?),
                 "--changed" => parsed.changed = Some(value(arg, rest.next())?),
+                "--by" => parsed.by = Some(value(arg, rest.next())?),
                 "--session" => parsed.session = Some(value(arg, rest.next())?),
                 "--project" => parsed.project = Some(value(arg, rest.next())?),
                 "--limit" => parsed.limit = Some(value(arg, rest.next())?),
@@ -93,6 +98,9 @@ impl Args {
                 "--model" => parsed.model = Some(value(arg, rest.next())?),
                 "--page" => parsed.page = Some(value(arg, rest.next())?),
                 "--path" => parsed.paths.push(value(arg, rest.next())?),
+                "--file" => parsed.files.push(value(arg, rest.next())?),
+                "--good" => parsed.good = Some(value(arg, rest.next())?),
+                "--bad" => parsed.bad = Some(value(arg, rest.next())?),
                 flag if flag.starts_with("--") => {
                     bad.get_or_insert(Failure::usage(format!("{flag} is not a flag")));
                 }

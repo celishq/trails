@@ -298,7 +298,7 @@ impl<'a> Entry<'a> {
                 self.start.get_or_insert(note);
             }
             Mark::Prompt { .. } => self.asked = self.asked.max(note.created_at),
-            Mark::Done { .. } => {
+            Mark::Done(_) => {
                 self.close.get_or_insert((note, Close::Done));
             }
             Mark::Drop { .. } if self.close.is_none() => {

@@ -24,7 +24,7 @@ impl<'a> Period<'a> {
     /// The steps done in it, oldest first.
     pub fn done(&self) -> Vec<Step<'a>> {
         self.parts()
-            .filter(|s| s.done().is_some_and(|d| self.holds(d.created_at)))
+            .filter(|s| s.done_record().is_some_and(|d| self.holds(d.created_at)))
             .collect()
     }
 
