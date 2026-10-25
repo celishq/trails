@@ -16,10 +16,8 @@ const SECTIONS: &[(&str, &str, &[&str])] = &[
         &[
             "tree [<id>]",
             "grep <pattern>",
-            "search <text>",
-            "recall <ask>",
+            "search <ask>",
             "patterns",
-            "rules [<file>]...",
             "stats [<id>]",
         ],
     ),
@@ -59,12 +57,10 @@ const PHRASES: &[(&str, &str)] = &[
         "Show the rules, patterns and past asks that fit an ask",
     ),
     ("setup", "Choose and download the model that search uses"),
-    ("recall", "Show the rules and patterns that fit an ask"),
     (
         "patterns",
         "Show your patterns with their good and bad examples",
     ),
-    ("rules", "Show the rules of the files you will touch"),
     ("stats", "Show what later work reused, and how work went"),
     ("decide", "Record a rule that later work must keep"),
     (

@@ -1,9 +1,10 @@
-//! CIP-05, "Triggers", and CIP-02, "Rules".
+//! CIP-05, "Triggers", and CIP-02, "Search".
 
 mod support;
 
 use celis_nostr::Note;
 use serde_json::json;
+use std::path::Path;
 use support::{account, add, err, objects, out, put, rule_tags, stored_rule, Repo, DAY};
 
 /// The id `celis decide <args> -- <text>` prints in the main checkout.
@@ -25,16 +26,26 @@ fn tagged(repo: &Repo, tags: &[(&str, &str)], content: &str, at: u64) -> Note {
     note
 }
 
-/// The lines `celis rules <args>` prints in the main checkout.
-fn rules(repo: &Repo, args: &[&str]) -> Vec<String> {
-    let mut all = vec!["rules"];
-    all.extend(args);
-    let o = repo.run(&repo.path(), &all, &[], "");
+/// The rule lines `celis search <files> --kind rule` prints in `folder`, for an ask that shares no word
+/// with a rule.
+fn found(repo: &Repo, folder: &Path, files: &[&str]) -> Vec<String> {
+    let mut all = vec!["search"];
+    all.extend(files);
+    all.extend(["--kind", "rule", "--", "x"]);
+    let o = repo.run(folder, &all, &[], "");
     assert!(o.status.success(), "{}", err(&o));
-    out(&o).lines().map(str::to_string).collect()
+    let shown = out(&o);
+    let lines = shown.lines().filter(|l| !l.starts_with(' '));
+    let rules = lines.filter(|l| *l != "rules" && *l != "nothing fits this ask");
+    rules.map(str::to_string).collect()
 }
 
-/// The text of each rule `celis rules <args>` prints, without its id and scope.
+/// The rule lines `celis search <files> --kind rule` prints in the main checkout.
+fn rules(repo: &Repo, files: &[&str]) -> Vec<String> {
+    found(repo, &repo.path(), files)
+}
+
+/// The text of each rule `celis search <files> --kind rule` prints, without its id and scope.
 fn texts(repo: &Repo, args: &[&str]) -> Vec<String> {
     let lines = rules(repo, args).into_iter();
     lines
@@ -57,23 +68,8 @@ fn a_path_glob_matches_the_file() {
     assert!(texts(&repo, &["c.rs"]).is_empty());
 }
 
-/// `--diff` counts as a read of each file git shows changed or new (`spec/02-cli.md`, "Rules").
-#[test]
-fn diff_reads_the_files_git_shows_changed() {
-    let repo = Repo::new();
-    decide(&repo, &["--path", "*.md"], "markdown");
-    decide(&repo, &["--path", "*.py"], "python");
-    decide(&repo, &["--path", "*.rs"], "rust");
-    assert!(rules(&repo, &["--diff"]).is_empty());
-    repo.write("new.py", "x = 1\n");
-    repo.write("README.md", "changed\n");
-    let mut found = texts(&repo, &["--diff"]);
-    found.sort();
-    assert_eq!(found, ["markdown", "python"]);
-}
-
 /// A folder counts as a read of each file git gives under it, ignored files left out
-/// (`spec/02-cli.md`, "Rules").
+/// (`spec/02-cli.md`, "Search").
 #[test]
 fn a_folder_gives_the_rules_of_its_files() {
     let repo = Repo::new();
@@ -87,10 +83,9 @@ fn a_folder_gives_the_rules_of_its_files() {
     let mut shelf = texts(&repo, &["shelf"]);
     shelf.sort();
     assert_eq!(shelf, ["floats", "markdown"]);
-    let o = repo.run(&repo.path().join("shelf"), &["rules", "."], &[], "");
-    let shown = out(&o);
+    let shown = found(&repo, &repo.path().join("shelf"), &["."]);
     let mut here: Vec<&str> = shown
-        .lines()
+        .iter()
         .map(|l| l.splitn(3, ' ').nth(2).unwrap())
         .collect();
     here.sort();
@@ -108,38 +103,6 @@ fn an_older_rule_with_a_tool_tag_has_no_trigger() {
     assert!(rules(&repo, &["."]).is_empty());
 }
 
-/// With no file, `rules` gives each word that the live rules use before their "because", most used
-/// first (`spec/02-cli.md`, "Rules").
-#[test]
-fn rules_with_no_file_give_the_index() {
-    let repo = Repo::new();
-    decide(
-        &repo,
-        &[],
-        "When prices change: keep prices in cents, because floats drift.",
-    );
-    decide(
-        &repo,
-        &["--path", "*.py"],
-        "When prices show: round prices, because cents.",
-    );
-    decide(
-        &repo,
-        &["--situation"],
-        "When a refund comes: log the refund.",
-    );
-    for args in [&[][..], &["--", " "]] {
-        let lines = rules(&repo, args);
-        assert_eq!(
-            lines[0], "3 live rules. Their words, by how many rules use each:",
-            "{lines:?}"
-        );
-        assert!(lines[1].starts_with("prices 2, "), "{lines:?}");
-        assert!(lines[1].contains("refund 1"), "{lines:?}");
-        assert!(!lines[1].contains("floats"), "{lines:?}");
-    }
-}
-
 /// A rule `at:<place>` counts as a rule with that place as its `path`, and holds under a folder it
 /// names (`spec/05-rules.md`, "Triggers").
 #[test]
@@ -153,7 +116,7 @@ fn an_at_rule_comes_at_its_place() {
 }
 
 /// A rule with no trigger and no `at:<place>` never comes, and a situation rule with a trigger comes at
-/// its calls (`spec/05-rules.md`, "Triggers"; `spec/02-cli.md`, "Rules").
+/// its calls (`spec/05-rules.md`, "Triggers"; `spec/02-cli.md`, "Search").
 #[test]
 fn a_rule_with_no_trigger_never_comes() {
     let repo = Repo::new();
@@ -166,7 +129,7 @@ fn a_rule_with_no_trigger_never_comes() {
 }
 
 /// Rules come with a named file first, then a glob; newest first within each (`spec/02-cli.md`,
-/// "Rules").
+/// "Search").
 #[test]
 fn rules_come_narrowest_first_then_newest() {
     let repo = Repo::new();
@@ -186,8 +149,7 @@ fn rules_come_narrowest_first_then_newest() {
     );
 }
 
-/// Every rule that matches comes, on each call of a session; `--json` gives each as an object
-/// (`spec/02-cli.md`, "Rules").
+/// Every rule that matches comes, on each call of a session (`spec/02-cli.md`, "Search").
 #[test]
 fn every_rule_comes_on_each_call() {
     let repo = Repo::new();
@@ -199,10 +161,6 @@ fn every_rule_comes_on_each_call() {
     assert_eq!(first.len(), 7, "{first:?}");
     assert_eq!((first[0].as_str(), first[6].as_str()), ("rule 6", "rule 0"));
     assert_eq!(texts(&repo, &["README.md"]), first);
-    let json = objects(&repo, &["rules", "README.md"]);
-    assert_eq!(json.len(), 7);
-    let keys: Vec<&String> = json[0].as_object().unwrap().keys().collect();
-    assert_eq!(keys, ["content", "id", "scope"]);
 }
 
 /// The grep view marks a rule with a trigger, a situation rule and a promoted rule (`spec/02-cli.md`,

@@ -2,8 +2,7 @@ celis keeps each ask as a trail of steps with proofs, and what the person taught
 work must keep, and patterns, the person's good and bad examples, which guide your choices.
 
 ```
-celis recall [<file>]... -- "<ask>"
-celis rules [<file>]... [--diff]
+celis search [<file>]... -- "<ask>"
 celis decide [--scope at:<place> | trail:<id> | me] [--replaces <id>] [--path <glob>]... [--situation] [--good <example>]... [--bad <example>]... -- "<rule>"
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>] [--check <command>] [--new] -- "<title>"
 celis step start <id>
@@ -13,14 +12,14 @@ celis step edit <id> [--at <place>]... [--check <command>] [-- "<new title>"]
 celis tree [<id>]...
 ```
 
-Each ask is one loop of four moves: recall, work, check, learn.
+Each ask is one loop of four moves: search, work, check, learn.
 
-1. **Recall.** At each new ask, run `celis recall [<each file it will touch>]... -- "<the ask>"`
+1. **Search.** At each new ask, run `celis search [<each file it will touch>]... -- "<the ask>"`
    before you change a file. Keep each rule it prints: a rule binds. Keep each pattern: at each choice
    the ask leaves open, choose like its good examples and unlike its bad ones; a pattern guides, and a
-   rule wins over it. Open the files of the examples that bear on your choice. When celis asks for
-   the past agent, it brings 1 or 2 done trails like the ask: take each of their steps that fits as
-   yours, with `--uses <its id>` (`steps.md`, "Past work").
+   rule wins over it. Open the files of the examples that bear on your choice. It also brings 1 or 2
+   done asks like this one: take each of their steps that fits as yours, with `--uses <its id>`
+   (`steps.md`, "Past work").
 2. **Work.** An ask that changes a file, however small, or that works toward a result someone can
    check, gets a step; a question, an explanation, or a review you only report on gets none: answer
    it. Its title names what the person wants done: a verb and what it acts on, in words that hold in
@@ -31,7 +30,7 @@ Each ask is one loop of four moves: recall, work, check, learn.
    check alone, such as an item of its list or a module; an ask with one job, such as a function and
    its test, is one step. A step says what it does and why; its `--at` and `--check` are optional, and
    only the ask needs a check. Add only the step you take next. For each step:
-   `start`, and keep the rules it prints. Run `celis rules <files>` before each change. Read all that
+   `start`, and keep the rules it prints. Read all that
    celis prints: never cut it with `head` or `grep`. Then `done` with a proof a person can check, such
    as a command and its result: `--as-planned` when the result matches `expect`, else `--changed`. A
    wrong step, or a fix to done work, takes `--replaces <id>`. When a step grows past one action, or
@@ -43,9 +42,9 @@ Each ask is one loop of four moves: recall, work, check, learn.
    dependency, a schema, money or a deploy. Take every other choice yourself, and name it in the end.
    After the intent, write nothing but such a question until the end: the person reads the end, not
    the work.
-3. **Check.** Before `done`, check your change against `celis rules --diff`. Before you close the ask,
-   run the `celis:judge` agent with its intent, the rules and patterns that recall gave, where the
-   result is, and its checks; with no subagents, do what `agents/judge.md` beside `steps.md` says.
+3. **Check.** `done` prints the rules of the files you changed: check your change against each.
+   Before you close the ask, run the `celis:judge` agent with its intent, the rules and patterns that
+   search gave, where the result is, and its checks; with no subagents, do what `agents/judge.md` beside `steps.md` says.
    What the judge could not check, take as far as you can, such as a run or a screenshot, then ask the
    person. Close the ask `--by judge` with its verdict, or `--by person` with the person's answer, and
    never close the trail. Then answer with the end that celis prints, alone, with no prose before it.

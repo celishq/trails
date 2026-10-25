@@ -6,7 +6,7 @@ description: Does a creative ask, such as an image, a logo, a sound, a level or 
 Creative work has no check that proves it good: the person's taste does. Do the ask as the card says,
 in layers, with these changes:
 
-1. Before the outer layer, run `celis recall <the file> -- "<the ask>"` and open the files of its
+1. Before the outer layer, run `celis search <the file> -- "<the ask>"` and open the files of its
    patterns' examples, to see what the person chose before. In creative work a rule guides too: a
    variant may break it on purpose.
 2. The outer layer has 2 variants as steps under it, unless the person names another number: one

@@ -1,16 +1,20 @@
-//! CIP-02, "Rules": the rank of the rules `celis rules` prints.
+//! CIP-02, "Search": the rank of the rules `celis search` prints.
 
 mod support;
 
 use celis_nostr::Note;
 use support::{account, err, out, put, rule_tags, Repo, DAY};
 
-/// The texts of the rules `celis rules <file>` gives.
+/// The texts of the rules `celis search <file> --kind rule` gives for an ask that shares no word with
+/// a rule.
 fn rules(repo: &Repo, file: &str) -> Vec<String> {
-    let o = repo.run(&repo.path(), &["rules", file], &[], "");
+    let args = ["search", file, "--kind", "rule", "--", "x"];
+    let o = repo.run(&repo.path(), &args, &[], "");
     assert!(o.status.success(), "{}", err(&o));
     let shown = out(&o);
-    let rules = shown.lines().filter(|l| !l.starts_with("celis: "));
+    let rules = shown
+        .lines()
+        .filter(|l| !l.starts_with(' ') && *l != "rules");
     rules
         .map(|l| l.splitn(3, ' ').nth(2).unwrap().to_string())
         .collect()
@@ -26,7 +30,7 @@ fn tagged(repo: &Repo, tags: &[(&str, &str)], content: &str, at: u64) -> Note {
 }
 
 /// A rule made by a correction comes first, then the rest narrowest first, then newest
-/// (`spec/02-cli.md`, "Rules").
+/// (`spec/02-cli.md`, "Search").
 #[test]
 fn rules_rank_a_correction_then_the_narrowest() {
     let repo = Repo::new();

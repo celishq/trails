@@ -313,7 +313,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "decide",
         usage: &["celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--situation] [--promoted] [--good <example>]... [--bad <example>]... [--project <id>] -- <text>"],
-        summary: "Record a rule that later work must keep. With no --scope, it holds for the whole project. Its paths name the files it acts on, so celis rules gives it for them. With examples, it is a pattern: it guides the work and never binds it.",
+        summary: "Record a rule that later work must keep. With no --scope, it holds for the whole project. Its paths name the files it acts on, so celis search gives it for them. With examples, it is a pattern: it guides the work and never binds it.",
         args: &[
             ("--scope <scope>", "Where it applies: at:<place>, trail:<id>, me, or project"),
             ("--replaces <id>", "The rule this one replaces"),
@@ -333,38 +333,11 @@ pub const VERBS: &[Verb] = &[
         ],
     },
     Verb {
-        command: "recall",
-        usage: &["celis recall [<file>]... -- <ask>"],
-        summary: "Show the rules and the patterns that fit an ask: those of the files it will touch, and those whose case its words or its meaning name. The rules come first, then the patterns with their good and bad examples. Changes nothing.",
-        args: &[
-            ("<file>", "A file the ask will read or change"),
-            ("<ask>", "What the person asks, in any words"),
-        ],
-        examples: &[
-            "celis recall -- \"cut the release\"",
-            "celis recall shelf/prices.py -- \"round the prices\"",
-        ],
-    },
-    Verb {
         command: "patterns",
         usage: &["celis patterns [--markdown]"],
         summary: "Show each pattern of this project and of you, the newest first, with its good and bad examples: the steps with their proofs, the files with their blobs, and the URLs. With --markdown, print them as one page, each file a link to its blob, for a review or a skill file. Changes nothing.",
         args: &[("--markdown", "Print one Markdown page, each file a link to its blob")],
         examples: &["celis patterns", "celis patterns --markdown > patterns.md"],
-    },
-    Verb {
-        command: "rules",
-        usage: &["celis rules [<file>]... [--diff]"],
-        summary: "Show every rule of the files you will read or change, the most important first. With no file, show the words the rules use, the most used first. Changes nothing.",
-        args: &[
-            ("<file>", "A file you will read or change"),
-            ("--diff", "Each file git shows changed or new"),
-        ],
-        examples: &[
-            "celis rules",
-            "celis rules shelf/prices.py",
-            "celis rules --diff",
-        ],
     },
     Verb {
         command: "tree",

@@ -18,9 +18,6 @@ const TIDY: &str = "Tidy the celis trails";
 /// How many days after a tidy the session start asks to offer the next.
 const TIDY_DAYS: u64 = 7;
 
-/// What the prompt note asks, in place of the past agent, of an agent that does not load it.
-const ALONE: &str = "do what past.md says, yourself, for the ask and the places it may touch";
-
 impl Command {
     /// Acts on the hook's JSON on stdin for `hook start <agent> <plugin folder>` or `hook ask <agent>`,
     /// and prints what the agent reads. Only a usage error fails.
@@ -44,7 +41,7 @@ impl Command {
         let json: Value = serde_json::from_str(&input).unwrap_or(Value::Null);
         let text = match root {
             Some(root) => self.start(agent, &json, root),
-            None => self.note(agent, &json),
+            None => self.note(&json),
         };
         match (agent, event) {
             ("cursor", "ask") => super::put(out, r#"{"continue": true}"#),
@@ -54,10 +51,8 @@ impl Command {
         }
     }
 
-    /// The card, where the plugin's files are and a version notice; a compaction lets
-    /// the session ask for the past agent again.
+    /// The card, where the plugin's files are and a version notice.
     fn start(&self, agent: &str, json: &Value, root: &Path) -> String {
-        let _ = self.act_on(json, &mut std::io::sink());
         let card = std::fs::read_to_string(root.join("card.md")).unwrap_or_default();
         let mut text = format!(
             "How to do an ask with the celis plugin:\n{}\n\n",
@@ -75,10 +70,6 @@ impl Command {
         text.push_str(&format!("steps.md: {}", root.join("steps.md").display()));
         if let Some(line) = self.tidy() {
             text.push_str(&format!("\n\n{line}"));
-        }
-        if agent != "claude" {
-            let past = root.join("agents/past.md");
-            text.push_str(&format!("\npast.md: {}", past.display()));
         }
         let manifest = std::fs::read_to_string(root.join(".claude-plugin/plugin.json"));
         let plugin = manifest
@@ -120,9 +111,8 @@ impl Command {
         ))
     }
 
-    /// The note on the prompt, after it is acted on in the project the JSON names; past.md in place of
-    /// the past agent for an agent that does not load it.
-    fn note(&self, agent: &str, json: &Value) -> String {
+    /// The note on the prompt, after it is acted on in the project the JSON names.
+    fn note(&self, json: &Value) -> String {
         let folder = json["cwd"]
             .as_str()
             .or(json["workspace_roots"][0].as_str())
@@ -136,11 +126,7 @@ impl Command {
         if here.act_on(json, &mut note).is_err() {
             return String::new();
         }
-        let note = String::from_utf8_lossy(&note).trim_end().to_string();
-        match agent {
-            "codex" | "gemini" => note.replace(super::prompt::PAST, ALONE),
-            _ => note,
-        }
+        String::from_utf8_lossy(&note).trim_end().to_string()
     }
 }
 

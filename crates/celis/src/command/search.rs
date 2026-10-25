@@ -8,7 +8,6 @@ mod meaning;
 #[cfg(feature = "search")]
 mod setup;
 
-use super::rules::index::COMMON;
 use super::view::kind::Kind;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
@@ -74,7 +73,7 @@ impl Command {
             .into_iter()
             .collect();
         let asked = words(&ask);
-        let found: Vec<(&Note, Rule)> = live
+        let mut found: Vec<(&Note, Rule)> = live
             .into_iter()
             .filter(|(note, rule)| {
                 rule.fit(&paths).is_some()
@@ -82,6 +81,10 @@ impl Command {
                     || !words(when(&rule.content)).is_disjoint(&asked)
             })
             .collect();
+        found.sort_by_key(|(_, rule)| {
+            let fit = rule.fit(&paths);
+            (rule.replaces.is_none(), fit.is_none(), fit)
+        });
         let steps = trails.steps();
         let past = match parts.contains(&Part::Past) {
             true => self.past(&ask, &steps.all(), err)?,
@@ -246,6 +249,16 @@ const NOTHING: &str = "nothing fits this ask";
 
 /// What `search` prints by meaning when no model was set up.
 const NONE: &str = "celis search has no model: search with celis grep, or run celis setup.";
+
+/// Words too common to tell rules apart.
+const COMMON: &[&str] = &[
+    "about", "after", "all", "also", "always", "and", "any", "are", "before", "but", "can", "did",
+    "does", "done", "each", "for", "from", "has", "have", "how", "into", "its", "just", "keep",
+    "make", "more", "most", "must", "never", "new", "not", "one", "only", "other", "our", "out",
+    "over", "per", "should", "some", "such", "than", "that", "the", "their", "them", "then",
+    "there", "they", "this", "use", "via", "was", "were", "what", "when", "where", "which", "who",
+    "why", "will", "with", "would", "you", "your",
+];
 
 /// The most past asks `search` prints.
 const PAST: usize = 2;

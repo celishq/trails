@@ -1,53 +1,9 @@
-//! `celis rules`: the rules of some files, or the index of the rules.
+//! The live rules that some files match.
 
-pub(super) mod index;
-
-use crate::command::{Args, Command};
-use crate::failure::Failure;
+use crate::command::Command;
 use celis_nostr::Note;
-use celis_trails::{Example, Fit, Place, Project, Rule, Trails};
-use index::Index;
-use serde_json::json;
-use std::io::Write;
+use celis_trails::{Fit, Place, Project, Rule, Trails};
 use std::path::Path;
-
-impl Command {
-    /// Prints every live rule in scope that the files of `args` match, by `rank`, each with the proof and
-    /// its good and bad examples.
-    /// With no file, prints the index of the live rules in scope. Writes no record.
-    pub(crate) fn rules(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
-        let mut files = args.words[1..].to_vec();
-        if args.diff {
-            files.extend(changed(&self.folder));
-        }
-        if !self.held()? {
-            return Ok(());
-        }
-        let project = self.project();
-        let trails = self.trails()?;
-        if files.is_empty() && !args.diff {
-            let live = trails.rules().live(&project.anchor.project).into_iter();
-            let index = Index::of(live.map(|(_, rule)| rule.content));
-            return super::put(out, &index.text());
-        }
-        for (note, rule) in &self.matched(&trails, &files) {
-            let mut object =
-                json!({"id": note.id, "scope": rule.scope.text(), "content": rule.content});
-            for (side, list) in [("good", &rule.examples.good), ("bad", &rule.examples.bad)] {
-                if !list.is_empty() {
-                    object[side] = json!(list.iter().map(value).collect::<Vec<_>>());
-                }
-            }
-            let text = if args.json {
-                object.to_string()
-            } else {
-                crate::text::line::rule(note, rule, &trails)
-            };
-            super::put(out, &text)?;
-        }
-        Ok(())
-    }
-}
 
 impl Command {
     /// The live rules in scope that `files` match, by `rank`.
@@ -70,15 +26,6 @@ impl Command {
             .into_iter()
             .map(|(_, note, rule)| (note, rule))
             .collect()
-    }
-}
-
-/// What the JSON of a rule gives for `example`: the id of its step, the sha256 of its file, or its URL.
-fn value(example: &Example) -> String {
-    match example {
-        Example::Step(id) => id.to_string(),
-        Example::File(file) => file.sha256.clone(),
-        Example::Url(url) => url.clone(),
     }
 }
 

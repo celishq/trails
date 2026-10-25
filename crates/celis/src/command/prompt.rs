@@ -3,8 +3,8 @@
 use super::tree::today;
 use crate::command::Command;
 use crate::failure::Failure;
-use celis_trails::{Link, Project, State, Trails};
-use hook::{Hook, Prompt};
+use celis_trails::{Link, Project, State};
+use hook::Prompt;
 use std::io::Write;
 use std::path::Path;
 
@@ -12,29 +12,24 @@ mod hook;
 
 impl Command {
     /// Acts on the hook `json` holds: a prompt goes on its session's open trail, with notes on `err`
-    /// about the work; with no open trail, it names the past agent, once a session, unless the prompt
-    /// is a task. A compaction lets the session name the past agent again.
+    /// about the work.
     pub(super) fn act_on(
         &self,
         json: &serde_json::Value,
         err: &mut dyn Write,
     ) -> Result<(), Failure> {
         let project = self.project();
-        match Hook::of(json) {
-            Hook::Compaction { session } => {
-                let _ = std::fs::remove_file(self.asked(&session)?);
-                Ok(())
-            }
-            Hook::Prompt(prompt) => self.ask(err, &project, prompt),
-            Hook::Nothing => Ok(()),
+        match Prompt::of(json) {
+            Some(prompt) => self.ask(err, &project, prompt),
+            None => Ok(()),
         }
     }
 
     /// Writes `prompt` on its session's open trail, signed now; then names on `err` how a new ask
-    /// recalls its rules and patterns, the oldest working step, every done step, and how a new ask
+    /// searches its rules and patterns, the oldest working step, every done step, and how a new ask
     /// joins a trail.
     fn ask(&self, err: &mut dyn Write, project: &Project, prompt: Prompt) -> Result<(), Failure> {
-        let asked = self.asked(&prompt.session)?;
+        let asked = self.offered(&prompt.session)?;
         if !self.held()? {
             if !prompt.task {
                 super::put(err, &fresh())?;
@@ -47,7 +42,12 @@ impl Command {
         }
         let steps = trails.steps();
         let Some(trail) = steps.session(&project.anchor.project, &prompt.session) else {
-            if !prompt.task && !self.remind(&trails, err, &asked)? {
+            if !prompt.task {
+                let line = match today(&steps).is_empty() {
+                    true => fresh(),
+                    false => joins(None),
+                };
+                super::put(err, &line)?;
                 self.offer(err, project, &asked)?;
             }
             return Ok(());
@@ -90,41 +90,16 @@ impl Command {
         super::put(err, &joins(Some(trail.id())))
     }
 
-    /// Names the past agent, when the store holds any record and `asked` does not exist; then writes
-    /// `asked`. Else says how a new ask joins a trail of today, or starts one. Returns whether it named
-    /// the agent.
-    fn remind(&self, trails: &Trails, err: &mut dyn Write, asked: &Path) -> Result<bool, Failure> {
-        if asked.exists() || trails.is_empty() {
-            let line = if today(&trails.steps()).is_empty() {
-                fresh()
-            } else {
-                joins(None)
-            };
-            super::put(err, &line)?;
-            return Ok(false);
-        }
-        let line = format!(
-            "celis: a new ask in this session; before any other tool, {PAST}; it brings the steps of past \
-             asks like it; add the ask with --uses <id> for each past step the ask follows. {RULES}"
-        );
-        super::put(err, &line)?;
-        mark(asked)?;
-        Ok(true)
+    /// The file that marks that `session` was asked to link the project.
+    fn offered(&self, session: &str) -> Result<std::path::PathBuf, Failure> {
+        let name = format!("{}.link", session.replace(['/', '.'], "_"));
+        Ok(self.home()?.join("offered").join(name))
     }
 
-    /// The file that marks that `session` named the past agent.
-    fn asked(&self, session: &str) -> Result<std::path::PathBuf, Failure> {
-        Ok(self
-            .home()?
-            .join("asked")
-            .join(session.replace(['/', '.'], "_")))
-    }
-
-    /// Asks, once in the session `asked` names, to link `project` to its `.celis/trails` when that folder
-    /// exists and is not linked.
-    fn offer(&self, err: &mut dyn Write, project: &Project, asked: &Path) -> Result<(), Failure> {
+    /// Asks, once in the session `offered` names, to link `project` to its `.celis/trails` when that
+    /// folder exists and is not linked.
+    fn offer(&self, err: &mut dyn Write, project: &Project, offered: &Path) -> Result<(), Failure> {
         let link = Link::new(project, Link::FOLDER);
-        let offered = asked.with_extension("link");
         if offered.exists() || !link.folder.is_dir() || link.is_on(&self.home()?) {
             return Ok(());
         }
@@ -134,7 +109,7 @@ impl Command {
              them; ask the person whether to link this project to celis, and if so, to run celis \
              link in it themselves. Never run celis link yourself, and never write in a linked folder.",
         )?;
-        mark(&offered)
+        mark(offered)
     }
 }
 
@@ -168,14 +143,9 @@ fn fresh() -> String {
 }
 
 /// What a new ask's line asks of the agent before it changes a file.
-const RECALL: &str = "celis: when this prompt is a new ask, run celis recall [<each file it will \
+const RECALL: &str = "celis: when this prompt is a new ask, run celis search [<each file it will \
                       touch>]... -- \"<the ask>\" before you change a file, and keep each rule and \
                       pattern it prints; a prompt that goes on with the same work needs none.";
-
-/// What a new ask's line asks of the agent before any other tool.
-pub(super) const PAST: &str =
-    "run the celis:past agent in the foreground with the ask and the places it \
-     may touch, never in the background, and wait for its answer before any other tool";
 
 /// The sentence of a new ask's line that asks to write the rules the prompt states.
 const RULES: &str = "When this prompt states how the work must be done (review feedback, a \

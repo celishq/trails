@@ -16,10 +16,7 @@ read. What a command shows a person is not part of it.
 ```
 celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--situation] [--promoted] [--good <example>]... [--bad <example>]... [--project <id>] -- <text>
                                                        a rule, in its scope
-celis recall [<file>]... -- <ask>                     the rules and patterns that fit an ask
 celis patterns [--markdown]                           the patterns and their examples
-celis rules [<file>]... [--diff]
-                                                       the rules of some files
 celis tree [<id>]... [--graph] [--full] [--all] [--demo]
                                                        a trail and its steps; again on each change
 celis grep <grep option>... <pattern>                 every trail, through the system grep
@@ -161,7 +158,7 @@ step  json  {"id", "created_at", "project", "links": [{"to", "kind": "under | re
   a rule, at `at:<the step's at>`, else `trail:<the step's trail id>`.
 - `done` of a step that is not an ask MUST print each live rule in scope that a file matches which
   `git diff --name-only HEAD` or `git ls-files --others --exclude-standard` gives in the working folder,
-  as "Search" gives a rule, in the order "Rules" states.
+  as "Search" gives a rule, in the order "Search" states.
 - `drop` MUST refuse an empty reason, and `edit` one with no text, `--at` or `--check`, as usage errors.
 
 **Examples**
@@ -186,81 +183,14 @@ Each agent's hooks give `hook` the JSON of a prompt or of a session start.
 
 - `hook` MUST read the session from `conversation_id` when the JSON has one, else from `session_id`.
 - On a prompt, it MUST write it as CIP-04 "Sessions" states. On a compaction, it MUST write no record.
-- A prompt that names a step with `celis step <id>` is a task for that step. With no open trail, `hook`
-  MUST NOT ask for the past agent on it.
-
-## Rules
-
-`rules` gives the live rules in scope in the working folder's project (CIP-05) that some files match
-(CIP-05, "Triggers"). With no file, it gives the words of those rules.
-
-```
-line     <id8> <scope> <rule>
-           good    <id8> <title> · <the first line of its proof>    a step example (CIP-05, "Patterns")
-                   <the path of each blob of its files>
-           good    <path>                                           a file example
-                   <the path of its blob>
-           bad     <url>                                            a URL example
-json     {"id", "scope", "content"}, with "good" and "bad" when the rule has them: a list of step ids,
-         sha256s and URLs
-index    <n> live rules. Their words, by how many rules use each:
-         <word> <n>, …
-```
-
-**Rules**
-
-- Each `<file>` MUST count as that file. A `<file>` that is a folder MUST count as each file that
-  `git ls-files --cached --others --exclude-standard -- <folder>` gives in the project. `--diff` MUST count as each file that `git diff
-  --name-only HEAD` and `git ls-files --others --exclude-standard` give in the working folder, and that
-  exists.
-- With no file, `rules` MUST print the index of the live rules in scope: each word that
-  they use before their "because", with how many use it, most used first.
-- A rule with no trigger and no `at:<place>` scope MUST NOT come.
-- `rules` MUST print every rule that matches: first a rule with a `replaces` tag, then the rest; within
-  each, first those that match a named file (a `path` with no `*` or `?`, or an `at:<place>`), then a
-  glob; newest first within each.
-
-**Examples**
-
-```
-celis rules
-celis rules shelf/prices.py
-celis rules --diff
-```
-
-## Recall
-
-`recall` gives the live rules in scope in the working folder's project (CIP-05) that fit an ask: those
-that some files match (CIP-05, "Triggers"), and those whose case the ask names.
-
-```
-rules
-<line>        each rule that fits, as "Rules" gives it
-patterns
-<line>        each pattern that fits, with its examples (CIP-05, "Patterns")
-none          nothing fits this ask
-```
-
-**Rules**
-
-- Each `<file>` MUST count as "Rules" states.
-- A rule fits the ask when it matches a file, when its text before its first `:` shares a word with the
-  ask, or when the search model (CIP-02, "Search") finds it among the most alike in meaning.
-- `recall` MUST print the rules before the patterns, and leave out a part with no line.
-
-**Examples**
-
-```
-celis recall -- "cut the release"
-celis recall shelf/prices.py -- "round the prices"
-```
+- A prompt that names a step with `celis step <id>` is a task for that step.
 
 ## Patterns
 
 `patterns` gives the live patterns in scope in the working folder's project (CIP-05, "Patterns").
 
 ```
-<line>     each pattern, as "Rules" gives it, newest first
+<line>     each pattern, as "Search" gives it, newest first
 none       no pattern yet
 ```
 
@@ -300,8 +230,8 @@ echo '{"session_id": "95e9be99", "cwd": "/repo", "prompt": "Use the shared Badge
 
 ## Grep
 
-`grep` gives every trail of every project to the system `grep`, as lines. The plugin's `past.md` searches
-the trails with it, and so does the `tidy` skill.
+`grep` gives every trail of every project to the system `grep`, as lines. The `tidy` skill searches the
+trails with it.
 
 ```
 view    <yyyy-mm-dd> <trail id8 | -> [<project name>] <kind> <id8> <fields> <text>
@@ -320,7 +250,7 @@ end     project [<project name>]
 `<id8>` is the first 8 characters of an id. A text holds each newline as a space. A rule's fields end with
 ` trigger` when it has a trigger tag (CIP-05), ` situation` when it has the `situation` label, and
 ` promoted` when it has the `promoted` label, ` pattern` when it has examples (CIP-05, "Patterns"), and
-` recalled:<day>` with the day `recall` last gave it.
+` recalled:<day>` with the day `search` last gave it.
 
 **Rules**
 
@@ -352,7 +282,12 @@ patterns, and the done asks of every project like it (CIP-04).
 
 ```
 rules
-<line>        each rule that fits, as "Rules" gives it
+<line>        <id8> <scope> <rule>, each rule that fits
+                good    <id8> <title> · <the first line of its proof>    a step example (CIP-05, "Patterns")
+                        <the path of each blob of its files>
+                good    <path>                                           a file example
+                        <the path of its blob>
+                bad     <url>                                            a URL example
 patterns
 <line>        each pattern that fits, with its examples (CIP-05, "Patterns")
 past
@@ -375,12 +310,16 @@ no model celis search has no model: search with celis grep, or run celis setup.
 
 **Rules**
 
-- Each `<file>` MUST count as "Rules" states.
+- Each `<file>` MUST count as that file. A `<file>` that is a folder MUST count as each file that
+  `git ls-files --cached --others --exclude-standard -- <folder>` gives in the project.
 - A rule fits the ask when it matches a file, when its text before its first `:` shares a word with the
   ask, or when the model finds it among the 5 most alike in meaning, at a cosine of 0.3 or more.
 - A done ask is like the ask when the model finds it among the 5 most alike in meaning, at a cosine of
   0.3 or more, or when its title shares 2 words with the ask. `search` MUST print at most 2.
 - `search` MUST print the parts in the order rules, patterns, past, and leave out a part with no line.
+  Within a part of rules, a rule with a `replaces` tag comes first, then the rest; within each, first
+  those that match a named file (a `path` with no `*` or `?`, or an `at:<place>`), then a glob, then
+  those that fit by words or meaning; newest first within each.
 - With `--kind rule` or `--kind pattern`, `search` MUST print only that part.
 - With `--kind trail` or `--kind step`, `search` MUST print at most `--limit` records, 20 when not
   given, highest score first; with no model, it MUST print the `no model` line and exit 0.

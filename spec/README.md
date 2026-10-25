@@ -14,7 +14,7 @@ section opens with a JSON example of its record, then one line for each tag, the
 Every change of `spec/` MUST keep these rules:
 
 1. **A CIP holds a rule only when another end breaks if it changes:** another `celis` version that reads
-   the same store or a linked folder, the plugin with its hooks and `past.md`, or a script that reads the
+   the same store or a linked folder, the plugin with its hooks, or a script that reads the
    `--json` of a record. What only `celis` reads or shows — text for a person or an agent, and values it
    works out, such as states by time, grades or reuse — is the app's, and its tests own it.
 2. **Data first.** A section opens with the record, then one line for each tag.
@@ -51,7 +51,7 @@ Every change of `spec/` MUST keep these rules:
 | `project:<id>` · `project` | anchor of a project, its `K`, and its name tag | 01 |
 | `figma:<key>` · `web:<host>` | the project id of a record outside git | 01 |
 | `$CELIS_HOME` · `$CELIS_HOME/trails/` · `$CELIS_HOME/phrase` · `$CELIS_HOME/links` | the home, the store, the phrase, the links | 01, 02 |
-| `celis` and its commands and flags, `rules` among them | the command line | 02 |
+| `celis` and its commands and flags, `search` among them | the command line | 02 |
 | `usage` · `no-decision` · `no-trail` · `no-step` · `closed` · `open-steps` · `check-failed` · `error` | errors | 02 |
 | 1111 with `step` in `celis.step` | kind: a step (NIP-22) | 03 |
 | `under` · `replaces` · `at` · `check` | step tags | 03 |

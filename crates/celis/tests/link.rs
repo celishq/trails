@@ -186,8 +186,7 @@ fn a_checkout_without_the_folder_writes_no_link() {
 }
 
 /// When the top folder has `.celis/trails/` and the link is not on, `prompt` asks, once a session, to
-/// ask the person whether to link, and names `celis link`; never on the prompt that asks for the past
-/// agent.
+/// ask the person whether to link, and names `celis link`.
 #[test]
 fn prompt_asks_to_link_a_project_whose_folder_is_not_linked() {
     let repo = Repo::new();
@@ -199,17 +198,13 @@ fn prompt_asks_to_link_a_project_whose_folder_is_not_linked() {
         support::prompt(&repo, &repo.path(), &[], &json)
     };
     let first = err(&hook("s1"));
-    assert!(first.contains("celis:past"), "{first}");
-    assert!(!first.contains("celis link"), "{first}");
+    assert!(first.contains("celis link"), "{first}");
     run(
         &repo,
         &["step", "add", "--session", "s1", "--", "Fix the cart."],
     );
     let second = err(&hook("s1"));
-    assert!(second.contains("celis link"), "{second}");
-    assert!(second.contains("link"), "{second}");
-    let third = err(&hook("s1"));
-    assert!(!third.contains("celis link"), "{third}");
+    assert!(!second.contains("celis link"), "{second}");
     run(&repo, &["link"]);
     hook("s2");
     let on = err(&hook("s2"));

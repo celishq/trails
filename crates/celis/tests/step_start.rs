@@ -70,7 +70,7 @@ fn start_refuses_unknown_and_closed_steps_and_starts_a_step_once() {
     assert_eq!(files(), before);
 }
 
-/// `start` prints no rule at the step's places; the agent asks `celis rules` for them.
+/// `start` prints no rule at the step's places; `celis search` gives them.
 #[test]
 fn start_prints_no_rule_at_the_steps_places() {
     let repo = Repo::new();

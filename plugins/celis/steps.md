@@ -7,16 +7,16 @@ The cases that the card does not cover, and that no command prints. Do not run `
 A place is a file, a `file:line`, a folder, or a URL. A rule that holds at one place takes the scope
 `at:<place>`.
 
-To find more rules than `celis recall` brought, run `celis rules` for the words the rules use, and
-search them with `celis grep -i -E " rule [0-9a-f]{8} live .*(<word>|<word>)"`.
+To find more rules than `celis search` brought, search them with
+`celis grep -i -E " rule [0-9a-f]{8} live .*(<word>|<word>)"`.
 
 When you move a file: write each rule of its old place again for the new place, with
-`decide --replaces <id>` and the new place as its scope or `--path`. Run `celis rules <old place>` to
-see them.
+`decide --replaces <id>` and the new place as its scope or `--path`. Run
+`celis search <old place> --kind rule -- "move"` to see them.
 
 ## Past work
 
-When the `celis:past` agent returns past work that did the same thing as your ask and went as planned,
+When `celis search` brings a past ask that did the same thing as your ask and went as planned,
 take the steps right under its ask as yours, with the `changed` lines in mind. Copy the steps under a
 step only when you take that step. A past step that does the same thing in other words is the same
 step. When its title names its own case, write it in words that hold in yours. Add each step you take
@@ -28,7 +28,7 @@ To go on with another session's trail, add your first step `--under <its id>`.
 
 ## Patterns
 
-A pattern is a rule with good and bad examples, which `celis recall` and `celis rules <file>` give with
+A pattern is a rule with good and bad examples, which `celis search` gives with
 the steps' proofs and the blobs of the files: an example shows what it means better than more words. A
 pattern guides and never binds, in every kind of work; a rule wins over it. Keep a pattern from:
 

@@ -1,6 +1,6 @@
 ---
 name: judge
-description: Reads the result of an ask with fresh eyes, only against its intent and the person's rules and patterns, and says whether its end state is met. Give it the intent lines of the ask (for, expect, not), the rules and patterns that celis recall gave, where the result is, and the checks to run. Run it as the last move before the ask closes.
+description: Reads the result of an ask with fresh eyes, only against its intent and the person's rules and patterns, and says whether its end state is met. Give it the intent lines of the ask (for, expect, not), the rules and patterns that celis search gave, where the result is, and the checks to run. Run it as the last move before the ask closes.
 tools: Bash, Read, Grep, Glob
 ---
 

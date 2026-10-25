@@ -55,7 +55,10 @@ fn decide_names_the_good_and_the_bad_step() {
         .unwrap();
     assert_eq!(rule.tag("good"), Some(b.as_str()));
     assert_eq!(rule.tag("bad"), Some(a.as_str()));
-    let rules = cli(&repo, &["rules", "logo.svg"]);
+    let rules = cli(
+        &repo,
+        &["search", "logo.svg", "--kind", "pattern", "--", "x"],
+    );
     let said = out(&rules);
     let blob = |text: &str| {
         use sha2::{Digest, Sha256};
@@ -65,7 +68,7 @@ fn decide_names_the_good_and_the_bad_step() {
             .display()
             .to_string()
     };
-    let lines: Vec<&str> = said.lines().skip(1).collect();
+    let lines: Vec<&str> = said.lines().skip(2).collect();
     assert_eq!(
         lines,
         [
@@ -139,7 +142,7 @@ fn decide_refuses_an_unknown_step() {
 }
 
 /// `decide` takes `--good` and `--bad` again and again, as a file it keeps as a blob or a URL, and
-/// `recall` prints each (`spec/05-rules.md`, "Patterns").
+/// `search` prints each (`spec/05-rules.md`, "Patterns").
 #[test]
 fn a_pattern_keeps_files_and_urls_as_examples() {
     let repo = Repo::new();
@@ -173,7 +176,7 @@ fn a_pattern_keeps_files_and_urls_as_examples() {
     assert!(values[0][1].starts_with("blossom:"), "{values:?}");
     assert_eq!(values[0][2], "a.svg");
     assert_eq!(values[2][1], url);
-    let o = cli(&repo, &["recall", "--", "draw a logo"]);
+    let o = cli(&repo, &["search", "--", "draw a logo"]);
     let said = out(&o);
     let blob = |text: &str| {
         use sha2::{Digest, Sha256};
@@ -280,7 +283,7 @@ fn patterns_says_when_there_is_none() {
 }
 
 /// `tree --full` names each pattern a step uses, and `stats` counts each pattern's examples and how often
-/// `recall` brought it.
+/// `search` brought it.
 #[test]
 fn tree_and_stats_show_the_patterns() {
     let repo = Repo::new();
@@ -302,7 +305,7 @@ fn tree_and_stats_show_the_patterns() {
     assert!(o.status.success(), "{}", err(&o));
     let pattern = out(&o).lines().next().unwrap().to_string();
     for _ in 0..2 {
-        assert!(cli(&repo, &["recall", "logo.svg", "--", "draw a logo"])
+        assert!(cli(&repo, &["search", "logo.svg", "--", "draw a logo"])
             .status
             .success());
     }

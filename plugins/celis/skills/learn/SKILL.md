@@ -11,7 +11,7 @@ person says yes.
    `~/.claude/projects/<project>/*.jsonl`, and look at the person's own prompts: corrections, the
    words "always" and "never", picks, and reactions to a result. For a skill file, a folder or a URL,
    read its text and the files it shows as examples.
-2. Run `celis recall -- "<what the source is about>"`, and leave out each draft that a live rule or
+2. Run `celis search -- "<what the source is about>"`, and leave out each draft that a live rule or
    pattern already says.
 3. Draft each point as a rule or a pattern, as the card's Learn move says: a must, such as "always" or
    "never", is a rule; a taste, shown by a result the person liked or did not, is a pattern, with each
