@@ -19,7 +19,8 @@ start, end = text.index("1. **Recall.**"), text.index("2. **Work.**")
 open(card, "w").write(text[:start] + move + text[end:])
 PY
 fi
+cd "$copy"
 for case in "$@"; do
-  claude plugin eval "$copy/plugins/celis" --eval-dir ../../evals --case "$case" --model "$model" \
-    --ablation none --scaffold --output-dir "$root/evals/results/$name-$model"
+  PATH="$root/crates/target/debug:$PATH" claude plugin eval plugins/celis --case "$case" --model "$model" \
+    --ablation none --scaffold --judge-model sonnet --output-dir "$root/evals/results/$name-$model-$case"
 done
