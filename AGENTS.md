@@ -2,6 +2,7 @@
 
 ## Layout
 
+- `DESIGN.md` holds the design decisions. Before you change the design, read it, and change it first.
 - `crates/` is one Cargo workspace. Run cargo from there.
 - `spec/` holds the contract, as CIPs. `spec/fixtures/` holds what two ends must match. Before you change
   `spec/`, read and follow `spec/README.md`, "How a CIP works".

@@ -24,7 +24,7 @@ Every change of `spec/` MUST keep these rules:
 6. **The base CIP says once that a reader ignores what it does not know.**
 7. **This README is the one registry** of kinds, tags, scopes, errors and deprecated names.
 8. **Examples are real records or commands,** not stories.
-9. **A rule states what, never how or why.** How belongs in the code, why in the plan.
+9. **A rule states what, never how or why.** How belongs in the code, why in `DESIGN.md` or the plan.
 10. **A section heading is stable.** Tests cite it, so a rename or removal changes each citation in the same
     commit.
 11. **The spec changes first.** A test of a spec rule cites its section: ``(`spec/03-steps.md`,
