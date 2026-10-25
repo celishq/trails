@@ -260,8 +260,8 @@ impl Trails {
     }
 
     /// Writes `pattern`, its trail scope taken whole from a trail of its project that is not done or
-    /// dropped, or whose pattern it replaces; replacing the live pattern there that `replaces` names, and
-    /// keeping its examples.
+    /// dropped, or whose pattern it replaces, and each `within` whole from a live pattern of any project;
+    /// replacing the live pattern there that `replaces` names, and keeping its examples and `within`.
     pub fn decide(&self, mut pattern: Pattern, replaces: Option<&str>) -> Result<Written, Refusal> {
         let project = pattern.anchor.project.clone();
         if let Scope::Trail(id) = &pattern.scope {
@@ -280,11 +280,20 @@ impl Trails {
             }
             pattern.scope = Scope::Trail(trail.id().to_string());
         }
+        let patterns = self.patterns();
+        let within: Result<Vec<PatternId>, Refusal> = pattern
+            .within
+            .iter()
+            .map(|id| Ok(PatternId::new(&patterns.any(id)?.id)))
+            .collect();
+        pattern.within = within?;
         if let Some(id) = replaces {
-            let patterns = self.patterns();
             let found = patterns.find(&project, id)?;
             if let Some((_, old)) = patterns.get(&found.id) {
                 pattern.examples = pattern.examples.with(&old.examples);
+                let kept = old.within.iter().filter(|w| !pattern.within.contains(w));
+                let kept: Vec<PatternId> = kept.cloned().collect();
+                pattern.within.extend(kept);
             }
             pattern.replaces = Some(PatternId::new(&found.id));
         }

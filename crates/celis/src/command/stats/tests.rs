@@ -87,6 +87,7 @@ impl Desk {
             content: "When you price: round down, because the shelf does.".into(),
             paths: vec![],
             binds: false,
+            within: vec![],
             examples: Default::default(),
         };
         let id = self.trails.decide(pattern, None).unwrap().records[0]

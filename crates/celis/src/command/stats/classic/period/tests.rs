@@ -86,6 +86,7 @@ fn a_period_counts_its_done_steps_that_use_a_pattern() {
         content: "keep cents".into(),
         paths: vec![],
         binds: false,
+        within: vec![],
         examples: Default::default(),
     }
     .record(&account(), 5)

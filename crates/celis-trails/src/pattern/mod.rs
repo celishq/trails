@@ -15,7 +15,7 @@ use anyhow::Result;
 use celis_nostr::{Account, Note};
 
 /// One pattern, written on a project, that holds in its scope; with the globs of the files it acts on,
-/// its examples, and its `binds` label, which makes it a rule.
+/// the larger patterns it completes, its examples, and its `binds` label, which makes it a rule.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Pattern {
     pub anchor: Anchor,
@@ -24,6 +24,7 @@ pub struct Pattern {
     pub content: String,
     pub paths: Vec<String>,
     pub binds: bool,
+    pub within: Vec<PatternId>,
     pub examples: Examples,
 }
 
@@ -44,6 +45,8 @@ impl Pattern {
         tags.extend(examples.map(|(side, example)| example.tag(side, &pubkey)));
         let paths = self.paths.iter();
         tags.extend(paths.map(|p| vec!["path".to_string(), p.clone()]));
+        let within = self.within.iter();
+        tags.extend(within.map(|id| vec!["within".to_string(), id.to_string()]));
         tags.push(vec!["L".to_string(), NAMESPACE.to_string()]);
         let labels = [("decision", true), ("binds", self.binds)].into_iter();
         tags.extend(
@@ -92,6 +95,12 @@ impl Pattern {
                 .map(|t| t[1].clone())
                 .collect(),
             binds: labelled(note, "binds") || labelled(note, "promoted"),
+            within: note
+                .tags
+                .iter()
+                .filter(|t| t.len() >= 2 && t[0] == "within")
+                .map(|t| PatternId::new(&t[1]))
+                .collect(),
             examples: Examples::read(note),
         })
     }

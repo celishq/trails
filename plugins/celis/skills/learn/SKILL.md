@@ -16,9 +16,13 @@ person says yes.
 3. Draft each point as a pattern in the four lines the card shows, as its Learn move says: a must, such
    as "always" or "never", is a rule (`--binds`); a taste or a choice the source explains is a pattern
    that guides, with each file, step or URL the source gives as a good or a bad example. A pattern needs
-   no example: its forces and its reason carry it. Name a secret by where it lives, never by its value.
+   no example: its forces and its reason carry it. A skill's process, such as "plan, then build", is a
+   pattern of the order of the work. Draft the patterns as a graph: a larger one first, such as the
+   whole page, then each smaller one it holds, such as the hero, linked with `--within <its id>`. Name a
+   secret by where it lives, never by its value.
 4. Show the person the drafts, numbered, each with where in the source it came from and `rule` when it
    binds, and ask which to
    keep: a list of numbers, all, or none. Write each kept draft with `decide`, its `--path` as narrow
-   as it allows, and `--scope me` when it holds for that kind of work in any project.
+   as it allows, `--within` the id of its larger pattern once that one is written, and `--scope me`
+   when it holds for that kind of work in any project.
 5. Close the ask. In the end, give how many drafts you made and how many the person kept, and each id.

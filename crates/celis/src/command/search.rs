@@ -82,8 +82,15 @@ impl Command {
                         .take(limit)
                         .collect();
                     self.recalled(part.iter().map(|(note, _)| *note));
+                    let project = self.project().anchor.project;
                     let line = |(note, pattern): &&(&Note, Pattern)| {
-                        crate::text::line::pattern(note, pattern, &trails)
+                        let mut lines = vec![crate::text::line::pattern(note, pattern, &trails)];
+                        let smaller = trails.patterns().smaller(&project, &note.id);
+                        lines.extend(smaller.iter().take(NEXT).map(|(note, pattern)| {
+                            let first = pattern.content.lines().next().unwrap_or("");
+                            format!("  next    {} {first}", short(&note.id))
+                        }));
+                        lines.join("\n")
                     };
                     part.iter().map(line).collect()
                 }
@@ -282,6 +289,9 @@ const COMMON: &[&str] = &[
     "there", "they", "this", "use", "via", "was", "were", "what", "when", "where", "which", "who",
     "why", "will", "with", "would", "you", "your",
 ];
+
+/// The most smaller patterns `search` prints under a pattern.
+const NEXT: usize = 5;
 
 /// The most past asks `search` prints.
 const PAST: usize = 2;

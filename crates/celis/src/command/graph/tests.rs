@@ -92,6 +92,7 @@ impl Bench {
             content: text.to_string(),
             paths: vec![],
             binds: false,
+            within: vec![],
             examples: Default::default(),
         };
         let id = self.trails.decide(pattern, None).unwrap().records[0]

@@ -99,6 +99,27 @@ me                in every project
 - A pattern `at:<place>` counts as a pattern with that place as its `path`, which matches as "Reading"
   states.
 
+## Graph
+
+```json
+{ "kind": 1111,
+  "tags": [ …, ["within", "<id of the larger pattern>"] ],
+  "content": "When the hero of a page is drawn\nForces: …\nDo: …\nBecause: …" }
+```
+
+- `within`: optional, repeatable; the larger pattern this one completes. It MAY name a pattern of another
+  project.
+
+**Writers**
+
+- A writer MUST write the whole id of each larger pattern, and only of a live pattern the store holds.
+- A pattern that replaces another MUST keep each `within` of the one it replaces.
+
+**Readers**
+
+- A reader MUST ignore a `within` that names no record it holds.
+- The smaller patterns of a pattern are the live patterns whose `within` names it.
+
 ## Examples
 
 ```json

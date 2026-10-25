@@ -473,6 +473,7 @@ impl Demo {
             content: text.to_string(),
             paths: vec![],
             binds: false,
+            within: vec![],
             examples: Default::default(),
         };
         let written = self.trails(ago)?.decide(pattern, None)?;

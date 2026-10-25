@@ -63,6 +63,7 @@ Every change of `spec/` MUST keep these rules:
 | `scope` · `replaces` | pattern tags | 05 |
 | `path` | pattern tag: the trigger | 05 |
 | `good` · `bad` | pattern tags: its examples | 05 |
+| `within` | pattern tag: the larger pattern it completes | 05 |
 | `binds` in `celis.decision` | a pattern label: the pattern is a rule | 05 |
 | `me` · `project` · `trail:<id>` · `at:<place>` | the scopes of a pattern | 05 |
 | `uses` | step tag | 06 |

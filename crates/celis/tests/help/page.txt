@@ -54,6 +54,7 @@ Record work · your agents run these
   ├ --replaces <id>   The pattern this one replaces
   ├ --path <glob>     A file it acts on; * and ? within a folder, ** across
   ├ --binds           It is a rule: a result must keep it
+  ├ --within <id>     The larger pattern it completes
   ├ --good <example>  A step, a file, or a URL that shows it, such as a pick
   ├ --bad <example>   A step, a file, or a URL that breaks it
   └ --project <id>    The id of a project in the store

@@ -124,6 +124,7 @@ fn reused(later: u64) -> (TempDir, Trails) {
         content: "When a rule holds: keep it, because it works.".into(),
         paths: vec![],
         binds: false,
+        within: vec![],
         examples: Default::default(),
     };
     trails.at(AT);

@@ -312,13 +312,14 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "decide",
-        usage: &["celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--binds] [--good <example>]... [--bad <example>]... [--project <id>] -- <text>"],
+        usage: &["celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--binds] [--within <id>]... [--good <example>]... [--bad <example>]... [--project <id>] -- <text>"],
         summary: "Record a pattern that later work must keep: when it applies, its forces, what to do, and why. With no --scope, it holds for the whole project. Its paths name the files it acts on, so celis search gives it for them. It guides the work; with --binds, it is a rule, which binds it.",
         args: &[
             ("--scope <scope>", "Where it applies: trail:<id>, me, or project"),
             ("--replaces <id>", "The pattern this one replaces"),
             ("--path <glob>", "A file it acts on; * and ? within a folder, ** across"),
             ("--binds", "It is a rule: a result must keep it"),
+            ("--within <id>", "The larger pattern it completes"),
             ("--good <example>", "A step, a file, or a URL that shows it, such as a pick"),
             ("--bad <example>", "A step, a file, or a URL that breaks it"),
             ("--project <id>", "The id of a project in the store"),

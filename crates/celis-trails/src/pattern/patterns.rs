@@ -63,6 +63,20 @@ impl<'a> Patterns<'a> {
         live.map(PatternEntry::said)
     }
 
+    /// The live pattern of any project whose id is `id`, or the only one whose id starts with `id` when
+    /// `id` is 4 or more characters.
+    pub fn any(&self, id: &str) -> Result<&'a Note, Refusal> {
+        let live = self.every.iter().filter(|e| e.is_live()).map(|e| e.note);
+        crate::records::id::find(live, id).ok_or_else(|| Refusal::NoPattern(id.to_string()))
+    }
+
+    /// The live patterns in scope in `project` whose `within` names `id`, newest first.
+    pub fn smaller(&self, project: &str, id: &str) -> Vec<(&'a Note, Pattern)> {
+        let live = self.live(project).into_iter();
+        live.filter(|(_, p)| p.within.iter().any(|w| &**w == id))
+            .collect()
+    }
+
     /// The live pattern in scope in `project` whose id is `id`, or the only one whose id starts with `id`
     /// when `id` is 4 or more characters.
     pub fn find(&self, project: &str, id: &str) -> Result<&'a Note, Refusal> {

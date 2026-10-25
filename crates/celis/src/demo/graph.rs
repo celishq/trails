@@ -292,6 +292,7 @@ impl Written {
                     content: self.plan.patterns[r].0.to_string(),
                     paths: vec![],
                     binds: false,
+                    within: vec![],
                     examples: Default::default(),
                 };
                 store.at(at);

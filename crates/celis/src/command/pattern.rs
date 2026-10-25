@@ -2,7 +2,7 @@
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use celis_trails::{Example, Examples, Pattern, Place, Project, Scope, Trails};
+use celis_trails::{Example, Examples, Pattern, PatternId, Place, Project, Scope, Trails};
 use std::io::Write;
 
 impl Command {
@@ -58,6 +58,7 @@ impl Command {
             content,
             paths,
             binds: args.binds,
+            within: args.within.iter().map(PatternId::new).collect(),
             examples,
         };
         let written = trails.decide(pattern, args.replaces.as_deref())?;

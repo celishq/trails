@@ -14,7 +14,7 @@ read. What a command shows a person is not part of it.
 ## Commands
 
 ```
-celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--binds] [--good <example>]... [--bad <example>]... [--project <id>] -- <text>
+celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--binds] [--within <id>]... [--good <example>]... [--bad <example>]... [--project <id>] -- <text>
                                                        a pattern, in its scope
 celis patterns [--markdown]                           the patterns, the rules first, and their examples
 celis tree [<id>]... [--graph] [--full] [--all] [--demo]
@@ -58,7 +58,8 @@ decision  json  {"id", "created_at", "project", "scope", "replaces", "content",
   `--replaces` as its tags, and no `scope` tag for `project`; for `--scope at:<place>`, no `scope` tag
   and a `path` tag of the place's path from the project's top folder, without its line, and with `/**`
   after it when it is a folder; each `--path`, from the project's top
-  folder, as a `path` tag, `--binds` as its label, and each `--good` and `--bad`
+  folder, as a `path` tag, `--binds` as its label, each `--within` as a `within` tag (CIP-05, "Graph"),
+  refusing an id that no live pattern of the store has with `no-decision`, and each `--good` and `--bad`
   as an example (CIP-05, "Examples"): a value with `://` as a URL, a file of the working folder as its
   blob, else the whole id of a step, refusing a step the store lacks with `no-step`.
 - `--project` on `decide` and `step add` MUST write the records of the project it names in place of the
@@ -293,6 +294,7 @@ rules first, then the other patterns, and the done asks of every project like it
 rules
 <line>        <id8> <scope> <first line>, each rule that fits (CIP-05, "Rules")
                 <each next line of its text>
+                next    <id8> <first line>                               a smaller pattern (CIP-05, "Graph")
                 good    <id8> <title> · <the first line of its proof>    a step example (CIP-05, "Examples")
                         <the path of each blob of its files>
                 good    <path>                                           a file example
@@ -333,6 +335,7 @@ no model celis search has no model: search with celis grep, or run celis setup.
 - With `--kind rule` or `--kind pattern`, `search` MUST print only that part.
 - With `--kind trail` or `--kind step`, `search` MUST print at most `--limit` records, 20 when not
   given, highest score first; with no model, it MUST print the `no model` line and exit 0.
+- Under each pattern, `search` MUST print each of its smaller patterns in scope, newest first, at most 5.
 - `--limit` MUST cap each part.
 - `search` MUST refuse empty text, a `--kind` that is not `rule`, `pattern`, `trail` or `step`, a
   `--limit` that is not a positive number, and `--json` without `--kind trail` or `--kind step`, as a
