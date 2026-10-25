@@ -168,8 +168,8 @@ fn prompts(repo: &Repo, step: &str) -> Vec<String> {
 }
 
 /// Each agent's session start gives the card; an agent other than Claude Code also gets its session, to
-/// pass with `--session`. Antigravity has no session start, and gets both before each call of the
-/// model.
+/// pass with `--session`, and the path of `judge.md`. Antigravity has no session start, and gets both
+/// before each call of the model.
 #[test]
 fn each_agents_session_start_gives_the_card_and_its_session() {
     let repo = Repo::new();
@@ -183,6 +183,8 @@ fn each_agents_session_start_gives_the_card_and_its_session() {
         );
         let named = context.contains("celis session: s1. Pass --session s1");
         assert_eq!(named, agent.name != "claude", "{}: {context}", agent.name);
+        let judged = context.contains("agents/judge.md. With no subagents");
+        assert_eq!(judged, agent.name != "claude", "{}: {context}", agent.name);
     }
 }
 
