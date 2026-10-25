@@ -10,5 +10,5 @@ The text after `/celis:steer` is the ask. Do it as the card says, with these cha
    A note, such as "move it left", is not a fix of done work: do it in the next layer.
 3. At the outer layer of creative work, make the variants as the `celis:create` skill says, open
    their blobs side by side, say in one line how they differ, and wait for the person's pick. Keep the
-   pick as a pair, in the person's words, and name the pick in the next layer's title.
+   pick as a pattern, in the person's words, and name the pick in the next layer's title.
 4. When the person wants to steer every ask like this, write it as a `me` rule.

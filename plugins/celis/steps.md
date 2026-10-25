@@ -7,7 +7,7 @@ The cases that the card does not cover, and that no command prints. Do not run `
 A place is a file, a `file:line`, a folder, or a URL. A rule that holds at one place takes the scope
 `at:<place>`.
 
-To find more rules than the past agent brought, run `celis rules` for the words the rules use, and
+To find more rules than `celis recall` brought, run `celis rules` for the words the rules use, and
 search them with `celis grep -i -E " rule [0-9a-f]{8} live .*(<word>|<word>)"`.
 
 When you move a file: write each rule of its old place again for the new place, with
@@ -26,21 +26,23 @@ with `--uses <its id>`, so that later work can see which steps were reused.
 
 To go on with another session's trail, add your first step `--under <its id>`.
 
-## Taste
+## Patterns
 
-A taste block is a rule with a good and a bad step, which `celis rules <file>` gives with their proofs
-and blobs: an example shows what a rule means better than more words. In Build it binds as any rule;
-in creative work it guides, and a variant that breaks it on purpose keeps it. Keep a block from:
+A pattern is a rule with good and bad examples, which `celis recall` and `celis rules <file>` give with
+the steps' proofs and the blobs of the files: an example shows what it means better than more words. A
+pattern guides and never binds, in every kind of work; a rule wins over it. Keep a pattern from:
 
 - a pick: `decide --good <pick> --bad <the other> --path <the file>`, in the person's words, or
   "because the person picked it" when they gave no reason; never your own choice;
-- a correction: the hunk it replaced and the fix in the fix's proof, a few lines each, and
-  `--good <the fix>`;
+- a reaction to a result: `--good` or `--bad` the step, the file or the URL the person reacted to;
+- a correction of done work: the hunk it replaced and the fix in the fix's proof, a few lines each,
+  and `--good <the fix>`;
 - the person's own rewrite, as `git log` shows at the next ask: a step that `--replaces` yours, closed
   `--by person` with both hunks.
 
-When 3 blocks make the same point, or the picks of a creative ask share one, propose one rule that says
-it, and replace them when the person agrees.
+To add an example to a pattern, replace it with `decide --replaces <its id>` and the new example: the
+new pattern keeps the old examples. When 3 patterns make the same point, or the picks of a creative ask
+share one, propose one rule that says it, and replace them when the person agrees.
 
 ## Links
 
