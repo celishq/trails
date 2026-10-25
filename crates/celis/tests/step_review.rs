@@ -2,7 +2,7 @@
 
 mod support;
 
-use support::{account, add, cli, err, now, step_note, Repo};
+use support::{account, add, cli, err, now, out, step_note, Repo};
 
 /// The stderr lines of `celis step done <id> <how> -- proof`, which must succeed.
 fn done(repo: &Repo, id: &str, how: &[&str]) -> Vec<String> {
@@ -161,4 +161,39 @@ fn done_by_takes_judge_or_person() {
         ],
     );
     assert_eq!(o.status.code(), Some(2), "{}", err(&o));
+}
+
+/// `done` of a step prints each rule of the files git shows changed, and leaves out the rest
+/// (`spec/02-cli.md`, "Step").
+#[test]
+fn done_prints_the_rules_of_the_changed_files() {
+    let repo = Repo::new();
+    let python = cli(
+        &repo,
+        &[
+            "decide",
+            "--path",
+            "*.py",
+            "--",
+            "When Python changes: run ruff.",
+        ],
+    );
+    let rust = cli(
+        &repo,
+        &[
+            "decide",
+            "--path",
+            "*.rs",
+            "--",
+            "When Rust changes: run fmt.",
+        ],
+    );
+    let (python, rust) = (out(&python), out(&rust));
+    let trail = add(&repo, &["--", "the trail"]);
+    let ask = add(&repo, &["--under", &trail[..8], "--", "the ask"]);
+    let piece = add(&repo, &["--under", &ask[..8], "--", "piece"]);
+    repo.write("new.py", "x = 1\n");
+    let said = done(&repo, &piece, &["--as-planned"]).join("\n");
+    assert!(said.contains(&python[..8]), "{said}");
+    assert!(!said.contains(&rust[..8]), "{said}");
 }

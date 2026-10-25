@@ -159,6 +159,9 @@ step  json  {"id", "created_at", "project", "links": [{"to", "kind": "under | re
   than `judge` or `person` is a usage error. Each `done --file` MUST be kept as a blob and named by an
   `imeta` tag (CIP-08), and a file that is not there is a usage error. `done --pitfall` MUST also write
   a rule, at `at:<the step's at>`, else `trail:<the step's trail id>`.
+- `done` of a step that is not an ask MUST print each live rule in scope that a file matches which
+  `git diff --name-only HEAD` or `git ls-files --others --exclude-standard` gives in the working folder,
+  as "Search" gives a rule, in the order "Rules" states.
 - `drop` MUST refuse an empty reason, and `edit` one with no text, `--at` or `--check`, as usage errors.
 
 **Examples**

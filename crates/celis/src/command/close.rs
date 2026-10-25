@@ -15,8 +15,8 @@ use std::io::Write;
 
 impl Command {
     /// Prints `review` on `err`: the step's plan against what it did, the open steps beside it, the blobs
-    /// of `trails` for its files and the files beside it, then the next move; on an ask, only its end; with no
-    /// `linked` folder, its blobs are local only.
+    /// of `trails` for its files and the files beside it, the rules of the changed files, then the next
+    /// move; on an ask, only its end; with no `linked` folder, its blobs are local only.
     pub(crate) fn review(
         &self,
         review: &Review,
@@ -61,6 +61,18 @@ impl Command {
         }
         for (id, title, file) in &review.beside {
             lines.push(format!("  beside  {} {title} · {}", short(id), kept(file)));
+        }
+        let rules = self.matched(trails, &super::rules::changed(&self.folder));
+        if !rules.is_empty() {
+            lines.push(
+                "celis: check the change against each rule of the files git shows changed:"
+                    .to_string(),
+            );
+            lines.extend(
+                rules
+                    .iter()
+                    .map(|(note, rule)| crate::text::line::rule(note, rule, trails)),
+            );
         }
         let under = review.under.as_deref().map(short);
         lines.extend(match (review.as_planned, under) {

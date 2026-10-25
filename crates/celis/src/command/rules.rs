@@ -5,7 +5,7 @@ pub(super) mod index;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use celis_nostr::Note;
-use celis_trails::{Example, Fit, Place, Project, Rule};
+use celis_trails::{Example, Fit, Place, Project, Rule, Trails};
 use index::Index;
 use serde_json::json;
 use std::io::Write;
@@ -25,20 +25,12 @@ impl Command {
         }
         let project = self.project();
         let trails = self.trails()?;
-        let live = trails.rules().live(&project.anchor.project).into_iter();
         if files.is_empty() && !args.diff {
+            let live = trails.rules().live(&project.anchor.project).into_iter();
             let index = Index::of(live.map(|(_, rule)| rule.content));
             return super::put(out, &index.text());
         }
-        let paths: Vec<String> = files
-            .iter()
-            .flat_map(|f| paths(&project, &self.folder, f))
-            .collect();
-        let mut found: Vec<(Fit, &Note, Rule)> = live
-            .filter_map(|(note, rule)| Some((rule.fit(&paths)?, note, rule)))
-            .collect();
-        found.sort_by_key(|(fit, _, rule)| rank(rule, *fit));
-        for (_, note, rule) in &found {
+        for (note, rule) in &self.matched(&trails, &files) {
             let mut object =
                 json!({"id": note.id, "scope": rule.scope.text(), "content": rule.content});
             for (side, list) in [("good", &rule.examples.good), ("bad", &rule.examples.bad)] {
@@ -54,6 +46,30 @@ impl Command {
             super::put(out, &text)?;
         }
         Ok(())
+    }
+}
+
+impl Command {
+    /// The live rules in scope that `files` match, by `rank`.
+    pub(super) fn matched<'a>(
+        &self,
+        trails: &'a Trails,
+        files: &[String],
+    ) -> Vec<(&'a Note, Rule)> {
+        let project = self.project();
+        let paths: Vec<String> = files
+            .iter()
+            .flat_map(|f| paths(&project, &self.folder, f))
+            .collect();
+        let live = trails.rules().live(&project.anchor.project).into_iter();
+        let mut found: Vec<(Fit, &Note, Rule)> = live
+            .filter_map(|(note, rule)| Some((rule.fit(&paths)?, note, rule)))
+            .collect();
+        found.sort_by_key(|(fit, _, rule)| rank(rule, *fit));
+        found
+            .into_iter()
+            .map(|(_, note, rule)| (note, rule))
+            .collect()
     }
 }
 
@@ -89,7 +105,7 @@ fn git(folder: &Path, args: &[&str]) -> Vec<String> {
 }
 
 /// The files that git shows changed or new in `folder`, each that exists, each once.
-fn changed(folder: &Path) -> Vec<String> {
+pub(super) fn changed(folder: &Path) -> Vec<String> {
     let listed = git(folder, &["diff", "-z", "--name-only", "--relative", "HEAD"]);
     let new = git(
         folder,
