@@ -73,8 +73,7 @@ impl Command {
     }
 
     /// Closes the open step `args` names, done with its proof, what changed from its plan, who gave the
-    /// proof and the files it keeps, and prints
-    /// the id of the done record, then of its pitfall's rule, and its review.
+    /// proof and the files it keeps, and prints the id of the done record and its review.
     fn step_close(
         &self,
         args: &Args,
@@ -110,8 +109,7 @@ impl Command {
             by,
             files,
         };
-        let pitfall = args.pitfall.clone();
-        let written = trails.done(id, done.clone(), pitfall, &project.folder)?;
+        let written = trails.done(id, done.clone(), &project.folder)?;
         self.print(written, args, out, err)?;
         let steps = trails.steps();
         let review = Review::of(trails.records(), steps.find(id)?, &done, super::now());

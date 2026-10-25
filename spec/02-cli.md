@@ -29,7 +29,7 @@ celis link [<folder>] [--off]                         keep this project's trails
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>]... [--check <command>] [--new] [--session <id>] [--project <id>] -- <text>
                                                        leave a step
 celis step start <id>                                 take up a step, and see the rules its plan links
-celis step done <id> [--changed <text>] [--as-planned] [--by <who>] [--file <path>]... [--pitfall <text>] -- <proof>
+celis step done <id> [--changed <text>] [--as-planned] [--by <who>] [--file <path>]... -- <proof>
                                                        close a step with its proof
 celis step drop <id> -- <reason>                      end a step, a done trail or a rule no longer wanted
 celis step edit <id> [--at <place>]... [--check <command>] [-- <text>]
@@ -156,8 +156,7 @@ step  json  {"id", "created_at", "project", "links": [{"to", "kind": "under | re
   fails or runs past `CELIS_CHECK_SECONDS`, 600 when not set.
 - `done --changed` MUST write its text as `changed`, and `done --by` its value as `by`; a `--by` other
   than `judge` or `person` is a usage error. Each `done --file` MUST be kept as a blob and named by an
-  `imeta` tag (CIP-08), and a file that is not there is a usage error. `done --pitfall` MUST also write
-  a rule, at `at:<the step's at>`, else `trail:<the step's trail id>`.
+  `imeta` tag (CIP-08), and a file that is not there is a usage error.
 - `done` of a step that is not an ask MUST print each live rule in scope that a file matches which
   `git diff --name-only HEAD` or `git ls-files --others --exclude-standard` gives in the working folder,
   as "Search" gives a rule, in the order "Search" states.

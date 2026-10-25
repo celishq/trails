@@ -192,14 +192,8 @@ impl Trails {
     }
 
     /// Closes the open step `id` `done`, once nothing under it is open and its check passes
-    /// in `folder`; a pitfall becomes a rule at its place, else on its trail.
-    pub fn done(
-        &self,
-        id: &str,
-        done: Done,
-        pitfall: Option<String>,
-        folder: &Path,
-    ) -> Result<Written, Refusal> {
+    /// in `folder`.
+    pub fn done(&self, id: &str, done: Done, folder: &Path) -> Result<Written, Refusal> {
         let steps = self.steps();
         let note = steps.find_open(id)?;
         if note.children().iter().any(|s| s.closed().is_none()) {
@@ -213,25 +207,6 @@ impl Trails {
         written.records.push(
             self.sign(|account, now| Mark::Done(done.clone()).record(account, note.id(), now))?,
         );
-        if let Some(pitfall) = pitfall {
-            let scope = match step.at() {
-                Some(at) => Scope::At(at.to_string()),
-                None => Scope::Trail(note.trail().id().to_string()),
-            };
-            let rule = Rule {
-                anchor: step.anchor.clone(),
-                scope,
-                replaces: None,
-                content: pitfall,
-                paths: vec![],
-                situation: false,
-                promoted: false,
-                examples: Default::default(),
-            };
-            written
-                .records
-                .push(self.sign(|account, now| rule.record(account, now))?);
-        }
         Ok(written)
     }
 

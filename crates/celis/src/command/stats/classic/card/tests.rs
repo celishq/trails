@@ -38,7 +38,6 @@ fn worked(later: u64) -> (TempDir, Trails) {
         .done(
             &part,
             celis_trails::Done::new("it works".into(), None),
-            None,
             home.path(),
         )
         .unwrap();
@@ -230,7 +229,6 @@ fn the_projects_card_aligns_its_times() {
         .done(
             &part,
             celis_trails::Done::new("it took long".into(), None),
-            None,
             home.path(),
         )
         .unwrap();

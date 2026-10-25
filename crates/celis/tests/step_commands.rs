@@ -260,50 +260,25 @@ fn add_writes_its_places_from_the_projects_top_folder() {
     assert_eq!(at, ["src/a.rs:4", "b.rs"]);
 }
 
-/// `done --pitfall` writes the pitfall as a rule at the step's place, which `read --at` gives in a
-/// later trail; with no place, as a rule of the step's trail (`spec/02-cli.md`, "Step").
+/// `done --pitfall` is a usage error: a pitfall is a `decide` after `done` (`spec/02-cli.md`,
+/// "Commands").
 #[test]
-fn done_writes_a_pitfall_as_a_rule_at_the_steps_place() {
+fn done_refuses_a_pitfall() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the trail"]);
-    let placed = add(
-        &repo,
-        &["--under", &trail[..8], "--at", "src/a.rs", "--", "placed"],
-    );
-    let loose = add(&repo, &["--under", &trail[..8], "--", "loose"]);
-    for (step, pitfall) in [
-        (&placed, "the fixture needs --yes"),
-        (&loose, "wait a second"),
-    ] {
-        let o = cli(
-            &repo,
-            &[
-                "step",
-                "done",
-                &step[..8],
-                "--as-planned",
-                "--pitfall",
-                pitfall,
-                "--",
-                "it passes",
-            ],
-        );
-        assert!(o.status.success(), "{}", err(&o));
-        assert_eq!(out(&o).lines().count(), 2, "{}", out(&o));
-    }
-    let rules = out(&cli(&repo, &["tree", &trail[..8], "--full"]));
-    assert!(
-        rules.contains("\n  § ") && rules.contains("wait a second"),
-        "{rules}"
-    );
-    support::finish(&repo, &trail[..8]);
-    let later = out(&cli(&repo, &["grep", "at:src/a.rs"]));
-    assert!(
-        later
-            .lines()
-            .any(|l| l.contains(" live {at:src/a.rs} the fixture needs --yes")),
-        "{later}"
-    );
+    let step = add(&repo, &["--under", &trail[..8], "--", "loose"]);
+    let args = [
+        "step",
+        "done",
+        &step[..8],
+        "--as-planned",
+        "--pitfall",
+        "wait",
+        "--",
+        "it passes",
+    ];
+    let o = cli(&repo, &args);
+    assert_eq!(o.status.code(), Some(2), "{}", err(&o));
 }
 
 /// `add` says when the step under an ask it goes under already holds an open step that has not

@@ -6,7 +6,7 @@ celis search [<file>]... -- "<ask>"
 celis decide [--scope trail:<id> | me] [--replaces <id>] [--path <glob>]... [--situation] [--good <example>]... [--bad <example>]... -- "<rule>"
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>] [--check <command>] [--new] -- "<title>"
 celis step start <id>
-celis step done <id> [--changed "<what differs>"] [--as-planned] [--by <who>] [--file <path>]... [--pitfall "<rule>"] -- "<proof>"
+celis step done <id> [--changed "<what differs>"] [--as-planned] [--by <who>] [--file <path>]... -- "<proof>"
 celis step drop <id> -- "<why>"
 celis step edit <id> [--at <place>]... [--check <command>] [-- "<new title>"]
 celis tree [<id>]...

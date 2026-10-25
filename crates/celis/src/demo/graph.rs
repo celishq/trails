@@ -273,7 +273,6 @@ impl Written {
                         store.done(
                             &id,
                             celis_trails::Done::new("it works".to_string(), changed),
-                            None,
                             home,
                         )?;
                     }

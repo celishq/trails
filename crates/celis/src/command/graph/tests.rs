@@ -67,7 +67,6 @@ impl Bench {
             .done(
                 id,
                 celis_trails::Done::new("it works".into(), changed),
-                None,
                 &home,
             )
             .unwrap();

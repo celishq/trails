@@ -447,7 +447,6 @@ impl Demo {
         self.trails(ago)?.done(
             id,
             celis_trails::Done::new(proof.to_string(), changed),
-            None,
             &self.home,
         )?;
         Ok(())

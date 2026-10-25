@@ -60,12 +60,7 @@ impl Desk {
         self.trails.at(noon() - ago);
         let home = self.home.path().to_path_buf();
         self.trails
-            .done(
-                id,
-                celis_trails::Done::new("it works".into(), None),
-                None,
-                &home,
-            )
+            .done(id, celis_trails::Done::new("it works".into(), None), &home)
             .unwrap();
         self.trails.at(noon() - ago);
     }

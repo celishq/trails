@@ -439,7 +439,7 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "step done",
-        usage: &["celis step done <id> [--changed <text>] [--as-planned] [--by <who>] [--file <path>]... [--pitfall <text>] -- <proof>"],
+        usage: &["celis step done <id> [--changed <text>] [--as-planned] [--by <who>] [--file <path>]... -- <proof>"],
         summary: "Finish a step with its proof and what changed. Finish the steps under it first.",
         args: &[
             ("<id>", "A step id, or its first 4 or more characters"),
@@ -447,12 +447,10 @@ pub const VERBS: &[Verb] = &[
             ("--as-planned", "The result matches its expect line; else use --changed"),
             ("--by", "judge, a reader that did not do the work, or person"),
             ("--file", "A file of the proof, kept as it is now"),
-            ("--pitfall", "A rule from what went wrong, kept at the step's places"),
             ("<proof>", "The check that failed before and passes now"),
         ],
         examples: &[
-            "celis step done 4c1d22e0 --as-planned --pitfall \\",
-            "  \"When data is missing: run make_fixtures, because git has none.\" \\",
+            "celis step done 4c1d22e0 --as-planned \\",
             "  -- \"python3 -m unittest: test_senior failed before, passes now.\"",
         ],
     },
