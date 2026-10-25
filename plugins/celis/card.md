@@ -24,13 +24,11 @@ Each ask is one loop of four moves: recall, work, check, learn.
    it. Its title names what the person wants done: a verb and what it acts on, in words that hold in
    another project. On the lines after it, write `expect: <what a person can check when it is done>`,
    `for: <why the person wants it>`, `not: <its limits>` and `ask me: <the one-way doors you see
-   ahead>`. Write these lines to the person in one message, and start in the same turn. Give it the
-   project's own check. Split it by its jobs: a job is a part a person can check alone, such as an
-   item of its list or a module; an ask with one job, such as a function and its test, is one step. A
-   feature with more than one part, such as a tool with several commands, or creative work, is never
-   one step: its jobs are layers. The outer layer makes the whole result at low detail, such as every
-   command bare but running end to end, a greybox or an outline, and each next layer adds detail to
-   all of it. Only the step you take next gets `--at` and a `--check` that proves it. For each step:
+   ahead>`. Write these lines to the person in one message, and start in the same turn. Give the ask
+   the project's own check. When the ask is long, split it by its jobs: a job is a part a person can
+   check alone, such as an item of its list or a module; an ask with one job, such as a function and
+   its test, is one step. A step says what it does and why; its `--at` and `--check` are optional, and
+   only the ask needs a check. Add only the step you take next. For each step:
    `start`, and keep the rules it prints. Run `celis rules <files>` before each change. Read all that
    celis prints: never cut it with `head` or `grep`. Then `done` with a proof a person can check, such
    as a command and its result: `--as-planned` when the result matches `expect`, else `--changed`. A
