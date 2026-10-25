@@ -18,7 +18,9 @@ Each ask is one loop of four moves: recall, work, check, learn.
 1. **Recall.** At each new ask, run `celis recall [<each file it will touch>]... -- "<the ask>"`
    before you change a file. Keep each rule it prints: a rule binds. Keep each pattern: at each choice
    the ask leaves open, choose like its good examples and unlike its bad ones; a pattern guides, and a
-   rule wins over it. Open the files of the examples that bear on your choice.
+   rule wins over it. Open the files of the examples that bear on your choice. When celis asks for
+   the past agent, it brings 1 or 2 done trails like the ask: take each of their steps that fits as
+   yours, with `--uses <its id>` (`steps.md`, "Past work").
 2. **Work.** An ask that changes a file, however small, or that works toward a result someone can
    check, gets a step; a question, an explanation, or a review you only report on gets none: answer
    it. Its title names what the person wants done: a verb and what it acts on, in words that hold in
