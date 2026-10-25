@@ -112,7 +112,7 @@ impl Command {
         let changed = self.changed(&args.files);
         let steps = trails.steps();
         let step = steps.find_open(id)?;
-        if done.by.is_none() && step.is_ask() {
+        if done.by.is_none() && step.is_judged() {
             let lines = self.unjudged(step, &trails, &changed);
             if !lines.is_empty() {
                 lines.iter().try_for_each(|line| super::put(err, line))?;

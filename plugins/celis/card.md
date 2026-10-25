@@ -20,7 +20,8 @@ Read all that celis prints, never cut by `head` or `grep`, and do the next move 
    when it is done>`, `for: <why the person wants it>`, `not: <its limits>` and `ask me: <the one-way
    doors you see ahead>`. Send these lines to the person, give the ask the project's own check, and
    start in the same turn. Each step gets `start`, then `done` with a proof a person can check, such
-   as a command and its result.
+   as a command and its result. A step with more than one part a person can check alone holds a step
+   for each, with its own `expect`; when its last part is done, it gets the judge too.
    At each choice the ask leaves open, take the patterns that search gave for it and the `next` ones
    under them, weigh their forces, choose, and add the pattern you followed to the step with `--uses`.
    Act, and tell after: ask only when you cannot write `expect` without a guess, or at a one-way door,

@@ -65,7 +65,8 @@ impl Command {
         lines.extend(self.changed_patterns(trails, changed));
         let steps = trails.steps();
         let ask = review.under.as_deref().and_then(|id| steps.get(id));
-        if let Some(ask) = ask.filter(|a| a.is_ask() && review.as_planned && review.open.is_empty())
+        if let Some(ask) =
+            ask.filter(|a| a.is_judged() && review.as_planned && review.open.is_empty())
         {
             lines.extend(self.brief(ask, trails, changed));
         }
@@ -114,8 +115,8 @@ impl Command {
         lines
     }
 
-    /// The judge brief of `ask`: the ask, its intent lines, the patterns that fit its title and the
-    /// changed files, the changed files, and its check.
+    /// The judge brief of `ask`, an ask or a step with steps under it: its title, its intent lines, the
+    /// patterns that fit its title and the changed files, the changed files, and its check.
     fn brief(&self, ask: Step, trails: &Trails, files: &[String]) -> Vec<String> {
         let record = ask.record();
         let mut lines = vec![
@@ -124,7 +125,11 @@ impl Command {
                  where the result is:",
                 short(ask.id())
             ),
-            format!("  ask     {}", ask.title()),
+            format!(
+                "  {:<7} {}",
+                if ask.is_ask() { "ask" } else { "step" },
+                ask.title()
+            ),
         ];
         for line in record.detail() {
             lines.push(match line.split_once(": ") {

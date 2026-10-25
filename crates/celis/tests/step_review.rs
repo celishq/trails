@@ -352,3 +352,50 @@ fn the_files_of_a_done_count_as_changed_without_git() {
     assert_eq!(o.status.code(), Some(1), "{}", err(&o));
     assert!(err(&o).contains(&pattern[..8]), "{}", err(&o));
 }
+
+/// A step with steps under it has its own check, and the judge confirms its `expect`: `done` of its last
+/// step prints its brief, and its own `done` with no `--by`, while git shows a changed file, refuses with
+/// `unjudged` (`spec/03-steps.md`, "Closing"; `spec/02-cli.md`, "Step").
+#[test]
+fn a_step_that_holds_steps_needs_a_judge() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    let ask = add(&repo, &["--under", &trail[..8], "--", "the shop"]);
+    let intent = "Round the prices\nexpect: prices show cents";
+    let part = add(
+        &repo,
+        &["--under", &ask[..8], "--check", "true", "--", intent],
+    );
+    let piece = add(&repo, &["--under", &part[..8], "--", "piece"]);
+    repo.write("new.py", "x = 1\n");
+    let said = done(&repo, &piece, &["--as-planned"]).join("\n");
+    assert!(
+        said.contains(&format!("before you close {} --by judge", &part[..8])),
+        "{said}"
+    );
+    assert!(said.contains("  step    Round the prices"), "{said}");
+    assert!(said.contains("  expect  prices show cents"), "{said}");
+    assert!(said.contains("  check   true"), "{said}");
+    let args = [
+        "step",
+        "done",
+        &part[..8],
+        "--as-planned",
+        "--json",
+        "--",
+        "p",
+    ];
+    let o = cli(&repo, &args);
+    assert!(err(&o).contains("\"error\":\"unjudged\""), "{}", err(&o));
+    let by = [
+        "step",
+        "done",
+        &part[..8],
+        "--as-planned",
+        "--by",
+        "judge",
+        "--",
+        "met",
+    ];
+    assert!(cli(&repo, &by).status.success());
+}

@@ -31,7 +31,8 @@ and closes it with a proof, or drops it.
 - `under`: optional; the step this one is a part of. A step with none is a trail (CIP-04).
 - `replaces`: optional; an open step whose plan it takes over, or a done step it revises (CIP-06).
 - `at`: zero or more; a place of the work (CIP-01, "Places").
-- `check`: optional; the command that proves the work.
+- `check`: optional; the command that proves the work. A step with steps under it MAY have one too, for
+  the work of its steps as a whole.
 - `session`: optional; CIP-04, "Sessions".
 - content: the work, so a stranger with only the step can do it. Its first line is the title.
 
@@ -74,7 +75,8 @@ dropped   a `drop` names it
 - content: the proof, the check that failed before and passes now.
 - `changed`: optional; with none, the work went as planned.
 - `by`: optional; who gave the proof: `judge`, a reader that did not do the work, or `person`. With none,
-  the proof is the agent's own.
+  the proof is the agent's own. A step with steps under it is done when its check passes and a `judge`
+  or the `person` confirms its `expect`.
 
 **Writers**
 
