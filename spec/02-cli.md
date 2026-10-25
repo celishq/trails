@@ -55,16 +55,14 @@ decision  json  {"id", "created_at", "project", "scope", "replaces", "content",
 - Off macOS, `$CELIS_HOME` MUST default to `~/.local/share/celis`.
 - A flag no command takes is a usage error.
 - `decide` MUST write a pattern of the working folder's project (CIP-05), with `--scope` and
-  `--replaces` as its tags, and no `scope` tag for `project`; for `--scope at:<place>`, no `scope` tag
-  and a `path` tag of the place's path from the project's top folder, without its line, and with `/**`
-  after it when it is a folder; each `--path`, from the project's top
+  `--replaces` as its tags, and no `scope` tag for `project`; each `--path`, from the project's top
   folder, as a `path` tag, `--binds` as its label, each `--within` as a `within` tag (CIP-05, "Graph"),
   refusing an id that no live pattern of the store has with `no-decision`, and each `--good` and `--bad`
   as an example (CIP-05, "Examples"): a value with `://` as a URL, a file of the working folder as its
   blob, else the whole id of a step, refusing a step the store lacks with `no-step`.
 - `--project` on `decide` and `step add` MUST write the records of the project it names in place of the
   working folder's: a project id that a record of the store has, with that record's project name. It MUST refuse any other id as a usage error.
-- `decide` MUST refuse empty text, and a scope that is not `me`, `project`, `trail:<id>` or `at:<place>`,
+- `decide` MUST refuse empty text, and a scope that is not `me`, `project` or `trail:<id>`,
   as a usage error; a `trail:<id>` that no open trail of the project has, with `no-trail`, unless
   `--replaces` names a live pattern of that trail; and a
   `--replaces` that no live pattern of the project has, with `no-decision`.
@@ -72,7 +70,7 @@ decision  json  {"id", "created_at", "project", "scope", "replaces", "content",
 **Examples**
 
 ```
-celis decide --scope at:shelf/prices.py --binds -- "When you change prices
+celis decide --path shelf/prices.py --binds -- "When you change prices
 Forces: floats are simple, but they lose cents
 Do: keep prices in cents
 Because: floats lost a cent"
@@ -247,7 +245,7 @@ trails with it.
 ```
 view    <yyyy-mm-dd> <trail id8 | -> [<project name>] <kind> <id8> <fields> <text>
           trail | step   <open | working | done | done-dropped | dropped | expired>[ revised-by <id>,…][ at:<place>]…
-          pattern        <live | replaced-by <id> | dropped> {<me | project | trail:<id8> | at:<place>>}
+          pattern        <live | replaced-by <id> | dropped> {<me | project | trail:<id8>>}
                            [ trigger][ binds][ recalled:<yyyy-mm-dd>]
           proof | changed | dropped                              the step's or pattern's id, no fields
 lines   <id8> [<project name>] <its title> · <yyyy-mm-dd>        each trail of the lines
@@ -330,7 +328,7 @@ no model celis search has no model: search with celis grep, or run celis setup.
   0.3 or more, or when its title and its trail's title share 2 words with the ask. `search` MUST print at most 2.
 - `search` MUST print the parts in the order rules, patterns, past, and leave out a part with no line.
   Within a part, a pattern with a `replaces` tag comes first, then the rest; within each, first
-  those that match a named file (a `path` with no `*` or `?`, or an `at:<place>`), then a glob, then
+  those that match a named file (a `path` with no `*` or `?`), then a glob, then
   those that fit by words or meaning; newest first within each.
 - With `--kind rule` or `--kind pattern`, `search` MUST print only that part.
 - With `--kind trail` or `--kind step`, `search` MUST print at most `--limit` records, 20 when not

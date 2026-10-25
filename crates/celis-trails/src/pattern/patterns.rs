@@ -1,6 +1,6 @@
 //! The patterns of a store.
 
-use crate::{Mark, Pattern, PatternEnd, PatternEntry, Place, Refusal, Scope, Step, Used};
+use crate::{Mark, Pattern, PatternEnd, PatternEntry, Refusal, Scope, Step, Used};
 use celis_nostr::Note;
 use std::collections::{HashMap, HashSet};
 
@@ -82,18 +82,6 @@ impl<'a> Patterns<'a> {
     pub fn find(&self, project: &str, id: &str) -> Result<&'a Note, Refusal> {
         let live: Vec<&'a Note> = self.live(project).into_iter().map(|(n, _)| n).collect();
         crate::records::id::find(live, id).ok_or_else(|| Refusal::NoPattern(id.to_string()))
-    }
-
-    /// The live patterns of `project` at `place`: those whose place, without its `:<line>`, is `place`,
-    /// lies under it, or is a folder that holds it.
-    pub fn at(&self, project: &str, place: &str) -> Vec<(&'a Note, Pattern)> {
-        self.live(project)
-            .into_iter()
-            .filter(|(_, d)| match &d.scope {
-                Scope::At(at) => Place::new(at).meets(Place::new(place)),
-                _ => false,
-            })
-            .collect()
     }
 
     /// The live patterns of `trail`, oldest first.

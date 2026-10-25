@@ -103,8 +103,8 @@ fn an_older_pattern_with_a_tool_tag_has_no_trigger() {
     assert!(patterns(&repo, &["."]).is_empty());
 }
 
-/// An older pattern `at:<place>` counts as a pattern with that place as its `path`, and holds under a folder
-/// it names (`spec/05-patterns.md`, "Triggers").
+/// An older pattern `at:<place>` reads with that place as its `path`, and holds under a folder it names
+/// (`spec/05-patterns.md`, "Reading").
 #[test]
 fn an_at_pattern_comes_at_its_place() {
     let repo = Repo::new();
@@ -242,8 +242,8 @@ fn decide_writes_the_trigger_and_labels() {
     }
 }
 
-/// A pattern from before triggers still reads, with no trigger and no label, and comes at its place
-/// (`spec/05-patterns.md`, "Patterns").
+/// A pattern from before triggers still reads, with its place as its paths and no label, and comes at
+/// its place (`spec/05-patterns.md`, "Reading").
 #[test]
 fn an_older_pattern_with_no_trigger_still_reads() {
     let repo = Repo::new();
@@ -262,27 +262,21 @@ fn an_older_pattern_with_no_trigger_still_reads() {
     let step = step.lines().next().unwrap();
     let shown = objects(&repo, &["step", "start", step]);
     let pattern = shown.iter().find_map(|v| v.get("decision")).unwrap();
-    assert_eq!(pattern["paths"], json!([]));
+    assert_eq!(pattern["paths"], json!(["a.py", "a.py/**"]));
+    assert_eq!(pattern["scope"], json!("project"));
     assert_eq!(pattern["binds"], json!(false));
     assert_eq!(texts(&repo, &["a.py"]), ["old"]);
 }
 
-/// `decide --scope at:<place>` writes the place as a `path` tag, without its line and with `/**` after
-/// a folder, and no `scope` tag (`spec/02-cli.md`, "Commands"; `spec/05-patterns.md`, "Scope").
+/// `decide --scope at:<place>` is a usage error (`spec/02-cli.md`, "Commands").
 #[test]
-fn an_at_scope_writes_a_path() {
+fn an_at_scope_is_no_scope() {
     let repo = Repo::new();
-    repo.write("shelf/b.py", "x = 1\n");
-    let file = decide(&repo, &["--scope", "at:a.py:3"], "at a line");
-    let folder = decide(&repo, &["--scope", "at:shelf"], "in the shelf");
-    let notes = support::labelled(&repo, "decision");
-    let tags = |id: &str| {
-        let note = notes.iter().find(|n| n.id == id).unwrap();
-        (
-            note.tag("path").map(str::to_string),
-            note.tag("scope").map(str::to_string),
-        )
-    };
-    assert_eq!(tags(&file), (Some("a.py".to_string()), None));
-    assert_eq!(tags(&folder), (Some("shelf/**".to_string()), None));
+    let o = repo.run(
+        &repo.path(),
+        &["decide", "--scope", "at:a.py", "--", "t"],
+        &[],
+        "",
+    );
+    assert_eq!(o.status.code(), Some(2), "{o:?}");
 }

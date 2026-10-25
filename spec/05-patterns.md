@@ -19,7 +19,7 @@ label is a rule, which binds.
     ["I", "project:<project id>"], ["K", "project"],
     ["i", "project:<project id>"], ["k", "project"],
     ["project", "<project name>"],
-    ["scope", "<me | trail:<step id> | at:<place>>"],
+    ["scope", "<me | trail:<step id>>"],
     ["replaces", "<id of the pattern it replaces>"],
     ["path", "<glob>"],
     ["L", "celis.decision"], ["l", "decision", "celis.decision"]
@@ -56,7 +56,6 @@ A drop (CIP-03, "Dropping") MAY name a pattern, with why it no longer holds.
 ## Scope
 
 ```
-at:<place>        at one place of its project (CIP-01, "Places")
 trail:<step id>   in its project, with the trail, while it is active and after it ends (CIP-04)
 project           in its project; a pattern with no `scope` tag
 me                in every project
@@ -65,8 +64,6 @@ me                in every project
 **Writers**
 
 - A writer MUST write the whole id of the trail that `trail:<id>` names.
-- A writer MUST NOT write `at:<place>`: it writes the place as a `path` ("Triggers"). Older writers
-  wrote it, and readers read it as "Reading" states.
 - A linked folder MUST NOT hold a `me` pattern (CIP-01, "Links").
 
 **Readers**
@@ -79,8 +76,8 @@ me                in every project
 
 **Readers**
 
-- A pattern `at:<place>` holds at that place whatever line the place names, under it when it is a
-  folder, and at each place under a folder it names.
+- A reader MUST read the scope `at:<place>`, which older writers wrote, as `project`, with two more
+  `path` globs: the place's path without its line, and that path with `/**` after it.
 
 ## Triggers
 
@@ -91,8 +88,6 @@ me                in every project
 **Readers**
 
 - A pattern matches a file when one of its `path` globs matches the file's path.
-- A pattern `at:<place>` counts as a pattern with that place as its `path`, which matches as "Reading"
-  states.
 
 ## Graph
 

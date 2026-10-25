@@ -72,8 +72,24 @@ impl Pattern {
         if note.kind != 1111 || !labelled(note, "decision") || note.tag("K")? != "project" {
             return None;
         }
+        let mut paths: Vec<String> = note
+            .tags
+            .iter()
+            .filter(|t| t.len() >= 2 && t[0] == "path")
+            .map(|t| t[1].clone())
+            .collect();
         let scope = match note.tag("scope") {
-            Some(text) => Scope::parse(text)?,
+            Some(text) => match text.strip_prefix("at:").filter(|p| !p.is_empty()) {
+                Some(place) => {
+                    let path = Place::new(place).path().trim_end_matches('/');
+                    match path {
+                        "." | "" => paths.push("**".to_string()),
+                        path => paths.extend([path.to_string(), format!("{path}/**")]),
+                    }
+                    Scope::Project
+                }
+                None => Scope::parse(text)?,
+            },
             None => Scope::Project,
         };
         let owned = |name: &str| note.tag(name).map(str::to_string);
@@ -82,12 +98,7 @@ impl Pattern {
             scope,
             replaces: owned("replaces").map(PatternId::new),
             content: note.content.clone(),
-            paths: note
-                .tags
-                .iter()
-                .filter(|t| t.len() >= 2 && t[0] == "path")
-                .map(|t| t[1].clone())
-                .collect(),
+            paths,
             binds: labelled(note, "binds"),
             within: note
                 .tags
@@ -102,20 +113,13 @@ impl Pattern {
     /// How narrowly the pattern fits the narrowest of `paths`; `None` when it matches none of them
     /// (CIP-05, "Triggers").
     pub fn fit(&self, paths: &[String]) -> Option<Fit> {
-        let place = match &self.scope {
-            Scope::At(place) => Some(Place::new(place)),
-            _ => None,
-        };
         let globs: Vec<Glob> = self.paths.iter().map(|p| Glob::new(p)).collect();
-        let fits = paths.iter().filter_map(|path| {
-            let at = place.as_ref().filter(|p| p.meets(Place::new(path)));
-            let at = at.map(|_| Fit::Named);
+        let fits = paths.iter().flat_map(|path| {
             let globs = globs.iter().filter(|g| g.matches(path));
-            let globs = globs.map(|g| match g.is_literal() {
+            globs.map(|g| match g.is_literal() {
                 true => Fit::Named,
                 false => Fit::Glob,
-            });
-            at.into_iter().chain(globs).min()
+            })
         });
         fits.min()
     }

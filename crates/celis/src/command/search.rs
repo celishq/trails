@@ -13,10 +13,10 @@ use super::view::kind::Kind;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::text::clock::date;
-use recalls::Recalls;
 use celis_nostr::Note;
 use celis_trails::records::id::short;
 use celis_trails::{Pattern, Step, Trails};
+use recalls::Recalls;
 use std::collections::{HashMap, HashSet};
 use std::io::Write;
 
@@ -186,7 +186,8 @@ impl Command {
 
     /// The patterns `search` gave on this machine.
     pub(crate) fn recalls(&self) -> Recalls {
-        self.home().map_or_else(|_| Recalls::default(), |home| Recalls::read(&home))
+        self.home()
+            .map_or_else(|_| Recalls::default(), |home| Recalls::read(&home))
     }
 }
 

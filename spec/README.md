@@ -65,7 +65,7 @@ Every change of `spec/` MUST keep these rules:
 | `good` · `bad` | pattern tags: its examples | 05 |
 | `within` | pattern tag: the larger pattern it completes | 05 |
 | `binds` in `celis.decision` | a pattern label: the pattern is a rule | 05 |
-| `me` · `project` · `trail:<id>` · `at:<place>` | the scopes of a pattern | 05 |
+| `me` · `project` · `trail:<id>` | the scopes of a pattern | 05 |
 | `uses` | step tag | 06 |
 | `imeta` with `url` · `x` · `m` · `size` · `path` | done tag: a file of the proof (NIP-92, BUD-10) | 08 |
 | `$CELIS_HOME/trails/blobs/` · `<folder>/blobs/` | the blobs of the store and of a linked folder | 08 |
@@ -85,6 +85,7 @@ them.
 | 1985 with `name` in `celis.step` · `skill:<name>` | the name of a trail, and the project of a trail from a skill file |
 | `situation` in `celis.decision` | a pattern label: the pattern also held where no file shows it ahead |
 | `promoted` in `celis.decision` | a pattern label, now `binds` |
+| `at:<place>` as the `scope` of a pattern | a scope, now `path` globs; a reader reads it as CIP-05, "Reading", states |
 | `promoted` in the `--json` of a decision | the same value as `binds` |
 
 ## Words

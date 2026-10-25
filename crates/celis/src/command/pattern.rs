@@ -18,30 +18,15 @@ impl Command {
         let content = args.required_text("decide needs its text after --")?;
         let scope = match &args.scope {
             Some(text) => Scope::parse(text).ok_or_else(|| {
-                Failure::usage(format!(
-                    "a scope is me, project, trail:<id> or at:<place>, not {text}"
-                ))
+                Failure::usage(format!("a scope is me, project or trail:<id>, not {text}"))
             })?,
             None => Scope::Project,
         };
-        let mut paths: Vec<String> = args
+        let paths: Vec<String> = args
             .paths
             .iter()
             .map(|p| Place::resolve(p, &project.folder, &self.folder))
             .collect();
-        let scope = match scope {
-            Scope::At(place) => {
-                let place = Place::resolve(&place, &project.folder, &self.folder);
-                let path = Place::new(&place).path();
-                paths.push(match project.folder.join(path).is_dir() {
-                    true if path == "." => "**".to_string(),
-                    true => format!("{path}/**"),
-                    false => path.to_string(),
-                });
-                Scope::Project
-            }
-            scope => scope,
-        };
         let trails = self.trails()?;
         let side = |values: &[String]| -> Result<Vec<Example>, Failure> {
             let found = values.iter().map(|v| self.example(&trails, project, v));

@@ -76,7 +76,7 @@ fn start_prints_no_pattern_at_the_steps_places() {
     let repo = Repo::new();
     let o = cli(
         &repo,
-        &["decide", "--scope", "at:src/a.rs", "--", "a.rs holds cents"],
+        &["decide", "--path", "src/a.rs", "--", "a.rs holds cents"],
     );
     assert!(o.status.success(), "{}", err(&o));
     let trail = add(&repo, &["--", "the trail"]);

@@ -21,7 +21,7 @@ fn a_me_pattern_holds_in_every_project_and_others_only_in_their_own() {
     let shop = repo.other("shop");
     let mine = decide(&repo, &["--scope", "me", "--", "Use plain words."]);
     let here = decide(&repo, &["--", "Keep prices in cents."]);
-    let placed = decide(&repo, &["--scope", "at:src/a.rs", "--", "Round down."]);
+    let placed = decide(&repo, &["--path", "src/a.rs", "--", "Round down."]);
     for id in [&here, &placed] {
         let o = repo.run(
             &shop,

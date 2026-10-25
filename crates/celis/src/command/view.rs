@@ -4,11 +4,11 @@ pub(super) mod header;
 pub(super) mod kind;
 pub(super) mod row;
 
+use super::search::recalls::Recalls;
 use crate::text::clock::date;
 use celis_nostr::Note;
 use celis_trails::records::id::short;
 use celis_trails::{Mark, PatternEnd, PatternEntry, Scope, Step, Trails};
-use super::search::recalls::Recalls;
 use header::Header;
 use kind::Kind;
 use row::Row;
@@ -147,11 +147,7 @@ fn step(root: Step, step: Step, kind: Kind) -> Row {
 
 /// The rows of the pattern `entry`, as a pattern of `trail`: its own, then its drop's reason when a drop
 /// names it.
-fn pattern(
-    entry: &PatternEntry,
-    trail: Option<String>,
-    recalled: &Recalls,
-) -> Vec<Row> {
+fn pattern(entry: &PatternEntry, trail: Option<String>, recalled: &Recalls) -> Vec<Row> {
     let (note, pattern) = (entry.note, &entry.pattern);
     let state = entry.end.map_or("live".to_string(), PatternEnd::text);
     let row = |kind: Kind, at: &Note, fields: Vec<String>, text: &str| Row {

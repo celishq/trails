@@ -124,7 +124,7 @@ fn a_place_reads_as_a_path_from_the_projects_top_folder() {
     let src = root.join("src");
     let o = repo.run(
         &root,
-        &["decide", "--scope", "at:./src/a.rs:3", "--", "kept"],
+        &["decide", "--path", "./src/a.rs", "--", "kept"],
         &[],
         "",
     );

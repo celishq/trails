@@ -125,8 +125,8 @@ fn decide_and_grep_at_with_stdin_left_open_ask_nothing() {
     for args in [
         vec![
             "decide",
-            "--scope",
-            "at:a.py",
+            "--path",
+            "a.py",
             "--",
             "When you edit: test, because.",
         ],

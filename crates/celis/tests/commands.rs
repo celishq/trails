@@ -63,7 +63,7 @@ fn the_json_form_of_a_pattern_has_the_listed_fields() {
         &repo,
         project(&id),
         &account(),
-        (Some("at:a.py"), None),
+        (Some("me"), None),
         "one",
         now() - 60,
     );
@@ -89,7 +89,7 @@ fn the_json_form_of_a_pattern_has_the_listed_fields() {
         ]
     );
     assert_eq!(pattern["id"], note.id.as_str());
-    assert_eq!(pattern["scope"], "at:a.py");
+    assert_eq!(pattern["scope"], "me");
 }
 
 /// `decide` writes a pattern on the working folder's project with `--scope` and `--replaces` as its
@@ -122,12 +122,7 @@ fn decide_writes_its_scope_and_replaces_as_tags() {
             .find(|n| n.id == id)
             .unwrap()
     };
-    let replacing = written(&[
-        "--scope",
-        "at:shelf/prices.py",
-        "--replaces",
-        &short(&old.id),
-    ]);
+    let replacing = written(&["--path", "shelf/prices.py", "--replaces", &short(&old.id)]);
     assert_eq!(replacing.content, WORK);
     assert_eq!(replacing.tag("scope"), None);
     assert_eq!(replacing.tag("path"), Some("shelf/prices.py"));
@@ -150,7 +145,7 @@ fn decide_refuses_empty_text_and_an_unknown_scope_as_a_usage_error() {
         vec!["decide", "--json", "--", ""],
         vec!["decide", "--json"],
         vec!["decide", "--json", "--scope", "team:design", "--", WORK],
-        vec!["decide", "--json", "--scope", "at:", "--", WORK],
+        vec!["decide", "--json", "--scope", "at:a.py", "--", WORK],
     ] {
         refusal(&repo.run(&repo.path(), &args, &[], ""), 2, "usage");
     }
