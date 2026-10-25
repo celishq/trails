@@ -345,10 +345,10 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "patterns",
-        usage: &["celis patterns"],
-        summary: "Show each pattern of this project and of you, the newest first, with its good and bad examples: the steps with their proofs, the files with their blobs, and the URLs. Changes nothing.",
-        args: &[],
-        examples: &["celis patterns"],
+        usage: &["celis patterns [--markdown]"],
+        summary: "Show each pattern of this project and of you, the newest first, with its good and bad examples: the steps with their proofs, the files with their blobs, and the URLs. With --markdown, print them as one page, each file a link to its blob, for a review or a skill file. Changes nothing.",
+        args: &[("--markdown", "Print one Markdown page, each file a link to its blob")],
+        examples: &["celis patterns", "celis patterns --markdown > patterns.md"],
     },
     Verb {
         command: "rules",

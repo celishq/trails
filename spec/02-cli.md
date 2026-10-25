@@ -17,7 +17,7 @@ read. What a command shows a person is not part of it.
 celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--situation] [--promoted] [--good <example>]... [--bad <example>]... [--project <id>] -- <text>
                                                        a rule, in its scope
 celis recall [<file>]... -- <ask>                     the rules and patterns that fit an ask
-celis patterns                                        the patterns and their examples
+celis patterns [--markdown]                           the patterns and their examples
 celis rules [<file>]... [--diff]
                                                        the rules of some files
 celis tree [<id>]... [--graph] [--full] [--all] [--demo]
@@ -265,6 +265,7 @@ none       no pattern yet
 
 ```
 celis patterns
+celis patterns --markdown > patterns.md
 ```
 
 ## Hooks

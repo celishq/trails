@@ -367,3 +367,50 @@ fn a_link_carries_a_pattern_and_its_files() {
     let blob = other.path().join("trails/blobs").join(&sha);
     assert!(said.contains(&blob.display().to_string()), "{said}");
 }
+
+/// `patterns --markdown` prints one page: a heading for each pattern, then a line for each example,
+/// a file as a link to its blob and a URL as a link.
+#[test]
+fn patterns_print_as_markdown() {
+    let repo = Repo::new();
+    repo.write("logo.svg", "<svg id=\"flat\"/>\n");
+    let url = "https://example.com/round.png";
+    let o = cli(
+        &repo,
+        &[
+            "decide",
+            "--good",
+            "logo.svg",
+            "--bad",
+            url,
+            "--",
+            "When a logo is drawn: keep it flat.",
+        ],
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let id = out(&o).lines().next().unwrap().to_string();
+    let blob = {
+        use sha2::{Digest, Sha256};
+        let sha = format!("{:x}", Sha256::digest(b"<svg id=\"flat\"/>\n"));
+        repo.home()
+            .join("trails/blobs")
+            .join(sha)
+            .display()
+            .to_string()
+    };
+    let said = out(&cli(&repo, &["patterns", "--markdown"]));
+    assert_eq!(
+        said.lines().collect::<Vec<_>>(),
+        [
+            "# Patterns".to_string(),
+            String::new(),
+            "## When a logo is drawn: keep it flat.".to_string(),
+            String::new(),
+            format!("`{}` · project", &id[..8]),
+            String::new(),
+            format!("- good: [logo.svg]({blob})"),
+            format!("- bad: <{url}>"),
+        ],
+        "{said}"
+    );
+}

@@ -23,6 +23,8 @@ Read
 
   recall <ask>        Show the rules and patterns that fit an ask
   patterns            Show your patterns with their good and bad examples
+  └ --markdown        Print one Markdown page, each file a link to its blob
+
   rules [<file>]...   Show the rules of the files you will touch
   └ --diff            Each file git shows changed or new
 
