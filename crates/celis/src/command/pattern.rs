@@ -1,4 +1,4 @@
-//! `celis decide`: write a pattern.
+//! `celis pattern`: write a pattern.
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
@@ -8,14 +8,14 @@ use std::io::Write;
 impl Command {
     /// Writes the pattern `args` states on `project`, in its scope, with its trigger, labels and examples,
     /// signed by the account now, and prints its id.
-    pub(crate) fn decide(
+    pub(crate) fn pattern(
         &self,
         args: &Args,
         out: &mut dyn Write,
         err: &mut dyn Write,
         project: &Project,
     ) -> Result<(), Failure> {
-        let content = args.required_text("decide needs its text after --")?;
+        let content = args.required_text("pattern needs its text after --")?;
         let scope = match &args.scope {
             Some(text) => Scope::parse(text).ok_or_else(|| {
                 Failure::usage(format!("a scope is me, project or trail:<id>, not {text}"))
@@ -69,7 +69,7 @@ impl Command {
     }
 }
 
-/// What `decide` with no scope says of the pattern's scope.
+/// What `pattern` with no scope says of the pattern's scope.
 const SCOPES: &str = "celis: the rule holds in this project. When it holds for that kind of work in any \
                       project, such as a rule about a framework, a platform or a review's convention, \
                       replace it with --scope me; when it holds only for this trail, with --scope \

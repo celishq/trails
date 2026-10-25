@@ -93,6 +93,7 @@ fn words(args: &[String]) -> Vec<&str> {
         .map(String::as_str)
         .take_while(|a| *a != "--")
         .filter(|a| !a.starts_with("--") && *a != "-h")
+        .map(|a| if a == "decide" { "pattern" } else { a })
         .collect()
 }
 
@@ -311,9 +312,9 @@ pub const VERBS: &[Verb] = &[
         examples: &["celis link", "celis link ~/Drive/celis/shop", "celis link --off"],
     },
     Verb {
-        command: "decide",
-        usage: &["celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--binds] [--within <id>]... [--good <example>]... [--bad <example>]... [--project <id>] -- <text>"],
-        summary: "Record a pattern that later work must keep: when it applies, its forces, what to do, and why. With no --scope, it holds for the whole project. Its paths name the files it acts on, so celis search gives it for them. It guides the work; with --binds, it is a rule, which binds it.",
+        command: "pattern",
+        usage: &["celis pattern [--scope <scope>] [--replaces <id>] [--path <glob>]... [--binds] [--within <id>]... [--good <example>]... [--bad <example>]... [--project <id>] -- <text>"],
+        summary: "Record a pattern that later work must keep: when it applies, its forces, what to do, and why. With no --scope, it holds for the whole project. Its paths name the files it acts on, so celis search gives it for them. It guides the work; with --binds, it is a rule, which binds it. celis decide is the same command.",
         args: &[
             ("--scope <scope>", "Where it applies: trail:<id>, me, or project"),
             ("--replaces <id>", "The pattern this one replaces"),
@@ -326,9 +327,9 @@ pub const VERBS: &[Verb] = &[
             ("<text>", "Its lines: When, Forces, Do and Because"),
         ],
         examples: &[
-            "celis decide --path shelf/prices.py \\",
+            "celis pattern --path shelf/prices.py \\",
             "  -- \"When you change prices: keep them in cents.\"",
-            "celis decide --path \"*.svg\" --good logo.svg --bad 3fa2c1d0 \\",
+            "celis pattern --path \"*.svg\" --good logo.svg --bad 3fa2c1d0 \\",
             "  -- \"When a logo is drawn: keep sharp corners.\"",
         ],
     },

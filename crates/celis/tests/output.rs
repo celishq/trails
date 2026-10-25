@@ -300,9 +300,9 @@ fn a_usage_error_names_the_narrowest_help_page() {
 #[test]
 fn an_unknown_command_names_the_known_one_nearest_it() {
     let repo = Repo::new();
-    let usage = repo.run(&repo.path(), &["decid"], &[], "");
+    let usage = repo.run(&repo.path(), &["patern"], &[], "");
     assert_eq!(usage.status.code(), Some(2));
-    assert!(err(&usage).contains("\"decide\""), "{}", err(&usage));
+    assert!(err(&usage).contains("\"pattern\""), "{}", err(&usage));
 }
 
 /// Without `--json`, an error is one line on stderr: `celis: <message>`; with `--json` it is one object

@@ -255,3 +255,21 @@ fn a_flag_no_command_takes_is_a_usage_error() {
         refusal(&repo.run(&repo.path(), &args, &[], ""), 2, "usage");
     }
 }
+
+/// `decide` runs as `pattern`, as a command and after `help` (`spec/02-cli.md`, "Commands").
+#[test]
+fn decide_runs_as_pattern() {
+    let repo = Repo::new();
+    for verb in ["pattern", "decide"] {
+        let o = repo.run(
+            &repo.path(),
+            &[verb, "--", &format!("{WORK} {verb}")],
+            &[],
+            "",
+        );
+        assert!(o.status.success(), "{verb}: {}", err(&o));
+    }
+    assert_eq!(labelled(&repo, "decision").len(), 2);
+    let page = repo.run(&repo.path(), &["help", "decide"], &[], "");
+    assert!(out(&page).contains("celis pattern"), "{}", out(&page));
+}

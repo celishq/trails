@@ -106,7 +106,7 @@ fn done_on_an_ask_prints_the_end_to_fill() {
     assert_eq!(
         done(&repo, &ask.id, &["--as-planned", "--by", "person"]),
         [
-            format!("celis: the ask {a} is done. Write each pattern a later plan must keep with celis decide. Then answer the person with the lines below alone: fill each <…>, and remove each line you do not need."),
+            format!("celis: the ask {a} is done. Write each pattern a later plan must keep with celis pattern. Then answer the person with the lines below alone: fill each <…>, and remove each line you do not need."),
             String::new(),
             "**<what was done, in one line>**".to_string(),
             String::new(),

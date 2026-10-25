@@ -57,7 +57,7 @@ impl End {
             ),
         };
         let mut lines = vec![
-            format!("celis: the ask {} is done. Write each pattern a later plan must keep with celis decide. Then answer the person with the lines below alone: fill each <…>, and remove each line you do not need.", &self.ask[..8]),
+            format!("celis: the ask {} is done. Write each pattern a later plan must keep with celis pattern. Then answer the person with the lines below alone: fill each <…>, and remove each line you do not need.", &self.ask[..8]),
             String::new(),
             "**<what was done, in one line>**".to_string(),
             String::new(),

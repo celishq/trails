@@ -13,7 +13,7 @@ whose grep fields say ` binds`.
    line. A pattern's fields say ` trigger`, ` binds` and `recalled:<day>`.
 4. For each change, show the person the records it touches, with their ids, and ask: yes, no, or yes to
    all in this part. Write nothing before a yes.
-5. To write into another project, add `--project <its id>` to `decide` and `step add`; the id is the
+5. To write into another project, add `--project <its id>` to `pattern` and `step add`; the id is the
    `project` that `celis tree <a trail of it> --json` gives.
 
 ## Stale
@@ -31,7 +31,7 @@ A dropped trail keeps its patterns: drop each that is stale too.
 ## Merge
 
 Find live patterns of one project and scope that say the same thing, or whose good examples make one
-point. Keep the one that says it best, or write one in the four lines with `decide --replaces <the
+point. Keep the one that says it best, or write one in the four lines with `pattern --replaces <the
 newest>`; drop each other with `-- "merged into <id8>"`. A merged pattern gives `--good` and `--bad`
 again for the examples of each pattern it does not replace, and `--binds` when one of them binds. When
 two or more projects hold the same `project` pattern, offer one `me` pattern in its place.

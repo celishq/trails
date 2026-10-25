@@ -16,7 +16,7 @@ each must as a rule. Write nothing to the store before the person says yes.
    when it says "must", "always" or "never", or when its grep fields say ` binds`.
 5. Show the person the whole list: each id8, the old text, the four lines, and `rule` when it binds. Ask:
    yes, no, or a change. With more than 50 patterns, show and write them in batches of 50.
-6. After a yes, write each one with `celis decide --replaces <id> [--scope <its scope>] [--path <glob>]...
+6. After a yes, write each one with `celis pattern --replaces <id> [--scope <its scope>] [--path <glob>]...
    [--binds] -- "<the four lines>"`. Keep its scope, a done trail's too, and each `path` that
    `celis tree <its trail> --json` or its grep line shows; `{project}` takes no `--scope`. Its examples
    stay. To write into another project, add `--project <its id>`.

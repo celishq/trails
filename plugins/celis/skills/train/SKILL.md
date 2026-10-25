@@ -13,7 +13,7 @@ their marks become one pattern. Add it as one ask, as the card says.
    and say in one line each how it differs.
 3. Show the person the 4 variants, and ask them to mark each `good`, `bad` or `neither`, with one line
    of why. Wait for their marks.
-4. Write one pattern in the person's words, in the four lines the card shows, with `decide --path <the
+4. Write one pattern in the person's words, in the four lines the card shows, with `pattern --path <the
    files it acts on> --good <each good file> --bad <each bad file> -- "When <the kind of thing> is
    made` and its `Forces`, `Do` and `Because` lines: the `Do` is what the good ones share, the `Forces`
    what the bad ones chose instead, the `Because` the person's why. When it adds to a pattern that

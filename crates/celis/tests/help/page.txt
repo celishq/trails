@@ -49,7 +49,7 @@ Record work · your agents run these
   ├ --at <place>      Where the work happens, in place of the old places
   └ --check <command> A command that proves the work, in place of the old one
 
-  decide              Record a pattern that later work must keep
+  pattern             Record a pattern that later work must keep
   ├ --scope <scope>   Where it applies: trail:<id>, me, or project
   ├ --replaces <id>   The pattern this one replaces
   ├ --path <glob>     A file it acts on; * and ? within a folder, ** across

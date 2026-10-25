@@ -3,4 +3,4 @@ type: regex
 target: trace
 flags: is
 ---
-"command":"(?:[^"\\]|\\.)*celis decide(?:[^"\\]|\\.)*--good(?:[^"\\]|\\.)*--bad|"command":"(?:[^"\\]|\\.)*celis decide(?:[^"\\]|\\.)*--bad(?:[^"\\]|\\.)*--good
+"command":"(?:[^"\\]|\\.)*celis (?:pattern|decide)(?:[^"\\]|\\.)*--good(?:[^"\\]|\\.)*--bad|"command":"(?:[^"\\]|\\.)*celis (?:pattern|decide)(?:[^"\\]|\\.)*--bad(?:[^"\\]|\\.)*--good

@@ -113,8 +113,8 @@ fn note(search: bool, trail: Option<&str>, today: bool) -> String {
     };
     format!(
         "celis: when this prompt is a new ask, {ask}{fix}; when it says always or never, or states a \
-         convention, write a rule with celis decide --binds before you change a file, with --scope me when \
+         convention, write a rule with celis pattern --binds before you change a file, with --scope me when \
          it holds in any project; when it reacts to a result, such as \"this one\" or \"too much\", write a \
-         pattern with celis decide --good <what the person liked> --bad <what they did not>."
+         pattern with celis pattern --good <what the person liked> --bad <what they did not>."
     )
 }

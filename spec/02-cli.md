@@ -14,7 +14,7 @@ read. What a command shows a person is not part of it.
 ## Commands
 
 ```
-celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--binds] [--within <id>]... [--good <example>]... [--bad <example>]... [--project <id>] -- <text>
+celis pattern [--scope <scope>] [--replaces <id>] [--path <glob>]... [--binds] [--within <id>]... [--good <example>]... [--bad <example>]... [--project <id>] -- <text>
                                                        a pattern, in its scope
 celis patterns [--markdown]                           the patterns, the rules first, and their examples
 celis tree [<id>]... [--graph] [--full] [--all] [--demo]
@@ -54,15 +54,16 @@ decision  json  {"id", "created_at", "project", "scope", "replaces", "content",
 
 - Off macOS, `$CELIS_HOME` MUST default to `~/.local/share/celis`.
 - A flag no command takes is a usage error.
-- `decide` MUST write a pattern of the working folder's project (CIP-05), with `--scope` and
+- `decide` MUST run as `pattern`, as a command and after `help`.
+- `pattern` MUST write a pattern of the working folder's project (CIP-05), with `--scope` and
   `--replaces` as its tags, and no `scope` tag for `project`; each `--path`, from the project's top
   folder, as a `path` tag, `--binds` as its label, each `--within` as a `within` tag (CIP-05, "Graph"),
   refusing an id that no live pattern of the store has with `no-decision`, and each `--good` and `--bad`
   as an example (CIP-05, "Examples"): a value with `://` as a URL, a file of the working folder as its
   blob, else the whole id of a step, refusing a step the store lacks with `no-step`.
-- `--project` on `decide` and `step add` MUST write the records of the project it names in place of the
+- `--project` on `pattern` and `step add` MUST write the records of the project it names in place of the
   working folder's: a project id that a record of the store has, with that record's project name. It MUST refuse any other id as a usage error.
-- `decide` MUST refuse empty text, and a scope that is not `me`, `project` or `trail:<id>`,
+- `pattern` MUST refuse empty text, and a scope that is not `me`, `project` or `trail:<id>`,
   as a usage error; a `trail:<id>` that no open trail of the project has, with `no-trail`, unless
   `--replaces` names a live pattern of that trail; and a
   `--replaces` that no live pattern of the project has, with `no-decision`.
@@ -70,15 +71,15 @@ decision  json  {"id", "created_at", "project", "scope", "replaces", "content",
 **Examples**
 
 ```
-celis decide --path shelf/prices.py --binds -- "When you change prices
+celis pattern --path shelf/prices.py --binds -- "When you change prices
 Forces: floats are simple, but they lose cents
 Do: keep prices in cents
 Because: floats lost a cent"
-celis decide --scope me -- "When you write a commit message
+celis pattern --scope me -- "When you write a commit message
 Forces: detail helps, but the team reads them fast
 Do: use plain words
 Because: the team reads them"
-celis decide --path "**/prices*.py" -- "When you change prices: keep them in cents, because floats lost a cent."
+celis pattern --path "**/prices*.py" -- "When you change prices: keep them in cents, because floats lost a cent."
 ```
 
 ## Help
@@ -99,7 +100,7 @@ celis decide --path "**/prices*.py" -- "When you change prices: keep them in cen
 - A command that writes records MUST print the id of each, its main record first.
 - With `--json`, a command but `grep` MUST print one JSON object a line, and nothing else, to stdout. A
   printed id is `{"id"}`.
-- Only `decide`, `step` and `hook ask` MAY write a record. A command that refuses MUST write nothing.
+- Only `pattern`, `step` and `hook ask` MAY write a record. A command that refuses MUST write nothing.
 - A command MUST NOT ask a question, but `auth login` and `setup` on a terminal.
 - A command MUST exit 0 when done, 2 on a usage error, and 1 on any other error.
 - An error MUST be named `usage`, `no-decision`, `no-trail`, `no-step`, `closed`, `open-steps`,

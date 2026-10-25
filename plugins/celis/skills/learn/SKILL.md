@@ -22,7 +22,7 @@ person says yes.
    secret by where it lives, never by its value.
 4. Show the person the drafts, numbered, each with where in the source it came from and `rule` when it
    binds, and ask which to
-   keep: a list of numbers, all, or none. Write each kept draft with `decide`, its `--path` as narrow
+   keep: a list of numbers, all, or none. Write each kept draft with `pattern`, its `--path` as narrow
    as it allows, `--within` the id of its larger pattern once that one is written, and `--scope me`
    when it holds for that kind of work in any project.
 5. Close the ask. In the end, give how many drafts you made and how many the person kept, and each id.

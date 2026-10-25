@@ -30,7 +30,7 @@ const SECTIONS: &[(&str, &str, &[&str])] = &[
             "step done <id>",
             "step drop <id>",
             "step edit <id>",
-            "decide",
+            "pattern",
         ],
     ),
     (
@@ -62,7 +62,7 @@ const PHRASES: &[(&str, &str)] = &[
         "Show your patterns with their good and bad examples",
     ),
     ("stats", "Show what later work reused, and how work went"),
-    ("decide", "Record a pattern that later work must keep"),
+    ("pattern", "Record a pattern that later work must keep"),
     (
         "link",
         "Keep this project's trails in a folder to commit or share",
