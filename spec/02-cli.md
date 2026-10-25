@@ -18,7 +18,6 @@ celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--situation
                                                        a rule, in its scope
 celis rules [<file>]... [--diff]
                                                        the rules of some files
-celis name [<trail id> <name>] [--limit <n>]          name a trail; with none, the named trails
 celis tree [<id>]... [--graph] [--full] [--all] [--demo]
                                                        a trail and its steps; again on each change
 celis grep <grep option>... <pattern>                 every trail, through the system grep
@@ -61,13 +60,11 @@ decision  json  {"id", "created_at", "project", "scope", "replaces", "content",
   folder, as a `path` tag, `--situation` and `--promoted` as their labels, and `--good` and `--bad` as
   the whole ids of their steps (CIP-05, "Pairs"), refusing a step the store lacks with `no-step`.
 - `--project` on `decide` and `step add` MUST write the records of the project it names in place of the
-  working folder's: `skill:<name>` (CIP-07, "Skill projects"), or a project id that a record of the store
-  has, with that record's project name. It MUST refuse any other id as a usage error.
+  working folder's: a project id that a record of the store has, with that record's project name. It MUST refuse any other id as a usage error.
 - `decide` MUST refuse empty text, and a scope that is not `me`, `project`, `trail:<id>` or `at:<place>`,
   as a usage error; a `trail:<id>` that no open trail of the project has, with `no-trail`, unless
   `--replaces` names a live rule of that trail; and a
-  `--replaces` that no live rule of the project, and no live rule of a named trail, has, with
-  `no-decision`.
+  `--replaces` that no live rule of the project has, with `no-decision`.
 
 **Examples**
 
@@ -95,7 +92,7 @@ celis decide --path "**/prices*.py" -- "When you change prices: keep them in cen
 - A command that writes records MUST print the id of each, its main record first.
 - With `--json`, a command but `grep` MUST print one JSON object a line, and nothing else, to stdout. A
   printed id is `{"id"}`.
-- Only `decide`, `name`, `step` and `hook ask` MAY write a record. A command that refuses MUST write nothing.
+- Only `decide`, `step` and `hook ask` MAY write a record. A command that refuses MUST write nothing.
 - A command MUST NOT ask a question, but `auth login` and `setup` on a terminal.
 - A command MUST exit 0 when done, 2 on a usage error, and 1 on any other error.
 - An error MUST be named `usage`, `no-decision`, `no-trail`, `no-step`, `closed`, `open-steps`,
@@ -136,8 +133,6 @@ step  json  {"id", "created_at", "project", "links": [{"to", "kind": "under | re
 
 **Rules**
 
-- A `--uses` that is a name (CIP-07) MUST be taken as the id of its trail, before any id that starts
-  with it.
 - `add` MUST write the whole id of `--under`, `--replaces` and each `--uses`, each `--at` (CIP-01,
   "Places") and the `--check` as tags. A `--replaces` that names a trail MUST name its first ask.
 - `add` MUST write no step when an open step of the same project and `under` has the same text, and
@@ -170,45 +165,6 @@ celis step add --under 3fa2c1d0 --at shelf/prices.py:40 -- "Write a test: a seni
 celis step start 4c1d22e0
 celis step done 4c1d22e0 --as-planned -- "python3 -m unittest: test_senior failed before, passes now."
 celis step drop 3fa2c1d0 -- "The person chose the shared price table instead."
-```
-
-## Name
-
-`name` writes the name of CIP-07.
-
-**Rules**
-
-- `name` MUST write the name record of the trail `<trail id>` names, and print its id. When the trail
-  already holds the name, it MUST write nothing and print the id of that record.
-- `name` MUST refuse a step that is not a trail, a text that is no name (CIP-07, "Names"), and a name
-  another trail holds, as usage errors.
-
-**Examples**
-
-```
-celis name 9b0e11aa review
-```
-
-## Names
-
-`name` with no trail lists the named trails.
-
-```
-line    <name> <trail id8> <the trail's title>
-json    {"name", "id", "title", "uses"}
-```
-
-- `uses`: how many steps of other trails use a step of its tree.
-
-**Rules**
-
-- `name` with no trail MUST print one line for each named trail of every project, most `uses` first, then newest.
-- `--limit <n>` MUST print the first `<n>` lines only.
-
-**Examples**
-
-```
-celis name --limit 20
 ```
 
 ## Prompt

@@ -42,7 +42,6 @@ Every change of `spec/` MUST keep these rules:
 | 04 | Trails | the trail, its sessions and prompts, its rules | CIP-01, 03, 05 |
 | 05 | Rules | the rule and its scope | CIP-01 |
 | 06 | Reuse | the steps and rules a step uses, revisions | CIP-03, 04, 05 |
-| 07 | Names | the name of a trail, skill projects, the rules of a name, overrides | CIP-01, 03, 04, 05, 06 |
 | 08 | Files | the files of a done, and their blobs | CIP-01, 03 |
 
 ## Names
@@ -51,7 +50,6 @@ Every change of `spec/` MUST keep these rules:
 |---|---|---|
 | `project:<id>` · `project` | anchor of a project, its `K`, and its name tag | 01 |
 | `figma:<key>` · `web:<host>` | the project id of a record outside git | 01 |
-| `skill:<name>` | the project id of a trail from a skill file | 07 |
 | `$CELIS_HOME` · `$CELIS_HOME/trails/` · `$CELIS_HOME/phrase` · `$CELIS_HOME/links` | the home, the store, the phrase, the links | 01, 02 |
 | `celis` and its commands and flags, `rules` among them | the command line | 02 |
 | `usage` · `no-decision` · `no-trail` · `no-step` · `closed` · `open-steps` · `check-failed` · `error` | errors | 02 |
@@ -68,7 +66,6 @@ Every change of `spec/` MUST keep these rules:
 | `situation` · `promoted` in `celis.decision` | rule labels | 05 |
 | `me` · `project` · `trail:<id>` · `at:<place>` | the scopes of a rule | 05 |
 | `uses` | step tag | 06 |
-| 1985 with `name` in `celis.step` | kind: the name of a trail (NIP-32) | 07 |
 | `imeta` with `url` · `x` · `m` · `size` · `path` | done tag: a file of the proof (NIP-92, BUD-10) | 08 |
 | `$CELIS_HOME/trails/blobs/` · `<folder>/blobs/` | the blobs of the store and of a linked folder | 08 |
 
@@ -82,6 +79,7 @@ Every change of `spec/` MUST keep these rules:
 | a `done` with a `step` tag in place of `e` | a done of a step in the code |
 | `$CELIS_HOME/key` | the key, now the phrase; `auth login` removes it |
 | `tool` | a rule tag: the other tool calls a rule acted on |
+| 1985 with `name` in `celis.step` · `skill:<name>` | the name of a trail, and the project of a trail from a skill file |
 
 ## Words
 
@@ -101,5 +99,3 @@ Every change of `spec/` MUST keep these rules:
 | `live` | a rule no other rule replaces and no drop names |
 | `revised` | done work that a later step replaces |
 | `blob` | the bytes of a file, named by their sha256 |
-| `named trail` | a trail that holds a name |
-| `override` | a rule that replaces a trail's rule of another project, in its own project only |

@@ -11,7 +11,7 @@ pub mod steps;
 pub mod used;
 
 use crate::step::steps::{Close, Entry, LIFE};
-use crate::{Done, Mark, NamedTrail, State, StepId, StepRecord, Steps, Trail, Used};
+use crate::{Done, Mark, State, StepId, StepRecord, Steps, Trail, Used};
 use celis_nostr::Note;
 use std::collections::HashSet;
 
@@ -50,11 +50,6 @@ impl<'a> Step<'a> {
         self.entry.step.title()
     }
 
-    /// It, with the name it holds first (CIP-07); `None` when it holds none.
-    pub fn named(self) -> Option<NamedTrail<'a>> {
-        self.steps.named_of(self)
-    }
-
     pub fn is_trail(self) -> bool {
         self.entry.step.under.is_none()
     }
@@ -81,8 +76,7 @@ impl<'a> Step<'a> {
         .collect()
     }
 
-    /// The trails that the steps on its `under` chain follow, then, past each named trail (CIP-07), the
-    /// trails that its steps follow, at any depth; each once.
+    /// The trails that the steps on its `under` chain follow, each once.
     pub fn followed(self) -> Vec<Step<'a>> {
         let follows = |s: Step<'a>| {
             let used = s.uses().into_iter();
@@ -98,9 +92,6 @@ impl<'a> Step<'a> {
         while let Some(trail) = next.pop() {
             if found.iter().any(|f| f.id() == trail.id()) {
                 continue;
-            }
-            if trail.named().is_some() {
-                next.extend(trail.tree().into_iter().flat_map(follows));
             }
             found.push(trail);
         }

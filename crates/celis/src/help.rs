@@ -320,7 +320,7 @@ pub const VERBS: &[Verb] = &[
             ("--promoted", "A tool of the place, like a linter, now checks it"),
             ("--good <id>", "A step whose result shows the rule, such as a pick or a fix"),
             ("--bad <id>", "A step whose result breaks it, such as a variant not picked"),
-            ("--project <id>", "skill:<name>, or the id of a project in the store"),
+            ("--project <id>", "The id of a project in the store"),
             ("<text>", "When it applies, what to do, and why"),
         ],
         examples: &[
@@ -343,17 +343,6 @@ pub const VERBS: &[Verb] = &[
         ],
     },
     Verb {
-        command: "name",
-        usage: &["celis name [<trail id> <name>] [--limit <n>]"],
-        summary: "Give a trail a name, so work in any project can use it: step add --uses <name> keeps its rules. The first trail with a name keeps it. With no trail, show each named trail of every project, most used first.",
-        args: &[
-            ("<trail id>", "A trail id, or its first 4 or more characters"),
-            ("<name>", "A lowercase letter, then lowercase letters, digits, and -"),
-            ("--limit <n>", "Show the first <n> named trails only"),
-        ],
-        examples: &["celis name 3fa2c1d0 review", "celis name --limit 20"],
-    },
-    Verb {
         command: "tree",
         usage: &["celis tree [<id>]... [--graph] [--full] [--all] [--demo]"],
         summary: "Show a trail with its state, rules, and steps. With no id, show the active trails and today's trails of every project.",
@@ -369,7 +358,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "hook start",
         usage: &["celis hook start <agent> <plugin folder>"],
-        summary: "Read a session start hook's JSON from stdin, and print what the agent reads: the card, the named trails, and a notice when celis and the plugin differ in version. The plugin runs this.",
+        summary: "Read a session start hook's JSON from stdin, and print what the agent reads: the card and a notice when celis and the plugin differ in version. The plugin runs this.",
         args: &[
             ("<agent>", "claude, codex, cursor, gemini or antigravity"),
             ("<plugin folder>", "The folder of the celis plugin"),
@@ -431,12 +420,12 @@ pub const VERBS: &[Verb] = &[
         args: &[
             ("--under <id>", "The open step this step is part of"),
             ("--replaces <id>", "A step this one takes over, or a finished step it fixes"),
-            ("--uses <id>", "A rule or a past step it follows, or a trail's name"),
+            ("--uses <id>", "A rule or a past step it follows"),
             ("--at <place>", "Where the work happens: a file:line, a URL, or any text"),
             ("--check <command>", "A command that proves the work"),
             ("--new", "Start a new trail, not a step of the session's trail"),
             ("--session <id>", "The session, when the hook names it"),
-            ("--project <id>", "skill:<name>, or the id of a project in the store"),
+            ("--project <id>", "The id of a project in the store"),
             ("<text>", "What the person wants done, then its expect: line"),
         ],
         examples: &[

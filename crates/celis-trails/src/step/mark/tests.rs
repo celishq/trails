@@ -69,13 +69,16 @@ fn an_empty_done_or_drop_is_no_mark() {
     }
 }
 
-/// A name carries the name on its trail, and reads back the same (`spec/07-names.md`, "Names").
+/// A reader ignores a name, which older versions wrote on a trail (`spec/README.md`, "Names").
 #[test]
-fn a_name_carries_its_name() {
+fn a_name_reads_as_no_mark() {
     let account = Account::new(&[1u8; 32]).unwrap();
-    let name = Mark::Name {
-        name: "review".into(),
+    let prompt = Mark::Prompt {
+        text: "review".into(),
     };
-    let note = name.record(&account, "t", 10).unwrap();
-    assert_eq!(Mark::read(&note), Some(("t".to_string(), name)));
+    let mut note = prompt.record(&account, "t", 10).unwrap();
+    for tag in note.tags.iter_mut().filter(|t| t[0] == "l") {
+        tag[1] = "name".into();
+    }
+    assert_eq!(Mark::read(&note), None);
 }

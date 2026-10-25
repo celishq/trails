@@ -1,9 +1,9 @@
 ---
 name: tidy
-description: Tidies the celis trails. Drops stale trails and rules, merges rules that say the same thing, settles rules that conflict, moves rules into the place's own checks, and turns work done many times into named trails. Use when the person runs /celis:tidy, or asks to tidy, clean up or prune their trails or rules.
+description: Tidies the celis trails. Drops stale trails and rules, merges rules that say the same thing, settles rules that conflict and moves rules into the place's own checks. Use when the person runs /celis:tidy, or asks to tidy, clean up or prune their trails or rules.
 ---
 
-You tidy the trails in five parts, in this order: stale, merge, conflicts, moves, templates. Write
+You tidy the trails in four parts, in this order: stale, merge, conflicts, moves. Write
 nothing before the person says yes.
 
 1. Ask the person what to clean: this project, this project and the `me` rules, or all projects.
@@ -26,8 +26,7 @@ Find what no longer holds:
 - a one-off note: a rule about one event, not about work to come.
 
 Drop each one with `celis step drop <id> -- "<why it no longer holds>"`. A dropped trail keeps its
-rules: drop each of its rules that is stale too. When you drop a named trail, tell the person that its
-name is free.
+rules: drop each of its rules that is stale too.
 
 ## Merge
 
@@ -41,13 +40,10 @@ offer one `me` rule in place of them.
 
 ## Conflicts
 
-Find live rules that hold together, by scope (`me`, `project`, `trail:<id>`, `at:<place>`) or along a
-named trail, for the same case, and that say to do different things. Show the person each pair, and ask
+Find live rules that hold together, by scope (`me`, `project`, `trail:<id>`, `at:<place>`), for the same
+case, and that say to do different things. Show the person each pair, and ask
 which one holds, or for a new rule. Drop the rule that loses with `-- "conflicts with <the winner's
 id8>"`. Write a new rule with `decide --replaces <one of them>`, and drop the other.
-
-A rule of a named trail from another project ends only in this project: write the winner with
-`decide --replaces <its id>`, as `steps.md` says for named trails.
 
 ## Moves
 
@@ -62,22 +58,7 @@ Show the person the rule and the change. After a yes, make the change, and run t
 one. Then mark the rule with `decide --replaces <its id> --scope <its scope> --promoted -- "<the same
 text>"`: celis keeps it, and knows that the place checks it.
 
-## Templates
-
-Find groups of 4 or more done trails, of any project, that did the same work in any words. Leave out
-named trails and trails dropped after done.
-
-- When `celis name` shows a named trail that does this work, add to it: add an ask under its trail with
-  `--project <its project id>`, write each new rule, write each changed rule with `--replaces <its id>`,
-  and close the ask.
-- Else write a named trail as `steps.md` says, under "Named trails". Give the ask `--uses` with the id
-  of each trail of the group. Write the steps that the trails share and the rules that hold for this
-  work, in words that hold in any project. Each step's proof is "From <the id8 of each trail>.", and the
-  ask's proof is "Made from <n> trails."
-- Then offer to drop each `trail:` rule of the group that the named trail now holds, with
-  `-- "held by <name>"`.
-
 ## End
 
 Close each part's step with what it changed: how many trails and rules it dropped, faded, merged, moved
-and wrote. Close the ask. Tell the person what each part changed, and each named trail it wrote.
+and wrote. Close the ask. Tell the person what each part changed.

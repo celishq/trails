@@ -8,7 +8,7 @@ use std::collections::HashMap;
 
 /// What an agent does to a step: takes it up, closes it done, or drops it with the reason its work is no
 /// longer wanted. It gives a step a new title or text, places or check. On a trail, the hook records the person's
-/// prompt, and a name lets other work use it.
+/// prompt.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Mark {
     Start,
@@ -24,9 +24,6 @@ pub enum Mark {
     Prompt {
         text: String,
     },
-    Name {
-        name: String,
-    },
 }
 
 impl Mark {
@@ -38,7 +35,6 @@ impl Mark {
             Mark::Drop { reason } => ("drop", reason.as_str()),
             Mark::Edit { text, .. } => ("edit", text.as_str()),
             Mark::Prompt { text } => ("prompt", text.as_str()),
-            Mark::Name { name } => ("name", name.as_str()),
         };
         let pubkey = signer.pubkey().hex();
         let mut content = content.to_string();
@@ -125,9 +121,6 @@ impl Mark {
             },
             "prompt" => Mark::Prompt {
                 text: note.content.clone(),
-            },
-            "name" => Mark::Name {
-                name: note.content.clone(),
             },
             _ => return None,
         };

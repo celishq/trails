@@ -3,7 +3,6 @@
 //! A [`step`] is one part of the work, a [`trail`] is one task as its steps, and a [`rule`] is what later
 //! work must keep. [`Trails`] writes them, signed by the account, into the [`records`] store.
 
-pub mod name;
 pub mod records;
 pub mod refusal;
 pub mod rule;
@@ -11,8 +10,6 @@ pub mod step;
 pub mod trail;
 pub mod trails;
 
-pub use name::named_trail::NamedTrail;
-pub use name::Name;
 pub use records::anchor::Anchor;
 pub use records::id::rule_id::RuleId;
 pub use records::id::step_id::StepId;

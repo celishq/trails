@@ -198,11 +198,6 @@ impl Command {
                 "celis: {} has not started; keep one step ahead: take it first, or drop it.",
                 short(step)
             ),
-            Notice::Ended { rule, project } => format!(
-                "celis: this ends the override {} of [{project}]; tell the person, and write it again \
-                 there with decide --replaces when it still holds.",
-                short(rule)
-            ),
         };
         super::put(err, &line)
     }

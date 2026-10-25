@@ -7,8 +7,8 @@ pub mod written;
 
 use crate::records::id::short;
 use crate::{
-    Anchor, Check, Done, Draft, Mark, Name, Notice, ProofFile, Refusal, Rule, RuleId, Rules, Scope,
-    Step, StepId, StepRecord, Steps, Store, Trail, Written,
+    Anchor, Check, Done, Draft, Mark, Notice, ProofFile, Refusal, Rule, RuleId, Rules, Scope, Step,
+    StepId, StepRecord, Steps, Store, Trail, Written,
 };
 use celis_nostr::{Account, Note};
 use std::path::{Path, PathBuf};
@@ -282,48 +282,8 @@ impl Trails {
         })
     }
 
-    /// Names the trail `id` `name`, or gives back the name record when the trail already holds it;
-    /// refuses a step that is not a trail, a text that is no name, and a name another trail holds.
-    pub fn name(&self, id: &str, name: &str) -> Result<Written, Refusal> {
-        let steps = self.steps();
-        let trail = steps.find(id)?;
-        if !trail.is_trail() {
-            return Err(Refusal::Usage(format!(
-                "{} is no trail; name its trail {}",
-                short(trail.id()),
-                short(trail.trail().id())
-            )));
-        }
-        let name = Name::parse(name).ok_or_else(|| {
-            Refusal::Usage(format!(
-                "\"{name}\" is no name: a lowercase letter, then lowercase letters, digits and -"
-            ))
-        })?;
-        let record = match steps.named(&name) {
-            Some(held) if held.trail.id() == trail.id() => held.record.clone(),
-            Some(held) => {
-                return Err(Refusal::Usage(format!(
-                    "the trail {} holds the name {}",
-                    short(held.trail.id()),
-                    name.as_str()
-                )))
-            }
-            None => {
-                let mark = Mark::Name {
-                    name: name.as_str().to_string(),
-                };
-                self.sign(|account, now| mark.record(account, trail.id(), now))?
-            }
-        };
-        Ok(Written {
-            records: vec![record],
-            ..Written::default()
-        })
-    }
-
     /// Writes `rule`, its trail scope taken whole from a trail of its project that is not done or
-    /// dropped, or whose rule it replaces; replacing the live rule there, or of a named trail, that `replaces` names; tells each
-    /// override that the new rule ends.
+    /// dropped, or whose rule it replaces; replacing the live rule there that `replaces` names.
     pub fn decide(&self, mut rule: Rule, replaces: Option<&str>) -> Result<Written, Refusal> {
         let project = rule.anchor.project.clone();
         if let Scope::Trail(id) = &rule.scope {
@@ -342,23 +302,13 @@ impl Trails {
             }
             rule.scope = Scope::Trail(trail.id().to_string());
         }
-        let mut notices = Vec::new();
         if let Some(id) = replaces {
-            let rules = self.rules();
-            let found = rules.replaceable(&self.steps(), &project, id)?;
+            let found = self.rules().find(&project, id)?;
             rule.replaces = Some(RuleId::new(&found.id));
-            if Anchor::read(found).is_some_and(|a| a.project == project) {
-                let ended = rules.overrides(&found.id).into_iter();
-                notices.extend(ended.map(|(note, old)| Notice::Ended {
-                    rule: RuleId::new(&note.id),
-                    project: old.anchor.name,
-                }));
-            }
         }
         let written = self.sign(|account, now| rule.record(account, now))?;
         Ok(Written {
             records: vec![written],
-            notices,
             ..Written::default()
         })
     }
@@ -369,8 +319,8 @@ impl Trails {
         self.sign(|account, now| mark.record(account, trail.id(), now))
     }
 
-    /// The whole id of the trail named `id`, else of the live rule of `project` or the step of a trail
-    /// other than `trail` that `id` names; a trail gives the step that holds its work (`Trail::work`).
+    /// The whole id of the live rule of `project` or the step of a trail other than `trail` that `id`
+    /// names; a trail gives the step that holds its work (`Trail::work`).
     fn used(
         &self,
         steps: &Steps,
@@ -378,15 +328,10 @@ impl Trails {
         trail: Option<&str>,
         id: &str,
     ) -> Result<String, Refusal> {
-        let step = match Name::parse(id).and_then(|name| steps.named(&name)) {
-            Some(named) => named.trail,
-            None => {
-                let rules = self.rules();
-                match Target::of(id, rules.find(project, id).ok(), steps.find(id).ok())? {
-                    Target::Rule(rule) => return Ok(rule.id.clone()),
-                    Target::Step(step) => step,
-                }
-            }
+        let rules = self.rules();
+        let step = match Target::of(id, rules.find(project, id).ok(), steps.find(id).ok())? {
+            Target::Rule(rule) => return Ok(rule.id.clone()),
+            Target::Step(step) => step,
         };
         let step = Trail::new(step).work();
         if Some(step.trail().id()) == trail {

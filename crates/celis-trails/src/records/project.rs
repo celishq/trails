@@ -1,6 +1,6 @@
 //! A code project: its folder, id and name.
 
-use crate::{Anchor, Name};
+use crate::Anchor;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -90,15 +90,6 @@ impl Project {
                 project: format!("web:{host}"),
                 name: host,
             },
-        })
-    }
-
-    /// The project of the trail written from the skill file `name` (CIP-07, "Skill projects"), at this
-    /// project's folder.
-    pub fn skill(&self, name: &Name) -> Project {
-        self.with(Anchor {
-            project: format!("skill:{}", name.as_str()),
-            name: name.as_str().to_string(),
         })
     }
 

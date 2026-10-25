@@ -48,7 +48,7 @@ impl Command {
         }
     }
 
-    /// The card, where the plugin's files are, the named trails and a version notice; a compaction lets
+    /// The card, where the plugin's files are and a version notice; a compaction lets
     /// the session ask for the past agent again.
     fn start(&self, agent: &str, json: &Value, root: &Path) -> String {
         let _ = self.act_on(json, &mut std::io::sink());
@@ -70,19 +70,6 @@ impl Command {
         if agent != "claude" {
             let past = root.join("agents/past.md");
             text.push_str(&format!("\npast.md: {}", past.display()));
-        }
-        let mut named = Vec::new();
-        let limit = Args {
-            limit: Some("20".to_string()),
-            ..Args::default()
-        };
-        let _ = self.names(&limit, &mut named);
-        let named = String::from_utf8_lossy(&named);
-        if !named.trim().is_empty() {
-            text.push_str(&format!(
-                "\n\nNamed trails: when an ask does what one does, add the ask with --uses <its name>.\n{}",
-                named.trim_end()
-            ));
         }
         let manifest = std::fs::read_to_string(root.join(".claude-plugin/plugin.json"));
         let plugin = manifest

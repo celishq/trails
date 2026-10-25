@@ -3,14 +3,11 @@
 use crate::{Rule, RuleEnd};
 use celis_nostr::Note;
 
-/// One rule as a store holds it: its record, what it says, the id of the rule it overrides (CIP-07),
-/// and how it ended, if it did. The rule that replaces the rule an override overrides replaces the
-/// override too.
+/// One rule as a store holds it: its record, what it says, and how it ended, if it did.
 #[derive(Clone)]
 pub struct RuleEntry<'a> {
     pub note: &'a Note,
     pub rule: Rule,
-    pub overrides: Option<String>,
     pub end: Option<RuleEnd<'a>>,
 }
 

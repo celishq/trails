@@ -31,7 +31,6 @@ const SECTIONS: &[(&str, &str, &[&str])] = &[
             "step drop <id>",
             "step edit <id>",
             "decide",
-            "name <trail> <name>",
         ],
     ),
     (
@@ -52,7 +51,6 @@ const SECTIONS: &[(&str, &str, &[&str])] = &[
 /// What each command of one word does, in a phrase.
 const PHRASES: &[(&str, &str)] = &[
     ("tree", "Show your trails and their steps"),
-    ("name", "Name a trail, so other work can use it by its name"),
     ("grep", "Search every trail with grep"),
     (
         "search",

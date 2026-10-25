@@ -7,7 +7,7 @@ use std::io::Write;
 
 impl Command {
     /// Writes the rule `args` states on `project`, in its scope, with its trigger and labels, signed by
-    /// the account now, and prints its id, then on `err` each override it ends.
+    /// the account now, and prints its id.
     pub(crate) fn decide(
         &self,
         args: &Args,
