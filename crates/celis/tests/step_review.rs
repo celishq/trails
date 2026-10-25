@@ -197,3 +197,66 @@ fn done_prints_the_rules_of_the_changed_files() {
     assert!(said.contains(&python[..8]), "{said}");
     assert!(!said.contains(&rust[..8]), "{said}");
 }
+
+/// When no step is open under the ask, `done` of its last step prints the judge brief: the ask, its
+/// intent lines, the rules that fit its title and the changed files, the changed files, and its check.
+#[test]
+fn done_of_the_last_step_prints_the_judge_brief() {
+    let repo = Repo::new();
+    let rule = cli(
+        &repo,
+        &[
+            "decide",
+            "--path",
+            "*.py",
+            "--",
+            "When Python changes: run ruff.",
+        ],
+    );
+    let rule = out(&rule);
+    let trail = add(&repo, &["--", "the trail"]);
+    let intent = "Round the prices\nexpect: prices show cents\nfor: the shop\nnot: the cart";
+    let ask = add(
+        &repo,
+        &["--under", &trail[..8], "--check", "true", "--", intent],
+    );
+    let piece = add(&repo, &["--under", &ask[..8], "--", "piece"]);
+    repo.write("new.py", "x = 1\n");
+    let said = done(&repo, &piece, &["--as-planned"]).join("\n");
+    assert!(said.contains("celis:judge"), "{said}");
+    for line in [
+        "  ask     Round the prices",
+        "  expect  prices show cents",
+        "  for     the shop",
+        "  not     the cart",
+        "  file    new.py",
+        "  check   true",
+    ] {
+        assert!(said.contains(line), "{line}: {said}");
+    }
+    assert!(
+        said.contains(&format!("  rule    {}", &rule[..8])),
+        "{said}"
+    );
+}
+
+/// `decide` with no scope says that the rule holds in the project, and how `me` and `trail:<id>`
+/// differ.
+#[test]
+fn decide_with_no_scope_names_the_scopes() {
+    let repo = Repo::new();
+    let o = cli(&repo, &["decide", "--", "When Python changes: run ruff."]);
+    assert!(o.status.success(), "{}", err(&o));
+    assert!(err(&o).contains("--scope me"), "{}", err(&o));
+    let o = cli(
+        &repo,
+        &[
+            "decide",
+            "--scope",
+            "me",
+            "--",
+            "When you push: run the tests.",
+        ],
+    );
+    assert!(!err(&o).contains("--scope me"), "{}", err(&o));
+}

@@ -61,7 +61,11 @@ impl Command {
             examples,
         };
         let written = trails.decide(rule, args.replaces.as_deref())?;
-        self.print(written, args, out, err)
+        self.print(written, args, out, err)?;
+        match args.scope {
+            Some(_) => Ok(()),
+            None => super::put(err, SCOPES),
+        }
     }
 
     /// The example `value` names: a URL, else a file of the working folder, kept as a blob, else a
@@ -78,3 +82,9 @@ impl Command {
         Ok(Example::Step(trails.steps().find(value)?.step_id()))
     }
 }
+
+/// What `decide` with no scope says of the rule's scope.
+const SCOPES: &str = "celis: the rule holds in this project. When it holds for that kind of work in any \
+                      project, such as a rule about a framework, a platform or a review's convention, \
+                      replace it with --scope me; when it holds only for this trail, with --scope \
+                      trail:<id>.";

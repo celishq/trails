@@ -14,7 +14,7 @@ use crate::failure::Failure;
 use crate::text::clock::date;
 use celis_nostr::Note;
 use celis_trails::records::id::short;
-use celis_trails::{Rule, Step};
+use celis_trails::{Rule, Step, Trails};
 use std::collections::{HashMap, HashSet};
 use std::io::Write;
 
@@ -60,31 +60,8 @@ impl Command {
             return super::put(out, NOTHING);
         }
         let limit = limit.unwrap_or(usize::MAX);
-        let project = self.project();
-        let paths: Vec<String> = args.words[1..]
-            .iter()
-            .flat_map(|f| super::rules::paths(&project, &self.folder, f))
-            .collect();
         let trails = self.trails()?;
-        let live = trails.rules().live(&project.anchor.project);
-        let ids: HashSet<String> = live.iter().map(|(note, _)| short(&note.id)).collect();
-        let meant: HashSet<String> = self
-            .meant(&ask, (Kind::Rule, &ids), err)?
-            .into_iter()
-            .collect();
-        let asked = words(&ask);
-        let mut found: Vec<(&Note, Rule)> = live
-            .into_iter()
-            .filter(|(note, rule)| {
-                rule.fit(&paths).is_some()
-                    || meant.contains(&short(&note.id))
-                    || !words(when(&rule.content)).is_disjoint(&asked)
-            })
-            .collect();
-        found.sort_by_key(|(_, rule)| {
-            let fit = rule.fit(&paths);
-            (rule.replaces.is_none(), fit.is_none(), fit)
-        });
+        let found = self.fits(&trails, &ask, &args.words[1..], err)?;
         let steps = trails.steps();
         let past = match parts.contains(&Part::Past) {
             true => self.past(&ask, &steps.all(), err)?,
@@ -122,6 +99,42 @@ impl Command {
             true => super::put(out, NOTHING),
             false => super::put(err, &format!("celis: {}.", said.join("; "))),
         }
+    }
+
+    /// The live rules in scope that fit `ask` by its `files`, its words or its meaning: a rule with a
+    /// `replaces` tag first, then those of a named file, of a glob, and the rest.
+    pub(super) fn fits<'a>(
+        &self,
+        trails: &'a Trails,
+        ask: &str,
+        files: &[String],
+        err: &mut dyn Write,
+    ) -> Result<Vec<(&'a Note, Rule)>, Failure> {
+        let project = self.project();
+        let paths: Vec<String> = files
+            .iter()
+            .flat_map(|f| super::rules::paths(&project, &self.folder, f))
+            .collect();
+        let live = trails.rules().live(&project.anchor.project);
+        let ids: HashSet<String> = live.iter().map(|(note, _)| short(&note.id)).collect();
+        let meant: HashSet<String> = self
+            .meant(ask, (Kind::Rule, &ids), err)?
+            .into_iter()
+            .collect();
+        let asked = words(ask);
+        let mut found: Vec<(&Note, Rule)> = live
+            .into_iter()
+            .filter(|(note, rule)| {
+                rule.fit(&paths).is_some()
+                    || meant.contains(&short(&note.id))
+                    || !words(when(&rule.content)).is_disjoint(&asked)
+            })
+            .collect();
+        found.sort_by_key(|(_, rule)| {
+            let fit = rule.fit(&paths);
+            (rule.replaces.is_none(), fit.is_none(), fit)
+        });
+        Ok(found)
     }
 
     /// The done asks among `steps` most like `ask`: those alike in meaning first, then those whose

@@ -74,6 +74,9 @@ impl Command {
                     .map(|(note, rule)| crate::text::line::rule(note, rule, trails)),
             );
         }
+        if review.as_planned && review.open.is_empty() {
+            lines.extend(self.brief(review, trails));
+        }
         let under = review.under.as_deref().map(short);
         lines.extend(match (review.as_planned, under) {
             (false, Some(u)) => Some(format!("celis: it went otherwise than planned; replace or drop each open step it voids, then add one step under {u}.")),
@@ -81,5 +84,46 @@ impl Command {
             (_, None) => None,
         });
         lines.iter().try_for_each(|line| super::put(err, line))
+    }
+
+    /// The judge brief when `review`'s step is the last open one under its ask: the ask, its intent
+    /// lines, the rules that fit its title and the changed files, the changed files, and its check.
+    fn brief(&self, review: &Review, trails: &Trails) -> Vec<String> {
+        let steps = trails.steps();
+        let ask = review.under.as_deref().and_then(|id| steps.get(id));
+        let Some(ask) = ask.filter(|a| a.is_ask()) else {
+            return vec![];
+        };
+        let files = super::rules::changed(&self.folder);
+        let record = ask.record();
+        let mut lines = vec![
+            format!(
+                "celis: no step is open under {}; before you close it, run the celis:judge agent with \
+                 this brief and where the result is:",
+                short(ask.id())
+            ),
+            format!("  ask     {}", ask.title()),
+        ];
+        for line in record.detail() {
+            lines.push(match line.split_once(": ") {
+                Some((key, value)) => format!("  {key:<7} {value}"),
+                None => format!("          {line}"),
+            });
+        }
+        let fits = self.fits(trails, ask.title(), &files, &mut std::io::sink());
+        for (note, rule) in fits.unwrap_or_default() {
+            let text = crate::text::line::rule(note, &rule, trails);
+            let mut rule = text.lines();
+            lines.extend(rule.next().map(|first| format!("  rule    {first}")));
+            lines.extend(rule.map(|line| format!("        {line}")));
+        }
+        lines.extend(files.iter().map(|file| format!("  file    {file}")));
+        lines.extend(
+            record
+                .check
+                .iter()
+                .map(|check| format!("  check   {check}")),
+        );
+        lines
     }
 }
