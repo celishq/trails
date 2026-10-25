@@ -260,3 +260,60 @@ fn decide_with_no_scope_names_the_scopes() {
     );
     assert!(!err(&o).contains("--scope me"), "{}", err(&o));
 }
+
+/// `done` of an ask with no `--by`, while git shows a changed file, refuses with `unjudged`, writes
+/// nothing, and prints the rules of the changed files and the judge brief; `--by judge` closes it
+/// (`spec/02-cli.md`, "Step").
+#[test]
+fn done_of_an_ask_with_changed_files_needs_a_judge() {
+    let repo = Repo::new();
+    let rule = cli(
+        &repo,
+        &[
+            "decide",
+            "--path",
+            "*.py",
+            "--",
+            "When Python changes: run ruff.",
+        ],
+    );
+    let rule = out(&rule);
+    let trail = add(&repo, &["--", "the trail"]);
+    let ask = add(
+        &repo,
+        &[
+            "--under",
+            &trail[..8],
+            "--",
+            "Round the prices\nexpect: cents",
+        ],
+    );
+    repo.write("new.py", "x = 1\n");
+    let args = [
+        "step",
+        "done",
+        &ask[..8],
+        "--as-planned",
+        "--json",
+        "--",
+        "proof",
+    ];
+    let o = cli(&repo, &args);
+    assert_eq!(o.status.code(), Some(1), "{}", err(&o));
+    assert!(err(&o).contains("\"error\":\"unjudged\""), "{}", err(&o));
+    assert!(err(&o).contains("celis:judge"), "{}", err(&o));
+    assert!(err(&o).contains("  expect  cents"), "{}", err(&o));
+    assert!(err(&o).contains(&rule[..8]), "{}", err(&o));
+    let by = [
+        "step",
+        "done",
+        &ask[..8],
+        "--as-planned",
+        "--by",
+        "judge",
+        "--",
+        "met",
+    ];
+    let o = cli(&repo, &by);
+    assert!(o.status.success(), "{}", err(&o));
+}

@@ -98,7 +98,7 @@ celis decide --path "**/prices*.py" -- "When you change prices: keep them in cen
 - A command MUST NOT ask a question, but `auth login` and `setup` on a terminal.
 - A command MUST exit 0 when done, 2 on a usage error, and 1 on any other error.
 - An error MUST be named `usage`, `no-decision`, `no-trail`, `no-step`, `closed`, `open-steps`,
-  `check-failed`, else `error`. With `--json`, it MUST be one object on stderr,
+  `check-failed`, `unjudged`, else `error`. With `--json`, it MUST be one object on stderr,
   `{"error": "<name>", "message": "<text>"}`.
 
 ## Update
@@ -152,6 +152,8 @@ step  json  {"id", "created_at", "project", "links": [{"to", "kind": "under | re
   both a rule's and a step's id as a usage error.
 - `done` MUST take one of `--changed <text>` and `--as-planned`, and a proof, else refuse as a usage
   error. It MUST refuse a step with an open step under it, with `open-steps`.
+- `done` of an ask with no `--by`, while git shows a changed or new file in the working folder, MUST
+  refuse with `unjudged`, and print the rules of those files and the brief that the judge needs.
 - `done` MUST run the step's `check` in the project's top folder, and refuse with `check-failed` when it
   fails or runs past `CELIS_CHECK_SECONDS`, 600 when not set.
 - `done --changed` MUST write its text as `changed`, and `done --by` its value as `by`; a `--by` other

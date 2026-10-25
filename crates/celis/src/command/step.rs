@@ -109,6 +109,15 @@ impl Command {
             by,
             files,
         };
+        let steps = trails.steps();
+        let step = steps.find_open(id)?;
+        if done.by.is_none() && step.is_ask() {
+            let lines = self.unjudged(step, &trails);
+            if !lines.is_empty() {
+                lines.iter().try_for_each(|line| super::put(err, line))?;
+                return Err(Failure::unjudged(step.id()));
+            }
+        }
         let written = trails.done(id, done.clone(), &project.folder)?;
         self.print(written, args, out, err)?;
         let steps = trails.steps();

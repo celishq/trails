@@ -7,7 +7,7 @@ mod review;
 use super::Command;
 use crate::failure::Failure;
 use celis_trails::records::id::short;
-use celis_trails::{ProofFile, Trails};
+use celis_trails::{ProofFile, Step, Trails};
 pub(crate) use end::End;
 pub(crate) use proof::Proof;
 pub(crate) use review::Review;
@@ -62,20 +62,12 @@ impl Command {
         for (id, title, file) in &review.beside {
             lines.push(format!("  beside  {} {title} · {}", short(id), kept(file)));
         }
-        let rules = self.matched(trails, &super::rules::changed(&self.folder));
-        if !rules.is_empty() {
-            lines.push(
-                "celis: check the change against each rule of the files git shows changed:"
-                    .to_string(),
-            );
-            lines.extend(
-                rules
-                    .iter()
-                    .map(|(note, rule)| crate::text::line::rule(note, rule, trails)),
-            );
-        }
-        if review.as_planned && review.open.is_empty() {
-            lines.extend(self.brief(review, trails));
+        lines.extend(self.changed_rules(trails));
+        let steps = trails.steps();
+        let ask = review.under.as_deref().and_then(|id| steps.get(id));
+        if let Some(ask) = ask.filter(|a| a.is_ask() && review.as_planned && review.open.is_empty())
+        {
+            lines.extend(self.brief(ask, trails));
         }
         let under = review.under.as_deref().map(short);
         lines.extend(match (review.as_planned, under) {
@@ -86,20 +78,40 @@ impl Command {
         lines.iter().try_for_each(|line| super::put(err, line))
     }
 
-    /// The judge brief when `review`'s step is the last open one under its ask: the ask, its intent
-    /// lines, the rules that fit its title and the changed files, the changed files, and its check.
-    fn brief(&self, review: &Review, trails: &Trails) -> Vec<String> {
-        let steps = trails.steps();
-        let ask = review.under.as_deref().and_then(|id| steps.get(id));
-        let Some(ask) = ask.filter(|a| a.is_ask()) else {
+    /// The lines of the rules that the files git shows changed match, after a line that asks to check
+    /// the change against each; none when none matches.
+    fn changed_rules(&self, trails: &Trails) -> Vec<String> {
+        let rules = self.matched(trails, &super::rules::changed(&self.folder));
+        if rules.is_empty() {
             return vec![];
-        };
+        }
+        let head = "celis: check the change against each rule of the files git shows changed:";
+        let lines = rules
+            .iter()
+            .map(|(note, rule)| crate::text::line::rule(note, rule, trails));
+        std::iter::once(head.to_string()).chain(lines).collect()
+    }
+
+    /// What `done` of the ask `ask` with no `--by` prints before it refuses: the rules of the changed
+    /// files and the judge brief; none when git shows no changed file.
+    pub(crate) fn unjudged(&self, ask: Step, trails: &Trails) -> Vec<String> {
+        if super::rules::changed(&self.folder).is_empty() {
+            return vec![];
+        }
+        let mut lines = self.changed_rules(trails);
+        lines.extend(self.brief(ask, trails));
+        lines
+    }
+
+    /// The judge brief of `ask`: the ask, its intent lines, the rules that fit its title and the
+    /// changed files, the changed files, and its check.
+    fn brief(&self, ask: Step, trails: &Trails) -> Vec<String> {
         let files = super::rules::changed(&self.folder);
         let record = ask.record();
         let mut lines = vec![
             format!(
-                "celis: no step is open under {}; before you close it, run the celis:judge agent with \
-                 this brief and where the result is:",
+                "celis: before you close {} --by judge, run the celis:judge agent with this brief and \
+                 where the result is:",
                 short(ask.id())
             ),
             format!("  ask     {}", ask.title()),

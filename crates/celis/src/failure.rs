@@ -64,6 +64,19 @@ impl Failure {
         )
     }
 
+    /// The ask changed files and names no one who checked it.
+    pub fn unjudged(id: &str) -> Self {
+        Self::new(
+            "unjudged",
+            1,
+            format!(
+                "the ask {} changed files; run the celis:judge agent with the brief above, then close it \
+                 --by judge, or --by person with the person's answer",
+                celis_trails::records::id::short(id)
+            ),
+        )
+    }
+
     /// The step is done.
     pub fn closed(id: &str) -> Self {
         Self::new(

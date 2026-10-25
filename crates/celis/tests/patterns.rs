@@ -13,6 +13,8 @@ fn done(repo: &Repo, id: &str, rel: &str, proof: &str) {
             "done",
             &id[..8],
             "--as-planned",
+            "--by",
+            "person",
             "--file",
             rel,
             "--",
