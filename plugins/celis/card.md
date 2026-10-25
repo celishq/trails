@@ -39,9 +39,10 @@ Read all that celis prints, never cut by `head` or `grep`, and do the next move 
    ```
 
 4. **Learn.** When the person corrects you or reacts to a result, or something surprises you, write
-   it with `decide` before you go on: "always", "never" or a convention is a rule; "this one", "too
-   busy" or a fix of done work is a pattern, with `--good` and `--bad` (`steps.md`, "Patterns"). Give
-   it the narrowest `--path`, and replace a wrong rule with `--replaces <id>`.
+   it with `decide` before you go on. A correction that says "always" or "never", or names a
+   convention, is a rule with no examples. A reaction to a result, such as "this one" or "too busy",
+   is a pattern, with `--good` and `--bad` (`steps.md`, "Patterns"). Give it the narrowest `--path`,
+   and replace a wrong rule with `--replaces <id>`.
 
 A rule reads "When <what you see>: <what to do>, because <the reason>." Its "When" names the work,
 such as "When a Raycast extension changes", never the person or the project.

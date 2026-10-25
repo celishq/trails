@@ -19,7 +19,8 @@ Keep a pattern from:
 
 - a pick: `--good <the pick> --bad <the other>`, in the person's words; never your own choice;
 - a reaction: `--good` or `--bad` what it was about;
-- a fix of done work: the old hunk and the fix in the fix step's proof, and `--good <the fix step>`;
+- a fix of done work with no "always" or "never": the old hunk and the fix in the fix step's proof,
+  and `--good <the fix step>`;
 - the person's own rewrite, which `git log` shows: a step that `--replaces` yours, `--by person`.
 
 To add an example, replace the pattern: the new one keeps the old examples.
