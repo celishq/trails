@@ -23,8 +23,8 @@ celis rules [<file>]... [--diff]
 celis tree [<id>]... [--graph] [--full] [--all] [--demo]
                                                        a trail and its steps; again on each change
 celis grep <grep option>... <pattern>                 every trail, through the system grep
-celis search [--kind <kind>] [--limit <n>] -- <text>
-                                                       the rules and steps most alike in meaning
+celis search [<file>]... [--kind <kind>] [--limit <n>] -- <ask>
+                                                       the rules, patterns and past asks that fit an ask
 celis setup [--model <model>]                         the model that search uses
 celis stats [<id>] [--demo]                           what later work reused
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
@@ -344,32 +344,54 @@ celis grep -A3 9b0e11aa
 
 ## Search
 
-`search` gives the records most alike in meaning to a text, by the model that `setup` chose. It searches
-the live rules in scope in the working folder's project (CIP-05), and every trail and step of every
-project.
+`search` gives what fits an ask: the live rules in scope in the working folder's project (CIP-05), its
+patterns, and the done asks of every project like it (CIP-04).
+
+```
+rules
+<line>        each rule that fits, as "Rules" gives it
+patterns
+<line>        each pattern that fits, with its examples (CIP-05, "Patterns")
+past
+<id8> <title> · <yyyy-mm-dd> [<project name>]     each done ask like it
+  step <id8> <state> <title>                      each step right under it
+    changed <text>                                when the step went otherwise than planned
+none          nothing fits this ask
+```
+
+With `--kind trail` or `--kind step`, `search` gives the records of that kind most alike in meaning to
+the text, by the model that `setup` chose.
 
 ```
 line     <score> <grep view line>
 json     {"id", "kind", "score", "project", "content"}
-none     celis search has no model: search with celis grep, or run celis setup.
+no model celis search has no model: search with celis grep, or run celis setup.
 ```
 
-`<score>` is the cosine of the text and the record, with two decimals. `<kind>` is `rule`, `step` or
-`trail`.
+`<score>` is the cosine of the text and the record, with two decimals.
 
 **Rules**
 
-- `search` MUST print at most `--limit` records, 20 when not given, highest score first.
-- With `--kind`, `search` MUST give only the records of that kind.
-- With no model, `search` MUST print the `none` line and exit 0.
-- `search` MUST refuse empty text, a `--kind` that is not a kind, and a `--limit` that is not a positive
-  number, as a usage error.
+- Each `<file>` MUST count as "Rules" states.
+- A rule fits the ask when it matches a file, when its text before its first `:` shares a word with the
+  ask, or when the model finds it among the 5 most alike in meaning, at a cosine of 0.3 or more.
+- A done ask is like the ask when the model finds it among the 5 most alike in meaning, at a cosine of
+  0.3 or more, or when its title shares 2 words with the ask. `search` MUST print at most 2.
+- `search` MUST print the parts in the order rules, patterns, past, and leave out a part with no line.
+- With `--kind rule` or `--kind pattern`, `search` MUST print only that part.
+- With `--kind trail` or `--kind step`, `search` MUST print at most `--limit` records, 20 when not
+  given, highest score first; with no model, it MUST print the `no model` line and exit 0.
+- `--limit` MUST cap each part.
+- `search` MUST refuse empty text, a `--kind` that is not `rule`, `pattern`, `trail` or `step`, a
+  `--limit` that is not a positive number, and `--json` without `--kind trail` or `--kind step`, as a
+  usage error.
 
 **Examples**
 
 ```
-celis search -- "make retrieval faster"
-celis search --kind rule --limit 10 -- "release for linux"
+celis search -- "cut the release"
+celis search shelf/prices.py -- "round the prices"
+celis search --kind trail --limit 5 -- "make retrieval faster"
 ```
 
 ## Setup

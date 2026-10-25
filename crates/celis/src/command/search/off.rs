@@ -1,26 +1,32 @@
-//! `celis search` and `celis setup` in a build with no search feature.
+//! What `celis search` finds by meaning, and `celis setup`, in a build with no search feature.
 
+use super::NONE;
+use crate::command::view::kind::Kind;
 use crate::command::{put, Args, Command};
 use crate::failure::Failure;
+use std::collections::HashSet;
 use std::io::Write;
 
 impl Command {
-    /// Prints that search has no model. Writes no record.
-    pub(crate) fn search(
+    /// Prints that search has no model.
+    pub(super) fn listed(
         &self,
-        args: &Args,
+        _text: &str,
+        _kind: Kind,
+        _shown: (usize, bool),
         out: &mut dyn Write,
         _err: &mut dyn Write,
     ) -> Result<(), Failure> {
-        args.required_text("search needs a text after --")?;
-        put(
-            out,
-            "celis search has no model: search with celis grep, or run celis setup.",
-        )
+        put(out, NONE)
     }
 
-    /// No rule: this build cannot run a model.
-    pub(crate) fn meant(&self, _text: &str, _err: &mut dyn Write) -> Result<Vec<String>, Failure> {
+    /// None: this build cannot run a model.
+    pub(super) fn meant(
+        &self,
+        _text: &str,
+        _among: (Kind, &HashSet<String>),
+        _err: &mut dyn Write,
+    ) -> Result<Vec<String>, Failure> {
         Ok(vec![])
     }
 

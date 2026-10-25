@@ -1,29 +1,28 @@
-//! `celis search`: the rules and steps most alike in meaning to a text.
+//! `celis search`: the rules, patterns and past asks that fit an ask.
 
+#[cfg(feature = "search")]
+mod meaning;
+#[cfg(not(feature = "search"))]
+#[path = "search/off.rs"]
+mod meaning;
+#[cfg(feature = "search")]
 mod setup;
 
+use super::rules::index::COMMON;
 use super::view::kind::Kind;
-use super::view::row::Row;
-use super::view::View;
-use super::{Args, Command};
+use crate::command::{Args, Command};
 use crate::failure::Failure;
-use celis_search::{Index, Model};
-use serde_json::json;
-use std::collections::HashSet;
-use std::io::{IsTerminal, Write};
-
-/// The most rules `recall` takes by meaning.
-const MEANT: usize = 5;
-
-/// The least cosine at which `recall` takes a rule by meaning.
-const CLOSE: f32 = 0.3;
-
-/// What `search` prints when no model was set up.
-const NONE: &str = "celis search has no model: search with celis grep, or run celis setup.";
+use crate::text::clock::date;
+use celis_nostr::Note;
+use celis_trails::records::id::short;
+use celis_trails::{Rule, Step};
+use std::collections::{HashMap, HashSet};
+use std::io::Write;
 
 impl Command {
-    /// Prints the live rules in scope and the trails and steps most alike in meaning to the text of
-    /// `args`, by the chosen model; first it indexes the records the model has not read. Writes no
+    /// Prints the live rules in scope that fit the ask of `args`, by its files, its words or its
+    /// meaning, then the patterns that fit it with their examples, then the done asks like it with
+    /// their steps, and marks each rule as recalled now; with `--kind`, only that part. Writes no
     /// record.
     pub(crate) fn search(
         &self,
@@ -31,99 +30,247 @@ impl Command {
         out: &mut dyn Write,
         err: &mut dyn Write,
     ) -> Result<(), Failure> {
-        let text = args.required_text("search needs a text after --")?;
-        let kinds = match args.kind.as_deref() {
-            None => vec![Kind::Rule, Kind::Step, Kind::Trail],
-            Some("rule") => vec![Kind::Rule],
-            Some("step") => vec![Kind::Step],
-            Some("trail") => vec![Kind::Trail],
+        let ask = args.required_text("search needs the ask after --")?;
+        let limit = Args::number("--limit", &args.limit)?;
+        let parts = match args.kind.as_deref() {
+            None => vec![Part::Rules, Part::Patterns, Part::Past],
+            Some("rule") => vec![Part::Rules],
+            Some("pattern") => vec![Part::Patterns],
+            Some("trail") => {
+                return self.listed(
+                    &ask,
+                    Kind::Trail,
+                    (limit.unwrap_or(20), args.json),
+                    out,
+                    err,
+                )
+            }
+            Some("step") => {
+                return self.listed(&ask, Kind::Step, (limit.unwrap_or(20), args.json), out, err)
+            }
             Some(kind) => {
                 return Err(Failure::usage(format!(
-                    "--kind takes rule, step or trail, not {kind}"
+                    "--kind takes rule, pattern, trail or step, not {kind}"
                 )))
             }
         };
-        let limit = Args::number("--limit", &args.limit)?.unwrap_or(20);
-        let Some(model) = Model::chosen(&self.home()?) else {
-            return super::put(out, NONE);
-        };
-        let rows = self.searched()?;
-        let index = self.indexed(model, &rows, err)?;
-        let alike = index.alike(&text)?;
-        let mut found: Vec<(f32, &Row)> = rows
-            .iter()
-            .filter(|row| kinds.contains(&row.kind))
-            .filter_map(|row| Some((alike(&row.text)?, row)))
-            .collect();
-        found.sort_by(|(a, _), (b, _)| b.total_cmp(a));
-        for (score, row) in found.into_iter().take(limit) {
-            let object = json!({"id": row.id, "kind": row.kind.text(), "score": score,
-                "project": row.project, "content": row.text});
-            let line = format!("{score:.2} {}", row.line());
-            super::put(out, &if args.json { object.to_string() } else { line })?;
+        if args.json {
+            return Err(Failure::usage("--json takes --kind trail or --kind step"));
         }
-        Ok(())
-    }
-
-    /// The short ids of the live rules in scope most alike in meaning to `text`, at most `MEANT`, each
-    /// at least `CLOSE`; none with no model.
-    pub(crate) fn meant(&self, text: &str, err: &mut dyn Write) -> Result<Vec<String>, Failure> {
-        let Some(model) = Model::chosen(&self.home()?) else {
-            return Ok(vec![]);
-        };
-        let rows: Vec<Row> = self
-            .searched()?
-            .into_iter()
-            .filter(|r| r.kind == Kind::Rule)
-            .collect();
-        let index = self.indexed(model, &rows, err)?;
-        let alike = index.alike(text)?;
-        let mut found: Vec<(f32, &Row)> = rows
-            .iter()
-            .filter_map(|row| Some((alike(&row.text)?, row)))
-            .filter(|(score, _)| *score >= CLOSE)
-            .collect();
-        found.sort_by(|(a, _), (b, _)| b.total_cmp(a));
-        Ok(found
-            .into_iter()
-            .take(MEANT)
-            .map(|(_, r)| r.id.clone())
-            .collect())
-    }
-
-    /// The rows `search` gives: each trail and step of every project, and each live rule in scope.
-    fn searched(&self) -> Result<Vec<Row>, Failure> {
         if !self.held()? {
-            return Ok(vec![]);
+            return super::put(out, NOTHING);
         }
-        let trails = self.trails()?;
+        let limit = limit.unwrap_or(usize::MAX);
         let project = self.project();
-        let live = trails.rules().live(&project.anchor.project).into_iter();
-        let rules: HashSet<String> = live
-            .map(|(note, _)| celis_trails::records::id::short(&note.id))
+        let paths: Vec<String> = args.words[1..]
+            .iter()
+            .flat_map(|f| super::rules::paths(&project, &self.folder, f))
             .collect();
-        let rows = View::of(&trails).into_rows().into_iter();
-        Ok(rows
-            .filter(|row| match row.kind {
-                Kind::Trail | Kind::Step => true,
-                Kind::Rule => rules.contains(&row.id),
-                _ => false,
+        let trails = self.trails()?;
+        let live = trails.rules().live(&project.anchor.project);
+        let ids: HashSet<String> = live.iter().map(|(note, _)| short(&note.id)).collect();
+        let meant: HashSet<String> = self
+            .meant(&ask, (Kind::Rule, &ids), err)?
+            .into_iter()
+            .collect();
+        let asked = words(&ask);
+        let found: Vec<(&Note, Rule)> = live
+            .into_iter()
+            .filter(|(note, rule)| {
+                rule.fit(&paths).is_some()
+                    || meant.contains(&short(&note.id))
+                    || !words(when(&rule.content)).is_disjoint(&asked)
             })
-            .collect())
+            .collect();
+        let steps = trails.steps();
+        let past = match parts.contains(&Part::Past) {
+            true => self.past(&ask, &steps.all(), err)?,
+            false => vec![],
+        };
+        let mut said = vec![];
+        for part in parts {
+            let lines: Vec<String> = match part {
+                Part::Past => past
+                    .iter()
+                    .take(limit.min(PAST))
+                    .flat_map(|a| lines(*a))
+                    .collect(),
+                _ => {
+                    let part: Vec<_> = found
+                        .iter()
+                        .filter(|(_, rule)| rule.is_pattern() == (part == Part::Patterns))
+                        .take(limit)
+                        .collect();
+                    self.recalled(part.iter().map(|(note, _)| *note));
+                    let line = |(note, rule): &&(&Note, Rule)| {
+                        crate::text::line::rule(note, rule, &trails)
+                    };
+                    part.iter().map(line).collect()
+                }
+            };
+            if lines.is_empty() {
+                continue;
+            }
+            super::put(out, part.heading())?;
+            lines.iter().try_for_each(|line| super::put(out, line))?;
+            said.push(part.next());
+        }
+        match said.is_empty() {
+            true => super::put(out, NOTHING),
+            false => super::put(err, &format!("celis: {}.", said.join("; "))),
+        }
     }
 
-    /// The index of `model`, refreshed with the text of each of `rows`; on a terminal, the count read
-    /// so far goes to `err`.
-    fn indexed(
+    /// The done asks among `steps` most like `ask`: those alike in meaning first, then those whose
+    /// title shares the most words with it, newest first.
+    fn past<'a>(
         &self,
-        model: &'static Model,
-        rows: &[Row],
+        ask: &str,
+        steps: &[Step<'a>],
         err: &mut dyn Write,
-    ) -> Result<Index, Failure> {
-        let mut index = Index::open(model, &self.home()?)?;
-        let texts: Vec<&str> = rows.iter().map(|r| r.text.as_str()).collect();
-        let progress = std::io::stderr().is_terminal().then_some(err);
-        index.refresh(&texts, progress)?;
-        Ok(index)
+    ) -> Result<Vec<Step<'a>>, Failure> {
+        let done: Vec<Step> = steps
+            .iter()
+            .copied()
+            .filter(|s| s.is_ask() && s.state_word() == "done")
+            .collect();
+        let ids: HashSet<String> = done.iter().map(|s| short(s.id())).collect();
+        let meant = self.meant(ask, (Kind::Step, &ids), err)?;
+        let asked = words(ask);
+        let mut shared: Vec<(usize, Step)> = done
+            .iter()
+            .map(|s| (words(s.title()).intersection(&asked).count(), *s))
+            .filter(|(n, s)| *n >= SHARED && !meant.contains(&short(s.id())))
+            .collect();
+        shared.sort_by_key(|(n, s)| {
+            (
+                std::cmp::Reverse(*n),
+                std::cmp::Reverse(s.note().created_at),
+            )
+        });
+        let by_id: HashMap<String, Step> = done.iter().map(|s| (short(s.id()), *s)).collect();
+        let alike = meant.iter().filter_map(|id| by_id.get(id).copied());
+        Ok(alike.chain(shared.into_iter().map(|(_, s)| s)).collect())
     }
+
+    /// Adds a byte to the file of each of `notes` in the recalled folder.
+    fn recalled<'a>(&self, notes: impl Iterator<Item = &'a Note>) {
+        let Ok(home) = self.home() else {
+            return;
+        };
+        let folder = home.join(RECALLED);
+        let _ = std::fs::create_dir_all(&folder);
+        for note in notes {
+            let file = std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(folder.join(&note.id));
+            let _ = file.and_then(|mut f| f.write_all(b"."));
+        }
+    }
+
+    /// The day `search` last brought each rule, and how many times it did, by its short id.
+    pub(crate) fn recalls(&self) -> HashMap<String, (String, u64)> {
+        let Ok(home) = self.home() else {
+            return HashMap::new();
+        };
+        let entries = std::fs::read_dir(home.join(RECALLED)).into_iter().flatten();
+        entries
+            .flatten()
+            .filter_map(|entry| {
+                let meta = entry.metadata().ok()?;
+                let at = meta.modified().ok()?;
+                let at = at.duration_since(std::time::UNIX_EPOCH).ok()?.as_secs();
+                let id = entry.file_name().to_string_lossy().to_string();
+                Some((short(&id), (date(at), meta.len())))
+            })
+            .collect()
+    }
+}
+
+/// A part of what `search` prints.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Part {
+    Rules,
+    Patterns,
+    Past,
+}
+
+impl Part {
+    fn heading(self) -> &'static str {
+        match self {
+            Part::Rules => "rules",
+            Part::Patterns => "patterns",
+            Part::Past => "past",
+        }
+    }
+
+    /// What the agent does with the part.
+    fn next(self) -> &'static str {
+        match self {
+            Part::Rules => "keep each rule: it binds",
+            Part::Patterns => {
+                "at each choice the ask leaves open, choose like a pattern's good examples and unlike \
+                 its bad ones, and open the files of the examples that bear on it; a rule wins over a \
+                 pattern"
+            }
+            Part::Past => "take each past step that fits as yours, with step add --uses <its id>",
+        }
+    }
+}
+
+/// The lines of the done ask `ask`: its own, then each step right under it with its `changed` line.
+fn lines(ask: Step) -> Vec<String> {
+    let mut lines = vec![format!(
+        "{} {} · {} [{}]",
+        short(ask.id()),
+        flat(ask.title()),
+        date(ask.note().created_at),
+        ask.record().anchor.name
+    )];
+    for step in ask.children() {
+        let state = step.state_word();
+        let title = flat(step.title());
+        lines.push(format!("  step {} {state} {title}", short(step.id())));
+        lines.extend(step.changed().map(|c| format!("    changed {}", flat(c))));
+    }
+    lines
+}
+
+/// The folder of `$CELIS_HOME` whose files name the rules `search` brought, each one byte longer each
+/// time it did.
+const RECALLED: &str = "recalled";
+
+/// What `search` prints when nothing fits.
+const NOTHING: &str = "nothing fits this ask";
+
+/// What `search` prints by meaning when no model was set up.
+const NONE: &str = "celis search has no model: search with celis grep, or run celis setup.";
+
+/// The most past asks `search` prints.
+const PAST: usize = 2;
+
+/// The least words a past ask's title shares with the ask to be like it.
+const SHARED: usize = 2;
+
+/// The part of a rule's text before its first `:`: the case it acts on.
+fn when(content: &str) -> &str {
+    content.split_once(':').map_or(content, |(when, _)| when)
+}
+
+/// The words of `text` that tell cases apart: 4 or more letters, not common, lower case, without a
+/// plural `s`.
+fn words(text: &str) -> HashSet<String> {
+    let lower = text.to_lowercase();
+    lower
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|w| w.chars().count() >= 4 && !COMMON.contains(w))
+        .map(|w| w.strip_suffix('s').unwrap_or(w).to_string())
+        .collect()
+}
+
+/// `text` on one line.
+fn flat(text: &str) -> String {
+    let lines = text.split(['\n', '\r']).filter(|l| !l.is_empty());
+    lines.collect::<Vec<_>>().join(" ")
 }

@@ -17,9 +17,9 @@ Read
   └ --demo            Show sample trails in every state
 
   grep <pattern>      Search every trail with grep
-  search <text>       Find the rules and steps alike in meaning to a text
-  ├ --kind <kind>     Only rule, step, or trail
-  └ --limit <n>       Show the first <n> only; 20 when not given
+  search <text>       Show the rules, patterns and past asks that fit an ask
+  ├ --kind <kind>     Only rule, pattern, trail, or step
+  └ --limit <n>       Show the first <n> of each part; 20 for trail or step
 
   recall <ask>        Show the rules and patterns that fit an ask
   patterns            Show your patterns with their good and bad examples

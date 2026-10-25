@@ -263,16 +263,18 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "search",
-        usage: &["celis search [--kind <kind>] [--limit <n>] -- <text>"],
-        summary: "Show the rules of this project and the trails and steps of every project most alike in meaning to a text, by the model celis setup chose, the most alike first with their score. Reads new records into the model's index first. With no model, says to use celis grep. Changes nothing.",
+        usage: &["celis search [<file>]... [--kind <kind>] [--limit <n>] -- <ask>"],
+        summary: "Show what fits an ask: the rules of this project that its files, its words or its meaning match, then the patterns with their good and bad examples, then up to 2 done asks of any project like it, with their steps. With --kind trail or step, show the records of that kind most alike in meaning, by the model celis setup chose, with their score; with no model, says to use celis grep. Changes nothing.",
         args: &[
-            ("--kind", "Only rule, step, or trail"),
-            ("--limit", "Show the first <n> only; 20 when not given"),
-            ("<text>", "What to find, in any words and any language"),
+            ("<file>", "A file or folder the ask will touch"),
+            ("--kind", "Only rule, pattern, trail, or step"),
+            ("--limit", "Show the first <n> of each part; 20 for trail or step"),
+            ("<ask>", "The ask, in any words and any language"),
         ],
         examples: &[
-            "celis search -- \"make retrieval faster\"",
-            "celis search --kind rule --limit 10 -- \"release for linux\"",
+            "celis search -- \"cut the release\"",
+            "celis search shelf/prices.py -- \"round the prices\"",
+            "celis search --kind trail --limit 5 -- \"make retrieval faster\"",
         ],
     },
     Verb {

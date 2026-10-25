@@ -38,7 +38,7 @@ fn none_turns_search_off() {
     let o = cli(&repo, &["setup", "--model", "none"]);
     assert!(o.status.success(), "{}", err(&o));
     assert!(!repo.home().join("models").exists());
-    let o = cli(&repo, &["search", "--", "prices"]);
+    let o = cli(&repo, &["search", "--kind", "step", "--", "prices"]);
     assert!(
         out(&o).starts_with("celis search has no model"),
         "{}",

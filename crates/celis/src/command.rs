@@ -10,14 +10,9 @@ mod issue;
 mod link;
 mod patterns;
 mod prompt;
-mod recall;
 pub(crate) mod report;
 mod rule;
 mod rules;
-#[cfg(feature = "search")]
-mod search;
-#[cfg(not(feature = "search"))]
-#[path = "command/search/off.rs"]
 mod search;
 mod stats;
 mod step;
@@ -91,7 +86,7 @@ impl Command {
             "step" => self.step(args, out, err, &self.project_of(args)?),
             "decide" => self.decide(args, out, err, &self.project_of(args)?),
             "tree" => self.tree(args, out),
-            "recall" => self.recall(args, out, err),
+            "recall" => self.search(args, out, err),
             "patterns" => self.patterns(args, out),
             "rules" => self.rules(args, out),
             "grep" => self.grep(&self.args[1..], out),

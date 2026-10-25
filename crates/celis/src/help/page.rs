@@ -56,7 +56,7 @@ const PHRASES: &[(&str, &str)] = &[
     ("grep", "Search every trail with grep"),
     (
         "search",
-        "Find the rules and steps alike in meaning to a text",
+        "Show the rules, patterns and past asks that fit an ask",
     ),
     ("setup", "Choose and download the model that search uses"),
     ("recall", "Show the rules and patterns that fit an ask"),
