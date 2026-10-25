@@ -25,6 +25,11 @@ pub(crate) struct View {
 
 impl View {
     pub fn of(trails: &Trails) -> View {
+        View::recalled(trails, &HashMap::new())
+    }
+
+    /// The view of `trails`, each rule with the day `recalled` gives for its short id.
+    pub fn recalled(trails: &Trails, recalled: &HashMap<String, String>) -> View {
         let (steps, rules) = (trails.steps(), trails.rules());
         let mut by_trail: HashMap<&str, Vec<Row>> = HashMap::new();
         let mut blocks: Vec<(u64, &str, Vec<Row>)> = Vec::new();
@@ -32,10 +37,10 @@ impl View {
             let note = entry.note;
             match &entry.rule.scope {
                 Scope::Trail(id) => {
-                    let rows = rule(entry, Some(short(id)));
+                    let rows = rule(entry, Some(short(id)), recalled);
                     by_trail.entry(id.as_str()).or_default().extend(rows);
                 }
-                _ => blocks.push((note.created_at, &note.id, rule(entry, None))),
+                _ => blocks.push((note.created_at, &note.id, rule(entry, None, recalled))),
             }
         }
         let mut headers = HashMap::new();
@@ -141,7 +146,7 @@ fn step(root: Step, step: Step, kind: Kind) -> Row {
 
 /// The rows of the rule `entry`, as a rule of `trail`: its own, then its drop's reason when a drop
 /// names it.
-fn rule(entry: &RuleEntry, trail: Option<String>) -> Vec<Row> {
+fn rule(entry: &RuleEntry, trail: Option<String>, recalled: &HashMap<String, String>) -> Vec<Row> {
     let (note, rule) = (entry.note, &entry.rule);
     let state = entry.end.map_or("live".to_string(), RuleEnd::text);
     let row = |kind: Kind, at: &Note, fields: Vec<String>, text: &str| Row {
@@ -158,6 +163,7 @@ fn rule(entry: &RuleEntry, trail: Option<String>) -> Vec<Row> {
         (!rule.paths.is_empty(), "trigger"),
         (rule.situation, "situation"),
         (rule.promoted, "promoted"),
+        (rule.is_pattern(), "pattern"),
     ];
     fields.extend(
         marks
@@ -165,6 +171,8 @@ fn rule(entry: &RuleEntry, trail: Option<String>) -> Vec<Row> {
             .filter(|(on, _)| *on)
             .map(|(_, mark)| mark.to_string()),
     );
+    let day = recalled.get(&short(&note.id));
+    fields.extend(day.map(|day| format!("recalled:{day}")));
     let mut rows = vec![row(Kind::Rule, note, fields, &rule.content)];
     if let Some(RuleEnd::Dropped(drop)) = entry.end {
         rows.push(row(Kind::Dropped, drop, vec![], &drop.content));

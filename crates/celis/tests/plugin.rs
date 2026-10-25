@@ -186,6 +186,38 @@ fn each_agents_session_start_gives_the_card_and_its_session() {
     }
 }
 
+/// Claude Code's session start asks to offer `/celis:tidy` while the store holds a rule and no tidy began
+/// in the last 7 days.
+#[test]
+fn claudes_session_start_asks_to_offer_a_tidy() {
+    let repo = Repo::new();
+    let claude = &AGENTS[0];
+    let start = claude.payload("s1", &repo.path(), "");
+    assert!(!claude
+        .run(&repo, claude.start, &start)
+        .contains("/celis:tidy"));
+    let o = repo.run(
+        &repo.path(),
+        &["decide", "--", "When you test: set A=1."],
+        &[],
+        "",
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let said = claude.run(&repo, claude.start, &start);
+    assert!(said.contains("no tidy has run yet"), "{said}");
+    assert!(said.contains("offer them /celis:tidy"), "{said}");
+    let o = repo.run(
+        &repo.path(),
+        &["step", "add", "--new", "--", "Tidy the celis trails"],
+        &[],
+        "",
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    assert!(!claude
+        .run(&repo, claude.start, &start)
+        .contains("/celis:tidy"));
+}
+
 /// Each agent's prompt hook writes the prompt on its session's trail while a step works, in the person's
 /// project (`spec/04-trails.md`, "Sessions").
 #[test]

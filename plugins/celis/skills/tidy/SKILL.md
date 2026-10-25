@@ -1,13 +1,14 @@
 ---
 name: tidy
-description: Tidies the celis trails. Drops stale trails and rules, merges rules that say the same thing, settles rules that conflict and moves rules into the place's own checks. Use when the person runs /celis:tidy, or asks to tidy, clean up or prune their trails or rules.
+description: Tidies the celis trails. Drops stale trails, rules and patterns, merges rules and patterns that say the same thing, turns patterns that make one point into a rule, settles rules that conflict and moves rules into the place's own checks. Use when the person runs /celis:tidy, when celis asks to offer it, or when the person asks to tidy, clean up or prune their trails, rules or patterns.
 ---
 
-You tidy the trails in four parts, in this order: stale, merge, conflicts, moves. Write
-nothing before the person says yes.
+You tidy the trails in five parts, in this order: stale, merge, patterns, conflicts, moves. Write
+nothing before the person says yes. A pattern is a rule whose grep line says ` pattern`.
 
 1. Ask the person what to clean: this project, this project and the `me` rules, or all projects.
-2. Add the tidy as one ask, as the card says, and one step under it for each part. Take the parts one
+2. Add the tidy as one ask titled `Tidy the celis trails`, as the card says, so that celis knows when
+   the last tidy was, and one step under it for each part. Take the parts one
    at a time.
 3. For each change, show the person the records it touches, with their ids, and ask: yes, no, or yes to
    all in this part. Write a change only after a yes.
@@ -23,7 +24,9 @@ Find what no longer holds:
   project;
 - a rule that names code, a file or a command that the project no longer has;
 - a rule of a trail whose done work was revised (`revised-by`) when the new work says otherwise;
-- a one-off note: a rule about one event, not about work to come.
+- a one-off note: a rule about one event, not about work to come;
+- a rule or a pattern older than 60 days whose grep line has no `recalled:<day>`, or a day older than
+  60 days: no ask has needed it for a long time.
 
 Drop each one with `celis step drop <id> -- "<why it no longer holds>"`. A dropped trail keeps its
 rules: drop each of its rules that is stale too.
@@ -35,8 +38,18 @@ says it best, keep it, and drop each other with `-- "merged into <its id8>"`. El
 says it best with `decide --scope <their scope> --replaces <the newest of them>`, and drop each other
 with `-- "merged into <the new id8>"`.
 
+Two patterns that say the same thing merge the same way: the new one gives `--good` and `--bad` again
+for each example of the patterns it does not replace, and keeps those of the one it replaces.
+
 When two or more projects hold the same `project` rule, and it holds for that kind of work anywhere,
 offer one `me` rule in place of them.
+
+## Patterns
+
+Find 3 or more live patterns of one scope whose good examples make one point, in any words. Propose one
+rule that says the point. After a yes, write it with `decide --scope <their scope>`, and drop each
+pattern with `-- "made the rule <the new id8>"`, or keep a pattern whose examples show more than the
+rule says.
 
 ## Conflicts
 

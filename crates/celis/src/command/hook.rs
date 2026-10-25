@@ -12,6 +12,12 @@ mod tests;
 /// The agents whose hooks run `celis hook`.
 const AGENTS: [&str; 5] = ["claude", "codex", "cursor", "gemini", "antigravity"];
 
+/// The title of the ask that `/celis:tidy` adds.
+const TIDY: &str = "Tidy the celis trails";
+
+/// How many days after a tidy the session start asks to offer the next.
+const TIDY_DAYS: u64 = 7;
+
 /// What the prompt note asks, in place of the past agent, of an agent that does not load it.
 const ALONE: &str = "do what past.md says, yourself, for the ask and the places it may touch";
 
@@ -67,6 +73,9 @@ impl Command {
             ));
         }
         text.push_str(&format!("steps.md: {}", root.join("steps.md").display()));
+        if let Some(line) = self.tidy() {
+            text.push_str(&format!("\n\n{line}"));
+        }
         if agent != "claude" {
             let past = root.join("agents/past.md");
             text.push_str(&format!("\npast.md: {}", past.display()));
@@ -81,6 +90,34 @@ impl Command {
             text.push_str(&format!("\n\n{notice}"));
         }
         text
+    }
+
+    /// The line that asks to offer `/celis:tidy` once in the session: when the store holds a live rule,
+    /// and no ask titled `TIDY` began in the last `TIDY_DAYS` days.
+    fn tidy(&self) -> Option<String> {
+        if !self.held().ok()? {
+            return None;
+        }
+        let trails = self.trails().ok()?;
+        if !trails.rules().every().iter().any(|e| e.is_live()) {
+            return None;
+        }
+        let steps = trails.steps();
+        let last = steps
+            .all()
+            .into_iter()
+            .filter(|s| s.title() == TIDY)
+            .map(|s| s.note().created_at)
+            .max();
+        let days = last.map(|at| super::now().saturating_sub(at) / 86_400);
+        let since = match days {
+            Some(days) if days < TIDY_DAYS => return None,
+            Some(days) => format!("the last tidy was {days} days ago"),
+            None => "no tidy has run yet".to_string(),
+        };
+        Some(format!(
+            "celis: {since}; once in this session, after the person's first ask, offer them /celis:tidy."
+        ))
     }
 
     /// The note on the prompt, after it is acted on in the project the JSON names; past.md in place of

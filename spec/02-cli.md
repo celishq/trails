@@ -281,13 +281,13 @@ echo '{"session_id": "95e9be99", "cwd": "/repo", "prompt": "Use the shared Badge
 ## Grep
 
 `grep` gives every trail of every project to the system `grep`, as lines. The plugin's `past.md` searches
-the trails with it, and so does the card.
+the trails with it, and so does the `tidy` skill.
 
 ```
 view    <yyyy-mm-dd> <trail id8 | -> [<project name>] <kind> <id8> <fields> <text>
           trail | step   <open | working | done | done-dropped | dropped | expired>[ revised-by <id>,…][ at:<place>]…
           rule           <live | replaced-by <id> | dropped> {<me | project | trail:<id8> | at:<place>>}
-                           [ trigger][ situation][ promoted]
+                           [ trigger][ situation][ promoted][ pattern][ recalled:<yyyy-mm-dd>]
           proof | changed | dropped                              the step's or rule's id, no fields
 lines   <id8> [<project name>] <its title> · <yyyy-mm-dd>        each trail of the lines
           trail <id8> <fields>                                    the trail's own line
@@ -299,7 +299,8 @@ end     project [<project name>]
 
 `<id8>` is the first 8 characters of an id. A text holds each newline as a space. A rule's fields end with
 ` trigger` when it has a trigger tag (CIP-05), ` situation` when it has the `situation` label, and
-` promoted` when it has the `promoted` label.
+` promoted` when it has the `promoted` label, ` pattern` when it has examples (CIP-05, "Patterns"), and
+` recalled:<day>` with the day `recall` last gave it.
 
 **Rules**
 

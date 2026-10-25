@@ -105,3 +105,23 @@ fn recall_needs_the_ask() {
     let o = cli(&repo, &["recall", "src/main.rs"]);
     assert_eq!(o.status.code(), Some(2), "{}", err(&o));
 }
+
+/// `grep` marks a pattern, and the day `recall` last brought a rule.
+#[test]
+fn grep_marks_patterns_and_the_day_of_a_recall() {
+    let repo = Repo::new();
+    let [rust, _, logo, pattern] = store(&repo);
+    recall(&repo, &["logo.svg", "--", "draw a new logo"]);
+    let o = cli(&repo, &["grep", " rule "]);
+    let said = out(&o);
+    let line = |id: &str| {
+        said.lines()
+            .find(|l| l.contains(&format!("rule {}", &id[..8])))
+            .unwrap()
+            .to_string()
+    };
+    assert!(line(&pattern).contains(" pattern recalled:"), "{said}");
+    assert!(line(&logo).contains(" recalled:"), "{said}");
+    assert!(!line(&logo).contains(" pattern"), "{said}");
+    assert!(!line(&rust).contains("recalled:"), "{said}");
+}

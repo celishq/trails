@@ -6,12 +6,13 @@ use crate::failure::Failure;
 use celis_nostr::Note;
 use celis_trails::records::id::short;
 use celis_trails::Rule;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::io::Write;
 
 impl Command {
     /// Prints the live rules in scope that fit the ask of `args`, by its files, its words or its
-    /// meaning, then the patterns that fit it with their examples. Writes no record.
+    /// meaning, then the patterns that fit it with their examples, and marks each as recalled now.
+    /// Writes no record.
     pub(crate) fn recall(
         &self,
         args: &Args,
@@ -41,6 +42,11 @@ impl Command {
         if found.is_empty() {
             return super::put(out, NOTHING);
         }
+        let folder = self.home()?.join(RECALLED);
+        let _ = std::fs::create_dir_all(&folder);
+        for (note, _) in &found {
+            let _ = std::fs::write(folder.join(&note.id), "");
+        }
         for (heading, patterns) in [("rules", false), ("patterns", true)] {
             let part: Vec<_> = found
                 .iter()
@@ -56,7 +62,27 @@ impl Command {
         }
         Ok(())
     }
+
+    /// The day `recall` last brought each rule, by its short id.
+    pub(crate) fn recalls(&self) -> HashMap<String, String> {
+        let Ok(home) = self.home() else {
+            return HashMap::new();
+        };
+        let entries = std::fs::read_dir(home.join(RECALLED)).into_iter().flatten();
+        entries
+            .flatten()
+            .filter_map(|entry| {
+                let at = entry.metadata().ok()?.modified().ok()?;
+                let at = at.duration_since(std::time::UNIX_EPOCH).ok()?.as_secs();
+                let id = entry.file_name().to_string_lossy().to_string();
+                Some((short(&id), crate::text::clock::date(at)))
+            })
+            .collect()
+    }
 }
+
+/// The folder of `$CELIS_HOME` whose files name the rules `recall` brought, each touched when it did.
+const RECALLED: &str = "recalled";
 
 /// What `recall` prints when no rule or pattern fits.
 const NOTHING: &str = "nothing fits this ask";
