@@ -138,7 +138,7 @@ impl Command {
     }
 
     /// The done asks among `steps` most like `ask`: those alike in meaning first, then those whose
-    /// title shares the most words with it, newest first.
+    /// title and trail's title share the most words with it, newest first.
     fn past<'a>(
         &self,
         ask: &str,
@@ -155,7 +155,11 @@ impl Command {
         let asked = words(ask);
         let mut shared: Vec<(usize, Step)> = done
             .iter()
-            .map(|s| (words(s.title()).intersection(&asked).count(), *s))
+            .map(|s| {
+                let mut titles = words(s.title());
+                titles.extend(words(s.trail().title()));
+                (titles.intersection(&asked).count(), *s)
+            })
             .filter(|(n, s)| *n >= SHARED && !meant.contains(&short(s.id())))
             .collect();
         shared.sort_by_key(|(n, s)| {

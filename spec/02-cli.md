@@ -318,7 +318,7 @@ no model celis search has no model: search with celis grep, or run celis setup.
 - A rule fits the ask when it matches a file, when its text before its first `:` shares a word with the
   ask, or when the model finds it among the 5 most alike in meaning, at a cosine of 0.3 or more.
 - A done ask is like the ask when the model finds it among the 5 most alike in meaning, at a cosine of
-  0.3 or more, or when its title shares 2 words with the ask. `search` MUST print at most 2.
+  0.3 or more, or when its title and its trail's title share 2 words with the ask. `search` MUST print at most 2.
 - `search` MUST print the parts in the order rules, patterns, past, and leave out a part with no line.
   Within a part of rules, a rule with a `replaces` tag comes first, then the rest; within each, first
   those that match a named file (a `path` with no `*` or `?`, or an `at:<place>`), then a glob, then

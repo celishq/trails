@@ -312,6 +312,22 @@ fn search_prints_a_past_ask_with_no_steps_as_its_own_step() {
     );
 }
 
+/// A past ask is like the ask by the words of its title and of its trail's title (`spec/02-cli.md`,
+/// "Search").
+#[test]
+fn search_reads_the_title_of_a_past_asks_trail() {
+    let repo = Repo::new();
+    let ids = add(&repo, &["--", "Add vendors_csv to report.py"]);
+    let trail = ids.lines().next().unwrap().to_string();
+    let ask = add(
+        &repo,
+        &["--under", &trail[..8], "--", "Write it with a test"],
+    );
+    done(&repo, &ask, None, "pytest passes");
+    let said = search(&repo, &["--", "Add clients_csv to report.py with a test"]);
+    assert!(said.contains(&ask[..8]), "{said}");
+}
+
 /// `search` prints at most 2 past asks, and with `--limit 1` at most 1 (`spec/02-cli.md`, "Search").
 #[test]
 fn search_prints_at_most_two_past_asks() {
