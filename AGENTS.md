@@ -9,8 +9,9 @@
   repo root, so `gemini-extension.json` and `hooks/` are there. Antigravity does too, so
   `.antigravity-plugin/` and `hooks.json` are there. The card's command lines match the usage in
   `crates/celis/src/help.rs`; `crates/celis/tests/help.rs` checks it.
-- `crates/celis/src` groups code by feature (tree, stats, graph, report). Only code that all features
-  share goes in `terminal/`.
+- `crates/celis/src/command` groups the commands as `celis help` does: `read/`, `record/` and `setup/`.
+  Within each, code goes by feature (tree, stats, graph). Only code that all features share goes in
+  `terminal/`.
 - Workflows, the Makefile and scripts run a script as `sh scripts/<name>.sh`.
 - Data from a real celis store never goes into the repo.
 

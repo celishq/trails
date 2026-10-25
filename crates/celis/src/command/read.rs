@@ -1,0 +1,10 @@
+//! The commands that read the trails: tree, grep, search, patterns and stats, and the views they share.
+
+pub(crate) mod graph;
+pub(crate) mod grep;
+pub(crate) mod patterns;
+pub(crate) mod report;
+pub(crate) mod search;
+pub(crate) mod stats;
+pub(crate) mod tree;
+pub(crate) mod view;

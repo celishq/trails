@@ -33,11 +33,11 @@
   },
   {
     "id": "rename-part",
-    "prompt": "The enum `Part` in crates/celis/src/command/search.rs says little. Give it a better name and update every use."
+    "prompt": "The enum `Part` in crates/celis/src/command/read/search.rs says little. Give it a better name and update every use."
   },
   {
     "id": "search-tests",
-    "prompt": "Add unit tests for the words that crates/celis/src/command/search.rs takes from an ask: the short words, the common words and the plural s it leaves out."
+    "prompt": "Add unit tests for the words that crates/celis/src/command/read/search.rs takes from an ask: the short words, the common words and the plural s it leaves out."
   },
   {
     "id": "card-missing",

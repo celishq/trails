@@ -1,24 +1,9 @@
 //! One run of `celis`.
 
 mod args;
-mod auth;
-mod close;
-mod files;
-mod graph;
-mod grep;
-mod hook;
-mod issue;
-mod link;
-mod pattern;
-mod patterns;
-mod prompt;
-pub(crate) mod report;
-mod search;
-mod stats;
-mod step;
-pub(crate) mod tree;
-mod update;
-mod view;
+mod read;
+mod record;
+mod setup;
 
 use crate::failure::Failure;
 use crate::help::{self, VERBS};
