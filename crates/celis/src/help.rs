@@ -315,7 +315,7 @@ pub const VERBS: &[Verb] = &[
         usage: &["celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--situation] [--promoted] [--good <example>]... [--bad <example>]... [--project <id>] -- <text>"],
         summary: "Record a rule that later work must keep. With no --scope, it holds for the whole project. Its paths name the files it acts on, so celis search gives it for them. With examples, it is a pattern: it guides the work and never binds it.",
         args: &[
-            ("--scope <scope>", "Where it applies: at:<place>, trail:<id>, me, or project"),
+            ("--scope <scope>", "Where it applies: trail:<id>, me, or project"),
             ("--replaces <id>", "The rule this one replaces"),
             ("--path <glob>", "A file it acts on; * and ? within a folder, ** across"),
             ("--situation", "No file shows it ahead"),
@@ -326,7 +326,7 @@ pub const VERBS: &[Verb] = &[
             ("<text>", "When it applies, what to do, and why"),
         ],
         examples: &[
-            "celis decide --scope at:shelf/prices.py \\",
+            "celis decide --path shelf/prices.py \\",
             "  -- \"When you change prices: keep them in cents.\"",
             "celis decide --path \"*.svg\" --good logo.svg --bad 3fa2c1d0 \\",
             "  -- \"When a logo is drawn: keep sharp corners.\"",

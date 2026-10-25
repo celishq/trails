@@ -55,7 +55,9 @@ decision  json  {"id", "created_at", "project", "scope", "replaces", "content",
 - Off macOS, `$CELIS_HOME` MUST default to `~/.local/share/celis`.
 - A flag no command takes is a usage error.
 - `decide` MUST write a rule of the working folder's project (CIP-05), with `--scope` and
-  `--replaces` as its tags, and no `scope` tag for `project`; each `--path`, from the project's top
+  `--replaces` as its tags, and no `scope` tag for `project`; for `--scope at:<place>`, no `scope` tag
+  and a `path` tag of the place's path from the project's top folder, without its line, and with `/**`
+  after it when it is a folder; each `--path`, from the project's top
   folder, as a `path` tag, `--situation` and `--promoted` as their labels, and each `--good` and `--bad`
   as an example (CIP-05, "Patterns"): a value with `://` as a URL, a file of the working folder as its
   blob, else the whole id of a step, refusing a step the store lacks with `no-step`.

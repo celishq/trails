@@ -51,7 +51,7 @@ Record work · your agents run these
   └ --check <command> A command that proves the work, in place of the old one
 
   decide              Record a rule that later work must keep
-  ├ --scope <scope>   Where it applies: at:<place>, trail:<id>, me, or project
+  ├ --scope <scope>   Where it applies: trail:<id>, me, or project
   ├ --replaces <id>   The rule this one replaces
   ├ --path <glob>     A file it acts on; * and ? within a folder, ** across
   ├ --situation       No file shows it ahead

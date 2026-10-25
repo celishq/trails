@@ -54,6 +54,8 @@ me                in every project
 **Writers**
 
 - A writer MUST write the whole id of the trail that `trail:<id>` names.
+- A writer MUST NOT write `at:<place>`: it writes the place as a `path` ("Triggers"). Older writers
+  wrote it, and readers read it as "Reading" states.
 - A linked folder MUST NOT hold a `me` rule (CIP-01, "Links").
 
 **Readers**

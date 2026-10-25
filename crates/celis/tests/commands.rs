@@ -39,7 +39,7 @@ fn a_rule_prints_its_id_scope_and_text() {
     let repo = Repo::new();
     let o = repo.run(
         &repo.path(),
-        &["decide", "--scope", "at:a.py", "--", "one"],
+        &["decide", "--scope", "me", "--", "one"],
         &[],
         "",
     );
@@ -48,7 +48,7 @@ fn a_rule_prints_its_id_scope_and_text() {
     let step = run(&repo, &["step", "add", "--uses", &placed, "--", "t"]);
     let step = short(out(&step).trim());
     let lines = lines_of(&repo, &repo.path(), &["step", "start", &step]);
-    assert_eq!(lines[1..], [format!("{} at:a.py one", short(&placed))]);
+    assert_eq!(lines[1..], [format!("{} me one", short(&placed))]);
 }
 
 /// The json form of a rule is one object with the fields the section lists
@@ -128,7 +128,8 @@ fn decide_writes_its_scope_and_replaces_as_tags() {
         &short(&old.id),
     ]);
     assert_eq!(replacing.content, WORK);
-    assert_eq!(replacing.tag("scope"), Some("at:shelf/prices.py"));
+    assert_eq!(replacing.tag("scope"), None);
+    assert_eq!(replacing.tag("path"), Some("shelf/prices.py"));
     assert_eq!(replacing.tag("replaces"), Some(old.id.as_str()));
     assert_eq!(replacing.tag("I"), Some(format!("project:{id}").as_str()));
     let rule = written(&["--scope", &format!("trail:{}", short(&trail))]);

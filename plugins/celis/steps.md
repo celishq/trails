@@ -4,14 +4,14 @@ The cases that the card does not cover, and that no command prints. Do not run `
 
 ## Rules
 
-A place is a file, a `file:line`, a folder, or a URL. A rule that holds at one place takes the scope
-`at:<place>`.
+A rule that holds at one file or folder takes it as `--path`, such as `shelf/prices.py` or
+`shelf/**`.
 
 To find more rules than `celis search` brought, search them with
 `celis grep -i -E " rule [0-9a-f]{8} live .*(<word>|<word>)"`.
 
 When you move a file: write each rule of its old place again for the new place, with
-`decide --replaces <id>` and the new place as its scope or `--path`. Run
+`decide --replaces <id>` and the new place as its `--path`. Run
 `celis search <old place> --kind rule -- "move"` to see them.
 
 ## Past work

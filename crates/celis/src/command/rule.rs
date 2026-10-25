@@ -24,8 +24,22 @@ impl Command {
             })?,
             None => Scope::Project,
         };
+        let mut paths: Vec<String> = args
+            .paths
+            .iter()
+            .map(|p| Place::resolve(p, &project.folder, &self.folder))
+            .collect();
         let scope = match scope {
-            Scope::At(place) => Scope::At(Place::resolve(&place, &project.folder, &self.folder)),
+            Scope::At(place) => {
+                let place = Place::resolve(&place, &project.folder, &self.folder);
+                let path = Place::new(&place).path();
+                paths.push(match project.folder.join(path).is_dir() {
+                    true if path == "." => "**".to_string(),
+                    true => format!("{path}/**"),
+                    false => path.to_string(),
+                });
+                Scope::Project
+            }
             scope => scope,
         };
         let trails = self.trails()?;
@@ -42,11 +56,7 @@ impl Command {
             scope,
             replaces: None,
             content,
-            paths: args
-                .paths
-                .iter()
-                .map(|p| Place::resolve(p, &project.folder, &self.folder))
-                .collect(),
+            paths,
             situation: args.situation,
             promoted: args.promoted,
             examples,

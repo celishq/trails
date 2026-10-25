@@ -103,13 +103,14 @@ fn an_older_rule_with_a_tool_tag_has_no_trigger() {
     assert!(rules(&repo, &["."]).is_empty());
 }
 
-/// A rule `at:<place>` counts as a rule with that place as its `path`, and holds under a folder it
-/// names (`spec/05-rules.md`, "Triggers").
+/// An older rule `at:<place>` counts as a rule with that place as its `path`, and holds under a folder
+/// it names (`spec/05-rules.md`, "Triggers").
 #[test]
 fn an_at_rule_comes_at_its_place() {
     let repo = Repo::new();
-    decide(&repo, &["--scope", "at:shelf"], "in the shelf");
-    decide(&repo, &["--scope", "at:a.py:3"], "at a line");
+    let at = support::now() - DAY;
+    tagged(&repo, &[("scope", "at:shelf")], "in the shelf", at);
+    tagged(&repo, &[("scope", "at:a.py:3")], "at a line", at + 1);
     assert_eq!(texts(&repo, &["shelf/b.py"]), ["in the shelf"]);
     assert_eq!(texts(&repo, &["a.py"]), ["at a line"]);
     assert!(rules(&repo, &["b.py"]).is_empty());
@@ -206,8 +207,6 @@ fn decide_writes_the_trigger_and_labels() {
         &repo.path().join("shelf"),
         &[
             "decide",
-            "--scope",
-            "at:a.py",
             "--path",
             "*.py",
             "--path",
@@ -263,4 +262,24 @@ fn an_older_rule_with_no_trigger_still_reads() {
         (&json!(false), &json!(false))
     );
     assert_eq!(texts(&repo, &["a.py"]), ["old"]);
+}
+
+/// `decide --scope at:<place>` writes the place as a `path` tag, without its line and with `/**` after
+/// a folder, and no `scope` tag (`spec/02-cli.md`, "Commands"; `spec/05-rules.md`, "Scope").
+#[test]
+fn an_at_scope_writes_a_path() {
+    let repo = Repo::new();
+    repo.write("shelf/b.py", "x = 1\n");
+    let file = decide(&repo, &["--scope", "at:a.py:3"], "at a line");
+    let folder = decide(&repo, &["--scope", "at:shelf"], "in the shelf");
+    let notes = support::labelled(&repo, "decision");
+    let tags = |id: &str| {
+        let note = notes.iter().find(|n| n.id == id).unwrap();
+        (
+            note.tag("path").map(str::to_string),
+            note.tag("scope").map(str::to_string),
+        )
+    };
+    assert_eq!(tags(&file), (Some("a.py".to_string()), None));
+    assert_eq!(tags(&folder), (Some("shelf/**".to_string()), None));
 }
