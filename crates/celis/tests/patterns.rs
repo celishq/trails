@@ -278,3 +278,60 @@ fn patterns_says_when_there_is_none() {
     let repo = Repo::new();
     assert_eq!(out(&cli(&repo, &["patterns"])).trim(), "no pattern yet");
 }
+
+/// `tree --full` names each pattern a step uses, and `stats` counts each pattern's examples and how often
+/// `recall` brought it.
+#[test]
+fn tree_and_stats_show_the_patterns() {
+    let repo = Repo::new();
+    let url = "https://example.com/flat.png";
+    let o = cli(
+        &repo,
+        &[
+            "decide",
+            "--path",
+            "*.svg",
+            "--good",
+            url,
+            "--bad",
+            url,
+            "--",
+            "When a logo is drawn: keep it flat.",
+        ],
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let pattern = out(&o).lines().next().unwrap().to_string();
+    for _ in 0..2 {
+        assert!(cli(&repo, &["recall", "logo.svg", "--", "draw a logo"])
+            .status
+            .success());
+    }
+    let trail = add(&repo, &["--", "the logo"]);
+    add(
+        &repo,
+        &[
+            "--under",
+            &trail[..8],
+            "--uses",
+            &pattern[..8],
+            "--",
+            "draw it flat",
+        ],
+    );
+    let tree = out(&cli(&repo, &["tree", &trail[..8], "--full"]));
+    assert!(
+        tree.contains(&format!(
+            "pattern  {} When a logo is drawn: keep it flat.",
+            &pattern[..8]
+        )),
+        "{tree}"
+    );
+    let stats = out(&cli(&repo, &["stats"]));
+    assert!(
+        stats.contains(&format!(
+            "pattern {} When a logo is drawn: keep it flat. · 2 examples · recalled 2",
+            &pattern[..8]
+        )),
+        "{stats}"
+    );
+}

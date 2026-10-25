@@ -14,7 +14,7 @@ const NOTHING: &str = "Nothing was reused yet.";
 
 impl Command {
     /// Prints the step `args` names with the steps it follows and the steps that follow it, or with no id
-    /// each followed step, each used rule and the total; on a terminal with no `--json`, draws them
+    /// each followed step, each used rule, each pattern and the total; on a terminal with no `--json`, draws them
     /// as cards, or as the board with `--next`. Writes no record.
     pub(crate) fn stats(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let id = args.words.get(1);
@@ -45,7 +45,9 @@ impl Command {
             None => {
                 let rules = trails.rules();
                 let used = reuse.used(&rules);
-                if reuse.followed().is_empty() && used.is_empty() {
+                let live = rules.live(&self.project().anchor.project);
+                let patterns: Vec<_> = live.iter().filter(|(_, r)| r.is_pattern()).collect();
+                if reuse.followed().is_empty() && used.is_empty() && patterns.is_empty() {
                     return match args.json {
                         true => Ok(()),
                         false => super::put(out, NOTHING),
@@ -68,6 +70,20 @@ impl Command {
                     let value = json!({"id": note.id, "content": rule.content, "used": count});
                     let line = format!("rule {} {} · used {count}", short(&note.id), rule.brief());
                     super::show(out, args.json, "used", value, &line)?;
+                }
+                let recalls = self.recalls();
+                for (note, rule) in patterns {
+                    let examples = rule.examples.sides().count();
+                    let recalled = recalls.get(&short(&note.id)).map_or(0, |(_, n)| *n);
+                    let value = json!({"id": note.id, "content": rule.content,
+                        "examples": examples, "recalled": recalled});
+                    let line = format!(
+                        "pattern {} {} · {} · recalled {recalled}",
+                        short(&note.id),
+                        rule.brief(),
+                        plural(examples, "example")
+                    );
+                    super::show(out, args.json, "pattern", value, &line)?;
                 }
                 let follows = reuse.total();
                 let value = json!({"follows": follows, "uses": uses});

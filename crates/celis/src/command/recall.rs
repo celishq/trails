@@ -45,7 +45,11 @@ impl Command {
         let folder = self.home()?.join(RECALLED);
         let _ = std::fs::create_dir_all(&folder);
         for (note, _) in &found {
-            let _ = std::fs::write(folder.join(&note.id), "");
+            let file = std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(folder.join(&note.id));
+            let _ = file.and_then(|mut f| f.write_all(b"."));
         }
         for (heading, patterns) in [("rules", false), ("patterns", true)] {
             let part: Vec<_> = found
@@ -63,8 +67,8 @@ impl Command {
         Ok(())
     }
 
-    /// The day `recall` last brought each rule, by its short id.
-    pub(crate) fn recalls(&self) -> HashMap<String, String> {
+    /// The day `recall` last brought each rule, and how many times it did, by its short id.
+    pub(crate) fn recalls(&self) -> HashMap<String, (String, u64)> {
         let Ok(home) = self.home() else {
             return HashMap::new();
         };
@@ -72,16 +76,18 @@ impl Command {
         entries
             .flatten()
             .filter_map(|entry| {
-                let at = entry.metadata().ok()?.modified().ok()?;
+                let meta = entry.metadata().ok()?;
+                let at = meta.modified().ok()?;
                 let at = at.duration_since(std::time::UNIX_EPOCH).ok()?.as_secs();
                 let id = entry.file_name().to_string_lossy().to_string();
-                Some((short(&id), crate::text::clock::date(at)))
+                Some((short(&id), (crate::text::clock::date(at), meta.len())))
             })
             .collect()
     }
 }
 
-/// The folder of `$CELIS_HOME` whose files name the rules `recall` brought, each touched when it did.
+/// The folder of `$CELIS_HOME` whose files name the rules `recall` brought, each one byte longer each
+/// time it did.
 const RECALLED: &str = "recalled";
 
 /// What `recall` prints when no rule or pattern fits.
