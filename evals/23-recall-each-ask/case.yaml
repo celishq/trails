@@ -1,4 +1,0 @@
-schema_version: "1.1"
-name: 23-recall-each-ask
-context:
-  scaffold_script: ./setup.sh
