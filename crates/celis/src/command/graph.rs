@@ -496,11 +496,11 @@ fn edge(buf: &mut Buffer, layout: &Layout, i: usize, alpha: f64) {
 fn learned<'a>(model: &Model<'a>, trails: &[Step<'a>], many: bool) -> Patterns<'a> {
     let mut learned: Vec<Learned> = vec![];
     for trail in trails {
-        for (note, pattern) in model.patterns.of(*trail) {
+        for pattern in model.patterns.of(*trail) {
             learned.push(Learned {
-                id: note.id.clone(),
-                text: pattern.content.clone(),
-                at: note.created_at,
+                id: pattern.note.id.clone(),
+                text: pattern.record.content.clone(),
+                at: pattern.note.created_at,
                 trail: *trail,
             });
         }
@@ -515,7 +515,7 @@ fn pattern_ids(model: &Model, trail: Step) -> Vec<String> {
         .patterns
         .of(trail)
         .into_iter()
-        .map(|(note, _)| note.id.clone())
+        .map(|p| p.note.id.clone())
         .collect()
 }
 

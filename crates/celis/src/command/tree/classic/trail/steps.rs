@@ -2,7 +2,7 @@
 
 use crate::command::tree::classic::level::Level;
 use crate::command::tree::classic::row::Row;
-use crate::command::tree::classic::{after, Item, PatternNote, Tree};
+use crate::command::tree::classic::{after, Item, Pattern, Tree};
 use crate::terminal::canvas::{paint, Styled, DIM};
 use crate::terminal::classic::look;
 use crate::text::clock::took;
@@ -17,7 +17,7 @@ impl Tree<'_> {
     pub(super) fn level(
         &self,
         level: Level,
-        patterns: Vec<PatternNote>,
+        patterns: Vec<Pattern>,
         rail: &Styled,
         above: &str,
         lines: &mut Vec<Row>,

@@ -168,7 +168,7 @@ impl Month {
             .iter()
             .filter_map(|e| {
                 let hits = *used.get(e.note.id.as_str())?;
-                Some((e.note.id.clone(), e.pattern.content.clone(), hits))
+                Some((e.note.id.clone(), e.record.content.clone(), hits))
             })
             .collect();
         top.sort_by(|a, b| b.2.cmp(&a.2).then_with(|| a.0.cmp(&b.0)));

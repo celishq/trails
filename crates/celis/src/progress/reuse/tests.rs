@@ -1,6 +1,6 @@
 use super::*;
-use celis_nostr::Account;
-use celis_trails::{Anchor, PatternId, Scope, StepId, StepRecord};
+use celis_nostr::{Account, Note};
+use celis_trails::{Anchor, PatternId, PatternRecord, Scope, StepId, StepRecord};
 
 fn account() -> Account {
     Account::new(&[1u8; 32]).unwrap()
@@ -31,7 +31,7 @@ fn step(text: &str, at: u64, under: Option<&Note>, uses: &[&str]) -> Note {
 
 /// A pattern of `text` at `at` that replaces `replaces`.
 fn pattern(text: &str, at: u64, replaces: Option<&Note>) -> Note {
-    Pattern {
+    PatternRecord {
         anchor: anchor(),
         scope: Scope::Project,
         replaces: replaces.map(|n| PatternId::new(&n.id)),
@@ -63,7 +63,7 @@ fn reuse_counts_the_follows_and_live_pattern_uses() {
     let used = reuse.used(&patterns);
     assert_eq!(reuse.total(), 1);
     assert_eq!(used.len(), 1);
-    assert_eq!((used[0].0.id.as_str(), used[0].2), (live.as_str(), 2));
+    assert_eq!((used[0].0.id(), used[0].1), (live.as_str(), 2));
 }
 
 /// Reuse counts the follows of some steps, and their uses of a live pattern, not of a replaced one

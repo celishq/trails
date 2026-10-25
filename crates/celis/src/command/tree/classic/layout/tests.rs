@@ -3,7 +3,7 @@ use super::Layout;
 use crate::progress::{Model, Reuse};
 use crate::text::clock::day;
 use celis_nostr::{Account, Note};
-use celis_trails::{Anchor, Mark, Pattern, Patterns, Scope, StepId, StepRecord, Steps};
+use celis_trails::{Anchor, Mark, PatternRecord, Patterns, Scope, StepId, StepRecord, Steps};
 use std::cell::Cell;
 
 /// The time the newest record was written.
@@ -95,7 +95,7 @@ fn a_record_forgets_only_the_group_of_its_trail() {
     assert_eq!(kept(&records, &[start]), only_old);
     assert_eq!(kept(&records, &[]), both);
 
-    let pattern = Pattern {
+    let pattern = PatternRecord {
         anchor: Anchor {
             project: "p".into(),
             name: "repo".into(),

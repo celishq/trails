@@ -55,7 +55,8 @@ impl Command {
             session: args.session.clone().or_else(|| self.session()),
             new: args.new,
         };
-        let written = self.trails()?.add(draft)?;
+        let trails = self.trails()?;
+        let written = trails.add(draft)?;
         self.print(written, args, out, err)
     }
 
@@ -68,7 +69,8 @@ impl Command {
         err: &mut dyn Write,
     ) -> Result<(), Failure> {
         let id = args.id("step start")?;
-        let written = self.trails()?.start(id)?;
+        let trails = self.trails()?;
+        let written = trails.start(id)?;
         self.print(written, args, out, err)
     }
 
@@ -174,9 +176,9 @@ impl Command {
         }
         if !written.patterns.is_empty() {
             let trails = self.trails()?;
-            for (said, pattern) in &written.patterns {
-                let line = crate::text::line::pattern(said, pattern, &trails);
-                let json = crate::text::json::pattern(said, pattern);
+            for pattern in &written.patterns {
+                let line = crate::text::line::pattern(pattern, &trails);
+                let json = crate::text::json::pattern(pattern);
                 super::show(out, args.json, "decision", json, &line)?;
             }
         }

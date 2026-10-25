@@ -2,7 +2,7 @@
 
 use super::level::Level;
 use super::row::Row;
-use super::{Item, PatternNote, Summary, Tree, PATTERNS};
+use super::{Item, Pattern, Summary, Tree, PATTERNS};
 use crate::terminal::canvas::{paint, Styled, BOLD, DIM};
 use crate::terminal::look::look;
 use celis_trails::{State, Step, Trail};
@@ -37,9 +37,9 @@ impl Tree<'_> {
 
     /// The trail `note` as a line a watch selects, `open` when it prints as a block: with every pattern of
     /// `patterns` and every step it prints under it.
-    pub(super) fn item(&self, note: Step, open: bool, patterns: &[PatternNote]) -> Item {
+    pub(super) fn item(&self, note: Step, open: bool, patterns: &[Pattern]) -> Item {
         let folded = (!patterns.is_empty()).then(|| format!("{PATTERNS}{}", note.id()));
-        let patterns = patterns.iter().map(|(pattern, _)| pattern.id.clone());
+        let patterns = patterns.iter().map(|pattern| pattern.note.id.clone());
         let steps = Level::of(Trail::new(note).parts()).ids(note.id());
         Item {
             id: note.id().to_string(),

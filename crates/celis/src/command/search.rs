@@ -13,7 +13,6 @@ use super::view::kind::Kind;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::text::clock::date;
-use celis_nostr::Note;
 use celis_trails::records::id::short;
 use celis_trails::{Pattern, Step, Trails};
 use recalls::Recalls;
@@ -78,21 +77,21 @@ impl Command {
                     .flat_map(|a| lines(*a))
                     .collect(),
                 _ => {
-                    let part: Vec<_> = found
+                    let part: Vec<&Pattern> = found
                         .iter()
-                        .filter(|(_, pattern)| pattern.binds == (part == Part::Rules))
+                        .filter(|pattern| pattern.record.binds == (part == Part::Rules))
                         .take(limit)
                         .collect();
                     if let Ok(home) = self.home() {
-                        Recalls::mark(&home, part.iter().map(|(note, _)| *note));
+                        Recalls::mark(&home, part.iter().map(|pattern| pattern.note));
                     }
                     let project = self.project().anchor.project;
-                    let line = |(note, pattern): &&(&Note, Pattern)| {
-                        let mut lines = vec![crate::text::line::pattern(note, pattern, &trails)];
-                        let smaller = trails.patterns().smaller(&project, &note.id);
-                        lines.extend(smaller.iter().take(NEXT).map(|(note, pattern)| {
-                            let first = pattern.content.lines().next().unwrap_or("");
-                            format!("  next    {} {first}", short(&note.id))
+                    let line = |pattern: &&Pattern| {
+                        let mut lines = vec![crate::text::line::pattern(pattern, &trails)];
+                        let smaller = trails.patterns().smaller(&project, pattern.id());
+                        lines.extend(smaller.iter().take(NEXT).map(|smaller| {
+                            let first = smaller.record.content.lines().next().unwrap_or("");
+                            format!("  next    {} {first}", short(smaller.id()))
                         }));
                         lines.join("\n")
                     };
@@ -112,40 +111,31 @@ impl Command {
         }
     }
 
-    /// The live patterns in scope that fit `ask` by its `files`, its words or its meaning: a pattern with a
-    /// `replaces` tag first, then those of a named file, of a glob, and the rest.
+    /// The live patterns in scope that fit `ask` by its `files`, its words or its meaning, in the order
+    /// `Patterns::fitting` gives.
     pub(super) fn fits<'a>(
         &self,
         trails: &'a Trails,
         ask: &str,
         files: &[String],
         err: &mut dyn Write,
-    ) -> Result<Vec<(&'a Note, Pattern)>, Failure> {
+    ) -> Result<Vec<Pattern<'a>>, Failure> {
         let project = self.project();
         let paths: Vec<String> = files
             .iter()
-            .flat_map(|f| super::matched::paths(&project, &self.folder, f))
+            .flat_map(|f| super::files::paths(&project, &self.folder, f))
             .collect();
-        let live = trails.patterns().live(&project.anchor.project);
-        let ids: HashSet<String> = live.iter().map(|(note, _)| short(&note.id)).collect();
+        let patterns = trails.patterns();
+        let live = patterns.live(&project.anchor.project);
+        let ids: HashSet<String> = live.iter().map(|p| short(p.id())).collect();
         let meant: HashSet<String> = self
             .meant(ask, (Kind::Pattern, &ids), err)?
             .into_iter()
             .collect();
         let asked = words(ask);
-        let mut found: Vec<(&Note, Pattern)> = live
-            .into_iter()
-            .filter(|(note, pattern)| {
-                pattern.fit(&paths).is_some()
-                    || meant.contains(&short(&note.id))
-                    || !words(when(&pattern.content)).is_disjoint(&asked)
-            })
-            .collect();
-        found.sort_by_key(|(_, pattern)| {
-            let fit = pattern.fit(&paths);
-            (pattern.replaces.is_none(), fit.is_none(), fit)
-        });
-        Ok(found)
+        Ok(patterns.fitting(&project.anchor.project, &paths, |p| {
+            meant.contains(&short(p.id())) || !words(when(&p.record.content)).is_disjoint(&asked)
+        }))
     }
 
     /// The done asks among `steps` most like `ask`: those alike in meaning first, then those whose

@@ -8,7 +8,7 @@ use super::search::recalls::Recalls;
 use crate::text::clock::date;
 use celis_nostr::Note;
 use celis_trails::records::id::short;
-use celis_trails::{Mark, PatternEnd, PatternEntry, Scope, Step, Trails};
+use celis_trails::{Mark, Pattern, PatternEnd, Scope, Step, Trails};
 use header::Header;
 use kind::Kind;
 use row::Row;
@@ -36,7 +36,7 @@ impl View {
         let mut blocks: Vec<(u64, &str, Vec<Row>)> = Vec::new();
         for entry in patterns.every() {
             let note = entry.note;
-            match &entry.pattern.scope {
+            match &entry.record.scope {
                 Scope::Trail(id) => {
                     let rows = pattern(entry, Some(short(id)), recalled);
                     by_trail.entry(id.as_str()).or_default().extend(rows);
@@ -147,8 +147,8 @@ fn step(root: Step, step: Step, kind: Kind) -> Row {
 
 /// The rows of the pattern `entry`, as a pattern of `trail`: its own, then its drop's reason when a drop
 /// names it.
-fn pattern(entry: &PatternEntry, trail: Option<String>, recalled: &Recalls) -> Vec<Row> {
-    let (note, pattern) = (entry.note, &entry.pattern);
+fn pattern(entry: &Pattern, trail: Option<String>, recalled: &Recalls) -> Vec<Row> {
+    let (note, pattern) = (entry.note, &entry.record);
     let state = entry.end.map_or("live".to_string(), PatternEnd::text);
     let row = |kind: Kind, at: &Note, fields: Vec<String>, text: &str| Row {
         trail: trail.clone(),

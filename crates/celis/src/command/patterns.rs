@@ -2,7 +2,6 @@
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use celis_nostr::Note;
 use celis_trails::records::id::short;
 use celis_trails::{Example, Pattern, Trails};
 use std::io::Write;
@@ -16,9 +15,8 @@ impl Command {
         }
         let trails = self.trails()?;
         let project = self.project().anchor.project;
-        let live = trails.patterns().live(&project);
-        let mut patterns: Vec<_> = live.iter().collect();
-        patterns.sort_by_key(|(_, pattern)| !pattern.binds);
+        let mut patterns = trails.patterns().live(&project);
+        patterns.sort_by_key(|pattern| !pattern.record.binds);
         if patterns.is_empty() {
             return super::put(out, NONE);
         }
@@ -27,21 +25,22 @@ impl Command {
             page.extend(
                 patterns
                     .iter()
-                    .flat_map(|(note, pattern)| markdown(note, pattern, &trails, &project)),
+                    .flat_map(|pattern| markdown(pattern, &trails, &project)),
             );
             return super::put(out, &page.join("\n"));
         }
-        for (note, pattern) in patterns {
-            super::put(out, &crate::text::line::pattern(note, pattern, &trails))?;
+        for pattern in &patterns {
+            super::put(out, &crate::text::line::pattern(pattern, &trails))?;
         }
         Ok(())
     }
 }
 
-/// The section of the pattern `note` holds: its first line as a heading, its id, scope and `rule` when
-/// it binds, the rest of its text, then a line for each smaller pattern in scope in `project` and each
-/// example, a file as a link to its blob.
-fn markdown(note: &Note, pattern: &Pattern, trails: &Trails, project: &str) -> Vec<String> {
+/// The section of `pattern`: its first line as a heading, its id, scope and `rule` when it binds, the rest
+/// of its text, then a line for each smaller pattern in scope in `project` and each example, a file as a
+/// link to its blob.
+fn markdown(pattern: &Pattern, trails: &Trails, project: &str) -> Vec<String> {
+    let (note, pattern) = (pattern.note, &pattern.record);
     let mut text = pattern.content.lines();
     let mut head = vec![pattern.scope.short()];
     head.extend(pattern.binds.then(|| "rule".to_string()));
@@ -58,9 +57,9 @@ fn markdown(note: &Note, pattern: &Pattern, trails: &Trails, project: &str) -> V
         lines.push(String::new());
     }
     let steps = trails.steps();
-    for (smaller, next) in trails.patterns().smaller(project, &note.id) {
-        let first = next.content.lines().next().unwrap_or("");
-        lines.push(format!("- next: `{}` {first}", short(&smaller.id)));
+    for smaller in trails.patterns().smaller(project, &note.id) {
+        let first = smaller.record.content.lines().next().unwrap_or("");
+        lines.push(format!("- next: `{}` {first}", short(smaller.id())));
     }
     for (side, example) in pattern.examples.sides() {
         match example {

@@ -12,7 +12,7 @@ use crate::text::clock::stride;
 use crate::text::clock::{day, midnight};
 use celis_trails::records::id::short;
 use celis_trails::step::steps::LIFE;
-use celis_trails::{Patterns, State, Step, Steps, Trail};
+use celis_trails::{Pattern, Patterns, State, Step, Steps, Trail};
 pub(crate) use layout::Layout;
 use level::Level;
 use ratatui::style::Style;
@@ -171,16 +171,13 @@ pub(crate) struct Tree<'a> {
     pub next: Cell<Option<u64>>,
 }
 
-/// A live pattern: its record and its pattern.
-type PatternNote<'a> = (&'a celis_nostr::Note, celis_trails::Pattern);
-
 /// What the tree says of a trail: the steps it prints under it, the done ones, the time they worked,
 /// and its patterns.
 struct Summary<'a> {
     all: usize,
     done: usize,
     worked: Option<u64>,
-    patterns: Vec<PatternNote<'a>>,
+    patterns: Vec<Pattern<'a>>,
 }
 
 impl Tree<'_> {
@@ -280,7 +277,7 @@ impl Tree<'_> {
     }
 
     /// The live patterns of the trail of `note`: its own, or its trail's when it is an ask.
-    fn patterns(&self, note: Step) -> Vec<PatternNote<'_>> {
+    fn patterns(&self, note: Step) -> Vec<Pattern<'_>> {
         let owner = match note.is_ask() {
             true => note.trail(),
             false => note,

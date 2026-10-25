@@ -1,39 +1,7 @@
-//! The live patterns that some files match.
+//! The files of a project that git gives.
 
-use crate::command::Command;
-use celis_nostr::Note;
-use celis_trails::{Fit, Pattern, Place, Project, Trails};
+use celis_trails::{Place, Project};
 use std::path::Path;
-
-impl Command {
-    /// The live patterns in scope that `files` match, by `rank`.
-    pub(super) fn matched<'a>(
-        &self,
-        trails: &'a Trails,
-        files: &[String],
-    ) -> Vec<(&'a Note, Pattern)> {
-        let project = self.project();
-        let paths: Vec<String> = files
-            .iter()
-            .flat_map(|f| paths(&project, &self.folder, f))
-            .collect();
-        let live = trails.patterns().live(&project.anchor.project).into_iter();
-        let mut found: Vec<(Fit, &Note, Pattern)> = live
-            .filter_map(|(note, pattern)| Some((pattern.fit(&paths)?, note, pattern)))
-            .collect();
-        found.sort_by_key(|(fit, _, pattern)| rank(pattern, *fit));
-        found
-            .into_iter()
-            .map(|(_, note, pattern)| (note, pattern))
-            .collect()
-    }
-}
-
-/// Where a pattern that fits a file by `fit` ranks, first first: made by a correction, then the rest;
-/// within each, by `fit`.
-fn rank(pattern: &Pattern, fit: Fit) -> (bool, Fit) {
-    (pattern.replaces.is_none(), fit)
-}
 
 /// The files `git <args>` lists in `folder`; none when git fails.
 fn git(folder: &Path, args: &[&str]) -> Vec<String> {

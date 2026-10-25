@@ -1,7 +1,7 @@
 use super::*;
 use celis_nostr::{Account, Note};
 use celis_trails::step::steps::LIFE;
-use celis_trails::{Anchor, Mark, Pattern, Scope, StepId, StepRecord, Steps};
+use celis_trails::{Anchor, Mark, PatternRecord, Scope, StepId, StepRecord, Steps};
 
 fn account() -> Account {
     Account::new(&[1u8; 32]).unwrap()
@@ -76,7 +76,7 @@ fn a_period_counts_its_done_steps_as_planned_and_reworked() {
 /// that names no record (`spec/06-reuse.md`, "Uses").
 #[test]
 fn a_period_counts_its_done_steps_that_use_a_pattern() {
-    let pattern = Pattern {
+    let pattern = PatternRecord {
         anchor: Anchor {
             project: "p".into(),
             name: "repo".into(),

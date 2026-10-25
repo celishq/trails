@@ -89,7 +89,7 @@ impl Command {
         let project = self.project();
         let live = trails.patterns().live(&project.anchor.project).into_iter();
         let patterns: HashSet<String> = live
-            .map(|(note, _)| celis_trails::records::id::short(&note.id))
+            .map(|p| celis_trails::records::id::short(p.id()))
             .collect();
         let rows = View::of(&trails).into_rows().into_iter();
         Ok(rows

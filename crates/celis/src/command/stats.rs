@@ -48,7 +48,7 @@ impl Command {
                 let live = patterns.live(&self.project().anchor.project);
                 let patterns: Vec<_> = live
                     .iter()
-                    .filter(|(_, r)| !r.examples.is_empty())
+                    .filter(|p| !p.record.examples.is_empty())
                     .collect();
                 if reuse.followed().is_empty() && used.is_empty() && patterns.is_empty() {
                     return match args.json {
@@ -68,7 +68,8 @@ impl Command {
                     super::show(out, args.json, "followed", value, &line)?;
                 }
                 let mut uses = 0;
-                for (note, pattern, count) in &used {
+                for (pattern, count) in &used {
+                    let (note, pattern) = (pattern.note, &pattern.record);
                     uses += count;
                     let value = json!({"id": note.id, "content": pattern.content, "used": count});
                     let line = format!(
@@ -79,7 +80,8 @@ impl Command {
                     super::show(out, args.json, "used", value, &line)?;
                 }
                 let recalls = self.recalls();
-                for (note, pattern) in patterns {
+                for pattern in patterns {
+                    let (note, pattern) = (pattern.note, &pattern.record);
                     let examples = pattern.examples.sides().count();
                     let recalled = recalls.count(&note.id);
                     let value = json!({"id": note.id, "content": pattern.content,

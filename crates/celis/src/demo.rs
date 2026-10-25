@@ -3,7 +3,7 @@
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use celis_trails::{Anchor, Draft, Pattern, Scope, Store, Trails};
+use celis_trails::{Anchor, Draft, PatternRecord, Scope, Store, Trails};
 use std::cell::{RefCell, RefMut};
 use std::io::{IsTerminal, Write};
 use std::path::PathBuf;
@@ -422,7 +422,8 @@ impl Demo {
             session: None,
             new: false,
         };
-        let written = self.trails(ago)?.add(draft)?;
+        let trails = self.trails(ago)?;
+        let written = trails.add(draft)?;
         Ok(written.records[0].id.clone())
     }
 
@@ -466,7 +467,7 @@ impl Demo {
         scope: Scope,
         text: &str,
     ) -> Result<String, Failure> {
-        let pattern = Pattern {
+        let pattern = PatternRecord {
             anchor: anchor.clone(),
             scope,
             replaces: None,
@@ -476,7 +477,8 @@ impl Demo {
             within: vec![],
             examples: Default::default(),
         };
-        let written = self.trails(ago)?.decide(pattern, None)?;
+        let trails = self.trails(ago)?;
+        let written = trails.decide(pattern, None)?;
         Ok(written.records[0].id.clone())
     }
 }

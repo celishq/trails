@@ -1,6 +1,6 @@
 //! The steps of a store, as they stand at one moment.
 
-use crate::{Mark, Pattern, Refusal, Step, StepRecord};
+use crate::{Mark, PatternRecord, Refusal, Step, StepRecord};
 use celis_nostr::Note;
 use std::cell::Cell;
 use std::collections::{HashMap, HashSet};
@@ -188,7 +188,7 @@ impl<'a> Index<'a> {
         sum(&mut entries);
         let roots = all.iter().copied();
         let roots = roots.filter(|n| entries[n.id.as_str()].step.under.is_none());
-        let patterns = sorted.iter().filter(|n| Pattern::read(n).is_some());
+        let patterns = sorted.iter().filter(|n| PatternRecord::read(n).is_some());
         let patterns = patterns.map(|n| n.id.as_str()).collect();
         Index {
             roots: roots.collect(),

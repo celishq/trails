@@ -1,6 +1,6 @@
 use super::super::window::DAY;
 use super::*;
-use celis_trails::{Anchor, Draft, Pattern, Scope, Store, Trails};
+use celis_trails::{Anchor, Draft, PatternRecord, Scope, Store, Trails};
 use tempfile::TempDir;
 
 /// The second a store's one step closed.
@@ -117,7 +117,7 @@ fn reused(later: u64) -> (TempDir, Trails) {
         project: "repo".into(),
         name: "repo".into(),
     };
-    let pattern = Pattern {
+    let pattern = PatternRecord {
         anchor: anchor.clone(),
         scope: Scope::Project,
         replaces: None,

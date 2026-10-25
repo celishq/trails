@@ -3,12 +3,12 @@
 mod args;
 mod auth;
 mod close;
+mod files;
 mod graph;
 mod grep;
 mod hook;
 mod issue;
 mod link;
-mod matched;
 mod pattern;
 mod patterns;
 mod prompt;

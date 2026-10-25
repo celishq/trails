@@ -65,7 +65,7 @@ pub(crate) fn markdown(
                 1 => "1 pattern".to_string(),
                 n => format!("{n} patterns"),
             };
-            let items = kept.iter().map(|(_, d)| format!("- {}", d.content));
+            let items = kept.iter().map(|p| format!("- {}", p.record.content));
             lines.extend(details(&count, items.collect()));
         }
         parts.push(lines.join("\n"));
@@ -76,8 +76,8 @@ pub(crate) fn markdown(
 /// The trail, step or pattern `id` as Markdown: a trail as `markdown` gives it, a step as the table of it and
 /// the steps under it, a pattern as `- <text>`.
 pub(crate) fn part(steps: &Steps, patterns: &Patterns, id: &str) -> Result<String, Failure> {
-    if let Some((_, pattern)) = patterns.get(id) {
-        return Ok(format!("- {}\n", pattern.content));
+    if let Ok(pattern) = patterns.find(None, id) {
+        return Ok(format!("- {}\n", pattern.record.content));
     }
     let step = steps.find(id)?;
     if step.is_trail() {

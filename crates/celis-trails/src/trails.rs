@@ -7,8 +7,8 @@ pub mod written;
 
 use crate::records::id::short;
 use crate::{
-    Anchor, Check, Done, Draft, Mark, Notice, Pattern, PatternId, Patterns, ProofFile, Refusal,
-    Scope, Step, StepId, StepRecord, Steps, Store, Trail, Written,
+    Anchor, Check, Done, Draft, Mark, Notice, PatternId, PatternRecord, Patterns, ProofFile,
+    Refusal, Scope, Step, StepId, StepRecord, Steps, Store, Trail, Written,
 };
 use celis_nostr::{Account, Note};
 use std::path::{Path, PathBuf};
@@ -76,7 +76,7 @@ impl Trails {
     /// Writes the step `draft` states, where `parent` puts it; a session's new trail holds its first ask,
     /// which takes the uses. A replaced open step's open tree drops; a replaced done step stays done. An
     /// open step with the same place and words is given back.
-    pub fn add(&self, draft: Draft) -> Result<Written, Refusal> {
+    pub fn add(&self, draft: Draft) -> Result<Written<'_>, Refusal> {
         let steps = self.steps();
         let replaced = draft.replaces.as_deref().map(|id| replaced(&steps, id));
         let replaced = replaced.transpose()?;
@@ -134,7 +134,7 @@ impl Trails {
     }
 
     /// Writes `ask` as a new trail with no links, places or check, then `ask` under it; the ask first.
-    fn start_trail(&self, ask: StepRecord) -> Result<Written, Refusal> {
+    fn start_trail(&self, ask: StepRecord) -> Result<Written<'_>, Refusal> {
         let head = StepRecord {
             replaces: None,
             uses: Vec::new(),
@@ -163,7 +163,7 @@ impl Trails {
 
     /// Starts the open step `id`, or gives back the first start of a working step; then the patterns
     /// the step must keep.
-    pub fn start(&self, id: &str) -> Result<Written, Refusal> {
+    pub fn start(&self, id: &str) -> Result<Written<'_>, Refusal> {
         let steps = self.steps();
         let step = steps.find_open(id)?;
         let mut written = Written::default();
@@ -173,10 +173,7 @@ impl Trails {
                 .records
                 .push(self.sign(|account, now| Mark::Start.record(account, step.id(), now))?),
         }
-        let kept = self.patterns().kept(step).into_iter();
-        written.patterns = kept
-            .map(|(said, pattern)| (said.clone(), pattern))
-            .collect();
+        written.patterns = self.patterns().kept(step);
         Ok(written)
     }
 
@@ -195,7 +192,7 @@ impl Trails {
 
     /// Closes the open step `id` `done`, once nothing under it is open and its check passes
     /// in `folder`.
-    pub fn done(&self, id: &str, done: Done, folder: &Path) -> Result<Written, Refusal> {
+    pub fn done(&self, id: &str, done: Done, folder: &Path) -> Result<Written<'_>, Refusal> {
         let steps = self.steps();
         let note = steps.find_open(id)?;
         if note.children().iter().any(|s| s.closed().is_none()) {
@@ -214,14 +211,14 @@ impl Trails {
 
     /// Drops the open step `id` and each open step under it, the done trail `id`, or the live pattern `id`,
     /// with the reason it is no longer wanted; the step's own drop first.
-    pub fn drop(&self, id: &str, reason: &str) -> Result<Written, Refusal> {
+    pub fn drop(&self, id: &str, reason: &str) -> Result<Written<'_>, Refusal> {
         let (steps, patterns) = (self.steps(), self.patterns());
         let pattern = crate::records::id::find(patterns.every().iter().map(|e| e.note), id);
         let mark = Mark::Drop {
             reason: reason.to_string(),
         };
         let records = match Target::of(id, pattern, steps.find(id).ok())? {
-            Target::Pattern(pattern) if patterns.get(&pattern.id).is_some() => {
+            Target::Pattern(pattern) if patterns.find(None, &pattern.id).is_ok() => {
                 vec![self.sign(|account, now| mark.record(account, &pattern.id, now))?]
             }
             Target::Pattern(pattern) => return Err(Refusal::Closed(pattern.id.clone())),
@@ -244,7 +241,7 @@ impl Trails {
         text: String,
         places: Vec<String>,
         check: Option<String>,
-    ) -> Result<Written, Refusal> {
+    ) -> Result<Written<'_>, Refusal> {
         let steps = self.steps();
         let step = steps.find(id)?;
         let mark = Mark::Edit {
@@ -262,7 +259,11 @@ impl Trails {
     /// Writes `pattern`, its trail scope taken whole from a trail of its project that is not done or
     /// dropped, or whose pattern it replaces, and each `within` whole from a live pattern of any project;
     /// replacing the live pattern there that `replaces` names, and keeping its examples and `within`.
-    pub fn decide(&self, mut pattern: Pattern, replaces: Option<&str>) -> Result<Written, Refusal> {
+    pub fn decide(
+        &self,
+        mut pattern: PatternRecord,
+        replaces: Option<&str>,
+    ) -> Result<Written<'_>, Refusal> {
         let project = pattern.anchor.project.clone();
         if let Scope::Trail(id) = &pattern.scope {
             let steps = self.steps();
@@ -273,7 +274,7 @@ impl Trails {
             let kept = replaces.is_some_and(|old| {
                 let patterns = self.patterns();
                 let live = patterns.of(trail).into_iter();
-                live.map(|(n, _)| n).any(|n| n.id.starts_with(old))
+                live.map(|p| p.note).any(|n| n.id.starts_with(old))
             });
             if !ours || (trail.closed().is_some() && !kept) {
                 return Err(Refusal::NoTrail(id.to_string()));
@@ -284,18 +285,16 @@ impl Trails {
         let within: Result<Vec<PatternId>, Refusal> = pattern
             .within
             .iter()
-            .map(|id| Ok(PatternId::new(&patterns.any(id)?.id)))
+            .map(|id| Ok(PatternId::new(patterns.find(None, id)?.id())))
             .collect();
         pattern.within = within?;
         if let Some(id) = replaces {
-            let found = patterns.find(&project, id)?;
-            if let Some((_, old)) = patterns.get(&found.id) {
-                pattern.examples = pattern.examples.with(&old.examples);
-                let kept = old.within.iter().filter(|w| !pattern.within.contains(w));
-                let kept: Vec<PatternId> = kept.cloned().collect();
-                pattern.within.extend(kept);
-            }
-            pattern.replaces = Some(PatternId::new(&found.id));
+            let old = patterns.find(Some(&project), id)?.record;
+            pattern.examples = pattern.examples.with(&old.examples);
+            let kept = old.within.iter().filter(|w| !pattern.within.contains(w));
+            let kept: Vec<PatternId> = kept.cloned().collect();
+            pattern.within.extend(kept);
+            pattern.replaces = Some(PatternId::new(patterns.find(Some(&project), id)?.id()));
         }
         let written = self.sign(|account, now| pattern.record(account, now))?;
         Ok(Written {
@@ -320,7 +319,8 @@ impl Trails {
         id: &str,
     ) -> Result<String, Refusal> {
         let patterns = self.patterns();
-        let step = match Target::of(id, patterns.find(project, id).ok(), steps.find(id).ok())? {
+        let found = patterns.find(Some(project), id).ok().map(|p| p.note);
+        let step = match Target::of(id, found, steps.find(id).ok())? {
             Target::Pattern(pattern) => return Ok(pattern.id.clone()),
             Target::Step(step) => step,
         };

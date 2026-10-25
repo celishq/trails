@@ -4,7 +4,7 @@ use crate::records::id::short;
 use celis_nostr::Note;
 
 /// How a pattern stopped holding: a pattern replaced it, or a drop named it (CIP-05, "Patterns").
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub enum PatternEnd<'a> {
     Replaced(&'a Note),
     Dropped(&'a Note),

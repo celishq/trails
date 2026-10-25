@@ -2,7 +2,7 @@
 
 use crate::command::tree::classic::level::ids;
 use crate::command::tree::classic::row::Row;
-use crate::command::tree::classic::{after, Item, PatternNote, Tree, CLOSED, PATTERNS};
+use crate::command::tree::classic::{after, Item, Pattern, Tree, CLOSED, PATTERNS};
 use crate::progress::Tally;
 use crate::terminal::canvas::{paint, Styled};
 use crate::terminal::classic::look;
@@ -17,7 +17,7 @@ impl Tree<'_> {
     /// open, a line under it for each of `patterns`: `§ <text>`, wrapped, its id at the end.
     pub(super) fn patterns_line(
         &self,
-        patterns: Vec<PatternNote>,
+        patterns: Vec<Pattern>,
         rail: &Styled,
         last: bool,
         trail: &str,
@@ -39,17 +39,15 @@ impl Tree<'_> {
             id: id.clone(),
             open,
             parent: Some(trail.to_string()),
-            under: patterns
-                .iter()
-                .map(|(record, _)| record.id.clone())
-                .collect(),
+            under: patterns.iter().map(|p| p.note.id.clone()).collect(),
         };
         self.pick(item, lines, first);
         if !open {
             return;
         }
         let all = patterns.len();
-        for (n, (record, pattern)) in patterns.into_iter().enumerate() {
+        for (n, found) in patterns.into_iter().enumerate() {
+            let (record, pattern) = (found.note, &found.record);
             let (lead, below) = self.branch(&rail, n + 1 == all, None);
             let first = lines.len();
             lines.push(Row::Titled {

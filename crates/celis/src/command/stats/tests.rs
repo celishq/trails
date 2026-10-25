@@ -1,7 +1,7 @@
 use super::month::Month;
 use crate::progress::Model;
 use crate::text::clock::midnight;
-use celis_trails::{Anchor, Draft, Pattern, Scope, Store, Trails};
+use celis_trails::{Anchor, Draft, PatternRecord, Scope, Store, Trails};
 use tempfile::TempDir;
 
 /// Noon of a day, the time a desk reads its month at.
@@ -77,7 +77,7 @@ impl Desk {
     /// Writes a pattern of `project` `ago` seconds before noon; its id.
     pub fn pattern(&mut self, ago: u64, project: &str) -> String {
         self.trails.at(noon() - ago);
-        let pattern = Pattern {
+        let pattern = PatternRecord {
             anchor: Anchor {
                 project: project.to_string(),
                 name: project.to_string(),

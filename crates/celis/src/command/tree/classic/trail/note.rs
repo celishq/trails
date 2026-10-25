@@ -50,11 +50,15 @@ impl Tree<'_> {
         }
         for used in note.uses() {
             let pattern = match used {
-                Used::Pattern(id) => self.patterns.get(id).filter(|(_, pattern)| !pattern.binds),
+                Used::Pattern(id) => self
+                    .patterns
+                    .find(None, id)
+                    .ok()
+                    .filter(|p| !p.record.binds),
                 Used::Follow(_) => None,
             };
-            if let Some((record, pattern)) = pattern {
-                let line = format!("{} {}", short(&record.id), pattern.content);
+            if let Some(pattern) = pattern {
+                let line = format!("{} {}", short(pattern.id()), pattern.record.content);
                 self.labelled(out, rail, "pattern", &line);
             }
         }

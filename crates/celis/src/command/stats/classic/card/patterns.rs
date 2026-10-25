@@ -15,7 +15,7 @@ pub(super) fn patterns(model: &Model, window: &Window, inside: usize, ink: Ink) 
     let used = reuse.used(patterns);
     let top = used.iter().take(3);
     let top: Vec<(String, usize)> = top
-        .map(|(_, d, n)| (d.brief().trim_start_matches("When ").into(), *n))
+        .map(|(p, n)| (p.record.brief().trim_start_matches("When ").into(), *n))
         .collect();
     let none = match used.is_empty() {
         true => "no pattern used yet".to_string(),
@@ -25,9 +25,9 @@ pub(super) fn patterns(model: &Model, window: &Window, inside: usize, ink: Ink) 
     let face = face(&daily, ("pattern uses", &none), &top, inside, ink);
     let rows = used
         .iter()
-        .map(|(note, d, n)| Row {
-            id: Some(note.id.clone()),
-            cells: vec![d.content.clone(), n.to_string()],
+        .map(|(p, n)| Row {
+            id: Some(p.note.id.clone()),
+            cells: vec![p.record.content.clone(), n.to_string()],
         })
         .collect();
     Card {

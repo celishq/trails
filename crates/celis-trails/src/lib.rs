@@ -15,7 +15,7 @@ pub use pattern::examples::Examples;
 pub use pattern::fit::Fit;
 pub use pattern::glob::Glob;
 pub use pattern::pattern_end::PatternEnd;
-pub use pattern::pattern_entry::PatternEntry;
+pub use pattern::pattern_record::PatternRecord;
 pub use pattern::patterns::Patterns;
 pub use pattern::scope::Scope;
 pub use pattern::Pattern;

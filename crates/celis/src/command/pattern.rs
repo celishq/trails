@@ -2,7 +2,7 @@
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use celis_trails::{Example, Examples, Pattern, PatternId, Place, Project, Scope, Trails};
+use celis_trails::{Example, Examples, PatternId, PatternRecord, Place, Project, Scope, Trails};
 use std::io::Write;
 
 impl Command {
@@ -36,7 +36,7 @@ impl Command {
             good: side(&args.good)?,
             bad: side(&args.bad)?,
         };
-        let pattern = Pattern {
+        let pattern = PatternRecord {
             anchor: project.anchor.clone(),
             scope,
             replaces: None,

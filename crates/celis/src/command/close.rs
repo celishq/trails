@@ -81,7 +81,7 @@ impl Command {
 
     /// The changed files of a `done` that names `files`: those git shows changed or new, and `files`.
     pub(crate) fn changed(&self, files: &[String]) -> Vec<String> {
-        let mut changed = super::matched::changed(&self.folder);
+        let mut changed = super::files::changed(&self.folder);
         for file in files {
             if !changed.contains(file) {
                 changed.push(file.clone());
@@ -93,14 +93,21 @@ impl Command {
     /// The lines of the patterns that the `changed` files match, after a line that asks to check the
     /// change against each; none when none matches.
     fn changed_patterns(&self, trails: &Trails, changed: &[String]) -> Vec<String> {
-        let patterns = self.matched(trails, changed);
+        let project = self.project();
+        let paths: Vec<String> = changed
+            .iter()
+            .flat_map(|f| super::files::paths(&project, &self.folder, f))
+            .collect();
+        let patterns = trails
+            .patterns()
+            .fitting(&project.anchor.project, &paths, |_| false);
         if patterns.is_empty() {
             return vec![];
         }
         let head = "celis: check the change against each pattern of the files git shows changed:";
         let lines = patterns
             .iter()
-            .map(|(note, pattern)| crate::text::line::pattern(note, pattern, trails));
+            .map(|pattern| crate::text::line::pattern(pattern, trails));
         std::iter::once(head.to_string()).chain(lines).collect()
     }
 
@@ -138,9 +145,13 @@ impl Command {
             });
         }
         let fits = self.fits(trails, ask.title(), files, &mut std::io::sink());
-        for (note, pattern) in fits.unwrap_or_default() {
-            let kind = if pattern.binds { "rule" } else { "pattern" };
-            let text = crate::text::line::pattern(note, &pattern, trails);
+        for pattern in fits.unwrap_or_default() {
+            let kind = if pattern.record.binds {
+                "rule"
+            } else {
+                "pattern"
+            };
+            let text = crate::text::line::pattern(&pattern, trails);
             let mut pattern = text.lines();
             lines.extend(pattern.next().map(|first| format!("  {kind:<7} {first}")));
             lines.extend(pattern.map(|line| format!("        {line}")));

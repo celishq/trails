@@ -6,8 +6,8 @@ use celis_nostr::Note;
 /// What one write gives back: the records it wrote or found, the patterns the work must keep, and the
 /// notices for the agent.
 #[derive(Default)]
-pub struct Written {
+pub struct Written<'a> {
     pub records: Vec<Note>,
-    pub patterns: Vec<(Note, Pattern)>,
+    pub patterns: Vec<Pattern<'a>>,
     pub notices: Vec<Notice>,
 }

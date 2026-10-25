@@ -30,8 +30,9 @@ pub(crate) fn links(record: &StepRecord) -> Value {
     Value::Array(links.collect())
 }
 
-/// The object of the pattern that `note` holds.
-pub(crate) fn pattern(note: &Note, pattern: &Pattern) -> Value {
+/// The object of `pattern`.
+pub(crate) fn pattern(pattern: &Pattern) -> Value {
+    let (note, pattern) = (pattern.note, &pattern.record);
     json!({
         "id": note.id,
         "created_at": note.created_at,

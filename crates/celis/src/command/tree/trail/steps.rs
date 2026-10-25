@@ -2,7 +2,7 @@
 
 use crate::command::tree::level::Level;
 use crate::command::tree::row::Row;
-use crate::command::tree::{after, Item, PatternNote, Tree};
+use crate::command::tree::{after, Item, Pattern, Tree};
 use crate::terminal::canvas::{paint, Styled, DIM};
 use crate::terminal::look::{look, SHIMMER};
 use celis_trails::step::steps::LIFE;
@@ -16,7 +16,7 @@ impl Tree<'_> {
     pub(super) fn level(
         &self,
         level: Level,
-        patterns: Vec<PatternNote>,
+        patterns: Vec<Pattern>,
         rail: &Styled,
         above: &str,
         lines: &mut Vec<Row>,

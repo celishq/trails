@@ -1,5 +1,5 @@
 use super::*;
-use celis_trails::{Anchor, Draft, Pattern, Scope, Store, Trails};
+use celis_trails::{Anchor, Draft, PatternRecord, Scope, Store, Trails};
 use tempfile::TempDir;
 
 /// The second the first record of a bench is written.
@@ -82,7 +82,7 @@ impl Bench {
     /// Writes the pattern `text` of the trail `trail` of `project`; its id.
     pub fn pattern(&mut self, project: &str, trail: &str, text: &str) -> String {
         self.tick();
-        let pattern = Pattern {
+        let pattern = PatternRecord {
             anchor: Anchor {
                 project: project.to_string(),
                 name: project.to_string(),

@@ -1,6 +1,5 @@
 //! What later work reused of the steps and patterns of a store.
 
-use celis_nostr::Note;
 use celis_trails::{Pattern, Patterns, Step, Steps, Used};
 use std::cmp::Reverse;
 use std::collections::{HashMap, HashSet};
@@ -106,7 +105,7 @@ impl<'a> Reuse<'a> {
         let ruled = steps.iter().filter_map(|s| self.ruled.get(s.id()));
         ruled
             .flatten()
-            .filter(|id| patterns.get(id).is_some())
+            .filter(|id| patterns.find(None, id).is_ok())
             .count()
     }
 
@@ -117,16 +116,19 @@ impl<'a> Reuse<'a> {
 
     /// Each live pattern of `patterns` that a step used, with how often, most used first, then newest
     /// first, then by id.
-    pub fn used(&self, patterns: &Patterns<'a>) -> Vec<(&'a Note, Pattern, usize)> {
-        let mut used: Vec<(&'a Note, Pattern, usize)> = self
+    pub fn used(&self, patterns: &Patterns<'a>) -> Vec<(Pattern<'a>, usize)> {
+        let mut used: Vec<(Pattern<'a>, usize)> = self
             .uses
             .iter()
-            .filter_map(|(id, count)| {
-                let (note, pattern) = patterns.get(id)?;
-                Some((note, pattern, *count))
-            })
+            .filter_map(|(id, count)| Some((patterns.find(None, id).ok()?, *count)))
             .collect();
-        used.sort_by_key(|(n, _, count)| (Reverse(*count), Reverse(n.created_at), n.id.clone()));
+        used.sort_by_key(|(p, count)| {
+            (
+                Reverse(*count),
+                Reverse(p.note.created_at),
+                p.note.id.clone(),
+            )
+        });
         used
     }
 
