@@ -16,6 +16,7 @@ read. What a command shows a person is not part of it.
 ```
 celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--situation] [--promoted] [--good <id>] [--bad <id>] [--project <id>] -- <text>
                                                        a rule, in its scope
+celis recall [<file>]... -- <ask>                     the rules and patterns that fit an ask
 celis rules [<file>]... [--diff]
                                                        the rules of some files
 celis tree [<id>]... [--graph] [--full] [--all] [--demo]
@@ -218,6 +219,33 @@ index    <n> live rules. Their words, by how many rules use each:
 celis rules
 celis rules shelf/prices.py
 celis rules --diff
+```
+
+## Recall
+
+`recall` gives the live rules in scope in the working folder's project (CIP-05) that fit an ask: those
+that some files match (CIP-05, "Triggers"), and those whose case the ask names.
+
+```
+rules
+<line>        each rule that fits, as "Rules" gives it
+patterns
+<line>        each pattern that fits, with its examples (CIP-05, "Patterns")
+none          nothing fits this ask
+```
+
+**Rules**
+
+- Each `<file>` MUST count as "Rules" states.
+- A rule fits the ask when it matches a file, when its text before its first `:` shares a word with the
+  ask, or when the search model (CIP-02, "Search") finds it among the most alike in meaning.
+- `recall` MUST print the rules before the patterns, and leave out a part with no line.
+
+**Examples**
+
+```
+celis recall -- "cut the release"
+celis recall shelf/prices.py -- "round the prices"
 ```
 
 ## Hooks

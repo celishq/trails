@@ -19,6 +19,11 @@ impl Command {
         )
     }
 
+    /// No rule: this build cannot run a model.
+    pub(crate) fn meant(&self, _text: &str, _err: &mut dyn Write) -> Result<Vec<String>, Failure> {
+        Ok(vec![])
+    }
+
     /// Fails: this build cannot run a model.
     pub(crate) fn setup(
         &self,

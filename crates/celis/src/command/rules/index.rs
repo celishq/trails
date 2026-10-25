@@ -9,7 +9,7 @@ const SHOWN: usize = 300;
 const WIDTH: usize = 100;
 
 /// Words too common to tell rules apart.
-const COMMON: &[&str] = &[
+pub(crate) const COMMON: &[&str] = &[
     "about", "after", "all", "also", "always", "and", "any", "are", "before", "but", "can", "did",
     "does", "done", "each", "for", "from", "has", "have", "how", "into", "its", "just", "keep",
     "make", "more", "most", "must", "never", "new", "not", "one", "only", "other", "our", "out",

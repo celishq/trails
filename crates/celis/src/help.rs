@@ -329,6 +329,19 @@ pub const VERBS: &[Verb] = &[
         ],
     },
     Verb {
+        command: "recall",
+        usage: &["celis recall [<file>]... -- <ask>"],
+        summary: "Show the rules and the patterns that fit an ask: those of the files it will touch, and those whose case its words or its meaning name. The rules come first, then the patterns with their good and bad examples. Changes nothing.",
+        args: &[
+            ("<file>", "A file the ask will read or change"),
+            ("<ask>", "What the person asks, in any words"),
+        ],
+        examples: &[
+            "celis recall -- \"cut the release\"",
+            "celis recall shelf/prices.py -- \"round the prices\"",
+        ],
+    },
+    Verb {
         command: "rules",
         usage: &["celis rules [<file>]... [--diff]"],
         summary: "Show every rule of the files you will read or change, the most important first. With no file, show the words the rules use, the most used first. Changes nothing.",

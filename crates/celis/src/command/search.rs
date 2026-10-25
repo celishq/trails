@@ -12,6 +12,12 @@ use serde_json::json;
 use std::collections::HashSet;
 use std::io::{IsTerminal, Write};
 
+/// The most rules `recall` takes by meaning.
+const MEANT: usize = 5;
+
+/// The least cosine at which `recall` takes a rule by meaning.
+const CLOSE: f32 = 0.3;
+
 /// What `search` prints when no model was set up.
 const NONE: &str = "celis search has no model: search with celis grep, or run celis setup.";
 
@@ -57,6 +63,32 @@ impl Command {
             super::put(out, &if args.json { object.to_string() } else { line })?;
         }
         Ok(())
+    }
+
+    /// The short ids of the live rules in scope most alike in meaning to `text`, at most `MEANT`, each
+    /// at least `CLOSE`; none with no model.
+    pub(crate) fn meant(&self, text: &str, err: &mut dyn Write) -> Result<Vec<String>, Failure> {
+        let Some(model) = Model::chosen(&self.home()?) else {
+            return Ok(vec![]);
+        };
+        let rows: Vec<Row> = self
+            .searched()?
+            .into_iter()
+            .filter(|r| r.kind == Kind::Rule)
+            .collect();
+        let index = self.indexed(model, &rows, err)?;
+        let alike = index.alike(text)?;
+        let mut found: Vec<(f32, &Row)> = rows
+            .iter()
+            .filter_map(|row| Some((alike(&row.text)?, row)))
+            .filter(|(score, _)| *score >= CLOSE)
+            .collect();
+        found.sort_by(|(a, _), (b, _)| b.total_cmp(a));
+        Ok(found
+            .into_iter()
+            .take(MEANT)
+            .map(|(_, r)| r.id.clone())
+            .collect())
     }
 
     /// The rows `search` gives: each trail and step of every project, and each live rule in scope.

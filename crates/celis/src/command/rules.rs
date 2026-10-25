@@ -1,6 +1,6 @@
 //! `celis rules`: the rules of some files, or the index of the rules.
 
-mod index;
+pub(super) mod index;
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
@@ -95,7 +95,7 @@ fn changed(folder: &Path) -> Vec<String> {
 
 /// The path of the file `file`, given in `folder`, from the project's top folder; else of each file
 /// git gives under it when it is a folder.
-fn paths(project: &Project, folder: &Path, file: &str) -> Vec<String> {
+pub(super) fn paths(project: &Project, folder: &Path, file: &str) -> Vec<String> {
     let files = match folder.join(file).is_dir() {
         true => git(
             folder,

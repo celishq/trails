@@ -21,6 +21,7 @@ Read
   ├ --kind <kind>     Only rule, step, or trail
   └ --limit <n>       Show the first <n> only; 20 when not given
 
+  recall <ask>        Show the rules and patterns that fit an ask
   rules [<file>]...   Show the rules of the files you will touch
   └ --diff            Each file git shows changed or new
 

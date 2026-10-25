@@ -43,7 +43,7 @@ impl Command {
         let trails = self.trails()?;
         let steps = trails.steps();
         let Some(trail) = steps.session(&project.anchor.project, &prompt.session) else {
-            if !prompt.task && !self.recall(&trails, err, &asked)? {
+            if !prompt.task && !self.remind(&trails, err, &asked)? {
                 self.offer(err, project, &asked)?;
             }
             return Ok(());
@@ -89,7 +89,7 @@ impl Command {
     /// Names the past agent, when the store holds any record and `asked` does not exist; then writes
     /// `asked`. Else says how a new ask joins a trail of today, or starts one. Returns whether it named
     /// the agent.
-    fn recall(&self, trails: &Trails, err: &mut dyn Write, asked: &Path) -> Result<bool, Failure> {
+    fn remind(&self, trails: &Trails, err: &mut dyn Write, asked: &Path) -> Result<bool, Failure> {
         if asked.exists() || trails.is_empty() {
             let line = if today(&trails.steps()).is_empty() {
                 fresh()

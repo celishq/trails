@@ -9,6 +9,7 @@ mod hook;
 mod issue;
 mod link;
 mod prompt;
+mod recall;
 pub(crate) mod report;
 mod rule;
 mod rules;
@@ -89,6 +90,7 @@ impl Command {
             "step" => self.step(args, out, err, &self.project_of(args)?),
             "decide" => self.decide(args, out, err, &self.project_of(args)?),
             "tree" => self.tree(args, out),
+            "recall" => self.recall(args, out, err),
             "rules" => self.rules(args, out),
             "grep" => self.grep(&self.args[1..], out),
             "search" => self.search(args, out, err),

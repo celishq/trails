@@ -53,6 +53,11 @@ impl Rule {
         Note::write(signer, 1111u16, at, tags, self.content.clone())
     }
 
+    /// Whether it is a pattern: a rule with examples, which guides and never binds.
+    pub fn is_pattern(&self) -> bool {
+        self.pair.sides().next().is_some()
+    }
+
     /// The text up to `, because`: when it applies and what to do, without the reason.
     pub fn brief(&self) -> &str {
         self.content
