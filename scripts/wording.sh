@@ -22,5 +22,5 @@ fi
 cd "$copy"
 for case in "$@"; do
   PATH="$root/crates/target/debug:$PATH" claude plugin eval plugins/celis --case "$case" --model "$model" \
-    --ablation none --scaffold --judge-model sonnet --output-dir "$root/evals/results/$name-$model-$case"
+    --ablation none --scaffold --trust-plugin -j 4 --judge-model sonnet --output-dir "$root/evals/results/$name-$model-$case"
 done
