@@ -50,15 +50,15 @@ Each ask is one loop of four moves: recall, work, check, learn.
    person. Close the ask `--by judge` with its verdict, or `--by person` with the person's answer, and
    never close the trail. Then answer with the end that celis prints, alone, with no prose before it.
    Fill each `<…>`, and remove each line you do not need, so that an ask with all its steps checked
-   ends in two lines. Add each rule and pattern you wrote:
+   ends in two lines. Add each rule and pattern you wrote. Each "I chose" names the pattern behind
+   the choice, or says that none did:
 
    ```markdown
    **<what was done, in one line>**
 
    - [?] **Needs you:** <each decision only the person can take>
    - [!] **Not proven:** <each claim step, and what the judge could not check>
-   - [~] **Changed:** <each step that went otherwise than planned, and why>
-   - [+] **I chose:** <each choice you took yourself, such as the variant you chose>
+   - [+] **I chose:** <each choice you took yourself, and each step that went otherwise than planned> · <the pattern that decided it, or none>
 
    <the total line that done prints>
    ```

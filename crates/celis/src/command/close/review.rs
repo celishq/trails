@@ -102,7 +102,7 @@ impl Review {
             },
             files: done.files.clone(),
             under: under.map(|u| u.step_id()),
-            end: ask.then(|| End::of(records, step, done, now)),
+            end: ask.then(|| End::of(step, done, now)),
         }
     }
 }

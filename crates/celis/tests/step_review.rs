@@ -106,16 +106,15 @@ fn done_on_an_ask_prints_the_end_to_fill() {
     assert_eq!(
         done(&repo, &ask.id, &["--as-planned", "--by", "person"]),
         [
-            format!("celis: the ask {a} is done. Write each rule a later plan must keep with celis decide. Then answer the person with the lines below alone: fill each <…>, and remove each line you do not need."),
+            format!("celis: the ask {a} is done. Write each rule and pattern a later plan must keep with celis decide. Then answer the person with the lines below alone: fill each <…>, and remove each line you do not need."),
             String::new(),
             "**<what was done, in one line>**".to_string(),
             String::new(),
             "- [?] **Needs you:** <each decision only the person can take>".to_string(),
             "- [!] **Not proven:** claim".to_string(),
             "- [!] **Not proven:** <what the judge could not check, and each file git diff --stat shows changed outside a.rs, b.rs>".to_string(),
-            "- [~] **Changed:** claim: it took the cache".to_string(),
-            "- [~] **Changed:** the intent now reads: expect: it ends".to_string(),
-            "- [+] **I chose:** <each choice you took yourself>".to_string(),
+            "- [+] **I chose:** claim: it took the cache · <the pattern that decided it, or none>".to_string(),
+            "- [+] **I chose:** <each choice you took yourself> · <the pattern that decided it, or none>".to_string(),
             String::new(),
             "celis · 4 steps · 1 checked · 1 judged · 1 person · 1 not proven · 10m".to_string(),
         ]

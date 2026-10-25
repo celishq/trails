@@ -1,15 +1,12 @@
 //! What the person must look at when an ask closes.
 
 use super::Proof;
-use celis_nostr::Note;
-use celis_trails::{Done, Mark, Step, StepId};
+use celis_trails::{Done, Step, StepId};
 
-/// What the person must look at when an ask closes: the intent the ask was last edited to, each done step
-/// with who stands behind its proof and what changed from its plan, the places of its steps, and the
-/// minutes since the ask began.
+/// What the person must look at when an ask closes: each done step with who stands behind its proof and
+/// what changed from its plan, the places of its steps, and the minutes since the ask began.
 pub(crate) struct End {
     pub ask: StepId,
-    pub intent: Option<String>,
     pub proofs: Vec<(String, Proof)>,
     pub turns: Vec<(String, String)>,
     pub places: Vec<String>,
@@ -17,21 +14,8 @@ pub(crate) struct End {
 }
 
 impl End {
-    /// The end of the ask `step`, just closed `done` at `now`; `records` are the store's before the done.
-    pub fn of(records: &[Note], step: Step, done: &Done, now: u64) -> End {
-        let intent = records
-            .iter()
-            .rev()
-            .find_map(|record| match Mark::read(record)? {
-                (on, Mark::Edit { text, .. }) if on == step.id() && !text.trim().is_empty() => {
-                    Some(text)
-                }
-                _ => None,
-            })
-            .map(|text| {
-                let lines: Vec<&str> = text.lines().map(str::trim).collect();
-                lines[usize::from(lines.len() > 1)..].join(" · ")
-            });
+    /// The end of the ask `step`, just closed `done` at `now`.
+    pub fn of(step: Step, done: &Done, now: u64) -> End {
         let tree = step.tree();
         let closed: Vec<(Step, Done)> = tree
             .iter()
@@ -49,7 +33,6 @@ impl End {
         let from = step.start().unwrap_or(step.note()).created_at;
         End {
             ask: step.step_id(),
-            intent,
             proofs: closed
                 .iter()
                 .map(|(s, d)| (s.title().to_string(), Proof::of(*s, d)))
@@ -74,7 +57,7 @@ impl End {
             ),
         };
         let mut lines = vec![
-            format!("celis: the ask {} is done. Write each rule a later plan must keep with celis decide. Then answer the person with the lines below alone: fill each <…>, and remove each line you do not need.", &self.ask[..8]),
+            format!("celis: the ask {} is done. Write each rule and pattern a later plan must keep with celis decide. Then answer the person with the lines below alone: fill each <…>, and remove each line you do not need.", &self.ask[..8]),
             String::new(),
             "**<what was done, in one line>**".to_string(),
             String::new(),
@@ -86,11 +69,14 @@ impl End {
             "- [!] **Not proven:** <what the judge could not check{outside}>"
         ));
         let turns = self.turns.iter();
-        lines
-            .extend(turns.map(|(title, changed)| format!("- [~] **Changed:** {title}: {changed}")));
-        let intent = self.intent.iter();
-        lines.extend(intent.map(|i| format!("- [~] **Changed:** the intent now reads: {i}")));
-        lines.push("- [+] **I chose:** <each choice you took yourself>".to_string());
+        lines.extend(
+            turns.map(|(title, changed)| {
+                format!("- [+] **I chose:** {title}: {changed} · {DECIDED}")
+            }),
+        );
+        lines.push(format!(
+            "- [+] **I chose:** <each choice you took yourself> · {DECIDED}"
+        ));
         lines.push(String::new());
         lines.push(self.total());
         lines
@@ -115,3 +101,6 @@ impl End {
         parts.join(" · ")
     }
 }
+
+/// What follows each choice of the end: the pattern behind it.
+const DECIDED: &str = "<the pattern that decided it, or none>";
