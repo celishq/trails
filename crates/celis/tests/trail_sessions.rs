@@ -221,108 +221,64 @@ fn a_sessions_open_trail_is_the_trail_of_its_newest_step() {
     assert_eq!(own.len(), 2, "{own:?}");
 }
 
-/// `prompt` names the working step of the session's trail on stderr, asks for a step under it when the
-/// next work does not fit, and gives the line a task for another agent carries; with no working step, it names none; either way it ends with the hint to
-/// join a trail.
+/// `prompt` gives one line on stderr: search, join the session's trail, replace done work by its id in
+/// `celis tree`, and keep a correction as a rule and a reaction as a pattern; a working step changes
+/// nothing of it.
 #[test]
-fn the_prompt_hook_names_the_working_step() {
+fn the_prompt_hook_gives_one_line() {
     let repo = Repo::new();
     let hook = |prompt: &str| {
         let json = serde_json::json!({"session_id": "s1", "prompt": prompt}).to_string();
         support::prompt(&repo, &repo.path(), &[], &json)
     };
     let trail = start(&repo, "s1", "the trail");
+    let line = format!("{}\n", note(true, Some(&trail[..8]), true));
     let o = hook("first");
     assert!(o.status.success(), "{}", err(&o));
-    assert_eq!(err(&o), format!("{RECALL}\n{}\n", joins(Some(&trail))));
+    assert_eq!(err(&o), line);
     let step = add(&repo, Some("s1"), "Cache the price list");
     let o = repo.run(&repo.path(), &["step", "start", &step[..8]], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     let o = hook("now make it blue");
     assert!(o.status.success(), "{}", err(&o));
-    assert_eq!(
-        err(&o).lines().collect::<Vec<_>>(),
-        [
-            RECALL.to_string(),
-            format!(
-                "celis: you work on {} \"Cache the price list\"; when the next work does not fit it, \
-                 add a step under it first, or replace it with step add --replaces. To hand work to \
-                 another agent, add a step for it, and put in its task: celis step <id>: run celis \
-                 step start <id> first and celis step done <id> last.",
-                &step[..8]
-            ),
-            joins(Some(&trail)),
-        ]
-    );
+    assert_eq!(err(&o), line);
 }
 
-/// `prompt` names every done step of the session's trail, its first ask too, and says a change to done
-/// work replaces it.
-#[test]
-fn the_prompt_hook_names_the_done_steps() {
-    let repo = Repo::new();
-    let first = ids(&repo, Some("s1"), "make the badges orange");
-    let (ask, trail) = (&first[0], &first[1]);
-    std::thread::sleep(std::time::Duration::from_millis(1100));
-    let part = add(&repo, Some("s1"), "now the buttons too");
-    for id in [ask, &part] {
-        let o = repo.run(
-            &repo.path(),
-            &["step", "done", &id[..8], "--as-planned", "--", "p"],
-            &[],
-            "",
-        );
-        assert!(o.status.success(), "{}", err(&o));
-    }
-    let json = serde_json::json!({"session_id": "s1", "prompt": "make them red"}).to_string();
-    let o = support::prompt(&repo, &repo.path(), &[], &json);
-    assert!(o.status.success(), "{}", err(&o));
-    assert_eq!(
-        err(&o).lines().collect::<Vec<_>>(),
-        [
-            RECALL.to_string(),
-            "celis: when this prompt changes done work, add it with step add --replaces <its id>, \
-             not as a new ask; the done steps:"
-                .to_string(),
-            format!("  {} \"make the badges orange\"", &ask[..8]),
-            format!("  {} \"now the buttons too\"", &part[..8]),
-            joins(Some(trail)),
-        ]
-    );
-}
-
-/// The hint `prompt` gives for a new ask: join the session's open trail `open` when it fits, else a
-/// related trail of today, else a new one.
-fn joins(open: Option<&str>) -> String {
-    match open {
+/// The line `prompt` gives: a new ask runs `search` when the store holds a record, then joins the
+/// session's trail `trail`, else a trail of `today`, else a new one; how done work is fixed; and how a
+/// correction becomes a rule and a reaction a pattern.
+fn note(search: bool, trail: Option<&str>, today: bool) -> String {
+    let join = match (trail, today) {
+        (Some(id), _) => {
+            format!("add it under the session's trail {id} when it fits, else with --new")
+        }
+        (None, true) => {
+            "add it --under a related trail of today that celis tree shows, else with --new"
+                .to_string()
+        }
+        (None, false) => "add it with --new".to_string(),
+    };
+    let ask = match search {
+        true => format!(
+            "run celis search [<each file it will touch>]... -- \"<the ask>\" before you change a file, \
+             then {join}"
+        ),
+        false => join,
+    };
+    let fix = match trail {
         Some(id) => format!(
-            "celis: when this prompt is a new ask, add it under the session's trail {}, when it fits; \
-             else run celis tree and add it --under a related trail of today; else add it --new. {RULES}",
-            &id[..8]
+            "; when it changes done work, add it with step add --replaces <the id of that step, as celis \
+             tree {id} shows it>"
         ),
-        None => format!(
-            "celis: when this prompt is a new ask, run celis tree and add it --under a related \
-             trail of today; else start a new trail. {RULES}"
-        ),
-    }
+        None => String::new(),
+    };
+    format!(
+        "celis: when this prompt is a new ask, {ask}{fix}; when it says always or never, or states a \
+         convention, write a rule with celis decide before you change a file, with --scope me when it \
+         holds in any project; when it reacts to a result, such as \"this one\" or \"too much\", write \
+         a pattern with celis decide --good <what the person liked> --bad <what they did not>."
+    )
 }
-
-/// The line of a prompt with no trail to join: an empty store, or no trail of today.
-/// The line `prompt` gives first once the store holds a record: how a new ask searches its rules and
-/// patterns.
-const RECALL: &str = "celis: when this prompt is a new ask, run celis search [<each file it will touch>]... \
-                      -- \"<the ask>\" before you change a file, and keep each rule and pattern it prints; \
-                      a prompt that goes on with the same work needs none.";
-
-const NEW: &str = "celis: when this prompt is a new ask, add it with --new. When this prompt states how the \
-                   work must be done (review feedback, a convention, a correction), write each point as a \
-                   rule with celis decide before you change a file; give it --scope me when it holds for that \
-                   kind of work in any project.";
-
-/// The sentence of a new ask's line that asks to write the rules the prompt states.
-const RULES: &str = "When this prompt states how the work must be done (review feedback, a \
-                     convention, a correction), write each point as a rule with celis decide before you \
-                     change a file; give it --scope me when it holds for that kind of work in any project.";
 
 /// A prompt with no open trail gives the hint to join a trail of today, of any project; with no trail
 /// of today, it asks for a new trail.
@@ -335,11 +291,11 @@ fn a_later_prompt_with_no_open_trail_hints_at_todays_trails() {
         assert!(o.status.success(), "{}", err(&o));
         err(&o)
     };
-    assert_eq!(hook("s9"), format!("{NEW}\n"));
+    assert_eq!(hook("s9"), format!("{}\n", note(false, None, false)));
     let shop = repo.other("shop");
     let o = repo.run(&shop, &["step", "add", "--", "a shop trail"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
-    assert_eq!(hook("s9"), format!("{RECALL}\n{}\n", joins(None)));
+    assert_eq!(hook("s9"), format!("{}\n", note(true, None, true)));
     let o = repo.run(
         &repo.path(),
         &["decide", "--", "When you test: set A=1."],
@@ -347,7 +303,7 @@ fn a_later_prompt_with_no_open_trail_hints_at_todays_trails() {
         "",
     );
     assert!(o.status.success(), "{}", err(&o));
-    assert_eq!(hook("s8"), format!("{RECALL}\n{}\n", joins(None)));
+    assert_eq!(hook("s8"), format!("{}\n", note(true, None, true)));
 }
 
 /// `prompt` writes and prints nothing for a prompt that is a task notification or an agent's message of
@@ -382,7 +338,7 @@ fn a_prompt_with_no_open_trail_asks_for_search_and_a_new_trail() {
         err(&o)
     };
     let ask = serde_json::json!({"session_id": "s9", "prompt": "Build a Vendors table"});
-    assert_eq!(hook(ask.clone()), format!("{NEW}\n"));
+    assert_eq!(hook(ask.clone()), format!("{}\n", note(false, None, false)));
     let o = repo.run(
         &repo.path(),
         &["decide", "--", "When you test: set SHELF_OFFLINE=1."],
@@ -390,12 +346,12 @@ fn a_prompt_with_no_open_trail_asks_for_search_and_a_new_trail() {
         "",
     );
     assert!(o.status.success(), "{}", err(&o));
-    assert_eq!(hook(ask.clone()), format!("{RECALL}\n{NEW}\n"));
+    assert_eq!(hook(ask.clone()), format!("{}\n", note(true, None, false)));
     for source in ["startup", "compact"] {
         let start = serde_json::json!({"session_id": "s9", "source": source});
         assert_eq!(hook(start), "");
     }
-    assert_eq!(hook(ask), format!("{RECALL}\n{NEW}\n"));
+    assert_eq!(hook(ask), format!("{}\n", note(true, None, false)));
     assert!(marks(&repo, "prompt").is_empty());
 }
 

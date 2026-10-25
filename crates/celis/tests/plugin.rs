@@ -278,9 +278,10 @@ fn claudes_prompt_hook_asks_for_search_at_each_prompt() {
     assert!(said.contains("celis search"), "{said}");
 }
 
-/// The prompt hooks of Claude Code, Codex and Gemini CLI name no past agent and no `past.md`.
+/// The prompt hooks of Claude Code, Codex and Gemini CLI give one line, with no past agent and no
+/// `past.md`.
 #[test]
-fn no_hook_names_a_past_agent() {
+fn each_prompt_hook_gives_one_line() {
     let repo = Repo::new();
     let o = repo.run(
         &repo.path(),
@@ -293,6 +294,7 @@ fn no_hook_names_a_past_agent() {
         let ask = agent.payload(agent.name, &repo.path(), "make it blue");
         let said = agent.run(&repo, agent.ask, &ask);
         let said = agent.context(&said);
+        assert_eq!(said.trim_end().lines().count(), 1, "{}: {said}", agent.name);
         assert!(
             !said.contains("celis:past") && !said.contains("past.md"),
             "{}: {said}",

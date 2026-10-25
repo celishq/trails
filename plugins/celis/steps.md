@@ -24,7 +24,9 @@ with `--uses <its id>`, so that later work can see which steps were reused.
 
 ## Other sessions
 
-To go on with another session's trail, add your first step `--under <its id>`.
+To go on with another session's trail, add your first step `--under <its id>`. To hand a step to
+another agent, put in its task: `celis step <id>: run celis step start <id> first and celis step done
+<id> last.`
 
 ## Patterns
 
