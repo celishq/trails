@@ -22,8 +22,10 @@ change no file.
    "Could not check" is an honest answer, not a failure: say what a person must look at, such as a
    screen, a sound or a deploy, and what you did get to see. A screenshot or the running app counts when
    you can make one.
-5. For each pattern that bears on the result, decide: like a good example, like a bad one, or no example
-   covers it. Cite the example by its id, path or URL. A pattern never fails the verdict.
+5. For each pattern that bears on the result, decide: like a good example or like a bad one, and cite
+   the example by its id, path or URL. Then name each part of the result that no example covers, such
+   as a table when the examples are all blurbs, with the pattern nearest to it. A pattern never fails
+   the verdict.
 
 Answer in this shape, and add nothing else:
 
