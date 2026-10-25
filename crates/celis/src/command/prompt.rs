@@ -104,9 +104,8 @@ impl Command {
             return Ok(false);
         }
         let line = format!(
-            "celis: a new ask in this session; before any other tool, {PAST}; it brings the rules the \
-             ask must keep and the steps of past asks like it; add the ask with --uses <id> for each rule \
-             and past step the ask follows. {RULES}"
+            "celis: a new ask in this session; before any other tool, {PAST}; it brings the steps of past \
+             asks like it; add the ask with --uses <id> for each past step the ask follows. {RULES}"
         );
         super::put(err, &line)?;
         mark(asked)?;
