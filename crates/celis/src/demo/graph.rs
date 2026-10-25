@@ -291,7 +291,6 @@ impl Written {
                     replaces: None,
                     content: self.plan.rules[r].0.to_string(),
                     paths: vec![],
-                    situation: false,
                     promoted: false,
                     examples: Default::default(),
                 };

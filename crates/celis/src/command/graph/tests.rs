@@ -91,7 +91,6 @@ impl Bench {
             replaces: None,
             content: text.to_string(),
             paths: vec![],
-            situation: false,
             promoted: false,
             examples: Default::default(),
         };

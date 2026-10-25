@@ -3,7 +3,7 @@ work must keep, and patterns, the person's good and bad examples, which guide yo
 
 ```
 celis search [<file>]... -- "<ask>"
-celis decide [--scope trail:<id> | me] [--replaces <id>] [--path <glob>]... [--situation] [--good <example>]... [--bad <example>]... -- "<rule>"
+celis decide [--scope trail:<id> | me] [--replaces <id>] [--path <glob>]... [--good <example>]... [--bad <example>]... -- "<rule>"
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>] [--check <command>] [--new] -- "<title>"
 celis step start <id>
 celis step done <id> [--changed "<what differs>"] [--as-planned] [--by <who>] [--file <path>]... -- "<proof>"
@@ -67,7 +67,7 @@ Each ask is one loop of four moves: search, work, check, learn.
    is a rule. A reaction to a result, such as "this one", "too busy" or a fix of done work, is a
    pattern: give it `--good` for what the person liked and `--bad` for what they did not, each a step,
    a file or a URL (`steps.md`, "Patterns"). Give it `--path` for the files it acts on, as narrow as
-   it allows, and `--situation` only when no file shows it ahead. A correction replaces the wrong rule
+   it allows. A correction replaces the wrong rule
    or pattern with `--replaces <id>`: never keep two for one point. When the person changes the
    intent, `step edit` the ask with the new lines.
 

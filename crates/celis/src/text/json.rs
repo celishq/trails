@@ -40,7 +40,6 @@ pub(crate) fn rule(note: &Note, rule: &Rule) -> Value {
         "replaces": rule.replaces,
         "content": rule.content,
         "paths": rule.paths,
-        "situation": rule.situation,
         "promoted": rule.promoted,
     })
 }

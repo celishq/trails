@@ -14,7 +14,7 @@ use anyhow::Result;
 use celis_nostr::{Account, Note};
 
 /// One rule, written on a project, that holds in its scope; with the globs of the files it acts on, its
-/// `situation` and `promoted` labels, and its examples, which make it a pattern.
+/// `promoted` label, and its examples, which make it a pattern.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Rule {
     pub anchor: Anchor,
@@ -22,7 +22,6 @@ pub struct Rule {
     pub replaces: Option<RuleId>,
     pub content: String,
     pub paths: Vec<String>,
-    pub situation: bool,
     pub promoted: bool,
     pub examples: Examples,
 }
@@ -45,8 +44,7 @@ impl Rule {
         let paths = self.paths.iter();
         tags.extend(paths.map(|p| vec!["path".to_string(), p.clone()]));
         tags.push(vec!["L".to_string(), NAMESPACE.to_string()]);
-        let labels = [("decision", true), ("situation", self.situation)];
-        let labels = labels.into_iter().chain([("promoted", self.promoted)]);
+        let labels = [("decision", true), ("promoted", self.promoted)].into_iter();
         tags.extend(
             labels
                 .filter(|(_, on)| *on)
@@ -88,7 +86,6 @@ impl Rule {
                 .filter(|t| t.len() >= 2 && t[0] == "path")
                 .map(|t| t[1].clone())
                 .collect(),
-            situation: labelled(note, "situation"),
             promoted: labelled(note, "promoted"),
             examples: Examples::read(note),
         })

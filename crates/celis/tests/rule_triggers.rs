@@ -116,17 +116,37 @@ fn an_at_rule_comes_at_its_place() {
     assert!(rules(&repo, &["b.py"]).is_empty());
 }
 
-/// A rule with no trigger and no `at:<place>` never comes, and a situation rule with a trigger comes at
-/// its calls (`spec/05-rules.md`, "Triggers"; `spec/02-cli.md`, "Search").
+/// A rule with no trigger and no `at:<place>` never comes by a file, and a rule with a trigger comes at
+/// its files (`spec/05-rules.md`, "Triggers"; `spec/02-cli.md`, "Search").
 #[test]
 fn a_rule_with_no_trigger_never_comes() {
     let repo = Repo::new();
-    decide(&repo, &["--situation"], "situation");
     decide(&repo, &[], "no trigger");
     decide(&repo, &["--scope", "me"], "mine");
     assert!(rules(&repo, &["README.md"]).is_empty());
-    decide(&repo, &["--path", "*.md", "--situation"], "both");
+    decide(&repo, &["--path", "*.md"], "both");
     assert_eq!(texts(&repo, &["README.md"]), ["both"]);
+}
+
+/// `decide --situation` is a usage error, and a reader ignores an older `situation` label
+/// (`spec/02-cli.md`, "Commands"; `spec/README.md`, "Deprecated").
+#[test]
+fn situation_is_no_flag_and_its_label_is_ignored() {
+    let repo = Repo::new();
+    let o = repo.run(&repo.path(), &["decide", "--situation", "--", "t"], &[], "");
+    assert_eq!(o.status.code(), Some(2), "{o:?}");
+    let mut tags = rule_tags((&repo.project_id(), "repo"));
+    tags.push(
+        ["l", "situation", "celis.decision"]
+            .map(String::from)
+            .to_vec(),
+    );
+    let old = Note::write(&account(), 1111u16, support::now() - DAY, tags, "older").unwrap();
+    put(&repo, &old);
+    let o = repo.run(&repo.path(), &["grep", " rule "], &[], "");
+    let shown = out(&o);
+    let line = shown.lines().find(|l| l.contains(&old.id[..8])).unwrap();
+    assert!(line.ends_with("live {project} older"), "{shown}");
 }
 
 /// Rules come with a named file first, then a glob; newest first within each (`spec/02-cli.md`,
@@ -164,17 +184,13 @@ fn every_rule_comes_on_each_call() {
     assert_eq!(texts(&repo, &["README.md"]), first);
 }
 
-/// The grep view marks a rule with a trigger, a situation rule and a promoted rule (`spec/02-cli.md`,
+/// The grep view marks a rule with a trigger and a promoted rule (`spec/02-cli.md`,
 /// "Grep").
 #[test]
-fn grep_marks_triggers_situations_and_promoted_rules() {
+fn grep_marks_triggers_and_promoted_rules() {
     let repo = Repo::new();
     let trigger = decide(&repo, &["--path", "Makefile"], "trigger");
-    let all = decide(
-        &repo,
-        &["--path", "*.md", "--situation", "--promoted"],
-        "all",
-    );
+    let all = decide(&repo, &["--path", "*.md", "--promoted"], "all");
     let plain = decide(&repo, &[], "plain");
     let o = repo.run(&repo.path(), &["grep", " rule "], &[], "");
     let shown = out(&o);
@@ -190,13 +206,13 @@ fn grep_marks_triggers_situations_and_promoted_rules() {
         "{shown}"
     );
     assert!(
-        line(&all).ends_with("live {project} trigger situation promoted all"),
+        line(&all).ends_with("live {project} trigger promoted all"),
         "{shown}"
     );
     assert!(line(&plain).ends_with("live {project} plain"), "{shown}");
 }
 
-/// `decide` writes each `--path` from the project's top folder, `--situation` and `--promoted`, and a
+/// `decide` writes each `--path` from the project's top folder and `--promoted`, and a
 /// reader reads them back; `--tool`, `--content` and `--command` are no flags
 /// (`spec/02-cli.md`, "Commands").
 #[test]
@@ -211,7 +227,6 @@ fn decide_writes_the_trigger_and_labels() {
             "*.py",
             "--path",
             "b.md",
-            "--situation",
             "--promoted",
             "--",
             "kept",
@@ -226,10 +241,7 @@ fn decide_writes_the_trigger_and_labels() {
     let shown = objects(&repo, &["step", "start", step]);
     let rule = shown.iter().find_map(|v| v.get("decision")).unwrap();
     assert_eq!(rule["paths"], json!(["shelf/*.py", "shelf/b.md"]));
-    assert_eq!(
-        (&rule["situation"], &rule["promoted"]),
-        (&json!(true), &json!(true))
-    );
+    assert_eq!(rule["promoted"], json!(true));
     for flag in ["--tool", "--content", "--command"] {
         let o = repo.run(&repo.path(), &["decide", flag, "x", "--", "t"], &[], "");
         assert_eq!(o.status.code(), Some(2), "{o:?}");
@@ -257,10 +269,7 @@ fn an_older_rule_with_no_trigger_still_reads() {
     let shown = objects(&repo, &["step", "start", step]);
     let rule = shown.iter().find_map(|v| v.get("decision")).unwrap();
     assert_eq!(rule["paths"], json!([]));
-    assert_eq!(
-        (&rule["situation"], &rule["promoted"]),
-        (&json!(false), &json!(false))
-    );
+    assert_eq!(rule["promoted"], json!(false));
     assert_eq!(texts(&repo, &["a.py"]), ["old"]);
 }
 

@@ -85,7 +85,6 @@ fn a_period_counts_its_done_steps_that_use_a_rule() {
         replaces: None,
         content: "keep cents".into(),
         paths: vec![],
-        situation: false,
         promoted: false,
         examples: Default::default(),
     }

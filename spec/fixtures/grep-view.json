@@ -9,12 +9,12 @@
     "Each <name> stands for the first 8 characters of a record's id, which a test knows only once it",
     "has written the record. All records are made on 2026-01-15 at noon UTC, in the order of `lines`",
     "read from the bottom of each block: the trail, then the table step, its done, the chart step, its",
-    "drop, the trail's rule, the floats rule, the cents rule that replaces it, the me rule, the situation rule,",
+    "drop, the trail's rule, the floats rule, the cents rule that replaces it, the me rule, a rule with the older situation label,",
     "and the me rule with a trigger."
   ],
   "lines": [
     "2026-01-15 - [repo] rule <push> live {me} trigger When you push: run the tests first.",
-    "2026-01-15 - [repo] rule <situation> live {project} situation When the person asks a question: answer it first.",
+    "2026-01-15 - [repo] rule <situation> live {project} When the person asks a question: answer it first.",
     "2026-01-15 - [repo] rule <me> live {me} When you write a commit message: use plain words.",
     "2026-01-15 - [repo] rule <new> live {project} When a price prints: use cents.",
     "2026-01-15 - [repo] rule <old> replaced-by <new> {project} When a price prints: use floats.",
@@ -37,7 +37,7 @@
     "  changed <table> a list, not a table",
     "- rules of no trail",
     "  [repo] rule <push> live {me} trigger When you push: run the tests first.",
-    "  [repo] rule <situation> live {project} situation When the person asks a question: answer it first.",
+    "  [repo] rule <situation> live {project} When the person asks a question: answer it first.",
     "  [repo] rule <me> live {me} When you write a commit message: use plain words.",
     "  [repo] rule <new> live {project} When a price prints: use cents.",
     "  [repo] rule <old> replaced-by <new> {project} When a price prints: use floats."
@@ -45,7 +45,7 @@
   "kept": [
     "- rules of no trail",
     "  [repo] rule <push> live {me} trigger When you push: run the tests first.",
-    "  [repo] rule <situation> live {project} situation When the person asks a question: answer it first.",
+    "  [repo] rule <situation> live {project} When the person asks a question: answer it first.",
     "  [repo] rule <new> live {project} When a price prints: use cents."
   ]
 }

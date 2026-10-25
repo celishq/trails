@@ -14,7 +14,7 @@ read. What a command shows a person is not part of it.
 ## Commands
 
 ```
-celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--situation] [--promoted] [--good <example>]... [--bad <example>]... [--project <id>] -- <text>
+celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--promoted] [--good <example>]... [--bad <example>]... [--project <id>] -- <text>
                                                        a rule, in its scope
 celis patterns [--markdown]                           the patterns and their examples
 celis tree [<id>]... [--graph] [--full] [--all] [--demo]
@@ -47,7 +47,7 @@ $CELIS_HOME   where celis keeps the phrase and the store
 
 ```
 decision  json  {"id", "created_at", "project", "scope", "replaces", "content",
-                 "paths", "situation", "promoted"}
+                 "paths", "promoted"}
 ```
 
 **Rules**
@@ -58,7 +58,7 @@ decision  json  {"id", "created_at", "project", "scope", "replaces", "content",
   `--replaces` as its tags, and no `scope` tag for `project`; for `--scope at:<place>`, no `scope` tag
   and a `path` tag of the place's path from the project's top folder, without its line, and with `/**`
   after it when it is a folder; each `--path`, from the project's top
-  folder, as a `path` tag, `--situation` and `--promoted` as their labels, and each `--good` and `--bad`
+  folder, as a `path` tag, `--promoted` as its label, and each `--good` and `--bad`
   as an example (CIP-05, "Patterns"): a value with `://` as a URL, a file of the working folder as its
   blob, else the whole id of a step, refusing a step the store lacks with `no-step`.
 - `--project` on `decide` and `step add` MUST write the records of the project it names in place of the
@@ -238,7 +238,7 @@ trails with it.
 view    <yyyy-mm-dd> <trail id8 | -> [<project name>] <kind> <id8> <fields> <text>
           trail | step   <open | working | done | done-dropped | dropped | expired>[ revised-by <id>,…][ at:<place>]…
           rule           <live | replaced-by <id> | dropped> {<me | project | trail:<id8> | at:<place>>}
-                           [ trigger][ situation][ promoted][ pattern][ recalled:<yyyy-mm-dd>]
+                           [ trigger][ promoted][ pattern][ recalled:<yyyy-mm-dd>]
           proof | changed | dropped                              the step's or rule's id, no fields
 lines   <id8> [<project name>] <its title> · <yyyy-mm-dd>        each trail of the lines
           trail <id8> <fields>                                    the trail's own line
@@ -249,9 +249,8 @@ end     project [<project name>]
 ```
 
 `<id8>` is the first 8 characters of an id. A text holds each newline as a space. A rule's fields end with
-` trigger` when it has a trigger tag (CIP-05), ` situation` when it has the `situation` label, and
-` promoted` when it has the `promoted` label, ` pattern` when it has examples (CIP-05, "Patterns"), and
-` recalled:<day>` with the day `search` last gave it.
+` trigger` when it has a trigger tag (CIP-05), ` promoted` when it has the `promoted` label, ` pattern`
+when it has examples (CIP-05, "Patterns"), and ` recalled:<day>` with the day `search` last gave it.
 
 **Rules**
 

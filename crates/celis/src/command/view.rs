@@ -165,7 +165,6 @@ fn rule(
     let mut fields = vec![state, format!("{{{}}}", rule.scope.short())];
     let marks = [
         (!rule.paths.is_empty(), "trigger"),
-        (rule.situation, "situation"),
         (rule.promoted, "promoted"),
         (rule.is_pattern(), "pattern"),
     ];

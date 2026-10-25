@@ -86,7 +86,6 @@ impl Desk {
             replaces: None,
             content: "When you price: round down, because the shelf does.".into(),
             paths: vec![],
-            situation: false,
             promoted: false,
             examples: Default::default(),
         };

@@ -57,7 +57,6 @@ impl Command {
             replaces: None,
             content,
             paths,
-            situation: args.situation,
             promoted: args.promoted,
             examples,
         };

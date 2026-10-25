@@ -63,7 +63,7 @@ Every change of `spec/` MUST keep these rules:
 | `scope` · `replaces` | rule tags | 05 |
 | `path` | rule tag: the trigger | 05 |
 | `good` · `bad` | rule tags: the examples of a pattern | 05 |
-| `situation` · `promoted` in `celis.decision` | rule labels | 05 |
+| `promoted` in `celis.decision` | a rule label | 05 |
 | `me` · `project` · `trail:<id>` · `at:<place>` | the scopes of a rule | 05 |
 | `uses` | step tag | 06 |
 | `imeta` with `url` · `x` · `m` · `size` · `path` | done tag: a file of the proof (NIP-92, BUD-10) | 08 |
@@ -80,6 +80,7 @@ Every change of `spec/` MUST keep these rules:
 | `$CELIS_HOME/key` | the key, now the phrase; `auth login` removes it |
 | `tool` | a rule tag: the other tool calls a rule acted on |
 | 1985 with `name` in `celis.step` · `skill:<name>` | the name of a trail, and the project of a trail from a skill file |
+| `situation` in `celis.decision` | a rule label: the rule also held where no file shows it ahead |
 
 ## Words
 

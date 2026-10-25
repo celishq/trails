@@ -22,7 +22,7 @@ learns what later work must keep.
     ["replaces", "<id of the rule it replaces>"],
     ["path", "<glob>"],
     ["L", "celis.decision"], ["l", "decision", "celis.decision"],
-    ["l", "situation", "celis.decision"], ["l", "promoted", "celis.decision"]
+    ["l", "promoted", "celis.decision"]
   ],
   "content": "When <what you see>: <what to do>, because <why>." }
 ```
@@ -31,7 +31,6 @@ learns what later work must keep.
 - `replaces`: optional; the rule this one takes the place of.
 - `path`: optional, repeatable; a file the rule acts on, as a glob from the project's top folder
   ("Triggers").
-- `situation`: optional label; the rule also holds in a case that no file shows ahead.
 - `promoted`: optional label; a tool of the place now checks the rule.
 
 The `path` tags are the rule's trigger.
