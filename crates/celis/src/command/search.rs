@@ -235,7 +235,8 @@ impl Part {
     }
 }
 
-/// The lines of the done ask `ask`: its own, then each step right under it with its `changed` line.
+/// The lines of the done ask `ask`: its own, then each step right under it with its `changed` line, or
+/// the ask itself as its one step when none is under it.
 fn lines(ask: Step) -> Vec<String> {
     let mut lines = vec![format!(
         "{} {} · {} [{}]",
@@ -244,7 +245,12 @@ fn lines(ask: Step) -> Vec<String> {
         date(ask.note().created_at),
         ask.record().anchor.name
     )];
-    for step in ask.children() {
+    let children = ask.children();
+    let steps = match children.is_empty() {
+        true => vec![ask],
+        false => children,
+    };
+    for step in steps {
         let state = step.state_word();
         let title = flat(step.title());
         lines.push(format!("  step {} {state} {title}", short(step.id())));

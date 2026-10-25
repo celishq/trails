@@ -279,6 +279,39 @@ fn search_prints_the_past_asks_like_the_ask() {
     assert!(!said.contains(&open[..8]), "{said}");
 }
 
+/// A past ask with no step under it prints as its own step, with its `changed` line
+/// (`spec/02-cli.md`, "Search").
+#[test]
+fn search_prints_a_past_ask_with_no_steps_as_its_own_step() {
+    let repo = Repo::new();
+    let trail = trail(&repo);
+    let ask = add(
+        &repo,
+        &[
+            "--under",
+            &trail[..8],
+            "--",
+            "Round the shelf prices to cents",
+        ],
+    );
+    done(
+        &repo,
+        &ask,
+        Some("kept floats in the tests"),
+        "pytest passes",
+    );
+    let said = search(&repo, &["--", "round the prices of the menu to cents"]);
+    let lines: Vec<&str> = said.lines().collect();
+    let past = lines.iter().position(|l| *l == "past").unwrap();
+    let step = format!("  step {} done Round the shelf prices to cents", &ask[..8]);
+    assert_eq!(lines[past + 2], step, "{said}");
+    assert_eq!(
+        lines[past + 3],
+        "    changed kept floats in the tests",
+        "{said}"
+    );
+}
+
 /// `search` prints at most 2 past asks, and with `--limit 1` at most 1 (`spec/02-cli.md`, "Search").
 #[test]
 fn search_prints_at_most_two_past_asks() {
