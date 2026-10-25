@@ -15,12 +15,12 @@ use std::io::Write;
 
 impl Command {
     /// Prints `review` on `err`: the step's plan against what it did, the open steps beside it, the blobs
-    /// of `trails` for its files and the files beside it, the rules of the changed files, then the next
-    /// move; on an ask, only its end; with no `linked` folder, its blobs are local only.
+    /// of `trails` for its files and the files beside it, the rules of the `changed` files, then the
+    /// next move; on an ask, only its end; with no `linked` folder, its blobs are local only.
     pub(crate) fn review(
         &self,
         review: &Review,
-        trails: &Trails,
+        (trails, changed): (&Trails, &[String]),
         linked: bool,
         err: &mut dyn Write,
     ) -> Result<(), Failure> {
@@ -62,12 +62,12 @@ impl Command {
         for (id, title, file) in &review.beside {
             lines.push(format!("  beside  {} {title} · {}", short(id), kept(file)));
         }
-        lines.extend(self.changed_rules(trails));
+        lines.extend(self.changed_rules(trails, changed));
         let steps = trails.steps();
         let ask = review.under.as_deref().and_then(|id| steps.get(id));
         if let Some(ask) = ask.filter(|a| a.is_ask() && review.as_planned && review.open.is_empty())
         {
-            lines.extend(self.brief(ask, trails));
+            lines.extend(self.brief(ask, trails, changed));
         }
         let under = review.under.as_deref().map(short);
         lines.extend(match (review.as_planned, under) {
@@ -78,10 +78,21 @@ impl Command {
         lines.iter().try_for_each(|line| super::put(err, line))
     }
 
-    /// The lines of the rules that the files git shows changed match, after a line that asks to check
-    /// the change against each; none when none matches.
-    fn changed_rules(&self, trails: &Trails) -> Vec<String> {
-        let rules = self.matched(trails, &super::rules::changed(&self.folder));
+    /// The changed files of a `done` that names `files`: those git shows changed or new, and `files`.
+    pub(crate) fn changed(&self, files: &[String]) -> Vec<String> {
+        let mut changed = super::rules::changed(&self.folder);
+        for file in files {
+            if !changed.contains(file) {
+                changed.push(file.clone());
+            }
+        }
+        changed
+    }
+
+    /// The lines of the rules that the `changed` files match, after a line that asks to check the
+    /// change against each; none when none matches.
+    fn changed_rules(&self, trails: &Trails, changed: &[String]) -> Vec<String> {
+        let rules = self.matched(trails, changed);
         if rules.is_empty() {
             return vec![];
         }
@@ -92,21 +103,20 @@ impl Command {
         std::iter::once(head.to_string()).chain(lines).collect()
     }
 
-    /// What `done` of the ask `ask` with no `--by` prints before it refuses: the rules of the changed
-    /// files and the judge brief; none when git shows no changed file.
-    pub(crate) fn unjudged(&self, ask: Step, trails: &Trails) -> Vec<String> {
-        if super::rules::changed(&self.folder).is_empty() {
+    /// What `done` of the ask `ask` with no `--by` prints before it refuses: the rules of the `changed`
+    /// files and the judge brief; none with no changed file.
+    pub(crate) fn unjudged(&self, ask: Step, trails: &Trails, changed: &[String]) -> Vec<String> {
+        if changed.is_empty() {
             return vec![];
         }
-        let mut lines = self.changed_rules(trails);
-        lines.extend(self.brief(ask, trails));
+        let mut lines = self.changed_rules(trails, changed);
+        lines.extend(self.brief(ask, trails, changed));
         lines
     }
 
     /// The judge brief of `ask`: the ask, its intent lines, the rules that fit its title and the
     /// changed files, the changed files, and its check.
-    fn brief(&self, ask: Step, trails: &Trails) -> Vec<String> {
-        let files = super::rules::changed(&self.folder);
+    fn brief(&self, ask: Step, trails: &Trails, files: &[String]) -> Vec<String> {
         let record = ask.record();
         let mut lines = vec![
             format!(
@@ -122,7 +132,7 @@ impl Command {
                 None => format!("          {line}"),
             });
         }
-        let fits = self.fits(trails, ask.title(), &files, &mut std::io::sink());
+        let fits = self.fits(trails, ask.title(), files, &mut std::io::sink());
         for (note, rule) in fits.unwrap_or_default() {
             let text = crate::text::line::rule(note, &rule, trails);
             let mut rule = text.lines();

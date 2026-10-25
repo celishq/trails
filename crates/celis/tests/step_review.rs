@@ -317,3 +317,38 @@ fn done_of_an_ask_with_changed_files_needs_a_judge() {
     let o = cli(&repo, &by);
     assert!(o.status.success(), "{}", err(&o));
 }
+
+/// With no git, the `--file` of a `done` count as its changed files: an ask that names one needs a
+/// judge, and gets the rules of that file (`spec/02-cli.md`, "Step").
+#[test]
+fn the_files_of_a_done_count_as_changed_without_git() {
+    let repo = Repo::new();
+    std::fs::remove_dir_all(repo.path().join(".git")).unwrap();
+    let rule = cli(
+        &repo,
+        &[
+            "decide",
+            "--path",
+            "*.py",
+            "--",
+            "When Python changes: run ruff.",
+        ],
+    );
+    let rule = out(&rule);
+    let trail = add(&repo, &["--", "the trail"]);
+    let ask = add(&repo, &["--under", &trail[..8], "--", "Round the prices"]);
+    repo.write("new.py", "x = 1\n");
+    let args = [
+        "step",
+        "done",
+        &ask[..8],
+        "--as-planned",
+        "--file",
+        "new.py",
+        "--",
+        "proof",
+    ];
+    let o = cli(&repo, &args);
+    assert_eq!(o.status.code(), Some(1), "{}", err(&o));
+    assert!(err(&o).contains(&rule[..8]), "{}", err(&o));
+}

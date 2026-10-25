@@ -152,15 +152,16 @@ step  json  {"id", "created_at", "project", "links": [{"to", "kind": "under | re
   both a rule's and a step's id as a usage error.
 - `done` MUST take one of `--changed <text>` and `--as-planned`, and a proof, else refuse as a usage
   error. It MUST refuse a step with an open step under it, with `open-steps`.
-- `done` of an ask with no `--by`, while git shows a changed or new file in the working folder, MUST
-  refuse with `unjudged`, and print the rules of those files and the brief that the judge needs.
+- The changed files of a `done` are each file that `git diff --name-only HEAD` or
+  `git ls-files --others --exclude-standard` gives in the working folder, and each `--file`.
+- `done` of an ask with no `--by` and a changed file MUST refuse with `unjudged`, and print the rules of
+  its changed files and the brief that the judge needs.
 - `done` MUST run the step's `check` in the project's top folder, and refuse with `check-failed` when it
   fails or runs past `CELIS_CHECK_SECONDS`, 600 when not set.
 - `done --changed` MUST write its text as `changed`, and `done --by` its value as `by`; a `--by` other
   than `judge` or `person` is a usage error. Each `done --file` MUST be kept as a blob and named by an
   `imeta` tag (CIP-08), and a file that is not there is a usage error.
-- `done` of a step that is not an ask MUST print each live rule in scope that a file matches which
-  `git diff --name-only HEAD` or `git ls-files --others --exclude-standard` gives in the working folder,
+- `done` of a step that is not an ask MUST print each live rule in scope that a changed file matches,
   as "Search" gives a rule, in the order "Search" states.
 - `drop` MUST refuse an empty reason, and `edit` one with no text, `--at` or `--check`, as usage errors.
 

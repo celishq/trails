@@ -109,10 +109,11 @@ impl Command {
             by,
             files,
         };
+        let changed = self.changed(&args.files);
         let steps = trails.steps();
         let step = steps.find_open(id)?;
         if done.by.is_none() && step.is_ask() {
-            let lines = self.unjudged(step, &trails);
+            let lines = self.unjudged(step, &trails, &changed);
             if !lines.is_empty() {
                 lines.iter().try_for_each(|line| super::put(err, line))?;
                 return Err(Failure::unjudged(step.id()));
@@ -123,7 +124,7 @@ impl Command {
         let steps = trails.steps();
         let review = Review::of(trails.records(), steps.find(id)?, &done, super::now());
         let linked = !Link::all(&self.home()?, &project.folder).is_empty();
-        self.review(&review, &trails, linked, err)
+        self.review(&review, (&trails, &changed), linked, err)
     }
 
     /// Drops the open step `args` names and each open step under it, and prints each drop's id.
