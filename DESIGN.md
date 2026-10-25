@@ -50,8 +50,10 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
 5. **The agent writes each record with a celis call.** A hook may give the agent context, such as the
    patterns that fit, but it never captures the agent's tools to write records.
 6. **Patterns lead.** The card, the help and the README start with patterns, and trails come after.
-7. **Names follow the core.** The crate `celis-trails` becomes `celis-patterns`. The repo keeps its name
-   for now, and becomes `celis` later.
+7. **Patterns and trails are separate crates.** `celis-store` holds the store, the account, projects and
+   ids. `celis-patterns` holds patterns, and `celis-trails` holds trails, steps and notes. Trails depend
+   on patterns, and patterns never depend on trails. The repo keeps its name for now, and becomes
+   `celis` later.
 8. **A cell groups patterns by topic.** A cell is a free-text tag that the agent picks, such as
    `cli-help`. A pattern can be in several cells, and cells can overlap.
    A cell has no record of its own.
