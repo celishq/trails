@@ -49,13 +49,8 @@ A drop (CIP-03, "Dropping") MAY name a pattern, with why it no longer holds.
 
 - `binds`: optional label; the pattern is a rule, which a result must keep.
 
-**Writers**
-
-- A writer MUST NOT write the `promoted` label.
-
 **Readers**
 
-- A reader MUST read the `promoted` label as `binds`.
 - A pattern with no `binds` guides: work MAY depart from it with a named reason.
 
 ## Scope

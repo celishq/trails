@@ -47,7 +47,7 @@ $CELIS_HOME   where celis keeps the phrase and the store
 
 ```
 decision  json  {"id", "created_at", "project", "scope", "replaces", "content",
-                 "paths", "binds", "promoted"}
+                 "paths", "binds"}
 ```
 
 **Rules**

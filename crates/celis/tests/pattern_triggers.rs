@@ -234,7 +234,6 @@ fn decide_writes_the_trigger_and_labels() {
     let pattern = shown.iter().find_map(|v| v.get("decision")).unwrap();
     assert_eq!(pattern["paths"], json!(["shelf/*.py", "shelf/b.md"]));
     assert_eq!(pattern["binds"], json!(true));
-    assert_eq!(pattern["promoted"], json!(true));
     let o = repo.run(&repo.path(), &["decide", "--promoted", "--", "t"], &[], "");
     assert_eq!(o.status.code(), Some(2), "{o:?}");
     for flag in ["--tool", "--content", "--command"] {

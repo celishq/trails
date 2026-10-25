@@ -40,6 +40,6 @@ pub(crate) fn pattern(note: &Note, pattern: &Pattern) -> Value {
         "replaces": pattern.replaces,
         "content": pattern.content,
         "paths": pattern.paths,
-        "binds": pattern.binds, "promoted": pattern.binds,
+        "binds": pattern.binds,
     })
 }

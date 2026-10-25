@@ -84,7 +84,6 @@ fn the_json_form_of_a_pattern_has_the_listed_fields() {
             "id",
             "paths",
             "project",
-            "promoted",
             "replaces",
             "scope"
         ]

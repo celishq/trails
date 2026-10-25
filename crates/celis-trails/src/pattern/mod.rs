@@ -57,19 +57,13 @@ impl Pattern {
         Note::write(signer, 1111u16, at, tags, self.content.clone())
     }
 
-    /// When it applies and what to do, on one line, without the reason: `<When>: <Do>`.
+    /// When it applies and what to do, on one line: `<When>: <Do>`, or its first line when it has no `Do`.
     pub fn brief(&self) -> String {
-        let line = |name: &str| {
-            let mut lines = self.content.lines();
-            lines.find_map(|l| l.strip_prefix(name).map(str::trim))
-        };
-        match (self.content.lines().next(), line("Do:")) {
-            (Some(when), Some(what)) => format!("{when}: {what}"),
-            _ => self
-                .content
-                .split_once(", because ")
-                .map_or(self.content.as_str(), |(brief, _)| brief)
-                .to_string(),
+        let when = self.content.lines().next().unwrap_or("");
+        let mut lines = self.content.lines();
+        match lines.find_map(|l| l.strip_prefix("Do:").map(str::trim)) {
+            Some(what) => format!("{when}: {what}"),
+            None => when.to_string(),
         }
     }
 
@@ -94,7 +88,7 @@ impl Pattern {
                 .filter(|t| t.len() >= 2 && t[0] == "path")
                 .map(|t| t[1].clone())
                 .collect(),
-            binds: labelled(note, "binds") || labelled(note, "promoted"),
+            binds: labelled(note, "binds"),
             within: note
                 .tags
                 .iter()

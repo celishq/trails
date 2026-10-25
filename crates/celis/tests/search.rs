@@ -211,9 +211,9 @@ fn search_prints_the_rules_before_the_other_patterns() {
     );
 }
 
-/// A pattern with the older `promoted` label reads as a rule (`spec/05-patterns.md`, "Rules").
+/// A pattern with the deprecated `promoted` label guides, and is no rule (`spec/05-patterns.md`, "Rules").
 #[test]
-fn a_promoted_pattern_reads_as_a_rule() {
+fn a_promoted_pattern_guides() {
     let repo = Repo::new();
     let id = repo.project_id();
     let label = vec![vec![
@@ -231,9 +231,9 @@ fn a_promoted_pattern_reads_as_a_rule() {
         now() - DAY,
     );
     let rules = search(&repo, &["--kind", "rule", "--", "draw a logo"]);
-    assert!(rules.contains(&old.id[..8]), "{rules}");
+    assert!(!rules.contains(&old.id[..8]), "{rules}");
     let line = out(&cli(&repo, &["grep", &old.id[..8]]));
-    assert!(line.contains(" binds "), "{line}");
+    assert!(!line.contains(" binds"), "{line}");
 }
 
 /// `search` prints a pattern's first line after its id and scope, and each next line of its text under

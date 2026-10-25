@@ -83,7 +83,7 @@ them.
 | `tool` | a rule tag: the other tool calls a rule acted on |
 | 1985 with `name` in `celis.step` · `skill:<name>` | the name of a trail, and the project of a trail from a skill file |
 | `situation` in `celis.decision` | a pattern label: the pattern also held where no file shows it ahead |
-| `promoted` in `celis.decision` | a pattern label, now `binds`; a reader reads it as `binds` |
+| `promoted` in `celis.decision` | a pattern label, now `binds` |
 | `promoted` in the `--json` of a decision | the same value as `binds` |
 
 ## Words
