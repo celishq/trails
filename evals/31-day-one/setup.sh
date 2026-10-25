@@ -1,5 +1,7 @@
 #!/bin/sh
 set -e
+export GIT_CEILING_DIRECTORIES="$(dirname "$PWD")"
+unset CLAUDE_CODE_SESSION_ID CODEX_THREAD_ID CELIS_SESSION_ID
 mkdir -p style
 printf 'Fresh beans. Roasted Monday. Gone by Friday.\n' > style/blurb-good.md
 printf 'Our carefully curated selection offers a truly unforgettable experience.\n' > style/blurb-bad.md

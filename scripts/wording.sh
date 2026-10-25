@@ -9,6 +9,7 @@ copy=$(mktemp -d)
 mkdir -p "$copy/plugins"
 cp -R "$root/plugins/celis" "$copy/plugins/celis"
 cp -R "$root/evals" "$copy/evals"
+cp -R "$root/.claude-plugin" "$copy/.claude-plugin"
 rm -rf "$copy/evals/results"
 if [ "$move" != - ]; then
   python3 -I - "$copy/plugins/celis/card.md" "$root/$move" <<'PY'
@@ -21,6 +22,6 @@ PY
 fi
 cd "$copy"
 for case in "$@"; do
-  PATH="$root/crates/target/debug:$PATH" claude plugin eval plugins/celis --case "$case" --model "$model" \
-    --ablation none --scaffold --trust-plugin -j 4 --judge-model sonnet --output-dir "$root/evals/results/$name-$model-$case"
+  PATH="$root/crates/target/debug:$PATH" claude plugin eval . --case "$case" --model "$model" \
+    --ablation none --scaffold --trust-plugin --allow-tools Write Edit Bash -j 4 --judge-model sonnet --output-dir "$root/evals/results/$name-$model-$(echo "$case" | tr -d "*")"
 done
