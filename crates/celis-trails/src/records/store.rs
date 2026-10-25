@@ -101,9 +101,9 @@ impl Store {
         self.blobs.get(sha256)
     }
 
-    /// Copies each record a linked folder holds and lacks into it, with the blobs its files name, and
-    /// each record of a linked folder the store lacks into `shared/`. Returns the counts of records
-    /// copied out and in.
+    /// Copies each record a linked folder holds and lacks into it, with the blobs its files and file
+    /// examples name, and each record of a linked folder the store lacks into `shared/`. Returns the
+    /// counts of records copied out and in.
     pub fn sync(&self) -> Result<(usize, usize)> {
         let mut kept = read(&self.root.join("shared"), |_| true, &self.verified);
         let came = self.take_in(&mut kept)?;
@@ -112,7 +112,13 @@ impl Store {
         for link in &self.links {
             for record in kept.iter().filter(|r| link.holds(r, &all)) {
                 went += usize::from(put(&link.folder, record)?.1);
-                for file in record.tags.iter().filter_map(|t| ProofFile::read(t)) {
+                let proofs = record.tags.iter().filter_map(|t| ProofFile::read(t));
+                let examples = crate::Examples::read(record);
+                let examples = examples.sides().filter_map(|(_, e)| match e {
+                    crate::Example::File(file) => Some(file.clone()),
+                    _ => None,
+                });
+                for file in proofs.chain(examples) {
                     link_blobs(link).copy(&self.blobs, &file.sha256)?;
                 }
             }

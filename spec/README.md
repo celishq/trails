@@ -42,7 +42,7 @@ Every change of `spec/` MUST keep these rules:
 | 04 | Trails | the trail, its sessions and prompts, its rules | CIP-01, 03, 05 |
 | 05 | Rules | the rule and its scope | CIP-01 |
 | 06 | Reuse | the steps and rules a step uses, revisions | CIP-03, 04, 05 |
-| 08 | Files | the files of a done, and their blobs | CIP-01, 03 |
+| 08 | Files | the files of a done and of a pattern, and their blobs | CIP-01, 03, 05 |
 
 ## Names
 

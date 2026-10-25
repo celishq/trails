@@ -335,3 +335,35 @@ fn tree_and_stats_show_the_patterns() {
         "{stats}"
     );
 }
+
+/// A linked folder carries a pattern and the blob of each file example to a second store, and keeps a
+/// `me` pattern out (`spec/08-files.md`, "Blobs").
+#[test]
+fn a_link_carries_a_pattern_and_its_files() {
+    let repo = Repo::new();
+    repo.write("logo.svg", "<svg id=\"flat\"/>\n");
+    let decide = |scope: &str, text: &str| {
+        let o = cli(
+            &repo,
+            &["decide", "--scope", scope, "--good", "logo.svg", "--", text],
+        );
+        assert!(o.status.success(), "{}", err(&o));
+    };
+    decide("project", "When a logo is drawn: keep it flat.");
+    decide("me", "When an icon is drawn: keep it bold.");
+    assert!(cli(&repo, &["link"]).status.success());
+    let sha = {
+        use sha2::{Digest, Sha256};
+        format!("{:x}", Sha256::digest(b"<svg id=\"flat\"/>\n"))
+    };
+    assert!(repo.path().join(".celis/trails/blobs").join(&sha).is_file());
+    let other = tempfile::tempdir().unwrap();
+    let home = other.path().display().to_string();
+    let env = [("CELIS_HOME", home.as_str())];
+    assert!(repo.run(&repo.path(), &["link"], &env, "").status.success());
+    let said = out(&repo.run(&repo.path(), &["patterns"], &env, ""));
+    assert!(said.contains("keep it flat"), "{said}");
+    assert!(!said.contains("keep it bold"), "{said}");
+    let blob = other.path().join("trails/blobs").join(&sha);
+    assert!(said.contains(&blob.display().to_string()), "{said}");
+}

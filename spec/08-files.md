@@ -2,7 +2,7 @@
 cip: 8
 title: Files
 status: draft
-depends: [CIP-01, CIP-03]
+depends: [CIP-01, CIP-03, CIP-05]
 ---
 
 # CIP-08 — Files
@@ -49,8 +49,8 @@ $CELIS_HOME/trails/blobs/<sha256>   the bytes of a file, named by their sha256
 **Writers**
 
 - A blob file MUST NOT change once written, and a reader MUST NOT see it half written.
-- While a link is on, a writer MUST write each blob that an `imeta` of a held record names to the
-  folder too.
+- While a link is on, a writer MUST write each blob that an `imeta` or a file example (CIP-05,
+  "Patterns") of a held record names to the folder too.
 
 **Readers**
 
