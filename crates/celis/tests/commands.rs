@@ -4,7 +4,9 @@ mod support;
 
 use serde_json::Value;
 use std::process::Output;
-use support::{account, err, labelled, mark_note, now, out, refusal, step_note, stored_rule, Repo};
+use support::{
+    account, err, labelled, mark_note, now, out, refusal, step_note, stored_pattern, Repo,
+};
 
 const WORK: &str = "When you change prices: keep them in cents, because floats lost a cent.";
 
@@ -33,9 +35,9 @@ fn project(id: &str) -> (&str, &str) {
     (id, "repo")
 }
 
-/// A rule prints as `<id, first 8> <scope> <text>`.
+/// A pattern prints as `<id, first 8> <scope> <text>`.
 #[test]
-fn a_rule_prints_its_id_scope_and_text() {
+fn a_pattern_prints_its_id_scope_and_text() {
     let repo = Repo::new();
     let o = repo.run(
         &repo.path(),
@@ -51,13 +53,13 @@ fn a_rule_prints_its_id_scope_and_text() {
     assert_eq!(lines[1..], [format!("{} me one", short(&placed))]);
 }
 
-/// The json form of a rule is one object with the fields the section lists
+/// The json form of a pattern is one object with the fields the section lists
 /// (`spec/02-cli.md`, "Commands").
 #[test]
-fn the_json_form_of_a_rule_has_the_listed_fields() {
+fn the_json_form_of_a_pattern_has_the_listed_fields() {
     let repo = Repo::new();
     let id = repo.project_id();
-    let note = stored_rule(
+    let note = stored_pattern(
         &repo,
         project(&id),
         &account(),
@@ -70,12 +72,13 @@ fn the_json_form_of_a_rule_has_the_listed_fields() {
     let o = repo.run(&repo.path(), &["step", "start", &step, "--json"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     let line: Value = serde_json::from_str(out(&o).lines().nth(1).unwrap()).unwrap();
-    let rule = line["decision"].as_object().unwrap();
-    let mut keys: Vec<&str> = rule.keys().map(String::as_str).collect();
+    let pattern = line["decision"].as_object().unwrap();
+    let mut keys: Vec<&str> = pattern.keys().map(String::as_str).collect();
     keys.sort();
     assert_eq!(
         keys,
         [
+            "binds",
             "content",
             "created_at",
             "id",
@@ -86,11 +89,11 @@ fn the_json_form_of_a_rule_has_the_listed_fields() {
             "scope"
         ]
     );
-    assert_eq!(rule["id"], note.id.as_str());
-    assert_eq!(rule["scope"], "at:a.py");
+    assert_eq!(pattern["id"], note.id.as_str());
+    assert_eq!(pattern["scope"], "at:a.py");
 }
 
-/// `decide` writes a rule on the working folder's project with `--scope` and `--replaces` as its
+/// `decide` writes a pattern on the working folder's project with `--scope` and `--replaces` as its
 /// tags, the whole id of a trail, and no `scope` tag for the project (`spec/02-cli.md`,
 /// "Commands").
 #[test]
@@ -100,7 +103,7 @@ fn decide_writes_its_scope_and_replaces_as_tags() {
     let trail = out(&run(&repo, &["step", "add", "--", "t"]))
         .trim()
         .to_string();
-    let old = stored_rule(
+    let old = stored_pattern(
         &repo,
         project(&id),
         &account(),
@@ -131,8 +134,11 @@ fn decide_writes_its_scope_and_replaces_as_tags() {
     assert_eq!(replacing.tag("path"), Some("shelf/prices.py"));
     assert_eq!(replacing.tag("replaces"), Some(old.id.as_str()));
     assert_eq!(replacing.tag("I"), Some(format!("project:{id}").as_str()));
-    let rule = written(&["--scope", &format!("trail:{}", short(&trail))]);
-    assert_eq!(rule.tag("scope"), Some(format!("trail:{trail}").as_str()));
+    let pattern = written(&["--scope", &format!("trail:{}", short(&trail))]);
+    assert_eq!(
+        pattern.tag("scope"),
+        Some(format!("trail:{trail}").as_str())
+    );
     assert_eq!(written(&["--scope", "project"]).tag("scope"), None);
 }
 
@@ -179,10 +185,10 @@ fn decide_refuses_a_trail_the_project_has_not_open() {
     assert!(o.status.success(), "{}", err(&o));
 }
 
-/// `decide` takes `trail:<id>` of a done trail when `--replaces` names a live rule of that trail
+/// `decide` takes `trail:<id>` of a done trail when `--replaces` names a live pattern of that trail
 /// (`spec/02-cli.md`, "Commands").
 #[test]
-fn decide_keeps_a_done_trails_scope_when_it_replaces_its_rule() {
+fn decide_keeps_a_done_trails_scope_when_it_replaces_its_pattern() {
     let repo = Repo::new();
     let t = now() - 5 * 60;
     let trail = step_note(&repo, &account(), None, "reached", t);
@@ -213,13 +219,13 @@ fn decide_keeps_a_done_trails_scope_when_it_replaces_its_rule() {
     assert!(o.status.success(), "{}", err(&o));
 }
 
-/// `decide` refuses a `--replaces` no live rule has, with `no-decision`
+/// `decide` refuses a `--replaces` no live pattern has, with `no-decision`
 /// (`spec/02-cli.md`, "Commands").
 #[test]
-fn decide_refuses_a_replaces_no_live_rule_has() {
+fn decide_refuses_a_replaces_no_live_pattern_has() {
     let repo = Repo::new();
     let id = repo.project_id();
-    let old = stored_rule(
+    let old = stored_pattern(
         &repo,
         project(&id),
         &account(),
@@ -227,7 +233,7 @@ fn decide_refuses_a_replaces_no_live_rule_has() {
         "old",
         now() - 3 * 60,
     );
-    stored_rule(
+    stored_pattern(
         &repo,
         project(&id),
         &account(),

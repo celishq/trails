@@ -13,12 +13,12 @@ pub(super) enum Mode {
 }
 
 /// Where the person is: all trails or one, the trail shown and the trail picked among all, the card
-/// selected and the row selected in it, the cards opened and the nestings unfolded, whether the rules
-/// fill the screen with the rule selected and the first row shown, what she searches and the trail
+/// selected and the row selected in it, the cards opened and the nestings unfolded, whether the patterns
+/// fill the screen with the pattern selected and the first row shown, what she searches and the trail
 /// picked before, whether the view follows the newest card and how far it is scrolled, whether it
 /// scrolls to show the trail picked, and since when a new trail is above the screen. It keeps from the
 /// last frame where each card and each trail stood, the steps the selected card lists, and the trails
-/// and rules shown.
+/// and patterns shown.
 #[derive(Default)]
 pub(super) struct View {
     pub mode: Option<Mode>,
@@ -28,9 +28,9 @@ pub(super) struct View {
     pub row: Option<String>,
     pub opened: HashSet<String>,
     pub unfolded: HashSet<String>,
-    pub rules: bool,
-    pub rule: Option<String>,
-    pub rule_top: usize,
+    pub patterns: bool,
+    pub pattern: Option<String>,
+    pub pattern_top: usize,
     pub query: Option<String>,
     pub before: Option<String>,
     pub follow: bool,
@@ -68,19 +68,19 @@ impl View {
         self.mode.unwrap_or(Mode::All)
     }
 
-    /// The key line: one for all trails, one for the rules, one for a search, and one for inside a
+    /// The key line: one for all trails, one for the patterns, one for a search, and one for inside a
     /// trail at any depth, `esc` last and always back.
     pub fn keys(&self) -> &'static str {
         if self.query.is_some() {
             return "type to find · ↑↓ navigate · enter open · esc back";
         }
-        if self.rules {
+        if self.patterns {
             return "↑↓ navigate · esc back";
         }
         match self.mode() {
-            Mode::All => "↑↓ navigate · enter open · / find · r rules",
+            Mode::All => "↑↓ navigate · enter open · / find · r patterns",
             Mode::Trail => {
-                "←↑↓→ navigate · enter open · * open all · tab next trail · a all trails · r rules · esc back"
+                "←↑↓→ navigate · enter open · * open all · tab next trail · a all trails · r patterns · esc back"
             }
         }
     }
@@ -104,7 +104,7 @@ impl View {
         self.row = None;
         self.opened.clear();
         self.unfolded.clear();
-        self.rules = false;
+        self.patterns = false;
         self.offset = 0.0;
         self.follow = true;
     }
@@ -122,13 +122,13 @@ impl View {
             self.query = Some(String::new());
             return;
         }
-        if self.rules {
+        if self.patterns {
             return self.read(key);
         }
         if let Key::Char('r') = key {
-            self.rules = true;
-            self.rule = self.learned.first().cloned();
-            self.rule_top = 0;
+            self.patterns = true;
+            self.pattern = self.learned.first().cloned();
+            self.pattern_top = 0;
             return;
         }
         match self.mode() {
@@ -314,20 +314,20 @@ impl View {
         true
     }
 
-    /// Takes a key while the rules fill the screen: ↑↓ move through them, esc or `r` close them.
+    /// Takes a key while the patterns fill the screen: ↑↓ move through them, esc or `r` close them.
     fn read(&mut self, key: Key) {
         let at = self
             .learned
             .iter()
-            .position(|r| Some(r) == self.rule.as_ref())
+            .position(|r| Some(r) == self.pattern.as_ref())
             .unwrap_or(0);
         match key {
-            Key::Up => self.rule = self.learned.get(at.saturating_sub(1)).cloned(),
+            Key::Up => self.pattern = self.learned.get(at.saturating_sub(1)).cloned(),
             Key::Down => {
                 let to = (at + 1).min(self.learned.len().saturating_sub(1));
-                self.rule = self.learned.get(to).cloned();
+                self.pattern = self.learned.get(to).cloned();
             }
-            Key::Escape | Key::Char('r') => self.rules = false,
+            Key::Escape | Key::Char('r') => self.patterns = false,
             _ => {}
         }
     }

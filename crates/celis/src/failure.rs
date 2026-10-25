@@ -25,12 +25,14 @@ impl Failure {
         )
     }
 
-    /// No live rule has this id.
-    pub fn no_rule(id: &str) -> Self {
+    /// No live pattern has this id.
+    pub fn no_pattern(id: &str) -> Self {
         Self::new(
             "no-decision",
             1,
-            format!("no live rule has the id {id}; see the live ones with `celis grep \" live \"`"),
+            format!(
+                "no live pattern has the id {id}; see the live ones with `celis grep \" live \"`"
+            ),
         )
     }
 
@@ -105,7 +107,7 @@ impl From<Refusal> for Failure {
         match refusal {
             Refusal::Usage(message) => Self::usage(message),
             Refusal::NoStep(id) => Self::no_step(&id),
-            Refusal::NoRule(id) => Self::no_rule(&id),
+            Refusal::NoPattern(id) => Self::no_pattern(&id),
             Refusal::NoTrail(id) => Self::no_trail(&id),
             Refusal::Closed(id) => Self::closed(&id),
             Refusal::OpenSteps(id) => Self::open_steps(&id),

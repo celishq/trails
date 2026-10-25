@@ -50,7 +50,7 @@ $CELIS_HOME/trails/blobs/<sha256>   the bytes of a file, named by their sha256
 
 - A blob file MUST NOT change once written, and a reader MUST NOT see it half written.
 - While a link is on, a writer MUST write each blob that an `imeta` or a file example (CIP-05,
-  "Patterns") of a held record names to the folder too.
+  "Examples") of a held record names to the folder too.
 
 **Readers**
 

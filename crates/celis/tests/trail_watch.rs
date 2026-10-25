@@ -440,29 +440,29 @@ fn watch_opens_a_step_and_copies_its_id() {
     );
 }
 
-/// A block folds its rules to one line, and `→` opens it to a line a rule, each wrapped whole; the
+/// A block folds its patterns to one line, and `→` opens it to a line a pattern, each wrapped whole; the
 /// watch prints no ids.
 #[test]
-fn watch_opens_the_rules_line() {
+fn watch_opens_the_patterns_line() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the trail"]);
     add(&repo, &["--under", &trail[..8], "--", "the part"]);
-    let rule = "When you price a senior: use cents, because floats lost a cent on the receipt.";
+    let pattern = "When you price a senior: use cents, because floats lost a cent on the receipt.";
     let scope = format!("trail:{}", &trail[..8]);
-    let o = cli(&repo, &["decide", "--scope", &scope, "--", rule]);
+    let o = cli(&repo, &["decide", "--scope", &scope, "--", pattern]);
     assert!(o.status.success(), "{}", err(&o));
     let mut watch = Watch::start(&repo, &["tree", &trail[..8]]);
     watch.size(24, 60);
-    watch.until("└▸ § 1 rule");
+    watch.until("└▸ § 1 pattern");
     let last = watch.trees(Duration::ZERO).pop().unwrap();
     assert!(
         !last.contains("When you price") && !last.contains(&trail[..8]),
         "{last:?}"
     );
     watch.press("\x1b[B\x1b[B\x1b[B");
-    watch.until("\r\n▌   └▸ § 1 rule");
+    watch.until("\r\n▌   └▸ § 1 pattern");
     watch.press("\x1b[C");
-    watch.until("└▾ § 1 rule");
+    watch.until("└▾ § 1 pattern");
     watch.until("   └─ § When you price");
     watch.until("the receipt");
 }
@@ -503,7 +503,7 @@ fn watch_opens_and_closes_with_arrows_and_star() {
     watch.without("parent text");
 }
 
-/// The watch draws a block with its lines under its title, its tree lines, its rules folded to one
+/// The watch draws a block with its lines under its title, its tree lines, its patterns folded to one
 /// line, each step's details on a line under its title and no ids, in colour: § magenta, places blue, the project bold.
 #[test]
 fn watch_draws_a_block_with_tree_lines_and_colour_anchors() {
@@ -557,7 +557,7 @@ fn watch_draws_a_block_with_tree_lines_and_colour_anchors() {
     );
     assert!(rows[7].starts_with("    │  └─ "), "{rows:?}");
     assert!(!rows.join("\n").contains("prices.py"), "{rows:?}");
-    assert_eq!(rows[9], "    └▸ § 1 rule", "{rows:?}");
+    assert_eq!(rows[9], "    └▸ § 1 pattern", "{rows:?}");
     assert!(!rows.join("\n").contains(&trail[..8]), "{rows:?}");
     let raw = watch.coloured(Duration::ZERO);
     for anchor in ["\x1b[35m§", "\x1b[1mrepo"] {
@@ -584,18 +584,18 @@ fn watch_prints_a_fresh_step_bold() {
     assert!(raw.contains("\x1b[32m✓\x1b[0m 1 closed step"), "{raw:?}");
 }
 
-/// A block prints its open steps newest first, then its rules line, then its closed line, and a step
+/// A block prints its open steps newest first, then its patterns line, then its closed line, and a step
 /// folds its own closed steps the same way.
 #[test]
-fn watch_prints_open_steps_then_rules_then_closed_steps() {
+fn watch_prints_open_steps_then_patterns_then_closed_steps() {
     let repo = Repo::new();
     let by = support::account();
     let at = support::now() - 60;
     let trail = support::step_note(&repo, &by, None, "the trail", at);
     let scope = format!("trail:{}", trail.id);
     let project = (repo.project_id(), "repo");
-    let rule = (Some(scope.as_str()), None);
-    support::stored_rule(&repo, (&project.0, project.1), &by, rule, "a rule", at);
+    let pattern = (Some(scope.as_str()), None);
+    support::stored_pattern(&repo, (&project.0, project.1), &by, pattern, "a rule", at);
     let finished = support::step_note(&repo, &by, Some(&trail), "finished", at + 1);
     support::mark_note(&repo, &by, "done", &finished.id, "proof", at + 2);
     let parent = support::step_note(&repo, &by, Some(&trail), "parent", at + 3);
@@ -618,7 +618,7 @@ fn watch_prints_open_steps_then_rules_then_closed_steps() {
         "    │  │ ",
         "    │  ├─ ○ new child",
         "    │  └▸ ✓ 1 closed step",
-        "    ├▸ § 1 rule",
+        "    ├▸ § 1 pattern",
         "    └▸ ✓ 1 closed step",
     ];
     assert_eq!(tree.len(), starts.len(), "{rows:?}");
@@ -752,7 +752,7 @@ fn watch_wraps_long_titles_whole() {
 }
 
 /// A trail's line prints its steps and worked time on a dim line under its title, and no count of its
-/// rules.
+/// patterns.
 #[test]
 fn watch_prints_a_trail_lines_details_under_its_title() {
     let repo = Repo::new();
@@ -769,7 +769,7 @@ fn watch_prints_a_trail_lines_details_under_its_title() {
     let project = repo.project_id();
     for n in 0..10 {
         let scope = format!("trail:{}", one.id);
-        support::stored_rule(
+        support::stored_pattern(
             &repo,
             (&project, "repo"),
             &by,
@@ -1236,7 +1236,7 @@ fn next_watch_leaves_the_last_column_empty() {
 }
 
 /// With `--next`, The watch draws a block with its project and done/all at the right of its title, its steps on tree
-/// lines under it, a step with steps under it closed behind `▸` and spinning while one under it works, its rules
+/// lines under it, a step with steps under it closed behind `▸` and spinning while one under it works, its patterns
 /// folded to one line, no ids and no places, in colour: § magenta, the tree lines grey whatever the state.
 #[test]
 fn next_watch_draws_a_block_with_tree_lines_and_colour_anchors() {
@@ -1288,7 +1288,7 @@ fn next_watch_draws_a_block_with_tree_lines_and_colour_anchors() {
         "{rows:?}"
     );
     assert_eq!(rows[2], "    ├── ○  the fix", "{rows:?}");
-    assert_eq!(rows[3], "    └ ▸ §  1 rule", "{rows:?}");
+    assert_eq!(rows[3], "    └ ▸ §  1 pattern", "{rows:?}");
     let all = rows.join("\n");
     for gone in ["prices.py", "deeper part", &trail[..8], &fix[..8]] {
         assert!(!all.contains(gone), "{gone:?} in {rows:?}");
@@ -1343,7 +1343,7 @@ fn next_watch_folds_closed_steps_and_done_branches() {
 }
 
 /// With `--next`, A project's closed trails fold into one line that opens to a line a trail, each its steps counted by
-/// state dim at the right of its title, with no time and no count of its rules.
+/// state dim at the right of its title, with no time and no count of its patterns.
 #[test]
 fn next_watch_prints_a_trail_lines_details_under_its_title() {
     let repo = Repo::new();
@@ -1360,7 +1360,7 @@ fn next_watch_prints_a_trail_lines_details_under_its_title() {
     let project = repo.project_id();
     for n in 0..10 {
         let scope = format!("trail:{}", one.id);
-        support::stored_rule(
+        support::stored_pattern(
             &repo,
             (&project, "repo"),
             &by,
@@ -1392,18 +1392,18 @@ fn next_watch_prints_a_trail_lines_details_under_its_title() {
     assert!(colour.contains("\x1b[2m 12"), "{colour:?}");
 }
 
-/// With `--next`, A block prints its steps in the order they came, closed ones among them, then its rules line; a step
+/// With `--next`, A block prints its steps in the order they came, closed ones among them, then its patterns line; a step
 /// with steps under it stays closed behind `▸` until it opens to them in their order.
 #[test]
-fn next_watch_prints_open_steps_then_rules_then_closed_steps() {
+fn next_watch_prints_open_steps_then_patterns_then_closed_steps() {
     let repo = Repo::new();
     let by = support::account();
     let at = support::now() - 60;
     let trail = support::step_note(&repo, &by, None, "the trail", at);
     let scope = format!("trail:{}", trail.id);
     let project = (repo.project_id(), "repo");
-    let rule = (Some(scope.as_str()), None);
-    support::stored_rule(&repo, (&project.0, project.1), &by, rule, "a rule", at);
+    let pattern = (Some(scope.as_str()), None);
+    support::stored_pattern(&repo, (&project.0, project.1), &by, pattern, "a rule", at);
     let finished = support::step_note(&repo, &by, Some(&trail), "finished", at + 1);
     support::mark_note(&repo, &by, "done", &finished.id, "proof", at + 2);
     let parent = support::step_note(&repo, &by, Some(&trail), "parent", at + 3);
@@ -1425,7 +1425,7 @@ fn next_watch_prints_open_steps_then_rules_then_closed_steps() {
         "    ├── ✓  finished",
         "    ├ ▸ ○  parent",
         "    ├── ○  newest",
-        "    └ ▸ §  1 rule",
+        "    └ ▸ §  1 pattern",
     ];
     assert_eq!(rows.len(), starts.len(), "{rows:?}");
     for (row, start) in rows.iter().zip(starts) {
@@ -1624,29 +1624,29 @@ fn next_watch_opens_a_step_and_copies_its_id() {
     watch.until("done     it works");
 }
 
-/// With `--next`, A block folds its rules to one line, and `→` opens it to a line a rule, each wrapped whole to fit,
+/// With `--next`, A block folds its patterns to one line, and `→` opens it to a line a pattern, each wrapped whole to fit,
 /// with no scope or id.
 #[test]
-fn next_watch_opens_the_rules_line() {
+fn next_watch_opens_the_patterns_line() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the trail"]);
     add(&repo, &["--under", &trail[..8], "--", "the part"]);
-    let rule = "When you price a senior: use cents, because floats lost a cent on the receipt.";
+    let pattern = "When you price a senior: use cents, because floats lost a cent on the receipt.";
     let scope = format!("trail:{}", &trail[..8]);
-    let o = cli(&repo, &["decide", "--scope", &scope, "--", rule]);
+    let o = cli(&repo, &["decide", "--scope", &scope, "--", pattern]);
     assert!(o.status.success(), "{}", err(&o));
     let mut watch = Watch::start(&repo, &["tree", "--next", &trail[..8]]);
     watch.size(24, 80);
-    watch.until("└ ▸ §  1 rule");
+    watch.until("└ ▸ §  1 pattern");
     let tree = watch.rows().join("\n");
     assert!(
         !tree.contains("When you price") && !tree.contains(&trail[..8]),
         "{tree:?}"
     );
     watch.press("\x1b[B\x1b[B\x1b[B");
-    watch.until("\r\n▌   └ ▸ §  1 rule");
+    watch.until("\r\n▌   └ ▸ §  1 pattern");
     watch.press("\x1b[C");
-    watch.until("└ ▾ §  1 rule");
+    watch.until("└ ▾ §  1 pattern");
     watch.until("        └── §  When you price a senior");
     watch.until("the receipt.");
     assert!(
@@ -1980,8 +1980,8 @@ fn next_watch_draws_only_its_trails() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the trail"]);
     let scope = format!("trail:{}", &trail[..8]);
-    let rule = "When you add a page: copy the frame, because it holds the header.";
-    let o = cli(&repo, &["decide", "--scope", &scope, "--", rule]);
+    let pattern = "When you add a page: copy the frame, because it holds the header.";
+    let o = cli(&repo, &["decide", "--scope", &scope, "--", pattern]);
     assert!(o.status.success(), "{}", err(&o));
     let mut watch = Watch::start(&repo, &["tree", "--next"]);
     watch.size(24, 80);

@@ -4,20 +4,22 @@ use super::clock::took;
 use crate::progress::Grade;
 use celis_nostr::Note;
 use celis_trails::records::id::short;
-use celis_trails::{Example, ProofFile, Rule, Step, Trails};
+use celis_trails::{Example, Pattern, ProofFile, Step, Trails};
 
-/// `<id, first 8> <scope> <text>` of the rule that `note` holds, then each of its examples: a step
-/// with its proof and blobs, a file with its blob, or a URL.
-pub(crate) fn rule(note: &Note, rule: &Rule, trails: &Trails) -> String {
+/// `<id, first 8> <scope> <first line>` of the pattern that `note` holds, then each next line of its
+/// text, then each of its examples: a step with its proof and blobs, a file with its blob, or a URL.
+pub(crate) fn pattern(note: &Note, pattern: &Pattern, trails: &Trails) -> String {
     let steps = trails.steps();
+    let mut text = pattern.content.lines();
     let head = format!(
         "{} {} {}",
         short(&note.id),
-        rule.scope.short(),
-        rule.content
+        pattern.scope.short(),
+        text.next().unwrap_or("")
     );
     let mut lines = vec![head];
-    for (side, example) in rule.examples.sides() {
+    lines.extend(text.map(|l| format!("  {l}")));
+    for (side, example) in pattern.examples.sides() {
         let id = match example {
             Example::Step(id) => id,
             Example::File(file) => {

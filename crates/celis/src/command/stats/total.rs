@@ -6,8 +6,8 @@ use celis_trails::{State, Used};
 use std::collections::HashSet;
 
 /// What a store holds of all time: the second of its first step, its trails, its steps that ended, the
-/// done steps that followed past work and no later step revised, the done steps that applied a rule,
-/// its rules kept and how many of them a step ever used, and the time its steps with no steps under
+/// done steps that followed past work and no later step revised, the done steps that applied a pattern,
+/// its patterns kept and how many of them a step ever used, and the time its steps with no steps under
 /// them took.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub(super) struct Total {
@@ -16,7 +16,7 @@ pub(super) struct Total {
     pub resolved: usize,
     pub reused: usize,
     pub hits: usize,
-    pub rules: usize,
+    pub patterns: usize,
     pub used: usize,
     pub time: u64,
 }
@@ -28,16 +28,21 @@ impl Total {
         let done = || parts().filter(|s| s.state() == State::Done);
         let follows =
             |s: &celis_trails::Step| s.uses().iter().any(|u| matches!(u, Used::Follow(_)));
-        let ruled = |s: &celis_trails::Step| s.uses().iter().any(|u| matches!(u, Used::Rule(_)));
+        let ruled = |s: &celis_trails::Step| s.uses().iter().any(|u| matches!(u, Used::Pattern(_)));
         let named: HashSet<&str> = all
             .iter()
             .flat_map(|s| s.uses())
             .filter_map(|u| match u {
-                Used::Rule(id) => Some(id),
+                Used::Pattern(id) => Some(id),
                 Used::Follow(_) => None,
             })
             .collect();
-        let live: Vec<_> = model.rules.every().iter().filter(|e| e.is_live()).collect();
+        let live: Vec<_> = model
+            .patterns
+            .every()
+            .iter()
+            .filter(|e| e.is_live())
+            .collect();
         Total {
             since: all.iter().map(|s| s.note().created_at).min().unwrap_or(0),
             trails: all.iter().filter(|s| s.is_trail()).count(),
@@ -46,7 +51,7 @@ impl Total {
                 .filter(|s| s.revised().is_empty() && follows(s))
                 .count(),
             hits: done().filter(|s| ruled(s)).count(),
-            rules: live.len(),
+            patterns: live.len(),
             used: live
                 .iter()
                 .filter(|e| named.contains(e.note.id.as_str()))

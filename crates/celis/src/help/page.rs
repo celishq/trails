@@ -62,7 +62,7 @@ const PHRASES: &[(&str, &str)] = &[
         "Show your patterns with their good and bad examples",
     ),
     ("stats", "Show what later work reused, and how work went"),
-    ("decide", "Record a rule that later work must keep"),
+    ("decide", "Record a pattern that later work must keep"),
     (
         "link",
         "Keep this project's trails in a folder to commit or share",
@@ -86,7 +86,7 @@ const WORDS: &[(&str, Style, &str, &str)] = &[
     (
         "§",
         MAGENTA,
-        "rule",
+        "pattern",
         "each lesson they learn, kept for later work",
     ),
 ];
@@ -94,7 +94,7 @@ const WORDS: &[(&str, Style, &str, &str)] = &[
 /// The flags only the plugin's hooks pass, left off the page.
 const HIDDEN: &[&str] = &["--session"];
 
-/// The marks celis prints for a step, a revision, a change and a rule.
+/// The marks celis prints for a step, a revision, a change and a pattern.
 const MARKS: &[(State, &str)] = &[
     (State::Open, "open"),
     (State::Working, "working"),
@@ -266,18 +266,14 @@ fn flags(verb: &Verb) -> Vec<(&'static str, Option<&'static str>, &'static str)>
     flags
 }
 
-/// The line of marks: each state's mark in its look, then the signs of a revision, a change and a rule.
+/// The line of marks: each state's mark in its look, then the signs of a revision and a change.
 fn marks() -> Styled {
     let mut spans = vec![Span::raw("  ")];
     for (state, name) in MARKS {
         spans.push(Span::styled(look(*state).mark, look(*state).text));
         spans.push(Span::raw(format!(" {name}  ")));
     }
-    for (sign, name, style) in [
-        ("↻", "revised", GREEN),
-        ("~", "changed", YELLOW),
-        ("§", "rule", MAGENTA),
-    ] {
+    for (sign, name, style) in [("↻", "revised", GREEN), ("~", "changed", YELLOW)] {
         spans.push(Span::styled(sign, style));
         spans.push(Span::raw(format!(" {name}  ")));
     }

@@ -76,7 +76,7 @@ fn the_tiles_stand_four_two_or_one_a_row() {
     assert_ne!(row(&lines, "REUSE RATE"), row(&lines, "RESOLVED STEPS"));
 }
 
-/// Opened, the sections show only what the tiles do not: the reused steps and the rules, the top rules
+/// Opened, the sections show only what the tiles do not: the reused steps and the patterns, the top patterns
 /// by hits, how the resolved steps ended, the weeks and the step times, the daily activity, and each
 /// project's time with its rework and drops; no tile number shows again, and prior is said once, in the
 /// Overview heading.
@@ -87,9 +87,9 @@ fn opened_sections_show_their_details() {
     for part in [
         "REUSE · past steps reapplied",
         "1 reused step   ▲ 1",
-        "RULES · learned rules applied",
-        "§ 1 rule kept  ·  1 applied  ·  +1 new",
-        "TOP RULES · most hits",
+        "PATTERNS · learned patterns applied",
+        "§ 1 pattern kept  ·  1 applied  ·  +1 new",
+        "TOP PATTERNS · most hits",
         "RESOLVED STEPS · how they ended",
         "4 resolved  ▲ 3  ·  2 first pass  ▼ 50 pp  ·  1 reworked  ▲ 25 pp  ·  1 dropped  ▲ 25 pp",
         "0 expired",
@@ -118,7 +118,7 @@ fn the_sparkline_marks_an_empty_day_on_its_baseline() {
     assert!(output.contains("⡀⡀⡀⡀⡀⡀█ a day"), "{output}");
 }
 
-/// A Total block of all time stands under the head, each total's name over its number, the rules
+/// A Total block of all time stands under the head, each total's name over its number, the patterns
 /// kept with how many a step ever used, and the board under it keeps to 14 days against the prior 14
 /// with its 28-day chart.
 #[test]
@@ -132,8 +132,8 @@ fn the_total_block_stands_over_the_14_day_board() {
     for name in [
         "resolved steps",
         "reused steps",
-        "rule hits",
-        "rules used",
+        "pattern hits",
+        "patterns used",
         "trails",
         "active time",
     ] {
@@ -144,7 +144,7 @@ fn the_total_block_stands_over_the_14_day_board() {
     for part in [
         "Overview  last 14 days vs prior 14",
         "DAILY ACTIVITY · last 28 days",
-        "weekly rule usage · last 4 weeks",
+        "weekly pattern usage · last 4 weeks",
     ] {
         assert!(text.contains(part), "{part:?} in\n{text}");
     }

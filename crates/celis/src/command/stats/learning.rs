@@ -1,4 +1,4 @@
-//! The Learning section of the stats board: the reuse of past work and the rules applied.
+//! The Learning section of the stats board: the reuse of past work and the patterns applied.
 
 use super::kind::Kind;
 use super::moment::{counted, plural, Moment};
@@ -9,7 +9,7 @@ use crate::terminal::unfold::ease;
 use celis_trails::records::id::short;
 use ratatui::style::Style;
 
-/// The panels of Learning: reuse, then rules.
+/// The panels of Learning: reuse, then patterns.
 pub(super) fn panels() -> [Panel; 2] {
     [
         Panel {
@@ -19,28 +19,28 @@ pub(super) fn panels() -> [Panel; 2] {
             draw: reuse,
         },
         Panel {
-            name: "Rules",
-            says: "learned rules applied".into(),
+            name: "Patterns",
+            says: "learned patterns applied".into(),
             start: 0.4,
-            draw: rules,
+            draw: patterns,
         },
     ]
 }
 
-/// The panel of the top rules of the last 14 days, when a rule has a hit.
+/// The panel of the top patterns of the last 14 days, when a pattern has a hit.
 pub(super) fn top(m: &Moment) -> Option<Panel> {
     (!m.month.top.is_empty()).then(|| Panel {
-        name: "Top rules",
+        name: "Top patterns",
         says: "most hits".into(),
         start: 0.5,
-        draw: rules_hit,
+        draw: patterns_hit,
     })
 }
 
-/// The rules with the most hits, most first: each its place, its id, its words cut to the width, a bar
+/// The patterns with the most hits, most first: each its place, its id, its words cut to the width, a bar
 /// when the card is wide, and its hits, the words on a row of their own when the card is narrow; the
 /// rows it takes.
-fn rules_hit(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
+fn patterns_hit(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
     let top = &m.month.top;
     let (wide, narrow) = (w >= 70, w < 60);
     let per = if narrow { 2 } else { 1 };
@@ -134,19 +134,19 @@ fn reuse(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
     row + 5 - y + 2
 }
 
-/// Rules, in violet: the rule usage with its change and the steps it counts, the rules kept with how
-/// many were applied and how many are new, the rule hits in each project, and the usage of each of the
+/// Patterns, in violet: the pattern usage with its change and the steps it counts, the patterns kept with how
+/// many were applied and how many are new, the pattern hits in each project, and the usage of each of the
 /// last four weeks as a run of numbers; the rows it takes.
-fn rules(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
+fn patterns(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
     let (now, month) = (m.now(), m.month);
     let violet = MAGENTA.patch(BOLD);
     let mut row = y + 2;
-    let usage = now.rule_usage();
+    let usage = now.pattern_usage();
     let lead = vec![
         paint(violet, &format!("{usage}%")),
-        paint(DIM, " rule usage"),
+        paint(DIM, " pattern usage"),
     ];
-    let before = m.before(|o| o.rule_usage());
+    let before = m.before(|o| o.pattern_usage());
     row += s.flow(
         x + 2,
         row,
@@ -154,7 +154,7 @@ fn rules(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
         &m.measure(lead, (Some(usage), before), Kind::Share, true),
     );
     let applied = format!(
-        "{} of {} successful steps applied a rule",
+        "{} of {} successful steps applied a pattern",
         now.applied,
         now.successful()
     );
@@ -162,8 +162,8 @@ fn rules(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
     row += 1;
     let counts: Vec<Group> = vec![
         vec![
-            paint(violet, &format!("§ {}", month.rules)),
-            paint(DIM, &format!(" {} kept", plural(month.rules, "rule"))),
+            paint(violet, &format!("§ {}", month.patterns)),
+            paint(DIM, &format!(" {} kept", plural(month.patterns, "pattern"))),
         ],
         vec![
             paint(DIM, "  ·  "),
@@ -177,7 +177,7 @@ fn rules(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
         ],
     ];
     row += s.flow(x + 2, row, w - 4, &counts) + 1;
-    s.put(x + 2, row, "rule hits by project", DIM);
+    s.put(x + 2, row, "pattern hits by project", DIM);
     let most = month
         .applied
         .iter()
@@ -194,7 +194,7 @@ fn rules(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
         s.put(x + w - 6, r, &format!("{v:>3}"), Style::new());
     }
     row += 1 + month.applied.len() as u16;
-    s.put(x + 2, row, "weekly rule usage · last 4 weeks", DIM);
+    s.put(x + 2, row, "weekly pattern usage · last 4 weeks", DIM);
     row += 1;
     let mut end = x + 4;
     let alpha = s.alpha;
@@ -204,7 +204,7 @@ fn rules(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
             end = s.put(end, row, " → ", MAGENTA);
         }
         let look = if n == 3 { BOLD } else { DIM };
-        end = s.put(end, row, &format!("{}%", week.rule_usage()), look);
+        end = s.put(end, row, &format!("{}%", week.pattern_usage()), look);
     }
     s.alpha = alpha;
     row - y + 3

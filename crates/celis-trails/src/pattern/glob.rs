@@ -1,4 +1,4 @@
-//! A path pattern of a rule's trigger.
+//! A path pattern of a pattern's trigger.
 
 use regex::Regex;
 

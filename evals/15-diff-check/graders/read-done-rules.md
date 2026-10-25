@@ -3,4 +3,4 @@ type: regex
 target: trace
 arm: with-only
 ---
-check the change against each rule of the files git shows changed
+check the change against each pattern of the files git shows changed

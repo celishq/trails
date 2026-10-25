@@ -60,20 +60,23 @@ fn a_and_tab_leave_the_trail() {
     );
 }
 
-/// `r` opens the rules over the screen with the newest selected, ↓ moves to the next, and esc closes
+/// `r` opens the patterns over the screen with the newest selected, ↓ moves to the next, and esc closes
 /// them.
 #[test]
-fn r_opens_the_rules_and_esc_closes_them() {
+fn r_opens_the_patterns_and_esc_closes_them() {
     let bench = Bench::new();
     let steps = bench.trails.steps();
     let mut view = inside("t", &["a"]);
     view.learned = vec!["new".into(), "old".into()];
     view.press(Key::Char('r'), &steps);
-    assert_eq!((view.rules, view.rule.as_deref()), (true, Some("new")));
+    assert_eq!(
+        (view.patterns, view.pattern.as_deref()),
+        (true, Some("new"))
+    );
     view.press(Key::Down, &steps);
-    assert_eq!(view.rule.as_deref(), Some("old"));
+    assert_eq!(view.pattern.as_deref(), Some("old"));
     view.press(Key::Escape, &steps);
-    assert!(!view.rules);
+    assert!(!view.patterns);
 }
 
 /// `/` searches all trails: every key types, `q` too, erase takes one off, and esc picks again the
@@ -106,7 +109,10 @@ fn the_key_line_ends_with_esc_and_names_no_quit() {
     view.selected = Some("a".into());
     assert_eq!(view.keys(), inside("t", &["a"]).keys());
     view.show(None);
-    assert_eq!(view.keys(), "↑↓ navigate · enter open · / find · r rules");
+    assert_eq!(
+        view.keys(),
+        "↑↓ navigate · enter open · / find · r patterns"
+    );
     assert!(!view.keys().contains("quit"));
 }
 

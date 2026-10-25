@@ -85,10 +85,10 @@ fn a_second_link_copies_nothing() {
     assert_eq!(listed.lines().count(), 1, "{listed}");
 }
 
-/// A link holds no `me` rule and no record of another project, and holds a status record by the
+/// A link holds no `me` pattern and no record of another project, and holds a status record by the
 /// step it names (`spec/01-records.md`, "Links").
 #[test]
-fn a_link_holds_only_the_projects_records_and_no_me_rule() {
+fn a_link_holds_only_the_projects_records_and_no_me_pattern() {
     let repo = Repo::new();
     let mine = run(
         &repo,

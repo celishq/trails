@@ -16,11 +16,11 @@ pub(crate) const GREEN: Style = Style::new().fg(Color::Rgb(52, 230, 140));
 pub(crate) const YELLOW: Style = Style::new().fg(Color::Rgb(250, 204, 21));
 /// Working: a neon cyan.
 pub(crate) const CYAN: Style = Style::new().fg(Color::Rgb(34, 211, 238));
-/// Rules: a neon violet.
+/// Patterns: a neon violet.
 pub(crate) const MAGENTA: Style = Style::new().fg(Color::Rgb(192, 96, 255));
 /// Dropped: rose.
 pub(crate) const RED: Style = Style::new().fg(Color::Rgb(251, 113, 133));
-/// The border of a day's box and the rule under its line: a slate blue, a little lighter than the
+/// The border of a day's box and the pattern under its line: a slate blue, a little lighter than the
 /// screen.
 pub(crate) const FRAME: Style = Style::new().fg(Color::Rgb(30, 48, 76));
 /// The border of celis's card and the line after its headline, lighter than a day's box.

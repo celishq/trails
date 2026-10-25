@@ -80,22 +80,22 @@ impl Command {
             .collect())
     }
 
-    /// The rows `search` reads: each trail and step of every project, and each live rule in scope.
+    /// The rows `search` reads: each trail and step of every project, and each live pattern in scope.
     pub(super) fn searched(&self) -> Result<Vec<Row>, Failure> {
         if !self.held()? {
             return Ok(vec![]);
         }
         let trails = self.trails()?;
         let project = self.project();
-        let live = trails.rules().live(&project.anchor.project).into_iter();
-        let rules: HashSet<String> = live
+        let live = trails.patterns().live(&project.anchor.project).into_iter();
+        let patterns: HashSet<String> = live
             .map(|(note, _)| celis_trails::records::id::short(&note.id))
             .collect();
         let rows = View::of(&trails).into_rows().into_iter();
         Ok(rows
             .filter(|row| match row.kind {
                 Kind::Trail | Kind::Step => true,
-                Kind::Rule => rules.contains(&row.id),
+                Kind::Pattern => patterns.contains(&row.id),
                 _ => false,
             })
             .collect())

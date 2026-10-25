@@ -5,7 +5,7 @@ use anyhow::Result;
 use celis_nostr::{Account, Note};
 
 /// One part of the work on its project: the step it is a part of, the step it replaces, the steps and
-/// rules it uses, the places the work goes, the check that proves it, the session that wrote it, and
+/// patterns it uses, the places the work goes, the check that proves it, the session that wrote it, and
 /// the words. A step under no other is a trail.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StepRecord {

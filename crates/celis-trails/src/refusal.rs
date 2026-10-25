@@ -6,7 +6,7 @@
 pub enum Refusal {
     Usage(String),
     NoStep(String),
-    NoRule(String),
+    NoPattern(String),
     NoTrail(String),
     Closed(String),
     OpenSteps(String),

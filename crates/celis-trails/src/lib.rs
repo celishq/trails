@@ -1,17 +1,26 @@
-//! celis-trails — the trails of steps and the rules agents leave for each other on one machine.
+//! celis-trails — the trails of steps and the patterns agents leave for each other on one machine.
 //!
-//! A [`step`] is one part of the work, a [`trail`] is one task as its steps, and a [`rule`] is what later
+//! A [`step`] is one part of the work, a [`trail`] is one task as its steps, and a [`pattern`] is what later
 //! work must keep. [`Trails`] writes them, signed by the account, into the [`records`] store.
 
+pub mod pattern;
 pub mod records;
 pub mod refusal;
-pub mod rule;
 pub mod step;
 pub mod trail;
 pub mod trails;
 
+pub use pattern::example::Example;
+pub use pattern::examples::Examples;
+pub use pattern::fit::Fit;
+pub use pattern::glob::Glob;
+pub use pattern::pattern_end::PatternEnd;
+pub use pattern::pattern_entry::PatternEntry;
+pub use pattern::patterns::Patterns;
+pub use pattern::scope::Scope;
+pub use pattern::Pattern;
 pub use records::anchor::Anchor;
-pub use records::id::rule_id::RuleId;
+pub use records::id::pattern_id::PatternId;
 pub use records::id::step_id::StepId;
 pub use records::link::Link;
 pub use records::phrase::Phrase;
@@ -19,15 +28,6 @@ pub use records::place::Place;
 pub use records::project::Project;
 pub use records::store::Store;
 pub use refusal::Refusal;
-pub use rule::example::Example;
-pub use rule::examples::Examples;
-pub use rule::fit::Fit;
-pub use rule::glob::Glob;
-pub use rule::rule_end::RuleEnd;
-pub use rule::rule_entry::RuleEntry;
-pub use rule::rules::Rules;
-pub use rule::scope::Scope;
-pub use rule::Rule;
 pub use step::by::By;
 pub use step::check::Check;
 pub use step::done::Done;

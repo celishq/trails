@@ -1,6 +1,6 @@
 use super::super::window::DAY;
 use super::*;
-use celis_trails::{Anchor, Draft, Rule, Scope, Store, Trails};
+use celis_trails::{Anchor, Draft, Pattern, Scope, Store, Trails};
 use tempfile::TempDir;
 
 /// The second a store's one step closed.
@@ -101,7 +101,7 @@ fn the_effect_says_what_each_share_counts() {
     for counts in [
         "of 1 done, no change",
         "of 1 done, revised",
-        "of 1 done, used a rule",
+        "of 1 done, used a pattern",
     ] {
         assert!(effect.contains(counts), "{counts:?} in\n{effect}");
     }
@@ -109,7 +109,7 @@ fn the_effect_says_what_each_share_counts() {
 }
 
 /// `worked`, with a new trail added at `AT` and a step under it that follows the done step and uses a
-/// rule.
+/// pattern.
 fn reused(later: u64) -> (TempDir, Trails) {
     let (home, mut trails) = worked(later);
     let part = Model::of(&trails, |m| m.steps.all()[1].id().to_string());
@@ -117,17 +117,17 @@ fn reused(later: u64) -> (TempDir, Trails) {
         project: "repo".into(),
         name: "repo".into(),
     };
-    let rule = Rule {
+    let pattern = Pattern {
         anchor: anchor.clone(),
         scope: Scope::Project,
         replaces: None,
         content: "When a rule holds: keep it, because it works.".into(),
         paths: vec![],
-        promoted: false,
+        binds: false,
         examples: Default::default(),
     };
     trails.at(AT);
-    let rule = trails.decide(rule, None).unwrap().records[0].id.clone();
+    let pattern = trails.decide(pattern, None).unwrap().records[0].id.clone();
     trails.at(AT);
     let draft = |content: &str, under: Option<String>, uses: Vec<String>| Draft {
         content: content.into(),
@@ -148,18 +148,18 @@ fn reused(later: u64) -> (TempDir, Trails) {
         .clone();
     trails.at(AT);
     trails
-        .add(draft("the next", Some(trail), vec![part, rule]))
+        .add(draft("the next", Some(trail), vec![part, pattern]))
         .unwrap();
     trails.at(AT + later);
     (home, trails)
 }
 
-/// The reuse and rules cards draw the follows and rule uses of each of the last 14 days as columns, a
-/// dot on each day with none, then the steps and rules used most.
+/// The reuse and patterns cards draw the follows and pattern uses of each of the last 14 days as columns, a
+/// dot on each day with none, then the steps and patterns used most.
 #[test]
 fn the_reuse_cards_draw_each_day_as_a_column() {
     let (_home, trails) = reused(3_600);
-    for title in ["01 REUSE", "02 RULES USED"] {
+    for title in ["01 REUSE", "02 PATTERNS USED"] {
         let face = face(&trails, title);
         assert!(face.contains("· · ·"), "{face}");
         assert!(face.contains("today"), "{face}");
@@ -167,13 +167,13 @@ fn the_reuse_cards_draw_each_day_as_a_column() {
     let reuse = face(&trails, "01 REUSE");
     assert!(reuse.contains("follows"), "{reuse}");
     assert!(reuse.ends_with(" 1"), "{reuse}");
-    let rules = face(&trails, "02 RULES USED");
-    assert!(rules.contains("rule uses"), "{rules}");
-    assert!(rules.contains("a rule holds"), "{rules}");
-    assert!(rules.ends_with(" 1"), "{rules}");
+    let patterns = face(&trails, "02 PATTERNS USED");
+    assert!(patterns.contains("pattern uses"), "{patterns}");
+    assert!(patterns.contains("a rule holds"), "{patterns}");
+    assert!(patterns.ends_with(" 1"), "{patterns}");
 }
 
-/// With no follow and no rule use in the last 14 days, the reuse and rules cards each say so in one line
+/// With no follow and no pattern use in the last 14 days, the reuse and patterns cards each say so in one line
 /// in place of their columns.
 #[test]
 fn the_reuse_cards_with_nothing_in_14_days_say_so() {
@@ -181,9 +181,12 @@ fn the_reuse_cards_with_nothing_in_14_days_say_so() {
     let reuse = face(&trails, "01 REUSE");
     assert!(reuse.contains("no follow in 14 days"), "{reuse}");
     assert!(!reuse.contains("today"), "{reuse}");
-    let rules = face(&trails, "02 RULES USED");
-    assert!(rules.contains("no rule used in 14 days"), "{rules}");
-    assert!(!rules.contains("today"), "{rules}");
+    let patterns = face(&trails, "02 PATTERNS USED");
+    assert!(
+        patterns.contains("no pattern used in 14 days"),
+        "{patterns}"
+    );
+    assert!(!patterns.contains("today"), "{patterns}");
 }
 
 /// The projects card ends each time at one column, the widest time setting it.

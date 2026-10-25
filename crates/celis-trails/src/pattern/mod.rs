@@ -1,33 +1,34 @@
-//! CIP-05: a rule, one sentence that holds in its scope until another replaces it.
+//! CIP-05: a pattern, what to choose in a context and why, that holds in its scope until another replaces
+//! it.
 
 pub mod example;
 pub mod examples;
 pub mod fit;
 pub mod glob;
-pub mod rule_end;
-pub mod rule_entry;
-pub mod rules;
+pub mod pattern_end;
+pub mod pattern_entry;
+pub mod patterns;
 pub mod scope;
 
-use crate::{Anchor, Examples, Fit, Glob, Place, RuleId, Scope};
+use crate::{Anchor, Examples, Fit, Glob, PatternId, Place, Scope};
 use anyhow::Result;
 use celis_nostr::{Account, Note};
 
-/// One rule, written on a project, that holds in its scope; with the globs of the files it acts on, its
-/// `promoted` label, and its examples, which make it a pattern.
+/// One pattern, written on a project, that holds in its scope; with the globs of the files it acts on,
+/// its examples, and its `binds` label, which makes it a rule.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Rule {
+pub struct Pattern {
     pub anchor: Anchor,
     pub scope: Scope,
-    pub replaces: Option<RuleId>,
+    pub replaces: Option<PatternId>,
     pub content: String,
     pub paths: Vec<String>,
-    pub promoted: bool,
+    pub binds: bool,
     pub examples: Examples,
 }
 
-impl Rule {
-    /// This rule as a kind 1111 record that `signer` signs at `at`.
+impl Pattern {
+    /// This pattern as a kind 1111 record that `signer` signs at `at`.
     pub fn record(&self, signer: &Account, at: u64) -> Result<Note> {
         let mut tags = self.anchor.tags();
         let scope = (self.scope != Scope::Project).then(|| self.scope.text());
@@ -44,7 +45,7 @@ impl Rule {
         let paths = self.paths.iter();
         tags.extend(paths.map(|p| vec!["path".to_string(), p.clone()]));
         tags.push(vec!["L".to_string(), NAMESPACE.to_string()]);
-        let labels = [("decision", true), ("promoted", self.promoted)].into_iter();
+        let labels = [("decision", true), ("binds", self.binds)].into_iter();
         tags.extend(
             labels
                 .filter(|(_, on)| *on)
@@ -53,20 +54,24 @@ impl Rule {
         Note::write(signer, 1111u16, at, tags, self.content.clone())
     }
 
-    /// Whether it is a pattern: a rule with examples, which guides and never binds.
-    pub fn is_pattern(&self) -> bool {
-        !self.examples.is_empty()
+    /// When it applies and what to do, on one line, without the reason: `<When>: <Do>`.
+    pub fn brief(&self) -> String {
+        let line = |name: &str| {
+            let mut lines = self.content.lines();
+            lines.find_map(|l| l.strip_prefix(name).map(str::trim))
+        };
+        match (self.content.lines().next(), line("Do:")) {
+            (Some(when), Some(what)) => format!("{when}: {what}"),
+            _ => self
+                .content
+                .split_once(", because ")
+                .map_or(self.content.as_str(), |(brief, _)| brief)
+                .to_string(),
+        }
     }
 
-    /// The text up to `, because`: when it applies and what to do, without the reason.
-    pub fn brief(&self) -> &str {
-        self.content
-            .split_once(", because ")
-            .map_or(self.content.as_str(), |(rule, _)| rule)
-    }
-
-    /// The rule `note` holds; `None` when it is not a rule, or names a scope no reader knows.
-    pub fn read(note: &Note) -> Option<Rule> {
+    /// The pattern `note` holds; `None` when it is not a pattern, or names a scope no reader knows.
+    pub fn read(note: &Note) -> Option<Pattern> {
         if note.kind != 1111 || !labelled(note, "decision") || note.tag("K")? != "project" {
             return None;
         }
@@ -75,10 +80,10 @@ impl Rule {
             None => Scope::Project,
         };
         let owned = |name: &str| note.tag(name).map(str::to_string);
-        Some(Rule {
+        Some(Pattern {
             anchor: Anchor::read(note)?,
             scope,
-            replaces: owned("replaces").map(RuleId::new),
+            replaces: owned("replaces").map(PatternId::new),
             content: note.content.clone(),
             paths: note
                 .tags
@@ -86,12 +91,12 @@ impl Rule {
                 .filter(|t| t.len() >= 2 && t[0] == "path")
                 .map(|t| t[1].clone())
                 .collect(),
-            promoted: labelled(note, "promoted"),
+            binds: labelled(note, "binds") || labelled(note, "promoted"),
             examples: Examples::read(note),
         })
     }
 
-    /// How narrowly the rule fits the narrowest of `paths`; `None` when it matches none of them
+    /// How narrowly the pattern fits the narrowest of `paths`; `None` when it matches none of them
     /// (CIP-05, "Triggers").
     pub fn fit(&self, paths: &[String]) -> Option<Fit> {
         let place = match &self.scope {
@@ -113,12 +118,12 @@ impl Rule {
     }
 }
 
-/// Whether `note` holds the label `label` of a rule.
+/// Whether `note` holds the label `label` of a pattern.
 fn labelled(note: &Note, label: &str) -> bool {
     note.tags
         .iter()
         .any(|t| t.len() >= 3 && t[0] == "l" && t[1] == label && t[2] == NAMESPACE)
 }
 
-/// The label namespace of a rule.
+/// The label namespace of a pattern.
 const NAMESPACE: &str = "celis.decision";

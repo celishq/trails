@@ -1,4 +1,4 @@
-//! The effect card: as planned, rework and rules reused, against the 14 days before.
+//! The effect card: as planned, rework and patterns reused, against the 14 days before.
 
 use super::super::table::{Row, Table};
 use super::super::{Period, Window};
@@ -89,13 +89,19 @@ impl Measure {
     }
 }
 
-/// The effect: as planned, rework and rules reused in the last 14 days, against the 14 days before,
+/// The effect: as planned, rework and patterns reused in the last 14 days, against the 14 days before,
 /// each with what its share counts, on two lines when one is too narrow.
 pub(super) fn effect(window: &Window, inside: usize, ink: Ink) -> Card {
     let measures = [
         Measure::new("AS PLANNED", Period::planned, window, "no change", true),
         Measure::new("REWORK", Period::reworked, window, "revised", false),
-        Measure::new("RULES REUSED", Period::ruled, window, "used a rule", true),
+        Measure::new(
+            "PATTERNS REUSED",
+            Period::ruled,
+            window,
+            "used a pattern",
+            true,
+        ),
     ];
     let column = (inside / measures.len()).max(1);
     let cell = |text: Span<'static>| pad(clip(&Styled::from(text), column - 1), column);

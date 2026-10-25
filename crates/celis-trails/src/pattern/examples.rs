@@ -35,7 +35,7 @@ impl Examples {
         self
     }
 
-    /// The examples of the rule `note` holds.
+    /// The examples of the pattern `note` holds.
     pub fn read(note: &Note) -> Examples {
         let side = |name: &str| -> Vec<Example> {
             let tags = note.tags.iter().filter(|t| t.len() >= 2 && t[0] == name);

@@ -1,4 +1,4 @@
-//! A count of each day of a window, as the reuse, rules and work cards show it.
+//! A count of each day of a window, as the reuse, patterns and work cards show it.
 
 use super::super::{Period, Window};
 

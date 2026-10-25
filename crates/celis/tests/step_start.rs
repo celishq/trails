@@ -70,9 +70,9 @@ fn start_refuses_unknown_and_closed_steps_and_starts_a_step_once() {
     assert_eq!(files(), before);
 }
 
-/// `start` prints no rule at the step's places; `celis search` gives them.
+/// `start` prints no pattern at the step's places; `celis search` gives them.
 #[test]
-fn start_prints_no_rule_at_the_steps_places() {
+fn start_prints_no_pattern_at_the_steps_places() {
     let repo = Repo::new();
     let o = cli(
         &repo,
@@ -118,10 +118,10 @@ fn start_does_not_run_the_steps_check() {
     assert!(!repo.path().join("ran").exists());
 }
 
-/// `start` prints the live rules of the step's trail, each rule its ask uses, and the rules of the
-/// trail of each step its ask uses; not a rule none of them names.
+/// `start` prints the live patterns of the step's trail, each pattern its ask uses, and the patterns of the
+/// trail of each step its ask uses; not a pattern none of them names.
 #[test]
-fn start_prints_the_trails_rules_and_the_rules_its_ask_uses() {
+fn start_prints_the_trails_patterns_and_the_patterns_its_ask_uses() {
     let repo = Repo::new();
     let decide = |args: &[&str]| {
         let o = cli(&repo, &[&["decide"], args].concat());

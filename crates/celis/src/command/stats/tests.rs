@@ -1,7 +1,7 @@
 use super::month::Month;
 use crate::progress::Model;
 use crate::text::clock::midnight;
-use celis_trails::{Anchor, Draft, Rule, Scope, Store, Trails};
+use celis_trails::{Anchor, Draft, Pattern, Scope, Store, Trails};
 use tempfile::TempDir;
 
 /// Noon of a day, the time a desk reads its month at.
@@ -74,10 +74,10 @@ impl Desk {
         self.trails.at(noon() - ago);
     }
 
-    /// Writes a rule of `project` `ago` seconds before noon; its id.
-    pub fn rule(&mut self, ago: u64, project: &str) -> String {
+    /// Writes a pattern of `project` `ago` seconds before noon; its id.
+    pub fn pattern(&mut self, ago: u64, project: &str) -> String {
         self.trails.at(noon() - ago);
-        let rule = Rule {
+        let pattern = Pattern {
             anchor: Anchor {
                 project: project.to_string(),
                 name: project.to_string(),
@@ -86,10 +86,10 @@ impl Desk {
             replaces: None,
             content: "When you price: round down, because the shelf does.".into(),
             paths: vec![],
-            promoted: false,
+            binds: false,
             examples: Default::default(),
         };
-        let id = self.trails.decide(rule, None).unwrap().records[0]
+        let id = self.trails.decide(pattern, None).unwrap().records[0]
             .id
             .clone();
         self.trails.at(noon() - ago);
@@ -104,7 +104,7 @@ impl Desk {
 }
 
 /// A store of `shop` whose steps 20 days ago and today end each way: a step done new 20 days ago, then
-/// today one done that follows it and applies a rule, one done that a later step revises, the revision,
+/// today one done that follows it and applies a pattern, one done that a later step revises, the revision,
 /// and one dropped.
 pub(super) fn shop() -> Desk {
     let mut desk = Desk::new();
@@ -112,14 +112,14 @@ pub(super) fn shop() -> Desk {
     let old = desk.add(20 * day, "shop", None, "the old trail", &[], None);
     let source = desk.add(20 * day, "shop", Some(&old), "the source", &[], None);
     desk.done(20 * day - 600, 600, &source);
-    let rule = desk.rule(3_000, "shop");
+    let pattern = desk.pattern(3_000, "shop");
     let trail = desk.add(3_000, "shop", None, "the trail", &[], None);
     let reused = desk.add(
         3_000,
         "shop",
         Some(&trail),
         "reused",
-        &[&source, &rule],
+        &[&source, &pattern],
         None,
     );
     let revised = desk.add(3_000, "shop", Some(&trail), "revised", &[], None);

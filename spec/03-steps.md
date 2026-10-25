@@ -42,7 +42,7 @@ and closes it with a proof, or drops it.
 **Readers**
 
 - A reader MUST count a kind 1111 record as a step only with the label `step` in `celis.step`, and never
-  as a rule.
+  as a pattern.
 
 ## Starting
 
@@ -103,7 +103,7 @@ dropped   a `drop` names it
 **Readers**
 
 - A reader MUST ignore a drop with no content.
-- A drop of a done trail MUST keep it done. The trail is then **dropped after done**. Its rules stay
+- A drop of a done trail MUST keep it done. The trail is then **dropped after done**. Its patterns stay
   live.
 
 ## Editing

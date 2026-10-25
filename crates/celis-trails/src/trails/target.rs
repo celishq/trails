@@ -3,25 +3,25 @@
 use crate::{Refusal, Step};
 use celis_nostr::Note;
 
-/// What an id names: a rule or a step.
+/// What an id names: a pattern or a step.
 pub(crate) enum Target<'a> {
-    Rule(&'a Note),
+    Pattern(&'a Note),
     Step(Step<'a>),
 }
 
 impl<'a> Target<'a> {
-    /// What `id` names, of the `rule` and the `step` it starts; refuses both as a usage error, and
+    /// What `id` names, of the `pattern` and the `step` it starts; refuses both as a usage error, and
     /// neither with `no-step`.
     pub(crate) fn of(
         id: &str,
-        rule: Option<&'a Note>,
+        pattern: Option<&'a Note>,
         step: Option<Step<'a>>,
     ) -> Result<Target<'a>, Refusal> {
-        match (rule, step) {
+        match (pattern, step) {
             (Some(_), Some(_)) => Err(Refusal::Usage(format!(
-                "{id} starts the id of a rule and of a step; give more of it"
+                "{id} starts the id of a pattern and of a step; give more of it"
             ))),
-            (Some(rule), None) => Ok(Target::Rule(rule)),
+            (Some(pattern), None) => Ok(Target::Pattern(pattern)),
             (None, Some(step)) => Ok(Target::Step(step)),
             (None, None) => Err(Refusal::NoStep(id.to_string())),
         }

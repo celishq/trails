@@ -1,12 +1,12 @@
-//! `celis decide`: write a rule.
+//! `celis decide`: write a pattern.
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use celis_trails::{Example, Examples, Place, Project, Rule, Scope, Trails};
+use celis_trails::{Example, Examples, Pattern, Place, Project, Scope, Trails};
 use std::io::Write;
 
 impl Command {
-    /// Writes the rule `args` states on `project`, in its scope, with its trigger, labels and examples,
+    /// Writes the pattern `args` states on `project`, in its scope, with its trigger, labels and examples,
     /// signed by the account now, and prints its id.
     pub(crate) fn decide(
         &self,
@@ -51,16 +51,16 @@ impl Command {
             good: side(&args.good)?,
             bad: side(&args.bad)?,
         };
-        let rule = Rule {
+        let pattern = Pattern {
             anchor: project.anchor.clone(),
             scope,
             replaces: None,
             content,
             paths,
-            promoted: args.promoted,
+            binds: args.binds,
             examples,
         };
-        let written = trails.decide(rule, args.replaces.as_deref())?;
+        let written = trails.decide(pattern, args.replaces.as_deref())?;
         self.print(written, args, out, err)?;
         match args.scope {
             Some(_) => Ok(()),
@@ -83,7 +83,7 @@ impl Command {
     }
 }
 
-/// What `decide` with no scope says of the rule's scope.
+/// What `decide` with no scope says of the pattern's scope.
 const SCOPES: &str = "celis: the rule holds in this project. When it holds for that kind of work in any \
                       project, such as a rule about a framework, a platform or a review's convention, \
                       replace it with --scope me; when it holds only for this trail, with --scope \

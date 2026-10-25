@@ -20,11 +20,11 @@ use folders::folders;
 use layout::{breadth, columns, Layout, GAP};
 use moment::{tally, Moment, LIGHT};
 use overview::{Overview, TALL};
+use patterns::{Learned, Patterns};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::Style;
 use ratatui::text::Span;
-use rules::{Learned, Rules};
 use seen::Seen;
 use std::io::{IsTerminal, Write};
 use std::time::{Duration, Instant};
@@ -33,7 +33,7 @@ use view::{Mode, View};
 /// The rows the head of the view takes: its path, a line, its counts, and a gap.
 const HEAD: u16 = 4;
 
-/// The most rows the rules card pinned under the graph takes.
+/// The most rows the patterns card pinned under the graph takes.
 const PINNED: u16 = 8;
 
 /// The width a graph prints at off a terminal.
@@ -95,7 +95,7 @@ impl Live for Graph {
             .max(HEAD + 6);
         let now = Instant::now();
         let trails = folders(model.steps);
-        self.seen.note(&trails, |t| rule_ids(model, t), now);
+        self.seen.note(&trails, |t| pattern_ids(model, t), now);
         let view = self
             .view
             .get_or_insert_with(|| View::new(&trails, self.named.as_deref()));
@@ -127,9 +127,9 @@ impl Live for Graph {
     }
 }
 
-/// The lines of the screen, `width` by `rows`, at `now`: the head, then the rules over the rest when
+/// The lines of the screen, `width` by `rows`, at `now`: the head, then the patterns over the rest when
 /// the person opened them; else the part of All or of the trail's graph that fits, with how many rows
-/// it hides above and below, and the rules card pinned under it. On All a trail that starts pushes
+/// it hides above and below, and the patterns card pinned under it. On All a trail that starts pushes
 /// what is below it down, and one that starts above the screen keeps the screen still and is marked
 /// on the line above; All scrolls only to show the trail the person picks.
 fn frame(
@@ -181,11 +181,11 @@ fn frame(
         (Mode::Trail, Some(trail)) => vec![trail],
         _ => matches.clone(),
     };
-    let rules = learned(model, &ruled, view.mode() == Mode::All);
-    view.learned = rules.learned.iter().map(|r| r.id.clone()).collect();
+    let patterns = learned(model, &ruled, view.mode() == Mode::All);
+    view.learned = patterns.learned.iter().map(|r| r.id.clone()).collect();
     let mut out = lines(&head(trails, &matches, shown, view, width, &m));
-    if view.rules {
-        let body = rules.opened(width, rows - HEAD, view, &m);
+    if view.patterns {
+        let body = patterns.opened(width, rows - HEAD, view, &m);
         out.extend(lines(&body));
         return out;
     }
@@ -206,7 +206,7 @@ fn frame(
             (drawn.buf, focus)
         }
     };
-    let pinned = rules.pinned(width, PINNED, &m);
+    let pinned = patterns.pinned(width, PINNED, &m);
     let below = pinned.as_ref().map_or(0, |p| p.area.height + 1);
     let room = rows.saturating_sub(HEAD + 2 + below).max(4);
     let height = canvas.area.height;
@@ -279,8 +279,8 @@ fn head(
     m: &Moment,
 ) -> Buffer {
     let mut buf = Buffer::empty(Rect::new(0, 0, width, HEAD));
-    let rule = "─".repeat(usize::from(width.saturating_sub(4)));
-    buf.set_string(2, 1, rule, FRAME);
+    let pattern = "─".repeat(usize::from(width.saturating_sub(4)));
+    buf.set_string(2, 1, pattern, FRAME);
     let (Mode::Trail, Some(trail)) = (view.mode(), shown) else {
         let mut x = put(&mut buf, 2, 0, &[paint(BOLD, "All trails")]);
         if let Some(query) = &view.query {
@@ -492,27 +492,27 @@ fn edge(buf: &mut Buffer, layout: &Layout, i: usize, alpha: f64) {
     buf.set_string(0, place.y + 2, "╰▶", look);
 }
 
-/// The rules `trails` learned, newest first, naming each rule's trail when `many`.
-fn learned<'a>(model: &Model<'a>, trails: &[Step<'a>], many: bool) -> Rules<'a> {
+/// The patterns `trails` learned, newest first, naming each pattern's trail when `many`.
+fn learned<'a>(model: &Model<'a>, trails: &[Step<'a>], many: bool) -> Patterns<'a> {
     let mut learned: Vec<Learned> = vec![];
     for trail in trails {
-        for (note, rule) in model.rules.of(*trail) {
+        for (note, pattern) in model.patterns.of(*trail) {
             learned.push(Learned {
                 id: note.id.clone(),
-                text: rule.content.clone(),
+                text: pattern.content.clone(),
                 at: note.created_at,
                 trail: *trail,
             });
         }
     }
     learned.sort_by(|a, b| b.at.cmp(&a.at).then_with(|| b.id.cmp(&a.id)));
-    Rules { learned, many }
+    Patterns { learned, many }
 }
 
-/// The ids of the rules `model` holds for `trail`.
-fn rule_ids(model: &Model, trail: Step) -> Vec<String> {
+/// The ids of the patterns `model` holds for `trail`.
+fn pattern_ids(model: &Model, trail: Step) -> Vec<String> {
     model
-        .rules
+        .patterns
         .of(trail)
         .into_iter()
         .map(|(note, _)| note.id.clone())
@@ -553,7 +553,7 @@ fn printed(model: &Model, id: Option<&str>) -> Result<String, Failure> {
         }
     }
     let mut seen = Seen::settled();
-    seen.note(&trails, |t| rule_ids(model, t), Instant::now());
+    seen.note(&trails, |t| pattern_ids(model, t), Instant::now());
     let mut view = View::new(&trails, named.as_deref());
     view.follow = false;
     let m = Moment {
@@ -579,8 +579,8 @@ fn printed(model: &Model, id: Option<&str>) -> Result<String, Failure> {
         }
     };
     out.extend(lines(&canvas));
-    let rules = learned(model, &ruled, view.mode() == Mode::All);
-    if let Some(pinned) = rules.pinned(PRINTED, u16::MAX, &m) {
+    let patterns = learned(model, &ruled, view.mode() == Mode::All);
+    if let Some(pinned) = patterns.pinned(PRINTED, u16::MAX, &m) {
         out.extend(lines(&pinned));
     }
     Ok(out
@@ -602,7 +602,7 @@ mod folders;
 mod layout;
 mod moment;
 mod overview;
-mod rules;
+mod patterns;
 mod seen;
 #[cfg(test)]
 mod tests;

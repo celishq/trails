@@ -53,11 +53,11 @@ impl<'a> Period<'a> {
             .collect()
     }
 
-    /// How many of its done steps use a rule.
+    /// How many of its done steps use a pattern.
     pub fn ruled(&self) -> usize {
-        let rule = |u: &Used| matches!(u, Used::Rule(_));
+        let pattern = |u: &Used| matches!(u, Used::Pattern(_));
         let done = self.done().into_iter();
-        done.filter(|s| s.uses().iter().any(rule)).count()
+        done.filter(|s| s.uses().iter().any(pattern)).count()
     }
 
     /// The steps done or dropped in it, and those expired with a trail whose newest record is in it,

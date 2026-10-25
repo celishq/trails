@@ -1,4 +1,4 @@
-//! The rules card: the rule uses and the rules used most.
+//! The patterns card: the pattern uses and the patterns used most.
 
 use super::super::table::{Row, Table};
 use super::super::Window;
@@ -8,21 +8,21 @@ use super::{nothing, Card, DAYS};
 use crate::progress::Model;
 use crate::terminal::ink::Ink;
 
-/// The rules used: the rule uses of each day of `window` against the 14 days before, then the
-/// rules used most.
-pub(super) fn rules(model: &Model, window: &Window, inside: usize, ink: Ink) -> Card {
-    let (rules, reuse) = (model.rules, model.reuse);
-    let used = reuse.used(rules);
+/// The patterns used: the pattern uses of each day of `window` against the 14 days before, then the
+/// patterns used most.
+pub(super) fn patterns(model: &Model, window: &Window, inside: usize, ink: Ink) -> Card {
+    let (patterns, reuse) = (model.patterns, model.reuse);
+    let used = reuse.used(patterns);
     let top = used.iter().take(3);
     let top: Vec<(String, usize)> = top
         .map(|(_, d, n)| (d.brief().trim_start_matches("When ").into(), *n))
         .collect();
     let none = match used.is_empty() {
-        true => "no rule used yet".to_string(),
-        false => nothing("rule used"),
+        true => "no pattern used yet".to_string(),
+        false => nothing("pattern used"),
     };
-    let daily = Daily::new(window, |p| reuse.uses_of(&p.added(), rules));
-    let face = face(&daily, ("rule uses", &none), &top, inside, ink);
+    let daily = Daily::new(window, |p| reuse.uses_of(&p.added(), patterns));
+    let face = face(&daily, ("pattern uses", &none), &top, inside, ink);
     let rows = used
         .iter()
         .map(|(note, d, n)| Row {
@@ -31,7 +31,7 @@ pub(super) fn rules(model: &Model, window: &Window, inside: usize, ink: Ink) -> 
         })
         .collect();
     Card {
-        title: format!("02 RULES USED · {DAYS} DAYS"),
+        title: format!("02 PATTERNS USED · {DAYS} DAYS"),
         face,
         table: Table {
             head: vec!["Rule", "Used"],

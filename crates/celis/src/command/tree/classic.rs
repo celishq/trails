@@ -1,4 +1,4 @@
-//! `celis tree` as v0.0.11 printed and watched it: a trail with its state, its rules and the steps under it.
+//! `celis tree` as v0.0.11 printed and watched it: a trail with its state, its patterns and the steps under it.
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
@@ -12,7 +12,7 @@ use crate::text::clock::stride;
 use crate::text::clock::{day, midnight};
 use celis_trails::records::id::short;
 use celis_trails::step::steps::LIFE;
-use celis_trails::{Rules, State, Step, Steps, Trail};
+use celis_trails::{Patterns, State, Step, Steps, Trail};
 pub(crate) use layout::Layout;
 use level::Level;
 use ratatui::style::Style;
@@ -70,7 +70,7 @@ impl Command {
         };
         let tree = Tree {
             steps,
-            rules: model.rules,
+            patterns: model.patterns,
             reuse: model.reuse,
             layout,
             grouped: id.is_none(),
@@ -131,8 +131,8 @@ pub(crate) struct Frame {
     pub picked: Option<usize>,
 }
 
-/// A trail, rule or step a watch selects: its id, whether it is open, the trail or step it is under,
-/// and every rule and step under it.
+/// A trail, pattern or step a watch selects: its id, whether it is open, the trail or step it is under,
+/// and every pattern and step under it.
 #[derive(Clone)]
 pub(crate) struct Item {
     pub id: String,
@@ -142,9 +142,9 @@ pub(crate) struct Item {
 }
 
 impl Item {
-    /// The first 8 characters of its id; none for a rules or closed line.
+    /// The first 8 characters of its id; none for a patterns or closed line.
     pub fn copy(&self) -> Option<String> {
-        let group = self.id.starts_with(RULES) || self.id.starts_with(CLOSED);
+        let group = self.id.starts_with(PATTERNS) || self.id.starts_with(CLOSED);
         (!group).then(|| short(&self.id))
     }
 }
@@ -152,13 +152,13 @@ impl Item {
 /// What `tree` with no id prints while it has no trail to print.
 pub(crate) const EMPTY: &str = "No active trails. Run `celis tree --all` to see every trail.";
 
-/// The steps and rules a tree is printed from, the day groups it keeps, and how: grouped by
+/// The steps and patterns a tree is printed from, the day groups it keeps, and how: grouped by
 /// day and project; `width` wide; as `view` shows it, off a watch as the agent view. `next` holds the
 /// earliest time a time it printed changes, `spun` whether it printed the spinner, `order` the lines a
 /// watch selects, `printed` the count of its lines, and `picked` the line of the selected trail.
 pub(crate) struct Tree<'a> {
     pub steps: &'a Steps<'a>,
-    pub rules: &'a Rules<'a>,
+    pub patterns: &'a Patterns<'a>,
     pub reuse: &'a Reuse<'a>,
     pub layout: Option<&'a Layout>,
     pub grouped: bool,
@@ -171,16 +171,16 @@ pub(crate) struct Tree<'a> {
     pub next: Cell<Option<u64>>,
 }
 
-/// A live rule: its record and its rule.
-type RuleNote<'a> = (&'a celis_nostr::Note, celis_trails::Rule);
+/// A live pattern: its record and its pattern.
+type PatternNote<'a> = (&'a celis_nostr::Note, celis_trails::Pattern);
 
 /// What the tree says of a trail: the steps it prints under it, the done ones, the time they worked,
-/// and its rules.
+/// and its patterns.
 struct Summary<'a> {
     all: usize,
     done: usize,
     worked: Option<u64>,
-    rules: Vec<RuleNote<'a>>,
+    patterns: Vec<PatternNote<'a>>,
 }
 
 impl Tree<'_> {
@@ -260,7 +260,7 @@ impl Tree<'_> {
     }
 
     /// What the tree says of the trail `note`, whose work `work` holds: the steps it prints under it, the
-    /// done ones, the time they worked, and its rules. An active one lowers `next` to its end.
+    /// done ones, the time they worked, and its patterns. An active one lowers `next` to its end.
     fn summary(&self, note: Step, work: Step) -> Summary<'_> {
         if note.state().active() {
             self.until(note.newest() + LIFE);
@@ -275,17 +275,17 @@ impl Tree<'_> {
             all: shown.len(),
             done: Tally::of(&shown).done,
             worked,
-            rules: self.rules(note),
+            patterns: self.patterns(note),
         }
     }
 
-    /// The live rules of the trail of `note`: its own, or its trail's when it is an ask.
-    fn rules(&self, note: Step) -> Vec<RuleNote<'_>> {
+    /// The live patterns of the trail of `note`: its own, or its trail's when it is an ask.
+    fn patterns(&self, note: Step) -> Vec<PatternNote<'_>> {
         let owner = match note.is_ask() {
             true => note.trail(),
             false => note,
         };
-        self.rules.of(owner)
+        self.patterns.of(owner)
     }
 
     /// The time the steps of `tree` with no step under them worked: what a done one took, and the time
@@ -392,8 +392,8 @@ fn after(rail: &Styled, more: Span<'static>) -> Styled {
 
 /// The seconds a step's title prints bold after its newest record.
 const FRESH: u64 = 2;
-/// What starts the id of a trail's rules line in a watch's order.
-const RULES: &str = "§";
+/// What starts the id of a trail's patterns line in a watch's order.
+const PATTERNS: &str = "§";
 /// The id of the `Show more` line in a watch's order.
 pub(crate) const MORE: &str = "+more";
 /// What starts the id of a trail's closed line in a watch's order.

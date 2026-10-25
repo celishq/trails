@@ -19,8 +19,8 @@
 - Say it once, in the fewest words that keep the meaning. Short sentences, never fragments.
 - A name is a noun for what a thing is. No `-er`/`-or` agent names (`Manager`, `Handler`).
 - One primary type per file; the filename matches it.
-- The record that later work must keep is a rule. The wire names (`celis.decision`, `celis decide`, the
-  `--json` keys) stay.
+- The record that later work must keep is a pattern, and a pattern that binds is a rule. The wire names
+  (`celis.decision`, `celis decide`, the `--json` keys) stay.
 
 ## Docstrings
 

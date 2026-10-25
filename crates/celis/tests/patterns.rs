@@ -25,7 +25,7 @@ fn done(repo: &Repo, id: &str, rel: &str, proof: &str) {
 }
 
 /// `decide --good --bad` writes the whole ids of the two steps as `good` and `bad`
-/// (`spec/05-rules.md`, "Patterns").
+/// (`spec/05-patterns.md`, "Examples").
 #[test]
 fn decide_names_the_good_and_the_bad_step() {
     let repo = Repo::new();
@@ -51,17 +51,17 @@ fn decide_names_the_good_and_the_bad_step() {
         ],
     );
     assert!(o.status.success(), "{}", err(&o));
-    let rule = support::labelled(&repo, "decision")
+    let pattern = support::labelled(&repo, "decision")
         .into_iter()
         .find(|n| n.content.contains("sharp corners"))
         .unwrap();
-    assert_eq!(rule.tag("good"), Some(b.as_str()));
-    assert_eq!(rule.tag("bad"), Some(a.as_str()));
-    let rules = cli(
+    assert_eq!(pattern.tag("good"), Some(b.as_str()));
+    assert_eq!(pattern.tag("bad"), Some(a.as_str()));
+    let patterns = cli(
         &repo,
         &["search", "logo.svg", "--kind", "pattern", "--", "x"],
     );
-    let said = out(&rules);
+    let said = out(&patterns);
     let blob = |text: &str| {
         use sha2::{Digest, Sha256};
         repo.home()
@@ -85,7 +85,7 @@ fn decide_names_the_good_and_the_bad_step() {
 
 /// `start` prints a pattern its ask uses with its good step.
 #[test]
-fn start_prints_the_pair_of_a_rule_its_ask_uses() {
+fn start_prints_the_pair_of_a_pattern_its_ask_uses() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the logo"]);
     let a = add(&repo, &["--under", &trail[..8], "--", "a sharp logo"]);
@@ -102,14 +102,14 @@ fn start_prints_the_pair_of_a_rule_its_ask_uses() {
         ],
     );
     assert!(o.status.success(), "{}", err(&o));
-    let rule = out(&o).lines().next().unwrap().to_string();
+    let pattern = out(&o).lines().next().unwrap().to_string();
     let ask = add(
         &repo,
         &[
             "--under",
             &trail[..8],
             "--uses",
-            &rule[..8],
+            &pattern[..8],
             "--",
             "the icon",
         ],
@@ -144,7 +144,7 @@ fn decide_refuses_an_unknown_step() {
 }
 
 /// `decide` takes `--good` and `--bad` again and again, as a file it keeps as a blob or a URL, and
-/// `search` prints each (`spec/05-rules.md`, "Patterns").
+/// `search` prints each (`spec/05-patterns.md`, "Examples").
 #[test]
 fn a_pattern_keeps_files_and_urls_as_examples() {
     let repo = Repo::new();
@@ -168,8 +168,8 @@ fn a_pattern_keeps_files_and_urls_as_examples() {
         ],
     );
     assert!(o.status.success(), "{}", err(&o));
-    let rule = support::labelled(&repo, "decision").remove(0);
-    let values: Vec<&Vec<String>> = rule
+    let pattern = support::labelled(&repo, "decision").remove(0);
+    let values: Vec<&Vec<String>> = pattern
         .tags
         .iter()
         .filter(|t| t[0] == "good" || t[0] == "bad")
@@ -190,8 +190,8 @@ fn a_pattern_keeps_files_and_urls_as_examples() {
     assert!(!said.contains("missing"), "{said}");
 }
 
-/// A pattern that replaces another keeps the examples of the one it replaces (`spec/05-rules.md`,
-/// "Patterns").
+/// A pattern that replaces another keeps the examples of the one it replaces (`spec/05-patterns.md`,
+/// "Examples").
 #[test]
 fn a_replacing_pattern_keeps_the_old_examples() {
     let repo = Repo::new();
@@ -222,11 +222,11 @@ fn a_replacing_pattern_keeps_the_old_examples() {
         ],
     );
     assert!(o.status.success(), "{}", err(&o));
-    let rule = support::labelled(&repo, "decision")
+    let pattern = support::labelled(&repo, "decision")
         .into_iter()
         .find(|n| n.content.contains("sharp"))
         .unwrap();
-    let good: Vec<&str> = rule
+    let good: Vec<&str> = pattern
         .tags
         .iter()
         .filter(|t| t[0] == "good")
@@ -235,8 +235,8 @@ fn a_replacing_pattern_keeps_the_old_examples() {
     assert_eq!(good, [second, first]);
 }
 
-/// `patterns` lists each live pattern in scope with its examples, newest first, and no rule without
-/// examples (`spec/02-cli.md`, "Patterns").
+/// `patterns` lists each live pattern in scope with its examples, the rules first, newest first within
+/// each (`spec/02-cli.md`, "Patterns").
 #[test]
 fn patterns_lists_each_pattern_with_its_examples() {
     let repo = Repo::new();
@@ -246,7 +246,7 @@ fn patterns_lists_each_pattern_with_its_examples() {
         assert!(o.status.success(), "{}", err(&o));
         out(&o).lines().next().unwrap().to_string()
     };
-    let rule = decide(&["decide", "--", "When you test: set A=1."]);
+    let rule = decide(&["decide", "--binds", "--", "When you test: set A=1."]);
     let old = decide(&[
         "decide",
         "--good",
@@ -267,6 +267,7 @@ fn patterns_lists_each_pattern_with_its_examples() {
     assert_eq!(
         lines,
         [
+            format!("{} project When you test: set A=1.", &rule[..8]),
             format!("{} project When an icon is drawn: keep it bold.", &new[..8]),
             format!("  bad     {url}"),
             format!("{} project When a logo is drawn: keep it flat.", &old[..8]),
@@ -274,7 +275,6 @@ fn patterns_lists_each_pattern_with_its_examples() {
         ],
         "{said}"
     );
-    assert!(!said.contains(&rule[..8]), "{said}");
 }
 
 /// `patterns` says when the store holds none.

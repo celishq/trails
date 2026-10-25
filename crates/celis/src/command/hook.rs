@@ -90,14 +90,14 @@ impl Command {
         text
     }
 
-    /// The line that asks to offer `/celis:tidy` once in the session: when the store holds a live rule,
+    /// The line that asks to offer `/celis:tidy` once in the session: when the store holds a live pattern,
     /// and no ask titled `TIDY` began in the last `TIDY_DAYS` days.
     fn tidy(&self) -> Option<String> {
         if !self.held().ok()? {
             return None;
         }
         let trails = self.trails().ok()?;
-        if !trails.rules().every().iter().any(|e| e.is_live()) {
+        if !trails.patterns().every().iter().any(|e| e.is_live()) {
             return None;
         }
         let steps = trails.steps();

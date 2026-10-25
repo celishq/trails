@@ -4,7 +4,7 @@
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Kind {
     Trail,
-    Rule,
+    Pattern,
     Step,
     Proof,
     Changed,
@@ -16,7 +16,7 @@ impl Kind {
     pub fn text(self) -> &'static str {
         match self {
             Kind::Trail => "trail",
-            Kind::Rule => "rule",
+            Kind::Pattern => "pattern",
             Kind::Step => "step",
             Kind::Proof => "proof",
             Kind::Changed => "changed",

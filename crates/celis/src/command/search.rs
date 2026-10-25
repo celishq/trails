@@ -1,4 +1,4 @@
-//! `celis search`: the rules, patterns and past asks that fit an ask.
+//! `celis search`: the rules, the other patterns and the past asks that fit an ask.
 
 #[cfg(feature = "search")]
 mod meaning;
@@ -14,14 +14,14 @@ use crate::failure::Failure;
 use crate::text::clock::date;
 use celis_nostr::Note;
 use celis_trails::records::id::short;
-use celis_trails::{Rule, Step, Trails};
+use celis_trails::{Pattern, Step, Trails};
 use std::collections::{HashMap, HashSet};
 use std::io::Write;
 
 impl Command {
-    /// Prints the live rules in scope that fit the ask of `args`, by its files, its words or its
-    /// meaning, then the patterns that fit it with their examples, then the done asks like it with
-    /// their steps, and marks each rule as recalled now; with `--kind`, only that part. Writes no
+    /// Prints the live rules in scope that fit the ask of `args`, by its files, its words or its meaning,
+    /// then the other patterns that fit it, each with its examples, then the done asks like it with
+    /// their steps, and marks each pattern as recalled now; with `--kind`, only that part. Writes no
     /// record.
     pub(crate) fn search(
         &self,
@@ -78,12 +78,12 @@ impl Command {
                 _ => {
                     let part: Vec<_> = found
                         .iter()
-                        .filter(|(_, rule)| rule.is_pattern() == (part == Part::Patterns))
+                        .filter(|(_, pattern)| pattern.binds == (part == Part::Rules))
                         .take(limit)
                         .collect();
                     self.recalled(part.iter().map(|(note, _)| *note));
-                    let line = |(note, rule): &&(&Note, Rule)| {
-                        crate::text::line::rule(note, rule, &trails)
+                    let line = |(note, pattern): &&(&Note, Pattern)| {
+                        crate::text::line::pattern(note, pattern, &trails)
                     };
                     part.iter().map(line).collect()
                 }
@@ -101,7 +101,7 @@ impl Command {
         }
     }
 
-    /// The live rules in scope that fit `ask` by its `files`, its words or its meaning: a rule with a
+    /// The live patterns in scope that fit `ask` by its `files`, its words or its meaning: a pattern with a
     /// `replaces` tag first, then those of a named file, of a glob, and the rest.
     pub(super) fn fits<'a>(
         &self,
@@ -109,30 +109,30 @@ impl Command {
         ask: &str,
         files: &[String],
         err: &mut dyn Write,
-    ) -> Result<Vec<(&'a Note, Rule)>, Failure> {
+    ) -> Result<Vec<(&'a Note, Pattern)>, Failure> {
         let project = self.project();
         let paths: Vec<String> = files
             .iter()
-            .flat_map(|f| super::rules::paths(&project, &self.folder, f))
+            .flat_map(|f| super::matched::paths(&project, &self.folder, f))
             .collect();
-        let live = trails.rules().live(&project.anchor.project);
+        let live = trails.patterns().live(&project.anchor.project);
         let ids: HashSet<String> = live.iter().map(|(note, _)| short(&note.id)).collect();
         let meant: HashSet<String> = self
-            .meant(ask, (Kind::Rule, &ids), err)?
+            .meant(ask, (Kind::Pattern, &ids), err)?
             .into_iter()
             .collect();
         let asked = words(ask);
-        let mut found: Vec<(&Note, Rule)> = live
+        let mut found: Vec<(&Note, Pattern)> = live
             .into_iter()
-            .filter(|(note, rule)| {
-                rule.fit(&paths).is_some()
+            .filter(|(note, pattern)| {
+                pattern.fit(&paths).is_some()
                     || meant.contains(&short(&note.id))
-                    || !words(when(&rule.content)).is_disjoint(&asked)
+                    || !words(when(&pattern.content)).is_disjoint(&asked)
             })
             .collect();
-        found.sort_by_key(|(_, rule)| {
-            let fit = rule.fit(&paths);
-            (rule.replaces.is_none(), fit.is_none(), fit)
+        found.sort_by_key(|(_, pattern)| {
+            let fit = pattern.fit(&paths);
+            (pattern.replaces.is_none(), fit.is_none(), fit)
         });
         Ok(found)
     }
@@ -189,7 +189,7 @@ impl Command {
         }
     }
 
-    /// The day `search` last brought each rule, and how many times it did, by its short id.
+    /// The day `search` last brought each pattern, and how many times it did, by its short id.
     pub(crate) fn recalls(&self) -> HashMap<String, (String, u64)> {
         let Ok(home) = self.home() else {
             return HashMap::new();
@@ -230,9 +230,9 @@ impl Part {
         match self {
             Part::Rules => "keep each rule: it binds",
             Part::Patterns => {
-                "at each choice the ask leaves open, choose like a pattern's good examples and unlike \
-                 its bad ones, and open the files of the examples that bear on it; a rule wins over a \
-                 pattern"
+                "at each choice the ask leaves open, weigh the forces of each pattern that bears on it, \
+                 choose like its good examples and unlike its bad ones, and name the pattern you \
+                 followed, or why you departed from it; a rule wins over a pattern"
             }
             Part::Past => "take each past step that fits as yours, with step add --uses <its id>",
         }
@@ -263,7 +263,7 @@ fn lines(ask: Step) -> Vec<String> {
     lines
 }
 
-/// The folder of `$CELIS_HOME` whose files name the rules `search` brought, each one byte longer each
+/// The folder of `$CELIS_HOME` whose files name the patterns `search` brought, each one byte longer each
 /// time it did.
 const RECALLED: &str = "recalled";
 
@@ -273,7 +273,7 @@ const NOTHING: &str = "nothing fits this ask";
 /// What `search` prints by meaning when no model was set up.
 const NONE: &str = "celis search has no model: search with celis grep, or run celis setup.";
 
-/// Words too common to tell rules apart.
+/// Words too common to tell patterns apart.
 const COMMON: &[&str] = &[
     "about", "after", "all", "also", "always", "and", "any", "are", "before", "but", "can", "did",
     "does", "done", "each", "for", "from", "has", "have", "how", "into", "its", "just", "keep",
@@ -289,9 +289,10 @@ const PAST: usize = 2;
 /// The least words a past ask's title shares with the ask to be like it.
 const SHARED: usize = 2;
 
-/// The part of a rule's text before its first `:`: the case it acts on.
+/// The part of a pattern's first line before its first `:`: the case it acts on.
 fn when(content: &str) -> &str {
-    content.split_once(':').map_or(content, |(when, _)| when)
+    let first = content.lines().next().unwrap_or("");
+    first.split_once(':').map_or(first, |(when, _)| when)
 }
 
 /// The words of `text` that tell cases apart: 4 or more letters, not common, lower case, without a

@@ -111,7 +111,7 @@ pub const GROUPS: &[Group] = &[
         "Add steps to a trail, then start, finish, drop, or edit them.",
         &[
             ("add", "Add a step to a trail, or start a new trail"),
-            ("start", "Start a step and show the rules its plan links"),
+            ("start", "Start a step and show the patterns its plan links"),
             ("done", "Finish a step with proof that it works"),
             ("drop", "Drop a step and the open steps under it"),
             (
@@ -250,7 +250,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "grep",
         usage: &["celis grep <grep option>... <pattern>"],
-        summary: "Search every trail of every project with the system grep, one line for each trail, step, proof, change, drop reason, and rule. Show what it finds under each trail's header, the trails with the most lines first. Changes nothing.",
+        summary: "Search every trail of every project with the system grep, one line for each trail, step, proof, change, drop reason, and pattern. Show what it finds under each trail's header, the trails with the most lines first. Changes nothing.",
         args: &[
             ("<grep option>", "Any option of grep, such as -i, -E, -w, or -A 3"),
             ("<pattern>", "What to find, as grep reads it"),
@@ -264,10 +264,10 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "search",
         usage: &["celis search [<file>]... [--kind <kind>] [--limit <n>] -- <ask>"],
-        summary: "Show what fits an ask: the rules of this project that its files, its words or its meaning match, then the patterns with their good and bad examples, then up to 2 done asks of any project like it, with their steps. With --kind trail or step, show the records of that kind most alike in meaning, by the model celis setup chose, with their score; with no model, says to use celis grep. Changes nothing.",
+        summary: "Show what fits an ask: the patterns of this project that its files, its words or its meaning match, the rules first, then the other patterns, each with its good and bad examples, then up to 2 done asks of any project like it, with their steps. With --kind trail or step, show the records of that kind most alike in meaning, by the model celis setup chose, with their score; with no model, says to use celis grep. Changes nothing.",
         args: &[
             ("<file>", "A file or folder the ask will touch"),
-            ("--kind", "Only rule, pattern, trail, or step"),
+            ("--kind", "Only rule (a pattern that binds), pattern, trail, or step"),
             ("--limit", "Show the first <n> of each part; 20 for trail or step"),
             ("<ask>", "The ask, in any words and any language"),
         ],
@@ -280,7 +280,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "stats",
         usage: &["celis stats [<id>] [--demo]"],
-        summary: "Show each step that later work reused and how often, then each rule that steps followed, then the total. With an id, show what that step reused and what reused it. On a terminal, show the totals of all time, then the last 14 days against the 14 before: reuse rate, first-pass success, resolved steps and median step time, then Learning, Quality, Output and speed, and Resources, each opened with enter, updating as work lands. Changes nothing.",
+        summary: "Show each step that later work reused and how often, then each pattern that steps followed, then the total. With an id, show what that step reused and what reused it. On a terminal, show the totals of all time, then the last 14 days against the 14 before: reuse rate, first-pass success, resolved steps and median step time, then Learning, Quality, Output and speed, and Resources, each opened with enter, updating as work lands. Changes nothing.",
         args: &[
             ("<id>", "A step id, or its first 4 or more characters"),
             ("--demo", "Show four weeks of sample trails"),
@@ -312,17 +312,17 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "decide",
-        usage: &["celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--promoted] [--good <example>]... [--bad <example>]... [--project <id>] -- <text>"],
-        summary: "Record a rule that later work must keep. With no --scope, it holds for the whole project. Its paths name the files it acts on, so celis search gives it for them. With examples, it is a pattern: it guides the work and never binds it.",
+        usage: &["celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--binds] [--good <example>]... [--bad <example>]... [--project <id>] -- <text>"],
+        summary: "Record a pattern that later work must keep: when it applies, its forces, what to do, and why. With no --scope, it holds for the whole project. Its paths name the files it acts on, so celis search gives it for them. It guides the work; with --binds, it is a rule, which binds it.",
         args: &[
             ("--scope <scope>", "Where it applies: trail:<id>, me, or project"),
-            ("--replaces <id>", "The rule this one replaces"),
+            ("--replaces <id>", "The pattern this one replaces"),
             ("--path <glob>", "A file it acts on; * and ? within a folder, ** across"),
-            ("--promoted", "A tool of the place, like a linter, now checks it"),
+            ("--binds", "It is a rule: a result must keep it"),
             ("--good <example>", "A step, a file, or a URL that shows it, such as a pick"),
             ("--bad <example>", "A step, a file, or a URL that breaks it"),
             ("--project <id>", "The id of a project in the store"),
-            ("<text>", "When it applies, what to do, and why"),
+            ("<text>", "Its lines: When, Forces, Do and Because"),
         ],
         examples: &[
             "celis decide --path shelf/prices.py \\",
@@ -341,7 +341,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "tree",
         usage: &["celis tree [<id>]... [--graph] [--full] [--all] [--demo]"],
-        summary: "Show a trail with its state, rules, and steps. With no id, show the active trails and today's trails of every project.",
+        summary: "Show a trail with its state, patterns, and steps. With no id, show the active trails and today's trails of every project.",
         args: &[
             ("<id>", "A step id, or its first 4 or more characters"),
             ("--graph", "Show today's trails as live graphs of cards"),
@@ -416,7 +416,7 @@ pub const VERBS: &[Verb] = &[
         args: &[
             ("--under <id>", "The open step this step is part of"),
             ("--replaces <id>", "A step this one takes over, or a finished step it fixes"),
-            ("--uses <id>", "A rule or a past step it follows"),
+            ("--uses <id>", "A pattern or a past step it follows"),
             ("--at <place>", "Where the work happens: a file:line, a URL, or any text"),
             ("--check <command>", "A command that proves the work"),
             ("--new", "Start a new trail, not a step of the session's trail"),
@@ -432,7 +432,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "step start",
         usage: &["celis step start <id>"],
-        summary: "Start a step and show the rules it must keep: those at its places, its trail's, and the ones its ask uses. The step stays in progress until it's done.",
+        summary: "Start a step and show the patterns it keeps: those at its places, its trail's, and the ones its ask uses. The step stays in progress until it's done.",
         args: &[("<id>", "A step id, or its first 4 or more characters")],
         examples: &["celis step start 4c1d22e0"],
     },
@@ -456,9 +456,9 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "step drop",
         usage: &["celis step drop <id> -- <reason>"],
-        summary: "Drop a step, a done trail or a rule you no longer need, and each open step under it.",
+        summary: "Drop a step, a done trail or a pattern you no longer need, and each open step under it.",
         args: &[
-            ("<id>", "A step, trail or rule id, or its first 4 or more characters"),
+            ("<id>", "A step, trail or pattern id, or its first 4 or more characters"),
             ("<reason>", "Why you no longer need it"),
         ],
         examples: &["celis step drop 4c1d22e0 -- \"The person chose the shared table.\""],

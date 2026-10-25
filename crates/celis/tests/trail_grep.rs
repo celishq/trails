@@ -114,10 +114,10 @@ fn grep_prints_proofs_changes_and_drop_reasons() {
     );
 }
 
-/// A rule prints with the kind `rule`: live or replaced, then its scope; one of a trail prints under
-/// the trail, one of the project under `- rules of no trail` with its project (`spec/02-cli.md`, "Grep").
+/// A pattern prints with the kind `pattern`: live or replaced, then its scope; one of a trail prints under
+/// the trail, one of the project under `- patterns of no trail` with its project (`spec/02-cli.md`, "Grep").
 #[test]
-fn grep_prints_rules_live_or_replaced() {
+fn grep_prints_patterns_live_or_replaced() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "Build the Vendors page"]);
     let decide = |args: &[&str]| {
@@ -128,7 +128,7 @@ fn grep_prints_rules_live_or_replaced() {
         out(&o).trim().to_string()
     };
     let scope = format!("trail:{}", &trail[..8]);
-    let rule = decide(&[
+    let pattern = decide(&[
         "--scope",
         &scope,
         "--",
@@ -141,26 +141,29 @@ fn grep_prints_rules_live_or_replaced() {
         "--",
         "When a price prints: use cents",
     ]);
-    let text = grep(&repo, &[" rule "]);
+    let text = grep(&repo, &[" pattern "]);
     let t = &trail[..8];
     assert_eq!(
         line(&text, "initials"),
         format!(
-            "  rule {} live {{trail:{t}}} When a vendor has no logo: show its initials",
-            &rule[..8]
+            "  pattern {} live {{trail:{t}}} When a vendor has no logo: show its initials",
+            &pattern[..8]
         )
     );
-    assert!(text.lines().any(|l| l == "- rules of no trail"), "{text}");
+    assert!(
+        text.lines().any(|l| l == "- patterns of no trail"),
+        "{text}"
+    );
     assert_eq!(
         line(&text, "floats"),
         format!(
-            "  [repo] rule {} replaced-by {} {{project}} When a price prints: use floats",
+            "  [repo] pattern {} replaced-by {} {{project}} When a price prints: use floats",
             &old[..8],
             &new[..8]
         )
     );
     assert!(
-        line(&text, "cents").contains(&format!(" rule {} live {{project}} ", &new[..8])),
+        line(&text, "cents").contains(&format!(" pattern {} live {{project}} ", &new[..8])),
         "{text}"
     );
 }
@@ -256,7 +259,7 @@ fn grep_prints_every_line_however_long() {
         let o = cli(&repo, &["decide", "--", &format!("When {n}: {long}")]);
         assert!(o.status.success(), "{}", err(&o));
     }
-    let text = grep(&repo, &[" rule "]);
+    let text = grep(&repo, &[" pattern "]);
     assert!(text.len() > 8_000, "{}", text.len());
     assert_eq!(
         text.lines().filter(|l| l.contains(long)).count(),
@@ -274,7 +277,7 @@ fn grep_prints_a_last_line_that_ends_in_a_space() {
     let o = cli(&repo, &["decide", "--", "When a page loads: keep it fast "]);
     assert!(o.status.success(), "{}", err(&o));
     let text = grep(&repo, &["keep it fast"]);
-    assert!(text.starts_with("- rules of no trail\n"), "{text}");
+    assert!(text.starts_with("- patterns of no trail\n"), "{text}");
     assert!(text.contains("When a page loads: keep it fast"), "{text}");
 }
 
@@ -328,12 +331,12 @@ fn grep_q_prints_nothing_on_a_match() {
     );
 }
 
-/// The view and what `grep` prints of it match `spec/fixtures/grep-view.json`, and the rule search of
+/// The view and what `grep` prints of it match `spec/fixtures/grep-view.json`, and the pattern search of
 /// `steps.md` prints exactly the lines it keeps (`spec/02-cli.md`, "Grep").
 #[test]
-fn the_view_and_the_steps_rule_search_match_the_fixture() {
+fn the_view_and_the_steps_pattern_search_match_the_fixture() {
     use celis_trails::{Anchor, Mark, StepId, StepRecord};
-    use support::{account, put, stored_rule, tagged_rule};
+    use support::{account, put, stored_pattern, tagged_pattern};
     let fixture: serde_json::Value =
         serde_json::from_str(include_str!("../../../spec/fixtures/grep-view.json")).unwrap();
     let steps = include_str!("../../../plugins/celis/steps.md");
@@ -376,7 +379,7 @@ fn the_view_and_the_steps_rule_search_match_the_fixture() {
     );
     let project = (id.as_str(), "repo");
     let scope = format!("trail:{}", trail.id);
-    let rule = stored_rule(
+    let pattern = stored_pattern(
         &repo,
         project,
         &by,
@@ -384,7 +387,7 @@ fn the_view_and_the_steps_rule_search_match_the_fixture() {
         "When a vendor has no logo: show its initials.",
         t + 5,
     );
-    let old = stored_rule(
+    let old = stored_pattern(
         &repo,
         project,
         &by,
@@ -392,7 +395,7 @@ fn the_view_and_the_steps_rule_search_match_the_fixture() {
         "When a price prints: use floats.",
         t + 6,
     );
-    let new = stored_rule(
+    let new = stored_pattern(
         &repo,
         project,
         &by,
@@ -400,7 +403,7 @@ fn the_view_and_the_steps_rule_search_match_the_fixture() {
         "When a price prints: use cents.",
         t + 7,
     );
-    let me = stored_rule(
+    let me = stored_pattern(
         &repo,
         project,
         &by,
@@ -409,7 +412,7 @@ fn the_view_and_the_steps_rule_search_match_the_fixture() {
         t + 8,
     );
     let tag = |tag: &[&str]| vec![tag.iter().map(|t| t.to_string()).collect()];
-    let situation = tagged_rule(
+    let situation = tagged_pattern(
         &repo,
         project,
         &by,
@@ -418,7 +421,7 @@ fn the_view_and_the_steps_rule_search_match_the_fixture() {
         "When the person asks a question: answer it first.",
         t + 9,
     );
-    let push = tagged_rule(
+    let push = tagged_pattern(
         &repo,
         project,
         &by,
@@ -431,7 +434,7 @@ fn the_view_and_the_steps_rule_search_match_the_fixture() {
         ("trail", &trail),
         ("table", &table),
         ("chart", &chart),
-        ("rule", &rule),
+        ("pattern", &pattern),
         ("old", &old),
         ("new", &new),
         ("me", &me),

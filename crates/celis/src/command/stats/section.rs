@@ -121,13 +121,13 @@ impl Section {
         match self {
             Section::Learning => vec![
                 vec![
-                    paint(MAGENTA.patch(BOLD), &format!("{}%", now.rule_usage())),
-                    paint(DIM, " rule usage"),
+                    paint(MAGENTA.patch(BOLD), &format!("{}%", now.pattern_usage())),
+                    paint(DIM, " pattern usage"),
                 ],
                 arrow(
                     Kind::Share,
-                    now.rule_usage(),
-                    m.before(|o| o.rule_usage()),
+                    now.pattern_usage(),
+                    m.before(|o| o.pattern_usage()),
                     true,
                 ),
                 vec![

@@ -1,7 +1,7 @@
 {
   "name": "celis",
   "version": "0.0.12",
-  "description": "Stop babysitting your coding agent. Celis keeps your rules and gives your agent the discipline to follow them, in every project and every agent.",
+  "description": "Stop babysitting your coding agent. Celis keeps your rules and patterns and gives your agent the discipline to follow them, in every project and every agent.",
   "author": { "name": "Celis" },
   "homepage": "https://celis.ai",
   "repository": "https://github.com/celishq/trails",

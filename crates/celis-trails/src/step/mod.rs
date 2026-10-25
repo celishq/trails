@@ -60,7 +60,7 @@ impl<'a> Step<'a> {
     }
 
     /// What each of its `uses` names, once each, in the order it names them; an id that names no step
-    /// and no rule is left out.
+    /// and no pattern is left out.
     pub fn uses(self) -> Vec<Used<'a>> {
         let mut seen = HashSet::new();
         let ids = self
@@ -71,7 +71,7 @@ impl<'a> Step<'a> {
             .filter(|id| seen.insert(id.as_str()));
         ids.filter_map(|id| match self.steps.get(id) {
             Some(step) => Some(Used::Follow(step)),
-            None => self.steps.holds_rule(id).then_some(Used::Rule(id)),
+            None => self.steps.holds_pattern(id).then_some(Used::Pattern(id)),
         })
         .collect()
     }
@@ -82,7 +82,7 @@ impl<'a> Step<'a> {
             let used = s.uses().into_iter();
             used.filter_map(|u| match u {
                 Used::Follow(step) => Some(step.trail()),
-                Used::Rule(_) => None,
+                Used::Pattern(_) => None,
             })
         };
         let chain = std::iter::successors(Some(self), |s| s.under());

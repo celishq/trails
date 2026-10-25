@@ -1,22 +1,24 @@
-//! CIP-05, "Rules".
+//! CIP-05, "Patterns".
 
 mod support;
 
 use celis_nostr::{Account, Note};
-use support::{account, cairn, live_ids, mark_note, now, out, put, rating, stored_rule, Repo, DAY};
+use support::{
+    account, cairn, live_ids, mark_note, now, out, put, rating, stored_pattern, Repo, DAY,
+};
 
 fn short(id: &str) -> String {
     id[..8].to_string()
 }
 
-/// A reader counts a rule whatever account signed it (`spec/01-records.md`, "The account").
+/// A reader counts a pattern whatever account signed it (`spec/01-records.md`, "The account").
 #[test]
-fn a_rule_counts_whatever_account_signed_it() {
+fn a_pattern_counts_whatever_account_signed_it() {
     let repo = Repo::plain();
     let id = repo.project_id();
     let project = (id.as_str(), "repo");
     let stranger = Account::new(&[2u8; 32]).unwrap();
-    let signed = stored_rule(
+    let signed = stored_pattern(
         &repo,
         project,
         &account(),
@@ -24,7 +26,7 @@ fn a_rule_counts_whatever_account_signed_it() {
         "mine",
         now() - 3 * DAY,
     );
-    let theirs = stored_rule(
+    let theirs = stored_pattern(
         &repo,
         project,
         &stranger,
@@ -38,15 +40,15 @@ fn a_rule_counts_whatever_account_signed_it() {
     );
 }
 
-/// A rule is live until another rule names it in `replaces` (`spec/05-rules.md`,
-/// "Rules").
+/// A pattern is live until another pattern names it in `replaces` (`spec/05-patterns.md`,
+/// "Patterns").
 #[test]
-fn a_rule_is_live_until_another_rule_replaces_it() {
+fn a_pattern_is_live_until_another_pattern_replaces_it() {
     let repo = Repo::plain();
     let id = repo.project_id();
     let project = (id.as_str(), "repo");
     let stranger = Account::new(&[2u8; 32]).unwrap();
-    let old = stored_rule(
+    let old = stored_pattern(
         &repo,
         project,
         &account(),
@@ -54,7 +56,7 @@ fn a_rule_is_live_until_another_rule_replaces_it() {
         "old",
         now() - 4 * DAY,
     );
-    let kept = stored_rule(
+    let kept = stored_pattern(
         &repo,
         project,
         &account(),
@@ -62,7 +64,7 @@ fn a_rule_is_live_until_another_rule_replaces_it() {
         "kept",
         now() - 3 * DAY,
     );
-    let gone = stored_rule(
+    let gone = stored_pattern(
         &repo,
         project,
         &stranger,
@@ -70,7 +72,7 @@ fn a_rule_is_live_until_another_rule_replaces_it() {
         "no",
         now() - 2 * DAY,
     );
-    let new = stored_rule(
+    let new = stored_pattern(
         &repo,
         project,
         &account(),
@@ -84,13 +86,13 @@ fn a_rule_is_live_until_another_rule_replaces_it() {
     );
 }
 
-/// A rule is live until a drop names it (`spec/05-rules.md`, "Rules").
+/// A pattern is live until a drop names it (`spec/05-patterns.md`, "Patterns").
 #[test]
-fn a_rule_is_live_until_a_drop_names_it() {
+fn a_pattern_is_live_until_a_drop_names_it() {
     let repo = Repo::plain();
     let id = repo.project_id();
     let project = (id.as_str(), "repo");
-    let kept = stored_rule(
+    let kept = stored_pattern(
         &repo,
         project,
         &account(),
@@ -98,7 +100,7 @@ fn a_rule_is_live_until_a_drop_names_it() {
         "kept",
         now() - 3 * DAY,
     );
-    let dropped = stored_rule(
+    let dropped = stored_pattern(
         &repo,
         project,
         &account(),
@@ -117,8 +119,8 @@ fn a_rule_is_live_until_a_drop_names_it() {
     assert_eq!(live_ids(&repo, &repo.path(), "repo"), [short(&kept.id)]);
     let o = repo.run(&repo.path(), &["grep", &short(&dropped.id)], &[], "");
     let text = out(&o);
-    let rule = format!("rule {} dropped {{project}} dropped", short(&dropped.id));
-    assert!(text.contains(&rule), "{text}");
+    let pattern = format!("pattern {} dropped {{project}} dropped", short(&dropped.id));
+    assert!(text.contains(&pattern), "{text}");
     let reason = format!("dropped {} no longer holds", short(&dropped.id));
     assert!(text.contains(&reason), "{text}");
 }
@@ -131,7 +133,7 @@ fn a_reader_ignores_cairns_ratings_outcomes_source_records_and_splits_from_befor
     let id = repo.project_id();
     let project = (id.as_str(), "repo");
     let by = &account();
-    let kept = stored_rule(
+    let kept = stored_pattern(
         &repo,
         project,
         &account(),

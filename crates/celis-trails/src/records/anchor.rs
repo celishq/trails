@@ -1,8 +1,8 @@
-//! What a rule, trail or step is on.
+//! What a pattern, trail or step is on.
 
 use celis_nostr::Note;
 
-/// What a rule, trail or step is on: the project of this id, and the name it goes by.
+/// What a pattern, trail or step is on: the project of this id, and the name it goes by.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Anchor {
     pub project: String,

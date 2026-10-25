@@ -15,7 +15,7 @@ use std::io::Write;
 
 impl Command {
     /// Prints `review` on `err`: the step's plan against what it did, the open steps beside it, the blobs
-    /// of `trails` for its files and the files beside it, the rules of the `changed` files, then the
+    /// of `trails` for its files and the files beside it, the patterns of the `changed` files, then the
     /// next move; on an ask, only its end; with no `linked` folder, its blobs are local only.
     pub(crate) fn review(
         &self,
@@ -62,7 +62,7 @@ impl Command {
         for (id, title, file) in &review.beside {
             lines.push(format!("  beside  {} {title} · {}", short(id), kept(file)));
         }
-        lines.extend(self.changed_rules(trails, changed));
+        lines.extend(self.changed_patterns(trails, changed));
         let steps = trails.steps();
         let ask = review.under.as_deref().and_then(|id| steps.get(id));
         if let Some(ask) = ask.filter(|a| a.is_ask() && review.as_planned && review.open.is_empty())
@@ -80,7 +80,7 @@ impl Command {
 
     /// The changed files of a `done` that names `files`: those git shows changed or new, and `files`.
     pub(crate) fn changed(&self, files: &[String]) -> Vec<String> {
-        let mut changed = super::rules::changed(&self.folder);
+        let mut changed = super::matched::changed(&self.folder);
         for file in files {
             if !changed.contains(file) {
                 changed.push(file.clone());
@@ -89,32 +89,32 @@ impl Command {
         changed
     }
 
-    /// The lines of the rules that the `changed` files match, after a line that asks to check the
+    /// The lines of the patterns that the `changed` files match, after a line that asks to check the
     /// change against each; none when none matches.
-    fn changed_rules(&self, trails: &Trails, changed: &[String]) -> Vec<String> {
-        let rules = self.matched(trails, changed);
-        if rules.is_empty() {
+    fn changed_patterns(&self, trails: &Trails, changed: &[String]) -> Vec<String> {
+        let patterns = self.matched(trails, changed);
+        if patterns.is_empty() {
             return vec![];
         }
-        let head = "celis: check the change against each rule of the files git shows changed:";
-        let lines = rules
+        let head = "celis: check the change against each pattern of the files git shows changed:";
+        let lines = patterns
             .iter()
-            .map(|(note, rule)| crate::text::line::rule(note, rule, trails));
+            .map(|(note, pattern)| crate::text::line::pattern(note, pattern, trails));
         std::iter::once(head.to_string()).chain(lines).collect()
     }
 
-    /// What `done` of the ask `ask` with no `--by` prints before it refuses: the rules of the `changed`
+    /// What `done` of the ask `ask` with no `--by` prints before it refuses: the patterns of the `changed`
     /// files and the judge brief; none with no changed file.
     pub(crate) fn unjudged(&self, ask: Step, trails: &Trails, changed: &[String]) -> Vec<String> {
         if changed.is_empty() {
             return vec![];
         }
-        let mut lines = self.changed_rules(trails, changed);
+        let mut lines = self.changed_patterns(trails, changed);
         lines.extend(self.brief(ask, trails, changed));
         lines
     }
 
-    /// The judge brief of `ask`: the ask, its intent lines, the rules that fit its title and the
+    /// The judge brief of `ask`: the ask, its intent lines, the patterns that fit its title and the
     /// changed files, the changed files, and its check.
     fn brief(&self, ask: Step, trails: &Trails, files: &[String]) -> Vec<String> {
         let record = ask.record();
@@ -133,11 +133,12 @@ impl Command {
             });
         }
         let fits = self.fits(trails, ask.title(), files, &mut std::io::sink());
-        for (note, rule) in fits.unwrap_or_default() {
-            let text = crate::text::line::rule(note, &rule, trails);
-            let mut rule = text.lines();
-            lines.extend(rule.next().map(|first| format!("  rule    {first}")));
-            lines.extend(rule.map(|line| format!("        {line}")));
+        for (note, pattern) in fits.unwrap_or_default() {
+            let kind = if pattern.binds { "rule" } else { "pattern" };
+            let text = crate::text::line::pattern(note, &pattern, trails);
+            let mut pattern = text.lines();
+            lines.extend(pattern.next().map(|first| format!("  {kind:<7} {first}")));
+            lines.extend(pattern.map(|line| format!("        {line}")));
         }
         lines.extend(files.iter().map(|file| format!("  file    {file}")));
         lines.extend(

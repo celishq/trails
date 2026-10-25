@@ -1,8 +1,8 @@
-//! A trail in the tree: a block with its steps, its rules line and its closed line, or one line.
+//! A trail in the tree: a block with its steps, its patterns line and its closed line, or one line.
 
 use super::level::Level;
 use super::row::Row;
-use super::{Item, RuleNote, Tree, PROJECT, RULES};
+use super::{Item, PatternNote, Tree, PATTERNS, PROJECT};
 use crate::terminal::canvas::{paint, Styled, BOLD, DIM};
 use crate::terminal::classic::look;
 use crate::text::clock::{stride, took};
@@ -43,23 +43,23 @@ impl Tree<'_> {
         self.order.borrow_mut().push(item);
     }
 
-    /// The trail `note` as a line a watch selects, `open` when it prints as a block: with every rule of
-    /// `rules` and every step it prints under it.
-    pub(super) fn item(&self, note: Step, open: bool, rules: &[RuleNote]) -> Item {
-        let folded = (!rules.is_empty()).then(|| format!("{RULES}{}", note.id()));
-        let rules = rules.iter().map(|(rule, _)| rule.id.clone());
+    /// The trail `note` as a line a watch selects, `open` when it prints as a block: with every pattern of
+    /// `patterns` and every step it prints under it.
+    pub(super) fn item(&self, note: Step, open: bool, patterns: &[PatternNote]) -> Item {
+        let folded = (!patterns.is_empty()).then(|| format!("{PATTERNS}{}", note.id()));
+        let patterns = patterns.iter().map(|(pattern, _)| pattern.id.clone());
         let steps = Level::of(Trail::new(note).parts()).ids(note.id());
         Item {
             id: note.id().to_string(),
             open,
             parent: None,
-            under: folded.into_iter().chain(rules).chain(steps).collect(),
+            under: folded.into_iter().chain(patterns).chain(steps).collect(),
         }
     }
 
     /// Adds `note` as a block: `▾`, its mark and title, then its lines: its worked time, its last change
     /// and its project while active, its project with no grouping, and the lines `--full` prints but its
-    /// grade; then its tree: its active steps, its rules, then its closed steps.
+    /// grade; then its tree: its active steps, its patterns, then its closed steps.
     pub(super) fn block(&self, note: Step, lines: &mut Vec<Row>) {
         let step = note.record();
         let state = note.state();
@@ -74,7 +74,7 @@ impl Tree<'_> {
             tone: self.tone(BOLD, note.newest()),
             rest: hair.clone(),
         });
-        self.pick(self.item(note, true, &summary.rules), lines, first);
+        self.pick(self.item(note, true, &summary.patterns), lines, first);
         if let Some(worked) = summary.worked {
             self.labelled(lines, &hair, "took", &took(worked));
         }
@@ -94,7 +94,13 @@ impl Tree<'_> {
         self.closing(work, &hair, false, lines);
         self.followed(work, &hair, lines);
         let level = Level::of(Trail::new(note).parts());
-        self.level(level, summary.rules, &Styled::from("  "), note.id(), lines);
+        self.level(
+            level,
+            summary.patterns,
+            &Styled::from("  "),
+            note.id(),
+            lines,
+        );
     }
 
     /// Adds `note` as one row: `▸`, its mark and wrapped title, then its details: its steps and worked
@@ -119,7 +125,7 @@ impl Tree<'_> {
             rest: rest.clone(),
         });
         self.details(&rest, [steps, summary.worked.map(took)], lines);
-        self.pick(self.item(note, false, &summary.rules), lines, first);
+        self.pick(self.item(note, false, &summary.patterns), lines, first);
     }
 }
 

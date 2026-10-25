@@ -6,7 +6,7 @@ use crate::terminal::look::look;
 use crate::text::clock::took;
 use crate::text::line::time;
 use celis_trails::records::id::short;
-use celis_trails::{Mark, Rules, State, Step, Steps, Trail};
+use celis_trails::{Mark, Patterns, State, Step, Steps, Trail};
 
 /// The trail of the step each of `ids` names, once, in their order.
 fn chosen<'a>(steps: &'a Steps<'a>, ids: &[String]) -> Result<Vec<Step<'a>>, Failure> {
@@ -21,14 +21,18 @@ fn chosen<'a>(steps: &'a Steps<'a>, ids: &[String]) -> Result<Vec<Step<'a>>, Fai
 }
 
 /// The trail of the step each of `ids` names in `steps`, once, in their order, as Markdown.
-pub(crate) fn markdown(steps: &Steps, rules: &Rules, ids: &[String]) -> Result<String, Failure> {
+pub(crate) fn markdown(
+    steps: &Steps,
+    patterns: &Patterns,
+    ids: &[String],
+) -> Result<String, Failure> {
     let mut parts = Vec::new();
     for trail in chosen(steps, ids)? {
         let step = trail.record();
         let tree = &trail.tree()[1..];
         let tally = Tally::of(tree);
         let ran = took(trail.newest().saturating_sub(trail.note().created_at));
-        let kept = rules.of(trail);
+        let kept = patterns.of(trail);
         let mut lines = vec![
             format!("## {}", step.title()),
             String::new(),
@@ -58,8 +62,8 @@ pub(crate) fn markdown(steps: &Steps, rules: &Rules, ids: &[String]) -> Result<S
         lines.extend(table(Trail::new(trail).parts()));
         if !kept.is_empty() {
             let count = match kept.len() {
-                1 => "1 rule".to_string(),
-                n => format!("{n} rules"),
+                1 => "1 pattern".to_string(),
+                n => format!("{n} patterns"),
             };
             let items = kept.iter().map(|(_, d)| format!("- {}", d.content));
             lines.extend(details(&count, items.collect()));
@@ -69,15 +73,15 @@ pub(crate) fn markdown(steps: &Steps, rules: &Rules, ids: &[String]) -> Result<S
     Ok(parts.join("\n\n") + "\n")
 }
 
-/// The trail, step or rule `id` as Markdown: a trail as `markdown` gives it, a step as the table of it and
-/// the steps under it, a rule as `- <text>`.
-pub(crate) fn part(steps: &Steps, rules: &Rules, id: &str) -> Result<String, Failure> {
-    if let Some((_, rule)) = rules.get(id) {
-        return Ok(format!("- {}\n", rule.content));
+/// The trail, step or pattern `id` as Markdown: a trail as `markdown` gives it, a step as the table of it and
+/// the steps under it, a pattern as `- <text>`.
+pub(crate) fn part(steps: &Steps, patterns: &Patterns, id: &str) -> Result<String, Failure> {
+    if let Some((_, pattern)) = patterns.get(id) {
+        return Ok(format!("- {}\n", pattern.content));
     }
     let step = steps.find(id)?;
     if step.is_trail() {
-        return markdown(steps, rules, &[id.to_string()]);
+        return markdown(steps, patterns, &[id.to_string()]);
     }
     let lines = table(vec![step]);
     Ok(lines[1..].join("\n") + "\n")

@@ -1,8 +1,8 @@
 {
   "name": "celis",
   "owner": { "name": "Celis" },
-  "description": "Stop babysitting your coding agent. Celis keeps your rules and gives your agent the discipline to follow them, in every project and every agent.",
+  "description": "Stop babysitting your coding agent. Celis keeps your rules and patterns and gives your agent the discipline to follow them, in every project and every agent.",
   "plugins": [
-    { "name": "celis", "source": "./plugins/celis", "description": "Stop babysitting your coding agent. Celis keeps your rules and gives your agent the discipline to follow them, in every project and every agent." }
+    { "name": "celis", "source": "./plugins/celis", "description": "Stop babysitting your coding agent. Celis keeps your rules and patterns and gives your agent the discipline to follow them, in every project and every agent." }
   ]
 }

@@ -1,4 +1,4 @@
-//! The face the reuse, rules and work cards share.
+//! The face the reuse, patterns and work cards share.
 
 use super::super::glyph::columns;
 use super::super::window::DAYS;

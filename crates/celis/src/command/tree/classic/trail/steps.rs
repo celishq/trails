@@ -2,7 +2,7 @@
 
 use crate::command::tree::classic::level::Level;
 use crate::command::tree::classic::row::Row;
-use crate::command::tree::classic::{after, Item, RuleNote, Tree};
+use crate::command::tree::classic::{after, Item, PatternNote, Tree};
 use crate::terminal::canvas::{paint, Styled, DIM};
 use crate::terminal::classic::look;
 use crate::text::clock::took;
@@ -12,20 +12,20 @@ use celis_trails::{State, Step};
 use ratatui::text::Span;
 
 impl Tree<'_> {
-    /// Adds `level` under the line `above` after `rail`: its active steps, the rules line of `rules`,
+    /// Adds `level` under the line `above` after `rail`: its active steps, the patterns line of `patterns`,
     /// then its closed line.
     pub(super) fn level(
         &self,
         level: Level,
-        rules: Vec<RuleNote>,
+        patterns: Vec<PatternNote>,
         rail: &Styled,
         above: &str,
         lines: &mut Vec<Row>,
     ) {
-        let more = !rules.is_empty() || !level.ended.is_empty();
+        let more = !patterns.is_empty() || !level.ended.is_empty();
         self.steps(level.active, rail, above, more, lines);
-        if !rules.is_empty() {
-            self.rules_line(rules, rail, level.ended.is_empty(), above, lines);
+        if !patterns.is_empty() {
+            self.patterns_line(patterns, rail, level.ended.is_empty(), above, lines);
         }
         if !level.ended.is_empty() {
             self.closed_line(level.ended, rail, above, lines);
@@ -137,7 +137,7 @@ impl Tree<'_> {
         lines || (note.state().closed() && !note.children().is_empty())
     }
 
-    /// Whether the step or rule `id` shows what `--full` shows: with `--full`, unless the watch closed
+    /// Whether the step or pattern `id` shows what `--full` shows: with `--full`, unless the watch closed
     /// it; else when the watch opened it.
     pub(super) fn open(&self, id: &str) -> bool {
         self.view.full != self.view.flipped.contains(id)

@@ -2,7 +2,7 @@
 
 use crate::command::tree::level::Level;
 use crate::command::tree::row::Row;
-use crate::command::tree::{after, Item, RuleNote, Tree};
+use crate::command::tree::{after, Item, PatternNote, Tree};
 use crate::terminal::canvas::{paint, Styled, DIM};
 use crate::terminal::look::{look, SHIMMER};
 use celis_trails::step::steps::LIFE;
@@ -12,16 +12,16 @@ use ratatui::text::Span;
 
 impl Tree<'_> {
     /// Adds `level` under the line `above` after `rail`: its steps in the order they came, its closed
-    /// ones folded into one closed line first when more than `FOLD`; then the rules line of `rules`.
+    /// ones folded into one closed line first when more than `FOLD`; then the patterns line of `patterns`.
     pub(super) fn level(
         &self,
         level: Level,
-        rules: Vec<RuleNote>,
+        patterns: Vec<PatternNote>,
         rail: &Styled,
         above: &str,
         lines: &mut Vec<Row>,
     ) {
-        let more = !rules.is_empty();
+        let more = !patterns.is_empty();
         let closed = level.order.iter().filter(|s| s.state().ended()).count();
         match closed > FOLD {
             true => {
@@ -34,7 +34,7 @@ impl Tree<'_> {
             false => self.steps(level.order, rail, above, more, lines),
         }
         if more {
-            self.rules_line(rules, rail, true, above, lines);
+            self.patterns_line(patterns, rail, true, above, lines);
         }
     }
 
@@ -139,7 +139,7 @@ impl Tree<'_> {
         note.tree().iter().any(|s| s.state() == State::Working)
     }
 
-    /// Whether the step or rule `id` shows what `--full` shows: with `--full`, unless the watch closed
+    /// Whether the step or pattern `id` shows what `--full` shows: with `--full`, unless the watch closed
     /// it; else when the watch opened it.
     pub(super) fn open(&self, id: &str) -> bool {
         self.view.full != self.view.flipped.contains(id)

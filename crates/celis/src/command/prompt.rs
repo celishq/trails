@@ -85,7 +85,7 @@ fn mark(path: &Path) -> Result<(), Failure> {
 
 /// The line on a prompt: a new ask runs `search` when the store holds a record, then joins the
 /// session's trail `trail`, else a trail of `today`, else a new one; how done work is fixed; and how a
-/// correction becomes a rule and a reaction a pattern.
+/// correction or a reaction becomes a pattern.
 fn note(search: bool, trail: Option<&str>, today: bool) -> String {
     let join = match (trail, today) {
         (Some(id), _) => {
@@ -113,8 +113,8 @@ fn note(search: bool, trail: Option<&str>, today: bool) -> String {
     };
     format!(
         "celis: when this prompt is a new ask, {ask}{fix}; when it says always or never, or states a \
-         convention, write a rule with celis decide before you change a file, with no --good or --bad, and \
-         with --scope me when it holds in any project; when it reacts to a result, such as \"this one\" or \"too much\", write \
-         a pattern with celis decide --good <what the person liked> --bad <what they did not>."
+         convention, write a rule with celis decide --binds before you change a file, with --scope me when \
+         it holds in any project; when it reacts to a result, such as \"this one\" or \"too much\", write a \
+         pattern with celis decide --good <what the person liked> --bad <what they did not>."
     )
 }

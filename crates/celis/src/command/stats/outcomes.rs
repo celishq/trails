@@ -1,7 +1,7 @@
 //! How the steps of a span of days ended, and the shares stats reads from them.
 
 /// How the steps that closed in a span ended, each step once: done following past work, done new, done
-/// and revised later, dropped, or expired; and how many of the done ones applied a rule.
+/// and revised later, dropped, or expired; and how many of the done ones applied a pattern.
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
 pub(super) struct Outcomes {
     pub reused: usize,
@@ -55,8 +55,8 @@ impl Outcomes {
         percent(self.reworked, self.resolved())
     }
 
-    /// The steps that applied a rule among the successful ones, in whole per cent.
-    pub fn rule_usage(self) -> i64 {
+    /// The steps that applied a pattern among the successful ones, in whole per cent.
+    pub fn pattern_usage(self) -> i64 {
         percent(self.applied, self.successful())
     }
 }

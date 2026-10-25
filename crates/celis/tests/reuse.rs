@@ -12,12 +12,12 @@ fn decide(repo: &Repo, text: &str) -> String {
     out(&o).trim().to_string()
 }
 
-/// `step add --uses` takes a live rule and a step of another trail, writes each whole id, and gives
+/// `step add --uses` takes a live pattern and a step of another trail, writes each whole id, and gives
 /// a trail id as its first ask (`spec/06-reuse.md`, "Uses").
 #[test]
-fn uses_takes_a_rule_and_a_step_of_another_trail() {
+fn uses_takes_a_pattern_and_a_step_of_another_trail() {
     let repo = Repo::new();
-    let rule = decide(
+    let pattern = decide(
         &repo,
         "When a test adds two steps: wait 1.1 s between them.",
     );
@@ -31,7 +31,7 @@ fn uses_takes_a_rule_and_a_step_of_another_trail() {
             "--under",
             &trail[..8],
             "--uses",
-            &rule[..8],
+            &pattern[..8],
             "--uses",
             &past_trail[..8],
             "--",
@@ -39,11 +39,11 @@ fn uses_takes_a_rule_and_a_step_of_another_trail() {
         ],
     );
     let json = step(&repo, &trail, &id);
-    assert_eq!(links(&json, "uses"), [rule, past_ask.clone()], "{json}");
+    assert_eq!(links(&json, "uses"), [pattern, past_ask.clone()], "{json}");
     assert_eq!(links(&json, "under"), [trail], "{json}");
 }
 
-/// `step add --uses` refuses an id no rule or step has with `no-step`, and a step of its own trail
+/// `step add --uses` refuses an id no pattern or step has with `no-step`, and a step of its own trail
 /// as a usage error (`spec/06-reuse.md`, "Uses").
 #[test]
 fn uses_refuses_an_unknown_id_and_a_step_of_the_same_trail() {
@@ -79,10 +79,10 @@ fn uses_refuses_an_unknown_id_and_a_step_of_the_same_trail() {
 #[test]
 fn uses_goes_on_the_ask_of_a_new_trail() {
     let repo = Repo::new();
-    let rule = decide(&repo, "When a price rounds: round down to the cent.");
-    let written = added(&repo, "s1", &["--uses", &rule[..8], "--", "the price"]);
+    let pattern = decide(&repo, "When a price rounds: round down to the cent.");
+    let written = added(&repo, "s1", &["--uses", &pattern[..8], "--", "the price"]);
     let (ask, trail) = (&written[0], &written[1]);
-    assert_eq!(links(&step(&repo, trail, ask), "uses"), [rule]);
+    assert_eq!(links(&step(&repo, trail, ask), "uses"), [pattern]);
     assert!(links(&step(&repo, trail, trail), "uses").is_empty());
 }
 
@@ -170,10 +170,10 @@ fn replaces_refuses_a_dropped_step() {
     refusal(&o, 1, "closed");
 }
 
-/// A chain of follows: the ask `a` of one trail, `b` of a second that uses `a` and the rule, and
-/// `c` of a third that uses `b` and the rule; each done. Gives `(a, b, c, rule)`.
+/// A chain of follows: the ask `a` of one trail, `b` of a second that uses `a` and the pattern, and
+/// `c` of a third that uses `b` and the pattern; each done. Gives `(a, b, c, pattern)`.
 fn chain(repo: &Repo) -> (String, String, String, String) {
-    let rule = decide(repo, "When a price rounds: round down to the cent.");
+    let pattern = decide(repo, "When a price rounds: round down to the cent.");
     let a = added(repo, "s1", &["--", "a senior pays 80%"]).remove(0);
     finish(repo, &a[..8]);
     let follow = |source: &str, text: &str| {
@@ -186,7 +186,7 @@ fn chain(repo: &Repo) -> (String, String, String, String) {
                 "--uses",
                 &source[..8],
                 "--uses",
-                &rule[..8],
+                &pattern[..8],
                 "--",
                 text,
             ],
@@ -196,7 +196,7 @@ fn chain(repo: &Repo) -> (String, String, String, String) {
     };
     let b = follow(&a, "a student pays 70%");
     let c = follow(&b, "a member pays 90%");
-    (a, b, c, rule)
+    (a, b, c, pattern)
 }
 
 /// The line of `text` that holds `id`.
@@ -218,12 +218,12 @@ fn stats_says_when_nothing_was_reused() {
     refusal(&cli(&repo, &["stats", "--json", "ffffffff"]), 1, "no-step");
 }
 
-/// `stats` prints each followed step, most followed at any depth first, then each used rule, then
+/// `stats` prints each followed step, most followed at any depth first, then each used pattern, then
 /// the total.
 #[test]
-fn stats_prints_the_followed_steps_the_used_rules_and_the_total() {
+fn stats_prints_the_followed_steps_the_used_patterns_and_the_total() {
     let repo = Repo::new();
-    let (a, b, _, rule) = chain(&repo);
+    let (a, b, _, pattern) = chain(&repo);
     let text = out(&cli(&repo, &["stats"]));
     let lines: Vec<&str> = text.lines().collect();
     assert!(lines[0].starts_with(&a[..8]), "{text}");
@@ -232,7 +232,7 @@ fn stats_prints_the_followed_steps_the_used_rules_and_the_total() {
     assert!(lines[1].starts_with(&b[..8]), "{text}");
     assert!(lines[1].contains(" · followed 1"), "{text}");
     assert!(
-        lines[2].starts_with(&format!("rule {}", &rule[..8])),
+        lines[2].starts_with(&format!("pattern {}", &pattern[..8])),
         "{text}"
     );
     assert!(lines[2].ends_with(" · used 2"), "{text}");
@@ -348,7 +348,7 @@ fn a_new_trail_that_replaces_a_done_step_links_it_once() {
 #[test]
 fn a_link_on_a_step_that_exists_is_refused() {
     let repo = Repo::new();
-    let rule = decide(&repo, "When a price rounds: round down to the cent.");
+    let pattern = decide(&repo, "When a price rounds: round down to the cent.");
     let trail = add(&repo, &["--", "the trail"]);
     add(&repo, &["--under", &trail[..8], "--", "the badge"]);
     let o = cli(
@@ -360,7 +360,7 @@ fn a_link_on_a_step_that_exists_is_refused() {
             "--under",
             &trail[..8],
             "--uses",
-            &rule[..8],
+            &pattern[..8],
             "--",
             "the badge",
         ],
@@ -372,7 +372,7 @@ fn a_link_on_a_step_that_exists_is_refused() {
 #[test]
 fn uses_writes_each_id_once() {
     let repo = Repo::new();
-    let rule = decide(&repo, "When a price rounds: round down to the cent.");
+    let pattern = decide(&repo, "When a price rounds: round down to the cent.");
     let trail = add(&repo, &["--", "the trail"]);
     let id = add(
         &repo,
@@ -380,14 +380,14 @@ fn uses_writes_each_id_once() {
             "--under",
             &trail[..8],
             "--uses",
-            &rule[..8],
+            &pattern[..8],
             "--uses",
-            &rule,
+            &pattern,
             "--",
             "a step",
         ],
     );
-    assert_eq!(links(&step(&repo, &trail, &id), "uses"), [rule]);
+    assert_eq!(links(&step(&repo, &trail, &id), "uses"), [pattern]);
 }
 
 /// `--uses` of a trail with no first ask of its text names the trail, and `stats` and `tree` count the

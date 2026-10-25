@@ -21,7 +21,7 @@ const VIVID: f64 = 5.0;
 /// The clean colours a light screen draws in place of the dark palette's vivid ones, which darkened
 /// would turn muddy: each dark colour, its text and its fill in bars and blocks. Done, changed and
 /// dropped are Apple's system green, orange and red, their text a deeper shade of the same hue; working
-/// sky blue, rules violet, and a second share, such as a day of new steps, a light grey.
+/// sky blue, patterns violet, and a second share, such as a day of new steps, a light grey.
 const CLEAN: [(Rgb, Rgb, Rgb); 6] = [
     ((52, 230, 140), (36, 138, 61), (52, 199, 89)),
     ((34, 211, 238), (10, 149, 216), (10, 149, 216)),

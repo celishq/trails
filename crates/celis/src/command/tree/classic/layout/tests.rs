@@ -3,7 +3,7 @@ use super::Layout;
 use crate::progress::{Model, Reuse};
 use crate::text::clock::day;
 use celis_nostr::{Account, Note};
-use celis_trails::{Anchor, Mark, Rule, Rules, Scope, StepId, StepRecord, Steps};
+use celis_trails::{Anchor, Mark, Pattern, Patterns, Scope, StepId, StepRecord, Steps};
 use std::cell::Cell;
 
 /// The time the newest record was written.
@@ -34,7 +34,7 @@ fn step(under: Option<&Note>, uses: &[&Note], at: u64) -> Note {
 /// Prints every trail of `records` by day into `layout`, as a watch shows all of them.
 fn print(records: &[Note], layout: &Layout) {
     let steps = Steps::new(records, NOW);
-    let rules = Rules::new(records);
+    let patterns = Patterns::new(records);
     let reuse = Reuse::new(&steps);
     let view = View {
         watch: true,
@@ -43,7 +43,7 @@ fn print(records: &[Note], layout: &Layout) {
     };
     let tree = Tree {
         steps: &steps,
-        rules: &rules,
+        patterns: &patterns,
         reuse: &reuse,
         layout: Some(layout),
         grouped: true,
@@ -64,11 +64,11 @@ fn kept(records: &[Note], landed: &[Note]) -> Vec<String> {
     let layout = Layout::default();
     print(records, &layout);
     let all: Vec<Note> = records.iter().chain(landed).cloned().collect();
-    let (steps, rules) = (Steps::new(&all, NOW), Rules::new(&all));
+    let (steps, patterns) = (Steps::new(&all, NOW), Patterns::new(&all));
     let reuse = Reuse::new(&steps);
     let model = Model {
         steps: &steps,
-        rules: &rules,
+        patterns: &patterns,
         reuse: &reuse,
     };
     layout.renew(&model, Some(landed));
@@ -77,7 +77,7 @@ fn kept(records: &[Note], landed: &[Note]) -> Vec<String> {
     days
 }
 
-/// A step or a mark in one trail forgets only the day group of that trail; a rule, a step that uses
+/// A step or a mark in one trail forgets only the day group of that trail; a pattern, a step that uses
 /// another, a mark of a step another follows, or records of two trails forget every group.
 #[test]
 fn a_record_forgets_only_the_group_of_its_trail() {
@@ -95,7 +95,7 @@ fn a_record_forgets_only_the_group_of_its_trail() {
     assert_eq!(kept(&records, &[start]), only_old);
     assert_eq!(kept(&records, &[]), both);
 
-    let rule = Rule {
+    let pattern = Pattern {
         anchor: Anchor {
             project: "p".into(),
             name: "repo".into(),
@@ -104,12 +104,12 @@ fn a_record_forgets_only_the_group_of_its_trail() {
         replaces: None,
         content: "a rule".into(),
         paths: vec![],
-        promoted: false,
+        binds: false,
         examples: Default::default(),
     }
     .record(&account(), NOW)
     .unwrap();
-    assert!(kept(&records, &[rule]).is_empty());
+    assert!(kept(&records, &[pattern]).is_empty());
     assert!(kept(&records, &[step(Some(&second), &[&part], NOW)]).is_empty());
     let two = [step(Some(&second), &[], NOW), step(Some(&first), &[], NOW)];
     assert!(kept(&records, &two).is_empty());

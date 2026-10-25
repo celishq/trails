@@ -5,12 +5,12 @@ use std::collections::HashMap;
 use std::time::Instant;
 
 /// What the view saw since it opened: when it opened; for each step the state it last saw, the state
-/// before, when it changed and when it was added; when each rule landed; when each trail last moved and
+/// before, when it changed and when it was added; when each pattern landed; when each trail last moved and
 /// was last shown. A moment before the view opened is `None`, so what stood then plays no animation.
 pub(super) struct Seen {
     pub opened: Instant,
     steps: HashMap<String, Change>,
-    rules: HashMap<String, Option<Instant>>,
+    patterns: HashMap<String, Option<Instant>>,
     moved: HashMap<String, Instant>,
     shown: HashMap<String, Instant>,
     first: bool,
@@ -30,7 +30,7 @@ impl Seen {
         Seen {
             opened: Instant::now(),
             steps: HashMap::new(),
-            rules: HashMap::new(),
+            patterns: HashMap::new(),
             moved: HashMap::new(),
             shown: HashMap::new(),
             first: true,
@@ -44,7 +44,7 @@ impl Seen {
         seen
     }
 
-    /// Whether something still moves at `now`: the view opened, a step changed or a rule landed within
+    /// Whether something still moves at `now`: the view opened, a step changed or a pattern landed within
     /// the last two seconds.
     pub fn lively(&self, now: Instant) -> bool {
         let recent = |at: &Instant| now.duration_since(*at).as_secs_f64() < 2.0;
@@ -53,16 +53,16 @@ impl Seen {
                 .steps
                 .values()
                 .any(|c| c.at.as_ref().is_some_and(recent))
-            || self.rules.values().flatten().any(recent)
+            || self.patterns.values().flatten().any(recent)
     }
 
-    /// Notes each step of `trails` and each rule `rules` gives a trail at `now`: a step it had not
-    /// seen, or one whose state changed, and a rule it had not seen, change now; on the first look,
+    /// Notes each step of `trails` and each pattern `patterns` gives a trail at `now`: a step it had not
+    /// seen, or one whose state changed, and a pattern it had not seen, change now; on the first look,
     /// all stood before.
     pub fn note<'a>(
         &mut self,
         trails: &[Step<'a>],
-        rules: impl Fn(Step<'a>) -> Vec<String>,
+        patterns: impl Fn(Step<'a>) -> Vec<String>,
         now: Instant,
     ) {
         let at = (!self.first).then_some(now);
@@ -93,8 +93,10 @@ impl Seen {
                     }
                 }
             }
-            for rule in rules(*trail) {
-                if let std::collections::hash_map::Entry::Vacant(entry) = self.rules.entry(rule) {
+            for pattern in patterns(*trail) {
+                if let std::collections::hash_map::Entry::Vacant(entry) =
+                    self.patterns.entry(pattern)
+                {
                     entry.insert(at);
                     moved = true;
                 }
@@ -123,9 +125,9 @@ impl Seen {
         Some(now.duration_since(at).as_secs_f64())
     }
 
-    /// The seconds since the rule `id` landed at `now`; `None` when it stood before the view opened.
+    /// The seconds since the pattern `id` landed at `now`; `None` when it stood before the view opened.
     pub fn landed(&self, id: &str, now: Instant) -> Option<f64> {
-        let at = (*self.rules.get(id)?)?;
+        let at = (*self.patterns.get(id)?)?;
         Some(now.duration_since(at).as_secs_f64())
     }
 

@@ -2,7 +2,7 @@
 //! steps, written before the view opens, and the rest of their events written live, one a beat.
 
 use crate::failure::Failure;
-use celis_trails::{Anchor, Draft, Rule, Scope, Store, Trails};
+use celis_trails::{Anchor, Draft, Pattern, Scope, Store, Trails};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -15,7 +15,7 @@ const BEAT: Duration = Duration::from_millis(700);
 /// The time before the first event written live.
 const OPEN: Duration = Duration::from_millis(1600);
 
-/// One trail of the demo: its title, project, steps one a line, nested by two spaces; its rules, each
+/// One trail of the demo: its title, project, steps one a line, nested by two spaces; its patterns, each
 /// with the step it was learned after, by its line; the steps dropped and those done otherwise than
 /// planned; from which top step on it plays live and how many steps of each it closes then; from which
 /// top step on its steps stay open; whether it writes all its events before the view opens, whether it
@@ -24,7 +24,7 @@ struct Plan {
     title: &'static str,
     project: &'static str,
     steps: &'static str,
-    rules: &'static [(&'static str, usize)],
+    patterns: &'static [(&'static str, usize)],
     dropped: &'static [&'static str],
     changed: &'static [&'static str],
     live_from: usize,
@@ -35,7 +35,7 @@ struct Plan {
     start_after: usize,
 }
 
-/// One thing that happens on a trail: a step added, at work or open; a step done or dropped; a rule
+/// One thing that happens on a trail: a step added, at work or open; a step done or dropped; a pattern
 /// learned.
 #[derive(Clone, Copy)]
 enum Event {
@@ -140,7 +140,7 @@ impl Written {
         };
         let (mut before, mut after) = (vec![], vec![]);
         let learned = |at: usize, into: &mut Vec<Event>| {
-            for (r, (_, after)) in plan.rules.iter().enumerate() {
+            for (r, (_, after)) in plan.patterns.iter().enumerate() {
                 if *after == at {
                     into.push(Event::Learn(r));
                 }
@@ -218,7 +218,7 @@ impl Written {
     /// Writes `event` in `store` at the second `at`, the store's folder `home`, reading the store again
     /// before each record: a step under its parent or the trail, started when it is
     /// at work; a step done, with what changed when it was done otherwise than planned, or dropped; a
-    /// rule of the trail.
+    /// pattern of the trail.
     fn write(
         &mut self,
         store: &mut Trails,
@@ -285,17 +285,17 @@ impl Written {
                 let Some(trail) = self.trail.clone() else {
                     return Ok(());
                 };
-                let rule = Rule {
+                let pattern = Pattern {
                     anchor,
                     scope: Scope::Trail(trail),
                     replaces: None,
-                    content: self.plan.rules[r].0.to_string(),
+                    content: self.plan.patterns[r].0.to_string(),
                     paths: vec![],
-                    promoted: false,
+                    binds: false,
                     examples: Default::default(),
                 };
                 store.at(at);
-                store.decide(rule, None)?;
+                store.decide(pattern, None)?;
             }
         }
         Ok(())
@@ -386,7 +386,7 @@ const PLANS: [Plan; 11] = [
         title: "Build the checkout for the shop",
         project: "shop",
         steps: CHECKOUT,
-        rules: &[
+        patterns: &[
             ("When you add up money: count in cents as integers, because floats lost a cent on three items.", 2),
             ("When you price a senior: pay 80% of the price, rounded down to the cent, because the receipt must match the shelf.", 6),
             ("When you show a price: use the shop's currency, because the receipt showed dollars.", 9),
@@ -428,7 +428,7 @@ const PLANS: [Plan; 11] = [
         title: "Merge the old leads into the contacts",
         project: "crm",
         steps: "Link each lead to its contact\n  Match a lead to a contact by email\n  Match the rest by phone\n  List the leads with no match\nMove the notes of each lead to its contact\n  Copy the notes\n  Keep each note's date\nRemove the old leads table",
-        rules: &[("When two records match by email and phone: trust the email, because phones were shared by a family.", 1)],
+        patterns: &[("When two records match by email and phone: trust the email, because phones were shared by a family.", 1)],
         dropped: &[],
         changed: &[],
         live_from: 0,
@@ -442,7 +442,7 @@ const PLANS: [Plan; 11] = [
         title: "Add a senior tier to the price list",
         project: "shop",
         steps: "Charge a senior 80% of the price\nShow the tier on the receipt\n  Add the tier's line to the receipt\n  Print the badge\nKeep the old discount banner\nShow the tier in the frame\n  Add the badge to the frame\n  Show the senior price\nRound the price down",
-        rules: &[
+        patterns: &[
             ("When you price a senior: pay 80% of the price, rounded down to the cent, because the receipt must match the shelf.", 0),
             ("When you show a price: use the shop's currency, because the receipt showed dollars.", 3),
             ("When a badge is drawn: use the tier's colour from the theme, because a hard-coded green failed in dark mode.", 6),
@@ -467,7 +467,7 @@ const PLANS: [Plan; 11] = [
         title: "Archive the old orders",
         project: "shop",
         steps: "Copy the orders before 2022 to cold storage\n  Export them\n  Check the counts match\nDelete the copied orders",
-        rules: &[],
+        patterns: &[],
         dropped: &[],
         changed: &[],
         live_from: 0,
@@ -479,7 +479,7 @@ const PLANS: [Plan; 11] = [
     },
 ];
 
-/// A small trail of no rules: its title, project and steps, and from which top step it plays live, how
+/// A small trail of no patterns: its title, project and steps, and from which top step it plays live, how
 /// many steps of each it closes then, whether it is quiet, whether it finishes, and when it starts.
 const fn small(
     title: &'static str,
@@ -497,7 +497,7 @@ const fn small(
         title,
         project,
         steps,
-        rules: &[],
+        patterns: &[],
         dropped: &[],
         changed: &[],
         live_from,

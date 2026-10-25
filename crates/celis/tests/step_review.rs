@@ -106,7 +106,7 @@ fn done_on_an_ask_prints_the_end_to_fill() {
     assert_eq!(
         done(&repo, &ask.id, &["--as-planned", "--by", "person"]),
         [
-            format!("celis: the ask {a} is done. Write each rule and pattern a later plan must keep with celis decide. Then answer the person with the lines below alone: fill each <…>, and remove each line you do not need."),
+            format!("celis: the ask {a} is done. Write each pattern a later plan must keep with celis decide. Then answer the person with the lines below alone: fill each <…>, and remove each line you do not need."),
             String::new(),
             "**<what was done, in one line>**".to_string(),
             String::new(),
@@ -163,10 +163,10 @@ fn done_by_takes_judge_or_person() {
     assert_eq!(o.status.code(), Some(2), "{}", err(&o));
 }
 
-/// `done` of a step prints each rule of the files git shows changed, and leaves out the rest
+/// `done` of a step prints each pattern of the files git shows changed, and leaves out the rest
 /// (`spec/02-cli.md`, "Step").
 #[test]
-fn done_prints_the_rules_of_the_changed_files() {
+fn done_prints_the_patterns_of_the_changed_files() {
     let repo = Repo::new();
     let python = cli(
         &repo,
@@ -199,11 +199,11 @@ fn done_prints_the_rules_of_the_changed_files() {
 }
 
 /// When no step is open under the ask, `done` of its last step prints the judge brief: the ask, its
-/// intent lines, the rules that fit its title and the changed files, the changed files, and its check.
+/// intent lines, the patterns that fit its title and the changed files, the changed files, and its check.
 #[test]
 fn done_of_the_last_step_prints_the_judge_brief() {
     let repo = Repo::new();
-    let rule = cli(
+    let pattern = cli(
         &repo,
         &[
             "decide",
@@ -213,7 +213,7 @@ fn done_of_the_last_step_prints_the_judge_brief() {
             "When Python changes: run ruff.",
         ],
     );
-    let rule = out(&rule);
+    let pattern = out(&pattern);
     let trail = add(&repo, &["--", "the trail"]);
     let intent = "Round the prices\nexpect: prices show cents\nfor: the shop\nnot: the cart";
     let ask = add(
@@ -235,12 +235,12 @@ fn done_of_the_last_step_prints_the_judge_brief() {
         assert!(said.contains(line), "{line}: {said}");
     }
     assert!(
-        said.contains(&format!("  rule    {}", &rule[..8])),
+        said.contains(&format!("  pattern {}", &pattern[..8])),
         "{said}"
     );
 }
 
-/// `decide` with no scope says that the rule holds in the project, and how `me` and `trail:<id>`
+/// `decide` with no scope says that the pattern holds in the project, and how `me` and `trail:<id>`
 /// differ.
 #[test]
 fn decide_with_no_scope_names_the_scopes() {
@@ -262,12 +262,12 @@ fn decide_with_no_scope_names_the_scopes() {
 }
 
 /// `done` of an ask with no `--by`, while git shows a changed file, refuses with `unjudged`, writes
-/// nothing, and prints the rules of the changed files and the judge brief; `--by judge` closes it
+/// nothing, and prints the patterns of the changed files and the judge brief; `--by judge` closes it
 /// (`spec/02-cli.md`, "Step").
 #[test]
 fn done_of_an_ask_with_changed_files_needs_a_judge() {
     let repo = Repo::new();
-    let rule = cli(
+    let pattern = cli(
         &repo,
         &[
             "decide",
@@ -277,7 +277,7 @@ fn done_of_an_ask_with_changed_files_needs_a_judge() {
             "When Python changes: run ruff.",
         ],
     );
-    let rule = out(&rule);
+    let pattern = out(&pattern);
     let trail = add(&repo, &["--", "the trail"]);
     let ask = add(
         &repo,
@@ -303,7 +303,7 @@ fn done_of_an_ask_with_changed_files_needs_a_judge() {
     assert!(err(&o).contains("\"error\":\"unjudged\""), "{}", err(&o));
     assert!(err(&o).contains("celis:judge"), "{}", err(&o));
     assert!(err(&o).contains("  expect  cents"), "{}", err(&o));
-    assert!(err(&o).contains(&rule[..8]), "{}", err(&o));
+    assert!(err(&o).contains(&pattern[..8]), "{}", err(&o));
     let by = [
         "step",
         "done",
@@ -319,12 +319,12 @@ fn done_of_an_ask_with_changed_files_needs_a_judge() {
 }
 
 /// With no git, the `--file` of a `done` count as its changed files: an ask that names one needs a
-/// judge, and gets the rules of that file (`spec/02-cli.md`, "Step").
+/// judge, and gets the patterns of that file (`spec/02-cli.md`, "Step").
 #[test]
 fn the_files_of_a_done_count_as_changed_without_git() {
     let repo = Repo::new();
     std::fs::remove_dir_all(repo.path().join(".git")).unwrap();
-    let rule = cli(
+    let pattern = cli(
         &repo,
         &[
             "decide",
@@ -334,7 +334,7 @@ fn the_files_of_a_done_count_as_changed_without_git() {
             "When Python changes: run ruff.",
         ],
     );
-    let rule = out(&rule);
+    let pattern = out(&pattern);
     let trail = add(&repo, &["--", "the trail"]);
     let ask = add(&repo, &["--under", &trail[..8], "--", "Round the prices"]);
     repo.write("new.py", "x = 1\n");
@@ -350,5 +350,5 @@ fn the_files_of_a_done_count_as_changed_without_git() {
     ];
     let o = cli(&repo, &args);
     assert_eq!(o.status.code(), Some(1), "{}", err(&o));
-    assert!(err(&o).contains(&rule[..8]), "{}", err(&o));
+    assert!(err(&o).contains(&pattern[..8]), "{}", err(&o));
 }

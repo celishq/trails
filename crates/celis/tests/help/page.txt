@@ -2,7 +2,7 @@ celis remembers how your agents do your tasks.
 
   ◆ trail   each task you give
   ○ step    each piece of work your agents do in it
-  § rule    each lesson they learn, kept for later work
+  § pattern each lesson they learn, kept for later work
 
 Your agents record them through the celis plugin.
 
@@ -18,7 +18,7 @@ Read
 
   grep <pattern>      Search every trail with grep
   search <ask>        Show the rules, patterns and past asks that fit an ask
-  ├ --kind <kind>     Only rule, pattern, trail, or step
+  ├ --kind <kind>     Only rule (a pattern that binds), pattern, trail, or step
   └ --limit <n>       Show the first <n> of each part; 20 for trail or step
 
   patterns            Show your patterns with their good and bad examples
@@ -31,13 +31,13 @@ Record work · your agents run these
   step add            Add a step to a trail, or start a new trail
   ├ --under <id>      The open step this step is part of
   ├ --replaces <id>   A step this one takes over, or a finished step it fixes
-  ├ --uses <id>       A rule or a past step it follows
+  ├ --uses <id>       A pattern or a past step it follows
   ├ --at <place>      Where the work happens: a file:line, a URL, or any text
   ├ --check <command> A command that proves the work
   ├ --new             Start a new trail, not a step of the session's trail
   └ --project <id>    The id of a project in the store
 
-  step start <id>     Start a step and show the rules its plan links
+  step start <id>     Start a step and show the patterns its plan links
   step done <id>      Finish a step with proof that it works
   ├ --changed <text>  How the result differs from its expect line
   ├ --as-planned      The result matches its expect line; else use --changed
@@ -49,11 +49,11 @@ Record work · your agents run these
   ├ --at <place>      Where the work happens, in place of the old places
   └ --check <command> A command that proves the work, in place of the old one
 
-  decide              Record a rule that later work must keep
+  decide              Record a pattern that later work must keep
   ├ --scope <scope>   Where it applies: trail:<id>, me, or project
-  ├ --replaces <id>   The rule this one replaces
+  ├ --replaces <id>   The pattern this one replaces
   ├ --path <glob>     A file it acts on; * and ? within a folder, ** across
-  ├ --promoted        A tool of the place, like a linter, now checks it
+  ├ --binds           It is a rule: a result must keep it
   ├ --good <example>  A step, a file, or a URL that shows it, such as a pick
   ├ --bad <example>   A step, a file, or a URL that breaks it
   └ --project <id>    The id of a project in the store
@@ -72,7 +72,7 @@ Set up
   issue [<id>]...     Write a problem report for the celis team
 
 Marks
-  ○ open  ⠏ working  ✓ done  ✗ dropped  ◌ expired  ↻ revised  ~ changed  § rule
+  ○ open  ⠏ working  ✓ done  ✗ dropped  ◌ expired  ↻ revised  ~ changed
 
 celis keeps your recovery phrase and records in $CELIS_HOME.
 

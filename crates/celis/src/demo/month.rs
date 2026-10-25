@@ -8,18 +8,18 @@ use celis_trails::{Anchor, Draft, Scope};
 use std::collections::VecDeque;
 
 impl Demo {
-    /// Writes the month: four rules a day before it, a fifth halfway; then each day's steps, a trail a
+    /// Writes the month: four patterns a day before it, a fifth halfway; then each day's steps, a trail a
     /// project, from the morning, or today so that they close before now; then two trails at work.
     pub(super) fn month(&self) -> Result<(), Failure> {
         let (shop, crm) = (anchor("shop"), anchor("crm"));
         let first = midnight(self.now) - 27 * DAY;
         let ago = |at: u64| self.now.saturating_sub(at);
-        let mut rules = vec![];
-        for (anchor, text) in RULES {
+        let mut patterns = vec![];
+        for (anchor, text) in PATTERNS {
             let anchor = if anchor == "shop" { &shop } else { &crm };
-            rules.push(self.write_rule(ago(first - DAY), anchor, Scope::Project, text)?);
+            patterns.push(self.write_pattern(ago(first - DAY), anchor, Scope::Project, text)?);
         }
-        self.write_rule(ago(first + 16 * DAY), &crm, Scope::Project, LATE)?;
+        self.write_pattern(ago(first + 16 * DAY), &crm, Scope::Project, LATE)?;
         let mut sources: Vec<String> = vec![];
         let mut reworked: VecDeque<String> = VecDeque::new();
         let mut applied = 0;
@@ -52,7 +52,7 @@ impl Demo {
                 let task = TASKS[(day + usize::from(anchor.name == "crm")) % TASKS.len()];
                 let title = format!("{} · {}", task[0], crate::text::clock::day(at));
                 let trail = self.trail(ago(at), anchor, &title)?;
-                for (n, &&(_, _, kind, took, rule)) in steps.iter().enumerate() {
+                for (n, &&(_, _, kind, took, pattern)) in steps.iter().enumerate() {
                     at += 30;
                     let mut uses = vec![];
                     if kind == 'r' {
@@ -63,14 +63,14 @@ impl Demo {
                         follows += usize::from(day >= 14);
                         uses.push(from);
                     }
-                    if rule {
+                    if pattern {
                         let own = if anchor.name == "shop" {
                             applied % 2
                         } else {
                             2
                         };
                         applied += 1;
-                        uses.push(rules[own].clone());
+                        uses.push(patterns[own].clone());
                     }
                     let replaces = match kind {
                         'f' => reworked.pop_front(),
@@ -136,20 +136,20 @@ impl Demo {
     }
 }
 
-/// The rules of the month, in force from a day before it: two of `shop`, one of `crm`.
-const RULES: [(&str, &str); 3] = [
+/// The patterns of the month, in force from a day before it: two of `shop`, one of `crm`.
+const PATTERNS: [(&str, &str); 3] = [
     ("shop", "When you change a price: change the shelf label in the same step, because a shopper pays what the shelf says."),
     ("shop", "When you test the till: run it with an empty cart first, because an empty cart broke the total twice."),
     ("crm", "When you import contacts: match them by email before by name, because names repeat."),
 ];
 
-/// The rule of `crm` learned halfway through the month, not applied yet.
+/// The pattern of `crm` learned halfway through the month, not applied yet.
 const LATE: &str =
     "When you change a contact field: keep the old value in its history, because sales asks for it.";
 
 /// A step of the month: its day, the oldest 0; its project; how it ends, `r` done following past work,
 /// `n` done new, `f` done new revising the oldest reworked step not yet revised, `w` done and revised
-/// later, `d` dropped, `e` left open to expire; the seconds it takes; whether it applies a rule.
+/// later, `d` dropped, `e` left open to expire; the seconds it takes; whether it applies a pattern.
 type Step = (usize, &'static str, char, u64, bool);
 
 /// Every step of the month, oldest first.

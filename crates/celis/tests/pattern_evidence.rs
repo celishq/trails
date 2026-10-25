@@ -1,38 +1,38 @@
-//! CIP-02, "Search": the rank of the rules `celis search` prints.
+//! CIP-02, "Search": the rank of the patterns `celis search` prints.
 
 mod support;
 
 use celis_nostr::Note;
-use support::{account, err, out, put, rule_tags, Repo, DAY};
+use support::{account, err, out, pattern_tags, put, Repo, DAY};
 
-/// The texts of the rules `celis search <file> --kind rule` gives for an ask that shares no word with
-/// a rule.
-fn rules(repo: &Repo, file: &str) -> Vec<String> {
-    let args = ["search", file, "--kind", "rule", "--", "x"];
+/// The texts of the patterns `celis search <file> --kind pattern` gives for an ask that shares no word with
+/// a pattern.
+fn patterns(repo: &Repo, file: &str) -> Vec<String> {
+    let args = ["search", file, "--kind", "pattern", "--", "x"];
     let o = repo.run(&repo.path(), &args, &[], "");
     assert!(o.status.success(), "{}", err(&o));
     let shown = out(&o);
-    let rules = shown
+    let patterns = shown
         .lines()
-        .filter(|l| !l.starts_with(' ') && *l != "rules");
-    rules
+        .filter(|l| !l.starts_with(' ') && *l != "patterns");
+    patterns
         .map(|l| l.splitn(3, ' ').nth(2).unwrap().to_string())
         .collect()
 }
 
-/// A rule of this repo with the extra tags `tags`, saying `content`, made at `at`, put in the store.
+/// A pattern of this repo with the extra tags `tags`, saying `content`, made at `at`, put in the store.
 fn tagged(repo: &Repo, tags: &[(&str, &str)], content: &str, at: u64) -> Note {
-    let mut all = rule_tags((&repo.project_id(), "repo"));
+    let mut all = pattern_tags((&repo.project_id(), "repo"));
     all.extend(tags.iter().map(|(n, v)| vec![n.to_string(), v.to_string()]));
     let note = Note::write(&account(), 1111u16, at, all, content).unwrap();
     put(repo, &note);
     note
 }
 
-/// A rule made by a correction comes first, then the rest narrowest first, then newest
+/// A pattern made by a correction comes first, then the rest narrowest first, then newest
 /// (`spec/02-cli.md`, "Search").
 #[test]
-fn rules_rank_a_correction_then_the_narrowest() {
+fn patterns_rank_a_correction_then_the_narrowest() {
     let repo = Repo::new();
     let at = support::now() - DAY;
     let gone = tagged(&repo, &[("path", "*.py")], "gone", at);
@@ -46,7 +46,7 @@ fn rules_rank_a_correction_then_the_narrowest() {
     tagged(&repo, &[("path", "a.py")], "named", at + 3);
     tagged(&repo, &[("path", "*.py")], "wide", at + 4);
     assert_eq!(
-        rules(&repo, "a.py"),
+        patterns(&repo, "a.py"),
         ["correction", "named", "wide", "older"]
     );
 }

@@ -28,8 +28,8 @@ pub(super) const SPANS: [(&str, u64); 5] = [
 /// The steps of a store in the last 28 days: how those of each day ended, the first second of the
 /// oldest day, the median time of a successful step in the last and the prior 14 days, how many fell in
 /// each span, each project's time and the time of the prior 14 days, the trails the reused steps
-/// followed, the live rules, those learned and those applied in the last 14 days with the steps that
-/// applied one in each project, the five live rules with the most hits in them, each its id, its words
+/// followed, the live patterns, those learned and those applied in the last 14 days with the steps that
+/// applied one in each project, the five live patterns with the most hits in them, each its id, its words
 /// and its hits, and the trails active now.
 #[derive(Debug, Default)]
 pub(super) struct Month {
@@ -41,7 +41,7 @@ pub(super) struct Month {
     pub projects: Vec<Project>,
     pub prior_active: u64,
     pub sources: usize,
-    pub rules: usize,
+    pub patterns: usize,
     pub learned: usize,
     pub kept: usize,
     pub applied: Vec<(String, usize)>,
@@ -82,13 +82,13 @@ impl Month {
                         .iter()
                         .filter_map(|u| match u {
                             Used::Follow(s) => Some(*s),
-                            Used::Rule(_) => None,
+                            Used::Pattern(_) => None,
                         })
                         .collect();
-                    let rules: Vec<&str> = uses
+                    let patterns: Vec<&str> = uses
                         .iter()
                         .filter_map(|u| match u {
-                            Used::Rule(id) => Some(*id),
+                            Used::Pattern(id) => Some(*id),
                             Used::Follow(_) => None,
                         })
                         .collect();
@@ -97,7 +97,7 @@ impl Month {
                         (true, false) => outcome.reused += 1,
                         (true, true) => outcome.new += 1,
                     }
-                    if !rules.is_empty() {
+                    if !patterns.is_empty() {
                         outcome.applied += 1;
                     }
                     let grade = Grade::of(step).map_or(0, |g| g.took);
@@ -107,10 +107,10 @@ impl Month {
                             if step.revised().is_empty() {
                                 sources.extend(follows.iter().map(|s| s.trail().id()));
                             }
-                            if !rules.is_empty() {
+                            if !patterns.is_empty() {
                                 *applied.entry(name.clone()).or_default() += 1;
-                                for rule in rules {
-                                    *used.entry(rule).or_default() += 1;
+                                for pattern in patterns {
+                                    *used.entry(pattern).or_default() += 1;
                                 }
                             }
                         }
@@ -152,8 +152,13 @@ impl Month {
         projects.sort_by(|a, b| b.active.cmp(&a.active).then_with(|| a.name.cmp(&b.name)));
         month.projects = projects;
         month.sources = sources.len();
-        let live: Vec<_> = model.rules.every().iter().filter(|e| e.is_live()).collect();
-        month.rules = live.len();
+        let live: Vec<_> = model
+            .patterns
+            .every()
+            .iter()
+            .filter(|e| e.is_live())
+            .collect();
+        month.patterns = live.len();
         month.learned = live.iter().filter(|e| e.note.created_at >= half).count();
         month.kept = live
             .iter()
@@ -163,7 +168,7 @@ impl Month {
             .iter()
             .filter_map(|e| {
                 let hits = *used.get(e.note.id.as_str())?;
-                Some((e.note.id.clone(), e.rule.content.clone(), hits))
+                Some((e.note.id.clone(), e.pattern.content.clone(), hits))
             })
             .collect();
         top.sort_by(|a, b| b.2.cmp(&a.2).then_with(|| a.0.cmp(&b.0)));

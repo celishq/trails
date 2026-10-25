@@ -59,7 +59,7 @@ impl Command {
         self.print(written, args, out, err)
     }
 
-    /// Starts the open step `args` names, and prints the id of its start, then the rules its plan
+    /// Starts the open step `args` names, and prints the id of its start, then the patterns its plan
     /// links.
     fn step_start(
         &self,
@@ -160,7 +160,7 @@ impl Command {
         self.print(written, args, out, &mut std::io::sink())
     }
 
-    /// Prints the id of each record of `written` and each of its rules on `out`, and its notices on
+    /// Prints the id of each record of `written` and each of its patterns on `out`, and its notices on
     /// `err`.
     pub(crate) fn print(
         &self,
@@ -172,11 +172,11 @@ impl Command {
         for record in &written.records {
             self.id(out, args, record)?;
         }
-        if !written.rules.is_empty() {
+        if !written.patterns.is_empty() {
             let trails = self.trails()?;
-            for (said, rule) in &written.rules {
-                let line = crate::text::line::rule(said, rule, &trails);
-                let json = crate::text::json::rule(said, rule);
+            for (said, pattern) in &written.patterns {
+                let line = crate::text::line::pattern(said, pattern, &trails);
+                let json = crate::text::json::pattern(said, pattern);
                 super::show(out, args.json, "decision", json, &line)?;
             }
         }

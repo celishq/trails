@@ -176,10 +176,10 @@ fn drop_takes_a_done_trail_once() {
     );
 }
 
-/// `drop` takes a live rule and ends it, and refuses a rule that is not live
-/// (`spec/02-cli.md`, "Step"; `spec/05-rules.md`, "Rules").
+/// `drop` takes a live pattern and ends it, and refuses a pattern that is not live
+/// (`spec/02-cli.md`, "Step"; `spec/05-patterns.md`, "Patterns").
 #[test]
-fn drop_takes_a_live_rule_once() {
+fn drop_takes_a_live_pattern_once() {
     let repo = Repo::new();
     let decide = |text: &str| {
         let o = cli(&repo, &["decide", "--", text]);
@@ -187,15 +187,18 @@ fn drop_takes_a_live_rule_once() {
         out(&o).trim().to_string()
     };
     let kept = decide("When a: do a, because a.");
-    let rule = decide("When b: do b, because b.");
-    let o = cli(&repo, &["step", "drop", &rule[..8], "--", "merged into a"]);
+    let pattern = decide("When b: do b, because b.");
+    let o = cli(
+        &repo,
+        &["step", "drop", &pattern[..8], "--", "merged into a"],
+    );
     assert!(o.status.success(), "{}", err(&o));
     assert_eq!(
         live_ids(&repo, &repo.path(), "repo"),
         [kept[..8].to_string()]
     );
     refusal(
-        &cli(&repo, &["step", "drop", &rule[..8], "--json", "--", "x"]),
+        &cli(&repo, &["step", "drop", &pattern[..8], "--json", "--", "x"]),
         1,
         "closed",
     );

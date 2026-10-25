@@ -1,25 +1,25 @@
 {
   "about": [
-    "The view `celis grep` searches, what it prints of it, and what the card's rule search prints.",
+    "The view `celis grep` searches, what it prints of it, and what the card's pattern search prints.",
     "celis writes the view and `plugins/celis/card.md` reads it, so both must match this file:",
     "the CLI test builds the store below, finds each line of `lines` in the view once, compares what",
-    "`celis grep \"\"` prints to `printed`, then runs the card's rule search with the words",
+    "`celis grep \"\"` prints to `printed`, then runs the card's pattern search with the words",
     "price, push and question, and checks that it prints exactly `kept`.",
     "",
     "Each <name> stands for the first 8 characters of a record's id, which a test knows only once it",
     "has written the record. All records are made on 2026-01-15 at noon UTC, in the order of `lines`",
     "read from the bottom of each block: the trail, then the table step, its done, the chart step, its",
-    "drop, the trail's rule, the floats rule, the cents rule that replaces it, the me rule, a rule with the older situation label,",
-    "and the me rule with a trigger."
+    "drop, the trail's pattern, the floats pattern, the cents pattern that replaces it, the me pattern, a pattern with the older situation label,",
+    "and the me pattern with a trigger."
   ],
   "lines": [
-    "2026-01-15 - [repo] rule <push> live {me} trigger When you push: run the tests first.",
-    "2026-01-15 - [repo] rule <situation> live {project} When the person asks a question: answer it first.",
-    "2026-01-15 - [repo] rule <me> live {me} When you write a commit message: use plain words.",
-    "2026-01-15 - [repo] rule <new> live {project} When a price prints: use cents.",
-    "2026-01-15 - [repo] rule <old> replaced-by <new> {project} When a price prints: use floats.",
+    "2026-01-15 - [repo] pattern <push> live {me} trigger When you push: run the tests first.",
+    "2026-01-15 - [repo] pattern <situation> live {project} When the person asks a question: answer it first.",
+    "2026-01-15 - [repo] pattern <me> live {me} When you write a commit message: use plain words.",
+    "2026-01-15 - [repo] pattern <new> live {project} When a price prints: use cents.",
+    "2026-01-15 - [repo] pattern <old> replaced-by <new> {project} When a price prints: use floats.",
     "2026-01-15 <trail> [repo] trail <trail> done Build the Vendors page",
-    "2026-01-15 <trail> [repo] rule <rule> live {trail:<trail>} When a vendor has no logo: show its initials.",
+    "2026-01-15 <trail> [repo] pattern <pattern> live {trail:<trail>} When a vendor has no logo: show its initials.",
     "2026-01-15 <trail> [repo] step <chart> dropped Add the chart",
     "2026-01-15 <trail> [repo] dropped <chart> no data for it",
     "2026-01-15 <trail> [repo] step <table> done at:src/vendors.rs Add the table",
@@ -29,23 +29,23 @@
   "printed": [
     "<trail> [repo] Build the Vendors page · 2026-01-15",
     "  trail <trail> done",
-    "  rule <rule> live {trail:<trail>} When a vendor has no logo: show its initials.",
+    "  pattern <pattern> live {trail:<trail>} When a vendor has no logo: show its initials.",
     "  step <chart> dropped Add the chart",
     "  dropped <chart> no data for it",
     "  step <table> done at:src/vendors.rs Add the table",
     "  proof <table> the table shows",
     "  changed <table> a list, not a table",
-    "- rules of no trail",
-    "  [repo] rule <push> live {me} trigger When you push: run the tests first.",
-    "  [repo] rule <situation> live {project} When the person asks a question: answer it first.",
-    "  [repo] rule <me> live {me} When you write a commit message: use plain words.",
-    "  [repo] rule <new> live {project} When a price prints: use cents.",
-    "  [repo] rule <old> replaced-by <new> {project} When a price prints: use floats."
+    "- patterns of no trail",
+    "  [repo] pattern <push> live {me} trigger When you push: run the tests first.",
+    "  [repo] pattern <situation> live {project} When the person asks a question: answer it first.",
+    "  [repo] pattern <me> live {me} When you write a commit message: use plain words.",
+    "  [repo] pattern <new> live {project} When a price prints: use cents.",
+    "  [repo] pattern <old> replaced-by <new> {project} When a price prints: use floats."
   ],
   "kept": [
-    "- rules of no trail",
-    "  [repo] rule <push> live {me} trigger When you push: run the tests first.",
-    "  [repo] rule <situation> live {project} When the person asks a question: answer it first.",
-    "  [repo] rule <new> live {project} When a price prints: use cents."
+    "- patterns of no trail",
+    "  [repo] pattern <push> live {me} trigger When you push: run the tests first.",
+    "  [repo] pattern <situation> live {project} When the person asks a question: answer it first.",
+    "  [repo] pattern <new> live {project} When a price prints: use cents."
   ]
 }

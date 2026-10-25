@@ -1,5 +1,5 @@
 use super::*;
-use celis_trails::{Anchor, Draft, Rule, Scope, Store, Trails};
+use celis_trails::{Anchor, Draft, Pattern, Scope, Store, Trails};
 use tempfile::TempDir;
 
 /// The second the first record of a bench is written.
@@ -79,10 +79,10 @@ impl Bench {
         self.trails.at(self.at);
     }
 
-    /// Writes the rule `text` of the trail `trail` of `project`; its id.
-    pub fn rule(&mut self, project: &str, trail: &str, text: &str) -> String {
+    /// Writes the pattern `text` of the trail `trail` of `project`; its id.
+    pub fn pattern(&mut self, project: &str, trail: &str, text: &str) -> String {
         self.tick();
-        let rule = Rule {
+        let pattern = Pattern {
             anchor: Anchor {
                 project: project.to_string(),
                 name: project.to_string(),
@@ -91,10 +91,10 @@ impl Bench {
             replaces: None,
             content: text.to_string(),
             paths: vec![],
-            promoted: false,
+            binds: false,
             examples: Default::default(),
         };
-        let id = self.trails.decide(rule, None).unwrap().records[0]
+        let id = self.trails.decide(pattern, None).unwrap().records[0]
             .id
             .clone();
         self.trails.at(self.at);
@@ -131,7 +131,7 @@ fn shelves() -> Bench {
 fn screen(bench: &Bench, view: &mut View, seen: &mut Seen, rows: u16) -> Vec<String> {
     Model::of(&bench.trails, |model| {
         let trails = folders(model.steps);
-        seen.note(&trails, |t| rule_ids(model, t), Instant::now());
+        seen.note(&trails, |t| pattern_ids(model, t), Instant::now());
         let lines = frame(model, &trails, view, seen, (100, rows), Instant::now());
         lines
             .iter()
@@ -227,18 +227,18 @@ fn a_trail_heads_with_its_path_and_the_trails_that_moved() {
     assert!(lines[0].ends_with("● 1 other trail moved"), "{lines:#?}");
 }
 
-/// Off a terminal, the graph prints All with every trail and the rules, as plain text.
+/// Off a terminal, the graph prints All with every trail and the patterns, as plain text.
 #[test]
-fn printed_shows_all_with_the_rules() {
+fn printed_shows_all_with_the_patterns() {
     let mut bench = shelves();
     let shop = Model::of(&bench.trails, |m| folders(m.steps)[0].id().to_string());
-    bench.rule(
+    bench.pattern(
         "shop",
         &shop,
         "When you price: round down, because the shelf does.",
     );
     let text = Model::of(&bench.trails, |model| printed(model, None)).unwrap();
     assert!(text.contains("📁 shop"), "{text}");
-    assert!(text.contains("§ Rules 1"), "{text}");
+    assert!(text.contains("§ Patterns 1"), "{text}");
     assert!(!text.contains('\x1b'), "{text}");
 }

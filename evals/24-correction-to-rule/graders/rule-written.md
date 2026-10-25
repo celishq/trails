@@ -3,4 +3,4 @@ type: regex
 target: trace
 flags: is
 ---
-"command":"(?:[^"\\]|\\.)*celis decide(?:[^"\\]|\\.)*When(?:[^"\\]|\\.)*logging(?:[^"\\]|\\.)*because
+"command":"(?:[^"\\]|\\.)*celis decide(?:[^"\\]|\\.)*--binds(?:[^"\\]|\\.)*When(?:[^"\\]|\\.)*logging(?:[^"\\]|\\.)*because

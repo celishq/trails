@@ -2,7 +2,7 @@
 
 <h3 align="center">Stop babysitting your coding agent</h3>
 
-<p align="center">Celis keeps your rules and gives your agent the discipline to follow them, in every project
+<p align="center">Celis keeps your rules and patterns and gives your agent the discipline to follow them, in every project
 and every agent.</p>
 
 <p align="center">
@@ -150,7 +150,7 @@ agent. Run `celis auth phrase` to see your recovery phrase, and `celis auth logi
 computer.
 
 **Can agents find past work by meaning?** Run `celis setup` and choose a model. It downloads the model
-from Hugging Face (0.5 to 1.2 GB) and indexes your trails on your machine. Then `celis search` finds rules
+from Hugging Face (0.5 to 1.2 GB) and indexes your trails on your machine. Then `celis search` finds patterns
 and past asks by meaning, in any language. With no model, agents search with `celis grep`.
 
 **What else can I run?** `celis help` lists every command, such as `celis grep` to search your trails.

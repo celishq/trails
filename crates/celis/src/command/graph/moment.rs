@@ -23,7 +23,7 @@ pub(super) const SEL: Color = Color::Rgb(51, 65, 98);
 /// The light a check glows with as it settles.
 const MINT: Color = Color::Rgb(210, 255, 225);
 
-/// The light a rule glows with as it lands.
+/// The light a pattern glows with as it lands.
 const LILAC: Color = Color::Rgb(255, 210, 255);
 
 /// The light a sign glows with as it lands.
@@ -112,8 +112,8 @@ impl Moment<'_> {
         Style::new().fg(colour)
     }
 
-    /// The glow of a rule that landed `since` seconds ago, magenta settling from lilac.
-    pub fn rule(&self, since: Option<f64>) -> Style {
+    /// The glow of a pattern that landed `since` seconds ago, magenta settling from lilac.
+    pub fn pattern(&self, since: Option<f64>) -> Style {
         let glow = since.map_or(0.0, |s| 1.0 - s / 1.4);
         Style::new().fg(mix(rgb(crate::terminal::canvas::MAGENTA), LILAC, glow))
     }

@@ -1,7 +1,7 @@
 use super::*;
 use celis_nostr::{Account, Note};
 use celis_trails::step::steps::LIFE;
-use celis_trails::{Anchor, Mark, Rule, Scope, StepId, StepRecord, Steps};
+use celis_trails::{Anchor, Mark, Pattern, Scope, StepId, StepRecord, Steps};
 
 fn account() -> Account {
     Account::new(&[1u8; 32]).unwrap()
@@ -72,11 +72,11 @@ fn a_period_counts_its_done_steps_as_planned_and_reworked() {
     assert_eq!(period.reworked(), 1);
 }
 
-/// A period counts the steps done in it that use a rule, and not those that use only a step or an id
+/// A period counts the steps done in it that use a pattern, and not those that use only a step or an id
 /// that names no record (`spec/06-reuse.md`, "Uses").
 #[test]
-fn a_period_counts_its_done_steps_that_use_a_rule() {
-    let rule = Rule {
+fn a_period_counts_its_done_steps_that_use_a_pattern() {
+    let pattern = Pattern {
         anchor: Anchor {
             project: "p".into(),
             name: "repo".into(),
@@ -85,20 +85,20 @@ fn a_period_counts_its_done_steps_that_use_a_rule() {
         replaces: None,
         content: "keep cents".into(),
         paths: vec![],
-        promoted: false,
+        binds: false,
         examples: Default::default(),
     }
     .record(&account(), 5)
     .unwrap();
     let trail = step("trail", 10, None, &[], None);
     let source = step("source", 11, Some(&trail), &[], None);
-    let ruled = step("ruled", 21, Some(&trail), &[&rule.id], None);
+    let ruled = step("ruled", 21, Some(&trail), &[&pattern.id], None);
     let follows = step("follows", 22, Some(&trail), &[&source.id], None);
     let dangling = step("dangling", 23, Some(&trail), &["ab12cd34"], None);
-    let late = step("late", 45, Some(&trail), &[&rule.id], None);
-    let open = step("open", 24, Some(&trail), &[&rule.id], None);
+    let late = step("late", 45, Some(&trail), &[&pattern.id], None);
+    let open = step("open", 24, Some(&trail), &[&pattern.id], None);
     let records = vec![
-        rule,
+        pattern,
         trail,
         source,
         ruled.clone(),

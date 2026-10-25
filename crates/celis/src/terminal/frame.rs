@@ -7,7 +7,7 @@ use ratatui::style::Style;
 use ratatui::widgets::{Block, BorderType, Widget};
 
 /// The row that draws a line across a frame.
-pub(crate) const RULE: &str = "\u{1}";
+pub(crate) const PATTERN: &str = "\u{1}";
 
 /// A frame: its title in its top line, its rows inside it, and whether it is picked, which draws it in
 /// heavy lines.
@@ -48,7 +48,7 @@ impl Frame {
             if y + 1 >= area.bottom() {
                 break;
             }
-            match row.to_string() == RULE {
+            match row.to_string() == PATTERN {
                 true => {
                     let line = format!("{left}{}{right}", edge.repeat(width - 2));
                     buf.set_string(area.x, y, line, frame);

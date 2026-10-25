@@ -2,7 +2,10 @@
 
 mod support;
 
-use support::{account, add, cli, err, now, out, refusal, stored_rule, tiny_model, Repo, DAY};
+use support::{
+    account, add, cli, err, now, out, refusal, stored_pattern, tagged_pattern, tiny_model, Repo,
+    DAY,
+};
 
 /// The JSON objects `celis search --json <args>` prints, one a line.
 fn objects(repo: &Repo, args: &[&str]) -> Vec<serde_json::Value> {
@@ -40,7 +43,7 @@ fn search_refuses_a_bad_text_kind_or_limit() {
         &["search", "--json", "--limit", "0", "--", "prices"],
         &["search", "--json", "--limit", "many", "--", "prices"],
         &["search", "--json", "--", "prices"],
-        &["search", "--json", "--kind", "rule", "--", "prices"],
+        &["search", "--json", "--kind", "pattern", "--", "prices"],
     ] {
         refusal(&cli(&repo, args), 2, "usage");
     }
@@ -73,13 +76,13 @@ fn search_gives_the_records_most_alike_first() {
     assert!(first.ends_with(" keep prices in cents"), "{first}");
 }
 
-/// `search` gives only the live rules in scope in the working folder's project
+/// `search` gives only the live patterns in scope in the working folder's project
 /// (`spec/02-cli.md`, "Search").
 #[test]
-fn search_leaves_out_the_rules_of_another_project() {
+fn search_leaves_out_the_patterns_of_another_project() {
     let repo = Repo::new();
     tiny_model(&repo);
-    stored_rule(
+    stored_pattern(
         &repo,
         ("0000000000000000000000000000000000000000", "other"),
         &account(),
@@ -131,8 +134,8 @@ fn done(repo: &Repo, id: &str, changed: Option<&str>, proof: &str) {
     assert!(o.status.success(), "{}", err(&o));
 }
 
-/// A store of 3 rules and 1 pattern, and the ids of the rule of `src/*.rs`, of the release rule, of
-/// the logo rule and of the pattern.
+/// A store of 3 rules and 1 pattern, and the ids of the rule of `src/*.rs`, of the release rule, of the
+/// logo rule and of the pattern.
 fn store(repo: &Repo) -> [String; 4] {
     let trail = add(repo, &["--", "the logo"]);
     let pick = add(repo, &["--under", &trail[..8], "--", "a sharp logo"]);
@@ -140,17 +143,17 @@ fn store(repo: &Repo) -> [String; 4] {
     [
         decide(
             repo,
-            &["--path", "src/*.rs"],
+            &["--path", "src/*.rs", "--binds"],
             "When Rust code changes: run cargo fmt, because CI checks it.",
         ),
         decide(
             repo,
-            &[],
+            &["--binds"],
             "When a release is cut: tag it from main, because the build reads the tag.",
         ),
         decide(
             repo,
-            &["--path", "*.svg"],
+            &["--path", "*.svg", "--binds"],
             "When a logo is drawn: export it as SVG, because the site scales it.",
         ),
         decide(
@@ -161,10 +164,10 @@ fn store(repo: &Repo) -> [String; 4] {
     ]
 }
 
-/// `search` prints the rules that fit an ask by its files and by its words, and leaves out the rest
+/// `search` prints the patterns that fit an ask by its files and by its words, and leaves out the rest
 /// (`spec/02-cli.md`, "Search").
 #[test]
-fn search_prints_the_rules_that_fit_an_ask() {
+fn search_prints_the_patterns_that_fit_an_ask() {
     let repo = Repo::new();
     let [rust, release, logo, pattern] = store(&repo);
     let said = search(&repo, &["src/main.rs", "--", "cut the release of the CLI"]);
@@ -174,25 +177,25 @@ fn search_prints_the_rules_that_fit_an_ask() {
     assert!(!said.contains(&pattern[..8]), "{said}");
 }
 
-/// `search` finds a rule by its meaning when it shares no file and no word with the ask
+/// `search` finds a pattern by its meaning when it shares no file and no word with the ask
 /// (`spec/02-cli.md`, "Search").
 #[test]
-fn search_finds_a_rule_by_its_meaning() {
+fn search_finds_a_pattern_by_its_meaning() {
     let repo = Repo::new();
     tiny_model(&repo);
-    let rule = decide(
+    let pattern = decide(
         &repo,
         &[],
         "When money moves: keep prices in cents, because floats lose a cent.",
     );
     let said = search(&repo, &["--", "keep prices in cents"]);
-    assert!(said.contains(&rule[..8]), "{said}");
+    assert!(said.contains(&pattern[..8]), "{said}");
 }
 
-/// `search` prints the rules first, then the patterns with their examples (`spec/02-cli.md`,
+/// `search` prints the rules first, then the other patterns with their examples (`spec/02-cli.md`,
 /// "Search").
 #[test]
-fn search_prints_the_patterns_after_the_rules() {
+fn search_prints_the_rules_before_the_other_patterns() {
     let repo = Repo::new();
     let [_, _, logo, pattern] = store(&repo);
     let said = search(&repo, &["logo.svg", "--", "draw a new logo"]);
@@ -204,6 +207,53 @@ fn search_prints_the_patterns_after_the_rules() {
     assert!(patterns < at(&pattern), "{said}");
     assert!(
         lines[at(&pattern) + 1].trim_start().starts_with("good"),
+        "{said}"
+    );
+}
+
+/// A pattern with the older `promoted` label reads as a rule (`spec/05-patterns.md`, "Rules").
+#[test]
+fn a_promoted_pattern_reads_as_a_rule() {
+    let repo = Repo::new();
+    let id = repo.project_id();
+    let label = vec![vec![
+        "l".to_string(),
+        "promoted".to_string(),
+        "celis.decision".to_string(),
+    ]];
+    let old = tagged_pattern(
+        &repo,
+        (&id, "repo"),
+        &account(),
+        (None, None),
+        label,
+        "When a logo is drawn: keep it flat.",
+        now() - DAY,
+    );
+    let rules = search(&repo, &["--kind", "rule", "--", "draw a logo"]);
+    assert!(rules.contains(&old.id[..8]), "{rules}");
+    let line = out(&cli(&repo, &["grep", &old.id[..8]]));
+    assert!(line.contains(" binds "), "{line}");
+}
+
+/// `search` prints a pattern's first line after its id and scope, and each next line of its text under
+/// it (`spec/02-cli.md`, "Search").
+#[test]
+fn search_prints_each_line_of_a_pattern() {
+    let repo = Repo::new();
+    let text = "When a logo is drawn\nForces: bold reads far, but thin reads light\nDo: keep it bold\nBecause: the person picked bold";
+    let id = decide(&repo, &[], text);
+    let said = search(&repo, &["--kind", "pattern", "--", "draw a logo"]);
+    let lines: Vec<&str> = said.lines().collect();
+    assert_eq!(
+        lines,
+        [
+            "patterns".to_string(),
+            format!("{} project When a logo is drawn", &id[..8]),
+            "  Forces: bold reads far, but thin reads light".to_string(),
+            "  Do: keep it bold".to_string(),
+            "  Because: the person picked bold".to_string(),
+        ],
         "{said}"
     );
 }
@@ -366,22 +416,22 @@ fn search_needs_the_ask() {
     assert_eq!(o.status.code(), Some(2), "{}", err(&o));
 }
 
-/// `grep` marks a pattern, and the day `search` last brought a rule.
+/// `grep` marks a rule, and the day `search` last brought a pattern.
 #[test]
 fn grep_marks_patterns_and_the_day_of_a_search() {
     let repo = Repo::new();
     let [rust, _, logo, pattern] = store(&repo);
     search(&repo, &["logo.svg", "--", "draw a new logo"]);
-    let o = cli(&repo, &["grep", " rule "]);
+    let o = cli(&repo, &["grep", " pattern "]);
     let said = out(&o);
     let line = |id: &str| {
         said.lines()
-            .find(|l| l.contains(&format!("rule {}", &id[..8])))
+            .find(|l| l.contains(&format!("pattern {}", &id[..8])))
             .unwrap()
             .to_string()
     };
-    assert!(line(&pattern).contains(" pattern recalled:"), "{said}");
-    assert!(line(&logo).contains(" recalled:"), "{said}");
-    assert!(!line(&logo).contains(" pattern"), "{said}");
+    assert!(line(&logo).contains(" binds recalled:"), "{said}");
+    assert!(line(&pattern).contains(" recalled:"), "{said}");
+    assert!(!line(&pattern).contains(" binds"), "{said}");
     assert!(!line(&rust).contains("recalled:"), "{said}");
 }

@@ -47,7 +47,7 @@ pub(super) fn total(s: &mut Sheet, m: &Moment, y: u16) -> u16 {
     let total = m.total;
     let k = ease((m.t - 0.1) / 0.9);
     let up = |v: u64| (v as f64 * k).round_ties_even() as u64;
-    let rules = total.rules;
+    let patterns = total.patterns;
     let items: [(String, &str, Style); 6] = [
         (
             grouped(up(total.resolved as u64) as usize),
@@ -61,12 +61,12 @@ pub(super) fn total(s: &mut Sheet, m: &Moment, y: u16) -> u16 {
         ),
         (
             grouped(up(total.hits as u64) as usize),
-            "rule hits",
+            "pattern hits",
             MAGENTA,
         ),
         (
-            format!("{} of {rules}", up(total.used as u64)),
-            "rules used",
+            format!("{} of {patterns}", up(total.used as u64)),
+            "patterns used",
             MAGENTA,
         ),
         (
@@ -86,7 +86,7 @@ pub(super) fn total(s: &mut Sheet, m: &Moment, y: u16) -> u16 {
             grouped(total.resolved),
             grouped(total.reused),
             grouped(total.hits),
-            format!("{} of {rules}", total.used),
+            format!("{} of {patterns}", total.used),
             grouped(total.trails),
             minutes(total.time),
         ];

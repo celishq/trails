@@ -88,7 +88,8 @@ impl Live for Watch<'_> {
             .iter()
             .find(|i| self.view.selected.as_ref() == Some(&i.id));
         let copy = selected.and_then(Item::copy);
-        let part = |item: &Item| crate::command::report::part(model.steps, model.rules, &item.id);
+        let part =
+            |item: &Item| crate::command::report::part(model.steps, model.patterns, &item.id);
         let markdown = selected
             .filter(|_| copy.is_some())
             .and_then(|item| part(item).ok());
@@ -125,7 +126,7 @@ fn legend(copy: Option<&str>) -> String {
 }
 
 /// Changes `view` as `key` asks: moves the selection along `order`, opens or closes the selected trail,
-/// rule or step, or everything under it too, selects the one it is under, or turns full on or off, and
+/// pattern or step, or everything under it too, selects the one it is under, or turns full on or off, and
 /// all when the watch `named` no id.
 fn press(key: Key, view: &mut View, order: &[Item], named: bool) {
     let at = view

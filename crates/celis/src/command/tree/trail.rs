@@ -1,8 +1,8 @@
-//! A trail in the tree: a block with its steps, its rules line and its closed line, or one line.
+//! A trail in the tree: a block with its steps, its patterns line and its closed line, or one line.
 
 use super::level::Level;
 use super::row::Row;
-use super::{Item, RuleNote, Summary, Tree, RULES};
+use super::{Item, PatternNote, Summary, Tree, PATTERNS};
 use crate::terminal::canvas::{paint, Styled, BOLD, DIM};
 use crate::terminal::look::look;
 use celis_trails::{State, Step, Trail};
@@ -35,24 +35,24 @@ impl Tree<'_> {
         self.order.borrow_mut().push(item);
     }
 
-    /// The trail `note` as a line a watch selects, `open` when it prints as a block: with every rule of
-    /// `rules` and every step it prints under it.
-    pub(super) fn item(&self, note: Step, open: bool, rules: &[RuleNote]) -> Item {
-        let folded = (!rules.is_empty()).then(|| format!("{RULES}{}", note.id()));
-        let rules = rules.iter().map(|(rule, _)| rule.id.clone());
+    /// The trail `note` as a line a watch selects, `open` when it prints as a block: with every pattern of
+    /// `patterns` and every step it prints under it.
+    pub(super) fn item(&self, note: Step, open: bool, patterns: &[PatternNote]) -> Item {
+        let folded = (!patterns.is_empty()).then(|| format!("{PATTERNS}{}", note.id()));
+        let patterns = patterns.iter().map(|(pattern, _)| pattern.id.clone());
         let steps = Level::of(Trail::new(note).parts()).ids(note.id());
         Item {
             id: note.id().to_string(),
             open,
             parent: None,
-            under: folded.into_iter().chain(rules).chain(steps).collect(),
+            under: folded.into_iter().chain(patterns).chain(steps).collect(),
         }
     }
 
     /// Adds `note` as a block: `▾` when something opens under it, its mark and title, wrapped with the tree
     /// line down from its mark when it has, its project with no grouping or while active off a watch, and
     /// done/all or its counts at the right; with full, the lines
-    /// `--full` prints but its grade; then its tree: its steps, its rules, and its closed steps folded when
+    /// `--full` prints but its grade; then its tree: its steps, its patterns, and its closed steps folded when
     /// many.
     pub(super) fn block(&self, note: Step, lines: &mut Vec<Row>) {
         let step = note.record();
@@ -61,7 +61,7 @@ impl Tree<'_> {
         let summary = self.summary(note, work);
         let level = Level::of(Trail::new(note).parts());
         let under =
-            !(level.active.is_empty() && level.ended.is_empty() && summary.rules.is_empty());
+            !(level.active.is_empty() && level.ended.is_empty() && summary.patterns.is_empty());
         let first = lines.len();
         let mut meta = vec![];
         if !self.grouped || (state.active() && !self.view.watch) {
@@ -82,14 +82,14 @@ impl Tree<'_> {
                 false => Styled::from("  "),
             }),
         });
-        self.pick(self.item(note, true, &summary.rules), lines, first);
+        self.pick(self.item(note, true, &summary.patterns), lines, first);
         let rail = Styled::from("  ");
         if self.view.full {
             let hair = Styled::from(vec![Span::raw("  "), paint(self.lane(), "│ ")]);
             self.closing(work, &hair, false, lines);
             self.followed(work, &hair, lines);
         }
-        self.level(level, summary.rules, &rail, note.id(), lines);
+        self.level(level, summary.patterns, &rail, note.id(), lines);
     }
 
     /// Adds `note` as one row: `▸` when something opens under it, its mark and title, and at the right
@@ -99,7 +99,7 @@ impl Tree<'_> {
         let state = note.state();
         let work = self.work(note);
         let summary = self.summary(note, work);
-        let under = !(Trail::new(note).parts().is_empty() && summary.rules.is_empty());
+        let under = !(Trail::new(note).parts().is_empty() && summary.patterns.is_empty());
         let meta: Vec<_> = came(state, &summary).into_iter().collect();
         let first = lines.len();
         lines.push(Row::Lined {
@@ -113,7 +113,7 @@ impl Tree<'_> {
             meta: joined(meta),
             whole: None,
         });
-        self.pick(self.item(note, false, &summary.rules), lines, first);
+        self.pick(self.item(note, false, &summary.patterns), lines, first);
     }
 }
 

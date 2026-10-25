@@ -1,10 +1,10 @@
 use super::*;
 
-/// A table of rules, with one rule too long for a line.
-fn rules() -> Table {
-    let row = |rule: &str, used: &str| Row {
+/// A table of patterns, with one pattern too long for a line.
+fn patterns() -> Table {
+    let row = |pattern: &str, used: &str| Row {
         id: None,
-        cells: vec![rule.to_string(), used.to_string()],
+        cells: vec![pattern.to_string(), used.to_string()],
     };
     Table {
         head: vec!["Rule", "Used"],
@@ -31,7 +31,7 @@ fn text(lines: &[Styled]) -> Vec<String> {
 /// and marks each line of the selected row.
 #[test]
 fn a_table_wraps_a_long_cell_whole() {
-    let (lines, first) = rules().lines(30, Some(0));
+    let (lines, first) = patterns().lines(30, Some(0));
     let shown = text(&lines);
     assert_eq!(first, vec![1, 4]);
     assert_eq!(

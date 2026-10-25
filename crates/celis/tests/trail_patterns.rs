@@ -1,13 +1,13 @@
-//! CIP-04, "Rules".
+//! CIP-04, "Patterns".
 
 mod support;
 
-use support::{account, cli, ids, now, out, step_note, stored_rule, Repo};
+use support::{account, cli, ids, now, out, step_note, stored_pattern, Repo};
 
-/// A reader counts a rule as one of a trail's rules only when its scope names that trail, and a
-/// replaced one not at all (`spec/04-trails.md`, "Rules").
+/// A reader counts a pattern as one of a trail's patterns only when its scope names that trail, and a
+/// replaced one not at all (`spec/04-trails.md`, "Patterns").
 #[test]
-fn a_rule_holds_for_a_trail_only_when_its_scope_names_it() {
+fn a_pattern_holds_for_a_trail_only_when_its_scope_names_it() {
     let repo = Repo::new();
     let id = repo.project_id();
     let project = (id.as_str(), "repo");
@@ -15,7 +15,7 @@ fn a_rule_holds_for_a_trail_only_when_its_scope_names_it() {
     let mine = step_note(&repo, &account(), None, "mine", t);
     let other = step_note(&repo, &account(), None, "other", t + 1);
     let scope = |trail: &str| format!("trail:{trail}");
-    let rule = stored_rule(
+    let pattern = stored_pattern(
         &repo,
         project,
         &account(),
@@ -23,7 +23,7 @@ fn a_rule_holds_for_a_trail_only_when_its_scope_names_it() {
         "rule",
         t + 2,
     );
-    let old = stored_rule(
+    let old = stored_pattern(
         &repo,
         project,
         &account(),
@@ -31,7 +31,7 @@ fn a_rule_holds_for_a_trail_only_when_its_scope_names_it() {
         "old",
         t + 3,
     );
-    stored_rule(
+    stored_pattern(
         &repo,
         project,
         &account(),
@@ -39,7 +39,7 @@ fn a_rule_holds_for_a_trail_only_when_its_scope_names_it() {
         "plain",
         t + 4,
     );
-    stored_rule(
+    stored_pattern(
         &repo,
         project,
         &account(),
@@ -51,5 +51,5 @@ fn a_rule_holds_for_a_trail_only_when_its_scope_names_it() {
         &repo,
         &["grep", &format!(" live {{trail:{}}}", &mine.id[..8])],
     ));
-    assert_eq!(ids(&text, "rule"), [&rule.id[..8]]);
+    assert_eq!(ids(&text, "pattern"), [&pattern.id[..8]]);
 }

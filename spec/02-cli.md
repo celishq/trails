@@ -14,24 +14,24 @@ read. What a command shows a person is not part of it.
 ## Commands
 
 ```
-celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--promoted] [--good <example>]... [--bad <example>]... [--project <id>] -- <text>
-                                                       a rule, in its scope
-celis patterns [--markdown]                           the patterns and their examples
+celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--binds] [--good <example>]... [--bad <example>]... [--project <id>] -- <text>
+                                                       a pattern, in its scope
+celis patterns [--markdown]                           the patterns, the rules first, and their examples
 celis tree [<id>]... [--graph] [--full] [--all] [--demo]
                                                        a trail and its steps; again on each change
 celis grep <grep option>... <pattern>                 every trail, through the system grep
 celis search [<file>]... [--kind <kind>] [--limit <n>] -- <ask>
-                                                       the rules, patterns and past asks that fit an ask
+                                                       the rules, the other patterns and the past asks that fit an ask
 celis setup [--model <model>]                         the model that search uses
 celis stats [<id>] [--demo]                           what later work reused
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
 celis link [<folder>] [--off]                         keep this project's trails in a folder, or stop
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>]... [--check <command>] [--new] [--session <id>] [--project <id>] -- <text>
                                                        leave a step
-celis step start <id>                                 take up a step, and see the rules its plan links
+celis step start <id>                                 take up a step, and see the patterns its plan links
 celis step done <id> [--changed <text>] [--as-planned] [--by <who>] [--file <path>]... -- <proof>
                                                        close a step with its proof
-celis step drop <id> -- <reason>                      end a step, a done trail or a rule no longer wanted
+celis step drop <id> -- <reason>                      end a step, a done trail or a pattern no longer wanted
 celis step edit <id> [--at <place>]... [--check <command>] [-- <text>]
                                                        give a step a new title, places or check
 celis hook start <agent> <plugin folder>              what an agent reads at a session start
@@ -47,32 +47,38 @@ $CELIS_HOME   where celis keeps the phrase and the store
 
 ```
 decision  json  {"id", "created_at", "project", "scope", "replaces", "content",
-                 "paths", "promoted"}
+                 "paths", "binds", "promoted"}
 ```
 
 **Rules**
 
 - Off macOS, `$CELIS_HOME` MUST default to `~/.local/share/celis`.
 - A flag no command takes is a usage error.
-- `decide` MUST write a rule of the working folder's project (CIP-05), with `--scope` and
+- `decide` MUST write a pattern of the working folder's project (CIP-05), with `--scope` and
   `--replaces` as its tags, and no `scope` tag for `project`; for `--scope at:<place>`, no `scope` tag
   and a `path` tag of the place's path from the project's top folder, without its line, and with `/**`
   after it when it is a folder; each `--path`, from the project's top
-  folder, as a `path` tag, `--promoted` as its label, and each `--good` and `--bad`
-  as an example (CIP-05, "Patterns"): a value with `://` as a URL, a file of the working folder as its
+  folder, as a `path` tag, `--binds` as its label, and each `--good` and `--bad`
+  as an example (CIP-05, "Examples"): a value with `://` as a URL, a file of the working folder as its
   blob, else the whole id of a step, refusing a step the store lacks with `no-step`.
 - `--project` on `decide` and `step add` MUST write the records of the project it names in place of the
   working folder's: a project id that a record of the store has, with that record's project name. It MUST refuse any other id as a usage error.
 - `decide` MUST refuse empty text, and a scope that is not `me`, `project`, `trail:<id>` or `at:<place>`,
   as a usage error; a `trail:<id>` that no open trail of the project has, with `no-trail`, unless
-  `--replaces` names a live rule of that trail; and a
-  `--replaces` that no live rule of the project has, with `no-decision`.
+  `--replaces` names a live pattern of that trail; and a
+  `--replaces` that no live pattern of the project has, with `no-decision`.
 
 **Examples**
 
 ```
-celis decide --scope at:shelf/prices.py -- "When you change prices: keep them in cents, because floats lost a cent."
-celis decide --scope me -- "When you write a commit message: use plain words, because the team reads them."
+celis decide --scope at:shelf/prices.py --binds -- "When you change prices
+Forces: floats are simple, but they lose cents
+Do: keep prices in cents
+Because: floats lost a cent"
+celis decide --scope me -- "When you write a commit message
+Forces: detail helps, but the team reads them fast
+Do: use plain words
+Because: the team reads them"
 celis decide --path "**/prices*.py" -- "When you change prices: keep them in cents, because floats lost a cent."
 ```
 
@@ -143,26 +149,26 @@ step  json  {"id", "created_at", "project", "links": [{"to", "kind": "under | re
 - `add` of a session's first ask MUST print the ask's id, then the trail's.
 - `add` MUST refuse empty text as a usage error; a closed `--under`, and a `--replaces` of a dropped step,
   with `closed`; a `--replaces` of a trail with no first ask as a usage error; a `--uses` that no live
-  rule and no step has, with `no-step`; and a `--uses` of a step of its own trail, or that starts both
-  a rule's and a step's id, as a usage error.
+  pattern and no step has, with `no-step`; and a `--uses` of a step of its own trail, or that starts both
+  a pattern's and a step's id, as a usage error.
 - `start` and `done` MUST refuse a closed step, with `closed`. `start` of a working step MUST write
   nothing and print the id of its first `start`.
-- `drop` MUST take the id of a step or a rule. It MUST refuse a dropped step, a done step that is not a
-  trail, a trail dropped after done, and a rule that is not live, with `closed`; and an id that starts
-  both a rule's and a step's id as a usage error.
+- `drop` MUST take the id of a step or a pattern. It MUST refuse a dropped step, a done step that is not a
+  trail, a trail dropped after done, and a pattern that is not live, with `closed`; and an id that starts
+  both a pattern's and a step's id as a usage error.
 - `done` MUST take one of `--changed <text>` and `--as-planned`, and a proof, else refuse as a usage
   error. It MUST refuse a step with an open step under it, with `open-steps`.
 - The changed files of a `done` are each file that `git diff --name-only HEAD` or
   `git ls-files --others --exclude-standard` gives in the working folder, and each `--file`.
-- `done` of an ask with no `--by` and a changed file MUST refuse with `unjudged`, and print the rules of
+- `done` of an ask with no `--by` and a changed file MUST refuse with `unjudged`, and print the patterns of
   its changed files and the brief that the judge needs.
 - `done` MUST run the step's `check` in the project's top folder, and refuse with `check-failed` when it
   fails or runs past `CELIS_CHECK_SECONDS`, 600 when not set.
 - `done --changed` MUST write its text as `changed`, and `done --by` its value as `by`; a `--by` other
   than `judge` or `person` is a usage error. Each `done --file` MUST be kept as a blob and named by an
   `imeta` tag (CIP-08), and a file that is not there is a usage error.
-- `done` of a step that is not an ask MUST print each live rule in scope that a changed file matches,
-  as "Search" gives a rule, in the order "Search" states.
+- `done` of a step that is not an ask MUST print each live pattern in scope that a changed file matches,
+  as "Search" gives a pattern, in the order "Search" states.
 - `drop` MUST refuse an empty reason, and `edit` one with no text, `--at` or `--check`, as usage errors.
 
 **Examples**
@@ -191,10 +197,10 @@ Each agent's hooks give `hook` the JSON of a prompt or of a session start.
 
 ## Patterns
 
-`patterns` gives the live patterns in scope in the working folder's project (CIP-05, "Patterns").
+`patterns` gives the live patterns in scope in the working folder's project (CIP-05).
 
 ```
-<line>     each pattern, as "Search" gives it, newest first
+<line>     each pattern, as "Search" gives it, the rules first, newest first within each
 none       no pattern yet
 ```
 
@@ -240,30 +246,30 @@ trails with it.
 ```
 view    <yyyy-mm-dd> <trail id8 | -> [<project name>] <kind> <id8> <fields> <text>
           trail | step   <open | working | done | done-dropped | dropped | expired>[ revised-by <id>,…][ at:<place>]…
-          rule           <live | replaced-by <id> | dropped> {<me | project | trail:<id8> | at:<place>>}
-                           [ trigger][ promoted][ pattern][ recalled:<yyyy-mm-dd>]
-          proof | changed | dropped                              the step's or rule's id, no fields
+          pattern        <live | replaced-by <id> | dropped> {<me | project | trail:<id8> | at:<place>>}
+                           [ trigger][ binds][ recalled:<yyyy-mm-dd>]
+          proof | changed | dropped                              the step's or pattern's id, no fields
 lines   <id8> [<project name>] <its title> · <yyyy-mm-dd>        each trail of the lines
           trail <id8> <fields>                                    the trail's own line
           <kind> <id8> <fields> <text>                            each other line of the trail
-        - rules of no trail
-          [<project name>] rule <id8> <fields> <text>             each line with no trail
+        - patterns of no trail
+          [<project name>] pattern <id8> <fields> <text>             each line with no trail
 end     project [<project name>]
 ```
 
-`<id8>` is the first 8 characters of an id. A text holds each newline as a space. A rule's fields end with
-` trigger` when it has a trigger tag (CIP-05), ` promoted` when it has the `promoted` label, ` pattern`
-when it has examples (CIP-05, "Patterns"), and ` recalled:<day>` with the day `search` last gave it.
+`<id8>` is the first 8 characters of an id. A text holds each newline as a space. A pattern's fields end with
+` trigger` when it has a trigger tag (CIP-05), ` binds` when it is a rule (CIP-05, "Rules"), and
+` recalled:<day>` with the day `search` last gave it.
 
 **Rules**
 
 - `grep` MUST give each word after it to the system `grep` as it is, with the view on its stdin.
-- The view MUST hold every trail of every project, newest first, and each live or replaced rule of a
-  scope other than `trail:<id>` by when it was made. A trail MUST print as its line, then its rules,
+- The view MUST hold every trail of every project, newest first, and each live or replaced pattern of a
+  scope other than `trail:<id>` by when it was made. A trail MUST print as its line, then its patterns,
   newest first, then its steps, each level newest first, each step with its proof, `changed` and drop
   lines, then its own steps.
 - `grep` MUST print each matched line under its trail's header, the trails with most lines first, and each
-  line with no trail under `- rules of no trail`. A matched line that is no line of the view MUST NOT
+  line with no trail under `- patterns of no trail`. A matched line that is no line of the view MUST NOT
   print. When no matched line is a line of the view, as with `-c` or `-l`, it MUST print what `grep`
   prints, and nothing else.
 - `grep` MUST print every matched line that is a line of the view, however long the output.
@@ -280,19 +286,20 @@ celis grep -A3 9b0e11aa
 
 ## Search
 
-`search` gives what fits an ask: the live rules in scope in the working folder's project (CIP-05), its
-patterns, and the done asks of every project like it (CIP-04).
+`search` gives what fits an ask: the live patterns in scope in the working folder's project (CIP-05), the
+rules first, then the other patterns, and the done asks of every project like it (CIP-04).
 
 ```
 rules
-<line>        <id8> <scope> <rule>, each rule that fits
-                good    <id8> <title> · <the first line of its proof>    a step example (CIP-05, "Patterns")
+<line>        <id8> <scope> <first line>, each rule that fits (CIP-05, "Rules")
+                <each next line of its text>
+                good    <id8> <title> · <the first line of its proof>    a step example (CIP-05, "Examples")
                         <the path of each blob of its files>
                 good    <path>                                           a file example
                         <the path of its blob>
                 bad     <url>                                            a URL example
 patterns
-<line>        each pattern that fits, with its examples (CIP-05, "Patterns")
+<line>        each other pattern that fits, as a rule prints
 past
 <id8> <title> · <yyyy-mm-dd> [<project name>]     each done ask like it
   step <id8> <state> <title>                      each step right under it
@@ -315,12 +322,12 @@ no model celis search has no model: search with celis grep, or run celis setup.
 
 - Each `<file>` MUST count as that file. A `<file>` that is a folder MUST count as each file that
   `git ls-files --cached --others --exclude-standard -- <folder>` gives in the project.
-- A rule fits the ask when it matches a file, when its text before its first `:` shares a word with the
-  ask, or when the model finds it among the 5 most alike in meaning, at a cosine of 0.3 or more.
+- A pattern fits the ask when it matches a file, when its first line before its first `:` shares a word
+  with the ask, or when the model finds it among the 5 most alike in meaning, at a cosine of 0.3 or more.
 - A done ask is like the ask when the model finds it among the 5 most alike in meaning, at a cosine of
   0.3 or more, or when its title and its trail's title share 2 words with the ask. `search` MUST print at most 2.
 - `search` MUST print the parts in the order rules, patterns, past, and leave out a part with no line.
-  Within a part of rules, a rule with a `replaces` tag comes first, then the rest; within each, first
+  Within a part, a pattern with a `replaces` tag comes first, then the rest; within each, first
   those that match a named file (a `path` with no `*` or `?`, or an `at:<place>`), then a glob, then
   those that fit by words or meaning; newest first within each.
 - With `--kind rule` or `--kind pattern`, `search` MUST print only that part.
