@@ -234,7 +234,7 @@ fn the_prompt_hook_names_the_working_step() {
     let trail = start(&repo, "s1", "the trail");
     let o = hook("first");
     assert!(o.status.success(), "{}", err(&o));
-    assert_eq!(err(&o), format!("{}\n", joins(Some(&trail))));
+    assert_eq!(err(&o), format!("{RECALL}\n{}\n", joins(Some(&trail))));
     let step = add(&repo, Some("s1"), "Cache the price list");
     let o = repo.run(&repo.path(), &["step", "start", &step[..8]], &[], "");
     assert!(o.status.success(), "{}", err(&o));
@@ -243,6 +243,7 @@ fn the_prompt_hook_names_the_working_step() {
     assert_eq!(
         err(&o).lines().collect::<Vec<_>>(),
         [
+            RECALL.to_string(),
             format!(
                 "celis: you work on {} \"Cache the price list\"; when the next work does not fit it, \
                  add a step under it first, or replace it with step add --replaces. To hand work to \
@@ -279,6 +280,7 @@ fn the_prompt_hook_names_the_done_steps() {
     assert_eq!(
         err(&o).lines().collect::<Vec<_>>(),
         [
+            RECALL.to_string(),
             "celis: when this prompt changes done work, add it with step add --replaces <its id>, \
              not as a new ask; the done steps:"
                 .to_string(),
@@ -306,6 +308,12 @@ fn joins(open: Option<&str>) -> String {
 }
 
 /// The line of a prompt with no trail to join: an empty store, or no trail of today.
+/// The line `prompt` gives first once the store holds a record: how a new ask recalls its rules and
+/// patterns.
+const RECALL: &str = "celis: when this prompt is a new ask, run celis recall [<each file it will touch>]... \
+                      -- \"<the ask>\" before you change a file, and keep each rule and pattern it prints; \
+                      a prompt that goes on with the same work needs none.";
+
 const NEW: &str = "celis: when this prompt is a new ask, add it with --new. When this prompt states how the \
                    work must be done (review feedback, a convention, a correction), write each point as a \
                    rule with celis decide before you change a file; give it --scope me when it holds for that \
@@ -332,7 +340,7 @@ fn a_later_prompt_with_no_open_trail_hints_at_todays_trails() {
     let o = repo.run(&shop, &["step", "add", "--", "a shop trail"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     assert!(hook("s9").contains("celis:past agent"));
-    assert_eq!(hook("s9"), format!("{}\n", joins(None)));
+    assert_eq!(hook("s9"), format!("{RECALL}\n{}\n", joins(None)));
     let o = repo.run(
         &repo.path(),
         &["decide", "--", "When you test: set A=1."],
@@ -341,7 +349,7 @@ fn a_later_prompt_with_no_open_trail_hints_at_todays_trails() {
     );
     assert!(o.status.success(), "{}", err(&o));
     assert!(hook("s8").contains("celis:past agent"));
-    assert_eq!(hook("s8"), format!("{}\n", joins(None)));
+    assert_eq!(hook("s8"), format!("{RECALL}\n{}\n", joins(None)));
 }
 
 /// `prompt` writes and prints nothing for a prompt that is a task notification or an agent's message of
@@ -384,7 +392,7 @@ fn a_prompt_with_no_open_trail_asks_for_the_past_agent() {
     );
     assert!(o.status.success(), "{}", err(&o));
     let said = hook("Build a Vendors table");
-    assert_eq!(said.lines().count(), 1, "{said}");
+    assert_eq!(said.lines().count(), 2, "{said}");
     assert!(said.contains("celis:past agent"), "{said}");
     assert!(said.contains("before any other tool"), "{said}");
     assert!(said.contains("wait for its answer"), "{said}");
@@ -421,14 +429,14 @@ fn a_session_asks_for_the_past_agent_once_until_a_compaction() {
     };
     let ask = serde_json::json!({"session_id": "s9", "prompt": "Build a Vendors table"});
     assert!(hook(ask.clone()).contains("celis:past agent"));
-    assert_eq!(hook(ask.clone()), format!("{NEW}\n"));
+    assert_eq!(hook(ask.clone()), format!("{RECALL}\n{NEW}\n"));
     let other = serde_json::json!({"session_id": "s8", "prompt": "Build a Vendors table"});
     assert!(hook(other).contains("celis:past agent"));
     assert_eq!(
         hook(serde_json::json!({"session_id": "s9", "source": "startup"})),
         ""
     );
-    assert_eq!(hook(ask.clone()), format!("{NEW}\n"));
+    assert_eq!(hook(ask.clone()), format!("{RECALL}\n{NEW}\n"));
     assert_eq!(
         hook(serde_json::json!({"session_id": "s9", "source": "compact"})),
         ""

@@ -30,8 +30,9 @@ impl Command {
         }
     }
 
-    /// Writes `prompt` on its session's open trail, signed now; then names on `err` the oldest working
-    /// step, every done step, and how a new ask joins a trail.
+    /// Writes `prompt` on its session's open trail, signed now; then names on `err` how a new ask
+    /// recalls its rules and patterns, the oldest working step, every done step, and how a new ask
+    /// joins a trail.
     fn ask(&self, err: &mut dyn Write, project: &Project, prompt: Prompt) -> Result<(), Failure> {
         let asked = self.asked(&prompt.session)?;
         if !self.held()? {
@@ -41,6 +42,9 @@ impl Command {
             return self.offer(err, project, &asked);
         }
         let trails = self.trails()?;
+        if !prompt.task && !trails.is_empty() {
+            super::put(err, RECALL)?;
+        }
         let steps = trails.steps();
         let Some(trail) = steps.session(&project.anchor.project, &prompt.session) else {
             if !prompt.task && !self.remind(&trails, err, &asked)? {
@@ -163,6 +167,11 @@ fn joins(open: Option<&str>) -> String {
 fn fresh() -> String {
     format!("celis: when this prompt is a new ask, add it with --new. {RULES}")
 }
+
+/// What a new ask's line asks of the agent before it changes a file.
+const RECALL: &str = "celis: when this prompt is a new ask, run celis recall [<each file it will \
+                      touch>]... -- \"<the ask>\" before you change a file, and keep each rule and \
+                      pattern it prints; a prompt that goes on with the same work needs none.";
 
 /// What a new ask's line asks of the agent before any other tool.
 pub(super) const PAST: &str =

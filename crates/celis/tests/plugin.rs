@@ -244,6 +244,35 @@ fn claudes_hooks_ask_for_the_past_agent_again_after_a_compaction() {
         .contains("celis:past agent"));
 }
 
+/// Claude Code's prompt hook asks for `celis recall` at each prompt, not only at the first of a session.
+#[test]
+fn claudes_prompt_hook_asks_for_recall_at_each_prompt() {
+    let repo = Repo::new();
+    let o = repo.run(
+        &repo.path(),
+        &["decide", "--", "When you test: set A=1."],
+        &[],
+        "",
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let claude = &AGENTS[0];
+    for prompt in ["make it blue", "now add a test"] {
+        let ask = claude.payload("s1", &repo.path(), prompt);
+        let said = claude.run(&repo, claude.ask, &ask);
+        assert!(said.contains("celis recall"), "{prompt}: {said}");
+    }
+    let o = repo.run(
+        &repo.path(),
+        &["step", "add", "--session", "s1", "--", "make it blue"],
+        &[],
+        "",
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let ask = claude.payload("s1", &repo.path(), "and the border too");
+    let said = claude.run(&repo, claude.ask, &ask);
+    assert!(said.contains("celis recall"), "{said}");
+}
+
 /// The prompt hooks of Codex and Gemini CLI ask to do what past.md says in place of the past agent.
 #[test]
 fn codex_and_gemini_prompt_hooks_name_past_md_for_the_past_agent() {
