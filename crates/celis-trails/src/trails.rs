@@ -226,7 +226,7 @@ impl Trails {
                 paths: vec![],
                 situation: false,
                 promoted: false,
-                pair: Default::default(),
+                examples: Default::default(),
             };
             written
                 .records
@@ -283,7 +283,8 @@ impl Trails {
     }
 
     /// Writes `rule`, its trail scope taken whole from a trail of its project that is not done or
-    /// dropped, or whose rule it replaces; replacing the live rule there that `replaces` names.
+    /// dropped, or whose rule it replaces; replacing the live rule there that `replaces` names, and
+    /// keeping its examples.
     pub fn decide(&self, mut rule: Rule, replaces: Option<&str>) -> Result<Written, Refusal> {
         let project = rule.anchor.project.clone();
         if let Scope::Trail(id) = &rule.scope {
@@ -303,7 +304,11 @@ impl Trails {
             rule.scope = Scope::Trail(trail.id().to_string());
         }
         if let Some(id) = replaces {
-            let found = self.rules().find(&project, id)?;
+            let rules = self.rules();
+            let found = rules.find(&project, id)?;
+            if let Some((_, old)) = rules.get(&found.id) {
+                rule.examples = rule.examples.with(&old.examples);
+            }
             rule.replaces = Some(RuleId::new(&found.id));
         }
         let written = self.sign(|account, now| rule.record(account, now))?;

@@ -62,7 +62,7 @@ Every change of `spec/` MUST keep these rules:
 | 1111 with `decision` in `celis.decision` | kind: a rule (NIP-22) | 05 |
 | `scope` · `replaces` | rule tags | 05 |
 | `path` | rule tag: the trigger | 05 |
-| `good` · `bad` | rule tags: the steps of a pair | 05 |
+| `good` · `bad` | rule tags: the examples of a pattern | 05 |
 | `situation` · `promoted` in `celis.decision` | rule labels | 05 |
 | `me` · `project` · `trail:<id>` · `at:<place>` | the scopes of a rule | 05 |
 | `uses` | step tag | 06 |

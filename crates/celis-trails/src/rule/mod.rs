@@ -1,19 +1,20 @@
 //! CIP-05: a rule, one sentence that holds in its scope until another replaces it.
 
+pub mod example;
+pub mod examples;
 pub mod fit;
 pub mod glob;
-pub mod pair;
 pub mod rule_end;
 pub mod rule_entry;
 pub mod rules;
 pub mod scope;
 
-use crate::{Anchor, Fit, Glob, Pair, Place, RuleId, Scope};
+use crate::{Anchor, Examples, Fit, Glob, Place, RuleId, Scope};
 use anyhow::Result;
 use celis_nostr::{Account, Note};
 
 /// One rule, written on a project, that holds in its scope; with the globs of the files it acts on, its
-/// `situation` and `promoted` labels, and the good and the bad step of its pair.
+/// `situation` and `promoted` labels, and its examples, which make it a pattern.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Rule {
     pub anchor: Anchor,
@@ -23,7 +24,7 @@ pub struct Rule {
     pub paths: Vec<String>,
     pub situation: bool,
     pub promoted: bool,
-    pub pair: Pair,
+    pub examples: Examples,
 }
 
 impl Rule {
@@ -38,8 +39,9 @@ impl Rule {
                 .into_iter()
                 .filter_map(|(name, value)| Some(vec![name.to_string(), value.clone()?])),
         );
-        let pair = self.pair.sides();
-        tags.extend(pair.map(|(side, id)| vec![side.to_string(), id.to_string()]));
+        let pubkey = signer.pubkey().hex();
+        let examples = self.examples.sides();
+        tags.extend(examples.map(|(side, example)| example.tag(side, &pubkey)));
         let paths = self.paths.iter();
         tags.extend(paths.map(|p| vec!["path".to_string(), p.clone()]));
         tags.push(vec!["L".to_string(), NAMESPACE.to_string()]);
@@ -55,7 +57,7 @@ impl Rule {
 
     /// Whether it is a pattern: a rule with examples, which guides and never binds.
     pub fn is_pattern(&self) -> bool {
-        self.pair.sides().next().is_some()
+        !self.examples.is_empty()
     }
 
     /// The text up to `, because`: when it applies and what to do, without the reason.
@@ -88,7 +90,7 @@ impl Rule {
                 .collect(),
             situation: labelled(note, "situation"),
             promoted: labelled(note, "promoted"),
-            pair: Pair::read(note),
+            examples: Examples::read(note),
         })
     }
 

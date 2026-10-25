@@ -2,12 +2,12 @@
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use celis_trails::{Pair, Place, Project, Rule, Scope, StepId};
+use celis_trails::{Example, Examples, Place, Project, Rule, Scope, Trails};
 use std::io::Write;
 
 impl Command {
-    /// Writes the rule `args` states on `project`, in its scope, with its trigger and labels, signed by
-    /// the account now, and prints its id.
+    /// Writes the rule `args` states on `project`, in its scope, with its trigger, labels and examples,
+    /// signed by the account now, and prints its id.
     pub(crate) fn decide(
         &self,
         args: &Args,
@@ -29,16 +29,13 @@ impl Command {
             scope => scope,
         };
         let trails = self.trails()?;
-        let steps = trails.steps();
-        let step = |id: &Option<String>| -> Result<Option<StepId>, Failure> {
-            match id {
-                Some(id) => Ok(Some(steps.find(id)?.step_id())),
-                None => Ok(None),
-            }
+        let side = |values: &[String]| -> Result<Vec<Example>, Failure> {
+            let found = values.iter().map(|v| self.example(&trails, project, v));
+            found.collect()
         };
-        let pair = Pair {
-            good: step(&args.good)?,
-            bad: step(&args.bad)?,
+        let examples = Examples {
+            good: side(&args.good)?,
+            bad: side(&args.bad)?,
         };
         let rule = Rule {
             anchor: project.anchor.clone(),
@@ -52,9 +49,23 @@ impl Command {
                 .collect(),
             situation: args.situation,
             promoted: args.promoted,
-            pair,
+            examples,
         };
         let written = trails.decide(rule, args.replaces.as_deref())?;
         self.print(written, args, out, err)
+    }
+
+    /// The example `value` names: a URL, else a file of the working folder, kept as a blob, else a
+    /// step of the store.
+    fn example(&self, trails: &Trails, project: &Project, value: &str) -> Result<Example, Failure> {
+        if value.contains("://") {
+            return Ok(Example::Url(value.to_string()));
+        }
+        let path = self.folder.join(value);
+        if path.is_file() {
+            let place = Place::resolve(value, &project.folder, &self.folder);
+            return Ok(Example::File(trails.keep(place, &path)?));
+        }
+        Ok(Example::Step(trails.steps().find(value)?.step_id()))
     }
 }

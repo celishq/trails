@@ -57,10 +57,8 @@ Record work · your agents run these
   ├ --path <glob>     A file it acts on; * and ? within a folder, ** across
   ├ --situation       No file shows it ahead
   ├ --promoted        A tool of the place, like a linter, now checks it
-  ├ --good <id>       A step whose result shows the rule, such as a pick or a
-  │                   fix
-  ├ --bad <id>        A step whose result breaks it, such as a variant not
-  │                   picked
+  ├ --good <example>  A step, a file, or a URL that shows it, such as a pick
+  ├ --bad <example>   A step, a file, or a URL that breaks it
   └ --project <id>    The id of a project in the store
 
 Set up

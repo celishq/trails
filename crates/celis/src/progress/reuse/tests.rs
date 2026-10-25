@@ -39,7 +39,7 @@ fn rule(text: &str, at: u64, replaces: Option<&Note>) -> Note {
         paths: vec![],
         situation: false,
         promoted: false,
-        pair: Default::default(),
+        examples: Default::default(),
     }
     .record(&account(), at)
     .unwrap()

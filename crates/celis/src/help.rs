@@ -310,22 +310,24 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "decide",
-        usage: &["celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--situation] [--promoted] [--good <id>] [--bad <id>] [--project <id>] -- <text>"],
-        summary: "Record a rule that later work must keep. With no --scope, it holds for the whole project. Its paths name the files it acts on, so celis rules gives it for them.",
+        usage: &["celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--situation] [--promoted] [--good <example>]... [--bad <example>]... [--project <id>] -- <text>"],
+        summary: "Record a rule that later work must keep. With no --scope, it holds for the whole project. Its paths name the files it acts on, so celis rules gives it for them. With examples, it is a pattern: it guides the work and never binds it.",
         args: &[
             ("--scope <scope>", "Where it applies: at:<place>, trail:<id>, me, or project"),
             ("--replaces <id>", "The rule this one replaces"),
             ("--path <glob>", "A file it acts on; * and ? within a folder, ** across"),
             ("--situation", "No file shows it ahead"),
             ("--promoted", "A tool of the place, like a linter, now checks it"),
-            ("--good <id>", "A step whose result shows the rule, such as a pick or a fix"),
-            ("--bad <id>", "A step whose result breaks it, such as a variant not picked"),
+            ("--good <example>", "A step, a file, or a URL that shows it, such as a pick"),
+            ("--bad <example>", "A step, a file, or a URL that breaks it"),
             ("--project <id>", "The id of a project in the store"),
             ("<text>", "When it applies, what to do, and why"),
         ],
         examples: &[
             "celis decide --scope at:shelf/prices.py \\",
             "  -- \"When you change prices: keep them in cents.\"",
+            "celis decide --path \"*.svg\" --good logo.svg --bad 3fa2c1d0 \\",
+            "  -- \"When a logo is drawn: keep sharp corners.\"",
         ],
     },
     Verb {

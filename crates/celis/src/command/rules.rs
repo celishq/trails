@@ -5,7 +5,7 @@ pub(super) mod index;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use celis_nostr::Note;
-use celis_trails::{Fit, Place, Project, Rule};
+use celis_trails::{Example, Fit, Place, Project, Rule};
 use index::Index;
 use serde_json::json;
 use std::io::Write;
@@ -13,7 +13,7 @@ use std::path::Path;
 
 impl Command {
     /// Prints every live rule in scope that the files of `args` match, by `rank`, each with the proof and
-    /// the blobs of the good and the bad step of its pair.
+    /// its good and bad examples.
     /// With no file, prints the index of the live rules in scope. Writes no record.
     pub(crate) fn rules(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let mut files = args.words[1..].to_vec();
@@ -41,8 +41,10 @@ impl Command {
         for (_, note, rule) in &found {
             let mut object =
                 json!({"id": note.id, "scope": rule.scope.text(), "content": rule.content});
-            for (side, id) in rule.pair.sides() {
-                object[side] = json!(id.to_string());
+            for (side, list) in [("good", &rule.examples.good), ("bad", &rule.examples.bad)] {
+                if !list.is_empty() {
+                    object[side] = json!(list.iter().map(value).collect::<Vec<_>>());
+                }
             }
             let text = if args.json {
                 object.to_string()
@@ -52,6 +54,15 @@ impl Command {
             super::put(out, &text)?;
         }
         Ok(())
+    }
+}
+
+/// What the JSON of a rule gives for `example`: the id of its step, the sha256 of its file, or its URL.
+fn value(example: &Example) -> String {
+    match example {
+        Example::Step(id) => id.to_string(),
+        Example::File(file) => file.sha256.clone(),
+        Example::Url(url) => url.clone(),
     }
 }
 

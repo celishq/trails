@@ -87,7 +87,7 @@ fn a_period_counts_its_done_steps_that_use_a_rule() {
         paths: vec![],
         situation: false,
         promoted: false,
-        pair: Default::default(),
+        examples: Default::default(),
     }
     .record(&account(), 5)
     .unwrap();

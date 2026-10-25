@@ -1,4 +1,4 @@
-//! CIP-05, "Pairs".
+//! CIP-05, "Patterns".
 
 mod support;
 
@@ -23,7 +23,7 @@ fn done(repo: &Repo, id: &str, rel: &str, proof: &str) {
 }
 
 /// `decide --good --bad` writes the whole ids of the two steps as `good` and `bad`
-/// (`spec/05-rules.md`, "Pairs").
+/// (`spec/05-rules.md`, "Patterns").
 #[test]
 fn decide_names_the_good_and_the_bad_step() {
     let repo = Repo::new();
@@ -78,7 +78,7 @@ fn decide_names_the_good_and_the_bad_step() {
     );
 }
 
-/// `start` prints a rule its ask uses with the good step of its pair.
+/// `start` prints a pattern its ask uses with its good step.
 #[test]
 fn start_prints_the_pair_of_a_rule_its_ask_uses() {
     let repo = Repo::new();
@@ -136,4 +136,96 @@ fn decide_refuses_an_unknown_step() {
         "{}",
         err(&o)
     );
+}
+
+/// `decide` takes `--good` and `--bad` again and again, as a file it keeps as a blob or a URL, and
+/// `recall` prints each (`spec/05-rules.md`, "Patterns").
+#[test]
+fn a_pattern_keeps_files_and_urls_as_examples() {
+    let repo = Repo::new();
+    repo.write("a.svg", "<svg id=\"a\"/>\n");
+    repo.write("b.svg", "<svg id=\"b\"/>\n");
+    let url = "https://example.com/round-logo.png";
+    let o = cli(
+        &repo,
+        &[
+            "decide",
+            "--path",
+            "*.svg",
+            "--good",
+            "a.svg",
+            "--good",
+            "b.svg",
+            "--bad",
+            url,
+            "--",
+            "When a logo is drawn: keep sharp corners, because the person picked them.",
+        ],
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let rule = support::labelled(&repo, "decision").remove(0);
+    let values: Vec<&Vec<String>> = rule
+        .tags
+        .iter()
+        .filter(|t| t[0] == "good" || t[0] == "bad")
+        .collect();
+    assert_eq!(values.len(), 3, "{values:?}");
+    assert!(values[0][1].starts_with("blossom:"), "{values:?}");
+    assert_eq!(values[0][2], "a.svg");
+    assert_eq!(values[2][1], url);
+    let o = cli(&repo, &["recall", "--", "draw a logo"]);
+    let said = out(&o);
+    let blob = |text: &str| {
+        use sha2::{Digest, Sha256};
+        format!("{:x}", Sha256::digest(text.as_bytes()))
+    };
+    assert!(said.contains(&blob("<svg id=\"a\"/>\n")), "{said}");
+    assert!(said.contains(&blob("<svg id=\"b\"/>\n")), "{said}");
+    assert!(said.contains(&format!("  bad     {url}")), "{said}");
+    assert!(!said.contains("missing"), "{said}");
+}
+
+/// A pattern that replaces another keeps the examples of the one it replaces (`spec/05-rules.md`,
+/// "Patterns").
+#[test]
+fn a_replacing_pattern_keeps_the_old_examples() {
+    let repo = Repo::new();
+    let first = "https://example.com/one.png";
+    let second = "https://example.com/two.png";
+    let o = cli(
+        &repo,
+        &[
+            "decide",
+            "--good",
+            first,
+            "--",
+            "When a logo is drawn: keep it flat.",
+        ],
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let old = out(&o).lines().next().unwrap().to_string();
+    let o = cli(
+        &repo,
+        &[
+            "decide",
+            "--replaces",
+            &old[..8],
+            "--good",
+            second,
+            "--",
+            "When a logo is drawn: keep it flat and sharp.",
+        ],
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let rule = support::labelled(&repo, "decision")
+        .into_iter()
+        .find(|n| n.content.contains("sharp"))
+        .unwrap();
+    let good: Vec<&str> = rule
+        .tags
+        .iter()
+        .filter(|t| t[0] == "good")
+        .map(|t| t[1].as_str())
+        .collect();
+    assert_eq!(good, [second, first]);
 }

@@ -294,7 +294,7 @@ impl Written {
                     paths: vec![],
                     situation: false,
                     promoted: false,
-                    pair: Default::default(),
+                    examples: Default::default(),
                 };
                 store.at(at);
                 store.decide(rule, None)?;

@@ -80,20 +80,31 @@ me                in every project
 - A rule matches a file when one of its `path` globs matches the file's path.
 - A rule `at:<place>` counts as a rule with that place as its `path`, which matches as "Reading" states.
 
-## Pairs
+## Patterns
 
 ```json
 { "kind": 1111,
-  "tags": [ …, ["good", "<step id>"], ["bad", "<step id>"] ],
+  "tags": [ …,
+    ["good", "<step id>"],
+    ["good", "blossom:<sha256>.<ext>?as=<pubkey>&sz=<size>", "<path>"],
+    ["bad", "<url>"] ],
   "content": "When a logo is drawn: keep sharp corners, because the person picked them." }
 ```
 
-- `good`: optional; a done step whose result the rule shows as better (CIP-03).
-- `bad`: optional; a step whose result the rule shows as worse.
+- `good`: optional, repeatable; an example the pattern shows as better: a done step (CIP-03), a file as
+  the Blossom URI of its blob (CIP-08) with its path from the project's top folder, or a URL.
+- `bad`: optional, repeatable; an example the pattern shows as worse, in the same forms.
 
-A rule with a `good` shows by example what its text means: a pick and a variant not picked, or a fix
-whose proof holds the result it replaced and the fix.
+A rule with a `good` or a `bad` is a pattern: the examples show what its text means. A pattern guides,
+and never binds.
 
 **Writers**
 
 - A writer MUST write the whole id of each step, and only of a step the store holds.
+- A writer MUST keep the blob of each file it names.
+- A pattern that replaces another MUST keep each example of the one it replaces.
+
+**Readers**
+
+- A reader MUST read a value that starts with `blossom:` as a file, another value with `://` as a URL,
+  and else as a step.

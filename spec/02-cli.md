@@ -14,7 +14,7 @@ read. What a command shows a person is not part of it.
 ## Commands
 
 ```
-celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--situation] [--promoted] [--good <id>] [--bad <id>] [--project <id>] -- <text>
+celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--situation] [--promoted] [--good <example>]... [--bad <example>]... [--project <id>] -- <text>
                                                        a rule, in its scope
 celis recall [<file>]... -- <ask>                     the rules and patterns that fit an ask
 celis rules [<file>]... [--diff]
@@ -58,8 +58,9 @@ decision  json  {"id", "created_at", "project", "scope", "replaces", "content",
 - A flag no command takes is a usage error.
 - `decide` MUST write a rule of the working folder's project (CIP-05), with `--scope` and
   `--replaces` as its tags, and no `scope` tag for `project`; each `--path`, from the project's top
-  folder, as a `path` tag, `--situation` and `--promoted` as their labels, and `--good` and `--bad` as
-  the whole ids of their steps (CIP-05, "Pairs"), refusing a step the store lacks with `no-step`.
+  folder, as a `path` tag, `--situation` and `--promoted` as their labels, and each `--good` and `--bad`
+  as an example (CIP-05, "Patterns"): a value with `://` as a URL, a file of the working folder as its
+  blob, else the whole id of a step, refusing a step the store lacks with `no-step`.
 - `--project` on `decide` and `step add` MUST write the records of the project it names in place of the
   working folder's: a project id that a record of the store has, with that record's project name. It MUST refuse any other id as a usage error.
 - `decide` MUST refuse empty text, and a scope that is not `me`, `project`, `trail:<id>` or `at:<place>`,
@@ -191,11 +192,13 @@ Each agent's hooks give `hook` the JSON of a prompt or of a session start.
 
 ```
 line     <id8> <scope> <rule>
-           good    <id8> <title> · <the first line of its proof>    a step of the rule's pair (CIP-05, "Pairs")
+           good    <id8> <title> · <the first line of its proof>    a step example (CIP-05, "Patterns")
                    <the path of each blob of its files>
-           bad     <id8> <title> · <the first line of its proof>
-                   <the path of each blob of its files>
-json     {"id", "scope", "content"}, with "good" and "bad" when the rule has them
+           good    <path>                                           a file example
+                   <the path of its blob>
+           bad     <url>                                            a URL example
+json     {"id", "scope", "content"}, with "good" and "bad" when the rule has them: a list of step ids,
+         sha256s and URLs
 index    <n> live rules. Their words, by how many rules use each:
          <word> <n>, …
 ```

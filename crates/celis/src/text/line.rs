@@ -4,10 +4,10 @@ use super::clock::took;
 use crate::progress::Grade;
 use celis_nostr::Note;
 use celis_trails::records::id::short;
-use celis_trails::{ProofFile, Rule, Step, Trails};
+use celis_trails::{Example, ProofFile, Rule, Step, Trails};
 
-/// `<id, first 8> <scope> <text>` of the rule that `note` holds, then the proof and the blobs of
-/// `trails` for the good and the bad step of its pair.
+/// `<id, first 8> <scope> <text>` of the rule that `note` holds, then each of its examples: a step
+/// with its proof and blobs, a file with its blob, or a URL.
 pub(crate) fn rule(note: &Note, rule: &Rule, trails: &Trails) -> String {
     let steps = trails.steps();
     let head = format!(
@@ -17,7 +17,19 @@ pub(crate) fn rule(note: &Note, rule: &Rule, trails: &Trails) -> String {
         rule.content
     );
     let mut lines = vec![head];
-    for (side, id) in rule.pair.sides() {
+    for (side, example) in rule.examples.sides() {
+        let id = match example {
+            Example::Step(id) => id,
+            Example::File(file) => {
+                lines.push(format!("  {side:<4}    {}", file.place));
+                lines.push(format!("          {}", blob(file, trails)));
+                continue;
+            }
+            Example::Url(url) => {
+                lines.push(format!("  {side:<4}    {url}"));
+                continue;
+            }
+        };
         let Ok(step) = steps.find(id) else {
             continue;
         };
