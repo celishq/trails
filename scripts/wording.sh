@@ -1,25 +1,25 @@
 #!/bin/sh
-# Runs the given eval cases twice, with the card's Recall move as it is (form A) and as evals/wording/recall-b.md words it (form B), on the given model.
+# Runs eval cases on a model with the card's Recall move as a file words it, or as the card has it when the file is "-"; usage: sh scripts/wording.sh <model> <move file | -> <case>...
 set -e
-model="$1"; shift
+model="$1"; move="$2"; shift 2
 root=$(cd "$(dirname "$0")/.." && pwd)
-for form in a b; do
-  copy=$(mktemp -d)
-  mkdir -p "$copy/plugins"
-  cp -R "$root/plugins/celis" "$copy/plugins/celis"
-  cp -R "$root/evals" "$copy/evals"
-  rm -rf "$copy/evals/results"
-  if [ "$form" = b ]; then
-    python3 -I - "$copy/plugins/celis/card.md" "$root/evals/wording/recall-b.md" <<'PY'
+name=$(basename "$move" .md)
+[ "$move" = - ] && name=card
+copy=$(mktemp -d)
+mkdir -p "$copy/plugins"
+cp -R "$root/plugins/celis" "$copy/plugins/celis"
+cp -R "$root/evals" "$copy/evals"
+rm -rf "$copy/evals/results"
+if [ "$move" != - ]; then
+  python3 -I - "$copy/plugins/celis/card.md" "$root/$move" <<'PY'
 import sys
 card, move = sys.argv[1], open(sys.argv[2]).read()
 text = open(card).read()
 start, end = text.index("1. **Recall.**"), text.index("2. **Work.**")
 open(card, "w").write(text[:start] + move + text[end:])
 PY
-  fi
-  for case in "$@"; do
-    claude plugin eval "$copy/plugins/celis" --eval-dir ../../evals --case "$case" --model "$model" \
-      --ablation none --scaffold --output-dir "$root/evals/results/wording-$form-$model"
-  done
+fi
+for case in "$@"; do
+  claude plugin eval "$copy/plugins/celis" --eval-dir ../../evals --case "$case" --model "$model" \
+    --ablation none --scaffold --output-dir "$root/evals/results/$name-$model"
 done
