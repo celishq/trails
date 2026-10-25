@@ -8,6 +8,7 @@ mod grep;
 mod hook;
 mod issue;
 mod link;
+mod patterns;
 mod prompt;
 mod recall;
 pub(crate) mod report;
@@ -91,6 +92,7 @@ impl Command {
             "decide" => self.decide(args, out, err, &self.project_of(args)?),
             "tree" => self.tree(args, out),
             "recall" => self.recall(args, out, err),
+            "patterns" => self.patterns(args, out),
             "rules" => self.rules(args, out),
             "grep" => self.grep(&self.args[1..], out),
             "search" => self.search(args, out, err),

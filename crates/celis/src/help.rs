@@ -344,6 +344,13 @@ pub const VERBS: &[Verb] = &[
         ],
     },
     Verb {
+        command: "patterns",
+        usage: &["celis patterns"],
+        summary: "Show each pattern of this project and of you, the newest first, with its good and bad examples: the steps with their proofs, the files with their blobs, and the URLs. Changes nothing.",
+        args: &[],
+        examples: &["celis patterns"],
+    },
+    Verb {
         command: "rules",
         usage: &["celis rules [<file>]... [--diff]"],
         summary: "Show every rule of the files you will read or change, the most important first. With no file, show the words the rules use, the most used first. Changes nothing.",

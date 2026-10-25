@@ -22,6 +22,7 @@ Read
   └ --limit <n>       Show the first <n> only; 20 when not given
 
   recall <ask>        Show the rules and patterns that fit an ask
+  patterns            Show your patterns with their good and bad examples
   rules [<file>]...   Show the rules of the files you will touch
   └ --diff            Each file git shows changed or new
 

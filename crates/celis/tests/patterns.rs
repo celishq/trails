@@ -229,3 +229,52 @@ fn a_replacing_pattern_keeps_the_old_examples() {
         .collect();
     assert_eq!(good, [second, first]);
 }
+
+/// `patterns` lists each live pattern in scope with its examples, newest first, and no rule without
+/// examples (`spec/02-cli.md`, "Patterns").
+#[test]
+fn patterns_lists_each_pattern_with_its_examples() {
+    let repo = Repo::new();
+    let url = "https://example.com/flat.png";
+    let decide = |args: &[&str]| {
+        let o = cli(&repo, args);
+        assert!(o.status.success(), "{}", err(&o));
+        out(&o).lines().next().unwrap().to_string()
+    };
+    let rule = decide(&["decide", "--", "When you test: set A=1."]);
+    let old = decide(&[
+        "decide",
+        "--good",
+        url,
+        "--",
+        "When a logo is drawn: keep it flat.",
+    ]);
+    std::thread::sleep(std::time::Duration::from_millis(1100));
+    let new = decide(&[
+        "decide",
+        "--bad",
+        url,
+        "--",
+        "When an icon is drawn: keep it bold.",
+    ]);
+    let said = out(&cli(&repo, &["patterns"]));
+    let lines: Vec<&str> = said.lines().collect();
+    assert_eq!(
+        lines,
+        [
+            format!("{} project When an icon is drawn: keep it bold.", &new[..8]),
+            format!("  bad     {url}"),
+            format!("{} project When a logo is drawn: keep it flat.", &old[..8]),
+            format!("  good    {url}"),
+        ],
+        "{said}"
+    );
+    assert!(!said.contains(&rule[..8]), "{said}");
+}
+
+/// `patterns` says when the store holds none.
+#[test]
+fn patterns_says_when_there_is_none() {
+    let repo = Repo::new();
+    assert_eq!(out(&cli(&repo, &["patterns"])).trim(), "no pattern yet");
+}
