@@ -23,5 +23,5 @@ fi
 cd "$copy"
 for case in "$@"; do
   PATH="$root/crates/target/debug:$PATH" claude plugin eval . --case "$case" --model "$model" \
-    --ablation none --scaffold --trust-plugin --allow-tools Write Edit Bash -j 4 --judge-model sonnet --output-dir "$root/evals/results/$name-$model-$(echo "$case" | tr -d "*")"
+    --ablation none --scaffold --trust-plugin --threshold 0 --allow-tools Write Edit Bash -j 4 --judge-model sonnet --output-dir "$root/evals/results/$name-$model-$(echo "$case" | tr -d "*")"
 done
