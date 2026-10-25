@@ -6,7 +6,7 @@ use celis_nostr::Note;
 use support::{account, cli, err, now, out, pattern_tags, put, refusal, Repo};
 
 fn decide(repo: &Repo, args: &[&str]) -> String {
-    let mut all = vec!["decide"];
+    let mut all = vec!["pattern"];
     all.extend(args);
     let o = cli(repo, &all);
     assert!(o.status.success(), "{}", err(&o));
@@ -25,15 +25,15 @@ fn a_me_pattern_holds_in_every_project_and_others_only_in_their_own() {
     for id in [&here, &placed] {
         let o = repo.run(
             &shop,
-            &["decide", "--json", "--replaces", &id[..8], "--", "x"],
+            &["pattern", "--json", "--replaces", &id[..8], "--", "x"],
             &[],
             "",
         );
-        refusal(&o, 1, "no-decision");
+        refusal(&o, 1, "no-pattern");
     }
     let o = repo.run(
         &shop,
-        &["decide", "--replaces", &mine[..8], "--", "x"],
+        &["pattern", "--replaces", &mine[..8], "--", "x"],
         &[],
         "",
     );

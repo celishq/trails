@@ -298,7 +298,7 @@ fn a_later_prompt_with_no_open_trail_hints_at_todays_trails() {
     assert_eq!(hook("s9"), format!("{}\n", note(true, None, true)));
     let o = repo.run(
         &repo.path(),
-        &["decide", "--", "When you test: set A=1."],
+        &["pattern", "--", "When you test: set A=1."],
         &[],
         "",
     );
@@ -341,7 +341,7 @@ fn a_prompt_with_no_open_trail_asks_for_search_and_a_new_trail() {
     assert_eq!(hook(ask.clone()), format!("{}\n", note(false, None, false)));
     let o = repo.run(
         &repo.path(),
-        &["decide", "--", "When you test: set SHELF_OFFLINE=1."],
+        &["pattern", "--", "When you test: set SHELF_OFFLINE=1."],
         &[],
         "",
     );

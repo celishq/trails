@@ -90,16 +90,16 @@ fn search_leaves_out_the_patterns_of_another_project() {
         "keep prices in cents",
         now() - DAY,
     );
-    assert!(cli(&repo, &["decide", "--", "rust release"])
+    assert!(cli(&repo, &["pattern", "--", "rust release"])
         .status
         .success());
     let said = search(&repo, &["--", "keep prices in cents"]);
     assert!(!said.contains("keep prices in cents"), "{said}");
 }
 
-/// The id `celis decide <args> -- <text>` prints.
+/// The id `celis pattern <args> -- <text>` prints.
 fn decide(repo: &Repo, args: &[&str], text: &str) -> String {
-    let mut all = vec!["decide"];
+    let mut all = vec!["pattern"];
     all.extend(args);
     all.extend(["--", text]);
     let o = cli(repo, &all);

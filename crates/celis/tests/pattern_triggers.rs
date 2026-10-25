@@ -7,9 +7,9 @@ use serde_json::json;
 use std::path::Path;
 use support::{account, add, err, objects, out, pattern_tags, put, stored_pattern, Repo, DAY};
 
-/// The id `celis decide <args> -- <text>` prints in the main checkout.
+/// The id `celis pattern <args> -- <text>` prints in the main checkout.
 fn decide(repo: &Repo, args: &[&str], text: &str) -> String {
-    let mut all = vec!["decide"];
+    let mut all = vec!["pattern"];
     all.extend(args);
     all.extend(["--", text]);
     let o = repo.run(&repo.path(), &all, &[], "");
@@ -128,12 +128,17 @@ fn a_pattern_with_no_trigger_never_comes() {
     assert_eq!(texts(&repo, &["README.md"]), ["both"]);
 }
 
-/// `decide --situation` is a usage error, and a reader ignores an older `situation` label
+/// `pattern --situation` is a usage error, and a reader ignores an older `situation` label
 /// (`spec/02-cli.md`, "Commands"; `spec/README.md`, "Deprecated").
 #[test]
 fn situation_is_no_flag_and_its_label_is_ignored() {
     let repo = Repo::new();
-    let o = repo.run(&repo.path(), &["decide", "--situation", "--", "t"], &[], "");
+    let o = repo.run(
+        &repo.path(),
+        &["pattern", "--situation", "--", "t"],
+        &[],
+        "",
+    );
     assert_eq!(o.status.code(), Some(2), "{o:?}");
     let mut tags = pattern_tags((&repo.project_id(), "repo"));
     tags.push(
@@ -211,17 +216,17 @@ fn grep_marks_triggers_and_rules() {
     assert!(line(&plain).ends_with("live {project} plain"), "{shown}");
 }
 
-/// `decide` writes each `--path` from the project's top folder and `--binds`, and a reader reads them
+/// `pattern` writes each `--path` from the project's top folder and `--binds`, and a reader reads them
 /// back; `--promoted`, `--tool`, `--content` and `--command` are no flags (`spec/02-cli.md`,
 /// "Commands").
 #[test]
-fn decide_writes_the_trigger_and_labels() {
+fn pattern_writes_the_trigger_and_labels() {
     let repo = Repo::new();
     std::fs::create_dir_all(repo.path().join("shelf")).unwrap();
     let o = repo.run(
         &repo.path().join("shelf"),
         &[
-            "decide", "--path", "*.py", "--path", "b.md", "--binds", "--", "kept",
+            "pattern", "--path", "*.py", "--path", "b.md", "--binds", "--", "kept",
         ],
         &[],
         "",
@@ -231,13 +236,13 @@ fn decide_writes_the_trigger_and_labels() {
     let step = add(&repo, &["--new", "--uses", &id, "--", "t"]);
     let step = step.lines().next().unwrap();
     let shown = objects(&repo, &["step", "start", step]);
-    let pattern = shown.iter().find_map(|v| v.get("decision")).unwrap();
+    let pattern = shown.iter().find_map(|v| v.get("pattern")).unwrap();
     assert_eq!(pattern["paths"], json!(["shelf/*.py", "shelf/b.md"]));
     assert_eq!(pattern["binds"], json!(true));
-    let o = repo.run(&repo.path(), &["decide", "--promoted", "--", "t"], &[], "");
+    let o = repo.run(&repo.path(), &["pattern", "--promoted", "--", "t"], &[], "");
     assert_eq!(o.status.code(), Some(2), "{o:?}");
     for flag in ["--tool", "--content", "--command"] {
-        let o = repo.run(&repo.path(), &["decide", flag, "x", "--", "t"], &[], "");
+        let o = repo.run(&repo.path(), &["pattern", flag, "x", "--", "t"], &[], "");
         assert_eq!(o.status.code(), Some(2), "{o:?}");
     }
 }
@@ -261,20 +266,20 @@ fn an_older_pattern_with_no_trigger_still_reads() {
     let step = add(&repo, &["--new", "--uses", &old.id, "--", "t"]);
     let step = step.lines().next().unwrap();
     let shown = objects(&repo, &["step", "start", step]);
-    let pattern = shown.iter().find_map(|v| v.get("decision")).unwrap();
+    let pattern = shown.iter().find_map(|v| v.get("pattern")).unwrap();
     assert_eq!(pattern["paths"], json!(["a.py", "a.py/**"]));
     assert_eq!(pattern["scope"], json!("project"));
     assert_eq!(pattern["binds"], json!(false));
     assert_eq!(texts(&repo, &["a.py"]), ["old"]);
 }
 
-/// `decide --scope at:<place>` is a usage error (`spec/02-cli.md`, "Commands").
+/// `pattern --scope at:<place>` is a usage error (`spec/02-cli.md`, "Commands").
 #[test]
 fn an_at_scope_is_no_scope() {
     let repo = Repo::new();
     let o = repo.run(
         &repo.path(),
-        &["decide", "--scope", "at:a.py", "--", "t"],
+        &["pattern", "--scope", "at:a.py", "--", "t"],
         &[],
         "",
     );

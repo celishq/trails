@@ -182,7 +182,7 @@ fn drop_takes_a_done_trail_once() {
 fn drop_takes_a_live_pattern_once() {
     let repo = Repo::new();
     let decide = |text: &str| {
-        let o = cli(&repo, &["decide", "--", text]);
+        let o = cli(&repo, &["pattern", "--", text]);
         assert!(o.status.success(), "{}", err(&o));
         out(&o).trim().to_string()
     };

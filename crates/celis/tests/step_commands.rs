@@ -260,7 +260,7 @@ fn add_writes_its_places_from_the_projects_top_folder() {
     assert_eq!(at, ["src/a.rs:4", "b.rs"]);
 }
 
-/// `done --pitfall` is a usage error: a pitfall is a `decide` after `done` (`spec/02-cli.md`,
+/// `done --pitfall` is a usage error: a pitfall is a `pattern` after `done` (`spec/02-cli.md`,
 /// "Commands").
 #[test]
 fn done_refuses_a_pitfall() {

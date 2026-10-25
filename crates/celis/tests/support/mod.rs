@@ -308,8 +308,8 @@ pub fn tagged_pattern(
         vec!["i".into(), anchor],
         vec!["k".into(), "project".into()],
         vec!["project".into(), project.1.into()],
-        vec!["L".into(), "celis.decision".into()],
-        vec!["l".into(), "decision".into(), "celis.decision".into()],
+        vec!["L".into(), "celis.pattern".into()],
+        vec!["l".into(), "pattern".into(), "celis.pattern".into()],
     ];
     if let Some(scope) = place.0 {
         tags.push(vec!["scope".into(), scope.into()]);
@@ -396,8 +396,8 @@ pub fn pattern_tags(project: (&str, &str)) -> Vec<Vec<String>> {
         vec!["i".into(), anchor],
         vec!["k".into(), "project".into()],
         vec!["project".into(), project.1.into()],
-        vec!["L".into(), "celis.decision".into()],
-        vec!["l".into(), "decision".into(), "celis.decision".into()],
+        vec!["L".into(), "celis.pattern".into()],
+        vec!["l".into(), "pattern".into(), "celis.pattern".into()],
     ]
 }
 
@@ -459,7 +459,7 @@ pub fn read_ids(repo: &Repo, folder: &Path, args: &[&str]) -> Vec<String> {
         .lines()
         .filter_map(|l| {
             let v: serde_json::Value = serde_json::from_str(l).unwrap();
-            Some(v.get("decision")?["id"].as_str()?[..8].to_string())
+            Some(v.get("pattern")?["id"].as_str()?[..8].to_string())
         })
         .collect()
 }

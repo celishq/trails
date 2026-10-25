@@ -52,19 +52,19 @@ Every change of `spec/` MUST keep these rules:
 | `figma:<key>` · `web:<host>` | the project id of a record outside git | 01 |
 | `$CELIS_HOME` · `$CELIS_HOME/trails/` · `$CELIS_HOME/phrase` · `$CELIS_HOME/links` | the home, the store, the phrase, the links | 01, 02 |
 | `celis` and its commands and flags, `search` among them | the command line | 02 |
-| `usage` · `no-decision` · `no-trail` · `no-step` · `closed` · `open-steps` · `check-failed` · `unjudged` · `error` | errors | 02 |
+| `usage` · `no-pattern` · `no-trail` · `no-step` · `closed` · `open-steps` · `check-failed` · `unjudged` · `error` | errors | 02 |
 | 1111 with `step` in `celis.step` | kind: a step (NIP-22) | 03 |
 | `under` · `replaces` · `at` · `check` | step tags | 03 |
 | 1985 with `start` · `done` · `drop` · `edit` in `celis.step` | kinds: a start, a done, a drop, an edit (NIP-32) | 03 |
 | `changed` · `by` | done tags | 03 |
 | `session` | step tag | 04 |
 | 1985 with `prompt` in `celis.step` | kind: a person's prompt, on the trail (NIP-32) | 04 |
-| 1111 with `decision` in `celis.decision` | kind: a pattern (NIP-22) | 05 |
+| 1111 with `pattern` in `celis.pattern` | kind: a pattern (NIP-22) | 05 |
 | `scope` · `replaces` | pattern tags | 05 |
 | `path` | pattern tag: the trigger | 05 |
 | `good` · `bad` | pattern tags: its examples | 05 |
 | `within` | pattern tag: the larger pattern it completes | 05 |
-| `binds` in `celis.decision` | a pattern label: the pattern is a rule | 05 |
+| `binds` in `celis.pattern` | a pattern label: the pattern is a rule | 05 |
 | `me` · `project` · `trail:<id>` | the scopes of a pattern | 05 |
 | `uses` | step tag | 06 |
 | `imeta` with `url` · `x` · `m` · `size` · `path` | done tag: a file of the proof (NIP-92, BUD-10) | 08 |
@@ -84,10 +84,14 @@ them.
 | `tool` | a rule tag: the other tool calls a rule acted on |
 | 1985 with `name` in `celis.step` · `skill:<name>` | the name of a trail, and the project of a trail from a skill file |
 | `situation` in `celis.decision` | a pattern label: the pattern also held where no file shows it ahead |
-| `celis decide` | the command, now `celis pattern`; `celis` runs it as `pattern` |
+| `celis decide` | the command, now `celis pattern` |
 | `promoted` in `celis.decision` | a pattern label, now `binds` |
 | `at:<place>` as the `scope` of a pattern | a scope, now `path` globs; a reader reads it as CIP-05, "Reading", states |
 | `promoted` in the `--json` of a decision | the same value as `binds` |
+| 1111 with `decision` in `celis.decision` | a pattern, now `pattern` in `celis.pattern`; a reader reads it as CIP-05, "Reading", states |
+| `binds` in `celis.decision` | a pattern label, now `binds` in `celis.pattern`; a reader reads it as CIP-05, "Reading", states |
+| `decision` as the `--json` key of a pattern | the key, now `pattern` |
+| `no-decision` | the error, now `no-pattern` |
 
 ## Words
 

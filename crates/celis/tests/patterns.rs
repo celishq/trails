@@ -24,10 +24,10 @@ fn done(repo: &Repo, id: &str, rel: &str, proof: &str) {
     assert!(o.status.success(), "{}", err(&o));
 }
 
-/// `decide --good --bad` writes the whole ids of the two steps as `good` and `bad`
+/// `pattern --good --bad` writes the whole ids of the two steps as `good` and `bad`
 /// (`spec/05-patterns.md`, "Examples").
 #[test]
-fn decide_names_the_good_and_the_bad_step() {
+fn pattern_names_the_good_and_the_bad_step() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the logo"]);
     let a = add(&repo, &["--under", &trail[..8], "--", "a round logo"]);
@@ -39,7 +39,7 @@ fn decide_names_the_good_and_the_bad_step() {
     let o = cli(
         &repo,
         &[
-            "decide",
+            "pattern",
             "--good",
             &b[..8],
             "--bad",
@@ -51,7 +51,7 @@ fn decide_names_the_good_and_the_bad_step() {
         ],
     );
     assert!(o.status.success(), "{}", err(&o));
-    let pattern = support::labelled(&repo, "decision")
+    let pattern = support::labelled(&repo, "pattern")
         .into_iter()
         .find(|n| n.content.contains("sharp corners"))
         .unwrap();
@@ -94,7 +94,7 @@ fn start_prints_the_pair_of_a_pattern_its_ask_uses() {
     let o = cli(
         &repo,
         &[
-            "decide",
+            "pattern",
             "--good",
             &a[..8],
             "--",
@@ -121,14 +121,14 @@ fn start_prints_the_pair_of_a_pattern_its_ask_uses() {
     );
 }
 
-/// `decide --good` refuses a step that the store does not hold, with `no-step`.
+/// `pattern --good` refuses a step that the store does not hold, with `no-step`.
 #[test]
-fn decide_refuses_an_unknown_step() {
+fn pattern_refuses_an_unknown_step() {
     let repo = Repo::new();
     let o = cli(
         &repo,
         &[
-            "decide",
+            "pattern",
             "--good",
             "0000aaaa",
             "--",
@@ -143,7 +143,7 @@ fn decide_refuses_an_unknown_step() {
     );
 }
 
-/// `decide` takes `--good` and `--bad` again and again, as a file it keeps as a blob or a URL, and
+/// `pattern` takes `--good` and `--bad` again and again, as a file it keeps as a blob or a URL, and
 /// `search` prints each (`spec/05-patterns.md`, "Examples").
 #[test]
 fn a_pattern_keeps_files_and_urls_as_examples() {
@@ -154,7 +154,7 @@ fn a_pattern_keeps_files_and_urls_as_examples() {
     let o = cli(
         &repo,
         &[
-            "decide",
+            "pattern",
             "--path",
             "*.svg",
             "--good",
@@ -168,7 +168,7 @@ fn a_pattern_keeps_files_and_urls_as_examples() {
         ],
     );
     assert!(o.status.success(), "{}", err(&o));
-    let pattern = support::labelled(&repo, "decision").remove(0);
+    let pattern = support::labelled(&repo, "pattern").remove(0);
     let values: Vec<&Vec<String>> = pattern
         .tags
         .iter()
@@ -200,7 +200,7 @@ fn a_replacing_pattern_keeps_the_old_examples() {
     let o = cli(
         &repo,
         &[
-            "decide",
+            "pattern",
             "--good",
             first,
             "--",
@@ -212,7 +212,7 @@ fn a_replacing_pattern_keeps_the_old_examples() {
     let o = cli(
         &repo,
         &[
-            "decide",
+            "pattern",
             "--replaces",
             &old[..8],
             "--good",
@@ -222,7 +222,7 @@ fn a_replacing_pattern_keeps_the_old_examples() {
         ],
     );
     assert!(o.status.success(), "{}", err(&o));
-    let pattern = support::labelled(&repo, "decision")
+    let pattern = support::labelled(&repo, "pattern")
         .into_iter()
         .find(|n| n.content.contains("sharp"))
         .unwrap();
@@ -246,9 +246,9 @@ fn patterns_lists_each_pattern_with_its_examples() {
         assert!(o.status.success(), "{}", err(&o));
         out(&o).lines().next().unwrap().to_string()
     };
-    let rule = decide(&["decide", "--binds", "--", "When you test: set A=1."]);
+    let rule = decide(&["pattern", "--binds", "--", "When you test: set A=1."]);
     let old = decide(&[
-        "decide",
+        "pattern",
         "--good",
         url,
         "--",
@@ -256,7 +256,7 @@ fn patterns_lists_each_pattern_with_its_examples() {
     ]);
     std::thread::sleep(std::time::Duration::from_millis(1100));
     let new = decide(&[
-        "decide",
+        "pattern",
         "--bad",
         url,
         "--",
@@ -293,7 +293,7 @@ fn tree_and_stats_show_the_patterns() {
     let o = cli(
         &repo,
         &[
-            "decide",
+            "pattern",
             "--path",
             "*.svg",
             "--good",
@@ -350,7 +350,9 @@ fn a_link_carries_a_pattern_and_its_files() {
     let decide = |scope: &str, text: &str| {
         let o = cli(
             &repo,
-            &["decide", "--scope", scope, "--good", "logo.svg", "--", text],
+            &[
+                "pattern", "--scope", scope, "--good", "logo.svg", "--", text,
+            ],
         );
         assert!(o.status.success(), "{}", err(&o));
     };
@@ -383,7 +385,7 @@ fn patterns_print_as_markdown() {
     let o = cli(
         &repo,
         &[
-            "decide",
+            "pattern",
             "--good",
             "logo.svg",
             "--bad",
@@ -418,4 +420,59 @@ fn patterns_print_as_markdown() {
         ],
         "{said}"
     );
+}
+
+/// The forms of `spec/fixtures/pattern-labels.json`.
+fn forms() -> Vec<serde_json::Value> {
+    let fixture: serde_json::Value =
+        serde_json::from_str(include_str!("../../../spec/fixtures/pattern-labels.json")).unwrap();
+    fixture["forms"].as_array().unwrap().clone()
+}
+
+/// A new pattern carries the labels in `celis.pattern` (`spec/05-patterns.md`, "Patterns").
+#[test]
+fn a_new_rule_carries_the_labels_in_celis_pattern() {
+    let repo = Repo::new();
+    let o = cli(
+        &repo,
+        &["pattern", "--binds", "--", "When you test: set A=1."],
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let rule = support::labelled(&repo, "pattern").remove(0);
+    let labels: Vec<Vec<String>> = rule
+        .tags
+        .iter()
+        .filter(|t| t[0] == "L" || t[0] == "l")
+        .cloned()
+        .collect();
+    let written = forms().into_iter().find(|f| f["written"] == true).unwrap();
+    let want: Vec<Vec<String>> = serde_json::from_value(written["labels"].clone()).unwrap();
+    assert_eq!(labels, want);
+}
+
+/// A record in each form of the fixture reads as a pattern, and as a rule with `binds`, in
+/// `celis.decision` too (`spec/05-patterns.md`, "Reading").
+#[test]
+fn each_form_of_the_labels_reads_as_a_pattern_and_a_rule() {
+    let repo = Repo::new();
+    let by = support::account();
+    let mut want = Vec::new();
+    for (n, form) in forms().iter().enumerate() {
+        let mut tags = support::pattern_tags((&repo.project_id(), "repo"));
+        tags.truncate(5);
+        tags.extend(serde_json::from_value::<Vec<Vec<String>>>(form["labels"].clone()).unwrap());
+        let content = format!("When {}", form["name"].as_str().unwrap());
+        let note = celis_nostr::Note::write(&by, 1111u16, 1_700_000_000 + n as u64, tags, content)
+            .unwrap();
+        support::put(&repo, &note);
+        let head = match form["binds"] == true {
+            true => format!("`{}` · project · rule", &note.id[..8]),
+            false => format!("`{}` · project", &note.id[..8]),
+        };
+        want.push(head);
+    }
+    let said = out(&cli(&repo, &["patterns", "--markdown"]));
+    for head in &want {
+        assert!(said.lines().any(|l| l == head), "{head}\n{said}");
+    }
 }

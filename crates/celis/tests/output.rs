@@ -16,17 +16,17 @@ fn objects(text: &str) -> Vec<Value> {
         .collect()
 }
 
-/// Every command accepts `--json`; `decide` prints the id, or `{"id"}` (`spec/02-cli.md`,
+/// Every command accepts `--json`; `pattern` prints the id, or `{"id"}` (`spec/02-cli.md`,
 /// "Output and errors").
 #[test]
 fn every_command_accepts_json_and_prints_the_id() {
     let repo = Repo::new();
     let dir = repo.path();
-    let o = repo.run(&dir, &["decide", "--", "one"], &[], "");
+    let o = repo.run(&dir, &["pattern", "--", "one"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     assert!(is_id(out(&o).trim()), "{}", out(&o));
 
-    let again = repo.run(&dir, &["decide", "--json", "--", "two"], &[], "");
+    let again = repo.run(&dir, &["pattern", "--json", "--", "two"], &[], "");
     let objs = objects(&out(&again));
     assert_eq!(objs.len(), 1);
     assert!(is_id(objs[0]["id"].as_str().unwrap()));
@@ -97,7 +97,7 @@ fn a_trail_or_step_command_with_stdin_left_open_asks_nothing() {
     let trail = trail_id(&repo, "senior tier");
     let scope = format!("trail:{}", &trail[..8]);
     let runs: Vec<Vec<&str>> = vec![
-        vec!["decide", "--scope", &scope, "--", "80%"],
+        vec!["pattern", "--scope", &scope, "--", "80%"],
         vec!["tree", &trail[..8]],
         vec!["step", "add", "--", "four"],
         vec!["grep", "senior"],
@@ -117,14 +117,14 @@ fn grep_with_stdin_left_open_asks_nothing() {
     without_asking(&repo, &["grep", "senior"]);
 }
 
-/// `decide` and a `grep` for its place run with their stdin left open finish, and print no question
+/// `pattern` and a `grep` for its place run with their stdin left open finish, and print no question
 /// (`spec/02-cli.md`, "Output and errors").
 #[test]
-fn decide_and_grep_at_with_stdin_left_open_ask_nothing() {
+fn pattern_and_grep_at_with_stdin_left_open_ask_nothing() {
     let repo = Repo::new();
     for args in [
         vec![
-            "decide",
+            "pattern",
             "--path",
             "a.py",
             "--",
@@ -170,15 +170,15 @@ fn a_command_takes_an_id_whole_or_as_a_start_of_4_or_more_characters() {
     }
 }
 
-/// `decide --replaces` takes the first 8 characters of a pattern's id
+/// `pattern --replaces` takes the first 8 characters of a pattern's id
 /// (`spec/02-cli.md`, "Output and errors").
 #[test]
-fn decide_replaces_takes_the_first_8_characters_of_an_id() {
+fn pattern_replaces_takes_the_first_8_characters_of_an_id() {
     let repo = Repo::plain();
-    let first = repo.run(&repo.path(), &["decide", "--", "old"], &[], "");
+    let first = repo.run(&repo.path(), &["pattern", "--", "old"], &[], "");
     assert!(first.status.success(), "{}", err(&first));
     let id = out(&first).trim().to_string();
-    let args = ["decide", "--replaces", &id[..8], "--", "new"];
+    let args = ["pattern", "--replaces", &id[..8], "--", "new"];
     let o = repo.run(&repo.path(), &args, &[], "");
     assert!(o.status.success(), "{}", err(&o));
     let read = out(&repo.run(&repo.path(), &["grep", " live "], &[], ""));
@@ -194,7 +194,7 @@ fn a_trail_or_step_command_prints_one_json_object_a_line_with_json() {
     let trail = trail_id(&repo, "g");
     let scope = format!("trail:{trail}");
     for args in [
-        vec!["decide", "--json", "--scope", &scope, "--", "80%"],
+        vec!["pattern", "--json", "--scope", &scope, "--", "80%"],
         vec!["tree", "--json", &trail],
         vec!["tree", "--all", "--json"],
         vec!["step", "done", "--json", &id, "--as-planned", "--", "p"],
@@ -207,12 +207,12 @@ fn a_trail_or_step_command_prints_one_json_object_a_line_with_json() {
     }
 }
 
-/// `decide` accepts `--json` and prints one JSON object a line (`spec/02-cli.md`, "Output and
+/// `pattern` accepts `--json` and prints one JSON object a line (`spec/02-cli.md`, "Output and
 /// errors").
 #[test]
-fn decide_prints_one_json_object_a_line_with_json() {
+fn pattern_prints_one_json_object_a_line_with_json() {
     let repo = Repo::plain();
-    let o = repo.run(&repo.path(), &["decide", "--json", "--", "one"], &[], "");
+    let o = repo.run(&repo.path(), &["pattern", "--json", "--", "one"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     assert_eq!(objects(&out(&o)).len(), 1);
 }
@@ -222,13 +222,13 @@ fn decide_prints_one_json_object_a_line_with_json() {
 #[test]
 fn a_command_that_writes_a_record_prints_its_id() {
     let repo = Repo::plain();
-    for args in [vec!["decide", "--", "g"], vec!["step", "add", "--", "p"]] {
+    for args in [vec!["pattern", "--", "g"], vec!["step", "add", "--", "p"]] {
         let o = repo.run(&repo.path(), &args, &[], "");
         assert!(o.status.success(), "{args:?}: {}", err(&o));
         assert!(is_id(out(&o).trim()), "{args:?}: {}", out(&o));
     }
     for args in [
-        vec!["decide", "--json", "--", "g2"],
+        vec!["pattern", "--json", "--", "g2"],
         vec!["step", "add", "--json", "--", "p2"],
     ] {
         let o = repo.run(&repo.path(), &args, &[], "");
@@ -252,31 +252,31 @@ fn on_a_terminal_a_written_record_prints_its_short_id() {
     assert!(id.chars().all(|c| c.is_ascii_hexdigit()), "{shown:?}");
 }
 
-/// `decide` prints the id of its record, and `{"id"}` with `--json` (`spec/02-cli.md`,
+/// `pattern` prints the id of its record, and `{"id"}` with `--json` (`spec/02-cli.md`,
 /// "Output and errors").
 #[test]
-fn decide_prints_its_id() {
+fn pattern_prints_its_id() {
     let repo = Repo::new();
-    let o = repo.run(&repo.path(), &["decide", "--", "one"], &[], "");
+    let o = repo.run(&repo.path(), &["pattern", "--", "one"], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     assert!(is_id(out(&o).trim()), "{}", out(&o));
-    let o = repo.run(&repo.path(), &["decide", "--json", "--", "two"], &[], "");
+    let o = repo.run(&repo.path(), &["pattern", "--json", "--", "two"], &[], "");
     let lines = objects(&out(&o));
     assert_eq!(lines[0].as_object().unwrap().len(), 1);
     assert!(is_id(lines[0]["id"].as_str().unwrap()));
 }
 
-/// With `--json`, a `--replaces` no live pattern has is named `no-decision`
+/// With `--json`, a `--replaces` no live pattern has is named `no-pattern`
 /// (`spec/02-cli.md`, "Output and errors").
 #[test]
 fn a_replaces_no_live_pattern_has_is_named_no_pattern_under_json() {
     let repo = Repo::new();
     let none = "0".repeat(64);
-    let args = ["decide", "--json", "--replaces", &none, "--", "x"];
+    let args = ["pattern", "--json", "--replaces", &none, "--", "x"];
     let o = repo.run(&repo.path(), &args, &[], "");
     assert_eq!(o.status.code(), Some(1), "{}", err(&o));
     let object: Value = serde_json::from_str(err(&o).trim()).expect("one JSON object");
-    assert_eq!(object["error"], "no-decision");
+    assert_eq!(object["error"], "no-pattern");
 }
 
 /// A usage error names the narrowest help page that covers it.
@@ -395,7 +395,7 @@ fn a_command_refuses_an_8_character_start_two_steps_share() {
 }
 
 /// A command refuses an 8-character start two steps share with `no-step`, or `no-trail` as a scope, and
-/// two patterns share with `no-decision`, under `--json` (`spec/02-cli.md`, "Output and errors").
+/// two patterns share with `no-pattern`, under `--json` (`spec/02-cli.md`, "Output and errors").
 #[test]
 fn a_command_refuses_an_8_character_start_two_trails_patterns_or_steps_share() {
     let repo = Repo::plain();
@@ -411,7 +411,7 @@ fn a_command_refuses_an_8_character_start_two_trails_patterns_or_steps_share() {
     for (args, name) in [
         (vec!["tree", "--json", &g1.id[..8]], "no-step"),
         (
-            vec!["decide", "--json", "--scope", &scope, "--", "x"],
+            vec!["pattern", "--json", "--scope", &scope, "--", "x"],
             "no-trail",
         ),
     ] {
@@ -426,11 +426,11 @@ fn a_command_refuses_an_8_character_start_two_trails_patterns_or_steps_share() {
     put(&repo, &d1);
     put(&repo, &d2);
     assert_eq!(d1.id[..8], d2.id[..8]);
-    let args = ["decide", "--json", "--replaces", &d1.id[..8], "--", "x"];
+    let args = ["pattern", "--json", "--replaces", &d1.id[..8], "--", "x"];
     let o = repo.run(&repo.path(), &args, &[], "");
-    support::refusal(&o, 1, "no-decision");
+    support::refusal(&o, 1, "no-pattern");
     assert_eq!(out(&o), "");
-    let args = ["decide", "--replaces", &d1.id, "--", "x"];
+    let args = ["pattern", "--replaces", &d1.id, "--", "x"];
     let o = repo.run(&repo.path(), &args, &[], "");
     assert!(o.status.success(), "{}", err(&o));
 
@@ -485,7 +485,7 @@ fn an_unknown_command_far_from_every_known_one_names_no_suggestion() {
     assert!(!err(&usage).contains("did you mean"), "{}", err(&usage));
 }
 
-/// With `--json`, each refusal names itself: `usage`, `no-decision`, `no-step` and `closed`, and
+/// With `--json`, each refusal names itself: `usage`, `no-pattern`, `no-step` and `closed`, and
 /// any other failure `error` (`spec/02-cli.md`, "Output and errors").
 #[test]
 fn each_refusal_names_itself_under_json() {
@@ -504,8 +504,8 @@ fn each_refusal_names_itself_under_json() {
 
     assert_eq!(name(&["--json", "frobnicate"]), "usage");
     assert_eq!(
-        name(&["--json", "decide", "--replaces", &none, "--", "x"]),
-        "no-decision"
+        name(&["--json", "pattern", "--replaces", &none, "--", "x"]),
+        "no-pattern"
     );
     assert_eq!(
         name(&["--json", "step", "done", &none, "--as-planned", "--", "p"]),
@@ -526,7 +526,7 @@ fn each_refusal_names_itself_under_json() {
     std::fs::write(&file, "x").unwrap();
     let broken = repo.run(
         &dir,
-        &["--json", "decide", "--", "x"],
+        &["--json", "pattern", "--", "x"],
         &[("CELIS_HOME", file.to_str().unwrap())],
         "",
     );
@@ -564,7 +564,7 @@ fn a_read_only_store_names_the_folder_to_let_the_agent_write() {
     std::fs::set_permissions(&home, std::fs::Permissions::from_mode(0o555)).unwrap();
     let o = repo.run(
         &repo.path(),
-        &["--json", "decide", "--", "When x: y."],
+        &["--json", "pattern", "--", "When x: y."],
         &[],
         "",
     );

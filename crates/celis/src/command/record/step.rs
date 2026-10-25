@@ -186,7 +186,7 @@ impl Command {
             for pattern in &written.patterns {
                 let line = crate::text::line::pattern(pattern, &trails);
                 let json = crate::text::json::pattern(pattern);
-                crate::command::show(out, args.json, "decision", json, &line)?;
+                crate::command::show(out, args.json, "pattern", json, &line)?;
             }
         }
         for notice in &written.notices {

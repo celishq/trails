@@ -163,7 +163,7 @@ fn tree_of_an_ask_prints_its_trails_patterns() {
     let scope = format!("trail:{}", short(&trail));
     let o = cli(
         &repo,
-        &["decide", "--scope", &scope, "--", "colours are tokens"],
+        &["pattern", "--scope", &scope, "--", "colours are tokens"],
     );
     assert!(o.status.success(), "{}", err(&o));
     let pattern = out(&o).trim()[..8].to_string();
@@ -314,7 +314,7 @@ fn the_agent_view_prints_whole_lines_with_no_colour() {
     let trail = add(&repo, &["--", title]);
     let pattern = "When you price a senior: use cents, because floats lost a cent on the receipt.";
     let scope = format!("trail:{}", short(&trail));
-    let o = cli(&repo, &["decide", "--scope", &scope, "--", pattern]);
+    let o = cli(&repo, &["pattern", "--scope", &scope, "--", pattern]);
     assert!(o.status.success(), "{}", err(&o));
     let part = add(
         &repo,

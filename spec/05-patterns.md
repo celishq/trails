@@ -22,7 +22,7 @@ label is a rule, which binds.
     ["scope", "<me | trail:<step id>>"],
     ["replaces", "<id of the pattern it replaces>"],
     ["path", "<glob>"],
-    ["L", "celis.decision"], ["l", "decision", "celis.decision"]
+    ["L", "celis.pattern"], ["l", "pattern", "celis.pattern"]
   ],
   "content": "When <the choice and its context>\nForces: <what pulls against what>\nDo: <the resolution>\nBecause: <why it resolves the forces>" }
 ```
@@ -35,6 +35,10 @@ label is a rule, which binds.
 
 A drop (CIP-03, "Dropping") MAY name a pattern, with why it no longer holds.
 
+**Writers**
+
+- A writer MUST write a pattern in `celis.pattern`.
+
 **Readers**
 
 - A pattern is live until another pattern names it in `replaces`, or a drop names it.
@@ -43,7 +47,7 @@ A drop (CIP-03, "Dropping") MAY name a pattern, with why it no longer holds.
 
 ```json
 { "kind": 1111,
-  "tags": [ …, ["l", "binds", "celis.decision"] ],
+  "tags": [ …, ["l", "binds", "celis.pattern"] ],
   "content": "When a secret is named\nForces: …\nDo: name it by where it lives, never by its value\nBecause: a record is signed and cannot be deleted" }
 ```
 
@@ -76,6 +80,8 @@ me                in every project
 
 **Readers**
 
+- A reader MUST read `decision` and `binds` in `celis.decision`, which older writers wrote, as `pattern`
+  and `binds` in `celis.pattern`.
 - A reader MUST read the scope `at:<place>`, which older writers wrote, as `project`, with two more
   `path` globs: the place's path without its line, and that path with `/**` after it.
 

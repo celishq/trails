@@ -3,4 +3,4 @@ type: regex
 target: trace
 flags: s
 ---
-"command":"(?:[^"\\]|\\.)*celis (?:pattern|decide)(?:[^"\\]|\\.)*--good(?:[^"\\]|\\.)*--good(?:[^"\\]|\\.)*--bad
+"command":"(?:[^"\\]|\\.)*celis pattern(?:[^"\\]|\\.)*--good(?:[^"\\]|\\.)*--good(?:[^"\\]|\\.)*--bad

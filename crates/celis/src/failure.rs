@@ -28,7 +28,7 @@ impl Failure {
     /// No live pattern has this id.
     pub fn no_pattern(id: &str) -> Self {
         Self::new(
-            "no-decision",
+            "no-pattern",
             1,
             format!(
                 "no live pattern has the id {id}; see the live ones with `celis grep \" live \"`"

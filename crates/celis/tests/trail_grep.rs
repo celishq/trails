@@ -121,7 +121,7 @@ fn grep_prints_patterns_live_or_replaced() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "Build the Vendors page"]);
     let decide = |args: &[&str]| {
-        let mut all = vec!["decide"];
+        let mut all = vec!["pattern"];
         all.extend(args);
         let o = cli(&repo, &all);
         assert!(o.status.success(), "{}", err(&o));
@@ -256,7 +256,7 @@ fn grep_prints_every_line_however_long() {
     let long = "the same long rule text again and again ".repeat(5);
     let long = long.trim();
     for n in 0..60 {
-        let o = cli(&repo, &["decide", "--", &format!("When {n}: {long}")]);
+        let o = cli(&repo, &["pattern", "--", &format!("When {n}: {long}")]);
         assert!(o.status.success(), "{}", err(&o));
     }
     let text = grep(&repo, &[" pattern "]);
@@ -274,7 +274,10 @@ fn grep_prints_every_line_however_long() {
 #[test]
 fn grep_prints_a_last_line_that_ends_in_a_space() {
     let repo = Repo::new();
-    let o = cli(&repo, &["decide", "--", "When a page loads: keep it fast "]);
+    let o = cli(
+        &repo,
+        &["pattern", "--", "When a page loads: keep it fast "],
+    );
     assert!(o.status.success(), "{}", err(&o));
     let text = grep(&repo, &["keep it fast"]);
     assert!(text.starts_with("- patterns of no trail\n"), "{text}");

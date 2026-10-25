@@ -5,9 +5,9 @@ mod support;
 use serde_json::Value;
 use support::{add, added, cli, err, finish, links, objects, out, refusal, step, Repo};
 
-/// The id `decide -- <text>` prints.
+/// The id `pattern -- <text>` prints.
 fn decide(repo: &Repo, text: &str) -> String {
-    let o = cli(repo, &["decide", "--", text]);
+    let o = cli(repo, &["pattern", "--", text]);
     assert!(o.status.success(), "{}", err(&o));
     out(&o).trim().to_string()
 }

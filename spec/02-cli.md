@@ -46,19 +46,18 @@ $CELIS_HOME   where celis keeps the phrase and the store
 ```
 
 ```
-decision  json  {"id", "created_at", "project", "scope", "replaces", "content",
-                 "paths", "binds"}
+pattern  json  {"id", "created_at", "project", "scope", "replaces", "content",
+                "paths", "binds"}
 ```
 
 **Rules**
 
 - Off macOS, `$CELIS_HOME` MUST default to `~/.local/share/celis`.
-- A flag no command takes is a usage error.
-- `decide` MUST run as `pattern`, as a command and after `help`.
+- A command that "Commands" does not name, and a flag no command takes, is a usage error.
 - `pattern` MUST write a pattern of the working folder's project (CIP-05), with `--scope` and
   `--replaces` as its tags, and no `scope` tag for `project`; each `--path`, from the project's top
   folder, as a `path` tag, `--binds` as its label, each `--within` as a `within` tag (CIP-05, "Graph"),
-  refusing an id that no live pattern of the store has with `no-decision`, and each `--good` and `--bad`
+  refusing an id that no live pattern of the store has with `no-pattern`, and each `--good` and `--bad`
   as an example (CIP-05, "Examples"): a value with `://` as a URL, a file of the working folder as its
   blob, else the whole id of a step, refusing a step the store lacks with `no-step`.
 - `--project` on `pattern` and `step add` MUST write the records of the project it names in place of the
@@ -66,7 +65,7 @@ decision  json  {"id", "created_at", "project", "scope", "replaces", "content",
 - `pattern` MUST refuse empty text, and a scope that is not `me`, `project` or `trail:<id>`,
   as a usage error; a `trail:<id>` that no open trail of the project has, with `no-trail`, unless
   `--replaces` names a live pattern of that trail; and a
-  `--replaces` that no live pattern of the project has, with `no-decision`.
+  `--replaces` that no live pattern of the project has, with `no-pattern`.
 
 **Examples**
 
@@ -103,7 +102,7 @@ celis pattern --path "**/prices*.py" -- "When you change prices: keep them in ce
 - Only `pattern`, `step` and `hook ask` MAY write a record. A command that refuses MUST write nothing.
 - A command MUST NOT ask a question, but `auth login` and `setup` on a terminal.
 - A command MUST exit 0 when done, 2 on a usage error, and 1 on any other error.
-- An error MUST be named `usage`, `no-decision`, `no-trail`, `no-step`, `closed`, `open-steps`,
+- An error MUST be named `usage`, `no-pattern`, `no-trail`, `no-step`, `closed`, `open-steps`,
   `check-failed`, `unjudged`, else `error`. With `--json`, it MUST be one object on stderr,
   `{"error": "<name>", "message": "<text>"}`.
 

@@ -37,11 +37,11 @@ fn a_command_must_open_the_store_in_celis_home_whatever_the_working_folder() {
     assert!(!repo.path().join(".celis").exists());
 }
 
-/// With no store, `decide` and `step add` create it (`spec/01-records.md`, "The store").
+/// With no store, `pattern` and `step add` create it (`spec/01-records.md`, "The store").
 #[test]
-fn with_no_store_decide_and_step_add_create_it() {
+fn with_no_store_pattern_and_step_add_create_it() {
     for args in [
-        &["decide", "--", "Keep prices in cents."][..],
+        &["pattern", "--", "Keep prices in cents."][..],
         &["step", "add", "--", "work"],
     ] {
         let repo = Repo::plain();

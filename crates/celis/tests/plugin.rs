@@ -200,7 +200,7 @@ fn claudes_session_start_asks_to_offer_a_tidy() {
         .contains("/celis:tidy"));
     let o = repo.run(
         &repo.path(),
-        &["decide", "--", "When you test: set A=1."],
+        &["pattern", "--", "When you test: set A=1."],
         &[],
         "",
     );
@@ -257,7 +257,7 @@ fn claudes_prompt_hook_asks_for_search_at_each_prompt() {
     let repo = Repo::new();
     let o = repo.run(
         &repo.path(),
-        &["decide", "--", "When you test: set A=1."],
+        &["pattern", "--", "When you test: set A=1."],
         &[],
         "",
     );
@@ -287,7 +287,7 @@ fn each_prompt_hook_gives_one_line() {
     let repo = Repo::new();
     let o = repo.run(
         &repo.path(),
-        &["decide", "--", "When you test: set A=1."],
+        &["pattern", "--", "When you test: set A=1."],
         &[],
         "",
     );

@@ -30,7 +30,7 @@ CIP.
 
 - `I` `K` `i` `k`: the project anchor, as NIP-22 gives it.
 - `project`: the project's name.
-- `L` `l`: what the record is: `decision` in `celis.decision`, or a label in `celis.step`.
+- `L` `l`: what the record is: `pattern` in `celis.pattern`, or a label in `celis.step`.
 
 **Writers**
 

@@ -124,7 +124,7 @@ fn a_place_reads_as_a_path_from_the_projects_top_folder() {
     let src = root.join("src");
     let o = repo.run(
         &root,
-        &["decide", "--path", "./src/a.rs", "--", "kept"],
+        &["pattern", "--path", "./src/a.rs", "--", "kept"],
         &[],
         "",
     );
@@ -134,6 +134,6 @@ fn a_place_reads_as_a_path_from_the_projects_top_folder() {
     assert_eq!(place_ids(&repo, &root, &["--at", &full]), [id.as_str()]);
     assert_eq!(place_ids(&repo, &src, &["--at", "a.rs"]), [id.as_str()]);
     assert_eq!(place_ids(&repo, &src, &["--at", "../src"]), [id.as_str()]);
-    let pattern = support::labelled(&repo, "decision").pop().unwrap();
+    let pattern = support::labelled(&repo, "pattern").pop().unwrap();
     assert_eq!(pattern.tag("path"), Some("src/a.rs"));
 }

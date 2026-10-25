@@ -38,7 +38,7 @@ impl PatternRecord {
         let within = self.within.iter();
         tags.extend(within.map(|id| vec!["within".to_string(), id.to_string()]));
         tags.push(vec!["L".to_string(), NAMESPACE.to_string()]);
-        let labels = [("decision", true), ("binds", self.binds)].into_iter();
+        let labels = [("pattern", true), ("binds", self.binds)].into_iter();
         tags.extend(
             labels
                 .filter(|(_, on)| *on)
@@ -59,7 +59,11 @@ impl PatternRecord {
 
     /// The pattern `note` holds; `None` when it is not a pattern, or names a scope no reader knows.
     pub fn read(note: &Note) -> Option<PatternRecord> {
-        if note.kind != 1111 || !labelled(note, "decision") || note.tag("K")? != "project" {
+        let namespace = [(NAMESPACE, "pattern"), (OLD_NAMESPACE, "decision")]
+            .into_iter()
+            .find(|(namespace, label)| labelled(note, label, namespace))?
+            .0;
+        if note.kind != 1111 || note.tag("K")? != "project" {
             return None;
         }
         let mut paths: Vec<String> = note
@@ -89,7 +93,7 @@ impl PatternRecord {
             replaces: owned("replaces").map(PatternId::new),
             content: note.content.clone(),
             paths,
-            binds: labelled(note, "binds"),
+            binds: labelled(note, "binds", namespace),
             within: note
                 .tags
                 .iter()
@@ -115,12 +119,15 @@ impl PatternRecord {
     }
 }
 
-/// Whether `note` holds the label `label` of a pattern.
-fn labelled(note: &Note, label: &str) -> bool {
+/// Whether `note` holds the label `label` in `namespace`.
+fn labelled(note: &Note, label: &str, namespace: &str) -> bool {
     note.tags
         .iter()
-        .any(|t| t.len() >= 3 && t[0] == "l" && t[1] == label && t[2] == NAMESPACE)
+        .any(|t| t.len() >= 3 && t[0] == "l" && t[1] == label && t[2] == namespace)
 }
 
 /// The label namespace of a pattern.
-const NAMESPACE: &str = "celis.decision";
+const NAMESPACE: &str = "celis.pattern";
+
+/// The label namespace of a pattern that older versions wrote.
+const OLD_NAMESPACE: &str = "celis.decision";

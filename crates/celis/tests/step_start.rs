@@ -76,7 +76,7 @@ fn start_prints_no_pattern_at_the_steps_places() {
     let repo = Repo::new();
     let o = cli(
         &repo,
-        &["decide", "--path", "src/a.rs", "--", "a.rs holds cents"],
+        &["pattern", "--path", "src/a.rs", "--", "a.rs holds cents"],
     );
     assert!(o.status.success(), "{}", err(&o));
     let trail = add(&repo, &["--", "the trail"]);
@@ -124,7 +124,7 @@ fn start_does_not_run_the_steps_check() {
 fn start_prints_the_trails_patterns_and_the_patterns_its_ask_uses() {
     let repo = Repo::new();
     let decide = |args: &[&str]| {
-        let o = cli(&repo, &[&["decide"], args].concat());
+        let o = cli(&repo, &[&["pattern"], args].concat());
         assert!(o.status.success(), "{}", err(&o));
         out(&o).lines().next().unwrap().to_string()
     };

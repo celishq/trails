@@ -3,7 +3,7 @@
 set -e
 export GIT_CEILING_DIRECTORIES="$(dirname "$PWD")"
 unset CLAUDE_CODE_SESSION_ID CODEX_THREAD_ID CELIS_SESSION_ID
-d() { celis decide "$@" 2>/dev/null | head -1; }
+d() { celis pattern "$@" 2>/dev/null | head -1; }
 page=$(d --path "*.html" --path "*.css" -- "When a page or UI is designed
 Forces: a brief leaves axes free, but a model fills free axes with the same defaults
 Do: ground each choice in the subject's world, and spend boldness on one element only

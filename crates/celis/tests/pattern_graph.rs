@@ -5,9 +5,9 @@ mod support;
 use std::path::Path;
 use support::{account, cli, err, labelled, now, out, refusal, tagged_pattern, Repo, DAY};
 
-/// The whole id `celis decide <args> -- <text>` prints in `folder`.
+/// The whole id `celis pattern <args> -- <text>` prints in `folder`.
 fn decide(repo: &Repo, folder: &Path, args: &[&str], text: &str) -> String {
-    let mut all = vec!["decide"];
+    let mut all = vec!["pattern"];
     all.extend(args);
     all.extend(["--", text]);
     let o = repo.run(folder, &all, &[], "");
@@ -17,16 +17,16 @@ fn decide(repo: &Repo, folder: &Path, args: &[&str], text: &str) -> String {
 
 /// The `within` tags of the stored pattern `id`.
 fn within(repo: &Repo, id: &str) -> Vec<String> {
-    let notes = labelled(repo, "decision");
+    let notes = labelled(repo, "pattern");
     let note = notes.iter().find(|n| n.id == id).unwrap();
     let tags = note.tags.iter().filter(|t| t[0] == "within");
     tags.map(|t| t[1].clone()).collect()
 }
 
-/// `decide --within` writes the whole id of the larger pattern, and keeps it when the pattern is
+/// `pattern --within` writes the whole id of the larger pattern, and keeps it when the pattern is
 /// replaced (`spec/05-patterns.md`, "Graph").
 #[test]
-fn decide_writes_the_larger_pattern_and_a_replacement_keeps_it() {
+fn pattern_writes_the_larger_pattern_and_a_replacement_keeps_it() {
     let repo = Repo::new();
     let page = decide(
         &repo,
@@ -50,15 +50,15 @@ fn decide_writes_the_larger_pattern_and_a_replacement_keeps_it() {
     assert_eq!(within(&repo, &new), [page]);
 }
 
-/// `decide --within` refuses an id that no live pattern has, with `no-decision` (`spec/02-cli.md`,
+/// `pattern --within` refuses an id that no live pattern has, with `no-pattern` (`spec/02-cli.md`,
 /// "Commands").
 #[test]
-fn decide_refuses_an_unknown_larger_pattern() {
+fn pattern_refuses_an_unknown_larger_pattern() {
     let repo = Repo::new();
     let o = cli(
         &repo,
         &[
-            "decide",
+            "pattern",
             "--json",
             "--within",
             "0000ffff",
@@ -66,7 +66,7 @@ fn decide_refuses_an_unknown_larger_pattern() {
             "When x: y.",
         ],
     );
-    refusal(&o, 1, "no-decision");
+    refusal(&o, 1, "no-pattern");
 }
 
 /// A `within` may name a pattern of another project (`spec/05-patterns.md`, "Graph").

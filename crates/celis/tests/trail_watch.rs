@@ -44,7 +44,7 @@ fn watch_prints_the_tree_again_only_when_it_changes() {
     let shown = watch.trees(Duration::from_millis(1200)).len();
     let o = cli(
         &repo,
-        &["decide", "--", "When you add a page: copy the frame."],
+        &["pattern", "--", "When you add a page: copy the frame."],
     );
     assert!(o.status.success(), "{}", err(&o));
     assert_eq!(watch.trees(Duration::from_millis(1500)).len(), shown);
@@ -449,7 +449,7 @@ fn watch_opens_the_patterns_line() {
     add(&repo, &["--under", &trail[..8], "--", "the part"]);
     let pattern = "When you price a senior: use cents, because floats lost a cent on the receipt.";
     let scope = format!("trail:{}", &trail[..8]);
-    let o = cli(&repo, &["decide", "--scope", &scope, "--", pattern]);
+    let o = cli(&repo, &["pattern", "--scope", &scope, "--", pattern]);
     assert!(o.status.success(), "{}", err(&o));
     let mut watch = Watch::start(&repo, &["tree", &trail[..8]]);
     watch.size(24, 60);
@@ -522,7 +522,7 @@ fn watch_draws_a_block_with_tree_lines_and_colour_anchors() {
     );
     let deeper = add(&repo, &["--under", &done[..8], "--", "deeper part"]);
     let scope = format!("trail:{}", &trail[..8]);
-    let o = cli(&repo, &["decide", "--scope", &scope, "--", "a rule"]);
+    let o = cli(&repo, &["pattern", "--scope", &scope, "--", "a rule"]);
     assert!(o.status.success(), "{}", err(&o));
     let o = cli(&repo, &["step", "start", &deeper[..8]]);
     assert!(o.status.success(), "{}", err(&o));
@@ -1255,7 +1255,7 @@ fn next_watch_draws_a_block_with_tree_lines_and_colour_anchors() {
     );
     let deeper = add(&repo, &["--under", &done[..8], "--", "deeper part"]);
     let scope = format!("trail:{}", &trail[..8]);
-    let o = cli(&repo, &["decide", "--scope", &scope, "--", "a rule"]);
+    let o = cli(&repo, &["pattern", "--scope", &scope, "--", "a rule"]);
     assert!(o.status.success(), "{}", err(&o));
     let o = cli(&repo, &["step", "start", &deeper[..8]]);
     assert!(o.status.success(), "{}", err(&o));
@@ -1633,7 +1633,7 @@ fn next_watch_opens_the_patterns_line() {
     add(&repo, &["--under", &trail[..8], "--", "the part"]);
     let pattern = "When you price a senior: use cents, because floats lost a cent on the receipt.";
     let scope = format!("trail:{}", &trail[..8]);
-    let o = cli(&repo, &["decide", "--scope", &scope, "--", pattern]);
+    let o = cli(&repo, &["pattern", "--scope", &scope, "--", pattern]);
     assert!(o.status.success(), "{}", err(&o));
     let mut watch = Watch::start(&repo, &["tree", "--next", &trail[..8]]);
     watch.size(24, 80);
@@ -1834,7 +1834,7 @@ fn next_watch_prints_the_tree_again_only_when_it_changes() {
     let shown = watch.trees(Duration::from_millis(1200)).len();
     let o = cli(
         &repo,
-        &["decide", "--", "When you add a page: copy the frame."],
+        &["pattern", "--", "When you add a page: copy the frame."],
     );
     assert!(o.status.success(), "{}", err(&o));
     assert_eq!(watch.trees(Duration::from_millis(1500)).len(), shown);
@@ -1981,7 +1981,7 @@ fn next_watch_draws_only_its_trails() {
     let trail = add(&repo, &["--", "the trail"]);
     let scope = format!("trail:{}", &trail[..8]);
     let pattern = "When you add a page: copy the frame, because it holds the header.";
-    let o = cli(&repo, &["decide", "--scope", &scope, "--", pattern]);
+    let o = cli(&repo, &["pattern", "--scope", &scope, "--", pattern]);
     assert!(o.status.success(), "{}", err(&o));
     let mut watch = Watch::start(&repo, &["tree", "--next"]);
     watch.size(24, 80);

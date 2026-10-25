@@ -171,7 +171,7 @@ fn done_prints_the_patterns_of_the_changed_files() {
     let python = cli(
         &repo,
         &[
-            "decide",
+            "pattern",
             "--path",
             "*.py",
             "--",
@@ -181,7 +181,7 @@ fn done_prints_the_patterns_of_the_changed_files() {
     let rust = cli(
         &repo,
         &[
-            "decide",
+            "pattern",
             "--path",
             "*.rs",
             "--",
@@ -206,7 +206,7 @@ fn done_of_the_last_step_prints_the_judge_brief() {
     let pattern = cli(
         &repo,
         &[
-            "decide",
+            "pattern",
             "--path",
             "*.py",
             "--",
@@ -240,18 +240,18 @@ fn done_of_the_last_step_prints_the_judge_brief() {
     );
 }
 
-/// `decide` with no scope says that the pattern holds in the project, and how `me` and `trail:<id>`
+/// `pattern` with no scope says that the pattern holds in the project, and how `me` and `trail:<id>`
 /// differ.
 #[test]
-fn decide_with_no_scope_names_the_scopes() {
+fn pattern_with_no_scope_names_the_scopes() {
     let repo = Repo::new();
-    let o = cli(&repo, &["decide", "--", "When Python changes: run ruff."]);
+    let o = cli(&repo, &["pattern", "--", "When Python changes: run ruff."]);
     assert!(o.status.success(), "{}", err(&o));
     assert!(err(&o).contains("--scope me"), "{}", err(&o));
     let o = cli(
         &repo,
         &[
-            "decide",
+            "pattern",
             "--scope",
             "me",
             "--",
@@ -270,7 +270,7 @@ fn done_of_an_ask_with_changed_files_needs_a_judge() {
     let pattern = cli(
         &repo,
         &[
-            "decide",
+            "pattern",
             "--path",
             "*.py",
             "--",
@@ -327,7 +327,7 @@ fn the_files_of_a_done_count_as_changed_without_git() {
     let pattern = cli(
         &repo,
         &[
-            "decide",
+            "pattern",
             "--path",
             "*.py",
             "--",

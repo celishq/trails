@@ -69,7 +69,7 @@ impl Command {
     fn go(&self, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> Result<(), Failure> {
         match args.words.first().map(String::as_str).unwrap_or("") {
             "step" => self.step(args, out, err, &self.project_of(args)?),
-            "pattern" | "decide" => self.pattern(args, out, err, &self.project_of(args)?),
+            "pattern" => self.pattern(args, out, err, &self.project_of(args)?),
             "tree" => self.tree(args, out),
             "patterns" => self.patterns(args, out),
             "grep" => self.grep(&self.args[1..], out),
