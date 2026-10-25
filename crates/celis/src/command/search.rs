@@ -5,6 +5,7 @@ mod meaning;
 #[cfg(not(feature = "search"))]
 #[path = "search/off.rs"]
 mod meaning;
+pub(crate) mod recalls;
 #[cfg(feature = "search")]
 mod setup;
 
@@ -12,6 +13,7 @@ use super::view::kind::Kind;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::text::clock::date;
+use recalls::Recalls;
 use celis_nostr::Note;
 use celis_trails::records::id::short;
 use celis_trails::{Pattern, Step, Trails};
@@ -81,7 +83,9 @@ impl Command {
                         .filter(|(_, pattern)| pattern.binds == (part == Part::Rules))
                         .take(limit)
                         .collect();
-                    self.recalled(part.iter().map(|(note, _)| *note));
+                    if let Ok(home) = self.home() {
+                        Recalls::mark(&home, part.iter().map(|(note, _)| *note));
+                    }
                     let project = self.project().anchor.project;
                     let line = |(note, pattern): &&(&Note, Pattern)| {
                         let mut lines = vec![crate::text::line::pattern(note, pattern, &trails)];
@@ -180,38 +184,9 @@ impl Command {
         Ok(alike.chain(shared.into_iter().map(|(_, s)| s)).collect())
     }
 
-    /// Adds a byte to the file of each of `notes` in the recalled folder.
-    fn recalled<'a>(&self, notes: impl Iterator<Item = &'a Note>) {
-        let Ok(home) = self.home() else {
-            return;
-        };
-        let folder = home.join(RECALLED);
-        let _ = std::fs::create_dir_all(&folder);
-        for note in notes {
-            let file = std::fs::OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open(folder.join(&note.id));
-            let _ = file.and_then(|mut f| f.write_all(b"."));
-        }
-    }
-
-    /// The day `search` last brought each pattern, and how many times it did, by its short id.
-    pub(crate) fn recalls(&self) -> HashMap<String, (String, u64)> {
-        let Ok(home) = self.home() else {
-            return HashMap::new();
-        };
-        let entries = std::fs::read_dir(home.join(RECALLED)).into_iter().flatten();
-        entries
-            .flatten()
-            .filter_map(|entry| {
-                let meta = entry.metadata().ok()?;
-                let at = meta.modified().ok()?;
-                let at = at.duration_since(std::time::UNIX_EPOCH).ok()?.as_secs();
-                let id = entry.file_name().to_string_lossy().to_string();
-                Some((short(&id), (date(at), meta.len())))
-            })
-            .collect()
+    /// The patterns `search` gave on this machine.
+    pub(crate) fn recalls(&self) -> Recalls {
+        self.home().map_or_else(|_| Recalls::default(), |home| Recalls::read(&home))
     }
 }
 
@@ -269,10 +244,6 @@ fn lines(ask: Step) -> Vec<String> {
     }
     lines
 }
-
-/// The folder of `$CELIS_HOME` whose files name the patterns `search` brought, each one byte longer each
-/// time it did.
-const RECALLED: &str = "recalled";
 
 /// What `search` prints when nothing fits.
 const NOTHING: &str = "nothing fits this ask";

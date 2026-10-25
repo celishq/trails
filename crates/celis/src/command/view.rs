@@ -8,6 +8,7 @@ use crate::text::clock::date;
 use celis_nostr::Note;
 use celis_trails::records::id::short;
 use celis_trails::{Mark, PatternEnd, PatternEntry, Scope, Step, Trails};
+use super::search::recalls::Recalls;
 use header::Header;
 use kind::Kind;
 use row::Row;
@@ -25,11 +26,11 @@ pub(crate) struct View {
 
 impl View {
     pub fn of(trails: &Trails) -> View {
-        View::recalled(trails, &HashMap::new())
+        View::recalled(trails, &Recalls::default())
     }
 
     /// The view of `trails`, each pattern with the day `recalled` gives for its short id.
-    pub fn recalled(trails: &Trails, recalled: &HashMap<String, (String, u64)>) -> View {
+    pub fn recalled(trails: &Trails, recalled: &Recalls) -> View {
         let (steps, patterns) = (trails.steps(), trails.patterns());
         let mut by_trail: HashMap<&str, Vec<Row>> = HashMap::new();
         let mut blocks: Vec<(u64, &str, Vec<Row>)> = Vec::new();
@@ -149,7 +150,7 @@ fn step(root: Step, step: Step, kind: Kind) -> Row {
 fn pattern(
     entry: &PatternEntry,
     trail: Option<String>,
-    recalled: &HashMap<String, (String, u64)>,
+    recalled: &Recalls,
 ) -> Vec<Row> {
     let (note, pattern) = (entry.note, &entry.pattern);
     let state = entry.end.map_or("live".to_string(), PatternEnd::text);
@@ -173,8 +174,7 @@ fn pattern(
             .filter(|(on, _)| *on)
             .map(|(_, mark)| mark.to_string()),
     );
-    let day = recalled.get(&short(&note.id));
-    fields.extend(day.map(|(day, _)| format!("recalled:{day}")));
+    fields.extend(recalled.day(&note.id).map(|day| format!("recalled:{day}")));
     let mut rows = vec![row(Kind::Pattern, note, fields, &pattern.content)];
     if let Some(PatternEnd::Dropped(drop)) = entry.end {
         rows.push(row(Kind::Dropped, drop, vec![], &drop.content));

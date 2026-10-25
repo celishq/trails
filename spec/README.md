@@ -69,6 +69,7 @@ Every change of `spec/` MUST keep these rules:
 | `uses` | step tag | 06 |
 | `imeta` with `url` · `x` · `m` · `size` · `path` | done tag: a file of the proof (NIP-92, BUD-10) | 08 |
 | `$CELIS_HOME/trails/blobs/` · `<folder>/blobs/` | the blobs of the store and of a linked folder | 08 |
+| `$CELIS_HOME/recalled/<id>` | a pattern `search` gave on this machine: one byte a time, last changed on the last day; no record | 02 |
 
 **Deprecated.** A reader ignores each of these, unless its row says how it reads it. Older versions wrote
 them.

@@ -81,7 +81,7 @@ impl Command {
                 let recalls = self.recalls();
                 for (note, pattern) in patterns {
                     let examples = pattern.examples.sides().count();
-                    let recalled = recalls.get(&short(&note.id)).map_or(0, |(_, n)| *n);
+                    let recalled = recalls.count(&note.id);
                     let value = json!({"id": note.id, "content": pattern.content,
                         "examples": examples, "recalled": recalled});
                     let line = format!(
