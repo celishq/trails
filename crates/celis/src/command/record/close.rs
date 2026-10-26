@@ -19,8 +19,8 @@ use std::io::Write;
 
 impl Command {
     /// Prints `review` on `err`: the step's plan against what it did, the open steps beside it, the blobs
-    /// of `trails` for its files and the files beside it, the patterns of the `changed` files, then the
-    /// next move; on an ask, only its end; with no `linked` folder, its blobs are local only.
+    /// of `trails` for its files and the files beside it, the judge brief or else the patterns of the
+    /// `changed` files, then the next move; on an ask, only its end; with no `linked` folder, local blobs.
     pub(crate) fn review(
         &self,
         review: &Review,
@@ -66,13 +66,11 @@ impl Command {
         for (id, title, file) in &review.beside {
             lines.push(format!("  beside  {} {title} · {}", short(id), kept(file)));
         }
-        lines.extend(self.changed_patterns(trails, changed));
         let steps = trails.steps();
         let ask = review.under.as_deref().and_then(|id| steps.get(id));
-        if let Some(ask) =
-            ask.filter(|a| a.is_judged() && review.as_planned && review.open.is_empty())
-        {
-            lines.extend(self.brief(ask, trails, changed));
+        match ask.filter(|a| a.is_judged() && review.as_planned && review.open.is_empty()) {
+            Some(ask) => lines.extend(self.brief(ask, trails, changed)),
+            None => lines.extend(self.changed_patterns(trails, changed)),
         }
         let under = review.under.as_deref().map(short);
         lines.extend(match (review.as_planned, under) {
@@ -120,15 +118,13 @@ impl Command {
         std::iter::once(head.to_string()).chain(lines).collect()
     }
 
-    /// What `done` of the ask `ask` with no `--by` prints before it refuses: the patterns of the `changed`
-    /// files and the judge brief; none with no changed file.
+    /// What `done` of the ask `ask` with no `--by` prints before it refuses: the judge brief; none with no
+    /// changed file.
     pub(crate) fn unjudged(&self, ask: Step, trails: &Store, changed: &[String]) -> Vec<String> {
         if changed.is_empty() {
             return vec![];
         }
-        let mut lines = self.changed_patterns(trails, changed);
-        lines.extend(self.brief(ask, trails, changed));
-        lines
+        self.brief(ask, trails, changed)
     }
 
     /// The judge brief of `ask`, an ask or a step with steps under it: its title, its intent lines, the

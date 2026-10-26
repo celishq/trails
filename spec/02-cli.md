@@ -164,7 +164,7 @@ note  json  {"id", "created_at", "step", "content"}
 - The changed files of a `done` are each file that `git diff --name-only HEAD` or
   `git ls-files --others --exclude-standard` gives in the working folder, and each `--file`.
 - `done` of an ask, or of another step with steps under it, with no `--by` and a changed file MUST refuse
-  with `unjudged`, and print the patterns of its changed files and the brief that the judge needs. The
+  with `unjudged`, and print the brief that the judge needs. The
   brief MUST give the whole text, with the examples, of each live pattern that its ask recalled
   (CIP-06, "Recalls") and of each live pattern in scope that a changed file matches, each once.
 - `done` MUST run the step's `check` in the project's top folder, and refuse with `check-failed` when it
@@ -173,7 +173,8 @@ note  json  {"id", "created_at", "step", "content"}
   than `judge` or `person` is a usage error. Each `done --file` MUST be kept as a blob and named by an
   `imeta` tag (CIP-08), and a file that is not there is a usage error.
 - `done` of a step that is not an ask MUST print each live pattern in scope that a changed file matches
-  (CIP-05, "Triggers"), whole with its examples: first those that match a named file (a `path` with no
+  (CIP-05, "Triggers"), whole with its examples, once: in the judge brief when it prints one, else
+  first those that match a named file (a `path` with no
   `*` or `?`), then those that match a glob; within each, a pattern with a `replaces` tag first, then
   the rest, newest first.
 - `drop` MUST refuse an empty reason, and `edit` one with no text, `--at` or `--check`, as usage errors.

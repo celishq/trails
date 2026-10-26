@@ -257,7 +257,8 @@ fn done_prints_the_patterns_of_the_changed_files() {
 }
 
 /// When no step is open under the ask, `done` of its last step prints the judge brief: the ask, its
-/// intent lines, the patterns of the changed files, the changed files, and its check.
+/// intent lines, the patterns of the changed files, each once, the changed files, and its check
+/// (`spec/02-cli.md`, "Step").
 #[test]
 fn done_of_the_last_step_prints_the_judge_brief() {
     let repo = Repo::new();
@@ -296,6 +297,7 @@ fn done_of_the_last_step_prints_the_judge_brief() {
         said.contains(&format!("  pattern {}", &pattern[..8])),
         "{said}"
     );
+    assert_eq!(said.matches(&pattern[..8]).count(), 1, "{said}");
 }
 
 /// `pattern` with no scope says that the pattern holds in the project, and names `--scope me` and
@@ -321,8 +323,8 @@ fn pattern_with_no_scope_names_the_scopes() {
 }
 
 /// `done` of an ask with no `--by`, while git shows a changed file, refuses with `unjudged`, writes
-/// nothing, and prints the patterns of the changed files and the judge brief with the trail's notes;
-/// `--by judge` closes it (`spec/02-cli.md`, "Step").
+/// nothing, and prints the judge brief with the patterns of the changed files, once, and the trail's
+/// notes; `--by judge` closes it (`spec/02-cli.md`, "Step").
 #[test]
 fn done_of_an_ask_with_changed_files_needs_a_judge() {
     let repo = Repo::new();
@@ -367,7 +369,7 @@ fn done_of_an_ask_with_changed_files_needs_a_judge() {
     assert!(err(&o).contains("\"error\":\"unjudged\""), "{}", err(&o));
     assert!(err(&o).contains("celis:judge"), "{}", err(&o));
     assert!(err(&o).contains("  expect  cents"), "{}", err(&o));
-    assert!(err(&o).contains(&pattern[..8]), "{}", err(&o));
+    assert_eq!(err(&o).matches(&pattern[..8]).count(), 1, "{}", err(&o));
     assert!(
         err(&o).contains("  note    keep the old table"),
         "{}",
