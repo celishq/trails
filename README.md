@@ -93,8 +93,6 @@ job; it gives it what it needs to do the job well.
 **It works across agents, too.** In another test, Claude Code learned the review rules of real
 Supabase pull requests. Codex then broke 0.25 of them per job with Celis, against 2.38 without.
 
-The full setup, numbers and limits are in [evals/drift](evals/drift/README.md).
-
 ## Install
 
 **1. Install `celis`:**
