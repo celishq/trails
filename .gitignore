@@ -2,6 +2,7 @@ crates/target/
 .claude/worktrees/
 .DS_Store
 evals/results/
+bench/results/
 .celis
 evals/raycast/cache/
 evals/raycast/results/**/transcripts/
