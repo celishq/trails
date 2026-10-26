@@ -229,35 +229,31 @@ fn each_agents_session_start_gives_the_index_of_the_patterns() {
     }
 }
 
-/// Claude Code's session start asks to offer `/celis:tidy` while the store holds a pattern and no step whose
-/// title starts with "Tidy the celis trails" began in the last 7 days.
+/// Claude Code's session start asks to offer `/celis:tidy` while `patterns --tidy` lists a pattern and no
+/// step whose title starts with "Tidy the celis trails" began in the last 7 days (`spec/02-cli.md`,
+/// "Hooks").
 #[test]
 fn claudes_session_start_asks_to_offer_a_tidy() {
     let repo = Repo::new();
     let claude = &AGENTS[0];
     let start = claude.payload("s1", &repo.path(), "");
+    let pattern = |text: &str| {
+        let o = repo.run(&repo.path(), &["pattern", "--", text], &[], "");
+        assert!(o.status.success(), "{}", err(&o));
+    };
+    pattern("When code handles money amounts: keep cents.");
     assert!(!claude
         .run(&repo, claude.start, &start)
         .contains("/celis:tidy"));
-    let o = repo.run(
-        &repo.path(),
-        &["pattern", "--", "When you test: set A=1."],
-        &[],
-        "",
-    );
-    assert!(o.status.success(), "{}", err(&o));
+    pattern("When you store money amounts: use cents.");
     let said = claude.run(&repo, claude.start, &start);
-    assert!(said.contains("no tidy has run yet"), "{said}");
-    assert!(said.contains("offer them /celis:tidy"), "{said}");
+    assert!(
+        said.contains("offer them /celis:tidy: 2 patterns need it."),
+        "{said}"
+    );
     let o = repo.run(
         &repo.path(),
-        &[
-            "step",
-            "add",
-            "--new",
-            "--",
-            "Tidy the celis trails of this project",
-        ],
+        &["step", "add", "--", "Tidy the celis trails of this project"],
         &[],
         "",
     );

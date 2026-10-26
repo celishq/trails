@@ -16,7 +16,7 @@ read. What a command shows a person is not part of it.
 ```
 celis pattern [--scope <scope>] [--replaces <id>] [--path <glob>]... [--within <id>]... [--good <example>]... [--bad <example>]... [--project <id>] -- <text>
                                                        a pattern, in its scope
-celis patterns [<file>]... [--markdown]               the index of the patterns in scope
+celis patterns [<file>]... [--markdown] [--tidy]       the index of the patterns in scope, or what needs tidy
 celis tree [<id>]... [--graph] [--full] [--all] [--demo]
                                                        a trail and its steps; again on each change
 celis grep <grep option>... <pattern>                 every trail, through the system grep
@@ -229,6 +229,21 @@ agent reads it, and reads the whole of a pattern with `grep <id8>`.
 no pattern yet           when there is none
 ```
 
+```
+celis patterns --tidy
+<id8> <reason>[,<reason>]... <When>     each live pattern in scope that needs tidy
+<n> patterns in the index               last, with `1 pattern` for one; the only line when none needs tidy
+```
+
+A pattern's reasons, in this order:
+
+- `misled`: it misled 2 or more steps and asks (CIP-06, "Revisions").
+- `near:<id8>`: the When of another live pattern in scope shares 2 or more words with its When, as the
+  `like` lines of `pattern` count them; the id is of the one that shares the most.
+- `unrecalled`: it was made 60 or more days ago, and no ask recalled it in the last 60 days (CIP-06,
+  "Recalls"), while an ask of the project recalled a pattern.
+- `churn`: it ends a chain of 3 or more `replaces` (CIP-05).
+
 **Rules**
 
 - `patterns` MUST print each live pattern in scope once, oldest first, so that a new pattern comes last.
@@ -236,6 +251,9 @@ no pattern yet           when there is none
   A `<file>` is a path from the working folder, and a folder stands for each file in it.
 - With `--markdown`, `patterns` MUST print each live pattern in scope whole, with its examples, as one
   Markdown page.
+- With `--tidy`, `patterns` MUST print a line for each live pattern in scope that has a reason, oldest
+  first, then the line of the index size. It MUST refuse `--tidy` with a `<file>` or `--markdown` as a
+  usage error.
 
 **Examples**
 
@@ -243,6 +261,7 @@ no pattern yet           when there is none
 celis patterns
 celis patterns shelf/prices.py shelf/
 celis patterns --markdown > patterns.md
+celis patterns --tidy
 ```
 
 ## Lesson
@@ -277,6 +296,9 @@ antigravity     {"injectSteps": [{"ephemeralMessage": "<text>"}]}
   in `<plugin folder>`.
 - After the card, `hook start` MUST print the line `The patterns in scope here:`, then what `patterns`
   prints with no `<file>` ("Patterns"). It MUST print neither when no pattern is live in scope.
+- When `patterns --tidy` lists `<n>` patterns, 1 or more, and no ask whose title starts with `Tidy the
+  celis trails` began in the last 7 days, `hook start` asks the agent to offer `/celis:tidy` once in the
+  session, after the person's first ask, and names `<n>`.
 - `hook` MUST print in the shape of `<agent>`, and nothing when it has no text, but Cursor's ask.
 - `hook` MUST exit 0 on any error but a usage error.
 
@@ -296,7 +318,7 @@ trails with it.
 view    <yyyy-mm-dd> <trail id8 | -> [<project name>] <kind> <id8> <fields> <text>
           trail | step   <open | done | dropped>[ revised-by <id>,…][ at:<place>]…
           pattern        <live | replaced-by <id> | dropped> {<me | project>}
-                           [ old-rule][ recalls:<n> uses:<n>][ recalled:<yyyy-mm-dd>]
+                           [ old-rule][ recalls:<n> uses:<n>][ misled:<n>][ recalled:<yyyy-mm-dd>]
           proof | changed | dropped | note                       the step's or pattern's id, no fields
           prompt                                                 the trail's id, no fields (CIP-04, "Sessions")
           good | bad                                             the pattern's id, no fields, and an example:
@@ -313,7 +335,8 @@ end     project [<project name>]
 `<id8>` is the first 8 characters of an id. A text holds each newline as a space. After its state and
 scope, a pattern's fields give ` old-rule` when it has the `binds` label that older writers wrote (CIP-05,
 "Reading"), ` recalls:<n> uses:<n>` with how many asks name it in `recalled` and how many steps name it in
-`uses` (CIP-06, "Uses"), when one is not 0, and ` recalled:<day>` with the day of the newest ask whose
+`uses` (CIP-06, "Uses"), when one is not 0, ` misled:<n>` with how many steps and asks it misled (CIP-06,
+"Revisions"), when not 0, and ` recalled:<day>` with the day of the newest ask whose
 `recalled` names it (CIP-06, "Recalls").
 
 **Rules**

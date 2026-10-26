@@ -330,16 +330,18 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "patterns",
-        usage: &["celis patterns [<file>]... [--markdown]"],
-        summary: "Show the index of the patterns of this project and of you, the oldest first: each one's id, scope and When, with its paths, each named file they match, and the larger patterns it completes. celis grep <id> shows the whole of one. With --markdown, print each whole as one page, with its examples, each file a link to its blob, for a review or a skill file. Changes nothing.",
+        usage: &["celis patterns [<file>]... [--markdown] [--tidy]"],
+        summary: "Show the index of the patterns of this project and of you, the oldest first: each one's id, scope and When, with its paths, each named file they match, and the larger patterns it completes. celis grep <id> shows the whole of one. With --markdown, print each whole as one page, with its examples, each file a link to its blob, for a review or a skill file. With --tidy, list the patterns that need tidy, with the reason, then the size of the index. Changes nothing.",
         args: &[
             ("<file>", "A file or folder; marks each pattern whose paths match it"),
             ("--markdown", "Print one Markdown page, each file a link to its blob"),
+            ("--tidy", "List the patterns that need tidy, and why"),
         ],
         examples: &[
             "celis patterns",
             "celis patterns shelf/prices.py shelf/",
             "celis patterns --markdown > patterns.md",
+            "celis patterns --tidy",
         ],
     },
     Verb {

@@ -90,6 +90,12 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
     change against. `done --by person` says that the person confirms the result. A reader reads an old
     `by judge` as a proof by a reader that did not do the work. `done --by judge` is accepted and writes
     no `by`, so an older plugin still works with a newer `celis`.
+13. **The outcomes are evidence, and celis lists what needs tidy.** A pattern misled a step that used
+    it, or an ask that recalled it, when a later step fixed that work. `celis patterns --tidy` lists each
+    live pattern that misled twice or more, that has a near copy, that no ask recalled in 60 days, or
+    that was replaced three times or more, with the reason. The session start offers tidy when the list
+    is not empty, and not within 7 days of a tidy, so that a person who kept a pattern is not asked each
+    session.
 
 ## What we do not do
 

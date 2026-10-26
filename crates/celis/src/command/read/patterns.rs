@@ -1,8 +1,10 @@
 //! `celis patterns`: the index of the person's patterns.
 
+use crate::command::read::candidate::Candidate;
 use crate::command::record::files;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
+use crate::text::line::plural;
 use celis_patterns::{Example, Pattern, PatternStore};
 use celis_store::records::id::short;
 use celis_store::Store;
@@ -12,8 +14,16 @@ use std::io::Write;
 
 impl Command {
     /// Prints the index of the live patterns in scope; with `--markdown`, each whole as one page, newest
-    /// first. Writes no record.
+    /// first; with `--tidy`, those that need tidy and the index size. Writes no record.
     pub(crate) fn patterns(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
+        if args.tidy {
+            if args.markdown || args.words.len() > 1 {
+                return Err(Failure::usage("patterns takes --tidy alone"));
+            }
+            let (mut lines, size) = self.candidates()?;
+            lines.push(format!("{} in the index", plural(size, "pattern")));
+            return crate::command::put(out, &lines.join("\n"));
+        }
         if !args.markdown {
             let index = self.index(&args.words[1..])?;
             return crate::command::put(out, index.as_deref().unwrap_or(NONE));
@@ -34,6 +44,19 @@ impl Command {
                 .flat_map(|pattern| markdown(pattern, &trails, &project)),
         );
         crate::command::put(out, &page.join("\n"))
+    }
+
+    /// The line of each live pattern in scope that needs tidy, oldest first, and how many are live in
+    /// scope.
+    pub(crate) fn candidates(&self) -> Result<(Vec<String>, usize), Failure> {
+        if !self.held()? {
+            return Ok((Vec::new(), 0));
+        }
+        let trails = self.trails()?;
+        let project = self.project().anchor.project;
+        let size = trails.patterns().live(&project).len();
+        let found = Candidate::all(&trails, &project);
+        Ok((found.iter().map(Candidate::line).collect(), size))
     }
 
     /// The index of the live patterns in scope, oldest first: each one's id, scope and When, with its

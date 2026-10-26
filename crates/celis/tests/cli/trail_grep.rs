@@ -468,6 +468,20 @@ fn the_view_and_the_steps_pattern_search_match_the_fixture() {
     mark(done, &prices.id, t + 14);
     let done = Mark::Done(celis_trails::Done::new("the page shows".into(), None));
     mark(done, &trail.id, t + 15);
+    let fix = StepRecord {
+        under: None,
+        replaces: Some(StepId::new(&prices.id)),
+        uses: Vec::new(),
+        content: "Print the prices in whole cents".to_string(),
+        ..StepRecord::read(&prices).unwrap()
+    };
+    let fix = fix.record(&by, t + 16).unwrap();
+    put(&repo, &fix);
+    let done = Mark::Done(celis_trails::Done::new(
+        "the prices print in cents".into(),
+        None,
+    ));
+    mark(done, &fix.id, t + 17);
     let names = [
         ("trail", &trail),
         ("table", &table),
@@ -478,6 +492,7 @@ fn the_view_and_the_steps_pattern_search_match_the_fixture() {
         ("situation", &situation),
         ("push", &push),
         ("prices", &prices),
+        ("fix", &fix),
     ];
     let fill = |line: &serde_json::Value| {
         let mut line = line.as_str().unwrap().to_string();
