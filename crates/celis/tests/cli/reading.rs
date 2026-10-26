@@ -82,20 +82,24 @@ fn a_pattern_at_a_file_is_at_that_file_whatever_line_and_a_folder_holds_what_lie
     let sibling = at("src/xy/c.rs:1", 2);
     let other = at("src/x/ab.rs:1", 1);
     let folder = repo.path();
+    let sorted = |mut ids: Vec<String>| {
+        ids.sort();
+        ids
+    };
     assert_eq!(
-        place_ids(&repo, &folder, &["--at", "src/x/a.rs"])[..3],
-        [bare.clone(), line99.clone(), line3.clone()]
+        place_ids(&repo, &folder, &["--at", "src/x/a.rs"]),
+        sorted(vec![bare.clone(), line99.clone(), line3.clone()])
     );
     assert_eq!(
         place_ids(&repo, &folder, &["--at", "src/x"]),
-        [other, deep, bare, line99, line3]
+        sorted(vec![other, deep, bare, line99, line3])
     );
     assert_eq!(place_ids(&repo, &folder, &["--at", "src/xy"]), [sibling]);
 }
 
-/// A reader orders the patterns at a place newest first, then by id.
+/// A reader orders the patterns at a place by id, whatever their time (`spec/02-cli.md`, "Step").
 #[test]
-fn a_reader_orders_patterns_newest_first_then_by_id() {
+fn a_reader_orders_patterns_at_a_place_by_id() {
     let repo = Repo::new();
     let id = repo.project_id();
     let project = (id.as_str(), "repo");
@@ -104,13 +108,10 @@ fn a_reader_orders_patterns_newest_first_then_by_id() {
         short(&stored_pattern(&repo, project, &account(), (scope, None), text, at).id)
     };
     let same = now() - 3 * DAY;
-    let mut tied: Vec<String> = ["a", "b", "c"].iter().map(|t| make(t, same)).collect();
-    tied.sort();
-    let newest = make("n", now() - 2 * DAY);
-    let oldest = make("o", now() - 5 * DAY);
-    let mut want = vec![newest];
-    want.extend(tied);
-    want.push(oldest);
+    let mut want: Vec<String> = ["a", "b", "c"].iter().map(|t| make(t, same)).collect();
+    want.push(make("n", now() - 2 * DAY));
+    want.push(make("o", now() - 5 * DAY));
+    want.sort();
     assert_eq!(place_ids(&repo, &repo.path(), &["--at", "src/a.rs"]), want);
 }
 
