@@ -13,7 +13,7 @@ use celis_nostr::Note;
 use celis_patterns::Patterns;
 use celis_store::records::id::short;
 use celis_trails::step::steps::LIFE;
-use celis_trails::{Notes, Step, Steps, Trail};
+use celis_trails::{Notes, State, Step, Steps, Trail};
 pub(crate) use layout::Layout;
 use level::Level;
 use ratatui::style::Style;
@@ -116,15 +116,15 @@ pub(crate) fn today<'a>(steps: &'a Steps<'a>) -> Vec<Step<'a>> {
     let midnight = midnight(steps.now());
     let roots = steps.roots().into_iter().rev();
     roots
-        .filter(|s| Phase::of(s).active() || s.newest() >= midnight)
+        .filter(|s| s.active() || s.newest() >= midnight)
         .collect()
 }
 
 /// Whether the trail `note` is a live session at `now`: active, or not dropped with a record in the
 /// last `LIFE` seconds, as when its agent just answered and waits for the person.
 pub(crate) fn live(note: Step, now: u64) -> bool {
-    let recent = now.saturating_sub(note.newest()) < LIFE && Phase::of(&note) != Phase::Dropped;
-    Phase::of(&note).active() || recent
+    let recent = now.saturating_sub(note.newest()) < LIFE && note.state() != State::Dropped;
+    note.active() || recent
 }
 
 /// How a tree shows: in a watch, with a cursor column; full; all with no id; and in a watch, with the
@@ -299,7 +299,7 @@ impl Tree<'_> {
     /// What the tree says of the trail `note`, whose work `work` holds: the steps it prints under it, the
     /// done ones, the time they worked, and its notes. An active one lowers `next` to its end.
     fn summary(&self, note: Step, work: Step) -> Summary<'_> {
-        if Phase::of(&note).active() {
+        if note.active() {
             self.until(note.newest() + LIFE);
         }
         let parts = Trail::new(note).parts().into_iter();
@@ -335,7 +335,7 @@ impl Tree<'_> {
         for leaf in leaves {
             match (Grade::of(*leaf), leaf.start()) {
                 (Some(grade), _) => total += grade.took,
-                (None, Some(start)) if Phase::of(leaf) == Phase::Started => {
+                (None, Some(start)) if leaf.works() => {
                     total += now.saturating_sub(start.created_at);
                     running = true;
                 }

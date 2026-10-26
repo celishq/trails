@@ -24,11 +24,11 @@ impl Tree<'_> {
         lines: &mut Vec<Row>,
     ) {
         let more = !patterns.is_empty();
-        let closed = level.order.iter().filter(|s| Phase::of(s).ended()).count();
+        let closed = level.order.iter().filter(|s| !s.active()).count();
         match closed > FOLD {
             true => {
                 let (ended, active): (Vec<Step>, Vec<Step>) =
-                    level.order.into_iter().partition(|s| Phase::of(s).ended());
+                    level.order.into_iter().partition(|s| !s.active());
                 let last = active.is_empty() && !more;
                 self.closed_line(ended, rail, above, last, lines);
                 self.steps(active, rail, above, more, lines);
@@ -57,7 +57,7 @@ impl Tree<'_> {
         for (n, note) in notes.into_iter().enumerate() {
             let step = note.record();
             let state = Phase::of(&note);
-            if state.active() {
+            if note.active() {
                 self.until(note.trail().newest() + LIFE);
             }
             let open = self.open(note.id());
@@ -127,7 +127,7 @@ impl Tree<'_> {
     /// The look `tone` of the title of `note`, marked to shimmer in a watch while it works with no step
     /// under it.
     fn shone(&self, note: Step, tone: Style) -> Style {
-        match self.view.spin && Phase::of(&note) == Phase::Started && note.children().is_empty() {
+        match self.view.spin && note.works() && note.children().is_empty() {
             true => {
                 self.spun.set(true);
                 tone.add_modifier(SHIMMER)
@@ -138,7 +138,7 @@ impl Tree<'_> {
 
     /// Whether `note` or a step under it works.
     pub(in crate::command::read::tree) fn busy(&self, note: Step) -> bool {
-        note.tree().iter().any(|s| Phase::of(s) == Phase::Started)
+        note.tree().iter().any(|s| s.works())
     }
 
     /// Whether the step or pattern `id` shows what `--full` shows: with `--full`, unless the watch closed

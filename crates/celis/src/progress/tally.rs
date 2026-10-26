@@ -1,7 +1,7 @@
 //! How a set of steps ended.
 
 use crate::progress::Phase;
-use celis_trails::Step;
+use celis_trails::{State, Step};
 
 /// How many of a set of steps are done, dropped and stale, and how many a later step revised.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -16,11 +16,10 @@ impl Tally {
     pub fn of(steps: &[Step]) -> Tally {
         let mut tally = Tally::default();
         for step in steps {
-            match Phase::of(step) {
-                Phase::Done => tally.done += 1,
-                Phase::Dropped => tally.dropped += 1,
-                Phase::Stale => tally.stale += 1,
-                Phase::Open | Phase::Started => {}
+            match step.state() {
+                State::Done => tally.done += 1,
+                State::Dropped => tally.dropped += 1,
+                State::Open => tally.stale += usize::from(step.stale()),
             }
             tally.revised += usize::from(!step.revised().is_empty());
         }

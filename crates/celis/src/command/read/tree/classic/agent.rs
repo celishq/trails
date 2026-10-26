@@ -13,7 +13,7 @@ impl Tree<'_> {
     pub(super) fn agent_block(&self, note: Step, lines: &mut Vec<Row>) {
         let work = self.work(note);
         let summary = self.summary(note, work);
-        let heading = match self.grouped && Phase::of(&note).active() {
+        let heading = match self.grouped && note.active() {
             true => format!("{} · {}", self.heading(note), note.record().anchor.name),
             false => self.heading(note),
         };

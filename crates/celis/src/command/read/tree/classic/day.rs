@@ -5,7 +5,6 @@ use super::layout::{self, Group, Key};
 use super::row::Row;
 use super::{Frame, Tree, PROJECT};
 use crate::failure::Failure;
-use crate::progress::Phase;
 use crate::terminal::canvas::{paint, Styled, BOLD, DIM};
 use crate::text::clock::weekday;
 use celis_trails::Step;
@@ -111,12 +110,11 @@ impl Tree<'_> {
         trails: Vec<Step>,
         out: &mut Vec<Styled>,
     ) -> Result<(), Failure> {
-        let active = trails.iter().filter(|s| Phase::of(s).active()).count();
+        let active = trails.iter().filter(|s| s.active()).count();
         let counts = format!(" · {active} active · {} done", trails.len() - active);
         let head = Styled::from(vec![paint(BOLD, &weekday(at)), paint(DIM, &counts)]);
         let mut lines = vec![Row::Mark(false, Box::new(Row::Text(head)))];
-        let (active, rest): (Vec<Step>, Vec<Step>) =
-            trails.into_iter().partition(|s| Phase::of(s).active());
+        let (active, rest): (Vec<Step>, Vec<Step>) = trails.into_iter().partition(|s| s.active());
         let mut last = None;
         if !active.is_empty() {
             lines.push(self.gap());

@@ -243,13 +243,18 @@ impl<'a> Step<'a> {
         self.state() == State::Open && self.trail().ended()
     }
 
+    /// Whether it is open and not stale.
+    pub fn active(self) -> bool {
+        self.state() == State::Open && !self.stale()
+    }
+
     /// Whether it is open and not stale, and a start names it, or, as a trail, a step of it.
     pub fn works(self) -> bool {
         let started = match self.is_trail() {
             true => self.entry.busy,
             false => self.start().is_some(),
         };
-        started && self.state() == State::Open && !self.stale()
+        started && self.active()
     }
 
     /// The time of the newest record of its tree: its steps, and the marks that name them.

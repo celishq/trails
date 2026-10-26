@@ -64,7 +64,6 @@ impl Tree<'_> {
     /// grade; then its tree: its active steps, its patterns, then its closed steps.
     pub(super) fn block(&self, note: Step, lines: &mut Vec<Row>) {
         let step = note.record();
-        let state = Phase::of(&note);
         let work = self.work(note);
         let summary = self.summary(note, work);
         let hair = Styled::from(vec![Span::raw("  "), paint(DIM, "│ ")]);
@@ -80,12 +79,12 @@ impl Tree<'_> {
         if let Some(worked) = summary.worked {
             self.labelled(lines, &hair, "took", &took(worked));
         }
-        if self.view.spin && state.active() {
+        if self.view.spin && note.active() {
             let seconds = self.steps.now().saturating_sub(note.newest());
             self.until(self.steps.now() + stride(seconds));
             self.labelled(lines, &hair, "active", &format!("{} ago", took(seconds)));
         }
-        if !self.grouped || state.active() {
+        if !self.grouped || note.active() {
             lines.push(Row::Note {
                 rail: hair.clone(),
                 label: "",

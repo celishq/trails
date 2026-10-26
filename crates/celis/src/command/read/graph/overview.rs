@@ -11,7 +11,7 @@ use crate::terminal::look::lane;
 use crate::terminal::unfold::toward;
 use crate::text::line::plural;
 use celis_store::records::id::short;
-use celis_trails::{Step, Trail};
+use celis_trails::{State, Step, Trail};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::Style;
@@ -98,11 +98,11 @@ fn line(buf: &mut Buffer, trail: Step, y: u16, width: u16, picked: bool, m: &Mom
     let (mark, look) = m.mark(trail);
     buf.set_string(4, y, mark, look);
     let steps: Vec<Step> = trail.tree().into_iter().skip(1).collect();
-    let done = steps.iter().filter(|s| Phase::of(s) == Phase::Done).count();
+    let done = steps.iter().filter(|s| s.state() == State::Done).count();
     let tail = format!("  {done}/{} · {}", steps.len(), super::worked(trail, m.at));
     let right = width.saturating_sub(2 + tail.chars().count() as u16);
     let state = Phase::of(&trail);
-    let ended = state.closed() || state == Phase::Stale;
+    let ended = !trail.active();
     let title = match (picked, ended) {
         (true, _) => Style::new().fg(LIGHT).patch(BOLD),
         (false, true) => DIM.patch(BOLD),
@@ -136,7 +136,7 @@ fn strip(buf: &mut Buffer, trail: Step, y: u16, width: u16, m: &Moment) {
     let fit = columns(width.saturating_sub(2));
     let first = tops
         .iter()
-        .position(|s| matches!(Phase::of(s), Phase::Started | Phase::Open))
+        .position(|s| s.active())
         .unwrap_or(tops.len().saturating_sub(1));
     let mut start = first.saturating_sub(1);
     let room = |start: usize| usize::from(fit) - usize::from(start > 0);
@@ -225,7 +225,7 @@ fn small(buf: &mut Buffer, step: Step, area: Rect, m: &Moment) {
             if state == Phase::Started && !under.is_empty() {
                 let (d, w) = m.shares(&under);
                 let end = put(buf, x, area.y + 2, &bar(d, w, 10).spans);
-                let done = under.iter().filter(|s| Phase::of(s) == Phase::Done).count();
+                let done = under.iter().filter(|s| s.state() == State::Done).count();
                 buf.set_string(end + 1, area.y + 2, format!("{done}/{}", under.len()), DIM);
             } else {
                 buf.set_string(x, area.y + 2, state.text(), DIM);
