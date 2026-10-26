@@ -272,7 +272,7 @@ pub const VERBS: &[Verb] = &[
         args: &[
             ("<file>", "A file or folder the ask will touch"),
             ("--kind", "Only rule (a pattern that binds), pattern, trail, or step"),
-            ("--limit", "Show the first <n> of each part; 20 for trail or step"),
+            ("--limit", "Show <n> patterns and past asks; 20 for trail or step"),
             ("<ask>", "The ask, in any words and any language"),
         ],
         examples: &[

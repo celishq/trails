@@ -22,10 +22,9 @@ use std::collections::{HashMap, HashSet};
 use std::io::Write;
 
 impl Command {
-    /// Prints the live rules in scope that fit the ask of `args`, by its files, its words or its meaning,
-    /// then the other patterns that fit it, each with its examples, then the done asks like it with
-    /// their steps, and marks each pattern as recalled now; with `--kind`, only that part. Writes no
-    /// record.
+    /// Prints every live rule in scope that fits the ask of `args`, then the first other patterns that fit
+    /// it and a line that names the rest, each with its examples, then the done asks like it, and marks
+    /// each printed pattern as recalled now; with `--kind`, only that part. Writes no record.
     pub(crate) fn search(
         &self,
         args: &Args,
@@ -62,9 +61,9 @@ impl Command {
         if !self.held()? {
             return crate::command::put(out, NOTHING);
         }
-        let limit = limit.unwrap_or(usize::MAX);
         let trails = self.trails()?;
-        let found = self.fits(&trails, &ask, &args.words[1..], err)?;
+        let files = &args.words[1..];
+        let found = self.fits(&trails, &ask, files, err)?;
         let steps = trails.steps();
         let past = match parts.contains(&Part::Past) {
             true => self.past(&ask, &steps.all(), err)?,
@@ -75,15 +74,19 @@ impl Command {
             let lines: Vec<String> = match part {
                 Part::Past => past
                     .iter()
-                    .take(limit.min(PAST))
+                    .take(limit.unwrap_or(PAST).min(PAST))
                     .flat_map(|a| lines(*a))
                     .collect(),
                 _ => {
-                    let part: Vec<&Pattern> = found
+                    let all: Vec<&Pattern> = found
                         .iter()
                         .filter(|pattern| pattern.record.binds == (part == Part::Rules))
-                        .take(limit)
                         .collect();
+                    let shown = match part {
+                        Part::Rules => all.len(),
+                        _ => limit.unwrap_or(BUDGET).min(all.len()),
+                    };
+                    let part = &all[..shown];
                     if let Ok(home) = self.home() {
                         Recalls::mark(&home, part.iter().map(|pattern| pattern.note));
                     }
@@ -97,7 +100,16 @@ impl Command {
                         }));
                         lines.join("\n")
                     };
-                    part.iter().map(line).collect()
+                    let mut lines: Vec<String> = part.iter().map(line).collect();
+                    if shown < all.len() {
+                        let files: String = files.iter().map(|f| format!("{f} ")).collect();
+                        lines.push(format!(
+                            "{} more: celis search {files}--kind pattern --limit {} -- {ask:?}",
+                            all.len() - shown,
+                            all.len()
+                        ));
+                    }
+                    lines
                 }
             };
             if lines.is_empty() {
@@ -115,8 +127,8 @@ impl Command {
         }
     }
 
-    /// The live patterns in scope that fit `ask` by its `files`, its words or its meaning, in the order
-    /// `Patterns::fitting` gives.
+    /// The live patterns in scope that fit `ask` by its `files`, their cells, its words or its meaning, in
+    /// the order `Patterns::fitting` gives.
     pub(crate) fn fits<'a>(
         &self,
         trails: &'a Store,
@@ -136,10 +148,36 @@ impl Command {
             .meant(ask, (Kind::Pattern, &ids), err)?
             .into_iter()
             .collect();
-        let asked = words(ask);
-        Ok(patterns.fitting(&project.anchor.project, &paths, |p| {
-            meant.contains(&short(p.id())) || !words(when(&p.record.content)).is_disjoint(&asked)
-        }))
+        let whens: Vec<HashSet<String>> = live
+            .iter()
+            .map(|p| words(when(&p.record.content)))
+            .collect();
+        let named = words(ask);
+        let asked: HashSet<String> = named
+            .iter()
+            .filter(|w| {
+                let n = whens.iter().filter(|when| when.contains(*w)).count();
+                n <= WIDE || n * 100 <= whens.len() * SHARE
+            })
+            .cloned()
+            .collect();
+        let filed: HashSet<String> = live
+            .iter()
+            .filter(|p| p.record.fit(&paths).is_some())
+            .flat_map(|p| p.record.cells.iter().map(|c| c.name().to_string()))
+            .collect();
+        let cell = |p: &Pattern| {
+            let cells = p.record.cells.iter();
+            cells
+                .map(|c| c.name())
+                .any(|c| filed.contains(c) || !words(c).is_disjoint(&named))
+        };
+        Ok(
+            patterns.fitting(&project.anchor.project, &paths, cell, |p| {
+                meant.contains(&short(p.id()))
+                    || !words(when(&p.record.content)).is_disjoint(&asked)
+            }),
+        )
     }
 
     /// The done asks among `steps` most like `ask`: those alike in meaning first, then those whose
@@ -216,8 +254,8 @@ impl Part {
     }
 }
 
-/// The lines of the done ask `ask`: its own, then each step right under it with its `changed` line, or
-/// the ask itself as its one step when none is under it.
+/// The lines of the done ask `ask`: its own, then each `changed` line of the steps right under it, or of
+/// the ask itself when none is under it.
 fn lines(ask: Step) -> Vec<String> {
     let mut lines = vec![format!(
         "{} {} · {} [{}]",
@@ -232,10 +270,11 @@ fn lines(ask: Step) -> Vec<String> {
         false => children,
     };
     for step in steps {
-        let state = step.state_word();
-        let title = flat(step.title());
-        lines.push(format!("  step {} {state} {title}", short(step.id())));
-        lines.extend(step.changed().map(|c| format!("    changed {}", flat(c))));
+        let id = short(step.id());
+        lines.extend(
+            step.changed()
+                .map(|c| format!("  changed {id} {}", flat(c))),
+        );
     }
     lines
 }
@@ -258,6 +297,15 @@ const COMMON: &[&str] = &[
 
 /// The most smaller patterns `search` prints under a pattern.
 const NEXT: usize = 5;
+
+/// The most patterns that are not rules `search` prints when no `--limit` is given.
+const BUDGET: usize = 8;
+
+/// The most patterns a word of the ask may be in and still fit, whatever their share.
+const WIDE: usize = 5;
+
+/// The most percent of the patterns a word of the ask may be in and still fit.
+const SHARE: usize = 5;
 
 /// The most past asks `search` prints.
 const PAST: usize = 2;

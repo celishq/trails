@@ -29,10 +29,10 @@ fn tagged(repo: &Repo, tags: &[(&str, &str)], content: &str, at: u64) -> Note {
     note
 }
 
-/// A pattern made by a correction comes first, then the rest narrowest first, then newest
+/// Patterns rank narrowest first, then within each a pattern made by a correction first, then newest
 /// (`spec/02-cli.md`, "Search").
 #[test]
-fn patterns_rank_a_correction_then_the_narrowest() {
+fn patterns_rank_the_narrowest_then_a_correction() {
     let repo = Repo::new();
     let at = support::now() - DAY;
     let gone = tagged(&repo, &[("path", "*.py")], "gone", at);
@@ -47,6 +47,6 @@ fn patterns_rank_a_correction_then_the_narrowest() {
     tagged(&repo, &[("path", "*.py")], "wide", at + 4);
     assert_eq!(
         patterns(&repo, "a.py"),
-        ["correction", "named", "wide", "older"]
+        ["named", "correction", "wide", "older"]
     );
 }

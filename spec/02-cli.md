@@ -306,11 +306,13 @@ rules
                         <the path of its blob>
                 bad     <url>                                            a URL example
 patterns
-<line>        each other pattern that fits, as a rule prints
+<line>        each other pattern that fits, as a rule prints, at most 8
+<n> more: celis search [<file>]... --kind pattern --limit <all> -- "<ask>"
+              when <n> more patterns fit; <all> is the count of all that fit
 past
 <id8> <title> · <yyyy-mm-dd> [<project name>]     each done ask like it
-  step <id8> <state> <title>                      each step right under it
-    changed <text>                                when the step went otherwise than planned
+  changed <id8> <text>                            each step right under it, or the ask with no step
+                                                  under it, that went otherwise than planned
 none          nothing fits this ask
 ```
 
@@ -329,19 +331,26 @@ no model celis search has no model: search with celis grep, or run celis setup.
 
 - Each `<file>` MUST count as that file. A `<file>` that is a folder MUST count as each file that
   `git ls-files --cached --others --exclude-standard -- <folder>` gives in the project.
-- A pattern fits the ask when it matches a file, when its first line before its first `:` shares a word
-  with the ask, or when the model finds it among the 5 most alike in meaning, at a cosine of 0.3 or more.
+- A pattern fits the ask when it matches a file, when one of its cells fits, when its first line before
+  its first `:` shares a word with the ask, or when the model finds it among the 5 most alike in meaning,
+  at a cosine of 0.3 or more.
+- A cell fits when a word of its name is a word of the ask, or when a pattern in the cell matches a file.
+- A word of the ask is shared only when at most 5% of the live patterns in scope, or at most 5 of them,
+  have it in their first line before its first `:`.
 - A done ask is like the ask when the model finds it among the 5 most alike in meaning, at a cosine of
   0.3 or more, or when its title and its trail's title share 2 words with the ask. `search` MUST print at most 2.
 - `search` MUST print the parts in the order rules, patterns, past, and leave out a part with no line.
-  Within a part, a pattern with a `replaces` tag comes first, then the rest; within each, first
-  those that match a named file (a `path` with no `*` or `?`), then a glob, then
-  those that fit by words or meaning; newest first within each.
+  Within a part, first come the patterns that match a named file (a `path` with no `*` or `?`), then
+  those that match a glob, then those in a cell that fits, then those that fit by words or meaning.
+  Within each, a pattern with a `replaces` tag comes first, then the rest, newest first.
+- `search` MUST print each rule that fits. It MUST print the first 8 patterns, or the first `--limit`
+  when given, then the `more` line when more fit.
 - With `--kind rule` or `--kind pattern`, `search` MUST print only that part.
 - With `--kind trail` or `--kind step`, `search` MUST print at most `--limit` records, 20 when not
   given, highest score first; with no model, it MUST print the `no model` line and exit 0.
 - Under each pattern, `search` MUST print each of its smaller patterns in scope, newest first, at most 5.
-- `--limit` MUST cap each part.
+- `--limit` MUST cap the patterns and the past asks, and never the rules.
+- Only a pattern that `search` prints counts as recalled.
 - `search` MUST refuse empty text, a `--kind` that is not `rule`, `pattern`, `trail` or `step`, a
   `--limit` that is not a positive number, and `--json` without `--kind trail` or `--kind step`, as a
   usage error.

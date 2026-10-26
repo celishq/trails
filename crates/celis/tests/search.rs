@@ -278,8 +278,8 @@ fn search_prints_only_the_kind_asked() {
     assert!(!patterns.contains(&logo[..8]), "{patterns}");
 }
 
-/// `search` prints the done asks like the ask, at most 2, each with the steps right under it and
-/// their `changed` lines, and leaves out an open ask (`spec/02-cli.md`, "Search").
+/// `search` prints the done asks like the ask, at most 2, each with the `changed` lines of the steps
+/// right under it and no other step line, and leaves out an open ask (`spec/02-cli.md`, "Search").
 #[test]
 fn search_prints_the_past_asks_like_the_ask() {
     let repo = Repo::new();
@@ -303,6 +303,8 @@ fn search_prints_the_past_asks_like_the_ask() {
         Some("kept floats in the tests"),
         "pytest passes",
     );
+    let plain = add(&repo, &["--under", &ask[..8], "--", "Show the cents"]);
+    done(&repo, &plain, None, "the shelf shows cents");
     done(&repo, &ask, None, "the shelf shows cents");
     let open = add(
         &repo,
@@ -317,20 +319,14 @@ fn search_prints_the_past_asks_like_the_ask() {
     let lines: Vec<&str> = said.lines().collect();
     let past = lines.iter().position(|l| *l == "past").unwrap();
     assert!(lines[past + 1].starts_with(&ask[..8]), "{said}");
-    assert!(
-        lines[past + 2].starts_with(&format!("  step {} done", &step[..8])),
-        "{said}"
-    );
-    assert_eq!(
-        lines[past + 3],
-        "    changed kept floats in the tests",
-        "{said}"
-    );
+    let changed = format!("  changed {} kept floats in the tests", &step[..8]);
+    assert_eq!(lines[past + 2], changed, "{said}");
+    assert!(!said.contains(&plain[..8]), "{said}");
+    assert!(!said.contains("  step "), "{said}");
     assert!(!said.contains(&open[..8]), "{said}");
 }
 
-/// A past ask with no step under it prints as its own step, with its `changed` line
-/// (`spec/02-cli.md`, "Search").
+/// A past ask with no step under it prints its own `changed` line (`spec/02-cli.md`, "Search").
 #[test]
 fn search_prints_a_past_ask_with_no_steps_as_its_own_step() {
     let repo = Repo::new();
@@ -353,13 +349,8 @@ fn search_prints_a_past_ask_with_no_steps_as_its_own_step() {
     let said = search(&repo, &["--", "round the prices of the menu to cents"]);
     let lines: Vec<&str> = said.lines().collect();
     let past = lines.iter().position(|l| *l == "past").unwrap();
-    let step = format!("  step {} done Round the shelf prices to cents", &ask[..8]);
-    assert_eq!(lines[past + 2], step, "{said}");
-    assert_eq!(
-        lines[past + 3],
-        "    changed kept floats in the tests",
-        "{said}"
-    );
+    let changed = format!("  changed {} kept floats in the tests", &ask[..8]);
+    assert_eq!(lines[past + 2], changed, "{said}");
 }
 
 /// A past ask is like the ask by the words of its title and of its trail's title (`spec/02-cli.md`,
@@ -434,4 +425,113 @@ fn grep_marks_patterns_and_the_day_of_a_search() {
     assert!(line(&pattern).contains(" recalled:"), "{said}");
     assert!(!line(&pattern).contains(" binds"), "{said}");
     assert!(!line(&rust).contains("recalled:"), "{said}");
+}
+
+/// The lines of `said` that start with a pattern's id, in their order.
+fn heads<'a>(said: &'a str, ids: &[String]) -> Vec<&'a str> {
+    let head = |l: &&str| ids.iter().any(|id| l.starts_with(&id[..8]));
+    said.lines().filter(head).collect()
+}
+
+/// `search` prints each rule that fits, more than 8 and also with `--limit 1` (`spec/02-cli.md`,
+/// "Search").
+#[test]
+fn search_never_cuts_a_rule() {
+    let repo = Repo::new();
+    let rules: Vec<String> = (0..10)
+        .map(|n| {
+            let text = format!("When Rust code {n} changes: run cargo fmt.");
+            decide(&repo, &["--path", "src/*.rs", "--binds"], &text)
+        })
+        .collect();
+    for args in [
+        &["src/main.rs", "--"][..],
+        &["src/main.rs", "--limit", "1", "--"],
+    ] {
+        let mut args = args.to_vec();
+        args.push("tidy the code");
+        let said = search(&repo, &args);
+        assert_eq!(heads(&said, &rules).len(), 10, "{said}");
+        assert!(!said.contains(" more: "), "{said}");
+    }
+}
+
+/// `search` prints the first 8 patterns, or the first `--limit`, then the `more` line, and only a
+/// printed pattern counts as recalled (`spec/02-cli.md`, "Search").
+#[test]
+fn search_prints_the_first_eight_patterns_and_the_more_line() {
+    let repo = Repo::new();
+    let patterns: Vec<String> = (0..10)
+        .map(|n| {
+            let text = format!("When Rust code {n} changes: keep it short.");
+            decide(&repo, &["--path", "src/*.rs"], &text)
+        })
+        .collect();
+    let said = search(&repo, &["src/main.rs", "--", "tidy the code"]);
+    let shown = heads(&said, &patterns);
+    assert_eq!(shown.len(), 8, "{said}");
+    let more = "2 more: celis search src/main.rs --kind pattern --limit 10 -- \"tidy the code\"";
+    assert_eq!(said.lines().last(), Some(more), "{said}");
+    let recalled = out(&cli(&repo, &["grep", " recalled:"]));
+    for (n, id) in patterns.iter().enumerate() {
+        let marked = recalled.contains(&id[..8]);
+        assert_eq!(
+            marked,
+            shown.iter().any(|l| l.starts_with(&id[..8])),
+            "{n} {recalled}"
+        );
+    }
+    let said = search(
+        &repo,
+        &["src/main.rs", "--limit", "3", "--", "tidy the code"],
+    );
+    assert_eq!(heads(&said, &patterns).len(), 3, "{said}");
+    assert!(
+        said.contains("\n7 more: celis search src/main.rs --kind pattern --limit 10 -- "),
+        "{said}"
+    );
+}
+
+/// A pattern in a cell that fits ranks under one that matches a file and over one that fits by words
+/// (`spec/02-cli.md`, "Search").
+#[test]
+fn a_cell_fit_ranks_between_a_path_and_a_word() {
+    let repo = Repo::new();
+    let path = decide(
+        &repo,
+        &["--path", "*.svg", "--cell", "brand"],
+        "When an icon ships: keep it flat.",
+    );
+    let named = decide(
+        &repo,
+        &["--cell", "logo"],
+        "When a mark ships: keep two colours.",
+    );
+    let filed = decide(
+        &repo,
+        &["--cell", "brand"],
+        "When a font ships: keep one family.",
+    );
+    let word = decide(&repo, &[], "When prices show: keep cents.");
+    let ids = [path.clone(), named.clone(), filed.clone(), word.clone()];
+    let said = search(&repo, &["logo.svg", "--", "draw a logo with the prices"]);
+    let shown = heads(&said, &ids);
+    let at = |id: &str| shown.iter().position(|l| l.starts_with(&id[..8])).unwrap();
+    assert!(at(&path) < at(&named) && at(&path) < at(&filed), "{said}");
+    assert!(at(&named) < at(&word) && at(&filed) < at(&word), "{said}");
+}
+
+/// A word in the first line of more than 5% of the live patterns, and of more than 5, does not fit
+/// (`spec/02-cli.md`, "Search").
+#[test]
+fn a_word_of_many_patterns_does_not_fit() {
+    let repo = Repo::new();
+    let common: Vec<String> = ["runs", "prints", "reads", "writes", "starts", "stops"]
+        .iter()
+        .map(|verb| decide(&repo, &[], &format!("When celis {verb}: keep it quiet.")))
+        .collect();
+    let prices = decide(&repo, &[], "When prices show: keep cents.");
+    let said = search(&repo, &["--", "celis prices"]);
+    assert!(heads(&said, &common).is_empty(), "{said}");
+    assert!(said.contains(&prices[..8]), "{said}");
 }

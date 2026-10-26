@@ -19,7 +19,7 @@ Read
   grep <pattern>      Search every trail with grep
   search <ask>        Show the rules, patterns and past asks that fit an ask
   ├ --kind <kind>     Only rule (a pattern that binds), pattern, trail, or step
-  └ --limit <n>       Show the first <n> of each part; 20 for trail or step
+  └ --limit <n>       Show <n> patterns and past asks; 20 for trail or step
 
   patterns            Show your patterns with their good and bad examples
   └ --markdown        Print one Markdown page, each file a link to its blob
