@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: 41-lesson-must-no-why
+context:
+  scaffold_script: ./setup.sh
