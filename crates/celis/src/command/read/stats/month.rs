@@ -4,8 +4,8 @@ use super::outcomes::Outcomes;
 use super::project::Project;
 use crate::progress::{Grade, Model};
 use crate::text::clock::midnight;
-use celis_trails::{State, Step, Used};
-use std::collections::{BTreeMap, HashMap, HashSet};
+use celis_trails::{State, Step};
+use std::collections::{BTreeMap, HashMap};
 
 /// The seconds of one day.
 pub(super) const DAY: u64 = 86_400;
@@ -27,8 +27,7 @@ pub(super) const SPANS: [(&str, u64); 5] = [
 
 /// The steps of a store in the last 28 days: how those of each day ended, the first second of the
 /// oldest day, the median time of a successful step in the last and the prior 14 days, how many fell in
-/// each span, each project's time and the time of the prior 14 days, the trails the reused steps
-/// followed, the live patterns, those learned and those applied in the last 14 days with the steps that
+/// each span, each project's time and the time of the prior 14 days, the live patterns, those learned and those applied in the last 14 days with the steps that
 /// applied one in each project, the five live patterns with the most hits in them, each its id, its words
 /// and its hits, and the trails active now.
 #[derive(Debug, Default)]
@@ -40,7 +39,6 @@ pub(super) struct Month {
     pub spans: [usize; 5],
     pub projects: Vec<Project>,
     pub prior_active: u64,
-    pub sources: usize,
     pub patterns: usize,
     pub learned: usize,
     pub kept: usize,
@@ -61,7 +59,6 @@ impl Month {
         };
         let (mut took, mut earlier) = (vec![], vec![]);
         let mut projects: BTreeMap<String, Project> = BTreeMap::new();
-        let mut sources = HashSet::new();
         let mut used: HashMap<&str, usize> = HashMap::new();
         let mut applied: BTreeMap<String, usize> = BTreeMap::new();
         for step in steps.all().into_iter().filter(|s| !s.is_trail()) {
@@ -77,22 +74,8 @@ impl Month {
             let outcome = &mut month.days[day];
             match step.state() {
                 State::Done => {
-                    let uses = step.uses();
-                    let follows: Vec<Step> = uses
-                        .iter()
-                        .filter_map(|u| match u {
-                            Used::Follow(s) => Some(*s),
-                            Used::Pattern(_) => None,
-                        })
-                        .collect();
-                    let patterns: Vec<&str> = uses
-                        .iter()
-                        .filter_map(|u| match u {
-                            Used::Pattern(id) => Some(*id),
-                            Used::Follow(_) => None,
-                        })
-                        .collect();
-                    match (step.revised().is_empty(), follows.is_empty()) {
+                    let patterns = step.uses();
+                    match (step.revised().is_empty(), patterns.is_empty()) {
                         (false, _) => outcome.reworked += 1,
                         (true, false) => outcome.reused += 1,
                         (true, true) => outcome.new += 1,
@@ -104,9 +87,6 @@ impl Month {
                     match last {
                         true => {
                             took.push(grade);
-                            if step.revised().is_empty() {
-                                sources.extend(follows.iter().map(|s| s.trail().id()));
-                            }
                             if !patterns.is_empty() {
                                 *applied.entry(name.clone()).or_default() += 1;
                                 for pattern in patterns {
@@ -150,7 +130,6 @@ impl Month {
         let mut projects: Vec<Project> = projects.into_values().filter(|p| p.active > 0).collect();
         projects.sort_by(|a, b| b.active.cmp(&a.active).then_with(|| a.name.cmp(&b.name)));
         month.projects = projects;
-        month.sources = sources.len();
         let live: Vec<_> = model
             .patterns
             .every()

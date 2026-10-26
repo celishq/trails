@@ -1,7 +1,7 @@
 //! The work of a store in one span of time.
 
 use crate::progress::Flags;
-use celis_trails::{Step, Steps, Used};
+use celis_trails::{Step, Steps};
 
 /// The work of a store from `from` up to `to`: the steps done, added and closed in that time. A trail
 /// counts as none of them.
@@ -55,9 +55,8 @@ impl<'a> Period<'a> {
 
     /// How many of its done steps use a pattern.
     pub fn ruled(&self) -> usize {
-        let pattern = |u: &Used| matches!(u, Used::Pattern(_));
         let done = self.done().into_iter();
-        done.filter(|s| s.uses().iter().any(pattern)).count()
+        done.filter(|s| !s.uses().is_empty()).count()
     }
 
     /// The steps done or dropped in it, and those stale with a trail whose newest record is in it,

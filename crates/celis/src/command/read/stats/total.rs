@@ -2,11 +2,11 @@
 
 use super::month::spent;
 use crate::progress::Model;
-use celis_trails::{State, Used};
+use celis_trails::State;
 use std::collections::HashSet;
 
 /// What a store holds of all time: the second of its first step, its trails, its steps that ended, the
-/// done steps that followed past work and no later step revised, the done steps that applied a pattern,
+/// done steps that used a pattern and no later step revised, the done steps that applied a pattern,
 /// its patterns kept and how many of them a step ever used, and the time its steps with no steps under
 /// them took.
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -26,17 +26,8 @@ impl Total {
         let all = model.steps.all();
         let parts = || all.iter().filter(|s| !s.is_trail());
         let done = || parts().filter(|s| s.state() == State::Done);
-        let follows =
-            |s: &celis_trails::Step| s.uses().iter().any(|u| matches!(u, Used::Follow(_)));
-        let ruled = |s: &celis_trails::Step| s.uses().iter().any(|u| matches!(u, Used::Pattern(_)));
-        let named: HashSet<&str> = all
-            .iter()
-            .flat_map(|s| s.uses())
-            .filter_map(|u| match u {
-                Used::Pattern(id) => Some(id),
-                Used::Follow(_) => None,
-            })
-            .collect();
+        let ruled = |s: &celis_trails::Step| !s.uses().is_empty();
+        let named: HashSet<&str> = all.iter().flat_map(|s| s.uses()).collect();
         let live: Vec<_> = model
             .patterns
             .every()
@@ -48,7 +39,7 @@ impl Total {
             trails: all.iter().filter(|s| s.is_trail()).count(),
             resolved: parts().filter(|s| s.closed_at().is_some()).count(),
             reused: done()
-                .filter(|s| s.revised().is_empty() && follows(s))
+                .filter(|s| s.revised().is_empty() && ruled(s))
                 .count(),
             hits: done().filter(|s| ruled(s)).count(),
             patterns: live.len(),

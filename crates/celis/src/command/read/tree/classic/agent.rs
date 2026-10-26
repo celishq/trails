@@ -68,7 +68,7 @@ impl Tree<'_> {
         if self.view.full {
             let indent = Styled::from(indent.to_string());
             self.closing(note, &indent, true, lines);
-            self.followed(note, &indent, lines);
+            self.used(note, &indent, lines);
             return;
         }
         if let Some(changed) = note.changed() {

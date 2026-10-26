@@ -118,8 +118,8 @@ fn start_does_not_run_the_steps_check() {
     assert!(!repo.path().join("ran").exists());
 }
 
-/// `start` prints the notes of the step's trail, each pattern its ask uses, and the notes of the trail of
-/// each step its ask uses; not a pattern none of them names (`spec/02-cli.md`, "Step").
+/// `start` prints the notes of the step's trail and each pattern its ask uses; not the notes of another
+/// trail, nor a pattern none of them names (`spec/02-cli.md`, "Step").
 #[test]
 fn start_prints_the_trails_notes_and_the_patterns_its_ask_uses() {
     let repo = Repo::new();
@@ -145,8 +145,6 @@ fn start_prints_the_trails_notes_and_the_patterns_its_ask_uses() {
             &trail[..8],
             "--uses",
             &used[..8],
-            "--uses",
-            &past[..8],
             "--",
             "the ask",
         ],
@@ -155,8 +153,10 @@ fn start_prints_the_trails_notes_and_the_patterns_its_ask_uses() {
     let o = cli(&repo, &["step", "start", &step[..8]]);
     assert!(o.status.success(), "{}", err(&o));
     let text = out(&o);
-    for said in ["this trail rule", "use the shared Badge", "past keeps tabs"] {
+    for said in ["this trail rule", "use the shared Badge"] {
         assert!(text.contains(said), "{text}");
     }
-    assert!(!text.contains("never deploy on friday"), "{text}");
+    for unsaid in ["past keeps tabs", "never deploy on friday"] {
+        assert!(!text.contains(unsaid), "{text}");
+    }
 }

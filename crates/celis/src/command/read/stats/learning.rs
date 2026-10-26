@@ -1,7 +1,7 @@
-//! The Learning section of the stats board: the reuse of past work and the patterns applied.
+//! The Learning section of the stats board: the reuse of patterns and the patterns applied.
 
 use super::kind::Kind;
-use super::moment::{counted, plural, Moment};
+use super::moment::{plural, Moment};
 use super::panel::Panel;
 use super::sheet::{Group, Sheet};
 use crate::terminal::canvas::{cut, paint, BOLD, CYAN, DIM, MAGENTA};
@@ -14,7 +14,7 @@ pub(super) fn panels() -> [Panel; 2] {
     [
         Panel {
             name: "Reuse",
-            says: "past steps reapplied".into(),
+            says: "steps done with a pattern".into(),
             start: 0.3,
             draw: reuse,
         },
@@ -80,7 +80,7 @@ pub(super) fn most(m: &Moment) -> i64 {
     (most.max(1) + 9) / 10 * 10
 }
 
-/// Reuse, in cyan: the reused steps with their change, the earlier trails they came from, and the reuse
+/// Reuse, in cyan: the reused steps with their change, and the reuse
 /// rate of each of the last four weeks as a bar; the rows it takes. The rate of the 14 days stands on
 /// its tile.
 fn reuse(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
@@ -98,13 +98,7 @@ fn reuse(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
         w - 4,
         &m.measure(lead, reused, Kind::Count, true),
     );
-    s.put(
-        x + 2,
-        row,
-        &format!("from {}", counted(m.month.sources, "earlier trail")),
-        DIM,
-    );
-    row += 2;
+    row += 1;
     s.put(x + 2, row, "weekly reuse rate · last 4 weeks", DIM);
     let label = if w >= 40 { 15 } else { 10 };
     let most = most(m) as f64;

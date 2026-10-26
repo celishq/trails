@@ -5,9 +5,7 @@ pub mod notice;
 mod target;
 pub mod written;
 
-use crate::{
-    Check, Done, Draft, Mark, Notes, Notice, Step, StepRecord, Steps, Trail, Used, Written,
-};
+use crate::{Check, Done, Draft, Mark, Notes, Notice, Step, StepRecord, Steps, Trail, Written};
 use celis_nostr::Note;
 use celis_patterns::{Pattern, PatternStore, Patterns};
 use celis_store::records::id::short;
@@ -28,7 +26,7 @@ pub trait TrailStore {
     fn add(&self, draft: Draft) -> Result<Written<'_>, Refusal>;
 
     /// Starts the open step `id`, or gives back the first start of a started step; then the patterns
-    /// the step must keep, and the notes of its trail and of each trail it follows.
+    /// the step must keep, and the notes of its trail.
     fn start(&self, id: &str) -> Result<Written<'_>, Refusal>;
 
     /// Closes the open step `id` `done`, once nothing under it is open and its check passes
@@ -70,11 +68,10 @@ impl TrailStore for Store {
         let replaced = replaced.transpose()?;
         let moved = replaced.filter(|s| s.done_record().is_none());
         let under = parent(&steps, &draft, moved)?;
-        let trail = under.map(|u| u.trail().id());
         let uses = draft
             .uses
             .iter()
-            .map(|id| used(self, &steps, &draft.anchor.project, trail, id));
+            .map(|id| used(self, &steps, &draft.anchor.project, id));
         let mut uses = uses.collect::<Result<Vec<String>, _>>()?;
         let mut seen = std::collections::HashSet::new();
         uses.retain(|id| seen.insert(id.clone()));
@@ -135,11 +132,7 @@ impl TrailStore for Store {
                 .push(self.sign(|account, now| Mark::Start.record(account, step.id(), now))?),
         }
         written.patterns = kept(&self.patterns(), step);
-        let notes = self.notes();
-        let trails = std::iter::once(step.trail()).chain(step.followed());
-        let mut seen = std::collections::HashSet::new();
-        let trails = trails.filter(|t| seen.insert(t.id()));
-        written.notes = trails.flat_map(|t| notes.of(t)).collect();
+        written.notes = self.notes().of(step.trail());
         Ok(written)
     }
 
@@ -251,28 +244,17 @@ fn start_trail(store: &Store, ask: StepRecord) -> Result<Written<'_>, Refusal> {
     })
 }
 
-/// The whole id of the live pattern of `project` or the step of a trail other than `trail` that `id`
-/// names, in `store`; a trail gives the step that holds its work (`Trail::work`).
-fn used(
-    store: &Store,
-    steps: &Steps,
-    project: &str,
-    trail: Option<&str>,
-    id: &str,
-) -> Result<String, Refusal> {
+/// The whole id of the live pattern of `project` that `id` names, in `store`; refuses a step as a usage
+/// error.
+fn used(store: &Store, steps: &Steps, project: &str, id: &str) -> Result<String, Refusal> {
     let patterns = store.patterns();
     let found = patterns.find(Some(project), id).ok().map(|p| p.note);
-    let step = match Target::of(id, found, steps.find(id).ok())? {
-        Target::Pattern(pattern) => return Ok(pattern.id.clone()),
-        Target::Step(step) => step,
-    };
-    let step = Trail::new(step).work();
-    if Some(step.trail().id()) == trail {
-        return Err(Refusal::Usage(
-            "step add --uses takes a step of another trail".into(),
-        ));
+    match Target::of(id, found, steps.find(id).ok())? {
+        Target::Pattern(pattern) => Ok(pattern.id.clone()),
+        Target::Step(_) => Err(Refusal::Usage(
+            "step add --uses takes the id of a pattern".into(),
+        )),
     }
-    Ok(step.id().to_string())
 }
 
 /// The whole id of each live pattern in scope that `draft` recalls, once each, in `store`; refuses an id
@@ -320,10 +302,8 @@ fn drop_open(store: &Store, step: Step, reason: &str) -> Result<Vec<Note>, Refus
 fn kept<'a>(patterns: &Patterns<'a>, step: Step) -> Vec<Pattern<'a>> {
     let mut found = Vec::new();
     let chain = std::iter::successors(Some(step), |s| s.under());
-    for used in chain.flat_map(Step::uses) {
-        if let Used::Pattern(id) = used {
-            found.extend(patterns.find(None, id));
-        }
+    for id in chain.flat_map(Step::uses) {
+        found.extend(patterns.find(None, id));
     }
     let mut seen = HashSet::new();
     found.retain(|p| seen.insert(p.note.id.clone()));

@@ -55,7 +55,7 @@ pub(super) fn time(last: &Period, inside: usize, ink: Ink) -> Card {
         })
         .collect();
     Card {
-        title: "04 TIME A STEP TOOK".into(),
+        title: "03 TIME A STEP TOOK".into(),
         face,
         table: Table {
             head: vec!["Step", "Took"],

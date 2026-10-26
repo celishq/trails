@@ -48,7 +48,7 @@ pub(super) fn outcome(last: &Period, inside: usize, ink: Ink) -> Card {
         })
         .collect();
     Card {
-        title: "05 OUTCOME".into(),
+        title: "04 OUTCOME".into(),
         face,
         table: Table {
             head: vec!["State", "Step"],

@@ -93,7 +93,7 @@ impl Tree<'_> {
             });
         }
         self.closing(work, &hair, false, lines);
-        self.followed(work, &hair, lines);
+        self.used(work, &hair, lines);
         let level = Level::of(Trail::new(note).parts());
         self.level(level, summary.notes, &Styled::from("  "), note.id(), lines);
     }

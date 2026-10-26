@@ -91,7 +91,7 @@ impl Tree<'_> {
             if open && self.view.full {
                 let below = after(&rail, Span::raw("  "));
                 self.closing(note, &below, true, lines);
-                self.followed(note, &below, lines);
+                self.used(note, &below, lines);
             }
             if open {
                 self.level(level, vec![], &rail, note.id(), lines);

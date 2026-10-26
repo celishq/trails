@@ -150,8 +150,8 @@ note  json  {"id", "created_at", "step", "content"}
 - `add` of a session's first ask MUST print the ask's id, then the trail's.
 - `add` MUST refuse empty text as a usage error; a closed `--under`, and a `--replaces` of a dropped step,
   with `closed`; a `--replaces` of a trail with no first ask as a usage error; a `--uses` that no live
-  pattern and no step has, with `no-step`; and a `--uses` of a step of its own trail, or that starts both
-  a pattern's and a step's id, as a usage error.
+  pattern and no step has, with `no-step`; and a `--uses` that names a step, or that starts both a
+  pattern's and a step's id, as a usage error.
 - `add` MUST refuse a `--recalled` that no live pattern in scope has, with `no-pattern`, and a
   `--recalled` on a step that is not an ask, as a usage error.
 - `start` and `done` MUST refuse a closed step, with `closed`. `start` of a step that a `start` names
@@ -178,7 +178,7 @@ note  json  {"id", "created_at", "step", "content"}
 - `drop` MUST refuse an empty reason, and `edit` one with no text, `--at` or `--check`, as usage errors.
 - `note` MUST write its text as a note on the step (CIP-03, "Notes"), and refuse empty text as a usage
   error.
-- `start` MUST print the notes of the step's trail and of each trail it follows (CIP-04, "Notes").
+- `start` MUST print the notes of the step's trail (CIP-04, "Notes").
 
 The output of `done` of an ask begins with the learn brief, before the end the agent answers with:
 

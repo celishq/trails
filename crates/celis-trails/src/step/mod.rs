@@ -8,10 +8,9 @@ pub mod notes;
 pub mod state;
 pub mod step_record;
 pub mod steps;
-pub mod used;
 
 use crate::step::steps::{Close, Entry, LIFE};
-use crate::{Done, Mark, State, StepRecord, Steps, Trail, Used};
+use crate::{Done, Mark, State, StepRecord, Steps, Trail};
 use celis_nostr::Note;
 use celis_store::StepId;
 use std::collections::HashSet;
@@ -60,43 +59,13 @@ impl<'a> Step<'a> {
         self.steps.get(self.entry.step.under.as_deref()?)
     }
 
-    /// What each of its `uses` names, once each, in the order it names them; an id that names no step
-    /// and no pattern is left out.
-    pub fn uses(self) -> Vec<Used<'a>> {
+    /// The id of each pattern its `uses` names, once each, in the order it names them; an id that names a
+    /// step or nothing is left out (CIP-06, "Uses").
+    pub fn uses(self) -> Vec<&'a str> {
         let mut seen = HashSet::new();
-        let ids = self
-            .entry
-            .step
-            .uses
-            .iter()
-            .filter(|id| seen.insert(id.as_str()));
-        ids.filter_map(|id| match self.steps.get(id) {
-            Some(step) => Some(Used::Follow(step)),
-            None => self.steps.holds_pattern(id).then_some(Used::Pattern(id)),
-        })
-        .collect()
-    }
-
-    /// The trails that the steps on its `under` chain follow, each once.
-    pub fn followed(self) -> Vec<Step<'a>> {
-        let follows = |s: Step<'a>| {
-            let used = s.uses().into_iter();
-            used.filter_map(|u| match u {
-                Used::Follow(step) => Some(step.trail()),
-                Used::Pattern(_) => None,
-            })
-        };
-        let chain = std::iter::successors(Some(self), |s| s.under());
-        let mut next: Vec<Step<'a>> = chain.flat_map(follows).collect();
-        next.reverse();
-        let mut found: Vec<Step<'a>> = Vec::new();
-        while let Some(trail) = next.pop() {
-            if found.iter().any(|f| f.id() == trail.id()) {
-                continue;
-            }
-            found.push(trail);
-        }
-        found
+        let ids = self.entry.step.uses.iter().map(String::as_str);
+        ids.filter(|id| seen.insert(*id) && self.steps.holds_pattern(id))
+            .collect()
     }
 
     /// The steps directly under it, oldest first.
