@@ -3,12 +3,12 @@
 use super::End;
 use celis_nostr::Note;
 use celis_store::{ProofFile, StepId};
-use celis_trails::{Done, Mark, Step};
+use celis_trails::{Done, Step};
 
 /// How a done step went against its plan: its expect line and its own changed, the steps under it planned
-/// before the first started, added after, dropped with their reasons and changed, the person's prompts on
-/// its tree, and the open steps beside it under `under`, each as an id and a title; the files of its
-/// proof, and when no step beside it is open, those of the done steps beside it; on an ask, its end.
+/// before the first started, added after, dropped with their reasons and changed, and the open steps
+/// beside it under `under`, each as an id and a title; the files of its proof, and when no step beside it
+/// is open, those of the done steps beside it; on an ask, its end.
 pub(crate) struct Review {
     pub step: StepId,
     pub under: Option<StepId>,
@@ -18,7 +18,6 @@ pub(crate) struct Review {
     pub added: Vec<(StepId, String)>,
     pub dropped: Vec<(StepId, String, String)>,
     pub changed: Vec<(StepId, String)>,
-    pub asked: Vec<String>,
     pub open: Vec<(StepId, String)>,
     pub files: Vec<ProofFile>,
     pub beside: Vec<(StepId, String, ProofFile)>,
@@ -44,15 +43,7 @@ impl Review {
             Some((s.step_id(), changed.to_string()))
         });
         let own = changed.map(|c| (step.step_id(), c.to_string()));
-        let trail = step.trail();
-        let since = step.note().created_at;
         let ask = step.is_ask();
-        let asked = records.iter().filter_map(|record| {
-            let (on, Mark::Prompt { text }) = Mark::read(record)? else {
-                return None;
-            };
-            (ask && on == trail.id() && record.created_at >= since).then_some(text)
-        });
         let expect = step
             .record()
             .detail()
@@ -87,7 +78,6 @@ impl Review {
                 })
                 .collect(),
             changed: turns.chain(own).collect(),
-            asked: asked.collect(),
             open: open.iter().map(line).collect(),
             beside: match open.is_empty() {
                 true => others

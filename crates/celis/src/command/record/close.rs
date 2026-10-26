@@ -53,9 +53,6 @@ impl Command {
         for (id, text) in &review.changed {
             lines.push(format!("  changed {} {text}", short(id)));
         }
-        for text in &review.asked {
-            lines.push(format!("  asked   {text}"));
-        }
         for (id, title) in &review.open {
             lines.push(format!("  open    {} {title}", short(id)));
         }
