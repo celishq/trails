@@ -278,6 +278,13 @@ pub const VERBS: &[Verb] = &[
         examples: &["celis stats", "celis stats 9b0e11aa", "celis stats --demo"],
     },
     Verb {
+        command: "lesson",
+        usage: &["celis lesson <id>"],
+        summary: "Show what an ask or a step taught, open or done: what to keep as patterns, each change from its plan, each note of its trail, each prompt since the ask began, and each pattern the ask recalled or its steps used. Give it to the celis:lesson agent. Changes nothing.",
+        args: &[("<id>", "A step id, or its first 4 or more characters")],
+        examples: &["celis lesson 3fa2c1d0"],
+    },
+    Verb {
         command: "issue",
         usage: &["celis issue [<id>]... [-- <text>]"],
         summary: "Write a problem report for the celis team as Markdown. It includes your text, the version, system, project, and store, the end of the log, and the trail of each step you name. Changes nothing.",

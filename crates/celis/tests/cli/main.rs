@@ -8,6 +8,7 @@ mod commands;
 mod files;
 mod help;
 mod issue;
+mod lesson;
 mod link;
 mod log;
 mod output;

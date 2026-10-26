@@ -14,7 +14,13 @@ const SECTIONS: &[(&str, &str, &[&str])] = &[
     (
         "Read",
         "",
-        &["patterns", "tree [<id>]", "grep <pattern>", "stats [<id>]"],
+        &[
+            "patterns",
+            "tree [<id>]",
+            "grep <pattern>",
+            "stats [<id>]",
+            "lesson <id>",
+        ],
     ),
     (
         "Record work",
@@ -49,6 +55,7 @@ const PHRASES: &[(&str, &str)] = &[
     ("grep", "Search every trail with grep"),
     ("patterns", "Show the index of your patterns"),
     ("stats", "Show what later work reused, and how work went"),
+    ("lesson", "Show what an ask taught, to keep as patterns"),
     ("pattern", "Record a pattern that guides later work"),
     (
         "link",

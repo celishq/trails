@@ -47,7 +47,7 @@ impl End {
                 .collect(),
             places,
             minutes: now.saturating_sub(from) / 60,
-            learn: Learn::of(records, step, done),
+            learn: Learn::of(records, step, done.changed.clone()),
         }
     }
 
