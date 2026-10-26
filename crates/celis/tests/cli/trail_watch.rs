@@ -1289,7 +1289,7 @@ fn next_watch_draws_a_block_with_tree_lines_and_colour_anchors() {
         "{rows:?}"
     );
     assert_eq!(rows[2], "    ├── ○  the fix", "{rows:?}");
-    assert_eq!(rows[3], "    └ ▸ §  1 note", "{rows:?}");
+    assert_eq!(rows[3], "    └ ▸ §  1 rule", "{rows:?}");
     let all = rows.join("\n");
     for gone in ["prices.py", "deeper part", &trail[..8], &fix[..8]] {
         assert!(!all.contains(gone), "{gone:?} in {rows:?}");
@@ -1391,7 +1391,7 @@ fn next_watch_prints_a_trail_lines_details_under_its_title() {
     assert!(colour.contains("\x1b[2m 12"), "{colour:?}");
 }
 
-/// With `--next`, A block prints its steps in the order they came, closed ones among them, then its notes line; a step
+/// With `--next`, A block prints its steps in the order they came, closed ones among them, then its rules line; a step
 /// with steps under it stays closed behind `▸` until it opens to them in their order.
 #[test]
 fn next_watch_prints_open_steps_then_notes_then_closed_steps() {
@@ -1424,7 +1424,7 @@ fn next_watch_prints_open_steps_then_notes_then_closed_steps() {
         "    ├── ✓  finished",
         "    ├ ▸ ○  parent",
         "    ├── ○  newest",
-        "    └ ▸ §  1 note",
+        "    └ ▸ §  1 rule",
     ];
     assert_eq!(rows.len(), starts.len(), "{rows:?}");
     for (row, start) in rows.iter().zip(starts) {
@@ -1623,10 +1623,10 @@ fn next_watch_opens_a_step_and_copies_its_id() {
     watch.until("done     it works");
 }
 
-/// With `--next`, A block folds its notes to one line, and `→` opens it to a line a note, each wrapped whole to fit,
+/// With `--next`, A block folds its rules to one line, and `→` opens it to a line a rule, each wrapped whole to fit,
 /// with no id.
 #[test]
-fn next_watch_opens_the_notes_line() {
+fn next_watch_opens_the_rules_line() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the trail"]);
     add(&repo, &["--under", &trail[..8], "--", "the part"]);
@@ -1635,16 +1635,16 @@ fn next_watch_opens_the_notes_line() {
     assert!(o.status.success(), "{}", err(&o));
     let mut watch = Watch::start(&repo, &["tree", "--next", &trail[..8]]);
     watch.size(24, 80);
-    watch.until("└ ▸ §  1 note");
+    watch.until("└ ▸ §  1 rule");
     let tree = watch.rows().join("\n");
     assert!(
         !tree.contains("When you price") && !tree.contains(&trail[..8]),
         "{tree:?}"
     );
     watch.press("\x1b[B\x1b[B\x1b[B");
-    watch.until("\r\n▌   └ ▸ §  1 note");
+    watch.until("\r\n▌   └ ▸ §  1 rule");
     watch.press("\x1b[C");
-    watch.until("└ ▾ §  1 note");
+    watch.until("└ ▾ §  1 rule");
     watch.until("        └── §  When you price a senior");
     watch.until("the receipt.");
     assert!(

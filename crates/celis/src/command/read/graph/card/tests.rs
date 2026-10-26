@@ -58,7 +58,7 @@ fn card(bench: &Bench, id: &str, width: u16, opened: bool, unfolded: &[&str]) ->
 }
 
 /// A working card lists the step at work first, then the open one, then the newest closed, four at
-/// most, and counts the rest by state, over a bar of its steps done.
+/// most, each title whole, and counts the rest by state, over a bar of its steps done.
 #[test]
 fn a_working_card_lists_the_work_first() {
     let (bench, fast, _) = fast();
@@ -67,9 +67,10 @@ fn a_working_card_lists_the_work_first() {
     assert!(rows[1].contains("Make the checkout"), "{rows:#?}");
     assert!(rows[5].contains("Cache the options"), "{rows:#?}");
     assert!(rows[6].contains("○ Test it under"), "{rows:#?}");
-    assert!(rows[7].contains("✗ Keep the banner"), "{rows:#?}");
-    assert!(rows[8].contains("+2 more"), "{rows:#?}");
-    assert!(rows[9].contains("4/7"), "{rows:#?}");
+    assert!(rows[7].contains("  load"), "{rows:#?}");
+    assert!(rows[8].contains("✗ Keep the banner"), "{rows:#?}");
+    assert!(rows[9].contains("+2 more"), "{rows:#?}");
+    assert!(rows[10].contains("4/7"), "{rows:#?}");
 }
 
 /// An opened card lists the steps right under it, each nesting folded under ▸ until the person
@@ -106,15 +107,17 @@ fn an_opened_card_unfolds_each_nesting_by_itself() {
     );
 }
 
-/// A closed card shows its title, and under it its steps by state and its time.
+/// A closed card shows its whole title, wrapped with no …, and under it its steps by state and its time.
 #[test]
 fn a_closed_card_shows_its_counts_and_time() {
     let (bench, _, index) = fast();
     let rows = card(&bench, &index, WIDTH, false, &[]);
-    assert_eq!(rows.len(), 4, "{rows:#?}");
-    assert!(rows[1].contains("Index the order ta…"), "{rows:#?}");
+    assert_eq!(rows.len(), 5, "{rows:#?}");
+    assert!(rows[1].contains("Index the order"), "{rows:#?}");
+    assert!(rows[2].contains("tables"), "{rows:#?}");
+    assert!(!rows.join("\n").contains('…'), "{rows:#?}");
     assert!(
-        rows[2].contains("│ ✓ 2") && rows[2].contains("changed · "),
+        rows[3].contains("│ ✓ 2") && rows[3].contains("changed · "),
         "{rows:#?}"
     );
 }

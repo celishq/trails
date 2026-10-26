@@ -12,7 +12,7 @@ use ratatui::style::Style;
 use ratatui::text::Span;
 
 impl Tree<'_> {
-    /// Adds the notes line `§ <n> notes` of the trail `trail` after `rail`, the `last` of its level;
+    /// Adds the rules line `§ <n> rules` of the trail `trail` after `rail`, the `last` of its level;
     /// open, a line under it for each note of `patterns`: `§ <text>`, wrapped to fit.
     pub(super) fn patterns_line(
         &self,
@@ -30,7 +30,7 @@ impl Tree<'_> {
         lines.push(Row::Lined {
             lead,
             marks: Styled::from(mark.clone()),
-            title: plural(patterns.len(), "note"),
+            title: plural(patterns.len(), "rule"),
             tone: Style::new(),
             meta: Styled::default(),
             whole: None,

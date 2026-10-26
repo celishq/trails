@@ -20,7 +20,7 @@ use celis_trails::{State, Step, Trail, TrailStore};
 use folders::folders;
 use layout::{Layout, GAP};
 use moment::{tally, Moment, LIGHT};
-use overview::{Overview, TALL};
+use overview::Overview;
 use patterns::{Learned, Patterns};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
@@ -197,7 +197,7 @@ fn frame(
             if !view.places.is_empty() {
                 for (id, y) in &drawn.places {
                     if !view.places.contains_key(id) && f64::from(*y) < view.offset {
-                        view.offset += f64::from(TALL);
+                        view.offset += f64::from(drawn.heights.get(id).copied().unwrap_or(0));
                         view.above = Some(now);
                     }
                 }
