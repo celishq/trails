@@ -14,7 +14,7 @@ read. What a command shows a person is not part of it.
 ## Commands
 
 ```
-celis pattern [--scope <scope>] [--replaces <id>] [--path <glob>]... [--within <id>]... [--cell <topic>]... [--good <example>]... [--bad <example>]... [--project <id>] -- <text>
+celis pattern [--scope <scope>] [--replaces <id>] [--path <glob>]... [--within <id>]... [--good <example>]... [--bad <example>]... [--project <id>] -- <text>
                                                        a pattern, in its scope
 celis patterns [--markdown]                           the patterns and their examples
 celis tree [<id>]... [--graph] [--full] [--all] [--demo]
@@ -47,7 +47,7 @@ $CELIS_HOME   where celis keeps the phrase and the store
 
 ```
 pattern  json  {"id", "created_at", "project", "scope", "replaces", "content",
-                "paths", "cells"}
+                "paths"}
 ```
 
 **Rules**
@@ -57,11 +57,11 @@ pattern  json  {"id", "created_at", "project", "scope", "replaces", "content",
 - `pattern` MUST write a pattern of the working folder's project (CIP-05), with `--scope` and
   `--replaces` as its tags, and no `scope` tag for `project`; each `--path`, from the project's top
   folder, as a `path` tag, each `--within` as a `within` tag (CIP-05, "Graph"),
-  refusing an id that no live pattern of the store has with `no-pattern`, each `--cell` as a `cell` tag
-  (CIP-05, "Cells"), refusing one with no letter or digit as a usage error, and each `--good` and `--bad`
+  refusing an id that no live pattern of the store has with `no-pattern`, and each `--good` and `--bad`
   as an example (CIP-05, "Examples"): a value with `://` as a URL, a file of the working folder as its
   blob, else the whole id of a step, refusing a step the store lacks with `no-step`.
-- `pattern` MUST accept `--binds`, which older plugins give, and write nothing for it.
+- `pattern` MUST accept `--binds` and `--cell <topic>`, which older plugins give, and write nothing for
+  them.
 - `--project` on `pattern` and `step add` MUST write the records of the project it names in place of the
   working folder's: a project id that a record of the store has, with that record's project name. It MUST refuse any other id as a usage error.
 - `pattern` MUST refuse empty text, and a scope that is not `me` or `project`, as a usage error, with a
@@ -252,7 +252,7 @@ trails with it.
 view    <yyyy-mm-dd> <trail id8 | -> [<project name>] <kind> <id8> <fields> <text>
           trail | step   <open | working | done | done-dropped | dropped | expired>[ revised-by <id>,…][ at:<place>]…
           pattern        <live | replaced-by <id> | dropped> {<me | project>}
-                           [ trigger][ old-rule][ cell:<cell>]…[ recalled:<yyyy-mm-dd>]
+                           [ trigger][ old-rule][ recalled:<yyyy-mm-dd>]
           proof | changed | dropped | note                       the step's or pattern's id, no fields
 lines   <id8> [<project name>] <its title> · <yyyy-mm-dd>        each trail of the lines
           trail <id8> <fields>                                    the trail's own line
@@ -264,8 +264,7 @@ end     project [<project name>]
 
 `<id8>` is the first 8 characters of an id. A text holds each newline as a space. A pattern's fields end with
 ` trigger` when it has a trigger tag (CIP-05), ` old-rule` when it has the `binds` label that older
-writers wrote (CIP-05, "Reading"), ` cell:<cell>` for each of its cells (CIP-05, "Cells"), and
-` recalled:<day>` with the day `search` last gave it.
+writers wrote (CIP-05, "Reading"), and ` recalled:<day>` with the day `search` last gave it.
 
 **Rules**
 
@@ -298,7 +297,6 @@ the done asks of every project like it (CIP-04).
 patterns
 <line>        <id8> <scope> <first line>, each pattern that fits, at most 8
                 <each next line of its text>
-                cell    <cell>                                           each of its cells (CIP-05, "Cells")
                 next    <id8> <first line>                               a smaller pattern (CIP-05, "Graph")
                 good    <id8> <title> · <the first line of its proof>    a step example (CIP-05, "Examples")
                         <the path of each blob of its files>
@@ -318,16 +316,15 @@ none          nothing fits this ask
 
 - Each `<file>` MUST count as that file. A `<file>` that is a folder MUST count as each file that
   `git ls-files --cached --others --exclude-standard -- <folder>` gives in the project.
-- A pattern fits the ask when it matches a file, when one of its cells fits, or when its first line before
-  its first `:` shares a word with the ask.
-- A cell fits when a word of its name is a word of the ask, or when a pattern in the cell matches a file.
+- A pattern fits the ask when it matches a file, or when its first line before its first `:` shares a
+  word with the ask.
 - A word of the ask is shared only when at most 5% of the live patterns in scope, or at most 5 of them,
   have it in their first line before its first `:`.
 - A done ask is like the ask when its title and its trail's title share 2 words with the ask. `search` MUST
   print at most 2.
 - `search` MUST print the parts in the order patterns, past, and leave out a part with no line.
   Within a part, first come the patterns that match a named file (a `path` with no `*` or `?`), then
-  those that match a glob, then those in a cell that fits, then those that fit by words.
+  those that match a glob, then those that fit by words.
   Within each, a pattern with a `replaces` tag comes first, then the rest, newest first.
 - `search` MUST print the first 8 patterns, or the first `--limit` when given, then the `more` line when
   more fit.

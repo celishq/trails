@@ -33,7 +33,6 @@ Record work · your agents run these
   ├ --replaces <id>   The pattern this one replaces
   ├ --path <glob>     A file it acts on; * and ? within a folder, ** across
   ├ --within <id>     The larger pattern it completes
-  ├ --cell <topic>    A topic it is in, such as cli-help
   ├ --good <example>  A step, a file, or a URL that shows it, such as a pick
   ├ --bad <example>   A step, a file, or a URL that breaks it
   └ --project <id>    The id of a project in the store

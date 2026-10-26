@@ -34,18 +34,18 @@ done.
 
 Patterns are the core. A pattern says what to choose in a context, and why. It guides your agent's
 judgement: when its forces are present, the agent resolves them in its own way. Good and bad examples
-show your taste, and cells group patterns by topic. They come from your corrections and code reviews,
+show your taste. They come from your corrections and code reviews,
 and `celis search` gives your agent the ones that fit the job.
 
 ```
-  knowledge    cell ◄── tag, many to many ── pattern
-               (a topic)                     When · Forces · Do · Because
-                                             good / bad examples, path globs
-                                             scope: project | me
-                                             within ──► a larger pattern
-                                               ▲              │
-                         examples, uses, recalls              │ activates
-                                               │              ▼
+  knowledge    pattern
+               When · Forces · Do · Because
+               good / bad examples, path globs
+               scope: project | me
+               within ──► a larger pattern
+                  ▲                 │
+   examples, uses, recalls          │ activates
+                  │                 ▼
   evidence     trail ──► step ──► done: proof, changed, judge ──► note
 ```
 

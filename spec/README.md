@@ -66,7 +66,6 @@ Every change of `spec/` MUST keep these rules:
 | `path` | pattern tag: the trigger | 05 |
 | `good` · `bad` | pattern tags: its examples | 05 |
 | `within` | pattern tag: the larger pattern it completes | 05 |
-| `cell` | pattern tag: a topic it is in | 05 |
 | `me` · `project` | the scopes of a pattern | 05 |
 | `uses` | step tag | 06 |
 | `imeta` with `url` · `x` · `m` · `size` · `path` | done tag: a file of the proof (NIP-92, BUD-10) | 08 |
@@ -95,6 +94,9 @@ them.
 | `binds` in `celis.pattern` | a pattern label: the pattern was a rule; a reader reads it as CIP-05, "Reading", states |
 | `binds` in the `--json` of a pattern | the value of that label |
 | `--binds` on `celis pattern` | the flag that wrote that label; `pattern` accepts it and writes nothing for it |
+| `cell` | a pattern tag: a topic the pattern was in; a reader ignores it, as CIP-05, "Reading", states |
+| `cells` in the `--json` of a pattern | the values of those tags |
+| `--cell` on `celis pattern` | the flag that wrote that tag; `pattern` accepts it and writes nothing for it |
 | `decision` as the `--json` key of a pattern | the key, now `pattern` |
 | `no-decision` | the error, now `no-pattern` |
 | `trail:<id>` as the `scope` of a pattern | a scope, now a note on the trail; a reader reads it as CIP-05, "Reading", states |

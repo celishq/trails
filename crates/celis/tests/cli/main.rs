@@ -11,7 +11,6 @@ mod issue;
 mod link;
 mod log;
 mod output;
-mod pattern_cells;
 mod pattern_ends;
 mod pattern_evidence;
 mod pattern_graph;

@@ -22,14 +22,14 @@ The store, the query, the card's method, the log, tidy and the tree are the core
 know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model can outgrow.
 
 ```
-  knowledge    cell ◄── tag, many to many ── pattern
-               (a topic)                     When · Forces · Do · Because
-                                             good / bad examples, path globs
-                                             scope: project | me
-                                             within ──► a larger pattern
-                                               ▲              │
-                         examples, uses, recalls              │ activates
-                                               │              ▼
+  knowledge    pattern
+               When · Forces · Do · Because
+               good / bad examples, path globs
+               scope: project | me
+               within ──► a larger pattern
+                  ▲                 │
+   examples, uses, recalls          │ activates
+                  │                 ▼
   evidence     trail ──► step ──► done: proof, changed, judge ──► note
 ```
 
@@ -41,9 +41,10 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
 2. **One record: the pattern.** Its label is `pattern` in `celis.pattern`. A writer writes this label, and
    a reader still reads `decision` in `celis.decision`. A reader reads an old `binds` record as a plain
    pattern. Only the `grep` view marks it `old-rule`, so that tidy can find it. `pattern --binds` is
-   accepted and ignored, so an older plugin still works with a newer `celis`.
+   accepted and ignored, so an older plugin still works with a newer `celis`. A pattern has no cell: a
+   reader ignores an old `cell` tag, and `pattern --cell` is accepted and ignored in the same way.
 3. **Search finds the best patterns.**
-   - Patterns are ranked by how well they fit: by path, then by cell, then by words. The output shows
+   - Patterns are ranked by how well they fit: by path, then by words. The output shows
      only a budget of them.
    - The past of like asks is a helper part, and it is short.
 4. **What goes in matters more than search.** An agent writes a pattern only for a choice that will come
@@ -55,10 +56,7 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
    ids. `celis-patterns` holds patterns, and `celis-trails` holds trails, steps and notes. Trails depend
    on patterns, and patterns never depend on trails. The repo keeps its name for now, and becomes
    `celis` later.
-8. **A cell groups patterns by topic.** A cell is a free-text tag that the agent picks, such as
-   `cli-help`. A pattern can be in several cells, and cells can overlap.
-   A cell has no record of its own.
-9. **`within` is the one link between patterns.** It goes from a smaller pattern to the larger one that
+8. **`within` is the one link between patterns.** It goes from a smaller pattern to the larger one that
    it completes, as in Alexander's pattern language. A pattern can complete several larger ones. There
    are no other link types: `replaces` takes a pattern's place, and tidy settles conflicts.
 
