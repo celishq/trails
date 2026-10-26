@@ -2,9 +2,10 @@
 
 use super::level::Level;
 use super::row::Row;
-use super::{Item, Pattern, Summary, Tree, PATTERNS};
+use super::{Item, Summary, Tree, PATTERNS};
 use crate::terminal::canvas::{paint, Styled, BOLD, DIM};
 use crate::terminal::look::look;
+use celis_nostr::Note;
 use celis_trails::{State, Step, Trail};
 use ratatui::text::Span;
 
@@ -37,9 +38,9 @@ impl Tree<'_> {
 
     /// The trail `note` as a line a watch selects, `open` when it prints as a block: with every pattern of
     /// `patterns` and every step it prints under it.
-    pub(super) fn item(&self, note: Step, open: bool, patterns: &[Pattern]) -> Item {
+    pub(super) fn item(&self, note: Step, open: bool, patterns: &[&Note]) -> Item {
         let folded = (!patterns.is_empty()).then(|| format!("{PATTERNS}{}", note.id()));
-        let patterns = patterns.iter().map(|pattern| pattern.note.id.clone());
+        let patterns = patterns.iter().map(|pattern| pattern.id.clone());
         let steps = Level::of(Trail::new(note).parts()).ids(note.id());
         Item {
             id: note.id().to_string(),
@@ -61,7 +62,7 @@ impl Tree<'_> {
         let summary = self.summary(note, work);
         let level = Level::of(Trail::new(note).parts());
         let under =
-            !(level.active.is_empty() && level.ended.is_empty() && summary.patterns.is_empty());
+            !(level.active.is_empty() && level.ended.is_empty() && summary.notes.is_empty());
         let first = lines.len();
         let mut meta = vec![];
         if !self.grouped || (state.active() && !self.view.watch) {
@@ -82,14 +83,14 @@ impl Tree<'_> {
                 false => Styled::from("  "),
             }),
         });
-        self.pick(self.item(note, true, &summary.patterns), lines, first);
+        self.pick(self.item(note, true, &summary.notes), lines, first);
         let rail = Styled::from("  ");
         if self.view.full {
             let hair = Styled::from(vec![Span::raw("  "), paint(self.lane(), "│ ")]);
             self.closing(work, &hair, false, lines);
             self.followed(work, &hair, lines);
         }
-        self.level(level, summary.patterns, &rail, note.id(), lines);
+        self.level(level, summary.notes, &rail, note.id(), lines);
     }
 
     /// Adds `note` as one row: `▸` when something opens under it, its mark and title, and at the right
@@ -99,7 +100,7 @@ impl Tree<'_> {
         let state = note.state();
         let work = self.work(note);
         let summary = self.summary(note, work);
-        let under = !(Trail::new(note).parts().is_empty() && summary.patterns.is_empty());
+        let under = !(Trail::new(note).parts().is_empty() && summary.notes.is_empty());
         let meta: Vec<_> = came(state, &summary).into_iter().collect();
         let first = lines.len();
         lines.push(Row::Lined {
@@ -113,7 +114,7 @@ impl Tree<'_> {
             meta: joined(meta),
             whole: None,
         });
-        self.pick(self.item(note, false, &summary.patterns), lines, first);
+        self.pick(self.item(note, false, &summary.notes), lines, first);
     }
 }
 

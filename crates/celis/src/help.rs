@@ -108,16 +108,20 @@ pub type Group = (
 pub const GROUPS: &[Group] = &[
     (
         "step",
-        "Add steps to a trail, then start, finish, drop, or edit them.",
+        "Add steps to a trail, then start, finish, drop, edit, or note them.",
         &[
             ("add", "Add a step to a trail, or start a new trail"),
-            ("start", "Start a step and show the patterns its plan links"),
+            (
+                "start",
+                "Start a step and show the patterns and notes it keeps",
+            ),
             ("done", "Finish a step with proof that it works"),
             ("drop", "Drop a step and the open steps under it"),
             (
                 "edit",
                 "Change a step's title, where it works, or its check",
             ),
+            ("note", "Leave a note for the work of the step's trail"),
         ],
     ),
     (
@@ -315,7 +319,7 @@ pub const VERBS: &[Verb] = &[
         usage: &["celis pattern [--scope <scope>] [--replaces <id>] [--path <glob>]... [--binds] [--within <id>]... [--good <example>]... [--bad <example>]... [--project <id>] -- <text>"],
         summary: "Record a pattern that later work must keep: when it applies, its forces, what to do, and why. With no --scope, it holds for the whole project. Its paths name the files it acts on, so celis search gives it for them. It guides the work; with --binds, it is a rule, which binds it.",
         args: &[
-            ("--scope <scope>", "Where it applies: trail:<id>, me, or project"),
+            ("--scope <scope>", "Where it applies: me, or project"),
             ("--replaces <id>", "The pattern this one replaces"),
             ("--path <glob>", "A file it acts on; * and ? within a folder, ** across"),
             ("--binds", "It is a rule: a result must keep it"),
@@ -342,7 +346,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "tree",
         usage: &["celis tree [<id>]... [--graph] [--full] [--all] [--demo]"],
-        summary: "Show a trail with its state, patterns, and steps. With no id, show the active trails and today's trails of every project.",
+        summary: "Show a trail with its state, notes, and steps. With no id, show the active trails and today's trails of every project.",
         args: &[
             ("<id>", "A step id, or its first 4 or more characters"),
             ("--graph", "Show today's trails as live graphs of cards"),
@@ -433,7 +437,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "step start",
         usage: &["celis step start <id>"],
-        summary: "Start a step and show the patterns it keeps: those at its places, its trail's, and the ones its ask uses. The step stays in progress until it's done.",
+        summary: "Start a step and show what it keeps: the patterns its ask uses, and the notes of its trail and of each trail it follows. The step stays in progress until it's done.",
         args: &[("<id>", "A step id, or its first 4 or more characters")],
         examples: &["celis step start 4c1d22e0"],
     },
@@ -478,6 +482,16 @@ pub const VERBS: &[Verb] = &[
             "celis step edit 3fa2c1d0 -- \"Make the badges and buttons orange\"",
             "celis step edit 4c1d22e0 --check \"cargo test -p shop\"",
         ],
+    },
+    Verb {
+        command: "step note",
+        usage: &["celis step note <id> -- <text>"],
+        summary: "Leave a note on a step: what holds for the work of its trail only. celis step start shows the notes of the step's trail.",
+        args: &[
+            ("<id>", "A step id, or its first 4 or more characters"),
+            ("<text>", "What later steps of the trail must keep"),
+        ],
+        examples: &["celis step note 3fa2c1d0 -- \"Keep the old table until the release.\""],
     },
 ];
 

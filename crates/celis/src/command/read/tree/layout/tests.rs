@@ -3,7 +3,9 @@ use super::Layout;
 use crate::progress::{Model, Reuse};
 use crate::text::clock::day;
 use celis_nostr::{Account, Note};
-use celis_trails::{Anchor, Mark, PatternRecord, Patterns, Scope, StepId, StepRecord, Steps};
+use celis_trails::{
+    Anchor, Mark, Notes, PatternRecord, Patterns, Scope, StepId, StepRecord, Steps,
+};
 use std::cell::Cell;
 
 /// The time the newest record was written.
@@ -34,7 +36,7 @@ fn step(under: Option<&Note>, uses: &[&Note], at: u64) -> Note {
 /// Prints every trail of `records` by day into `layout`, as `--all` shows them.
 fn print(records: &[Note], layout: &Layout) {
     let steps = Steps::new(records, NOW);
-    let patterns = Patterns::new(records);
+    let (patterns, notes) = (Patterns::new(records), Notes::new(records));
     let reuse = Reuse::new(&steps);
     let view = View {
         all: true,
@@ -43,6 +45,7 @@ fn print(records: &[Note], layout: &Layout) {
     let tree = Tree {
         steps: &steps,
         patterns: &patterns,
+        notes: &notes,
         reuse: &reuse,
         layout: Some(layout),
         grouped: true,
@@ -64,10 +67,12 @@ fn kept(records: &[Note], landed: &[Note]) -> Vec<String> {
     print(records, &layout);
     let all: Vec<Note> = records.iter().chain(landed).cloned().collect();
     let (steps, patterns) = (Steps::new(&all, NOW), Patterns::new(&all));
+    let notes = Notes::new(&all);
     let reuse = Reuse::new(&steps);
     let model = Model {
         steps: &steps,
         patterns: &patterns,
+        notes: &notes,
         reuse: &reuse,
     };
     layout.renew(&model, Some(landed));

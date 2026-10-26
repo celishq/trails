@@ -1,4 +1,4 @@
-//! The agent view of `celis tree`: every trail, pattern and step with its id, plain and whole.
+//! The agent view of `celis tree`: every trail, note and step with its id, plain and whole.
 
 use super::{Level, Row, Styled, Summary, Tree};
 use crate::progress::Flags;
@@ -9,7 +9,7 @@ use celis_trails::{Step, Trail};
 
 impl Tree<'_> {
     /// Adds `note` as a block: its mark, id and title, then two spaces in its progress and worked time,
-    /// its own lines, its active steps, its patterns, then its other steps.
+    /// its own lines, its active steps, its notes, then its other steps.
     pub(super) fn agent_block(&self, note: Step, lines: &mut Vec<Row>) {
         let work = self.work(note);
         let summary = self.summary(note, work);
@@ -25,8 +25,8 @@ impl Tree<'_> {
         self.below(work, "  ", lines);
         let level = Level::of(Trail::new(note).parts());
         self.agent_steps(level.active, "  ", lines);
-        for pattern in &summary.patterns {
-            let line = format!("  § {} {}", short(pattern.id()), pattern.record.content);
+        for pattern in &summary.notes {
+            let line = format!("  § {} {}", short(&pattern.id), pattern.content);
             lines.push(Row::Text(line.into()));
         }
         self.agent_steps(level.ended, "  ", lines);

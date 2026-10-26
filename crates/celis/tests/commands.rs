@@ -4,9 +4,7 @@ mod support;
 
 use serde_json::Value;
 use std::process::Output;
-use support::{
-    account, err, labelled, mark_note, now, out, refusal, step_note, stored_pattern, Repo,
-};
+use support::{account, err, labelled, now, out, refusal, stored_pattern, Repo};
 
 const WORK: &str = "When you change prices: keep them in cents, because floats lost a cent.";
 
@@ -93,15 +91,11 @@ fn the_json_form_of_a_pattern_has_the_listed_fields() {
 }
 
 /// `pattern` writes a pattern on the working folder's project with `--scope` and `--replaces` as its
-/// tags, the whole id of a trail, and no `scope` tag for the project (`spec/02-cli.md`,
-/// "Commands").
+/// tags, and no `scope` tag for the project (`spec/02-cli.md`, "Commands").
 #[test]
 fn pattern_writes_its_scope_and_replaces_as_tags() {
     let repo = Repo::new();
     let id = repo.project_id();
-    let trail = out(&run(&repo, &["step", "add", "--", "t"]))
-        .trim()
-        .to_string();
     let old = stored_pattern(
         &repo,
         project(&id),
@@ -128,11 +122,6 @@ fn pattern_writes_its_scope_and_replaces_as_tags() {
     assert_eq!(replacing.tag("path"), Some("shelf/prices.py"));
     assert_eq!(replacing.tag("replaces"), Some(old.id.as_str()));
     assert_eq!(replacing.tag("I"), Some(format!("project:{id}").as_str()));
-    let pattern = written(&["--scope", &format!("trail:{}", short(&trail))]);
-    assert_eq!(
-        pattern.tag("scope"),
-        Some(format!("trail:{trail}").as_str())
-    );
     assert_eq!(written(&["--scope", "project"]).tag("scope"), None);
 }
 
@@ -152,65 +141,19 @@ fn pattern_refuses_empty_text_and_an_unknown_scope_as_a_usage_error() {
     assert_eq!(records(&repo), 0);
 }
 
-/// `pattern` refuses `trail:<id>` when no trail of the project that is not done or dropped has the id,
-/// with `no-trail`; it takes a reached one (`spec/02-cli.md`, "Commands").
-#[test]
-fn pattern_refuses_a_trail_the_project_has_not_open() {
-    let repo = Repo::new();
-    let t = now() - 5 * 60;
-    let done = step_note(&repo, &account(), None, "reached", t);
-    mark_note(&repo, &account(), "done", &done.id, "proof", t + 1);
-    let active = step_note(&repo, &account(), None, "active", t + 2);
-    let part = step_note(&repo, &account(), Some(&active), "part", t + 3);
-    let unknown = "0".repeat(64);
-    for trail in [unknown.as_str(), done.id.as_str(), part.id.as_str()] {
-        let scope = format!("trail:{trail}");
-        let args = ["pattern", "--json", "--scope", &scope, "--", WORK];
-        refusal(&repo.run(&repo.path(), &args, &[], ""), 1, "no-trail");
-    }
-    let shop = repo.other("shop");
-    let scope = format!("trail:{}", active.id);
-    let args = ["pattern", "--json", "--scope", &scope, "--", WORK];
-    refusal(&repo.run(&shop, &args, &[], ""), 1, "no-trail");
-    assert!(labelled(&repo, "pattern").is_empty());
-    mark_note(&repo, &account(), "done", &part.id, "proof", t + 4);
-    let args = ["pattern", "--scope", &scope, "--", WORK];
-    let o = repo.run(&repo.path(), &args, &[], "");
-    assert!(o.status.success(), "{}", err(&o));
-}
-
-/// `pattern` takes `trail:<id>` of a done trail when `--replaces` names a live pattern of that trail
+/// `pattern` refuses the scope `trail:<id>` as a usage error that names `step note`, and writes nothing
 /// (`spec/02-cli.md`, "Commands").
 #[test]
-fn pattern_keeps_a_done_trails_scope_when_it_replaces_its_pattern() {
+fn pattern_refuses_a_trail_scope_and_names_step_note() {
     let repo = Repo::new();
-    let t = now() - 5 * 60;
-    let trail = step_note(&repo, &account(), None, "reached", t);
-    let scope = format!("trail:{}", trail.id);
-    let first = repo.run(
-        &repo.path(),
-        &["pattern", "--scope", &scope, "--", WORK],
-        &[],
-        "",
-    );
-    assert!(first.status.success(), "{}", err(&first));
-    let old = String::from_utf8_lossy(&first.stdout).trim().to_string();
-    mark_note(&repo, &account(), "done", &trail.id, "proof", t + 1);
-    let args = ["pattern", "--json", "--scope", &scope, "--", WORK];
-    refusal(&repo.run(&repo.path(), &args, &[], ""), 1, "no-trail");
-    let args = [
-        "pattern",
-        "--scope",
-        &scope,
-        "--replaces",
-        &old,
-        "--path",
-        "**/*.py",
-        "--",
-        WORK,
-    ];
-    let o = repo.run(&repo.path(), &args, &[], "");
-    assert!(o.status.success(), "{}", err(&o));
+    let trail = out(&run(&repo, &["step", "add", "--", "t"]))
+        .trim()
+        .to_string();
+    let scope = format!("trail:{trail}");
+    let o = run(&repo, &["pattern", "--json", "--scope", &scope, "--", WORK]);
+    refusal(&o, 2, "usage");
+    assert!(err(&o).contains("step note"), "{}", err(&o));
+    assert!(labelled(&repo, "pattern").is_empty());
 }
 
 /// `pattern` refuses a `--replaces` no live pattern has, with `no-pattern`

@@ -16,10 +16,10 @@ impl Command {
         project: &Project,
     ) -> Result<(), Failure> {
         let content = args.required_text("pattern needs its text after --")?;
-        let scope = match &args.scope {
-            Some(text) => Scope::parse(text).ok_or_else(|| {
-                Failure::usage(format!("a scope is me, project or trail:<id>, not {text}"))
-            })?,
+        let scope = match args.scope.as_deref() {
+            Some(text) if text.starts_with("trail:") => return Err(Failure::usage(TRAIL)),
+            Some(text) => Scope::parse(text)
+                .ok_or_else(|| Failure::usage(format!("a scope is me or project, not {text}")))?,
             None => Scope::Project,
         };
         let paths: Vec<String> = args
@@ -72,5 +72,10 @@ impl Command {
 /// What `pattern` with no scope says of the pattern's scope.
 const SCOPES: &str = "celis: the rule holds in this project. When it holds for that kind of work in any \
                       project, such as a rule about a framework, a platform or a review's convention, \
-                      replace it with --scope me; when it holds only for this trail, with --scope \
-                      trail:<id>.";
+                      replace it with --scope me; when it holds only for this trail, drop it and write \
+                      it with celis step note <id>.";
+
+/// What `pattern` with a `trail:<id>` scope says.
+const TRAIL: &str =
+    "a pattern holds in the project or for me; write what holds only for one trail with \
+                     celis step note <id> -- <text>";

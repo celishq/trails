@@ -19,7 +19,7 @@ label is a rule, which binds.
     ["I", "project:<project id>"], ["K", "project"],
     ["i", "project:<project id>"], ["k", "project"],
     ["project", "<project name>"],
-    ["scope", "<me | trail:<step id>>"],
+    ["scope", "me"],
     ["replaces", "<id of the pattern it replaces>"],
     ["path", "<glob>"],
     ["L", "celis.pattern"], ["l", "pattern", "celis.pattern"]
@@ -60,14 +60,12 @@ A drop (CIP-03, "Dropping") MAY name a pattern, with why it no longer holds.
 ## Scope
 
 ```
-trail:<step id>   in its project, with the trail, while it is active and after it ends (CIP-04)
-project           in its project; a pattern with no `scope` tag
-me                in every project
+project   in its project; a pattern with no `scope` tag
+me        in every project
 ```
 
 **Writers**
 
-- A writer MUST write the whole id of the trail that `trail:<id>` names.
 - A linked folder MUST NOT hold a `me` pattern (CIP-01, "Links").
 
 **Readers**
@@ -84,6 +82,8 @@ me                in every project
   and `binds` in `celis.pattern`.
 - A reader MUST read the scope `at:<place>`, which older writers wrote, as `project`, with two more
   `path` globs: the place's path without its line, and that path with `/**` after it.
+- A reader MUST read a live pattern with the scope `trail:<id>`, which older writers wrote, as a note on
+  the trail `<id>` (CIP-04, "Notes"), and not as a pattern.
 
 ## Triggers
 

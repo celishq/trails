@@ -1,23 +1,24 @@
-//! The folded lines of a level: its patterns line and its closed line, each open or closed.
+//! The folded lines of a level: its notes line and its closed line, each open or closed.
 
 use crate::command::read::tree::classic::level::ids;
 use crate::command::read::tree::classic::row::Row;
-use crate::command::read::tree::classic::{after, Item, Pattern, Tree, CLOSED, PATTERNS};
+use crate::command::read::tree::classic::{after, Item, Tree, CLOSED, PATTERNS};
 use crate::progress::Tally;
 use crate::terminal::canvas::{paint, Styled};
 use crate::terminal::classic::look;
 use crate::terminal::classic::MAGENTA;
 use crate::text::line::plural;
+use celis_nostr::Note;
 use celis_trails::{State, Step};
 use ratatui::style::Style;
 use ratatui::text::Span;
 
 impl Tree<'_> {
-    /// Adds the patterns line `§ <n> patterns` of the trail `trail` after `rail`, the `last` of its level;
-    /// open, a line under it for each of `patterns`: `§ <text>`, wrapped, its id at the end.
+    /// Adds the notes line `§ <n> notes` of the trail `trail` after `rail`, the `last` of its level;
+    /// open, a line under it for each note of `patterns`: `§ <text>`, wrapped, its id at the end.
     pub(super) fn patterns_line(
         &self,
-        patterns: Vec<Pattern>,
+        patterns: Vec<&Note>,
         rail: &Styled,
         last: bool,
         trail: &str,
@@ -31,7 +32,7 @@ impl Tree<'_> {
         lines.push(Row::Titled {
             lead,
             marks: Styled::from(mark.clone()),
-            title: plural(patterns.len(), "pattern"),
+            title: plural(patterns.len(), "note"),
             tone: Style::new(),
             rest: after(&rail, Span::raw("  ")),
         });
@@ -39,21 +40,20 @@ impl Tree<'_> {
             id: id.clone(),
             open,
             parent: Some(trail.to_string()),
-            under: patterns.iter().map(|p| p.note.id.clone()).collect(),
+            under: patterns.iter().map(|p| p.id.clone()).collect(),
         };
         self.pick(item, lines, first);
         if !open {
             return;
         }
         let all = patterns.len();
-        for (n, found) in patterns.into_iter().enumerate() {
-            let (record, pattern) = (found.note, &found.record);
+        for (n, record) in patterns.into_iter().enumerate() {
             let (lead, below) = self.branch(&rail, n + 1 == all, None);
             let first = lines.len();
             lines.push(Row::Titled {
                 lead,
                 marks: Styled::from(mark.clone()),
-                title: pattern.content.clone(),
+                title: record.content.clone(),
                 tone: Style::new(),
                 rest: after(&below, Span::raw("  ")),
             });

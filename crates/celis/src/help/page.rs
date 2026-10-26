@@ -30,6 +30,7 @@ const SECTIONS: &[(&str, &str, &[&str])] = &[
             "step done <id>",
             "step drop <id>",
             "step edit <id>",
+            "step note <id>",
             "pattern",
         ],
     ),

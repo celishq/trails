@@ -2,11 +2,12 @@
 
 use super::level::Level;
 use super::row::Row;
-use super::{Item, Pattern, Tree, PATTERNS, PROJECT};
+use super::{Item, Tree, PATTERNS, PROJECT};
 use crate::terminal::canvas::{paint, Styled, BOLD, DIM};
 use crate::terminal::classic::look;
 use crate::text::clock::{stride, took};
 use crate::text::line::plural;
+use celis_nostr::Note;
 use celis_trails::{Step, Trail};
 use ratatui::text::Span;
 
@@ -45,9 +46,9 @@ impl Tree<'_> {
 
     /// The trail `note` as a line a watch selects, `open` when it prints as a block: with every pattern of
     /// `patterns` and every step it prints under it.
-    pub(super) fn item(&self, note: Step, open: bool, patterns: &[Pattern]) -> Item {
+    pub(super) fn item(&self, note: Step, open: bool, patterns: &[&Note]) -> Item {
         let folded = (!patterns.is_empty()).then(|| format!("{PATTERNS}{}", note.id()));
-        let patterns = patterns.iter().map(|pattern| pattern.note.id.clone());
+        let patterns = patterns.iter().map(|pattern| pattern.id.clone());
         let steps = Level::of(Trail::new(note).parts()).ids(note.id());
         Item {
             id: note.id().to_string(),
@@ -74,7 +75,7 @@ impl Tree<'_> {
             tone: self.tone(BOLD, note.newest()),
             rest: hair.clone(),
         });
-        self.pick(self.item(note, true, &summary.patterns), lines, first);
+        self.pick(self.item(note, true, &summary.notes), lines, first);
         if let Some(worked) = summary.worked {
             self.labelled(lines, &hair, "took", &took(worked));
         }
@@ -94,13 +95,7 @@ impl Tree<'_> {
         self.closing(work, &hair, false, lines);
         self.followed(work, &hair, lines);
         let level = Level::of(Trail::new(note).parts());
-        self.level(
-            level,
-            summary.patterns,
-            &Styled::from("  "),
-            note.id(),
-            lines,
-        );
+        self.level(level, summary.notes, &Styled::from("  "), note.id(), lines);
     }
 
     /// Adds `note` as one row: `▸`, its mark and wrapped title, then its details: its steps and worked
@@ -125,7 +120,7 @@ impl Tree<'_> {
             rest: rest.clone(),
         });
         self.details(&rest, [steps, summary.worked.map(took)], lines);
-        self.pick(self.item(note, false, &summary.patterns), lines, first);
+        self.pick(self.item(note, false, &summary.notes), lines, first);
     }
 }
 

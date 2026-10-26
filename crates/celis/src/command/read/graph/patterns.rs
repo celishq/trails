@@ -47,7 +47,7 @@ impl Patterns<'_> {
         let kept = lines[..shown].last().map_or(0, |l| l.0 + 1);
         let rest = self.learned.len() - kept;
         let mut title = vec![
-            paint(BOLD.fg(MAGENTA.fg.unwrap_or_default()), " § Patterns "),
+            paint(BOLD.fg(MAGENTA.fg.unwrap_or_default()), " § Notes "),
             paint(DIM, &format!("{} ", self.learned.len())),
         ];
         if rest > 0 {
@@ -75,7 +75,7 @@ impl Patterns<'_> {
         let inner = room.saturating_sub(2).max(1);
         let mut buf = Buffer::empty(Rect::new(0, 0, width, room.max(3)));
         let mut title = vec![
-            paint(BOLD.fg(MAGENTA.fg.unwrap_or_default()), " § Patterns "),
+            paint(BOLD.fg(MAGENTA.fg.unwrap_or_default()), " § Notes "),
             paint(DIM, &format!("{} ", self.learned.len())),
         ];
         if self.learned.is_empty() {

@@ -193,10 +193,9 @@ impl Demo {
             "Add a senior tier to the price list\nexpect: a senior pays 80% on the shelf, the receipt and the frame",
             &[],
         )?;
-        self.pattern(1490, &shop, &tier, "When you price a senior: pay 80% of the price, rounded down to the cent, because the receipt must match the shelf.")?;
-        self.pattern(
+        self.note(1490, &tier, "When you price a senior: pay 80% of the price, rounded down to the cent, because the receipt must match the shelf.")?;
+        self.note(
             1480,
-            &shop,
             &tier,
             "When you show a price: use the shop's currency, because the receipt showed dollars.",
         )?;
@@ -453,9 +452,9 @@ impl Demo {
         Ok(())
     }
 
-    /// Writes the pattern `text` of the trail `trail`, `ago` seconds before now.
-    fn pattern(&self, ago: u64, anchor: &Anchor, trail: &str, text: &str) -> Result<(), Failure> {
-        self.write_pattern(ago, anchor, Scope::Trail(trail.to_string()), text)?;
+    /// Writes the note `text` on the trail `trail`, `ago` seconds before now.
+    fn note(&self, ago: u64, trail: &str, text: &str) -> Result<(), Failure> {
+        self.trails(ago)?.note(trail, text.to_string())?;
         Ok(())
     }
 

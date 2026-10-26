@@ -2,7 +2,7 @@
 //! steps, written before the view opens, and the rest of their events written live, one a beat.
 
 use crate::failure::Failure;
-use celis_trails::{Anchor, Draft, PatternRecord, Scope, Store, Trails};
+use celis_trails::{Anchor, Draft, Store, Trails};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -285,18 +285,8 @@ impl Written {
                 let Some(trail) = self.trail.clone() else {
                     return Ok(());
                 };
-                let pattern = PatternRecord {
-                    anchor,
-                    scope: Scope::Trail(trail),
-                    replaces: None,
-                    content: self.plan.patterns[r].0.to_string(),
-                    paths: vec![],
-                    binds: false,
-                    within: vec![],
-                    examples: Default::default(),
-                };
                 store.at(at);
-                store.decide(pattern, None)?;
+                store.note(&trail, self.plan.patterns[r].0.to_string())?;
             }
         }
         Ok(())

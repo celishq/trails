@@ -32,6 +32,7 @@ pub use step::by::By;
 pub use step::check::Check;
 pub use step::done::Done;
 pub use step::mark::Mark;
+pub use step::notes::Notes;
 pub use step::proof_file::ProofFile;
 pub use step::state::State;
 pub use step::step_record::StepRecord;

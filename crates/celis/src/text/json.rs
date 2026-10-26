@@ -1,7 +1,7 @@
 //! The `--json` object of each record.
 
 use celis_nostr::Note;
-use celis_trails::{Pattern, StepRecord};
+use celis_trails::{Notes, Pattern, StepRecord};
 use serde_json::{json, Value};
 
 /// The object of the step `record` that `note` holds.
@@ -28,6 +28,16 @@ pub(crate) fn links(record: &StepRecord) -> Value {
         .chain(uses)
         .map(|(kind, to)| json!({"to": to, "kind": kind}));
     Value::Array(links.collect())
+}
+
+/// The object of the note `note`.
+pub(crate) fn note(note: &Note) -> Value {
+    json!({
+        "id": note.id,
+        "created_at": note.created_at,
+        "step": Notes::step(note),
+        "content": note.content,
+    })
 }
 
 /// The object of `pattern`.

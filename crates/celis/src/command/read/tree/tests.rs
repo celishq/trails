@@ -1,6 +1,6 @@
 use super::*;
 use celis_nostr::{Account, Note};
-use celis_trails::{Anchor, Mark, StepRecord};
+use celis_trails::{Anchor, Mark, Notes, StepRecord};
 
 fn account() -> Account {
     Account::new(&[1u8; 32]).unwrap()
@@ -27,11 +27,12 @@ fn step(under: Option<&Note>, at: u64, content: &str) -> Note {
 /// The time the tree of `records` at `now` changes next.
 fn next(records: &[Note], now: u64) -> Option<u64> {
     let steps = Steps::new(records, now);
-    let patterns = Patterns::new(records);
+    let (patterns, notes) = (Patterns::new(records), Notes::new(records));
     let reuse = Reuse::new(&steps);
     let tree = Tree {
         steps: &steps,
         patterns: &patterns,
+        notes: &notes,
         reuse: &reuse,
         layout: None,
         grouped: false,

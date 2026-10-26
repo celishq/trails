@@ -114,8 +114,9 @@ fn grep_prints_proofs_changes_and_drop_reasons() {
     );
 }
 
-/// A pattern prints with the kind `pattern`: live or replaced, then its scope; one of a trail prints under
-/// the trail, one of the project under `- patterns of no trail` with its project (`spec/02-cli.md`, "Grep").
+/// A pattern prints with the kind `pattern`: live or replaced, then its scope, under `- patterns of no
+/// trail` with its project; a note prints under its trail with the id of its step (`spec/02-cli.md`,
+/// "Grep").
 #[test]
 fn grep_prints_patterns_live_or_replaced() {
     let repo = Repo::new();
@@ -127,13 +128,14 @@ fn grep_prints_patterns_live_or_replaced() {
         assert!(o.status.success(), "{}", err(&o));
         out(&o).trim().to_string()
     };
-    let scope = format!("trail:{}", &trail[..8]);
-    let pattern = decide(&[
-        "--scope",
-        &scope,
+    let note = [
+        "step",
+        "note",
+        &trail[..8],
         "--",
         "When a vendor has no logo: show its initials",
-    ]);
+    ];
+    assert!(cli(&repo, &note).status.success());
     let old = decide(&["--", "When a price prints: use floats"]);
     let new = decide(&[
         "--replaces",
@@ -141,13 +143,12 @@ fn grep_prints_patterns_live_or_replaced() {
         "--",
         "When a price prints: use cents",
     ]);
-    let text = grep(&repo, &[" pattern "]);
-    let t = &trail[..8];
+    let text = grep(&repo, &["-E", " (pattern|note) "]);
     assert_eq!(
         line(&text, "initials"),
         format!(
-            "  pattern {} live {{trail:{t}}} When a vendor has no logo: show its initials",
-            &pattern[..8]
+            "  note {} When a vendor has no logo: show its initials",
+            &trail[..8]
         )
     );
     assert!(
@@ -382,7 +383,7 @@ fn the_view_and_the_steps_pattern_search_match_the_fixture() {
     );
     let project = (id.as_str(), "repo");
     let scope = format!("trail:{}", trail.id);
-    let pattern = stored_pattern(
+    stored_pattern(
         &repo,
         project,
         &by,
@@ -433,11 +434,14 @@ fn the_view_and_the_steps_pattern_search_match_the_fixture() {
         "When you push: run the tests first.",
         t + 10,
     );
+    let note = Mark::Note {
+        text: "Keep the table sortable.".into(),
+    };
+    mark(note, &table.id, t + 11);
     let names = [
         ("trail", &trail),
         ("table", &table),
         ("chart", &chart),
-        ("pattern", &pattern),
         ("old", &old),
         ("new", &new),
         ("me", &me),

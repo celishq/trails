@@ -42,7 +42,7 @@ impl Command {
 fn markdown(pattern: &Pattern, trails: &Trails, project: &str) -> Vec<String> {
     let (note, pattern) = (pattern.note, &pattern.record);
     let mut text = pattern.content.lines();
-    let mut head = vec![pattern.scope.short()];
+    let mut head = vec![pattern.scope.text()];
     head.extend(pattern.binds.then(|| "rule".to_string()));
     let mut lines = vec![
         String::new(),

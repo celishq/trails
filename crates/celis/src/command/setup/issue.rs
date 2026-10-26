@@ -36,7 +36,7 @@ impl Command {
                 return Err(Failure::no_step(&ids[0]));
             }
             let trails = self.trails()?;
-            let text = markdown(&trails.steps(), &trails.patterns(), ids)?;
+            let text = markdown(&trails.steps(), &trails.notes(), ids)?;
             parts.push(text.trim_end().to_string());
         }
         let text = parts.join("\n\n");

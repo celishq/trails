@@ -4,11 +4,9 @@ use crate::{Fit, Mark, Pattern, PatternEnd, PatternRecord, Refusal, Scope, Step,
 use celis_nostr::Note;
 use std::collections::{HashMap, HashSet};
 
-/// The patterns of a store, read once, newest first, then by id. `trails` holds the live patterns of each
-/// trail.
+/// The patterns of a store, read once, newest first, then by id.
 pub struct Patterns<'a> {
     every: Vec<Pattern<'a>>,
-    trails: HashMap<String, Vec<usize>>,
 }
 
 impl<'a> Patterns<'a> {
@@ -35,13 +33,7 @@ impl<'a> Patterns<'a> {
             })
             .collect();
         every.sort_by(|a, b| (b.note.created_at, &a.note.id).cmp(&(a.note.created_at, &b.note.id)));
-        let mut trails: HashMap<String, Vec<usize>> = HashMap::new();
-        for (n, pattern) in every.iter().enumerate().filter(|(_, p)| p.is_live()) {
-            if let Scope::Trail(trail) = &pattern.record.scope {
-                trails.entry(trail.clone()).or_default().push(n);
-            }
-        }
-        Patterns { every, trails }
+        Patterns { every }
     }
 
     /// Every pattern of every project, live or ended.
@@ -96,32 +88,15 @@ impl<'a> Patterns<'a> {
             .collect()
     }
 
-    /// The live patterns of `trail`, oldest first.
-    pub fn of(&self, trail: Step) -> Vec<Pattern<'a>> {
-        let project = &trail.record().anchor.project;
-        let patterns = self.trails.get(trail.id()).into_iter().flatten();
-        let mut patterns: Vec<Pattern<'a>> = patterns
-            .map(|&n| &self.every[n])
-            .filter(|p| &p.record.anchor.project == project)
-            .cloned()
-            .collect();
-        patterns
-            .sort_by(|a, b| (a.note.created_at, &a.note.id).cmp(&(b.note.created_at, &b.note.id)));
-        patterns
-    }
-
-    /// The live patterns the plan of `step` links, each once: its trail's patterns, each pattern a step on its
-    /// `under` chain uses, and the patterns of each trail it follows (`Step::followed`).
+    /// The live patterns the plan of `step` links, each once: each pattern a step on its `under` chain
+    /// uses.
     pub fn kept(&self, step: Step) -> Vec<Pattern<'a>> {
-        let mut found = self.of(step.trail());
+        let mut found = Vec::new();
         let chain = std::iter::successors(Some(step), |s| s.under());
         for used in chain.flat_map(Step::uses) {
             if let Used::Pattern(id) = used {
                 found.extend(self.find(None, id));
             }
-        }
-        for trail in step.followed() {
-            found.extend(self.of(trail));
         }
         let mut seen = HashSet::new();
         found.retain(|p| seen.insert(p.note.id.clone()));

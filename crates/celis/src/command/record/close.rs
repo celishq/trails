@@ -125,7 +125,8 @@ impl Command {
     }
 
     /// The judge brief of `ask`, an ask or a step with steps under it: its title, its intent lines, the
-    /// patterns that fit its title and the changed files, the changed files, and its check.
+    /// patterns that fit its title and the changed files, the notes of its trail, the changed files, and
+    /// its check.
     fn brief(&self, ask: Step, trails: &Trails, files: &[String]) -> Vec<String> {
         let record = ask.record();
         let mut lines = vec![
@@ -157,6 +158,11 @@ impl Command {
             let mut pattern = text.lines();
             lines.extend(pattern.next().map(|first| format!("  {kind:<7} {first}")));
             lines.extend(pattern.map(|line| format!("        {line}")));
+        }
+        for note in trails.notes().of(ask.trail()) {
+            let mut text = note.content.lines();
+            lines.extend(text.next().map(|first| format!("  note    {first}")));
+            lines.extend(text.map(|line| format!("        {line}")));
         }
         lines.extend(files.iter().map(|file| format!("  file    {file}")));
         lines.extend(

@@ -8,15 +8,15 @@ use crate::command::read::search::recalls::Recalls;
 use crate::text::clock::date;
 use celis_nostr::Note;
 use celis_trails::records::id::short;
-use celis_trails::{Mark, Pattern, PatternEnd, Scope, Step, Trails};
+use celis_trails::{Mark, Notes, Pattern, PatternEnd, Step, Trails};
 use header::Header;
 use kind::Kind;
 use row::Row;
 use std::collections::HashMap;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
-/// Every trail of every project with its patterns and steps, and each pattern with no trail, newest made
-/// first; with the header of each trail.
+/// Every trail of every project with its notes and steps, and each pattern, newest made first; with the
+/// header of each trail.
 #[derive(Default)]
 pub(crate) struct View {
     rows: Vec<Row>,
@@ -31,25 +31,18 @@ impl View {
 
     /// The view of `trails`, each pattern with the day `recalled` gives for its short id.
     pub fn recalled(trails: &Trails, recalled: &Recalls) -> View {
-        let (steps, patterns) = (trails.steps(), trails.patterns());
-        let mut by_trail: HashMap<&str, Vec<Row>> = HashMap::new();
+        let (steps, patterns, notes) = (trails.steps(), trails.patterns(), trails.notes());
         let mut blocks: Vec<(u64, &str, Vec<Row>)> = Vec::new();
         for entry in patterns.every() {
             let note = entry.note;
-            match &entry.record.scope {
-                Scope::Trail(id) => {
-                    let rows = pattern(entry, Some(short(id)), recalled);
-                    by_trail.entry(id.as_str()).or_default().extend(rows);
-                }
-                _ => blocks.push((note.created_at, &note.id, pattern(entry, None, recalled))),
-            }
+            blocks.push((note.created_at, &note.id, pattern(entry, recalled)));
         }
         let mut headers = HashMap::new();
         for root in steps.roots() {
             headers.insert(short(root.id()), Header::of(root));
             let mut rows = vec![step(root, root, Kind::Trail)];
-            rows.extend(by_trail.remove(root.id()).unwrap_or_default());
-            level(root, root, &mut rows);
+            rows.extend(noted(root, root, &notes));
+            level(root, root, &notes, &mut rows);
             blocks.push((root.note().created_at, root.id(), rows));
         }
         blocks.sort_by(|(a, x, _), (b, y, _)| (b, y).cmp(&(a, x)));
@@ -99,9 +92,9 @@ impl View {
     }
 }
 
-/// Adds the steps under `parent` of `root` to `rows`, newest made first, each with its close and then
-/// the steps under it.
-fn level<'a>(root: Step<'a>, parent: Step<'a>, rows: &mut Vec<Row>) {
+/// Adds the steps under `parent` of `root` to `rows`, newest made first, each with its close, its
+/// `notes` and then the steps under it.
+fn level<'a>(root: Step<'a>, parent: Step<'a>, notes: &Notes, rows: &mut Vec<Row>) {
     for child in parent.children().into_iter().rev() {
         rows.push(step(root, child, Kind::Step));
         let row = |note: &Note, kind: Kind, text: &str| Row {
@@ -121,8 +114,24 @@ fn level<'a>(root: Step<'a>, parent: Step<'a>, rows: &mut Vec<Row>) {
             Some((note, Mark::Drop { reason })) => rows.push(row(note, Kind::Dropped, &reason)),
             _ => {}
         }
-        level(root, child, rows);
+        rows.extend(noted(root, child, notes));
+        level(root, child, notes, rows);
     }
+}
+
+/// The rows of the notes on `step` of the trail `root`, oldest first.
+fn noted(root: Step, step: Step, notes: &Notes) -> Vec<Row> {
+    let on = notes.on(step.id()).iter();
+    on.map(|note| Row {
+        trail: Some(short(root.id())),
+        kind: Kind::Note,
+        day: date(note.created_at),
+        project: root.record().anchor.name.clone(),
+        id: short(step.id()),
+        fields: vec![],
+        text: flat(&note.content),
+    })
+    .collect()
 }
 
 /// The row of the step `step` of the trail `root`, as `kind`.
@@ -145,13 +154,12 @@ fn step(root: Step, step: Step, kind: Kind) -> Row {
     }
 }
 
-/// The rows of the pattern `entry`, as a pattern of `trail`: its own, then its drop's reason when a drop
-/// names it.
-fn pattern(entry: &Pattern, trail: Option<String>, recalled: &Recalls) -> Vec<Row> {
+/// The rows of the pattern `entry`: its own, then its drop's reason when a drop names it.
+fn pattern(entry: &Pattern, recalled: &Recalls) -> Vec<Row> {
     let (note, pattern) = (entry.note, &entry.record);
     let state = entry.end.map_or("live".to_string(), PatternEnd::text);
     let row = |kind: Kind, at: &Note, fields: Vec<String>, text: &str| Row {
-        trail: trail.clone(),
+        trail: None,
         kind,
         day: date(at.created_at),
         project: pattern.anchor.name.clone(),
@@ -159,7 +167,7 @@ fn pattern(entry: &Pattern, trail: Option<String>, recalled: &Recalls) -> Vec<Ro
         fields,
         text: flat(text),
     };
-    let mut fields = vec![state, format!("{{{}}}", pattern.scope.short())];
+    let mut fields = vec![state, format!("{{{}}}", pattern.scope.text())];
     let marks = [
         (!pattern.paths.is_empty(), "trigger"),
         (pattern.binds, "binds"),

@@ -240,14 +240,15 @@ fn done_of_the_last_step_prints_the_judge_brief() {
     );
 }
 
-/// `pattern` with no scope says that the pattern holds in the project, and how `me` and `trail:<id>`
-/// differ.
+/// `pattern` with no scope says that the pattern holds in the project, and names `--scope me` and
+/// `step note`.
 #[test]
 fn pattern_with_no_scope_names_the_scopes() {
     let repo = Repo::new();
     let o = cli(&repo, &["pattern", "--", "When Python changes: run ruff."]);
     assert!(o.status.success(), "{}", err(&o));
     assert!(err(&o).contains("--scope me"), "{}", err(&o));
+    assert!(err(&o).contains("celis step note"), "{}", err(&o));
     let o = cli(
         &repo,
         &[
@@ -262,8 +263,8 @@ fn pattern_with_no_scope_names_the_scopes() {
 }
 
 /// `done` of an ask with no `--by`, while git shows a changed file, refuses with `unjudged`, writes
-/// nothing, and prints the patterns of the changed files and the judge brief; `--by judge` closes it
-/// (`spec/02-cli.md`, "Step").
+/// nothing, and prints the patterns of the changed files and the judge brief with the trail's notes;
+/// `--by judge` closes it (`spec/02-cli.md`, "Step").
 #[test]
 fn done_of_an_ask_with_changed_files_needs_a_judge() {
     let repo = Repo::new();
@@ -288,6 +289,11 @@ fn done_of_an_ask_with_changed_files_needs_a_judge() {
             "Round the prices\nexpect: cents",
         ],
     );
+    let note = cli(
+        &repo,
+        &["step", "note", &trail[..8], "--", "keep the old table"],
+    );
+    assert!(note.status.success(), "{}", err(&note));
     repo.write("new.py", "x = 1\n");
     let args = [
         "step",
@@ -304,6 +310,11 @@ fn done_of_an_ask_with_changed_files_needs_a_judge() {
     assert!(err(&o).contains("celis:judge"), "{}", err(&o));
     assert!(err(&o).contains("  expect  cents"), "{}", err(&o));
     assert!(err(&o).contains(&pattern[..8]), "{}", err(&o));
+    assert!(
+        err(&o).contains("  note    keep the old table"),
+        "{}",
+        err(&o)
+    );
     let by = [
         "step",
         "done",

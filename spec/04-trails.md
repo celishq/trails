@@ -46,9 +46,10 @@ A session is one run of an agent; a subagent shares it. Many sessions can work o
 - The prompt hook MUST write a prompt on its session's open trail only, and nothing with no open trail.
   It MUST write nothing for a prompt that starts with `<task-notification>` or `<agent-message`.
 
-## Patterns
+## Notes
 
-A trail's patterns are its live patterns with the scope `trail:<id>` (CIP-05, "Scope").
+A trail's notes are the notes on the steps of its tree (CIP-03, "Notes"), and each pattern that CIP-05,
+"Reading", reads as a note on the trail.
 
 ## State
 

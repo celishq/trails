@@ -2,8 +2,17 @@
 
 use super::clock::took;
 use crate::progress::Grade;
+use celis_nostr::Note;
 use celis_trails::records::id::short;
 use celis_trails::{Example, Pattern, ProofFile, Step, Trails};
+
+/// `<id, first 8> note <first line>` of the note `note`, then each next line of its text.
+pub(crate) fn note(note: &Note) -> String {
+    let mut text = note.content.lines();
+    let head = format!("{} note {}", short(&note.id), text.next().unwrap_or(""));
+    let lines = std::iter::once(head).chain(text.map(|l| format!("  {l}")));
+    lines.collect::<Vec<_>>().join("\n")
+}
 
 /// `<id, first 8> <scope> <first line>` of `pattern`, then each next line of its
 /// text, then each of its examples: a step with its proof and blobs, a file with its blob, or a URL.
@@ -14,7 +23,7 @@ pub(crate) fn pattern(pattern: &Pattern, trails: &Trails) -> String {
     let head = format!(
         "{} {} {}",
         short(&note.id),
-        pattern.scope.short(),
+        pattern.scope.text(),
         text.next().unwrap_or("")
     );
     let mut lines = vec![head];

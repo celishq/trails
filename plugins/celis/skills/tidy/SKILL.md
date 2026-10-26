@@ -26,8 +26,6 @@ Drop with `celis step drop <id> -- "<why>"`:
 - a one-off note about one event;
 - a pattern older than 60 days with no `recalled:<day>` in the last 60 days.
 
-A dropped trail keeps its patterns: drop each that is stale too.
-
 ## Merge
 
 Find live patterns of one project and scope that say the same thing, or whose good examples make one

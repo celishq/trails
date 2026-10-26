@@ -18,11 +18,11 @@ fn printed(repo: &Repo, args: &[&str]) -> Vec<String> {
 }
 
 /// `tree <id>` prints the trail as a block: its mark, id and title, then two spaces in its progress and
-/// worked time, its open steps, its patterns, then its closed steps, each group newest first and each step
+/// worked time, its open steps, its notes, then its closed steps, each group newest first and each step
 /// followed by its own two spaces further in, in the same order; `--full` adds the proof and grade of a
 /// done one.
 #[test]
-fn tree_prints_the_trail_its_patterns_and_the_steps_under_it() {
+fn tree_prints_the_trail_its_notes_and_the_steps_under_it() {
     let repo = Repo::new();
     let by = support::account();
     let at = support::now() - 600;
@@ -123,7 +123,7 @@ fn tree_prints_the_expect_line_in_the_label_column() {
     );
 }
 
-/// `tree <id>` prints an expired step with the closed steps, after the patterns.
+/// `tree <id>` prints an expired step with the closed steps, after the notes.
 #[test]
 fn tree_prints_an_expired_step_with_the_closed_ones() {
     let repo = Repo::new();
@@ -155,15 +155,14 @@ fn tree_prints_an_expired_step_with_the_closed_ones() {
     );
 }
 
-/// `tree <id>` of an ask prints its trail's patterns on its block.
+/// `tree <id>` of an ask prints its trail's notes on its block.
 #[test]
-fn tree_of_an_ask_prints_its_trails_patterns() {
+fn tree_of_an_ask_prints_its_trails_notes() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "build the CRM"]);
-    let scope = format!("trail:{}", short(&trail));
     let o = cli(
         &repo,
-        &["pattern", "--scope", &scope, "--", "colours are tokens"],
+        &["step", "note", short(&trail), "--", "colours are tokens"],
     );
     assert!(o.status.success(), "{}", err(&o));
     let pattern = out(&o).trim()[..8].to_string();
@@ -313,8 +312,7 @@ fn the_agent_view_prints_whole_lines_with_no_colour() {
     let title = "a trail whose words run well past thirty characters";
     let trail = add(&repo, &["--", title]);
     let pattern = "When you price a senior: use cents, because floats lost a cent on the receipt.";
-    let scope = format!("trail:{}", short(&trail));
-    let o = cli(&repo, &["pattern", "--scope", &scope, "--", pattern]);
+    let o = cli(&repo, &["step", "note", short(&trail), "--", pattern]);
     assert!(o.status.success(), "{}", err(&o));
     let part = add(
         &repo,
@@ -499,7 +497,7 @@ fn tree_demo_prints_every_state_and_writes_nothing() {
 /// `tree <id> --graph` prints the trail as a graph: its path, its steps by state with its bar, done of
 /// all and time worked, then each step right under it as a card in a chain from left to right in the
 /// order they were added, a done one closed to its time, an open one with steps under it the bar of
-/// those done, and the trail's patterns.
+/// those done, and the trail's notes.
 #[test]
 fn tree_graph_prints_the_trail_as_a_chain_of_cards() {
     let repo = Repo::new();
@@ -539,7 +537,7 @@ fn tree_graph_prints_the_trail_as_a_chain_of_cards() {
         "  ╰─────────────────────╯   ╎ ━━━━━━━━━━━━ 1/3    ╎   ╎ open                ╎",
         "                            ╰╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╯   ╰╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╯",
         "",
-        "  ╭─ § Patterns 1 ───────────────────────────────────────────────────────────────────────────────────────╮",
+        "  ╭─ § Notes 1 ──────────────────────────────────────────────────────────────────────────────────────────╮",
         "  │ § <id>  colours are tokens                                                                       │",
         "  ╰──────────────────────────────────────────────────────────────────────────────────────────────────────╯",
     ];

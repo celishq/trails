@@ -118,10 +118,10 @@ fn start_does_not_run_the_steps_check() {
     assert!(!repo.path().join("ran").exists());
 }
 
-/// `start` prints the live patterns of the step's trail, each pattern its ask uses, and the patterns of the
-/// trail of each step its ask uses; not a pattern none of them names.
+/// `start` prints the notes of the step's trail, each pattern its ask uses, and the notes of the trail of
+/// each step its ask uses; not a pattern none of them names (`spec/02-cli.md`, "Step").
 #[test]
-fn start_prints_the_trails_patterns_and_the_patterns_its_ask_uses() {
+fn start_prints_the_trails_notes_and_the_patterns_its_ask_uses() {
     let repo = Repo::new();
     let decide = |args: &[&str]| {
         let o = cli(&repo, &[&["pattern"], args].concat());
@@ -129,21 +129,15 @@ fn start_prints_the_trails_patterns_and_the_patterns_its_ask_uses() {
         out(&o).lines().next().unwrap().to_string()
     };
     let past = add(&repo, &["--", "past work"]);
-    decide(&[
-        "--scope",
-        &format!("trail:{}", &past[..8]),
-        "--",
-        "past keeps tabs",
-    ]);
+    let note = |id: &str, text: &str| {
+        let o = cli(&repo, &["step", "note", id, "--", text]);
+        assert!(o.status.success(), "{}", err(&o));
+    };
+    note(&past[..8], "past keeps tabs");
     let used = decide(&["--", "use the shared Badge"]);
     decide(&["--", "never deploy on friday"]);
     let trail = add(&repo, &["--", "the trail"]);
-    decide(&[
-        "--scope",
-        &format!("trail:{}", &trail[..8]),
-        "--",
-        "this trail rule",
-    ]);
+    note(&trail[..8], "this trail rule");
     let ask = add(
         &repo,
         &[

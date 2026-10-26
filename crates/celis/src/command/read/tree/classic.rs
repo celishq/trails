@@ -1,4 +1,4 @@
-//! `celis tree` as v0.0.11 printed and watched it: a trail with its state, its patterns and the steps under it.
+//! `celis tree` as v0.0.11 printed and watched it: a trail with its state, its notes and the steps under it.
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
@@ -10,9 +10,10 @@ use crate::terminal::classic::{look, signs, SPINNER};
 use crate::terminal::look::SPUN;
 use crate::text::clock::stride;
 use crate::text::clock::{day, midnight};
+use celis_nostr::Note;
 use celis_trails::records::id::short;
 use celis_trails::step::steps::LIFE;
-use celis_trails::{Pattern, Patterns, State, Step, Steps, Trail};
+use celis_trails::{Notes, Patterns, State, Step, Steps, Trail};
 pub(crate) use layout::Layout;
 use level::Level;
 use ratatui::style::Style;
@@ -71,6 +72,7 @@ impl Command {
         let tree = Tree {
             steps,
             patterns: model.patterns,
+            notes: model.notes,
             reuse: model.reuse,
             layout,
             grouped: id.is_none(),
@@ -159,6 +161,7 @@ pub(crate) const EMPTY: &str = "No active trails. Run `celis tree --all` to see 
 pub(crate) struct Tree<'a> {
     pub steps: &'a Steps<'a>,
     pub patterns: &'a Patterns<'a>,
+    pub notes: &'a Notes<'a>,
     pub reuse: &'a Reuse<'a>,
     pub layout: Option<&'a Layout>,
     pub grouped: bool,
@@ -177,7 +180,7 @@ struct Summary<'a> {
     all: usize,
     done: usize,
     worked: Option<u64>,
-    patterns: Vec<Pattern<'a>>,
+    notes: Vec<&'a Note>,
 }
 
 impl Tree<'_> {
@@ -257,7 +260,7 @@ impl Tree<'_> {
     }
 
     /// What the tree says of the trail `note`, whose work `work` holds: the steps it prints under it, the
-    /// done ones, the time they worked, and its patterns. An active one lowers `next` to its end.
+    /// done ones, the time they worked, and its notes. An active one lowers `next` to its end.
     fn summary(&self, note: Step, work: Step) -> Summary<'_> {
         if note.state().active() {
             self.until(note.newest() + LIFE);
@@ -272,17 +275,17 @@ impl Tree<'_> {
             all: shown.len(),
             done: Tally::of(&shown).done,
             worked,
-            patterns: self.patterns(note),
+            notes: self.notes(note),
         }
     }
 
-    /// The live patterns of the trail of `note`: its own, or its trail's when it is an ask.
-    fn patterns(&self, note: Step) -> Vec<Pattern<'_>> {
+    /// The notes of the trail of `note`: its own, or its trail's when it is an ask.
+    fn notes(&self, note: Step) -> Vec<&Note> {
         let owner = match note.is_ask() {
             true => note.trail(),
             false => note,
         };
-        self.patterns.of(owner)
+        self.notes.of(owner)
     }
 
     /// The time the steps of `tree` with no step under them worked: what a done one took, and the time

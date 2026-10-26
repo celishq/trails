@@ -22,6 +22,7 @@ impl Command {
             "done" => self.step_close(args, out, err, project),
             "drop" => self.step_drop(args, out),
             "edit" => self.step_edit(args, out, project),
+            "note" => self.step_note(args, out),
             "" => Err(Failure::usage("expected: celis step <command>")),
             verb => Err(Failure::usage(format!("no command \"step {verb}\""))),
         }
@@ -60,8 +61,8 @@ impl Command {
         self.print(written, args, out, err)
     }
 
-    /// Starts the open step `args` names, and prints the id of its start, then the patterns its plan
-    /// links.
+    /// Starts the open step `args` names, and prints the id of its start, then the patterns and notes
+    /// its plan links.
     fn step_start(
         &self,
         args: &Args,
@@ -169,8 +170,16 @@ impl Command {
         self.print(written, args, out, &mut std::io::sink())
     }
 
-    /// Prints the id of each record of `written` and each of its patterns on `out`, and its notices on
-    /// `err`.
+    /// Writes the text after `--` as a note on the step `args` names, and prints the note's id.
+    fn step_note(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
+        let id = args.id("step note")?;
+        let trails = self.trails()?;
+        let text = args.required_text("step note needs its text after --")?;
+        self.print(trails.note(id, text)?, args, out, &mut std::io::sink())
+    }
+
+    /// Prints the id of each record of `written`, each of its patterns and each of its notes on `out`, and
+    /// its notices on `err`.
     pub(crate) fn print(
         &self,
         written: Written,
@@ -188,6 +197,10 @@ impl Command {
                 let json = crate::text::json::pattern(pattern);
                 crate::command::show(out, args.json, "pattern", json, &line)?;
             }
+        }
+        for note in &written.notes {
+            let (line, json) = (crate::text::line::note(note), crate::text::json::note(note));
+            crate::command::show(out, args.json, "note", json, &line)?;
         }
         for notice in &written.notices {
             self.notice(notice, err)?;

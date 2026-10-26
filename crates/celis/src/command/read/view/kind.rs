@@ -9,6 +9,7 @@ pub(crate) enum Kind {
     Proof,
     Changed,
     Dropped,
+    Note,
 }
 
 impl Kind {
@@ -21,6 +22,7 @@ impl Kind {
             Kind::Proof => "proof",
             Kind::Changed => "changed",
             Kind::Dropped => "dropped",
+            Kind::Note => "note",
         }
     }
 }

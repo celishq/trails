@@ -95,9 +95,8 @@ fn a_trail_or_step_command_with_stdin_left_open_asks_nothing() {
     let repo = Repo::plain();
     let closed = step_id(&repo, "two")[..8].to_string();
     let trail = trail_id(&repo, "senior tier");
-    let scope = format!("trail:{}", &trail[..8]);
     let runs: Vec<Vec<&str>> = vec![
-        vec!["pattern", "--scope", &scope, "--", "80%"],
+        vec!["step", "note", &trail[..8], "--", "80%"],
         vec!["tree", &trail[..8]],
         vec!["step", "add", "--", "four"],
         vec!["grep", "senior"],
@@ -192,9 +191,8 @@ fn a_trail_or_step_command_prints_one_json_object_a_line_with_json() {
     let repo = Repo::plain();
     let id = step_id(&repo, "one");
     let trail = trail_id(&repo, "g");
-    let scope = format!("trail:{trail}");
     for args in [
-        vec!["pattern", "--json", "--scope", &scope, "--", "80%"],
+        vec!["step", "note", "--json", &trail, "--", "80%"],
         vec!["tree", "--json", &trail],
         vec!["tree", "--all", "--json"],
         vec!["step", "done", "--json", &id, "--as-planned", "--", "p"],
@@ -394,8 +392,8 @@ fn a_command_refuses_an_8_character_start_two_steps_share() {
     assert!(o.status.success(), "{}", err(&o));
 }
 
-/// A command refuses an 8-character start two steps share with `no-step`, or `no-trail` as a scope, and
-/// two patterns share with `no-pattern`, under `--json` (`spec/02-cli.md`, "Output and errors").
+/// A command refuses an 8-character start two steps share with `no-step`, and two patterns share with
+/// `no-pattern`, under `--json` (`spec/02-cli.md`, "Output and errors").
 #[test]
 fn a_command_refuses_an_8_character_start_two_trails_patterns_or_steps_share() {
     let repo = Repo::plain();
@@ -407,12 +405,11 @@ fn a_command_refuses_an_8_character_start_two_trails_patterns_or_steps_share() {
     put(&repo, &g1);
     put(&repo, &g2);
     assert_eq!(g1.id[..8], g2.id[..8]);
-    let scope = format!("trail:{}", &g1.id[..8]);
     for (args, name) in [
         (vec!["tree", "--json", &g1.id[..8]], "no-step"),
         (
-            vec!["pattern", "--json", "--scope", &scope, "--", "x"],
-            "no-trail",
+            vec!["step", "note", "--json", &g1.id[..8], "--", "x"],
+            "no-step",
         ),
     ] {
         let o = repo.run(&repo.path(), &args, &[], "");

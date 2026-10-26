@@ -105,8 +105,7 @@ dropped   a `drop` names it
 **Readers**
 
 - A reader MUST ignore a drop with no content.
-- A drop of a done trail MUST keep it done. The trail is then **dropped after done**. Its patterns stay
-  live.
+- A drop of a done trail MUST keep it done. The trail is then **dropped after done**.
 
 ## Editing
 
@@ -123,6 +122,19 @@ dropped   a `drop` names it
 - One line of content MUST change only the title. More lines MUST replace the text. No content MUST keep
   it.
 - `at` tags MUST replace the step's places, and a `check` its check.
+
+## Notes
+
+```json
+{ "kind": 1985, "content": "<what holds for the work of the step's trail>",
+  "tags": [["L", "celis.step"], ["l", "note", "celis.step"], ["e", "<step id>"]] }
+```
+
+- content: text for an agent. A reader MAY show it, and does not parse it.
+
+**Readers**
+
+- A reader MUST ignore a note with no content.
 
 ## Sources
 

@@ -4,6 +4,7 @@ pub mod by;
 pub mod check;
 pub mod done;
 pub mod mark;
+pub mod notes;
 pub mod proof_file;
 pub mod state;
 pub mod step_record;

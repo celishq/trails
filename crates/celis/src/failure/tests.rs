@@ -13,7 +13,6 @@ fn an_error_about_an_id_names_the_command_that_fixes_it() {
     for failure in [
         Failure::no_step("3fa2"),
         Failure::no_pattern("3fa2"),
-        Failure::no_trail("3fa2"),
         Failure::closed("3fa2"),
         Failure::open_steps("3fa2"),
     ] {

@@ -38,8 +38,8 @@ Every change of `spec/` MUST keep these rules:
 |---|---|---|---|
 | 01 | Records | the record, the store, the account, projects, places, links | — |
 | 02 | The command line | usage, the records each command writes, errors, and the output the plugin reads | CIP-01 |
-| 03 | Steps | the step, its start, done, drop and edit | CIP-01 |
-| 04 | Trails | the trail, its sessions and prompts, its patterns | CIP-01, 03, 05 |
+| 03 | Steps | the step, its start, done, drop, edit and note | CIP-01 |
+| 04 | Trails | the trail, its sessions and prompts, its notes | CIP-01, 03, 05 |
 | 05 | Patterns | the pattern, the rule, its scope and its examples | CIP-01 |
 | 06 | Reuse | the steps and patterns a step uses, revisions | CIP-03, 04, 05 |
 | 08 | Files | the files of a done and of a pattern, and their blobs | CIP-01, 03, 05 |
@@ -52,10 +52,10 @@ Every change of `spec/` MUST keep these rules:
 | `figma:<key>` · `web:<host>` | the project id of a record outside git | 01 |
 | `$CELIS_HOME` · `$CELIS_HOME/trails/` · `$CELIS_HOME/phrase` · `$CELIS_HOME/links` | the home, the store, the phrase, the links | 01, 02 |
 | `celis` and its commands and flags, `search` among them | the command line | 02 |
-| `usage` · `no-pattern` · `no-trail` · `no-step` · `closed` · `open-steps` · `check-failed` · `unjudged` · `error` | errors | 02 |
+| `usage` · `no-pattern` · `no-step` · `closed` · `open-steps` · `check-failed` · `unjudged` · `error` | errors | 02 |
 | 1111 with `step` in `celis.step` | kind: a step (NIP-22) | 03 |
 | `under` · `replaces` · `at` · `check` | step tags | 03 |
-| 1985 with `start` · `done` · `drop` · `edit` in `celis.step` | kinds: a start, a done, a drop, an edit (NIP-32) | 03 |
+| 1985 with `start` · `done` · `drop` · `edit` · `note` in `celis.step` | kinds: a start, a done, a drop, an edit, a note (NIP-32) | 03 |
 | `changed` · `by` | done tags | 03 |
 | `session` | step tag | 04 |
 | 1985 with `prompt` in `celis.step` | kind: a person's prompt, on the trail (NIP-32) | 04 |
@@ -65,7 +65,7 @@ Every change of `spec/` MUST keep these rules:
 | `good` · `bad` | pattern tags: its examples | 05 |
 | `within` | pattern tag: the larger pattern it completes | 05 |
 | `binds` in `celis.pattern` | a pattern label: the pattern is a rule | 05 |
-| `me` · `project` · `trail:<id>` | the scopes of a pattern | 05 |
+| `me` · `project` | the scopes of a pattern | 05 |
 | `uses` | step tag | 06 |
 | `imeta` with `url` · `x` · `m` · `size` · `path` | done tag: a file of the proof (NIP-92, BUD-10) | 08 |
 | `$CELIS_HOME/trails/blobs/` · `<folder>/blobs/` | the blobs of the store and of a linked folder | 08 |
@@ -92,6 +92,8 @@ them.
 | `binds` in `celis.decision` | a pattern label, now `binds` in `celis.pattern`; a reader reads it as CIP-05, "Reading", states |
 | `decision` as the `--json` key of a pattern | the key, now `pattern` |
 | `no-decision` | the error, now `no-pattern` |
+| `trail:<id>` as the `scope` of a pattern | a scope, now a note on the trail; a reader reads it as CIP-05, "Reading", states |
+| `no-trail` | the error of a `trail:<id>` scope that no open trail had |
 
 ## Words
 
@@ -109,6 +111,7 @@ them.
 | `prompt` | what you wrote to the agent while a trail was open |
 | `pattern` | what to choose in a context, and why, that holds in its scope until another replaces it |
 | `rule` | a pattern with the `binds` label: a result must keep it |
+| `note` | what holds for the work of one trail, on a step of it |
 | `live` | a pattern no other pattern replaces and no drop names |
 | `revised` | done work that a later step replaces |
 | `blob` | the bytes of a file, named by their sha256 |

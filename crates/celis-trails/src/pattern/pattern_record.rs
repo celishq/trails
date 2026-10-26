@@ -57,7 +57,8 @@ impl PatternRecord {
         }
     }
 
-    /// The pattern `note` holds; `None` when it is not a pattern, or names a scope no reader knows.
+    /// The pattern `note` holds; `None` when it is not a pattern, or names a scope no reader knows, such
+    /// as `trail:<id>`.
     pub fn read(note: &Note) -> Option<PatternRecord> {
         let namespace = [(NAMESPACE, "pattern"), (OLD_NAMESPACE, "decision")]
             .into_iter()
@@ -102,6 +103,17 @@ impl PatternRecord {
                 .collect(),
             examples: Examples::read(note),
         })
+    }
+
+    /// The whole id of the trail that `note`, a pattern with a `trail:<id>` scope that older writers
+    /// wrote, names; `None` for any other record (CIP-05, "Reading").
+    pub fn trail(note: &Note) -> Option<&str> {
+        let pattern = [(NAMESPACE, "pattern"), (OLD_NAMESPACE, "decision")];
+        let pattern = pattern
+            .into_iter()
+            .any(|(namespace, label)| labelled(note, label, namespace));
+        let trail = note.tag("scope")?.strip_prefix("trail:")?;
+        (pattern && note.kind == 1111 && !trail.is_empty()).then_some(trail)
     }
 
     /// How narrowly the pattern fits the narrowest of `paths`; `None` when it matches none of them

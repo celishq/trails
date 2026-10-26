@@ -37,7 +37,7 @@ Record work · your agents run these
   ├ --new             Start a new trail, not a step of the session's trail
   └ --project <id>    The id of a project in the store
 
-  step start <id>     Start a step and show the patterns its plan links
+  step start <id>     Start a step and show the patterns and notes it keeps
   step done <id>      Finish a step with proof that it works
   ├ --changed <text>  How the result differs from its expect line
   ├ --as-planned      The result matches its expect line; else use --changed
@@ -49,8 +49,9 @@ Record work · your agents run these
   ├ --at <place>      Where the work happens, in place of the old places
   └ --check <command> A command that proves the work, in place of the old one
 
+  step note <id>      Leave a note for the work of the step's trail
   pattern             Record a pattern that later work must keep
-  ├ --scope <scope>   Where it applies: trail:<id>, me, or project
+  ├ --scope <scope>   Where it applies: me, or project
   ├ --replaces <id>   The pattern this one replaces
   ├ --path <glob>     A file it acts on; * and ? within a folder, ** across
   ├ --binds           It is a rule: a result must keep it

@@ -28,12 +28,13 @@ celis issue [<id>]... [-- <text>]                     what went wrong, as Markdo
 celis link [<folder>] [--off]                         keep this project's trails in a folder, or stop
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>]... [--check <command>] [--new] [--session <id>] [--project <id>] -- <text>
                                                        leave a step
-celis step start <id>                                 take up a step, and see the patterns its plan links
+celis step start <id>                                 take up a step, and see the patterns and notes its plan links
 celis step done <id> [--changed <text>] [--as-planned] [--by <who>] [--file <path>]... -- <proof>
                                                        close a step with its proof
 celis step drop <id> -- <reason>                      end a step, a done trail or a pattern no longer wanted
 celis step edit <id> [--at <place>]... [--check <command>] [-- <text>]
                                                        give a step a new title, places or check
+celis step note <id> -- <text>                        leave a note on a step, for the work of its trail
 celis hook start <agent> <plugin folder>              what an agent reads at a session start
 celis hook ask <agent>                                a person's prompt, and what the agent reads on it
 celis auth login                                      keep the phrase stdin gives
@@ -62,10 +63,9 @@ pattern  json  {"id", "created_at", "project", "scope", "replaces", "content",
   blob, else the whole id of a step, refusing a step the store lacks with `no-step`.
 - `--project` on `pattern` and `step add` MUST write the records of the project it names in place of the
   working folder's: a project id that a record of the store has, with that record's project name. It MUST refuse any other id as a usage error.
-- `pattern` MUST refuse empty text, and a scope that is not `me`, `project` or `trail:<id>`,
-  as a usage error; a `trail:<id>` that no open trail of the project has, with `no-trail`, unless
-  `--replaces` names a live pattern of that trail; and a
-  `--replaces` that no live pattern of the project has, with `no-pattern`.
+- `pattern` MUST refuse empty text, and a scope that is not `me` or `project`, as a usage error, with a
+  message that names `step note` for `trail:<id>`; and a `--replaces` that no live pattern of the
+  project has, with `no-pattern`.
 
 **Examples**
 
@@ -102,8 +102,8 @@ celis pattern --path "**/prices*.py" -- "When you change prices: keep them in ce
 - Only `pattern`, `step` and `hook ask` MAY write a record. A command that refuses MUST write nothing.
 - A command MUST NOT ask a question, but `auth login` and `setup` on a terminal.
 - A command MUST exit 0 when done, 2 on a usage error, and 1 on any other error.
-- An error MUST be named `usage`, `no-pattern`, `no-trail`, `no-step`, `closed`, `open-steps`,
-  `check-failed`, `unjudged`, else `error`. With `--json`, it MUST be one object on stderr,
+- An error MUST be named `usage`, `no-pattern`, `no-step`, `closed`, `open-steps`, `check-failed`,
+  `unjudged`, else `error`. With `--json`, it MUST be one object on stderr,
   `{"error": "<name>", "message": "<text>"}`.
 
 ## Update
@@ -136,6 +136,7 @@ $CELIS_BASE   where the releases are; default: https://github.com/celishq/trails
 ```
 step  json  {"id", "created_at", "project", "links": [{"to", "kind": "under | replaces | uses"}], "places": [],
             "check", "content"}
+note  json  {"id", "created_at", "step", "content"}
 ```
 
 **Rules**
@@ -169,6 +170,9 @@ step  json  {"id", "created_at", "project", "links": [{"to", "kind": "under | re
 - `done` of a step that is not an ask MUST print each live pattern in scope that a changed file matches,
   as "Search" gives a pattern, in the order "Search" states.
 - `drop` MUST refuse an empty reason, and `edit` one with no text, `--at` or `--check`, as usage errors.
+- `note` MUST write its text as a note on the step (CIP-03, "Notes"), and refuse empty text as a usage
+  error.
+- `start` MUST print the notes of the step's trail and of each trail it follows (CIP-04, "Notes").
 
 **Examples**
 
@@ -177,6 +181,7 @@ celis step add --under 3fa2c1d0 --at shelf/prices.py:40 -- "Write a test: a seni
 celis step start 4c1d22e0
 celis step done 4c1d22e0 --as-planned -- "python3 -m unittest: test_senior failed before, passes now."
 celis step drop 3fa2c1d0 -- "The person chose the shared price table instead."
+celis step note 3fa2c1d0 -- "The person wants the old table kept until the release."
 ```
 
 ## Prompt
@@ -245,9 +250,9 @@ trails with it.
 ```
 view    <yyyy-mm-dd> <trail id8 | -> [<project name>] <kind> <id8> <fields> <text>
           trail | step   <open | working | done | done-dropped | dropped | expired>[ revised-by <id>,…][ at:<place>]…
-          pattern        <live | replaced-by <id> | dropped> {<me | project | trail:<id8>>}
+          pattern        <live | replaced-by <id> | dropped> {<me | project>}
                            [ trigger][ binds][ recalled:<yyyy-mm-dd>]
-          proof | changed | dropped                              the step's or pattern's id, no fields
+          proof | changed | dropped | note                       the step's or pattern's id, no fields
 lines   <id8> [<project name>] <its title> · <yyyy-mm-dd>        each trail of the lines
           trail <id8> <fields>                                    the trail's own line
           <kind> <id8> <fields> <text>                            each other line of the trail
@@ -263,10 +268,9 @@ end     project [<project name>]
 **Rules**
 
 - `grep` MUST give each word after it to the system `grep` as it is, with the view on its stdin.
-- The view MUST hold every trail of every project, newest first, and each live or replaced pattern of a
-  scope other than `trail:<id>` by when it was made. A trail MUST print as its line, then its patterns,
-  newest first, then its steps, each level newest first, each step with its proof, `changed` and drop
-  lines, then its own steps.
+- The view MUST hold every trail of every project, newest first, and each live or replaced pattern by
+  when it was made. A trail MUST print as its line, then the notes on it, then its steps, each level
+  newest first, each step with its proof, `changed`, drop and note lines, then its own steps.
 - `grep` MUST print each matched line under its trail's header, the trails with most lines first, and each
   line with no trail under `- patterns of no trail`. A matched line that is no line of the view MUST NOT
   print. When no matched line is a line of the view, as with `-c` or `-l`, it MUST print what `grep`

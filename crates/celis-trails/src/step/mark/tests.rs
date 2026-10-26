@@ -82,3 +82,23 @@ fn a_name_reads_as_no_mark() {
     }
     assert_eq!(Mark::read(&note), None);
 }
+
+/// A note carries its text and the step it is on, reads back the same, and reads as no mark with no
+/// text (`spec/03-steps.md`, "Notes").
+#[test]
+fn a_note_carries_its_text() {
+    let account = Account::new(&[1u8; 32]).unwrap();
+    let note = Mark::Note {
+        text: "keep the old table".into(),
+    };
+    let record = note.record(&account, "s", 10).unwrap();
+    assert!(record.tags.contains(&vec![
+        "l".to_string(),
+        "note".to_string(),
+        "celis.step".to_string()
+    ]));
+    assert_eq!(Mark::read(&record), Some(("s".to_string(), note)));
+    let empty = Mark::Note { text: " ".into() };
+    let record = empty.record(&account, "s", 10).unwrap();
+    assert_eq!(Mark::read(&record), None);
+}

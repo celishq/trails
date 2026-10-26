@@ -36,15 +36,6 @@ impl Failure {
         )
     }
 
-    /// No trail in the store has this id.
-    pub fn no_trail(id: &str) -> Self {
-        Self::new(
-            "no-trail",
-            1,
-            format!("no trail has the id {id}; find it with `celis tree --all`"),
-        )
-    }
-
     /// The step's check fails; `output` is the end of what it printed.
     pub fn check_failed(output: &str) -> Self {
         Self::new(
@@ -108,7 +99,6 @@ impl From<Refusal> for Failure {
             Refusal::Usage(message) => Self::usage(message),
             Refusal::NoStep(id) => Self::no_step(&id),
             Refusal::NoPattern(id) => Self::no_pattern(&id),
-            Refusal::NoTrail(id) => Self::no_trail(&id),
             Refusal::Closed(id) => Self::closed(&id),
             Refusal::OpenSteps(id) => Self::open_steps(&id),
             Refusal::CheckFailed(output) => Self::check_failed(&output),

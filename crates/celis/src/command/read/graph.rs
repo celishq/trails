@@ -492,15 +492,15 @@ fn edge(buf: &mut Buffer, layout: &Layout, i: usize, alpha: f64) {
     buf.set_string(0, place.y + 2, "╰▶", look);
 }
 
-/// The patterns `trails` learned, newest first, naming each pattern's trail when `many`.
+/// The notes of `trails`, newest first, naming each note's trail when `many`.
 fn learned<'a>(model: &Model<'a>, trails: &[Step<'a>], many: bool) -> Patterns<'a> {
     let mut learned: Vec<Learned> = vec![];
     for trail in trails {
-        for pattern in model.patterns.of(*trail) {
+        for note in model.notes.of(*trail) {
             learned.push(Learned {
-                id: pattern.note.id.clone(),
-                text: pattern.record.content.clone(),
-                at: pattern.note.created_at,
+                id: note.id.clone(),
+                text: note.content.clone(),
+                at: note.created_at,
                 trail: *trail,
             });
         }
@@ -509,14 +509,10 @@ fn learned<'a>(model: &Model<'a>, trails: &[Step<'a>], many: bool) -> Patterns<'
     Patterns { learned, many }
 }
 
-/// The ids of the patterns `model` holds for `trail`.
+/// The ids of the notes `model` holds for `trail`.
 fn pattern_ids(model: &Model, trail: Step) -> Vec<String> {
-    model
-        .patterns
-        .of(trail)
-        .into_iter()
-        .map(|p| p.note.id.clone())
-        .collect()
+    let notes = model.notes.of(trail).into_iter();
+    notes.map(|n| n.id.clone()).collect()
 }
 
 /// The time worked on `trail` at the second `at`: what its done steps with no steps under them took,

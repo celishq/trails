@@ -7,8 +7,8 @@ pub mod written;
 
 use crate::records::id::short;
 use crate::{
-    Anchor, Check, Done, Draft, Mark, Notice, PatternId, PatternRecord, Patterns, ProofFile,
-    Refusal, Scope, Step, StepId, StepRecord, Steps, Store, Trail, Written,
+    Anchor, Check, Done, Draft, Mark, Notes, Notice, PatternId, PatternRecord, Patterns, ProofFile,
+    Refusal, Step, StepId, StepRecord, Steps, Store, Trail, Written,
 };
 use celis_nostr::{Account, Note};
 use std::path::{Path, PathBuf};
@@ -71,6 +71,10 @@ impl Trails {
 
     pub fn patterns(&self) -> Patterns<'_> {
         Patterns::new(&self.records)
+    }
+
+    pub fn notes(&self) -> Notes<'_> {
+        Notes::new(&self.records)
     }
 
     /// Writes the step `draft` states, where `parent` puts it; a session's new trail holds its first ask,
@@ -162,7 +166,7 @@ impl Trails {
     }
 
     /// Starts the open step `id`, or gives back the first start of a working step; then the patterns
-    /// the step must keep.
+    /// the step must keep, and the notes of its trail and of each trail it follows.
     pub fn start(&self, id: &str) -> Result<Written<'_>, Refusal> {
         let steps = self.steps();
         let step = steps.find_open(id)?;
@@ -174,6 +178,11 @@ impl Trails {
                 .push(self.sign(|account, now| Mark::Start.record(account, step.id(), now))?),
         }
         written.patterns = self.patterns().kept(step);
+        let notes = self.notes();
+        let trails = std::iter::once(step.trail()).chain(step.followed());
+        let mut seen = std::collections::HashSet::new();
+        let trails = trails.filter(|t| seen.insert(t.id()));
+        written.notes = trails.flat_map(|t| notes.of(t)).collect();
         Ok(written)
     }
 
@@ -256,31 +265,14 @@ impl Trails {
         })
     }
 
-    /// Writes `pattern`, its trail scope taken whole from a trail of its project that is not done or
-    /// dropped, or whose pattern it replaces, and each `within` whole from a live pattern of any project;
-    /// replacing the live pattern there that `replaces` names, and keeping its examples and `within`.
+    /// Writes `pattern`, each `within` taken whole from a live pattern of any project; replacing the live
+    /// pattern of its project that `replaces` names, and keeping its examples and `within`.
     pub fn decide(
         &self,
         mut pattern: PatternRecord,
         replaces: Option<&str>,
     ) -> Result<Written<'_>, Refusal> {
         let project = pattern.anchor.project.clone();
-        if let Scope::Trail(id) = &pattern.scope {
-            let steps = self.steps();
-            let trail = steps
-                .find(id)
-                .map_err(|_| Refusal::NoTrail(id.to_string()))?;
-            let ours = trail.is_trail() && trail.record().anchor.project == project;
-            let kept = replaces.is_some_and(|old| {
-                let patterns = self.patterns();
-                let live = patterns.of(trail).into_iter();
-                live.map(|p| p.note).any(|n| n.id.starts_with(old))
-            });
-            if !ours || (trail.closed().is_some() && !kept) {
-                return Err(Refusal::NoTrail(id.to_string()));
-            }
-            pattern.scope = Scope::Trail(trail.id().to_string());
-        }
         let patterns = self.patterns();
         let within: Result<Vec<PatternId>, Refusal> = pattern
             .within
@@ -299,6 +291,18 @@ impl Trails {
         let written = self.sign(|account, now| pattern.record(account, now))?;
         Ok(Written {
             records: vec![written],
+            ..Written::default()
+        })
+    }
+
+    /// Writes `text` as a note on the step `id`.
+    pub fn note(&self, id: &str, text: String) -> Result<Written<'_>, Refusal> {
+        let steps = self.steps();
+        let step = steps.find(id)?;
+        let mark = Mark::Note { text };
+        let note = self.sign(|account, now| mark.record(account, step.id(), now))?;
+        Ok(Written {
+            records: vec![note],
             ..Written::default()
         })
     }
