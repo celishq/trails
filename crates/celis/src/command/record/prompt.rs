@@ -27,7 +27,7 @@ impl Command {
     }
 
     /// Writes `prompt` on its session's open trail, signed now; then, unless it is a task, gives on `err`
-    /// one line: how a new ask searches and joins a trail, and how a correction or a reaction is kept.
+    /// one line: how a new ask recalls and joins a trail, and how a correction or a reaction is kept.
     fn ask(&self, err: &mut dyn Write, project: &Project, prompt: Prompt) -> Result<(), Failure> {
         let offered = self.offered(&prompt.session)?;
         if !self.held()? {
@@ -84,10 +84,11 @@ fn mark(path: &Path) -> Result<(), Failure> {
     Ok(())
 }
 
-/// The line on a prompt: a new ask runs `search` when the store holds a record, then joins the
+/// The line on a prompt: a new ask takes the patterns that bear on it when the store holds a record,
+/// then joins the
 /// session's trail `trail`, else a trail of `today`, else a new one; how done work is fixed; and how a
 /// correction or a reaction becomes a pattern.
-fn note(search: bool, trail: Option<&str>, today: bool) -> String {
+fn note(recall: bool, trail: Option<&str>, today: bool) -> String {
     let join = match (trail, today) {
         (Some(id), _) => {
             format!("add it under the session's trail {id} when it fits, else with --new")
@@ -98,10 +99,10 @@ fn note(search: bool, trail: Option<&str>, today: bool) -> String {
         }
         (None, false) => "add it with --new".to_string(),
     };
-    let ask = match search {
+    let ask = match recall {
         true => format!(
-            "run celis search [<each file it will touch>]... -- \"<the ask>\" before you change a file, \
-             then {join}"
+            "take the patterns that bear on it, from celis patterns or the celis:recall agent, before \
+             you change a file, then {join}, with --recalled <the id of each>"
         ),
         false => join,
     };

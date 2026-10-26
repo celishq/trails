@@ -244,10 +244,11 @@ fn the_prompt_hook_gives_one_line() {
     assert_eq!(err(&o), line);
 }
 
-/// The line `prompt` gives: a new ask runs `search` when the store holds a record, then joins the
+/// The line `prompt` gives: a new ask takes the patterns that bear on it when the store holds a record,
+/// then joins the
 /// session's trail `trail`, else a trail of `today`, else a new one; how done work is fixed; and how a
 /// correction becomes a pattern and a reaction a pattern.
-fn note(search: bool, trail: Option<&str>, today: bool) -> String {
+fn note(recall: bool, trail: Option<&str>, today: bool) -> String {
     let join = match (trail, today) {
         (Some(id), _) => {
             format!("add it under the session's trail {id} when it fits, else with --new")
@@ -258,10 +259,10 @@ fn note(search: bool, trail: Option<&str>, today: bool) -> String {
         }
         (None, false) => "add it with --new".to_string(),
     };
-    let ask = match search {
+    let ask = match recall {
         true => format!(
-            "run celis search [<each file it will touch>]... -- \"<the ask>\" before you change a file, \
-             then {join}"
+            "take the patterns that bear on it, from celis patterns or the celis:recall agent, before \
+             you change a file, then {join}, with --recalled <the id of each>"
         ),
         false => join,
     };
@@ -325,11 +326,11 @@ fn prompt_skips_a_harness_message() {
     assert!(marks(&repo, "prompt").is_empty());
 }
 
-/// With no open trail in the session, `prompt` writes nothing, and prints on stderr the search line once
+/// With no open trail in the session, `prompt` writes nothing, and prints on stderr the recall line once
 /// the store holds any record, then how to add a new trail; a session start or a compaction prints
 /// nothing.
 #[test]
-fn a_prompt_with_no_open_trail_asks_for_search_and_a_new_trail() {
+fn a_prompt_with_no_open_trail_asks_for_recall_and_a_new_trail() {
     let repo = Repo::new();
     let hook = |json: serde_json::Value| {
         let o = support::prompt(&repo, &repo.path(), &[], &json.to_string());

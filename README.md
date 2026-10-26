@@ -34,8 +34,8 @@ done.
 
 Patterns are the core. A pattern says what to choose in a context, and why. It guides your agent's
 judgement: when its forces are present, the agent resolves them in its own way. Good and bad examples
-show your taste. They come from your corrections and code reviews,
-and `celis search` gives your agent the ones that fit the job.
+show your taste. They come from your corrections and code reviews. At each job, your agent reads the
+index that `celis patterns` gives, and opens the ones that bear on it.
 
 ```
   knowledge    pattern

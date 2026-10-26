@@ -1,7 +1,7 @@
 celis keeps what the person taught you as patterns. A pattern guides your
 judgement: when its forces are present here, resolve them in your own way; when they are not, it does
-not apply. Search gives those that fit an ask. Write one only for a choice that will come back. Each ask is a trail of
-steps with proofs of the work.
+not apply. At each ask, you take those that bear on it. Write one only for a choice that will come back.
+Each ask is a trail of steps with proofs of the work.
 
 ```
 celis patterns
@@ -15,8 +15,10 @@ celis pattern [--scope me] [--replaces <id>] [--path <glob>]... [--within <id>].
 
 Read all that celis prints, never cut by `head` or `grep`, and do the next move it names.
 
-1. **Search.** At a new ask, before you change a file, run
-   `celis search [<each file it will touch>]... -- "<the ask>"`.
+1. **Recall.** At a new ask, before you change a file, take the patterns that bear on it: from the
+   index that `celis patterns` gives, each read whole with `celis grep <id>`, or from the
+   `celis:recall` agent with the ask and its files, as you choose. Name each on the ask with
+   `--recalled <id>`.
 2. **Work.** An ask that changes a file, or works toward a result someone can check, gets a step; a
    question, an explanation or a review you only report on gets none. Its title is a verb and what it
    acts on, in words that hold in another project. Under it, write `expect: <what a person can check
@@ -25,9 +27,8 @@ Read all that celis prints, never cut by `head` or `grep`, and do the next move 
    start in the same turn. Each step gets `start`, then `done` with a proof a person can check, such
    as a command and its result. A step with more than one part a person can check alone holds a step
    for each, with its own `expect`; when its last part is done, it gets the judge too.
-   At each choice the ask leaves open, take the patterns that search gave for it and the `next` ones
-   under them whose forces are present, resolve those forces, and add each pattern that guided the
-   choice to the step with `--uses`.
+   At each choice the ask leaves open, take the patterns you recalled for it whose forces are present,
+   resolve those forces, and add each pattern that guided the choice to the step with `--uses`.
    Act, and tell after: ask only when you cannot write `expect` without a guess, or at a one-way door,
    such as a new dependency, a schema, money or a deploy. Take every other choice yourself, name it in
    the end, and write nothing else until then.

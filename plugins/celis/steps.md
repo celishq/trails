@@ -4,8 +4,8 @@ The cases that the card leaves out. Do not run `--help`.
 
 ## Paths
 
-A pattern of one file or folder takes it as `--path`, such as `shelf/**`. To find a pattern that search
-missed, run `celis grep -i -E " pattern [0-9a-f]{8} live .*(<word>|<word>)"`. When you move a file,
+A pattern of one file or folder takes it as `--path`, such as `shelf/**`. To find a pattern by its words,
+run `celis grep -i -E " pattern [0-9a-f]{8} live .*(<word>|<word>)"`. When you move a file,
 replace each pattern of its old place with one of the new `--path`.
 
 ## Past work

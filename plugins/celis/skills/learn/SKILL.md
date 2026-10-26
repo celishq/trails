@@ -11,8 +11,8 @@ person says yes.
    `~/.claude/projects/<project>/*.jsonl`, and look at the person's own prompts: corrections, the
    words "always" and "never", picks, and reactions to a result. For a skill file, a folder or a URL,
    read its text and the files it shows as examples.
-2. Run `celis search -- "<what the source is about>"`, and leave out each draft that a live pattern
-   already says.
+2. Read the index that `celis patterns` gives, open with `celis grep <id>` each pattern that may say
+   the same as a draft, and leave out each draft that a live pattern already says.
 3. Draft each point as a pattern in the four lines the card shows, as its Learn move says: a must, such
    as "always" or "never", a taste, and a choice the source explains are each a pattern that guides,
    with each file, step or URL the source gives as a good or a bad example. A pattern needs

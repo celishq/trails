@@ -168,7 +168,7 @@ fn prompts(repo: &Repo, step: &str) -> Vec<String> {
 }
 
 /// Each agent's session start gives the card; an agent other than Claude Code also gets its session, to
-/// pass with `--session`, and the path of `judge.md`. Antigravity has no session start, and gets both
+/// pass with `--session`, and the paths of `judge.md` and `recall.md`. Antigravity has no session start, and gets both
 /// before each call of the model.
 #[test]
 fn each_agents_session_start_gives_the_card_and_its_session() {
@@ -185,6 +185,13 @@ fn each_agents_session_start_gives_the_card_and_its_session() {
         assert_eq!(named, agent.name != "claude", "{}: {context}", agent.name);
         let judged = context.contains("agents/judge.md. With no subagents");
         assert_eq!(judged, agent.name != "claude", "{}: {context}", agent.name);
+        let recalled = context.contains("agents/recall.md. With no subagents");
+        assert_eq!(
+            recalled,
+            agent.name != "claude",
+            "{}: {context}",
+            agent.name
+        );
     }
 }
 
@@ -251,9 +258,10 @@ fn each_agents_prompt_hook_writes_a_prompt_on_its_sessions_trail() {
     }
 }
 
-/// Claude Code's prompt hook asks for `celis search` at each prompt, not only at the first of a session.
+/// Claude Code's prompt hook asks for the patterns of the ask at each prompt, not only at the first of a
+/// session.
 #[test]
-fn claudes_prompt_hook_asks_for_search_at_each_prompt() {
+fn claudes_prompt_hook_asks_for_recall_at_each_prompt() {
     let repo = Repo::new();
     let o = repo.run(
         &repo.path(),
@@ -266,7 +274,7 @@ fn claudes_prompt_hook_asks_for_search_at_each_prompt() {
     for prompt in ["make it blue", "now add a test"] {
         let ask = claude.payload("s1", &repo.path(), prompt);
         let said = claude.run(&repo, claude.ask, &ask);
-        assert!(said.contains("celis search"), "{prompt}: {said}");
+        assert!(said.contains("celis patterns"), "{prompt}: {said}");
     }
     let o = repo.run(
         &repo.path(),
@@ -277,7 +285,7 @@ fn claudes_prompt_hook_asks_for_search_at_each_prompt() {
     assert!(o.status.success(), "{}", err(&o));
     let ask = claude.payload("s1", &repo.path(), "and the border too");
     let said = claude.run(&repo, claude.ask, &ask);
-    assert!(said.contains("celis search"), "{said}");
+    assert!(said.contains("celis patterns"), "{said}");
 }
 
 /// The prompt hooks of Claude Code, Codex and Gemini CLI give one line, with no past agent and no
