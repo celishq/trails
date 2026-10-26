@@ -242,24 +242,21 @@ fn the_prompt_hook_gives_one_line() {
     assert_eq!(err(&o), line);
 }
 
-/// The line `prompt` gives: a new ask takes the patterns that bear on it when the store holds a record,
-/// and is a new step; a prompt that goes on with the open ask `open` adds steps under it; and how done
-/// work is fixed.
-fn note(recall: bool, open: Option<&str>) -> String {
-    let ask = match recall {
-        true => "take the patterns that bear on it, from the index you got at the session start or from celis \
-                 patterns <file>... again, before you change a file, then add it with celis step add \
-                 --recalled <the id of each>"
-            .to_string(),
-        false => "add it with celis step add".to_string(),
-    };
+/// The line `prompt` gives: a new ask is a new step; a prompt that goes on with the open ask `open` adds
+/// steps under it; how done work is fixed; and, when the store holds a record, when a pattern is read.
+fn note(held: bool, open: Option<&str>) -> String {
     let more = match open {
         Some(id) => format!("; when it goes on with the open ask {id}, add its steps --under {id}"),
         None => String::new(),
     };
+    let load = match held {
+        true => " When a choice of the work matches a When of the index, read that pattern with celis grep \
+                 <id> before you choose, and name it with --uses <id> on the step of that choice.",
+        false => "",
+    };
     format!(
-        "celis: when this prompt is a new ask, {ask}{more}; when it changes done work, add it with step add \
-         --replaces <the id of that step, as celis tree shows it>."
+        "celis: when this prompt is a new ask, add it with celis step add{more}; when it changes done work, \
+         add it with step add --replaces <the id of that step, as celis tree shows it>.{load}"
     )
 }
 
@@ -282,11 +279,11 @@ fn prompt_skips_a_harness_message() {
     assert!(marks(&repo, "prompt").is_empty());
 }
 
-/// With no open trail in the session, `prompt` writes nothing, and prints on stderr the recall line once
-/// the store holds any record, then how to add a new ask; a session start or a compaction prints
+/// With no open trail in the session, `prompt` writes nothing, and prints on stderr how to add a new ask,
+/// then when to read a pattern once the store holds any record; a session start or a compaction prints
 /// nothing.
 #[test]
-fn a_prompt_with_no_open_trail_asks_for_recall_and_a_new_trail() {
+fn a_prompt_with_no_open_trail_asks_for_a_new_trail() {
     let repo = Repo::new();
     let hook = |json: serde_json::Value| {
         let o = support::prompt(&repo, &repo.path(), &[], &json.to_string());

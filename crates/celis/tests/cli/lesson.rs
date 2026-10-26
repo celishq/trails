@@ -12,14 +12,14 @@ fn pattern(repo: &Repo, text: &str) -> String {
 }
 
 /// `lesson` of an open ask prints its learn brief: each prompt on its trail since the ask began, then
-/// each pattern the ask recalled and each one a step of it uses, once each (`spec/02-cli.md`, "Lesson";
+/// each pattern a step of the ask's tree uses, the ask too, once each (`spec/02-cli.md`, "Lesson";
 /// `spec/02-cli.md`, "Step").
 #[test]
 fn lesson_of_an_open_ask_prints_its_learn_brief() {
     let repo = Repo::new();
     let flat = pattern(&repo, "When a logo is drawn: keep it flat.");
     let cents = pattern(&repo, "When prices change: keep them in cents.");
-    let ask = add(&repo, &["--recalled", &flat[..8], "--", "Draw the logo"]);
+    let ask = add(&repo, &["--uses", &flat[..8], "--", "Draw the logo"]);
     let a = &ask[..8];
     mark_note(
         &repo,

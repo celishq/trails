@@ -360,13 +360,17 @@ fn the_view_and_the_steps_pattern_search_match_the_fixture() {
                 under: under.map(StepId::new),
                 replaces: None,
                 uses,
-                recalled: recalled.iter().map(|r| r.to_string()).collect(),
                 places: places.iter().map(|p| p.to_string()).collect(),
                 check: None,
                 session: None,
                 content: text.to_string(),
             };
-            let note = record.record(&by, at).unwrap();
+            let mut tags = record.record(&by, at).unwrap().tags;
+            let old = recalled
+                .iter()
+                .map(|r| vec!["recalled".to_string(), r.to_string()]);
+            tags.extend(old);
+            let note = celis_nostr::Note::write(&by, 1111u16, at, tags, text).unwrap();
             put(&repo, &note);
             note
         };

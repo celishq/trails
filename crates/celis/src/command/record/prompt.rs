@@ -26,8 +26,8 @@ impl Command {
     }
 
     /// Writes `prompt` on its session's open trail, signed now, else keeps it for the session's next step;
-    /// then, unless it is a task, gives on `err` one line: how a new ask recalls, and how a step joins the
-    /// open ask.
+    /// then, unless it is a task, gives on `err` one line: how a new ask and a step of the open ask are
+    /// added, and when a pattern of the index is read.
     fn ask(&self, err: &mut dyn Write, project: &Project, prompt: Prompt) -> Result<(), Failure> {
         let offered = self.offered(&prompt.session)?;
         if !self.held()? {
@@ -117,23 +117,20 @@ fn mark(path: &Path) -> Result<(), Failure> {
     Ok(())
 }
 
-/// The line on a prompt: a new ask takes the patterns that bear on it when the store holds a record, and
-/// is a new step; a prompt that goes on with the open ask `open` adds steps under it; and how done work is
-/// fixed.
-fn note(recall: bool, open: Option<&str>) -> String {
-    let ask = match recall {
-        true => "take the patterns that bear on it, from the index you got at the session start or from celis \
-                 patterns <file>... again, before you change a file, then add it with celis step add \
-                 --recalled <the id of each>"
-            .to_string(),
-        false => "add it with celis step add".to_string(),
-    };
+/// The line on a prompt: a new ask is a new step; a prompt that goes on with the open ask `open` adds
+/// steps under it; how done work is fixed; and, when the store holds a record, when a pattern is read.
+fn note(held: bool, open: Option<&str>) -> String {
     let more = match open {
         Some(id) => format!("; when it goes on with the open ask {id}, add its steps --under {id}"),
         None => String::new(),
     };
+    let load = match held {
+        true => " When a choice of the work matches a When of the index, read that pattern with celis grep \
+                 <id> before you choose, and name it with --uses <id> on the step of that choice.",
+        false => "",
+    };
     format!(
-        "celis: when this prompt is a new ask, {ask}{more}; when it changes done work, add it with step add \
-         --replaces <the id of that step, as celis tree shows it>."
+        "celis: when this prompt is a new ask, add it with celis step add{more}; when it changes done work, \
+         add it with step add --replaces <the id of that step, as celis tree shows it>.{load}"
     )
 }

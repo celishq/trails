@@ -7,10 +7,10 @@ use celis_store::Store;
 use celis_trails::TrailStore;
 use std::collections::HashMap;
 
-/// How many steps and asks a pattern misled before it needs tidy.
+/// How many steps a pattern misled before it needs tidy.
 const MISLED: usize = 2;
 
-/// How many days a pattern goes unrecalled before it needs tidy.
+/// How many days a pattern goes unused before it needs tidy.
 const DAYS: u64 = 60;
 
 /// How many `replaces` in a pattern's chain before it needs tidy.
@@ -29,9 +29,10 @@ impl<'a> Candidate<'a> {
         let (steps, patterns) = (trails.steps(), trails.patterns());
         let live = patterns.live(project);
         let since = steps.now().saturating_sub(DAYS * 86_400);
-        let recalling = steps.all().into_iter().any(|s| {
-            s.is_trail() && s.record().anchor.project == project && !s.record().recalled.is_empty()
-        });
+        let using = steps
+            .all()
+            .into_iter()
+            .any(|s| s.record().anchor.project == project && !s.uses().is_empty());
         let replaced: HashMap<&str, Option<&str>> = patterns
             .every()
             .iter()
@@ -51,12 +52,9 @@ impl<'a> Candidate<'a> {
                 {
                     reasons.push(format!("near:{}", short(near.id())));
                 }
-                let recalled = steps.recalls(id).first().map(|a| a.note().created_at);
-                if recalling
-                    && pattern.note.created_at <= since
-                    && recalled.is_none_or(|at| at < since)
-                {
-                    reasons.push("unrecalled".to_string());
+                let used = steps.uses(id).first().map(|s| s.note().created_at);
+                if using && pattern.note.created_at <= since && used.is_none_or(|at| at < since) {
+                    reasons.push("unused".to_string());
                 }
                 let mut chain = 0;
                 let mut at = replaced.get(id).copied().flatten();

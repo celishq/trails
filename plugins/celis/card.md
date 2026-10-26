@@ -9,7 +9,7 @@ of the work.
 celis patterns [<file>]...
 celis grep <id>
 celis lesson <id>
-celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--recalled <id>]... [--check <command>] -- "<title>"
+celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--check <command>] -- "<title>"
 celis step start <id>
 celis step done <id> [--changed "<what differs>"] [--as-planned] [--by person] [--file <path>]... -- "<proof>"
 celis step note <id> -- "<note>"

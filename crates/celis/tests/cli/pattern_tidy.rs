@@ -52,15 +52,15 @@ fn a_pattern_whose_uses_were_fixed_twice_needs_tidy_as_misled() {
     );
     assert_eq!(tidy(&repo), want);
     let grep = out(&cli(&repo, &["grep", " pattern "]));
-    assert!(grep.contains(" recalls:0 uses:2 misled:2 "), "{grep}");
+    assert!(grep.contains(" uses:2 misled:2 "), "{grep}");
     let stats = out(&cli(&repo, &["stats"]));
     assert!(stats.contains(" · misled 2"), "{stats}");
 }
 
-/// An ask that recalled a pattern and was then fixed misled it once, even when it used it too
-/// (`spec/06-reuse.md`, "Revisions").
+/// An ask that used a pattern and was then fixed misled it once, and the `--recalled` that older plugins
+/// give counts for nothing (`spec/06-reuse.md`, "Revisions").
 #[test]
-fn a_fixed_ask_that_recalled_and_used_a_pattern_misled_it_once() {
+fn a_fixed_ask_that_used_a_pattern_misled_it_once() {
     let repo = Repo::new();
     let id = decide(&repo, &["--", "When a price prints: use cents."]);
     let ask = add(
@@ -80,7 +80,7 @@ fn a_fixed_ask_that_recalled_and_used_a_pattern_misled_it_once() {
         &["--replaces", &ask[..8], "--", "Print the prices in cents"],
     );
     let grep = out(&cli(&repo, &["grep", " pattern "]));
-    assert!(grep.contains(" recalls:1 uses:1 misled:1 "), "{grep}");
+    assert!(grep.contains(" uses:1 misled:1 "), "{grep}");
 }
 
 /// Each of two live patterns whose Whens share 2 or more words lists the other as `near`
@@ -109,10 +109,10 @@ fn near_copies_name_each_other() {
     assert_eq!(lines[2], "3 patterns in the index");
 }
 
-/// A pattern made 60 or more days ago that no ask recalled in the last 60 days is `unrecalled`, only
-/// while an ask of the project recalled a pattern (`spec/02-cli.md`, "Patterns").
+/// A pattern made 60 or more days ago that no step used in the last 60 days is `unused`, only while a
+/// step of the project used a pattern (`spec/02-cli.md`, "Patterns").
 #[test]
-fn an_old_pattern_no_ask_recalls_is_unrecalled() {
+fn an_old_pattern_no_step_uses_is_unused() {
     let repo = Repo::new();
     let project = (repo.project_id(), "repo".to_string());
     let old = stored_pattern(
@@ -125,9 +125,9 @@ fn an_old_pattern_no_ask_recalls_is_unrecalled() {
     );
     let fresh = decide(&repo, &["--", "When a logo is drawn: keep it flat."]);
     assert_eq!(tidy(&repo), "2 patterns in the index");
-    add(&repo, &["--recalled", &fresh[..8], "--", "Draw the logo"]);
+    add(&repo, &["--uses", &fresh[..8], "--", "Draw the logo"]);
     let want = format!(
-        "{} unrecalled When a release is cut\n2 patterns in the index",
+        "{} unused When a release is cut\n2 patterns in the index",
         &old.id[..8]
     );
     assert_eq!(tidy(&repo), want);

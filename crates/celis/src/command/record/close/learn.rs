@@ -92,17 +92,14 @@ impl Learn {
     }
 }
 
-/// Each live pattern of `records` that the ask of `step` recalled or a step of its tree uses, once, as
-/// its id and When.
+/// Each live pattern of `records` that a step of the tree of the ask of `step` uses, once, as its id and
+/// When.
 fn in_play(records: &[Note], step: Step) -> Vec<(String, String)> {
     let trail = step.trail();
     let patterns = Patterns::new(records);
-    let recalled = trail.record().recalled.iter().map(String::as_str);
     let used = trail.tree().into_iter().flat_map(|s| s.uses());
     let mut seen = HashSet::new();
-    recalled
-        .chain(used)
-        .filter(|id| seen.insert(*id))
+    used.filter(|id| seen.insert(*id))
         .filter_map(|id| patterns.find(None, id).ok())
         .map(|p| (p.id().to_string(), p.record.when().to_string()))
         .collect()

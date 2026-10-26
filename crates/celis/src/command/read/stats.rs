@@ -15,7 +15,7 @@ const NOTHING: &str = "Nothing was reused yet.";
 
 impl Command {
     /// Prints the step `args` names with its grade, or with no id each used pattern, each pattern with
-    /// examples, recalls or steps it misled, and the total; on a terminal with no `--json`, draws them as cards, or as the
+    /// examples or steps it misled, and the total; on a terminal with no `--json`, draws them as cards, or as the
     /// board with `--next`. Writes no record.
     pub(crate) fn stats(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let id = args.words.get(1);
@@ -51,11 +51,9 @@ impl Command {
                     .iter()
                     .map(|p| {
                         let id = &p.note.id;
-                        (p, steps.recalls(id).len(), steps.misled(id).len())
+                        (p, steps.misled(id).len())
                     })
-                    .filter(|(p, recalled, misled)| {
-                        !p.record.examples.is_empty() || *recalled > 0 || *misled > 0
-                    })
+                    .filter(|(p, misled)| !p.record.examples.is_empty() || *misled > 0)
                     .collect();
                 if used.is_empty() && patterns.is_empty() {
                     return match args.json {
@@ -75,13 +73,13 @@ impl Command {
                     );
                     crate::command::show(out, args.json, "used", value, &line)?;
                 }
-                for (pattern, recalled, misled) in patterns {
+                for (pattern, misled) in patterns {
                     let (note, pattern) = (pattern.note, &pattern.record);
                     let examples = pattern.examples.sides().count();
                     let value = json!({"id": note.id, "content": pattern.content,
-                        "examples": examples, "recalled": recalled, "misled": misled});
+                        "examples": examples, "misled": misled});
                     let mut line = format!(
-                        "pattern {} {} · {} · recalled {recalled}",
+                        "pattern {} {} · {}",
                         short(&note.id),
                         pattern.brief(),
                         plural(examples, "example")

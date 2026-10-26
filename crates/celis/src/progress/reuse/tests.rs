@@ -22,7 +22,6 @@ fn step(text: &str, at: u64, under: Option<&Note>, uses: &[&str]) -> Note {
         under: under.map(|n| StepId::new(&n.id)),
         replaces: None,
         uses: uses.iter().map(|u| u.to_string()).collect(),
-        recalled: Vec::new(),
         places: Vec::new(),
         check: None,
         session: None,
