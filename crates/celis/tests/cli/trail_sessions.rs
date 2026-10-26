@@ -260,8 +260,9 @@ fn note(recall: bool, trail: Option<&str>, today: bool) -> String {
     };
     let ask = match recall {
         true => format!(
-            "take the patterns that bear on it, from celis patterns or the celis:recall agent, before \
-             you change a file, then {join}, with --recalled <the id of each>"
+            "take the patterns that bear on it, from the index you got at the session start or from celis \
+             patterns <file>... again, before you change a file, then {join}, with --recalled <the id \
+             of each>"
         ),
         false => join,
     };
