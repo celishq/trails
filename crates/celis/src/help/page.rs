@@ -14,10 +14,10 @@ const SECTIONS: &[(&str, &str, &[&str])] = &[
         "Read",
         "",
         &[
-            "tree [<id>]",
-            "grep <pattern>",
             "search <ask>",
             "patterns",
+            "tree [<id>]",
+            "grep <pattern>",
             "stats [<id>]",
         ],
     ),
@@ -25,13 +25,13 @@ const SECTIONS: &[(&str, &str, &[&str])] = &[
         "Record work",
         "your agents run these",
         &[
+            "pattern",
             "step add",
             "step start <id>",
             "step done <id>",
             "step drop <id>",
             "step edit <id>",
             "step note <id>",
-            "pattern",
         ],
     ),
     (
@@ -77,18 +77,18 @@ const PHRASES: &[(&str, &str)] = &[
 
 /// What celis keeps: each one's mark, the look of its mark, its word, and what it is.
 const WORDS: &[(&str, Style, &str, &str)] = &[
+    (
+        "§",
+        MAGENTA,
+        "pattern",
+        "what to choose in a context, and why; a rule binds",
+    ),
     ("◆", MAGENTA, "trail", "each task you give"),
     (
         "○",
         Style::new(),
         "step",
         "each piece of work your agents do in it",
-    ),
-    (
-        "§",
-        MAGENTA,
-        "pattern",
-        "each lesson they learn, kept for later work",
     ),
 ];
 
@@ -113,7 +113,7 @@ const FLAGS: usize = 18;
 /// The page: what celis is, then each command with what it does and its flags, then the marks.
 pub fn page() -> Vec<Styled> {
     let mut lines = vec![
-        Styled::raw("celis remembers how your agents do your tasks."),
+        Styled::raw("celis remembers what your agents learn, and how they do your tasks."),
         Styled::default(),
     ];
     for (mark, look, word, said) in WORDS {

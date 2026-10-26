@@ -1,8 +1,8 @@
-celis remembers how your agents do your tasks.
+celis remembers what your agents learn, and how they do your tasks.
 
+  § pattern what to choose in a context, and why; a rule binds
   ◆ trail   each task you give
   ○ step    each piece of work your agents do in it
-  § pattern each lesson they learn, kept for later work
 
 Your agents record them through the celis plugin.
 
@@ -10,13 +10,6 @@ Usage
   celis <command> [<args>] [flags]
 
 Read
-  tree [<id>]         Show your trails and their steps
-  ├ --graph           Show today's trails as live graphs of cards
-  ├ --full            Show each step's proof, grade, and reason
-  ├ --all             Show every trail of every project, by day
-  └ --demo            Show sample trails in every state
-
-  grep <pattern>      Search every trail with grep
   search <ask>        Show the rules, patterns and past asks that fit an ask
   ├ --kind <kind>     Only rule (a pattern that binds), pattern, trail, or step
   └ --limit <n>       Show <n> patterns and past asks; 20 for trail or step
@@ -24,10 +17,28 @@ Read
   patterns            Show your patterns with their good and bad examples
   └ --markdown        Print one Markdown page, each file a link to its blob
 
+  tree [<id>]         Show your trails and their steps
+  ├ --graph           Show today's trails as live graphs of cards
+  ├ --full            Show each step's proof, grade, and reason
+  ├ --all             Show every trail of every project, by day
+  └ --demo            Show sample trails in every state
+
+  grep <pattern>      Search every trail with grep
   stats [<id>]        Show what later work reused, and how work went
   └ --demo            Show four weeks of sample trails
 
 Record work · your agents run these
+  pattern             Record a pattern that later work must keep
+  ├ --scope <scope>   Where it applies: me, or project
+  ├ --replaces <id>   The pattern this one replaces
+  ├ --path <glob>     A file it acts on; * and ? within a folder, ** across
+  ├ --binds           It is a rule: a result must keep it
+  ├ --within <id>     The larger pattern it completes
+  ├ --cell <topic>    A topic it is in, such as cli-help
+  ├ --good <example>  A step, a file, or a URL that shows it, such as a pick
+  ├ --bad <example>   A step, a file, or a URL that breaks it
+  └ --project <id>    The id of a project in the store
+
   step add            Add a step to a trail, or start a new trail
   ├ --under <id>      The open step this step is part of
   ├ --replaces <id>   A step this one takes over, or a finished step it fixes
@@ -50,16 +61,6 @@ Record work · your agents run these
   └ --check <command> A command that proves the work, in place of the old one
 
   step note <id>      Leave a note for the work of the step's trail
-  pattern             Record a pattern that later work must keep
-  ├ --scope <scope>   Where it applies: me, or project
-  ├ --replaces <id>   The pattern this one replaces
-  ├ --path <glob>     A file it acts on; * and ? within a folder, ** across
-  ├ --binds           It is a rule: a result must keep it
-  ├ --within <id>     The larger pattern it completes
-  ├ --cell <topic>    A topic it is in, such as cli-help
-  ├ --good <example>  A step, a file, or a URL that shows it, such as a pick
-  ├ --bad <example>   A step, a file, or a URL that breaks it
-  └ --project <id>    The id of a project in the store
 
 Set up
   link [<folder>]     Keep this project's trails in a folder to commit or share

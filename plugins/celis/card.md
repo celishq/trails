@@ -1,6 +1,7 @@
-celis keeps each ask as a trail of steps with proofs, and what the person taught you as patterns. A
-pattern guides: follow it, or name why you depart from it. A pattern with `--binds` is a rule: it
-binds, and wins over a pattern.
+celis keeps what the person taught you as patterns, in cells by topic. A pattern guides: follow it,
+or name why you depart from it. A pattern with `--binds` is a rule, and wins over a pattern. Search
+gives those that fit an ask. Write one only for a choice that will come back. Each ask is a trail of
+steps with proofs of the work.
 
 ```
 celis search [<file>]... -- "<ask>"
@@ -47,11 +48,10 @@ Read all that celis prints, never cut by `head` or `grep`, and do the next move 
    it with `pattern` before you go on. A correction that says "always" or "never", or names a
    convention, is a rule: `--binds`. A reaction to a result, such as "this one" or "too busy", is a
    pattern, with `--good` and `--bad` (`steps.md`, "Patterns"). Give it the narrowest `--path`, name
-   the larger pattern it completes with `--within <id>`, and replace a wrong pattern with
-   `--replaces <id>`. Give it one to three cells with `--cell <topic>`, and reuse a cell that search
-   shows before you make a new one. What holds only for this trail is a note:
-   `step note <the ask's id>`. Write a pattern only for a choice that will come back, and replace a
-   pattern instead of adding a near copy.
+   the larger pattern it completes with `--within <id>`, and replace a wrong pattern or a near copy
+   with `--replaces <id>`. Give it one to three cells with `--cell <topic>`, and reuse a cell that
+   search shows before you make a new one. What holds only for this trail is a note:
+   `step note <the ask's id>`.
 
 A pattern has four lines. Its "When" names the work, such as "When a Raycast extension changes", never
 the person or the project:
@@ -65,4 +65,4 @@ Because: <why that resolves the forces>
 
 A subagent gets the patterns of its work in its task, and replies with its output and proof.
 Name a secret by where it lives, such as `API_KEY in .env`, never by its value: a record is signed and
-cannot be deleted. In creative work, use the `celis:create` skill; for other cases, read `steps.md`.
+cannot be deleted. In creative work, use the `celis:create` skill; else, read `steps.md`.

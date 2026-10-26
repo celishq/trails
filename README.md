@@ -32,9 +32,26 @@ one rule that matters is lost among hundreds of others. Celis is a checklist. It
 few rules that apply right now: when a job starts, before it changes a file, and before it says it's
 done.
 
-Those rules come from your corrections and code reviews. Your agent works one step at a time, tries
-the part it's least sure of first, proves each step works, and keeps what it learned as a rule. Each
-step lands on a trail you can watch, so you see what your agent did and why.
+Patterns are the core. A pattern says what to choose in a context, and why. A pattern that binds is a
+rule, which the result must keep. Good and bad examples show your taste, and cells group patterns by
+topic. They come from your corrections and code reviews, and `celis search` gives your agent the ones
+that fit the job.
+
+```
+  knowledge    cell ◄── tag, many to many ── pattern ── binds ──► rule
+               (a topic)                     When · Forces · Do · Because
+                                             good / bad examples, path globs
+                                             scope: project | me
+                                             within ──► a larger pattern
+                                               ▲              │
+                         examples, uses, recalls              │ activates
+                                               │              ▼
+  evidence     trail ──► step ──► done: proof, changed, judge ──► note
+```
+
+Trails are the evidence. Your agent works one step at a time, tries the part it's least sure of
+first, proves each step works, and keeps what it learned as a pattern. Each step lands on a trail you
+can watch, so you see what your agent did and why.
 
 ```
 Job: seniors pay 20% less
