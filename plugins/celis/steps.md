@@ -25,6 +25,9 @@ Keep a pattern from:
 
 To add an example, replace the pattern: the new one keeps the old examples.
 
+Write a pattern only for a choice that will come back; when `pattern` prints a `like` line, replace
+that pattern instead of keeping a near copy.
+
 ## Work
 
 - When the intent changes, run `celis step edit <the ask's id> -- "<its title and new lines>"`.

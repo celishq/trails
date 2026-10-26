@@ -50,7 +50,8 @@ Read all that celis prints, never cut by `head` or `grep`, and do the next move 
    the larger pattern it completes with `--within <id>`, and replace a wrong pattern with
    `--replaces <id>`. Give it one to three cells with `--cell <topic>`, and reuse a cell that search
    shows before you make a new one. What holds only for this trail is a note:
-   `step note <the ask's id>`.
+   `step note <the ask's id>`. Write a pattern only for a choice that will come back, and replace a
+   pattern instead of adding a near copy.
 
 A pattern has four lines. Its "When" names the work, such as "When a Raycast extension changes", never
 the person or the project:

@@ -266,14 +266,14 @@ const PAST: usize = 2;
 const SHARED: usize = 2;
 
 /// The part of a pattern's first line before its first `:`: the case it acts on.
-fn when(content: &str) -> &str {
+pub(crate) fn when(content: &str) -> &str {
     let first = content.lines().next().unwrap_or("");
     first.split_once(':').map_or(first, |(when, _)| when)
 }
 
 /// The words of `text` that tell cases apart: 4 or more letters, not common, lower case, without a
 /// plural `s`.
-fn words(text: &str) -> HashSet<String> {
+pub(crate) fn words(text: &str) -> HashSet<String> {
     let lower = text.to_lowercase();
     lower
         .split(|c: char| !c.is_alphanumeric())

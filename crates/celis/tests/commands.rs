@@ -111,7 +111,7 @@ fn pattern_writes_its_scope_and_replaces_as_tags() {
         all.extend(["--", WORK]);
         let o = repo.run(&repo.path(), &all, &[], "");
         assert!(o.status.success(), "{}", err(&o));
-        let id = out(&o).trim().to_string();
+        let id = out(&o).lines().next().unwrap().to_string();
         labelled(&repo, "pattern")
             .into_iter()
             .find(|n| n.id == id)

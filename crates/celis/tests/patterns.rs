@@ -476,3 +476,44 @@ fn each_form_of_the_labels_reads_as_a_pattern_and_a_rule() {
         assert!(said.lines().any(|l| l == head), "{head}\n{said}");
     }
 }
+
+/// `pattern` prints each live pattern whose "When" shares words with the new one's, and names
+/// `--replaces` as the next move; it prints none for an unlike pattern.
+#[test]
+fn pattern_prints_the_live_patterns_like_it() {
+    let repo = Repo::new();
+    let old = cli(
+        &repo,
+        &[
+            "pattern",
+            "--",
+            "When a release tags a version: push the tag last.",
+        ],
+    );
+    let old = out(&old).lines().next().unwrap().to_string();
+    let like = cli(
+        &repo,
+        &[
+            "pattern",
+            "--",
+            "When a release tags its version: sign the tag.",
+        ],
+    );
+    assert!(like.status.success(), "{}", err(&like));
+    let line = format!(
+        "like    {} When a release tags a version: push the tag last.",
+        &old[..8]
+    );
+    assert!(out(&like).lines().any(|l| l == line), "{}", out(&like));
+    assert!(
+        err(&like).contains(&format!("celis pattern --replaces {}", &old[..8])),
+        "{}",
+        err(&like)
+    );
+    let unlike = cli(
+        &repo,
+        &["pattern", "--", "When a logo is drawn: keep sharp corners."],
+    );
+    assert!(unlike.status.success(), "{}", err(&unlike));
+    assert!(!out(&unlike).contains("like "), "{}", out(&unlike));
+}
