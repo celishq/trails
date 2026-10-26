@@ -25,6 +25,7 @@ mod reading;
 mod reuse;
 mod scope;
 mod spec_citations;
+mod stats;
 mod stats_watch;
 mod step_commands;
 mod step_drop;

@@ -16,16 +16,24 @@ const DAYS: u64 = 60;
 /// How many `replaces` in a pattern's chain before it needs tidy.
 const CHURN: usize = 3;
 
-/// A live pattern in scope that needs tidy, with its reasons.
+/// A live pattern in scope, with its reasons to need tidy and the length of its `replaces` chain.
 pub(crate) struct Candidate<'a> {
     pattern: Pattern<'a>,
     reasons: Vec<String>,
+    chain: usize,
 }
 
 impl<'a> Candidate<'a> {
     /// Each live pattern in scope in `project` of `trails` that has a reason, oldest first (CIP-02,
     /// "Patterns").
     pub fn all(trails: &'a Store, project: &str) -> Vec<Candidate<'a>> {
+        let mut found = Candidate::every(trails, project);
+        found.retain(|c| !c.reasons.is_empty());
+        found
+    }
+
+    /// Each live pattern in scope in `project` of `trails`, oldest first.
+    pub fn every(trails: &'a Store, project: &str) -> Vec<Candidate<'a>> {
         let (steps, patterns) = (trails.steps(), trails.patterns());
         let live = patterns.live(project);
         let since = steps.now().saturating_sub(DAYS * 86_400);
@@ -38,8 +46,7 @@ impl<'a> Candidate<'a> {
             .iter()
             .map(|p| (p.id(), p.record.replaces.as_deref()))
             .collect();
-        let mut found: Vec<Candidate<'a>> = live
-            .iter()
+        live.iter()
             .rev()
             .map(|pattern| {
                 let id = pattern.id();
@@ -68,11 +75,23 @@ impl<'a> Candidate<'a> {
                 Candidate {
                     pattern: pattern.clone(),
                     reasons,
+                    chain,
                 }
             })
-            .collect();
-        found.retain(|c| !c.reasons.is_empty());
-        found
+            .collect()
+    }
+
+    pub fn pattern(&self) -> &Pattern<'a> {
+        &self.pattern
+    }
+
+    pub fn reasons(&self) -> &[String] {
+        &self.reasons
+    }
+
+    /// How many `replaces` its chain holds.
+    pub fn chain(&self) -> usize {
+        self.chain
     }
 
     /// `<id8> <reason>[,<reason>]... <When>`.

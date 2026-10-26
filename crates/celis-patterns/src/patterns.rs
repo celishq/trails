@@ -44,8 +44,14 @@ impl<'a> Patterns<'a> {
 
     /// The live patterns in scope in the project `project`.
     pub fn live(&self, project: &str) -> Vec<Pattern<'a>> {
-        let live = self.every.iter().filter(|p| p.is_live());
-        live.filter(|p| self.holds(p, project)).cloned().collect()
+        let scoped = self.scoped(project).into_iter();
+        scoped.filter(|p| p.is_live()).collect()
+    }
+
+    /// The patterns in scope in the project `project`, live or ended.
+    pub fn scoped(&self, project: &str) -> Vec<Pattern<'a>> {
+        let every = self.every.iter();
+        every.filter(|p| self.holds(p, project)).cloned().collect()
     }
 
     /// The live pattern in scope in `project`, or of any project with `None`, whose id is `id`, or the only

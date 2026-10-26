@@ -54,7 +54,7 @@ fn a_pattern_whose_uses_were_fixed_twice_needs_tidy_as_misled() {
     let grep = out(&cli(&repo, &["grep", " pattern "]));
     assert!(grep.contains(" uses:2 misled:2 "), "{grep}");
     let stats = out(&cli(&repo, &["stats"]));
-    assert!(stats.contains(" · misled 2"), "{stats}");
+    assert!(stats.contains(" misled:2 "), "{stats}");
 }
 
 /// An ask that used a pattern and was then fixed misled it once, and the `--recalled` that older plugins

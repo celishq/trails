@@ -157,17 +157,21 @@ fn line<'a>(text: &'a str, id: &str) -> &'a str {
     text.lines().find(|l| l.contains(&id[..8])).unwrap_or("")
 }
 
-/// `stats` with nothing reused says so, and prints nothing with `--json`; it refuses an unknown id
-/// with `no-step`.
+/// `stats` with no record says so, and prints nothing with `--json`; with a record and no pattern, it
+/// prints only the total; it refuses an unknown id with `no-step` (`spec/02-cli.md`, "Stats").
 #[test]
 fn stats_says_when_nothing_was_reused() {
     let repo = Repo::new();
-    add(&repo, &["--", "the trail"]);
     assert_eq!(
         out(&cli(&repo, &["stats"])).trim(),
         "Nothing was reused yet."
     );
     assert_eq!(out(&cli(&repo, &["stats", "--json"])), "");
+    add(&repo, &["--", "the trail"]);
+    assert_eq!(
+        out(&cli(&repo, &["stats"])).trim(),
+        "total 0 patterns in the index · last 7 days: 0 written, 0 replaced, 0 gaps"
+    );
     refusal(&cli(&repo, &["stats", "--json", "ffffffff"]), 1, "no-step");
 }
 
@@ -190,7 +194,7 @@ fn used(repo: &Repo) -> (String, String) {
     (id, pattern)
 }
 
-/// `stats` prints each used pattern, then the total.
+/// `stats` prints each used pattern with its uses, then the total (`spec/02-cli.md`, "Stats").
 #[test]
 fn stats_prints_the_used_patterns_and_the_total() {
     let repo = Repo::new();
@@ -198,14 +202,16 @@ fn stats_prints_the_used_patterns_and_the_total() {
     let text = out(&cli(&repo, &["stats"]));
     let lines: Vec<&str> = text.lines().collect();
     assert!(
-        lines[0].starts_with(&format!("pattern {}", &pattern[..8])),
+        lines[0].starts_with(&format!("{} uses:1 ", &pattern[..8])),
         "{text}"
     );
-    assert!(lines[0].ends_with(" · used 1"), "{text}");
-    assert_eq!(lines[1], "total 1 use", "{text}");
+    assert!(
+        lines[1].starts_with("total 1 pattern in the index"),
+        "{text}"
+    );
     let json = objects(&repo, &["stats"]);
-    assert_eq!(json[0]["used"]["used"], 1, "{json:?}");
-    assert_eq!(json[1]["total"]["uses"], 1, "{json:?}");
+    assert_eq!(json[0]["pattern"]["uses"], 1, "{json:?}");
+    assert_eq!(json[1]["total"]["index"], 1, "{json:?}");
 }
 
 /// `stats <id>` prints the step with its grade, and nothing more.
@@ -234,7 +240,7 @@ fn a_uses_that_names_a_step_is_ignored() {
     let old = Note::write(&account(), 1111u16, now(), tags, "a student pays 70%").unwrap();
     put(&repo, &old);
     let json = objects(&repo, &["stats"]);
-    assert_eq!(json.last().unwrap()["total"]["uses"], 1, "{json:?}");
+    assert_eq!(json[0]["pattern"]["uses"], 1, "{json:?}");
     assert!(!format!("{json:?}").contains(&past[..8]), "{json:?}");
     let tree = out(&cli(&repo, &["tree", &trail[..8], "--full"]));
     assert!(tree.contains("a student pays 70%"), "{tree}");
