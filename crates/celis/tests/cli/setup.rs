@@ -1,11 +1,10 @@
-//! CIP-02, "Setup".
+//! `celis setup`.
 
 use crate::support;
 
 use support::{cli, err, out, refusal, tiny_model, Repo};
 
-/// Off a terminal with no `--model`, `setup` prints the list, the recommended model first
-/// (`spec/02-cli.md`, "Setup").
+/// Off a terminal with no `--model`, `setup` prints the list, the recommended model first.
 #[test]
 fn off_a_terminal_setup_prints_the_list() {
     let repo = Repo::new();
@@ -19,7 +18,7 @@ fn off_a_terminal_setup_prints_the_list() {
     assert!(out(&o).lines().next().unwrap().contains(" recommended "));
 }
 
-/// `setup` refuses a model that is not in the list (`spec/02-cli.md`, "Setup").
+/// `setup` refuses a model that is not in the list.
 #[test]
 fn setup_refuses_a_model_not_in_the_list() {
     let repo = Repo::new();
@@ -30,7 +29,7 @@ fn setup_refuses_a_model_not_in_the_list() {
     );
 }
 
-/// `none` turns search off and removes the downloaded models (`spec/02-cli.md`, "Setup").
+/// `none` turns search off and removes the downloaded models.
 #[test]
 fn none_turns_search_off() {
     let repo = Repo::new();
@@ -46,8 +45,7 @@ fn none_turns_search_off() {
     );
 }
 
-/// When a download or its sha256 check fails, `setup` keeps the model it had
-/// (`spec/02-cli.md`, "Setup").
+/// When a download or its sha256 check fails, `setup` keeps the model it had.
 #[test]
 fn a_failed_download_or_check_keeps_the_model_there_was() {
     let repo = Repo::new();
