@@ -16,7 +16,7 @@ read. What a command shows a person is not part of it.
 ```
 celis pattern [--scope <scope>] [--replaces <id>] [--path <glob>]... [--within <id>]... [--good <example>]... [--bad <example>]... [--project <id>] -- <text>
                                                        a pattern, in its scope
-celis patterns [--markdown]                           the index of the patterns in scope
+celis patterns [<file>]... [--markdown]               the index of the patterns in scope
 celis tree [<id>]... [--graph] [--full] [--all] [--demo]
                                                        a trail and its steps; again on each change
 celis grep <grep option>... <pattern>                 every trail, through the system grep
@@ -225,6 +225,7 @@ agent reads it, and reads the whole of a pattern with `grep <id8>`.
 <id8> <scope> <When>     each pattern; its When is the first line of its text, and of a text of one
                          line, the part before its first `:`
   path   <glob>          each `path` of it (CIP-05, "Triggers")
+  match  <file>          each `<file>` that one of its paths matches (CIP-05, "Triggers")
   within <id8>           each larger pattern it completes (CIP-05, "Graph")
 no pattern yet           when there is none
 ```
@@ -232,6 +233,8 @@ no pattern yet           when there is none
 **Rules**
 
 - `patterns` MUST print each live pattern in scope once, oldest first, so that a new pattern comes last.
+- `patterns` MUST print a `match` line under a pattern for each `<file>` that one of its paths matches.
+  A `<file>` is a path from the working folder, and a folder stands for each file in it.
 - With `--markdown`, `patterns` MUST print each live pattern in scope whole, with its examples, as one
   Markdown page.
 
@@ -239,6 +242,7 @@ no pattern yet           when there is none
 
 ```
 celis patterns
+celis patterns shelf/prices.py shelf/
 celis patterns --markdown > patterns.md
 ```
 

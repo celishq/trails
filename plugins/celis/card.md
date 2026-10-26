@@ -6,7 +6,7 @@ the person agrees in `celis:tidy`, which learns from the trails. Each ask is a t
 of the work.
 
 ```
-celis patterns
+celis patterns [<file>]...
 celis grep <id>
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--recalled <id>]... [--check <command>] [--new] -- "<title>"
 celis step start <id>

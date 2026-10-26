@@ -1,5 +1,6 @@
 //! `celis patterns`: the index of the person's patterns.
 
+use crate::command::record::files;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use celis_patterns::{Example, Pattern, PatternStore};
@@ -11,8 +12,8 @@ use std::io::Write;
 
 impl Command {
     /// Prints the index of the live patterns in scope, oldest first: each one's id, scope and When, with
-    /// its paths and larger patterns; with `--markdown`, each whole as one page, newest first. Writes no
-    /// record.
+    /// its paths, the files it names that match them, and its larger patterns; with `--markdown`, each
+    /// whole as one page, newest first. Writes no record.
     pub(crate) fn patterns(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         if !self.held()? {
             return crate::command::put(out, NONE);
@@ -34,16 +35,21 @@ impl Command {
         }
         let every = trails.patterns();
         let held: HashSet<&str> = every.every().iter().map(|p| p.id()).collect();
+        let here = self.project();
+        let files: Vec<(&str, Vec<String>)> = args.words[1..]
+            .iter()
+            .map(|f| (f.as_str(), files::paths(&here, &self.folder, f)))
+            .collect();
         for pattern in patterns.iter().rev() {
-            crate::command::put(out, &index(pattern, &held))?;
+            crate::command::put(out, &index(pattern, &held, &files))?;
         }
         Ok(())
     }
 }
 
-/// The lines of `pattern` in the index: `<id8> <scope> <When>`, then each of its paths, and each larger
-/// pattern of the `held` ids.
-fn index(pattern: &Pattern, held: &HashSet<&str>) -> String {
+/// The lines of `pattern` in the index: `<id8> <scope> <When>`, then each of its paths, each of the
+/// `files` whose paths it matches, and each larger pattern of the `held` ids.
+fn index(pattern: &Pattern, held: &HashSet<&str>, files: &[(&str, Vec<String>)]) -> String {
     let record = &pattern.record;
     let head = format!(
         "{} {} {}",
@@ -52,9 +58,16 @@ fn index(pattern: &Pattern, held: &HashSet<&str>) -> String {
         record.when()
     );
     let paths = record.paths.iter().map(|p| format!("  path   {p}"));
+    let matched = files
+        .iter()
+        .filter(|(_, paths)| record.fit(paths).is_some());
+    let matched = matched.map(|(file, _)| format!("  match  {file}"));
     let within = record.within.iter().filter(|w| held.contains(&**w as &str));
     let within = within.map(|w| format!("  within {}", short(w)));
-    let lines = std::iter::once(head).chain(paths).chain(within);
+    let lines = std::iter::once(head)
+        .chain(paths)
+        .chain(matched)
+        .chain(within);
     lines.collect::<Vec<_>>().join("\n")
 }
 
