@@ -8,7 +8,7 @@ celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--check <comma
 celis step start <id>
 celis step done <id> [--changed "<what differs>"] [--as-planned] [--by <who>] [--file <path>]... -- "<proof>"
 celis step note <id> -- "<note>"
-celis pattern [--scope me] [--replaces <id>] [--path <glob>]... [--binds] [--within <id>]... [--good <example>]... [--bad <example>]... -- "<pattern>"
+celis pattern [--scope me] [--replaces <id>] [--path <glob>]... [--binds] [--within <id>]... [--cell <topic>]... [--good <example>]... [--bad <example>]... -- "<pattern>"
 ```
 
 Read all that celis prints, never cut by `head` or `grep`, and do the next move it names.
@@ -48,7 +48,9 @@ Read all that celis prints, never cut by `head` or `grep`, and do the next move 
    convention, is a rule: `--binds`. A reaction to a result, such as "this one" or "too busy", is a
    pattern, with `--good` and `--bad` (`steps.md`, "Patterns"). Give it the narrowest `--path`, name
    the larger pattern it completes with `--within <id>`, and replace a wrong pattern with
-   `--replaces <id>`. What holds only for this trail is a note: `step note <the ask's id>`.
+   `--replaces <id>`. Give it one to three cells with `--cell <topic>`, and reuse a cell that search
+   shows before you make a new one. What holds only for this trail is a note:
+   `step note <the ask's id>`.
 
 A pattern has four lines. Its "When" names the work, such as "When a Raycast extension changes", never
 the person or the project:

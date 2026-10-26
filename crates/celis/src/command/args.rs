@@ -37,6 +37,7 @@ pub(crate) struct Args {
     pub files: Vec<String>,
     pub good: Vec<String>,
     pub within: Vec<String>,
+    pub cells: Vec<String>,
     pub bad: Vec<String>,
 }
 
@@ -96,6 +97,7 @@ impl Args {
                 "--file" => parsed.files.push(value(arg, rest.next())?),
                 "--good" => parsed.good.push(value(arg, rest.next())?),
                 "--within" => parsed.within.push(value(arg, rest.next())?),
+                "--cell" => parsed.cells.push(value(arg, rest.next())?),
                 "--bad" => parsed.bad.push(value(arg, rest.next())?),
                 flag if flag.starts_with("--") => {
                     bad.get_or_insert(Failure::usage(format!("{flag} is not a flag")));

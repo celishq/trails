@@ -116,6 +116,27 @@ me        in every project
 - A reader MUST ignore a `within` that names no record it holds.
 - The smaller patterns of a pattern are the live patterns whose `within` names it.
 
+## Cells
+
+```json
+{ "kind": 1111,
+  "tags": [ …, ["cell", "cli-help"] ],
+  "content": "When a flag gets its help text\nForces: …\nDo: …\nBecause: …" }
+```
+
+- `cell`: optional, repeatable; a topic the pattern is in, as lower-case words joined by `-`.
+
+**Writers**
+
+- A writer MUST write a cell in lower case, with each run of characters that are not a letter or a digit
+  as one `-`, and no `-` at its ends.
+- A pattern that replaces another MUST keep each `cell` of the one it replaces.
+
+**Readers**
+
+- A reader MUST read a cell in the same form, so that `CLI Help` and `cli-help` are one cell. It MUST
+  ignore a cell that is empty in that form.
+
 ## Examples
 
 ```json

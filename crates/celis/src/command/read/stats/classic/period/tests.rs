@@ -89,6 +89,7 @@ fn a_period_counts_its_done_steps_that_use_a_pattern() {
         paths: vec![],
         binds: false,
         within: vec![],
+        cells: vec![],
         examples: Default::default(),
     }
     .record(&account(), 5)

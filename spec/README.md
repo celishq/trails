@@ -64,6 +64,7 @@ Every change of `spec/` MUST keep these rules:
 | `path` | pattern tag: the trigger | 05 |
 | `good` · `bad` | pattern tags: its examples | 05 |
 | `within` | pattern tag: the larger pattern it completes | 05 |
+| `cell` | pattern tag: a topic it is in | 05 |
 | `binds` in `celis.pattern` | a pattern label: the pattern is a rule | 05 |
 | `me` · `project` | the scopes of a pattern | 05 |
 | `uses` | step tag | 06 |

@@ -3,6 +3,7 @@
 //! A [`Pattern`] is what later work must keep. [`PatternStore`] reads them from a store and writes
 //! them, signed by the account.
 
+pub mod cell;
 pub mod example;
 pub mod examples;
 pub mod fit;
@@ -14,6 +15,7 @@ pub mod pattern_store;
 pub mod patterns;
 pub mod scope;
 
+pub use cell::Cell;
 pub use example::Example;
 pub use examples::Examples;
 pub use fit::Fit;

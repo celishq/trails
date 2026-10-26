@@ -180,6 +180,7 @@ fn pattern(entry: &Pattern, recalled: &Recalls) -> Vec<Row> {
             .filter(|(on, _)| *on)
             .map(|(_, mark)| mark.to_string()),
     );
+    fields.extend(pattern.cells.iter().map(|c| format!("cell:{}", c.name())));
     fields.extend(recalled.day(&note.id).map(|day| format!("recalled:{day}")));
     let mut rows = vec![row(Kind::Pattern, note, fields, &pattern.content)];
     if let Some(PatternEnd::Dropped(drop)) = entry.end {

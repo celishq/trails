@@ -127,6 +127,7 @@ fn reused(later: u64) -> (TempDir, Store) {
         paths: vec![],
         binds: false,
         within: vec![],
+        cells: vec![],
         examples: Default::default(),
     };
     trails.at(AT);

@@ -90,6 +90,7 @@ impl Desk {
             paths: vec![],
             binds: false,
             within: vec![],
+            cells: vec![],
             examples: Default::default(),
         };
         let id = self.trails.decide(pattern, None).unwrap().id;

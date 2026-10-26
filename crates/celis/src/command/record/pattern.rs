@@ -2,14 +2,14 @@
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use celis_patterns::{Example, Examples, PatternRecord, PatternStore, Scope};
+use celis_patterns::{Cell, Example, Examples, PatternRecord, PatternStore, Scope};
 use celis_store::{PatternId, Place, Project, Store};
 use celis_trails::{TrailStore, Written};
 use std::io::Write;
 
 impl Command {
-    /// Writes the pattern `args` states on `project`, in its scope, with its trigger, labels and examples,
-    /// signed by the account now, and prints its id.
+    /// Writes the pattern `args` states on `project`, in its scope, with its trigger, labels, cells and
+    /// examples, signed by the account now, and prints its id.
     pub(crate) fn pattern(
         &self,
         args: &Args,
@@ -29,6 +29,11 @@ impl Command {
             .iter()
             .map(|p| Place::resolve(p, &project.folder, &self.folder))
             .collect();
+        if let Some(cell) = args.cells.iter().find(|c| Cell::new(c).is_none()) {
+            return Err(Failure::usage(format!(
+                "a cell needs a letter or a digit, not {cell:?}"
+            )));
+        }
         let trails = self.trails()?;
         let side = |values: &[String]| -> Result<Vec<Example>, Failure> {
             let found = values.iter().map(|v| self.example(&trails, project, v));
@@ -46,6 +51,7 @@ impl Command {
             paths,
             binds: args.binds,
             within: args.within.iter().map(PatternId::new).collect(),
+            cells: Cell::all(args.cells.iter().map(String::as_str)),
             examples,
         };
         let written = Written {

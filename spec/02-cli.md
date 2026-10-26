@@ -14,7 +14,7 @@ read. What a command shows a person is not part of it.
 ## Commands
 
 ```
-celis pattern [--scope <scope>] [--replaces <id>] [--path <glob>]... [--binds] [--within <id>]... [--good <example>]... [--bad <example>]... [--project <id>] -- <text>
+celis pattern [--scope <scope>] [--replaces <id>] [--path <glob>]... [--binds] [--within <id>]... [--cell <topic>]... [--good <example>]... [--bad <example>]... [--project <id>] -- <text>
                                                        a pattern, in its scope
 celis patterns [--markdown]                           the patterns, the rules first, and their examples
 celis tree [<id>]... [--graph] [--full] [--all] [--demo]
@@ -48,7 +48,7 @@ $CELIS_HOME   where celis keeps the phrase and the store
 
 ```
 pattern  json  {"id", "created_at", "project", "scope", "replaces", "content",
-                "paths", "binds"}
+                "paths", "binds", "cells"}
 ```
 
 **Rules**
@@ -58,7 +58,8 @@ pattern  json  {"id", "created_at", "project", "scope", "replaces", "content",
 - `pattern` MUST write a pattern of the working folder's project (CIP-05), with `--scope` and
   `--replaces` as its tags, and no `scope` tag for `project`; each `--path`, from the project's top
   folder, as a `path` tag, `--binds` as its label, each `--within` as a `within` tag (CIP-05, "Graph"),
-  refusing an id that no live pattern of the store has with `no-pattern`, and each `--good` and `--bad`
+  refusing an id that no live pattern of the store has with `no-pattern`, each `--cell` as a `cell` tag
+  (CIP-05, "Cells"), refusing one with no letter or digit as a usage error, and each `--good` and `--bad`
   as an example (CIP-05, "Examples"): a value with `://` as a URL, a file of the working folder as its
   blob, else the whole id of a step, refusing a step the store lacks with `no-step`.
 - `--project` on `pattern` and `step add` MUST write the records of the project it names in place of the
@@ -251,7 +252,7 @@ trails with it.
 view    <yyyy-mm-dd> <trail id8 | -> [<project name>] <kind> <id8> <fields> <text>
           trail | step   <open | working | done | done-dropped | dropped | expired>[ revised-by <id>,…][ at:<place>]…
           pattern        <live | replaced-by <id> | dropped> {<me | project>}
-                           [ trigger][ binds][ recalled:<yyyy-mm-dd>]
+                           [ trigger][ binds][ cell:<cell>]…[ recalled:<yyyy-mm-dd>]
           proof | changed | dropped | note                       the step's or pattern's id, no fields
 lines   <id8> [<project name>] <its title> · <yyyy-mm-dd>        each trail of the lines
           trail <id8> <fields>                                    the trail's own line
@@ -262,8 +263,9 @@ end     project [<project name>]
 ```
 
 `<id8>` is the first 8 characters of an id. A text holds each newline as a space. A pattern's fields end with
-` trigger` when it has a trigger tag (CIP-05), ` binds` when it is a rule (CIP-05, "Rules"), and
-` recalled:<day>` with the day `search` last gave it.
+` trigger` when it has a trigger tag (CIP-05), ` binds` when it is a rule (CIP-05, "Rules"),
+` cell:<cell>` for each of its cells (CIP-05, "Cells"), and ` recalled:<day>` with the day `search` last
+gave it.
 
 **Rules**
 
@@ -296,6 +298,7 @@ rules first, then the other patterns, and the done asks of every project like it
 rules
 <line>        <id8> <scope> <first line>, each rule that fits (CIP-05, "Rules")
                 <each next line of its text>
+                cell    <cell>                                           each of its cells (CIP-05, "Cells")
                 next    <id8> <first line>                               a smaller pattern (CIP-05, "Graph")
                 good    <id8> <title> · <the first line of its proof>    a step example (CIP-05, "Examples")
                         <the path of each blob of its files>

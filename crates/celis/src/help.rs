@@ -316,7 +316,7 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "pattern",
-        usage: &["celis pattern [--scope <scope>] [--replaces <id>] [--path <glob>]... [--binds] [--within <id>]... [--good <example>]... [--bad <example>]... [--project <id>] -- <text>"],
+        usage: &["celis pattern [--scope <scope>] [--replaces <id>] [--path <glob>]... [--binds] [--within <id>]... [--cell <topic>]... [--good <example>]... [--bad <example>]... [--project <id>] -- <text>"],
         summary: "Record a pattern that later work must keep: when it applies, its forces, what to do, and why. With no --scope, it holds for the whole project. Its paths name the files it acts on, so celis search gives it for them. It guides the work; with --binds, it is a rule, which binds it.",
         args: &[
             ("--scope <scope>", "Where it applies: me, or project"),
@@ -324,6 +324,7 @@ pub const VERBS: &[Verb] = &[
             ("--path <glob>", "A file it acts on; * and ? within a folder, ** across"),
             ("--binds", "It is a rule: a result must keep it"),
             ("--within <id>", "The larger pattern it completes"),
+            ("--cell <topic>", "A topic it is in, such as cli-help"),
             ("--good <example>", "A step, a file, or a URL that shows it, such as a pick"),
             ("--bad <example>", "A step, a file, or a URL that breaks it"),
             ("--project <id>", "The id of a project in the store"),

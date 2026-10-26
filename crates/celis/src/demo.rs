@@ -476,6 +476,7 @@ impl Demo {
             paths: vec![],
             binds: false,
             within: vec![],
+            cells: vec![],
             examples: Default::default(),
         };
         let trails = self.trails(ago)?;

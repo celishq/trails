@@ -408,15 +408,16 @@ fn the_view_and_the_steps_pattern_search_match_the_fixture() {
         "When a price prints: use cents.",
         t + 7,
     );
-    let me = stored_pattern(
+    let tag = |tag: &[&str]| vec![tag.iter().map(|t| t.to_string()).collect()];
+    let me = tagged_pattern(
         &repo,
         project,
         &by,
         (Some("me"), None),
+        tag(&["cell", "Commit Messages"]),
         "When you write a commit message: use plain words.",
         t + 8,
     );
-    let tag = |tag: &[&str]| vec![tag.iter().map(|t| t.to_string()).collect()];
     let situation = tagged_pattern(
         &repo,
         project,
