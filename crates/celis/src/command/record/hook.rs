@@ -2,7 +2,6 @@
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use celis_patterns::PatternStore;
 use celis_trails::TrailStore;
 use serde_json::{json, Value};
 use std::io::{Read, Write};
@@ -91,7 +90,7 @@ impl Command {
         if let Some(index) = self.here(json).index(&[]).ok().flatten() {
             text.push_str(&format!("\n\nThe patterns in scope here:\n{index}"));
         }
-        if let Some(line) = self.tidy() {
+        if let Some(line) = self.here(json).tidy() {
             text.push_str(&format!("\n\n{line}"));
         }
         let manifest = std::fs::read_to_string(root.join(".claude-plugin/plugin.json"));
@@ -106,31 +105,29 @@ impl Command {
         text
     }
 
-    /// The line that asks to offer `/celis:tidy` once in the session: when the store holds a live pattern,
-    /// and no step whose title starts with `TIDY` began in the last `TIDY_DAYS` days.
+    /// The line that asks to offer `/celis:tidy` once in the session: when patterns in scope here need
+    /// tidy, and no step whose title starts with `TIDY` began in the last `TIDY_DAYS` days.
     fn tidy(&self) -> Option<String> {
-        if !self.held().ok()? {
+        let (found, _) = self.candidates().ok()?;
+        if found.is_empty() {
             return None;
         }
         let trails = self.trails().ok()?;
-        if !trails.patterns().every().iter().any(|e| e.is_live()) {
+        let steps = trails.steps();
+        let since = crate::command::now().saturating_sub(TIDY_DAYS * 86_400);
+        let all = steps.all().into_iter();
+        if all
+            .filter(|s| s.title().starts_with(TIDY))
+            .any(|s| s.note().created_at >= since)
+        {
             return None;
         }
-        let steps = trails.steps();
-        let last = steps
-            .all()
-            .into_iter()
-            .filter(|s| s.title().starts_with(TIDY))
-            .map(|s| s.note().created_at)
-            .max();
-        let days = last.map(|at| crate::command::now().saturating_sub(at) / 86_400);
-        let since = match days {
-            Some(days) if days < TIDY_DAYS => return None,
-            Some(days) => format!("the last tidy was {days} days ago"),
-            None => "no tidy has run yet".to_string(),
+        let need = match found.len() {
+            1 => "1 pattern needs it".to_string(),
+            n => format!("{n} patterns need it"),
         };
         Some(format!(
-            "celis: {since}; once in this session, after the person's first ask, offer them /celis:tidy."
+            "celis: once in this session, after the person's first ask, offer them /celis:tidy: {need}."
         ))
     }
 

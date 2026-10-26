@@ -15,7 +15,7 @@ const NOTHING: &str = "Nothing was reused yet.";
 
 impl Command {
     /// Prints the step `args` names with its grade, or with no id each used pattern, each pattern with
-    /// examples or recalls and the total; on a terminal with no `--json`, draws them as cards, or as the
+    /// examples, recalls or steps it misled, and the total; on a terminal with no `--json`, draws them as cards, or as the
     /// board with `--next`. Writes no record.
     pub(crate) fn stats(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let id = args.words.get(1);
@@ -49,8 +49,13 @@ impl Command {
                 let live = patterns.live(&self.project().anchor.project);
                 let patterns: Vec<_> = live
                     .iter()
-                    .map(|p| (p, steps.recalls(&p.note.id).len()))
-                    .filter(|(p, recalled)| !p.record.examples.is_empty() || *recalled > 0)
+                    .map(|p| {
+                        let id = &p.note.id;
+                        (p, steps.recalls(id).len(), steps.misled(id).len())
+                    })
+                    .filter(|(p, recalled, misled)| {
+                        !p.record.examples.is_empty() || *recalled > 0 || *misled > 0
+                    })
                     .collect();
                 if used.is_empty() && patterns.is_empty() {
                     return match args.json {
@@ -70,17 +75,20 @@ impl Command {
                     );
                     crate::command::show(out, args.json, "used", value, &line)?;
                 }
-                for (pattern, recalled) in patterns {
+                for (pattern, recalled, misled) in patterns {
                     let (note, pattern) = (pattern.note, &pattern.record);
                     let examples = pattern.examples.sides().count();
                     let value = json!({"id": note.id, "content": pattern.content,
-                        "examples": examples, "recalled": recalled});
-                    let line = format!(
+                        "examples": examples, "recalled": recalled, "misled": misled});
+                    let mut line = format!(
                         "pattern {} {} · {} · recalled {recalled}",
                         short(&note.id),
                         pattern.brief(),
                         plural(examples, "example")
                     );
+                    if misled > 0 {
+                        line.push_str(&format!(" · misled {misled}"));
+                    }
                     crate::command::show(out, args.json, "pattern", value, &line)?;
                 }
                 let value = json!({"uses": uses});

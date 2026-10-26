@@ -101,7 +101,11 @@ impl Command {
 
 /// At most `LIKE` of `live`, other than `replaced`, whose "When" shares `SHARED` or more words with the
 /// "When" of `content`, those that share the most first.
-fn like<'a>(live: &[Pattern<'a>], content: &str, replaced: Option<Pattern>) -> Vec<Pattern<'a>> {
+pub(crate) fn like<'a>(
+    live: &[Pattern<'a>],
+    content: &str,
+    replaced: Option<Pattern>,
+) -> Vec<Pattern<'a>> {
     let asked = words(when(content));
     let mut found: Vec<(usize, &Pattern<'a>)> = live
         .iter()

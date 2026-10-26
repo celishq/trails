@@ -44,6 +44,16 @@ impl<'a> Steps<'a> {
             .collect()
     }
 
+    /// The steps whose `uses` names `id` and the asks whose `recalled` names it, each once, that a later
+    /// step revised (CIP-06, "Revisions").
+    pub fn misled(&'a self, id: &str) -> Vec<Step<'a>> {
+        let all = self.all().into_iter();
+        let named = all.filter(|s| {
+            s.uses().contains(&id) || (s.is_trail() && s.record().recalled.iter().any(|r| r == id))
+        });
+        named.filter(|s| !s.revised().is_empty()).collect()
+    }
+
     /// Whether a pattern record has the id `id`.
     pub(crate) fn holds_pattern(&self, id: &str) -> bool {
         self.index.patterns.contains(id)

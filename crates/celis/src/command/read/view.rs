@@ -173,7 +173,7 @@ fn step(root: Step, step: Step, kind: Kind) -> Row {
 }
 
 /// The rows of the pattern `entry`: its own, with how many asks of `steps` recalled it and steps used it
-/// when not none, and the day of the newest recall; then each of its examples, then its drop's reason when a drop
+/// when not none, how many it misled when not none, and the day of the newest recall; then each of its examples, then its drop's reason when a drop
 /// names it.
 fn pattern(entry: &Pattern, steps: &Steps, trails: &Store) -> Vec<Row> {
     let (note, pattern) = (entry.note, &entry.record);
@@ -197,6 +197,10 @@ fn pattern(entry: &Pattern, steps: &Steps, trails: &Store) -> Vec<Row> {
     let counts = (recalls.len(), uses.count());
     if counts != (0, 0) {
         fields.push(format!("recalls:{} uses:{}", counts.0, counts.1));
+    }
+    let misled = steps.misled(&note.id).len();
+    if misled > 0 {
+        fields.push(format!("misled:{misled}"));
     }
     let newest = recalls.first().map(|ask| date(ask.note().created_at));
     fields.extend(newest.map(|day| format!("recalled:{day}")));

@@ -20,7 +20,6 @@
     "2026-01-15 - [repo] pattern <new> live {project} recalls:1 uses:1 misled:1 recalled:2026-01-15 When a price prints: use cents.",
     "2026-01-15 - [repo] pattern <old> replaced-by <new> {project} When a price prints: use floats.",
     "2026-01-15 <fix> [repo] trail <fix> done Print the prices in whole cents",
-    "2026-01-15 <fix> [repo] proof <fix> the prices print in cents",
     "2026-01-15 <trail> [repo] trail <trail> done Build the Vendors page",
     "2026-01-15 <trail> [repo] note <trail> When a vendor has no logo: show its initials.",
     "2026-01-15 <trail> [repo] prompt <trail> Show the prices in cents.",
@@ -46,16 +45,15 @@
     "  proof <table> the table shows",
     "  changed <table> a list, not a table",
     "  note <table> Keep the table sortable.",
-    "<fix> [repo] Print the prices in whole cents · 2026-01-15",
-    "  trail <fix> done",
-    "  proof <fix> the prices print in cents",
     "- patterns of no trail",
     "  [repo] pattern <push> live {me} When you push: run the tests first.",
     "  [repo] good <push> https://example.com/ci",
     "  [repo] pattern <situation> live {project} When the person asks a question: answer it first.",
     "  [repo] pattern <me> live {me} When you write a commit message: use plain words.",
     "  [repo] pattern <new> live {project} recalls:1 uses:1 misled:1 recalled:2026-01-15 When a price prints: use cents.",
-    "  [repo] pattern <old> replaced-by <new> {project} When a price prints: use floats."
+    "  [repo] pattern <old> replaced-by <new> {project} When a price prints: use floats.",
+    "<fix> [repo] Print the prices in whole cents · 2026-01-15",
+    "  trail <fix> done"
   ],
   "kept": [
     "- patterns of no trail",
