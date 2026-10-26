@@ -70,7 +70,8 @@ me        in every project
   writers wrote, as a plain pattern.
 - A reader MUST ignore a `cell` tag, which older writers wrote.
 - A reader MUST read the scope `at:<place>`, which older writers wrote, as `project`, with two more
-  `path` globs: the place's path without its line, and that path with `/**` after it.
+  `path` globs: the place's path without its line, and that path with `/**` after it. A place of the
+  project's top folder, such as `.`, adds no `path`.
 - A reader MUST read a live pattern with the scope `trail:<id>`, which older writers wrote, as a note on
   the trail `<id>` (CIP-04, "Notes"), and not as a pattern.
 

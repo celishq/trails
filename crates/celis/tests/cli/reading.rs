@@ -138,3 +138,27 @@ fn a_place_reads_as_a_path_from_the_projects_top_folder() {
     let pattern = support::labelled(&repo, "pattern").pop().unwrap();
     assert_eq!(pattern.tag("path"), Some("src/a.rs"));
 }
+
+/// A pattern whose scope is `at:` of the top folder is a pattern of the project with no path: it holds
+/// in the whole project, and no changed file brings it (`spec/05-patterns.md`, "Reading").
+#[test]
+fn a_pattern_at_the_top_folder_has_no_path() {
+    let repo = Repo::new();
+    repo.write("src/a.rs", "fn main() {}\n");
+    let id = repo.project_id();
+    let project = (id.as_str(), "repo");
+    let mut tops = vec![];
+    for (n, scope) in ["at:.", "at:./", "at:.:3"].iter().enumerate() {
+        let made = now() - (n as u64 + 2) * DAY;
+        let note = stored_pattern(&repo, project, &account(), (Some(scope), None), "top", made);
+        tops.push(short(&note.id));
+    }
+    let found = place_ids(&repo, &repo.path(), &["--at", "src/a.rs"]);
+    assert!(found.iter().all(|f| !tops.contains(f)), "{found:?}");
+    let o = repo.run(&repo.path(), &["grep", " pattern "], &[], "");
+    let shown = support::out(&o);
+    for top in &tops {
+        let line = shown.lines().find(|l| l.contains(top.as_str())).unwrap();
+        assert!(line.ends_with("live {project} top"), "{shown}");
+    }
+}

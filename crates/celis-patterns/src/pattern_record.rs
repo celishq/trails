@@ -86,9 +86,8 @@ impl PatternRecord {
             Some(text) => match text.strip_prefix("at:").filter(|p| !p.is_empty()) {
                 Some(place) => {
                     let path = Place::new(place).path().trim_end_matches('/');
-                    match path {
-                        "." | "" => paths.push("**".to_string()),
-                        path => paths.extend([path.to_string(), format!("{path}/**")]),
+                    if !matches!(path, "." | "") {
+                        paths.extend([path.to_string(), format!("{path}/**")]);
                     }
                     Scope::Project
                 }
