@@ -164,7 +164,9 @@ note  json  {"id", "created_at", "step", "content"}
 - The changed files of a `done` are each file that `git diff --name-only HEAD` or
   `git ls-files --others --exclude-standard` gives in the working folder, and each `--file`.
 - `done` of an ask, or of another step with steps under it, with no `--by` and a changed file MUST refuse
-  with `unjudged`, and print the patterns of its changed files and the brief that the judge needs.
+  with `unjudged`, and print the patterns of its changed files and the brief that the judge needs. The
+  brief MUST give the whole text, with the examples, of each live pattern that its ask recalled
+  (CIP-06, "Recalls") and of each live pattern in scope that a changed file matches, each once.
 - `done` MUST run the step's `check` in the project's top folder, and refuse with `check-failed` when it
   fails or runs past `CELIS_CHECK_SECONDS`, 600 when not set.
 - `done --changed` MUST write its text as `changed`, and `done --by` its value as `by`; a `--by` other

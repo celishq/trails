@@ -253,7 +253,7 @@ fn done_prints_the_patterns_of_the_changed_files() {
 }
 
 /// When no step is open under the ask, `done` of its last step prints the judge brief: the ask, its
-/// intent lines, the patterns that fit its title and the changed files, the changed files, and its check.
+/// intent lines, the patterns of the changed files, the changed files, and its check.
 #[test]
 fn done_of_the_last_step_prints_the_judge_brief() {
     let repo = Repo::new();
@@ -463,4 +463,65 @@ fn a_step_that_holds_steps_needs_a_judge() {
         "met",
     ];
     assert!(cli(&repo, &by).status.success());
+}
+
+/// The judge brief gives the whole text of each live pattern the ask recalled and of each that a changed
+/// file matches, each once, and no other pattern (`spec/02-cli.md`, "Step").
+#[test]
+fn the_judge_brief_gives_the_recalled_patterns_whole() {
+    let repo = Repo::new();
+    let decide = |args: &[&str], text: &str| {
+        let mut all = vec!["pattern"];
+        all.extend(args);
+        all.extend(["--", text]);
+        let o = cli(&repo, &all);
+        assert!(o.status.success(), "{}", err(&o));
+        out(&o).lines().next().unwrap().to_string()
+    };
+    let prices = decide(
+        &[],
+        "When prices change\nForces: floats are simple, but they lose cents\nDo: keep prices in cents\nBecause: floats lost a cent",
+    );
+    let python = decide(&["--path", "*.py"], "When Python changes: run ruff.");
+    let other = decide(&[], "When a logo is drawn: keep it flat.");
+    let ids = add(
+        &repo,
+        &[
+            "--session",
+            "s1",
+            "--recalled",
+            &prices[..8],
+            "--recalled",
+            &python[..8],
+            "--",
+            "Round the prices\nexpect: cents",
+        ],
+    );
+    let ask = ids.lines().next().unwrap();
+    repo.write("new.py", "x = 1\n");
+    let o = cli(
+        &repo,
+        &["step", "done", &ask[..8], "--as-planned", "--", "proof"],
+    );
+    assert_eq!(o.status.code(), Some(1), "{}", err(&o));
+    let said = err(&o);
+    let brief = &said[said.find("celis: before you close").unwrap()..];
+    let lines: Vec<&str> = brief.lines().collect();
+    let at = |head: &str| lines.iter().filter(|l| l.starts_with(head)).count();
+    assert_eq!(
+        at(&format!(
+            "  pattern {} project When prices change",
+            &prices[..8]
+        )),
+        1,
+        "{brief}"
+    );
+    assert_eq!(
+        at("          Forces: floats are simple, but they lose cents"),
+        1,
+        "{brief}"
+    );
+    assert_eq!(at("          Because: floats lost a cent"), 1, "{brief}");
+    assert_eq!(at(&format!("  pattern {}", &python[..8])), 1, "{brief}");
+    assert!(!brief.contains(&other[..8]), "{brief}");
 }

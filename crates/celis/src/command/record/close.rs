@@ -132,7 +132,8 @@ impl Command {
     }
 
     /// The judge brief of `ask`, an ask or a step with steps under it: its title, its intent lines, the
-    /// patterns of the changed files, the notes of its trail, the changed files, and its check.
+    /// patterns its ask recalled and those of the changed files, the notes of its trail, the changed
+    /// files, and its check.
     fn brief(&self, ask: Step, trails: &Store, files: &[String]) -> Vec<String> {
         let record = ask.record();
         let mut lines = vec![
@@ -153,7 +154,15 @@ impl Command {
                 None => format!("          {line}"),
             });
         }
-        for pattern in self.matched(trails, files) {
+        let patterns = trails.patterns();
+        let recalled = ask.ask().into_iter().flat_map(|a| &a.record().recalled);
+        let mut brought: Vec<Pattern> = recalled
+            .filter_map(|id| patterns.find(None, id).ok())
+            .collect();
+        brought.extend(self.matched(trails, files));
+        let mut seen = std::collections::HashSet::new();
+        brought.retain(|p| seen.insert(p.id()));
+        for pattern in brought {
             let text = crate::text::line::pattern(&pattern, trails);
             let mut pattern = text.lines();
             lines.extend(pattern.next().map(|first| format!("  pattern {first}")));
