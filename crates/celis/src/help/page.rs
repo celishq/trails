@@ -7,6 +7,7 @@ use crate::terminal::look::look;
 use celis_trails::State;
 use ratatui::style::Style;
 use ratatui::text::Span;
+use std::path::Path;
 
 /// The sections of the page: a heading, its note, and its commands with their arguments.
 const SECTIONS: &[(&str, &str, &[&str])] = &[
@@ -110,8 +111,9 @@ const NAMES: usize = 20;
 /// The width of the column of flags with their values.
 const FLAGS: usize = 18;
 
-/// The page: what celis is, then each command with what it does and its flags, then the marks.
-pub fn page() -> Vec<Styled> {
+/// The page: what celis is, then each command with what it does and its flags, then the marks and
+/// the store folder `home`, when known.
+pub fn page(home: Option<&Path>) -> Vec<Styled> {
     let mut lines = vec![
         Styled::raw("celis remembers what your agents learn, and how they do your tasks."),
         Styled::default(),
@@ -156,10 +158,19 @@ pub fn page() -> Vec<Styled> {
     lines.push(Styled::styled("Marks", BOLD));
     lines.push(marks());
     lines.push(Styled::default());
-    lines.push(Styled::styled(
-        "celis keeps your recovery phrase and records in $CELIS_HOME.",
-        DIM,
-    ));
+    match home {
+        Some(home) => {
+            lines.push(Styled::styled(
+                "celis keeps your recovery phrase and records in $CELIS_HOME:",
+                DIM,
+            ));
+            lines.push(Styled::styled(format!("  {}", home.display()), DIM));
+        }
+        None => lines.push(Styled::styled(
+            "celis keeps your recovery phrase and records in $CELIS_HOME.",
+            DIM,
+        )),
+    }
     lines.push(Styled::default());
     lines.push(Styled::styled(
         "To learn more about a command, run `celis <command> --help`.",

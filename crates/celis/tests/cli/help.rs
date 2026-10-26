@@ -2,6 +2,7 @@
 
 use crate::support;
 
+use std::path::Path;
 use std::process::{Command, Output};
 use std::time::Duration;
 use support::watch::Watch;
@@ -13,22 +14,28 @@ const PAGE: &str = include_str!("help/page.txt");
 const STEP: &str = include_str!("help/step.txt");
 
 fn run(args: &[&str]) -> Output {
-    let home = tempfile::tempdir().unwrap();
+    run_in(args, tempfile::tempdir().unwrap().path())
+}
+
+fn run_in(args: &[&str], home: &Path) -> Output {
     Command::new(env!("CARGO_BIN_EXE_celis"))
         .args(args)
-        .env("CELIS_HOME", home.path())
+        .env("CELIS_HOME", home)
         .stdin(std::process::Stdio::null())
         .output()
         .unwrap()
 }
 
-/// What a help page prints: exit 0, the page on stdout, nothing on stderr.
+/// What a help page prints: exit 0, the page on stdout with `<home>` for `$CELIS_HOME`, nothing on
+/// stderr.
 fn page(args: &[&str]) -> String {
-    let out = run(args);
+    let home = tempfile::tempdir().unwrap();
+    let out = run_in(args, home.path());
     let err = String::from_utf8_lossy(&out.stderr).to_string();
     assert_eq!(out.status.code(), Some(0), "{args:?}: {err:?}");
     assert!(err.is_empty(), "{args:?}: stderr {err:?}");
-    String::from_utf8(out.stdout).unwrap()
+    let shown = String::from_utf8(out.stdout).unwrap();
+    shown.replace(&home.path().display().to_string(), "<home>")
 }
 
 /// The fenced blocks under `## <heading>` of a spec.
@@ -312,6 +319,7 @@ fn on_a_terminal_the_page_prints_in_celis_looks() {
         assert!(shown.contains(code), "{code:?} in {shown:?}");
     }
     let plain = support::watch::plain(&shown).replace("\r\n", "\n");
+    let plain = plain.replace(&repo.home().display().to_string(), "<home>");
     let lines: Vec<&str> = plain.lines().collect();
     let page: Vec<&str> = PAGE.lines().collect();
     assert_eq!(lines, page);
