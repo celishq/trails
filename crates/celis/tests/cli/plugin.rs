@@ -195,6 +195,40 @@ fn each_agents_session_start_gives_the_card_and_its_session() {
     }
 }
 
+/// Each agent's session start gives, after the card, the index of the patterns in scope in the person's
+/// project, under one heading line; none while the store holds no pattern (`spec/02-cli.md`, "Hooks").
+#[test]
+fn each_agents_session_start_gives_the_index_of_the_patterns() {
+    let repo = Repo::new();
+    let start = |agent: &Agent| {
+        let stdout = agent.run(&repo, agent.start, &agent.payload("s1", &repo.path(), ""));
+        agent.context(&stdout)
+    };
+    for agent in AGENTS {
+        assert!(
+            !start(&agent).contains("The patterns in scope here:"),
+            "{}",
+            agent.name
+        );
+    }
+    let o = repo.run(
+        &repo.path(),
+        &["pattern", "--", "When you test: set A=1."],
+        &[],
+        "",
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let id = out(&o).lines().next().unwrap().to_string();
+    let index = format!(
+        "The patterns in scope here:\n{} project When you test",
+        &id[..8]
+    );
+    for agent in AGENTS {
+        let context = start(&agent);
+        assert!(context.contains(&index), "{}: {context}", agent.name);
+    }
+}
+
 /// Claude Code's session start asks to offer `/celis:tidy` while the store holds a pattern and no step whose
 /// title starts with "Tidy the celis trails" began in the last 7 days.
 #[test]

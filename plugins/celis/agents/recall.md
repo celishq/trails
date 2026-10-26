@@ -12,8 +12,9 @@ A pattern guides: it has a When, Forces, Do and Because, and good and bad exampl
 when its forces are present in the work the ask will do, by the When and the files, not only by shared
 words.
 
-1. Run `celis patterns`. It gives the index: each live pattern of this project and of the person, as
-   its id, its scope and its When, then its paths and each larger pattern it completes.
+1. Run `celis patterns <file>...` with the files of the ask, unless your task gives the index. It gives
+   each live pattern of this project and of the person, as its id, its scope and its When, then its
+   paths, a `match` line for each of the files they match, and each larger pattern it completes.
 2. For each pattern whose When or paths may bear on the ask or its files, run `celis grep <id>` to read
    the whole pattern and its examples. Open a larger pattern of one that bears on the ask, too. Send
    in one message each call that does not wait on another.

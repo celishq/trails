@@ -17,9 +17,10 @@ celis pattern [--scope me] [--replaces <id>] [--path <glob>]... [--within <id>].
 
 Read all that celis prints, never cut by `head` or `grep`, and do the next move it names.
 
-1. **Recall.** At a new ask, before you change a file, find the patterns that bear on it, from the
-   index that `celis patterns` gives or through the `celis:recall` agent, as you choose. Name each on
-   the ask with `--recalled <id>`.
+1. **Recall.** At a new ask, before you change a file, find the patterns that bear on it. The index is
+   in your context from the session start; read it again with `celis patterns <file>...` when patterns
+   may have changed. Open what bears on the ask with `celis grep <id>` or through the `celis:recall`
+   agent, and name each on the ask with `--recalled <id>`.
 2. **Work.** An ask that changes a file, or works toward a result someone can check, gets a step; a
    question, an explanation or a review you only report on gets none. Its title names what it changes,
    in words that hold in another project. Before the work, the person needs to see what they will be

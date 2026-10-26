@@ -259,10 +259,12 @@ antigravity     {"injectSteps": [{"ephemeralMessage": "<text>"}]}
 
 **Rules**
 
-- `hook` MUST read the hook's JSON on stdin, and act on it as "Prompt" states. `hook ask`
-  MUST act in the folder the JSON names in `cwd`, else in the first of `workspace_roots`.
+- `hook` MUST read the hook's JSON on stdin, and act on it as "Prompt" states. It MUST act in the
+  folder the JSON names in `cwd`, else in the first of `workspace_roots`, else of `workspacePaths`.
 - `hook start` MUST read the card from `card.md` and the plugin's version from `.claude-plugin/plugin.json`
   in `<plugin folder>`.
+- After the card, `hook start` MUST print the line `The patterns in scope here:`, then what `patterns`
+  prints with no `<file>` ("Patterns"). It MUST print neither when no pattern is live in scope.
 - `hook` MUST print in the shape of `<agent>`, and nothing when it has no text, but Cursor's ask.
 - `hook` MUST exit 0 on any error but a usage error.
 

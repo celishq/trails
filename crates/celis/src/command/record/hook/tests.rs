@@ -35,3 +35,69 @@ fn each_agent_reads_the_text_in_its_shape() {
         serde_json::from_str(&shape("antigravity", "SessionStart", "a")).unwrap();
     assert_eq!(antigravity["injectSteps"][0]["ephemeralMessage"], "a");
 }
+
+/// A run of `celis` in a new project, with its own store.
+struct Desk {
+    home: tempfile::TempDir,
+    project: tempfile::TempDir,
+}
+
+impl Desk {
+    fn new() -> Desk {
+        Desk {
+            home: tempfile::tempdir().unwrap(),
+            project: tempfile::tempdir().unwrap(),
+        }
+    }
+
+    /// The command of `words`, in the folder `folder`.
+    fn command(&self, words: &[&str], folder: &Path) -> Command {
+        let home = self.home.path().display().to_string();
+        Command {
+            args: words.iter().map(|w| w.to_string()).collect(),
+            env: [("CELIS_HOME".to_string(), home)].into(),
+            folder: folder.to_path_buf(),
+        }
+    }
+
+    /// What the session start in the project gives `agent`, from a hook that runs in `folder`.
+    fn start(&self, agent: &str, folder: &Path) -> String {
+        let json = json!({"session_id": "s1", "cwd": self.project.path()});
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../plugins/celis");
+        self.command(&[], folder).start(agent, &json, &root)
+    }
+}
+
+/// The session start gives the index of the patterns in scope in the project the JSON names, under one
+/// heading line, after the card (`spec/02-cli.md`, "Hooks").
+#[test]
+fn the_session_start_gives_the_index_of_the_project() {
+    let desk = Desk::new();
+    let words = [
+        "pattern",
+        "--path",
+        "*.svg",
+        "--",
+        "When a logo is drawn: keep it flat.",
+    ];
+    let write = desk.command(&words, desk.project.path());
+    assert_eq!(write.run(&mut Vec::new(), &mut Vec::new()), 0);
+    let mut index = Vec::new();
+    let read = desk.command(&["patterns"], desk.project.path());
+    assert_eq!(read.run(&mut index, &mut Vec::new()), 0);
+    let index = String::from_utf8(index).unwrap();
+    let elsewhere = tempfile::tempdir().unwrap();
+    let text = desk.start("claude", elsewhere.path());
+    let given = format!("\n\nThe patterns in scope here:\n{}", index.trim_end());
+    assert!(text.contains(&given), "{text}");
+    assert!(text.find("How to do an ask").unwrap() < text.find(&given).unwrap());
+}
+
+/// The session start gives no index while the store holds no pattern (`spec/02-cli.md`, "Hooks").
+#[test]
+fn the_session_start_gives_no_index_without_a_pattern() {
+    let desk = Desk::new();
+    let text = desk.start("claude", desk.project.path());
+    assert!(text.starts_with("How to do an ask"), "{text}");
+    assert!(!text.contains("The patterns in scope here"), "{text}");
+}

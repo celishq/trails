@@ -46,7 +46,8 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
 3. **The agent reads the index of all patterns in scope and opens what bears on the ask.**
    - `celis patterns` gives the index: each live pattern in scope as its id and its When. `celis grep
      <id>` gives the whole pattern. The agent reads the index itself or through the `celis:recall`
-     agent. celis has no vector, no word match and no rank.
+     agent. celis has no vector, no word match and no rank. The session start gives the index, so the
+     agent has it before the first ask.
    - The ask records the patterns the agent recalled as `recalled` tags. Tidy reads them with the uses.
    - Past trails serve the learn and tidy, not recall.
 4. **What goes in matters more than recall.** The agent learns at each close, and only there: when an
