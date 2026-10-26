@@ -2,7 +2,7 @@
 
 use crate::support;
 
-use support::{account, add, cli, err, now, out, step_note, Repo};
+use support::{account, add, cli, err, mark_note, now, out, step_note, Repo};
 
 /// The stderr lines of `celis step done <id> <how> -- proof`, which must succeed.
 fn done(repo: &Repo, id: &str, how: &[&str]) -> Vec<String> {
@@ -106,7 +106,7 @@ fn done_on_an_ask_prints_the_end_to_fill() {
     assert_eq!(
         done(&repo, &ask.id, &["--as-planned", "--by", "person"]),
         [
-            format!("celis: the ask {a} is done. Write each pattern a later plan must keep with celis pattern. Then answer the person with the lines below alone: fill each <…>, and remove each line you do not need."),
+            format!("celis: the ask {a} is done. Do the learn below the total line first. Then answer the person with the lines down to the total line alone: fill each <…>, and remove each line you do not need."),
             String::new(),
             "**<what was done, in one line>**".to_string(),
             String::new(),
@@ -115,8 +115,11 @@ fn done_on_an_ask_prints_the_end_to_fill() {
             "- [!] **Not proven:** <what the judge could not check, and each file git diff --stat shows changed outside a.rs, b.rs>".to_string(),
             "- [+] **I chose:** claim: it took the cache · <the pattern that decided it, or none>".to_string(),
             "- [+] **I chose:** <each choice you took yourself> · <the pattern that decided it, or none>".to_string(),
+            "- [+] **Learned:** <each pattern you wrote, as its id and When>".to_string(),
             String::new(),
             "celis · 4 steps · 1 checked · 1 judged · 1 person · 1 not proven · 10m".to_string(),
+            learn(a),
+            format!("  changed {} it took the cache", &claim[..8]),
         ]
     );
 }
@@ -136,9 +139,60 @@ fn an_end_whose_steps_share_one_proof_totals_them_as_all() {
     );
     done(&repo, &part, &["--as-planned"]);
     let lines = done(&repo, &ask, &["--as-planned"]);
+    assert!(
+        lines.contains(&"celis · 2 steps · all checked · 0m".to_string()),
+        "{lines:?}"
+    );
+}
+
+/// The head of the learn brief of the ask `a`.
+fn learn(a: &str) -> String {
+    format!("celis: before you answer, learn from the ask {a}. Write a pattern with celis pattern for each choice of the ask that will come back, such as those below, and give --replaces <id> to a pattern that misled you. Write nothing when the ask taught nothing.")
+}
+
+/// `done` of an ask ends with the learn brief: each `changed` of the ask and of its steps, each note of
+/// its trail and each prompt on its trail (`spec/02-cli.md`, "Step").
+#[test]
+fn done_on_an_ask_ends_with_the_learn_brief() {
+    let repo = Repo::new();
+    let by = &account();
+    let began = now() - 60;
+    let trail = step_note(&repo, by, None, "the trail", began);
+    let ask = step_note(&repo, by, Some(&trail), "the ask", began);
+    mark_note(&repo, by, "prompt", &trail.id, "make it blue", began + 1);
+    let a = &ask.id[..8];
+    let part = add(&repo, &["--under", a, "--", "part"]);
+    done(&repo, &part, &["--changed", "it took the cache"]);
+    let note = cli(
+        &repo,
+        &[
+            "step",
+            "note",
+            a,
+            "--",
+            "keep the old table\nuntil the release",
+        ],
+    );
+    assert!(note.status.success(), "{}", err(&note));
+    let lines = done(
+        &repo,
+        &ask.id,
+        &["--changed", "it went blue", "--by", "person"],
+    );
+    let total = lines
+        .iter()
+        .position(|l| l.starts_with("celis · "))
+        .unwrap();
     assert_eq!(
-        lines.last().map(String::as_str),
-        Some("celis · 2 steps · all checked · 0m")
+        lines[total + 1..],
+        [
+            learn(a),
+            format!("  changed {} it took the cache", &part[..8]),
+            format!("  changed {a} it went blue"),
+            "  note    keep the old table".to_string(),
+            "          until the release".to_string(),
+            "  asked   make it blue".to_string(),
+        ]
     );
 }
 

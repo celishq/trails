@@ -1,22 +1,25 @@
 //! What the person must look at when an ask closes.
 
-use super::Proof;
+use super::{Learn, Proof};
+use celis_nostr::Note;
 use celis_store::StepId;
 use celis_trails::{Done, Step};
 
 /// What the person must look at when an ask closes: each done step with who stands behind its proof and
-/// what changed from its plan, the places of its steps, and the minutes since the ask began.
+/// what changed from its plan, the places of its steps, the minutes since the ask began, and what it
+/// taught.
 pub(crate) struct End {
     pub ask: StepId,
     pub proofs: Vec<(String, Proof)>,
     pub turns: Vec<(String, String)>,
     pub places: Vec<String>,
     pub minutes: u64,
+    pub learn: Learn,
 }
 
 impl End {
-    /// The end of the ask `step`, just closed `done` at `now`.
-    pub fn of(step: Step, done: &Done, now: u64) -> End {
+    /// The end of the ask `step`, just closed `done` at `now`, from `records`.
+    pub fn of(records: &[Note], step: Step, done: &Done, now: u64) -> End {
         let tree = step.tree();
         let closed: Vec<(Step, Done)> = tree
             .iter()
@@ -44,11 +47,12 @@ impl End {
                 .collect(),
             places,
             minutes: now.saturating_sub(from) / 60,
+            learn: Learn::of(records, step, done),
         }
     }
 
-    /// The lines to give the agent: what to do, then the draft it fills for the person, with a `<…>` for
-    /// each part only the agent knows.
+    /// The lines to give the agent: what to do, the draft it fills for the person, with a `<…>` for each
+    /// part only the agent knows, then the learn brief.
     pub fn lines(&self) -> Vec<String> {
         let outside = match self.places.is_empty() {
             true => String::new(),
@@ -58,7 +62,7 @@ impl End {
             ),
         };
         let mut lines = vec![
-            format!("celis: the ask {} is done. Write each pattern a later plan must keep with celis pattern. Then answer the person with the lines below alone: fill each <…>, and remove each line you do not need.", &self.ask[..8]),
+            format!("celis: the ask {} is done. Do the learn below the total line first. Then answer the person with the lines down to the total line alone: fill each <…>, and remove each line you do not need.", &self.ask[..8]),
             String::new(),
             "**<what was done, in one line>**".to_string(),
             String::new(),
@@ -78,8 +82,10 @@ impl End {
         lines.push(format!(
             "- [+] **I chose:** <each choice you took yourself> · {DECIDED}"
         ));
+        lines.push("- [+] **Learned:** <each pattern you wrote, as its id and When>".to_string());
         lines.push(String::new());
         lines.push(self.total());
+        lines.extend(self.learn.lines());
         lines
     }
 
