@@ -55,13 +55,12 @@ and closes it with a proof, or drops it.
 **Readers**
 
 ```
-open      no `start`, `done` or `drop` names the step
-working   a `start` names it, and no `done` or `drop`
-done      a `done` names it
-dropped   a `drop` names it
+open      no `done` or `drop` settles the step
+done      a `done` settles it
+dropped   a `drop` settles it, or names it as a done trail
 ```
 
-- A `start` MUST NOT close its step.
+- A `start` MUST NOT close its step. The step stays open.
 
 ## Closing
 
@@ -105,7 +104,7 @@ dropped   a `drop` names it
 **Readers**
 
 - A reader MUST ignore a drop with no content.
-- A drop of a done trail MUST keep it done. The trail is then **dropped after done**.
+- A drop of a done trail MUST make it dropped, and its `done` MUST keep its proof.
 
 ## Editing
 

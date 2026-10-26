@@ -152,11 +152,11 @@ note  json  {"id", "created_at", "step", "content"}
   with `closed`; a `--replaces` of a trail with no first ask as a usage error; a `--uses` that no live
   pattern and no step has, with `no-step`; and a `--uses` of a step of its own trail, or that starts both
   a pattern's and a step's id, as a usage error.
-- `start` and `done` MUST refuse a closed step, with `closed`. `start` of a working step MUST write
-  nothing and print the id of its first `start`.
+- `start` and `done` MUST refuse a closed step, with `closed`. `start` of a step that a `start` names
+  MUST write nothing and print the id of its first `start`.
 - `drop` MUST take the id of a step or a pattern. It MUST refuse a dropped step, a done step that is not a
-  trail, a trail dropped after done, and a pattern that is not live, with `closed`; and an id that starts
-  both a pattern's and a step's id as a usage error.
+  trail, and a pattern that is not live, with `closed`; and an id that starts both a pattern's and a
+  step's id as a usage error.
 - `done` MUST take one of `--changed <text>` and `--as-planned`, and a proof, else refuse as a usage
   error. It MUST refuse a step with an open step under it, with `open-steps`.
 - The changed files of a `done` are each file that `git diff --name-only HEAD` or
@@ -250,7 +250,7 @@ trails with it.
 
 ```
 view    <yyyy-mm-dd> <trail id8 | -> [<project name>] <kind> <id8> <fields> <text>
-          trail | step   <open | working | done | done-dropped | dropped | expired>[ revised-by <id>,…][ at:<place>]…
+          trail | step   <open | done | dropped>[ revised-by <id>,…][ at:<place>]…
           pattern        <live | replaced-by <id> | dropped> {<me | project>}
                            [ trigger][ binds][ cell:<cell>]…[ recalled:<yyyy-mm-dd>]
           proof | changed | dropped | note                       the step's or pattern's id, no fields
