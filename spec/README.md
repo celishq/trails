@@ -63,7 +63,7 @@ Every change of `spec/` MUST keep these rules:
 | 1985 with `prompt` in `celis.step` | kind: a person's prompt, on the trail (NIP-32) | 04 |
 | 1111 with `pattern` in `celis.pattern` | kind: a pattern (NIP-22) | 05 |
 | `scope` · `replaces` | pattern tags | 05 |
-| `path` | pattern tag: the trigger | 05 |
+| `path` | pattern tag: its paths | 05 |
 | `good` · `bad` | pattern tags: its examples | 05 |
 | `within` | pattern tag: the larger pattern it completes | 05 |
 | `me` · `project` | the scopes of a pattern | 05 |

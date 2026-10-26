@@ -188,16 +188,9 @@ fn pattern(entry: &Pattern, steps: &Steps, trails: &Store) -> Vec<Row> {
         text: flat(text),
     };
     let mut fields = vec![state, format!("{{{}}}", pattern.scope.text())];
-    let marks = [
-        (!pattern.paths.is_empty(), "trigger"),
-        (pattern.old_rule, "old-rule"),
-    ];
-    fields.extend(
-        marks
-            .into_iter()
-            .filter(|(on, _)| *on)
-            .map(|(_, mark)| mark.to_string()),
-    );
+    if pattern.old_rule {
+        fields.push("old-rule".to_string());
+    }
     let recalls = steps.recalls(&note.id);
     let uses = steps.all().into_iter();
     let uses = uses.filter(|s| s.record().uses.contains(&note.id));

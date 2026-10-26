@@ -1,4 +1,4 @@
-//! CIP-05, "Triggers", and CIP-02, "Step".
+//! CIP-05, "Paths", and CIP-02, "Step".
 
 use crate::support;
 
@@ -48,7 +48,7 @@ fn texts(repo: &Repo, args: &[&str]) -> Vec<String> {
 }
 
 /// A pattern matches a file when one of its `path` globs matches the file's path, whether the file exists
-/// or not (`spec/05-patterns.md`, "Triggers").
+/// or not (`spec/05-patterns.md`, "Paths").
 #[test]
 fn a_path_glob_matches_the_file() {
     let repo = Repo::new();
@@ -86,10 +86,10 @@ fn a_folder_gives_the_patterns_of_its_files() {
     assert_eq!(here, ["floats", "markdown"]);
 }
 
-/// A pattern from an older version with only a `tool` tag reads with no trigger, and never comes
+/// A pattern from an older version with only a `tool` tag reads with no path, and never comes
 /// (`spec/README.md`, "Names").
 #[test]
-fn an_older_pattern_with_a_tool_tag_has_no_trigger() {
+fn an_older_pattern_with_a_tool_tag_has_no_path() {
     let repo = Repo::new();
     tagged(&repo, &[("tool", "^Grep$")], "grep", support::now() - DAY);
     let o = repo.run(&repo.path(), &["grep", " pattern "], &[], "");
@@ -110,12 +110,12 @@ fn an_at_pattern_comes_at_its_place() {
     assert!(patterns(&repo, &["b.py"]).is_empty());
 }
 
-/// A pattern with no trigger and no `at:<place>` never comes by a file, and a pattern with a trigger comes at
-/// its files (`spec/05-patterns.md`, "Triggers"; `spec/02-cli.md`, "Step").
+/// A pattern with no path and no `at:<place>` never comes by a file, and a pattern with a path comes at its
+/// files (`spec/05-patterns.md`, "Paths"; `spec/02-cli.md`, "Step").
 #[test]
-fn a_pattern_with_no_trigger_never_comes() {
+fn a_pattern_with_no_path_never_comes() {
     let repo = Repo::new();
-    decide(&repo, &[], "no trigger");
+    decide(&repo, &[], "no path");
     decide(&repo, &["--scope", "me"], "mine");
     assert!(patterns(&repo, &["README.md"]).is_empty());
     decide(&repo, &["--path", "*.md"], "both");
@@ -178,11 +178,11 @@ fn every_pattern_comes_on_each_call() {
     assert_eq!(texts(&repo, &["README.md"]), first);
 }
 
-/// The grep view marks a pattern with a trigger, and gives no mark for `--binds` (`spec/02-cli.md`, "Grep").
+/// The grep view gives no mark for a path or for `--binds` (`spec/02-cli.md`, "Grep").
 #[test]
-fn grep_marks_triggers() {
+fn grep_marks_no_paths() {
     let repo = Repo::new();
-    let trigger = decide(&repo, &["--path", "Makefile"], "trigger");
+    let path = decide(&repo, &["--path", "Makefile"], "path");
     let all = decide(&repo, &["--path", "*.md", "--binds"], "all");
     let plain = decide(&repo, &[], "plain");
     let o = repo.run(&repo.path(), &["grep", " pattern "], &[], "");
@@ -194,14 +194,8 @@ fn grep_marks_triggers() {
             .unwrap()
             .to_string()
     };
-    assert!(
-        line(&trigger).ends_with("live {project} trigger trigger"),
-        "{shown}"
-    );
-    assert!(
-        line(&all).ends_with("live {project} trigger all"),
-        "{shown}"
-    );
+    assert!(line(&path).ends_with("live {project} path"), "{shown}");
+    assert!(line(&all).ends_with("live {project} all"), "{shown}");
     assert!(line(&plain).ends_with("live {project} plain"), "{shown}");
 }
 
@@ -209,7 +203,7 @@ fn grep_marks_triggers() {
 /// `--binds` and writes nothing for it; `--promoted`, `--tool`, `--content` and `--command` are no
 /// flags (`spec/02-cli.md`, "Commands").
 #[test]
-fn pattern_writes_the_trigger_and_labels() {
+fn pattern_writes_the_paths_and_labels() {
     let repo = Repo::new();
     std::fs::create_dir_all(repo.path().join("shelf")).unwrap();
     let o = repo.run(
@@ -236,10 +230,10 @@ fn pattern_writes_the_trigger_and_labels() {
     }
 }
 
-/// A pattern from before triggers still reads, with its place as its paths and no label, and comes at
+/// A pattern from before paths still reads, with its place as its paths and no label, and comes at
 /// its place (`spec/05-patterns.md`, "Reading").
 #[test]
-fn an_older_pattern_with_no_trigger_still_reads() {
+fn an_older_pattern_with_no_path_still_reads() {
     let repo = Repo::new();
     let id = repo.project_id();
     let at = support::now() - DAY;

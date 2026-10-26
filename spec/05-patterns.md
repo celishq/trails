@@ -30,7 +30,7 @@ forces are present, work resolves them; where they are not, it does not apply.
 - `scope`: optional; where the pattern holds ("Scope"). With none, it holds in the project.
 - `replaces`: optional; the pattern this one takes the place of.
 - `path`: optional, repeatable; a file the pattern acts on, as a glob from the project's top folder
-  ("Triggers").
+  ("Paths").
 - content: text for an agent. A reader MAY show it, and does not parse it.
 
 A drop (CIP-03, "Dropping") MAY name a pattern, with why it no longer holds.
@@ -75,7 +75,7 @@ me        in every project
 - A reader MUST read a live pattern with the scope `trail:<id>`, which older writers wrote, as a note on
   the trail `<id>` (CIP-04, "Notes"), and not as a pattern.
 
-## Triggers
+## Paths
 
 ```
 <glob>    a path from the project's top folder: * within a segment, ** across segments, ? one character

@@ -126,7 +126,7 @@ impl PatternRecord {
         (pattern && note.kind == 1111 && !trail.is_empty()).then_some(trail)
     }
 
-    /// Whether the pattern matches one of `paths` (CIP-05, "Triggers").
+    /// Whether the pattern matches one of `paths` (CIP-05, "Paths").
     pub fn matches(&self, paths: &[String]) -> bool {
         let globs: Vec<Glob> = self.paths.iter().map(|p| Glob::new(p)).collect();
         paths

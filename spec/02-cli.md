@@ -173,7 +173,7 @@ note  json  {"id", "created_at", "step", "content"}
   than `judge` or `person` is a usage error. Each `done --file` MUST be kept as a blob and named by an
   `imeta` tag (CIP-08), and a file that is not there is a usage error.
 - `done` of a step that is not an ask MUST print each live pattern in scope that a changed file matches
-  (CIP-05, "Triggers"), whole with its examples, once: in the judge brief when it prints one, else as
+  (CIP-05, "Paths"), whole with its examples, once: in the judge brief when it prints one, else as
   a list, by id.
 - `drop` MUST refuse an empty reason, and `edit` one with no text, `--at` or `--check`, as usage errors.
 - `note` MUST write its text as a note on the step (CIP-03, "Notes"), and refuse empty text as a usage
@@ -223,8 +223,8 @@ agent reads it, and reads the whole of a pattern with `grep <id8>`.
 ```
 <id8> <scope> <When>     each pattern; its When is the first line of its text, and of a text of one
                          line, the part before its first `:`
-  path   <glob>          each `path` of it (CIP-05, "Triggers")
-  match  <file>          each `<file>` that one of its paths matches (CIP-05, "Triggers")
+  path   <glob>          each `path` of it (CIP-05, "Paths")
+  match  <file>          each `<file>` that one of its paths matches (CIP-05, "Paths")
   within <id8>           each larger pattern it completes (CIP-05, "Graph")
 no pattern yet           when there is none
 ```
@@ -283,7 +283,7 @@ trails with it.
 view    <yyyy-mm-dd> <trail id8 | -> [<project name>] <kind> <id8> <fields> <text>
           trail | step   <open | done | dropped>[ revised-by <id>,…][ at:<place>]…
           pattern        <live | replaced-by <id> | dropped> {<me | project>}
-                           [ trigger][ old-rule][ recalls:<n> uses:<n>][ recalled:<yyyy-mm-dd>]
+                           [ old-rule][ recalls:<n> uses:<n>][ recalled:<yyyy-mm-dd>]
           proof | changed | dropped | note                       the step's or pattern's id, no fields
           prompt                                                 the trail's id, no fields (CIP-04, "Sessions")
           good | bad                                             the pattern's id, no fields, and an example:
@@ -298,10 +298,10 @@ end     project [<project name>]
 ```
 
 `<id8>` is the first 8 characters of an id. A text holds each newline as a space. After its state and
-scope, a pattern's fields give ` trigger` when it has a trigger tag (CIP-05), ` old-rule` when it has the
-`binds` label that older writers wrote (CIP-05, "Reading"), ` recalls:<n> uses:<n>` with how many asks
-name it in `recalled` and how many steps name it in `uses` (CIP-06, "Uses"), when one is not 0, and
-` recalled:<day>` with the day of the newest ask whose `recalled` names it (CIP-06, "Recalls").
+scope, a pattern's fields give ` old-rule` when it has the `binds` label that older writers wrote (CIP-05,
+"Reading"), ` recalls:<n> uses:<n>` with how many asks name it in `recalled` and how many steps name it in
+`uses` (CIP-06, "Uses"), when one is not 0, and ` recalled:<day>` with the day of the newest ask whose
+`recalled` names it (CIP-06, "Recalls").
 
 **Rules**
 

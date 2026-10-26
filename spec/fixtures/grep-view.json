@@ -10,10 +10,10 @@
     "has written the record. All records are made on 2026-01-15 at noon UTC, in the order of `lines`",
     "read from the bottom of each block: the trail, then the table step, its done, the chart step, its",
     "drop, an older pattern of the trail's scope, the floats pattern, the cents pattern that replaces it, the me pattern with a tag that older writers wrote and the view leaves out, a pattern with the",
-    "older situation label, the me pattern with a trigger and a good URL, a note on the table step, a prompt on the trail, and the prices ask that recalls and uses the cents pattern, with its done. The older trail pattern prints as a note on the trail."
+    "older situation label, the me pattern with a path and a good URL, a note on the table step, a prompt on the trail, and the prices ask that recalls and uses the cents pattern, with its done. The older trail pattern prints as a note on the trail."
   ],
   "lines": [
-    "2026-01-15 - [repo] pattern <push> live {me} trigger When you push: run the tests first.",
+    "2026-01-15 - [repo] pattern <push> live {me} When you push: run the tests first.",
     "2026-01-15 - [repo] good <push> https://example.com/ci",
     "2026-01-15 - [repo] pattern <situation> live {project} When the person asks a question: answer it first.",
     "2026-01-15 - [repo] pattern <me> live {me} When you write a commit message: use plain words.",
@@ -45,7 +45,7 @@
     "  changed <table> a list, not a table",
     "  note <table> Keep the table sortable.",
     "- patterns of no trail",
-    "  [repo] pattern <push> live {me} trigger When you push: run the tests first.",
+    "  [repo] pattern <push> live {me} When you push: run the tests first.",
     "  [repo] good <push> https://example.com/ci",
     "  [repo] pattern <situation> live {project} When the person asks a question: answer it first.",
     "  [repo] pattern <me> live {me} When you write a commit message: use plain words.",
@@ -54,7 +54,7 @@
   ],
   "kept": [
     "- patterns of no trail",
-    "  [repo] pattern <push> live {me} trigger When you push: run the tests first.",
+    "  [repo] pattern <push> live {me} When you push: run the tests first.",
     "  [repo] pattern <situation> live {project} When the person asks a question: answer it first.",
     "  [repo] pattern <new> live {project} recalls:1 uses:1 recalled:2026-01-15 When a price prints: use cents."
   ]
