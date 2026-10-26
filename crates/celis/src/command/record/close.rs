@@ -150,8 +150,7 @@ impl Command {
                 None => format!("          {line}"),
             });
         }
-        let fits = self.fits(trails, ask.title(), files, &mut std::io::sink());
-        for pattern in fits.unwrap_or_default() {
+        for pattern in self.fits(trails, ask.title(), files) {
             let kind = if pattern.record.binds {
                 "rule"
             } else {

@@ -43,7 +43,6 @@ const SECTIONS: &[(&str, &str, &[&str])] = &[
             "auth login",
             "auth status",
             "auth phrase",
-            "setup",
             "update [<version>]",
             "issue [<id>]...",
         ],
@@ -58,7 +57,6 @@ const PHRASES: &[(&str, &str)] = &[
         "search",
         "Show the rules, patterns and past asks that fit an ask",
     ),
-    ("setup", "Choose and download the model that search uses"),
     (
         "patterns",
         "Show your patterns with their good and bad examples",

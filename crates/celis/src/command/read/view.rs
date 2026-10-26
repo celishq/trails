@@ -27,10 +27,6 @@ pub(crate) struct View {
 }
 
 impl View {
-    pub fn of(trails: &Store) -> View {
-        View::recalled(trails, &Recalls::default())
-    }
-
     /// The view of `trails`, each pattern with the day `recalled` gives for its short id.
     pub fn recalled(trails: &Store, recalled: &Recalls) -> View {
         let (steps, patterns, notes) = (trails.steps(), trails.patterns(), trails.notes());
@@ -59,11 +55,6 @@ impl View {
             lines,
             headers,
         }
-    }
-
-    #[cfg_attr(not(feature = "search"), allow(dead_code))]
-    pub fn into_rows(self) -> Vec<Row> {
-        self.rows
     }
 
     /// The lines, one a row.

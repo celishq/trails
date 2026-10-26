@@ -1,15 +1,7 @@
 //! `celis search`: the rules, the other patterns and the past asks that fit an ask.
 
-#[cfg(feature = "search")]
-mod meaning;
-#[cfg(not(feature = "search"))]
-#[path = "search/off.rs"]
-mod meaning;
 pub(crate) mod recalls;
-#[cfg(feature = "search")]
-mod setup;
 
-use crate::command::read::view::kind::Kind;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::text::clock::date;
@@ -18,7 +10,7 @@ use celis_store::records::id::short;
 use celis_store::Store;
 use celis_trails::{Step, TrailStore};
 use recalls::Recalls;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::io::Write;
 
 impl Command {
@@ -37,36 +29,24 @@ impl Command {
             None => vec![Part::Rules, Part::Patterns, Part::Past],
             Some("rule") => vec![Part::Rules],
             Some("pattern") => vec![Part::Patterns],
-            Some("trail") => {
-                return self.listed(
-                    &ask,
-                    Kind::Trail,
-                    (limit.unwrap_or(20), args.json),
-                    out,
-                    err,
-                )
-            }
-            Some("step") => {
-                return self.listed(&ask, Kind::Step, (limit.unwrap_or(20), args.json), out, err)
-            }
             Some(kind) => {
                 return Err(Failure::usage(format!(
-                    "--kind takes rule, pattern, trail or step, not {kind}"
+                    "--kind takes rule or pattern, not {kind}"
                 )))
             }
         };
         if args.json {
-            return Err(Failure::usage("--json takes --kind trail or --kind step"));
+            return Err(Failure::usage("search takes no --json"));
         }
         if !self.held()? {
             return crate::command::put(out, NOTHING);
         }
         let trails = self.trails()?;
         let files = &args.words[1..];
-        let found = self.fits(&trails, &ask, files, err)?;
+        let found = self.fits(&trails, &ask, files);
         let steps = trails.steps();
         let past = match parts.contains(&Part::Past) {
-            true => self.past(&ask, &steps.all(), err)?,
+            true => self.past(&ask, &steps.all()),
             false => vec![],
         };
         let mut said = vec![];
@@ -127,15 +107,14 @@ impl Command {
         }
     }
 
-    /// The live patterns in scope that fit `ask` by its `files`, their cells, its words or its meaning, in
-    /// the order `Patterns::fitting` gives.
+    /// The live patterns in scope that fit `ask` by its `files`, their cells or its words, in the order
+    /// `Patterns::fitting` gives.
     pub(crate) fn fits<'a>(
         &self,
         trails: &'a Store,
         ask: &str,
         files: &[String],
-        err: &mut dyn Write,
-    ) -> Result<Vec<Pattern<'a>>, Failure> {
+    ) -> Vec<Pattern<'a>> {
         let project = self.project();
         let paths: Vec<String> = files
             .iter()
@@ -143,11 +122,6 @@ impl Command {
             .collect();
         let patterns = trails.patterns();
         let live = patterns.live(&project.anchor.project);
-        let ids: HashSet<String> = live.iter().map(|p| short(p.id())).collect();
-        let meant: HashSet<String> = self
-            .meant(ask, (Kind::Pattern, &ids), err)?
-            .into_iter()
-            .collect();
         let whens: Vec<HashSet<String>> = live
             .iter()
             .map(|p| words(when(&p.record.content)))
@@ -172,29 +146,19 @@ impl Command {
                 .map(|c| c.name())
                 .any(|c| filed.contains(c) || !words(c).is_disjoint(&named))
         };
-        Ok(
-            patterns.fitting(&project.anchor.project, &paths, cell, |p| {
-                meant.contains(&short(p.id()))
-                    || !words(when(&p.record.content)).is_disjoint(&asked)
-            }),
-        )
+        patterns.fitting(&project.anchor.project, &paths, cell, |p| {
+            !words(when(&p.record.content)).is_disjoint(&asked)
+        })
     }
 
-    /// The done asks among `steps` most like `ask`: those alike in meaning first, then those whose
-    /// title and trail's title share the most words with it, newest first.
-    fn past<'a>(
-        &self,
-        ask: &str,
-        steps: &[Step<'a>],
-        err: &mut dyn Write,
-    ) -> Result<Vec<Step<'a>>, Failure> {
+    /// The done asks among `steps` whose title and trail's title share the most words with `ask`, newest
+    /// first.
+    fn past<'a>(&self, ask: &str, steps: &[Step<'a>]) -> Vec<Step<'a>> {
         let done: Vec<Step> = steps
             .iter()
             .copied()
             .filter(|s| s.is_ask() && s.state_word() == "done")
             .collect();
-        let ids: HashSet<String> = done.iter().map(|s| short(s.id())).collect();
-        let meant = self.meant(ask, (Kind::Step, &ids), err)?;
         let asked = words(ask);
         let mut shared: Vec<(usize, Step)> = done
             .iter()
@@ -203,7 +167,7 @@ impl Command {
                 titles.extend(words(s.trail().title()));
                 (titles.intersection(&asked).count(), *s)
             })
-            .filter(|(n, s)| *n >= SHARED && !meant.contains(&short(s.id())))
+            .filter(|(n, _)| *n >= SHARED)
             .collect();
         shared.sort_by_key(|(n, s)| {
             (
@@ -211,9 +175,7 @@ impl Command {
                 std::cmp::Reverse(s.note().created_at),
             )
         });
-        let by_id: HashMap<String, Step> = done.iter().map(|s| (short(s.id()), *s)).collect();
-        let alike = meant.iter().filter_map(|id| by_id.get(id).copied());
-        Ok(alike.chain(shared.into_iter().map(|(_, s)| s)).collect())
+        shared.into_iter().map(|(_, s)| s).collect()
     }
 
     /// The patterns `search` gave on this machine.
@@ -281,9 +243,6 @@ fn lines(ask: Step) -> Vec<String> {
 
 /// What `search` prints when nothing fits.
 const NOTHING: &str = "nothing fits this ask";
-
-/// What `search` prints by meaning when no model was set up.
-const NONE: &str = "celis search has no model: search with celis grep, or run celis setup.";
 
 /// Words too common to tell patterns apart.
 const COMMON: &[&str] = &[

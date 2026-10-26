@@ -270,17 +270,16 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "search",
         usage: &["celis search [<file>]... [--kind <kind>] [--limit <n>] -- <ask>"],
-        summary: "Show what fits an ask: the patterns of this project that its files, its words or its meaning match, the rules first, then the other patterns, each with its good and bad examples, then up to 2 done asks of any project like it, with their steps. With --kind trail or step, show the records of that kind most alike in meaning, by the model celis setup chose, with their score; with no model, says to use celis grep. Changes nothing.",
+        summary: "Show what fits an ask: the patterns of this project that its files or its words match, the rules first, then the other patterns, each with its good and bad examples, then up to 2 done asks of any project like it, with their steps. Changes nothing.",
         args: &[
             ("<file>", "A file or folder the ask will touch"),
-            ("--kind", "Only rule (a pattern that binds), pattern, trail, or step"),
-            ("--limit", "Show <n> patterns and past asks; 20 for trail or step"),
+            ("--kind", "Only rule (a pattern that binds), or pattern"),
+            ("--limit", "Show <n> patterns and past asks"),
             ("<ask>", "The ask, in any words and any language"),
         ],
         examples: &[
             "celis search -- \"cut the release\"",
             "celis search shelf/prices.py -- \"round the prices\"",
-            "celis search --kind trail --limit 5 -- \"make retrieval faster\"",
         ],
     },
     Verb {
@@ -396,17 +395,6 @@ pub const VERBS: &[Verb] = &[
         summary: "Show your recovery phrase, so you can add it to the Celis app or another computer.",
         args: &[],
         examples: &["celis auth phrase"],
-    },
-    Verb {
-        command: "setup",
-        usage: &["celis setup [--model <model>]"],
-        summary: "Choose the model that celis search uses, download it from Hugging Face, and index your records. On a terminal with no model, ask for one from the list; else print the list. none turns search off and removes the downloaded models.",
-        args: &[("--model", "embeddinggemma, e5-small, or none")],
-        examples: &[
-            "celis setup",
-            "celis setup --model embeddinggemma",
-            "celis setup --model none",
-        ],
     },
     Verb {
         command: "update",

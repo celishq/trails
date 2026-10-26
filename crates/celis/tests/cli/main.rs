@@ -23,7 +23,6 @@ mod reading;
 mod reuse;
 mod scope;
 mod search;
-mod setup;
 mod spec_citations;
 mod stats_watch;
 mod step_commands;

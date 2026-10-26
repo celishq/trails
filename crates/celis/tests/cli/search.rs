@@ -3,43 +3,17 @@
 use crate::support;
 
 use support::{
-    account, add, cli, err, now, out, refusal, stored_pattern, tagged_pattern, tiny_model, Repo,
-    DAY,
+    account, add, cli, err, now, out, refusal, stored_pattern, tagged_pattern, Repo, DAY,
 };
 
-/// The JSON objects `celis search --json <args>` prints, one a line.
-fn objects(repo: &Repo, args: &[&str]) -> Vec<serde_json::Value> {
-    let mut all = vec!["search", "--json"];
-    all.extend(args);
-    let o = cli(repo, &all);
-    assert!(o.status.success(), "{}", err(&o));
-    out(&o)
-        .lines()
-        .map(|l| serde_json::from_str(l).unwrap())
-        .collect()
-}
-
-/// With no model, `search --kind step` prints the `no model` line and exits 0 (`spec/02-cli.md`,
-/// "Search").
-#[test]
-fn with_no_model_search_names_grep() {
-    let repo = Repo::new();
-    let o = cli(&repo, &["search", "--kind", "step", "--", "prices"]);
-    assert!(o.status.success(), "{}", err(&o));
-    assert_eq!(
-        out(&o).trim(),
-        "celis search has no model: search with celis grep, or run celis setup."
-    );
-}
-
 /// `search` refuses empty text, an unknown kind, a limit that is not a positive number, and `--json`
-/// without `--kind trail` or `--kind step` (`spec/02-cli.md`, "Search").
+/// (`spec/02-cli.md`, "Search").
 #[test]
 fn search_refuses_a_bad_text_kind_or_limit() {
     let repo = Repo::new();
     for args in [
         &["search", "--json", "--", " "][..],
-        &["search", "--json", "--kind", "proof", "--", "prices"],
+        &["search", "--json", "--kind", "trail", "--", "prices"],
         &["search", "--json", "--limit", "0", "--", "prices"],
         &["search", "--json", "--limit", "many", "--", "prices"],
         &["search", "--json", "--", "prices"],
@@ -49,39 +23,11 @@ fn search_refuses_a_bad_text_kind_or_limit() {
     }
 }
 
-/// With `--kind step` or `--kind trail`, `search` gives the records of that kind most alike first, at
-/// most `--limit` (`spec/02-cli.md`, "Search").
-#[test]
-fn search_gives_the_records_most_alike_first() {
-    let repo = Repo::new();
-    tiny_model(&repo);
-    let trail = trail(&repo);
-    for title in ["keep prices in cents", "release linux"] {
-        add(&repo, &["--under", &trail[..8], "--", title]);
-    }
-    let found = objects(&repo, &["--kind", "step", "--", "keep prices in cents"]);
-    assert_eq!(found[0]["content"], "keep prices in cents");
-    assert!(found.iter().all(|f| f["kind"] == "step"), "{found:?}");
-    assert!((found[0]["score"].as_f64().unwrap() - 1.0).abs() < 1e-4);
-    let trails = objects(&repo, &["--kind", "trail", "--", "rust"]);
-    assert!(trails.iter().all(|f| f["kind"] == "trail"), "{trails:?}");
-    let one = objects(&repo, &["--kind", "trail", "--limit", "1", "--", "rust"]);
-    assert_eq!(one.len(), 1);
-    let o = cli(
-        &repo,
-        &["search", "--kind", "step", "--", "keep prices in cents"],
-    );
-    let first = out(&o).lines().next().unwrap().to_string();
-    assert!(first.starts_with("1.00 "), "{first}");
-    assert!(first.ends_with(" keep prices in cents"), "{first}");
-}
-
 /// `search` gives only the live patterns in scope in the working folder's project
 /// (`spec/02-cli.md`, "Search").
 #[test]
 fn search_leaves_out_the_patterns_of_another_project() {
     let repo = Repo::new();
-    tiny_model(&repo);
     stored_pattern(
         &repo,
         ("0000000000000000000000000000000000000000", "other"),
@@ -175,21 +121,6 @@ fn search_prints_the_patterns_that_fit_an_ask() {
     assert!(said.contains(&release[..8]), "{said}");
     assert!(!said.contains(&logo[..8]), "{said}");
     assert!(!said.contains(&pattern[..8]), "{said}");
-}
-
-/// `search` finds a pattern by its meaning when it shares no file and no word with the ask
-/// (`spec/02-cli.md`, "Search").
-#[test]
-fn search_finds_a_pattern_by_its_meaning() {
-    let repo = Repo::new();
-    tiny_model(&repo);
-    let pattern = decide(
-        &repo,
-        &[],
-        "When money moves: keep prices in cents, because floats lose a cent.",
-    );
-    let said = search(&repo, &["--", "keep prices in cents"]);
-    assert!(said.contains(&pattern[..8]), "{said}");
 }
 
 /// `search` prints the rules first, then the other patterns with their examples (`spec/02-cli.md`,
