@@ -33,7 +33,7 @@ Record work · your agents run these
   ├ --bad <example>   A step, a file, or a URL that breaks it
   └ --project <id>    The id of a project in the store
 
-  step add            Add a step to a trail, or start a new trail
+  step add            Add a new ask, or a step under one
   ├ --under <id>      The open step this step is part of
   ├ --replaces <id>   A step this one takes over, or a finished step it fixes
   ├ --uses <id>       A pattern it follows
