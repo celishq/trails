@@ -38,9 +38,9 @@ pub(super) fn head(s: &mut Sheet, m: &Moment) {
 }
 
 /// The Total block from row `y`: `Total` and the day the records start, then each sum of all time as its
-/// name over its bold number, counting up, spread evenly across the width with a thin line between two,
-/// as many a row as the width holds at 17 columns each, or a list of numbers beside their names when it
-/// holds fewer than two; the row after it.
+/// name over its bold number, counting up, each on two, four or six tracks of the grid with a thin line
+/// in the gutter before it, as many a row as hold 15 columns each, or a list of numbers beside their
+/// names when fewer than two do; the row after it.
 pub(super) fn total(s: &mut Sheet, m: &Moment, y: u16) -> u16 {
     s.clip = None;
     s.alpha = m.fade(0.04);
@@ -78,8 +78,11 @@ pub(super) fn total(s: &mut Sheet, m: &Moment, y: u16) -> u16 {
     ];
     let x = s.put(2, y, "Total", BOLD);
     s.put(x, y, &format!("  since {}", day(total.since)), DIM);
-    let w = m.width.saturating_sub(4);
-    let per = (w / 17).min(items.len() as u16);
+    let grid = m.grid();
+    let per = [6u16, 3, 2]
+        .into_iter()
+        .find(|per| grid.span(0, 12 / per).1 >= 15)
+        .unwrap_or(1);
     let row = y + 2;
     if per < 2 {
         let full = [
@@ -100,10 +103,9 @@ pub(super) fn total(s: &mut Sheet, m: &Moment, y: u16) -> u16 {
         s.alpha = 1.0;
         return row + items.len() as u16 + 1;
     }
-    let span = f64::from(w) / f64::from(per);
     for (n, (value, name, look)) in items.iter().enumerate() {
         let col = n as u16 % per;
-        let x = 2 + (f64::from(col) * span).round_ties_even() as u16;
+        let x = grid.edge(col * (12 / per));
         let r = row + (n as u16 / per) * 3;
         if col > 0 {
             s.put(x - 2, r, "│", FRAME);
@@ -143,17 +145,16 @@ pub(super) fn group(s: &mut Sheet, m: &Moment, y: u16, name: &str, says: &str) -
     y + 2
 }
 
-/// The four headline measures from row `y` as tiles, four, two or one a row as the width holds them:
-/// each named in its top border, a blank row, its value as big digits counting up beside a cyan bar, a
+/// The four headline measures from row `y` as tiles of three, six or twelve tracks of the grid, four, two
+/// or one a row as the tracks hold 24 columns: each named in its top border, a blank row, its value as big digits counting up beside a cyan bar, a
 /// blank row, its change, the base it is counted from, and a blank row; the row after them.
 pub(super) fn headline(s: &mut Sheet, m: &Moment, y: u16) -> u16 {
-    let width = m.width;
-    let per: u16 = match width {
-        w if w >= 4 + 4 * 24 + 6 => 4,
-        w if w >= 4 + 2 * 24 + 2 => 2,
-        _ => 1,
-    };
-    let w = (width - 4 - 2 * (per - 1)) / per;
+    let grid = m.grid();
+    let per = [4u16, 2]
+        .into_iter()
+        .find(|per| grid.span(0, 12 / per).1 >= 24)
+        .unwrap_or(1);
+    let tracks = 12 / per;
     let (now, prior) = (m.now(), m.prior());
     let month = m.month;
     let k = ease((m.t - 0.1) / 0.9);
@@ -197,7 +198,7 @@ pub(super) fn headline(s: &mut Sheet, m: &Moment, y: u16) -> u16 {
     ];
     for (n, (name, value, before, up, kind, base)) in tiles.into_iter().enumerate() {
         let n = n as u16;
-        let x = 2 + (n % per) * (w + 2);
+        let (x, w) = grid.span((n % per) * tracks, (n % per + 1) * tracks);
         let top = y + (n / per) * (TILE + 1);
         s.alpha = ease((m.t - 0.08 * f64::from(n)) / 0.45);
         s.card((x, top, w, TILE), name, "");

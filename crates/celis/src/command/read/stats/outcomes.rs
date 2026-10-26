@@ -49,16 +49,6 @@ impl Outcomes {
     pub fn first_pass_rate(self) -> i64 {
         percent(self.first_pass(), self.resolved())
     }
-
-    /// The reworked steps among the resolved ones, in whole per cent.
-    pub fn rework_rate(self) -> i64 {
-        percent(self.reworked, self.resolved())
-    }
-
-    /// The steps that applied a pattern among the successful ones, in whole per cent.
-    pub fn pattern_usage(self) -> i64 {
-        percent(self.applied, self.successful())
-    }
 }
 
 /// `part` of `whole` in whole per cent; none of nothing.

@@ -32,21 +32,23 @@ impl Panel {
     }
 }
 
-/// `panels` side by side from row `y` when the width holds two at 44 columns or more, each as tall as
-/// the tallest, else one under another; the row after them.
+/// `panels` side by side from row `y`, six tracks of the grid each, when six tracks hold 44 columns or
+/// more, each as tall as the tallest, else one under another across the grid; the row after them.
 pub(super) fn pair(s: &mut Sheet, m: &Moment, y: u16, panels: &[Panel]) -> u16 {
-    let width = m.width;
-    if width >= 4 + 2 * 44 + 2 {
-        let w = (width - 4 - 2) / 2;
-        let tall = panels.iter().map(|p| p.height(m, w)).max().unwrap_or(0);
+    let grid = m.grid();
+    let half = grid.span(0, 6).1;
+    if half >= 44 {
+        let tall = panels.iter().map(|p| p.height(m, half)).max().unwrap_or(0);
         for (n, panel) in panels.iter().enumerate() {
-            panel.place(s, m, (2 + n as u16 * (w + 2), y, w), tall);
+            let (x, w) = grid.span(6 * n as u16, 6 * n as u16 + 6);
+            panel.place(s, m, (x, y, w), tall);
         }
         return y + tall + 1;
     }
+    let (x, w) = grid.span(0, 12);
     let mut y = y;
     for panel in panels {
-        y += panel.place(s, m, (2, y, width - 4), 0) + 1;
+        y += panel.place(s, m, (x, y, w), 0) + 1;
     }
     y
 }

@@ -41,7 +41,7 @@ impl Tree<'_> {
     pub(super) fn item(&self, note: Step, open: bool, patterns: &[&Note]) -> Item {
         let folded = (!patterns.is_empty()).then(|| format!("{PATTERNS}{}", note.id()));
         let patterns = patterns.iter().map(|pattern| pattern.id.clone());
-        let steps = Level::of(Trail::new(note).parts()).ids(note.id());
+        let steps = Level::of(Trail::new(note).parts()).ids();
         Item {
             id: note.id().to_string(),
             open,
@@ -93,8 +93,8 @@ impl Tree<'_> {
         self.level(level, summary.notes, &rail, note.id(), lines);
     }
 
-    /// Adds `note` as one row: `▸` when something opens under it, its mark and title, and at the right
-    /// done/all while active, else its steps counted by state.
+    /// Adds `note` as one row: `▸` when something opens under it, its mark and title wrapped, and at the
+    /// right done/all while active, else its steps counted by state.
     pub(super) fn line(&self, note: Step, lines: &mut Vec<Row>) {
         let step = note.record();
         let state = note.state();
@@ -112,7 +112,7 @@ impl Tree<'_> {
             title: step.title().to_string(),
             tone: self.tone(trail_tone(state), note.newest()),
             meta: joined(meta),
-            whole: None,
+            whole: Some(Styled::from("  ")),
         });
         self.pick(self.item(note, false, &summary.notes), lines, first);
     }

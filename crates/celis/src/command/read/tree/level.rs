@@ -1,6 +1,5 @@
 //! One level of a tree.
 
-use super::CLOSED;
 use celis_trails::Step;
 
 /// The steps of one level of a tree: the active ones, then the ended ones, each newest first, and every
@@ -23,13 +22,10 @@ impl<'a> Level<'a> {
         }
     }
 
-    /// The ids of the lines a watch prints for it under the line `above`, at any depth: its closed
-    /// line, and each step with its own.
-    pub fn ids(&self, above: &str) -> Vec<String> {
-        let closed = (!self.ended.is_empty()).then(|| format!("{CLOSED}{above}"));
-        closed
+    /// The ids of the lines a watch prints for it, at any depth: each step with its own.
+    pub fn ids(&self) -> Vec<String> {
+        ids(&self.active)
             .into_iter()
-            .chain(ids(&self.active))
             .chain(ids(&self.ended))
             .collect()
     }
@@ -38,7 +34,7 @@ impl<'a> Level<'a> {
 /// The ids of the lines a watch prints for `steps` and under them, at any depth.
 pub(super) fn ids(steps: &[Step]) -> Vec<String> {
     let lines = steps.iter().flat_map(|s| {
-        let under = Level::of(s.children()).ids(s.id());
+        let under = Level::of(s.children()).ids();
         std::iter::once(s.id().to_string()).chain(under)
     });
     lines.collect()

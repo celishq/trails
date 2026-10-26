@@ -86,19 +86,26 @@ fn opened_sections_show_their_details() {
     let text = board(&month, 108, [true; 4]).join("\n");
     for part in [
         "REUSE · past steps reapplied",
-        "1 reused step   ▲ 1",
+        "1 reused step  ▲ 1",
         "PATTERNS · learned patterns applied",
-        "§ 1 pattern kept  ·  1 applied  ·  +1 new",
+        "1 of 3 steps applied a pattern  ▲ 1",
+        "1 pattern kept: 1 applied, 1 new",
         "TOP PATTERNS · most hits",
         "RESOLVED STEPS · how they ended",
-        "4 resolved  ▲ 3  ·  2 first pass  ▼ 50 pp  ·  1 reworked  ▲ 25 pp  ·  1 dropped  ▲ 25 pp",
+        "4 resolved  ▲ 3",
+        "2 first pass  ▲ 1",
+        "1 reworked  ▲ 1",
+        "1 dropped  ▲ 1",
         "0 expired",
         "RESOLVED STEPS · by week",
         "STEP TIME · successful steps, start to done",
         "DAILY ACTIVITY",
         "ALLOCATION · active time",
         "📁 shop",
-        "20m rework 67%  ·  4m dropped 13%",
+        "30m active  ▲ 20m",
+        "■ productive  6m",
+        "■ rework  20m",
+        "■ dropped  4m",
     ] {
         assert!(text.contains(part), "{part:?} in\n{text}");
     }
@@ -144,7 +151,7 @@ fn the_total_block_stands_over_the_14_day_board() {
     for part in [
         "Overview  last 14 days vs prior 14",
         "DAILY ACTIVITY · last 28 days",
-        "weekly pattern usage · last 4 weeks",
+        "hits by project",
     ] {
         assert!(text.contains(part), "{part:?} in\n{text}");
     }
@@ -169,10 +176,10 @@ fn the_closed_resources_bar_splits_the_time_as_allocation() {
     let lines = sheet.lines(0, length);
     let at = lines
         .iter()
-        .position(|l| l.to_string().contains("lost to rework"))
+        .position(|l| l.to_string().contains("▸ RESOURCES"))
         .unwrap();
     let block = |c: char| ('\u{2580}'..='\u{259F}').contains(&c);
-    let looks: Vec<_> = lines[at..at + 2]
+    let looks: Vec<_> = lines[at + 1..at + 5]
         .iter()
         .flat_map(|l| &l.spans)
         .filter(|s| s.content.chars().any(block))
@@ -257,4 +264,62 @@ fn every_weeks_bar_is_one_colour() {
         .collect();
     assert_eq!(labels.len(), 4, "{labels:?}");
     assert!(labels.iter().all(|(_, m)| m.is_empty()), "{labels:?}");
+}
+
+/// The display column of each character of `line`.
+fn columns(line: &str) -> Vec<(usize, char)> {
+    let mut at = 0;
+    line.chars()
+        .map(|c| {
+            let here = at;
+            at += unicode_width::UnicodeWidthChar::width(c).unwrap_or(0);
+            (here, c)
+        })
+        .collect()
+}
+
+/// The board lays out on one grid at any width: every card and tile ends in one column, the bars of the
+/// cards with labels start in one column, a track's text column, and every legend square stands on a
+/// track's text column.
+#[test]
+fn the_board_keeps_to_one_grid() {
+    let month = shop().month();
+    for w in [60, 80, 108, 119] {
+        let grid = crate::terminal::grid::Grid::of(w);
+        let tracks: Vec<usize> = (0..12).map(|k| usize::from(grid.column(k))).collect();
+        let lines = board(&month, w, [true; 4]);
+        let ends: std::collections::BTreeSet<usize> = lines
+            .iter()
+            .filter_map(|l| {
+                columns(l)
+                    .iter()
+                    .rev()
+                    .find(|(_, c)| *c == '╮')
+                    .map(|(at, _)| *at)
+            })
+            .collect();
+        assert_eq!(ends.len(), 1, "{w}: {ends:?}");
+        let bar = |text: &str| {
+            let line = lines.iter().rev().find(|l| l.contains(text));
+            let line = line.unwrap_or_else(|| panic!("{w}: no {text:?} in {lines:#?}"));
+            columns(line)
+                .into_iter()
+                .find(|(_, c)| "█▏▎▍▌▋▊▉".contains(*c))
+                .map(|(at, _)| at)
+                .unwrap()
+        };
+        let starts = [bar("this week"), bar(" – "), bar("📁 shop")];
+        assert!(starts.iter().all(|s| *s == starts[0]), "{w}: {starts:?}");
+        assert!(tracks.contains(&starts[0]), "{w}: {starts:?} {tracks:?}");
+        for line in lines
+            .iter()
+            .filter(|l| l.contains('■') && !l.contains("■ ■") && !l.contains(" · "))
+        {
+            for (at, c) in columns(line) {
+                if c == '■' {
+                    assert!(tracks.contains(&at), "{w}: {line:?} {tracks:?}");
+                }
+            }
+        }
+    }
 }

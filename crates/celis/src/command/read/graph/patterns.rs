@@ -6,11 +6,13 @@ use super::view::View;
 use crate::command::read::tree::wrap;
 use crate::terminal::canvas::{paint, BOLD, DIM, EDGE, MAGENTA};
 use crate::text::clock::clock;
-use celis_store::records::id::short;
 use celis_trails::Step;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::Style;
+
+/// The column a rule's text starts at, after its `§`.
+const TEXT: u16 = 6;
 
 /// One pattern a trail learned: its id, its text, the second it was written, and its trail.
 pub(super) struct Learned<'a> {
@@ -33,7 +35,7 @@ impl Patterns<'_> {
         if self.learned.is_empty() {
             return None;
         }
-        let text = usize::from(width.saturating_sub(22));
+        let text = usize::from(width.saturating_sub(TEXT + 6));
         let mut lines: Vec<(usize, usize, String)> = vec![];
         for (n, pattern) in self.learned.iter().enumerate() {
             for (k, line) in wrap(&pattern.text, text).into_iter().enumerate() {
@@ -47,7 +49,7 @@ impl Patterns<'_> {
         let kept = lines[..shown].last().map_or(0, |l| l.0 + 1);
         let rest = self.learned.len() - kept;
         let mut title = vec![
-            paint(BOLD.fg(MAGENTA.fg.unwrap_or_default()), " § Notes "),
+            paint(BOLD.fg(MAGENTA.fg.unwrap_or_default()), " § Rules "),
             paint(DIM, &format!("{} ", self.learned.len())),
         ];
         if rest > 0 {
@@ -75,7 +77,7 @@ impl Patterns<'_> {
         let inner = room.saturating_sub(2).max(1);
         let mut buf = Buffer::empty(Rect::new(0, 0, width, room.max(3)));
         let mut title = vec![
-            paint(BOLD.fg(MAGENTA.fg.unwrap_or_default()), " § Notes "),
+            paint(BOLD.fg(MAGENTA.fg.unwrap_or_default()), " § Rules "),
             paint(DIM, &format!("{} ", self.learned.len())),
         ];
         if self.learned.is_empty() {
@@ -93,7 +95,7 @@ impl Patterns<'_> {
             buf.set_string(4, 1, none, DIM);
             return buf;
         }
-        let text = usize::from(width.saturating_sub(22));
+        let text = usize::from(width.saturating_sub(TEXT + 6));
         let mut lines: Vec<(usize, Option<(usize, String)>)> = vec![];
         for (n, pattern) in self.learned.iter().enumerate() {
             lines.extend(
@@ -171,7 +173,7 @@ impl Patterns<'_> {
     }
 
     /// Draws the line `line`, the `k`th of the pattern `n`, at row `y`: on its first, the `§` glowing as
-    /// it lands and the pattern's id, then its text in the light when `lit`; fading in as it lands.
+    /// it lands, then its text in the light when `lit`; fading in as it lands.
     #[allow(clippy::too_many_arguments)]
     fn line(
         &self,
@@ -187,13 +189,12 @@ impl Patterns<'_> {
         let landed = m.seen.landed(&pattern.id, m.now);
         if k == 0 {
             buf.set_string(4, y, "§", m.pattern(landed));
-            buf.set_string(6, y, short(&pattern.id), DIM);
         }
         let look = match lit {
             true => Style::new().fg(LIGHT),
             false => Style::new(),
         };
-        buf.set_string(16, y, line, look);
+        buf.set_string(TEXT, y, line, look);
         let alpha = m.arrived(landed, 0.4);
         if alpha < 1.0 {
             fade(

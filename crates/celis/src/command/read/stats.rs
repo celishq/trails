@@ -148,6 +148,7 @@ mod daily;
 mod head;
 mod kind;
 mod learning;
+mod measures;
 mod moment;
 mod month;
 mod outcomes;

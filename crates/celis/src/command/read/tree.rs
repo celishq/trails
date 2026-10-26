@@ -6,6 +6,7 @@ use crate::progress::{Flags, Grade, Model, Reuse, Tally};
 pub(crate) use crate::terminal::canvas::{cut, visible};
 use crate::terminal::canvas::{line as line_text, paint, width, Styled};
 use crate::terminal::canvas::{BOLD, DIM, EDGE, GREEN, YELLOW};
+use crate::terminal::grid::GUTTER;
 use crate::terminal::look::{look, DRAWN, SPINNER, SPUN};
 use crate::text::clock::stride;
 use crate::text::clock::{day, midnight};
@@ -69,7 +70,7 @@ impl Command {
     }
 
     /// The tree of `model` that `args` names, `width` wide, as `view` shows it, from the day groups
-    /// `layout` kept.
+    /// `layout` kept; in a watch its rows end a gutter before the width, at the grid's right edge.
     pub(crate) fn frame(
         &self,
         model: &Model,
@@ -97,7 +98,8 @@ impl Command {
             reuse: model.reuse,
             layout,
             grouped: id.is_none(),
-            width: width.map(|w| w.saturating_sub(2 * usize::from(view.watch))),
+            width: width
+                .map(|w| w.saturating_sub(2 * usize::from(GUTTER) * usize::from(view.watch))),
             view,
             spun: Cell::default(),
             order: RefCell::default(),
@@ -172,11 +174,9 @@ pub(crate) struct Item {
 }
 
 impl Item {
-    /// The first 8 characters of its id; none for a patterns, closed, closed trails or day line.
+    /// The first 8 characters of its id; none for a patterns or day line.
     pub fn copy(&self) -> Option<String> {
-        let group = [PATTERNS, CLOSED, TRAILS, DAY]
-            .iter()
-            .any(|p| self.id.starts_with(p));
+        let group = [PATTERNS, DAY].iter().any(|p| self.id.starts_with(p));
         (!group).then(|| short(&self.id))
     }
 }
@@ -480,10 +480,6 @@ pub(crate) const MORE: &str = "+more";
 /// The cells the marks before a title take in a watch: its mark; a sign takes a space after it.
 const SLOT: usize = 1;
 
-/// What starts the id of a trail's closed line in a watch's order.
-const CLOSED: &str = "✓";
-/// What starts the id of a project's line of closed trails in a watch's order.
-const TRAILS: &str = "≡";
 /// What starts the id of an earlier day's line in a watch's order.
 const DAY: &str = "🗓";
 /// The colour of a project's name.
