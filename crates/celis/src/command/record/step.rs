@@ -102,9 +102,13 @@ impl Command {
             };
         let by = match args.by.as_deref() {
             None => None,
-            Some(text) => Some(By::parse(text).ok_or_else(|| {
-                Failure::usage(format!("step done --by takes judge or person, not {text}"))
-            })?),
+            Some("person") => Some(By::Person),
+            Some("judge") => None,
+            Some(text) => {
+                return Err(Failure::usage(format!(
+                    "step done --by takes person, not {text}"
+                )))
+            }
         };
         let mut files = Vec::new();
         for file in &args.files {
@@ -118,17 +122,6 @@ impl Command {
             files,
         };
         let changed = self.changed(&args.files);
-        let steps = trails.steps();
-        let step = steps.find_open(id)?;
-        if done.by.is_none() && step.is_judged() {
-            let lines = self.unjudged(step, &trails, &changed);
-            if !lines.is_empty() {
-                lines
-                    .iter()
-                    .try_for_each(|line| crate::command::put(err, line))?;
-                return Err(Failure::unjudged(step.id()));
-            }
-        }
         let written = trails.done(id, done.clone(), &project.folder)?;
         self.print(written, args, out, err)?;
         let steps = trails.steps();

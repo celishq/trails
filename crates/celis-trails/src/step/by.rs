@@ -3,6 +3,7 @@
 /// Who gave the proof of a done, when it is not the agent that did the work.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum By {
+    /// A reader that did not do the work; only older writers wrote it.
     Judge,
     Person,
 }

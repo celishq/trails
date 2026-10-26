@@ -72,11 +72,6 @@ impl Command {
         }
         text.push_str(&format!("steps.md: {}", root.join("steps.md").display()));
         if agent != "claude" {
-            let judge = root.join("agents/judge.md").display().to_string();
-            text.push_str(&format!(
-                "\njudge.md: {judge}. With no subagents, do what it says yourself, with the brief \
-                 that done prints."
-            ));
             let lesson = root.join("agents/lesson.md").display().to_string();
             text.push_str(&format!(
                 "\nlesson.md: {lesson}. With no subagents, do what it says yourself, with the brief \

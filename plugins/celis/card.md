@@ -11,7 +11,7 @@ celis grep <id>
 celis lesson <id>
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--recalled <id>]... [--check <command>] -- "<title>"
 celis step start <id>
-celis step done <id> [--changed "<what differs>"] [--as-planned] [--by <who>] [--file <path>]... -- "<proof>"
+celis step done <id> [--changed "<what differs>"] [--as-planned] [--by person] [--file <path>]... -- "<proof>"
 celis step note <id> -- "<note>"
 celis pattern [--scope me] [--replaces <id>] [--path <glob>]... [--within <id>]... [--good <example>]... [--bad <example>]... -- "<pattern>"
 ```
@@ -34,16 +34,15 @@ Read all that celis prints, never cut by `head` or `grep`, and do the next move 
    it, and name each with `--uses`. Act, and tell after: ask only when you
    cannot write `expect` without a guess, or at a one-way door, such as a new dependency, a schema,
    money or a deploy. Take every other choice yourself, and name it in the end.
-3. **Check.** Run the `celis:judge` agent with the brief that `done` prints. Take what it could not
-   check as far as you can, then ask the person. Close the ask `--by judge` or `--by person`. Learn
-   from it, then answer with the end that celis prints, alone: fill each `<…>`, and remove each line
-   you do not need.
+3. **Close.** When the work of the ask is done, close it with its proof. When only the person can check
+   it, ask them, and close it `--by person` with their answer. Learn from it, then answer with the end
+   that celis prints, alone: fill each `<…>`, and remove each line you do not need.
 
    ```markdown
    **<what was done, in one line>**
 
    - [?] **Needs you:** <each decision only the person can take>
-   - [!] **Not proven:** <each claim step, and what the judge could not check>
+   - [!] **Not proven:** <each claim step, and what no check proves>
    - [+] **I chose:** <each choice you took yourself, and each step that went otherwise than planned> · <the pattern that decided it, or none>
    - [+] **Learned:** <each pattern you wrote, as its id and When> · <the guessed why, or none>
 

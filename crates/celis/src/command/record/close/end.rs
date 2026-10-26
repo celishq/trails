@@ -72,7 +72,7 @@ impl End {
         let claims = self.proofs.iter().filter(|(_, p)| *p == Proof::Claim);
         lines.extend(claims.map(|(title, _)| format!("- [!] **Not proven:** {title}")));
         lines.push(format!(
-            "- [!] **Not proven:** <what the judge could not check{outside}>"
+            "- [!] **Not proven:** <what no check proves{outside}>"
         ));
         let turns = self.turns.iter();
         lines.extend(
