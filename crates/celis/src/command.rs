@@ -74,6 +74,7 @@ impl Command {
             "patterns" => self.patterns(args, out),
             "grep" => self.grep(&self.args[1..], out),
             "stats" => self.stats(args, out),
+            "lesson" => self.lesson(args, out),
             "issue" => self.issue(args, out),
             "link" => self.link(args, out, &self.project()),
             "hook" => self.hook(args, out),

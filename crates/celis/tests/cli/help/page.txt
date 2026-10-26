@@ -23,6 +23,8 @@ Read
   stats [<id>]        Show what later work reused, and how work went
   └ --demo            Show four weeks of sample trails
 
+  lesson <id>         Show what an ask taught, to keep as patterns
+
 Record work · your agents run these
   pattern             Record a pattern that guides later work
   ├ --scope <scope>   Where it applies: me, or project
