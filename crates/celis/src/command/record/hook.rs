@@ -14,7 +14,7 @@ mod tests;
 /// The agents whose hooks run `celis hook`.
 const AGENTS: [&str; 5] = ["claude", "codex", "cursor", "gemini", "antigravity"];
 
-/// The title of the ask that `/celis:tidy` adds.
+/// The start of the title of the ask that `/celis:tidy` adds.
 const TIDY: &str = "Tidy the celis trails";
 
 /// How many days after a tidy the session start asks to offer the next.
@@ -98,7 +98,7 @@ impl Command {
     }
 
     /// The line that asks to offer `/celis:tidy` once in the session: when the store holds a live pattern,
-    /// and no ask titled `TIDY` began in the last `TIDY_DAYS` days.
+    /// and no step whose title starts with `TIDY` began in the last `TIDY_DAYS` days.
     fn tidy(&self) -> Option<String> {
         if !self.held().ok()? {
             return None;
@@ -111,7 +111,7 @@ impl Command {
         let last = steps
             .all()
             .into_iter()
-            .filter(|s| s.title() == TIDY)
+            .filter(|s| s.title().starts_with(TIDY))
             .map(|s| s.note().created_at)
             .max();
         let days = last.map(|at| crate::command::now().saturating_sub(at) / 86_400);
