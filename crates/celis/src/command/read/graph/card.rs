@@ -10,7 +10,7 @@ use crate::terminal::look::lane;
 use crate::terminal::unfold::faded_style;
 use crate::text::clock::took;
 use celis_store::records::id::short;
-use celis_trails::Step;
+use celis_trails::{State, Step};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::Style;
@@ -305,7 +305,7 @@ fn walk<'a>(
             _ => format!(" · {}", state.text()),
         };
         if !under.is_empty() {
-            let done = under.iter().filter(|s| Phase::of(s) == Phase::Done).count();
+            let done = under.iter().filter(|s| s.state() == State::Done).count();
             meta = format!("{done}/{} · {meta}", under.len());
         }
         let room = width.saturating_sub(used + meta.width() + 2).max(8);
@@ -376,7 +376,7 @@ fn progress(buf: &mut Buffer, x: u16, y: u16, step: Step, m: &Moment, cells: usi
     let under: Vec<Step> = step.tree().into_iter().skip(1).collect();
     let (done, working) = m.shares(&under);
     let end = put(buf, x, y, &bar(done, working, cells).spans);
-    let finished = under.iter().filter(|s| Phase::of(s) == Phase::Done).count();
+    let finished = under.iter().filter(|s| s.state() == State::Done).count();
     let end = put(
         buf,
         end + 1,
@@ -392,9 +392,7 @@ fn progress(buf: &mut Buffer, x: u16, y: u16, step: Step, m: &Moment, cells: usi
 pub(super) fn spent(step: Step, at: u64) -> String {
     match (Grade::of(step), step.start()) {
         (Some(grade), _) => took(grade.took),
-        (None, Some(start)) if Phase::of(&step) == Phase::Started => {
-            took(at.saturating_sub(start.created_at))
-        }
+        (None, Some(start)) if step.works() => took(at.saturating_sub(start.created_at)),
         _ => Phase::of(&step).text().to_string(),
     }
 }

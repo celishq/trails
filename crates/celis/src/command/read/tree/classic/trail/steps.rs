@@ -10,7 +10,7 @@ use crate::text::clock::took;
 use crate::text::line::plural;
 use celis_nostr::Note;
 use celis_trails::step::steps::LIFE;
-use celis_trails::Step;
+use celis_trails::{State, Step};
 use ratatui::text::Span;
 
 impl Tree<'_> {
@@ -50,7 +50,7 @@ impl Tree<'_> {
         for (n, note) in notes.into_iter().enumerate() {
             let step = note.record();
             let state = Phase::of(&note);
-            if state.active() {
+            if note.active() {
                 self.until(note.trail().newest() + LIFE);
             }
             let open = self.open(note.id());
@@ -58,7 +58,7 @@ impl Tree<'_> {
             let (lead, rail) = self.branch(rail, last, self.opens(note).then_some(open));
             let size = note.tree().len() - 1;
             let level = Level::of(note.children());
-            let folded = state == Phase::Done && size > 0 && !open;
+            let folded = note.state() == State::Done && size > 0 && !open;
             let below = match note.children().is_empty() || folded {
                 true => after(&rail, Span::raw("  ")),
                 false => after(&rail, paint(DIM, "│ ")),
@@ -71,7 +71,7 @@ impl Tree<'_> {
                 tone: self.tone(look(state).title, note.newest()),
                 rest: below.clone(),
             });
-            let time = match state.closed() {
+            let time = match note.state() != State::Open {
                 true => None,
                 false => self.worked(&note.tree()).map(took),
             };
@@ -136,7 +136,7 @@ impl Tree<'_> {
             || note.dropped().is_some()
             || !self.reuse.sources(note).is_empty()
             || self.reuse.followers(note) > 0;
-        lines || (Phase::of(&note).closed() && !note.children().is_empty())
+        lines || (note.state() != State::Open && !note.children().is_empty())
     }
 
     /// Whether the step or pattern `id` shows what `--full` shows: with `--full`, unless the watch closed

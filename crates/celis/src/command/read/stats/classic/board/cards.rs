@@ -4,7 +4,6 @@
 use super::super::card::{Card, CARDS};
 use super::super::grid::grid;
 use super::{head, legend, Board};
-use crate::progress::Phase;
 use crate::terminal::canvas::{paint, Styled, BOLD};
 use crate::terminal::frame::Frame;
 use crate::terminal::live::Page;
@@ -99,10 +98,6 @@ pub(super) fn empty(right: &str, width: usize) -> Page {
 
 /// `● <n> active · <weekday>` of `steps`.
 pub(super) fn status(steps: &Steps) -> String {
-    let active = steps
-        .roots()
-        .into_iter()
-        .filter(|s| Phase::of(s).active())
-        .count();
+    let active = steps.roots().into_iter().filter(|s| s.active()).count();
     format!("● {active} active · {}", weekday(steps.now()))
 }

@@ -6,7 +6,7 @@ use crate::progress::Phase;
 use crate::terminal::canvas::{paint, CYAN, DIM, GREEN, RED, YELLOW};
 use crate::terminal::look::{frame, STROKES};
 use crate::terminal::unfold::{ease, mix, toward};
-use celis_trails::Step;
+use celis_trails::{State, Step};
 use ratatui::style::{Color, Style};
 use ratatui::text::Span;
 use std::collections::HashSet;
@@ -76,7 +76,7 @@ impl Moment<'_> {
 
     /// `˜` in amber beside the mark of a step done otherwise than planned, glowing once as it lands.
     pub fn sign(&self, step: Step) -> Option<Span<'static>> {
-        if Phase::of(&step) != Phase::Done || step.changed().is_none() {
+        if step.state() != State::Done || step.changed().is_none() {
             return None;
         }
         let since = self.seen.changed(step.id(), self.now).unwrap_or(9.0);

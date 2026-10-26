@@ -15,7 +15,7 @@ use crate::terminal::wake::Key;
 use crate::text::clock::took;
 use card::{inside, put, Card};
 use celis_nostr::Note;
-use celis_trails::{Step, Trail, TrailStore};
+use celis_trails::{State, Step, Trail, TrailStore};
 use folders::folders;
 use layout::{breadth, columns, Layout, GAP};
 use moment::{tally, Moment, LIGHT};
@@ -101,7 +101,7 @@ impl Live for Graph {
             .get_or_insert_with(|| View::new(&trails, self.named.as_deref()));
         let lines = frame(model, &trails, view, &mut self.seen, (width, rows), now);
         let lively = self.seen.lively(now) || view.offset.fract() != 0.0;
-        let working = trails.iter().any(|t| Phase::of(t) == Phase::Started);
+        let working = trails.iter().any(|t| t.works());
         let again = match (lively, working) {
             (true, _) => Duration::from_millis(16),
             (false, true) => Duration::from_millis(33),
@@ -299,17 +299,9 @@ fn head(
         }
         let working: usize = trails
             .iter()
-            .map(|t| {
-                t.tree()
-                    .iter()
-                    .filter(|s| Phase::of(s) == Phase::Started)
-                    .count()
-            })
+            .map(|t| t.tree().iter().filter(|s| s.works()).count())
             .sum();
-        let finished = trails
-            .iter()
-            .filter(|t| Phase::of(t) == Phase::Done)
-            .count();
+        let finished = trails.iter().filter(|t| t.state() == State::Done).count();
         let mut projects: Vec<&str> = trails
             .iter()
             .map(|t| t.record().anchor.project.as_str())
@@ -368,7 +360,7 @@ fn head(
     }
     let steps: Vec<Step> = trail.tree().into_iter().skip(1).collect();
     put(&mut buf, 2, 2, &tally(&steps, m.spin(), true));
-    let done = steps.iter().filter(|s| Phase::of(s) == Phase::Done).count();
+    let done = steps.iter().filter(|s| s.state() == State::Done).count();
     let tail = format!("  {done}/{} · {}", steps.len(), worked(trail, m.at));
     let right = width.saturating_sub(2 + tail.chars().count() as u16);
     let (d, w) = m.shares(&steps);
@@ -525,7 +517,7 @@ pub(crate) fn worked(trail: Step, at: u64) -> String {
     for leaf in trail.tree().into_iter().filter(|s| s.children().is_empty()) {
         match (Grade::of(leaf), leaf.start()) {
             (Some(grade), _) => total += grade.took,
-            (None, Some(start)) if Phase::of(&leaf) == Phase::Started => {
+            (None, Some(start)) if leaf.works() => {
                 total += at.saturating_sub(start.created_at);
             }
             _ => {}

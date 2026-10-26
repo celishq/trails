@@ -140,8 +140,7 @@ impl Tree<'_> {
 
     /// Adds `trails` as `day` does off a box: its active trails, then the rest by project.
     fn active_first(&self, trails: Vec<Step>, lines: &mut Vec<Row>) {
-        let (active, rest): (Vec<Step>, Vec<Step>) =
-            trails.into_iter().partition(|s| Phase::of(s).active());
+        let (active, rest): (Vec<Step>, Vec<Step>) = trails.into_iter().partition(|s| s.active());
         let mut after = false;
         if !active.is_empty() {
             lines.push(self.gap());
@@ -296,7 +295,7 @@ impl Tree<'_> {
     fn lively(&self, note: Step) -> bool {
         match self.view.watch {
             true => live(note, self.steps.now()),
-            false => Phase::of(&note).active(),
+            false => note.active(),
         }
     }
 

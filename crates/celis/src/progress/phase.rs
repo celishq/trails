@@ -1,9 +1,9 @@
-//! How a step or trail shows in a view.
+//! The mark a view prints for a step or trail.
 
 use celis_trails::{State, Step};
 
-/// How a step or trail shows in a view: its state, with an open one that works shown as started, and an
-/// open one of an ended trail shown as stale.
+/// The mark a view prints for a step or trail: its state, or on an open one, started while it works and
+/// stale once its trail ended.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Phase {
     Open,
@@ -32,20 +32,5 @@ impl Phase {
             Phase::Dropped => State::Dropped.text(),
             Phase::Stale => "stale",
         }
-    }
-
-    /// Whether work on it may go on: open and not stale.
-    pub fn active(self) -> bool {
-        matches!(self, Phase::Open | Phase::Started)
-    }
-
-    /// Whether work on it stopped: done, dropped or stale.
-    pub fn ended(self) -> bool {
-        !self.active()
-    }
-
-    /// Whether its work ended: done or dropped.
-    pub fn closed(self) -> bool {
-        matches!(self, Phase::Done | Phase::Dropped)
     }
 }
