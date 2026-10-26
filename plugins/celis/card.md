@@ -62,6 +62,8 @@ Do: <what to choose>
 Because: <why that resolves the forces>
 ```
 
-A subagent gets the patterns of its work in its task, and replies with its output and proof.
+A subagent does not see your context. Put the whole text of each pattern that bears on its work in its
+task, say that its work must follow them, and ask it to reply with only its output and proof, not the
+steps it took.
 Name a secret by where it lives, such as `API_KEY in .env`, never by its value: a record is signed and
 cannot be deleted. In creative work, use the `celis:create` skill; else, read `steps.md`.
