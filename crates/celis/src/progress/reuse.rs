@@ -1,12 +1,13 @@
-//! What later work reused of the steps and rules of a store.
+//! What later work reused of the steps and patterns of a store.
 
-use celis_nostr::Note;
-use celis_trails::{Rule, Rules, Step, Steps, Used};
+use celis_patterns::{Pattern, Patterns};
+
+use celis_trails::{Step, Steps, Used};
 use std::cmp::Reverse;
 use std::collections::{HashMap, HashSet};
 
-/// What later work reused of a store: which steps follow which, which rules each step used, and how
-/// often a step used each rule.
+/// What later work reused of a store: which steps follow which, which patterns each step used, and how
+/// often a step used each pattern.
 pub struct Reuse<'a> {
     sources: HashMap<&'a str, Vec<Step<'a>>>,
     followers: HashMap<&'a str, Vec<Step<'a>>>,
@@ -41,7 +42,7 @@ impl<'a> Reuse<'a> {
                         reuse.sources.entry(step.id()).or_default().push(source);
                         reuse.followers.entry(source.id()).or_default().push(step);
                     }
-                    Used::Rule(id) => {
+                    Used::Pattern(id) => {
                         reuse.ruled.entry(step.id()).or_default().push(id);
                         *reuse.uses.entry(id).or_default() += 1;
                     }
@@ -70,13 +71,6 @@ impl<'a> Reuse<'a> {
     /// The steps that `step` follows.
     pub fn sources(&self, step: Step<'a>) -> Vec<Step<'a>> {
         self.sources.get(step.id()).cloned().unwrap_or_default()
-    }
-
-    /// How many steps follow a step of the tree of `trail`.
-    pub fn tree_followers(&self, trail: Step<'a>) -> usize {
-        let tree = trail.tree().into_iter();
-        tree.map(|s| self.followers.get(s.id()).map_or(0, Vec::len))
-            .sum()
     }
 
     /// Each step that `step` follows at any depth, depth first and once.
@@ -108,10 +102,13 @@ impl<'a> Reuse<'a> {
         steps.iter().map(|s| self.sources(*s).len()).sum()
     }
 
-    /// The uses of a live rule of `rules` that `steps` made.
-    pub fn uses_of(&self, steps: &[Step<'a>], rules: &Rules<'a>) -> usize {
+    /// The uses of a live pattern of `patterns` that `steps` made.
+    pub fn uses_of(&self, steps: &[Step<'a>], patterns: &Patterns<'a>) -> usize {
         let ruled = steps.iter().filter_map(|s| self.ruled.get(s.id()));
-        ruled.flatten().filter(|id| rules.get(id).is_some()).count()
+        ruled
+            .flatten()
+            .filter(|id| patterns.find(None, id).is_ok())
+            .count()
     }
 
     /// Each step that a step follows, most followed at any depth first, then newest first, then by id.
@@ -119,18 +116,21 @@ impl<'a> Reuse<'a> {
         &self.followed
     }
 
-    /// Each live rule of `rules` that a step used, with how often, most used first, then newest
+    /// Each live pattern of `patterns` that a step used, with how often, most used first, then newest
     /// first, then by id.
-    pub fn used(&self, rules: &Rules<'a>) -> Vec<(&'a Note, Rule, usize)> {
-        let mut used: Vec<(&'a Note, Rule, usize)> = self
+    pub fn used(&self, patterns: &Patterns<'a>) -> Vec<(Pattern<'a>, usize)> {
+        let mut used: Vec<(Pattern<'a>, usize)> = self
             .uses
             .iter()
-            .filter_map(|(id, count)| {
-                let (note, rule) = rules.get(id)?;
-                Some((note, rule, *count))
-            })
+            .filter_map(|(id, count)| Some((patterns.find(None, id).ok()?, *count)))
             .collect();
-        used.sort_by_key(|(n, _, count)| (Reverse(*count), Reverse(n.created_at), n.id.clone()));
+        used.sort_by_key(|(p, count)| {
+            (
+                Reverse(*count),
+                Reverse(p.note.created_at),
+                p.note.id.clone(),
+            )
+        });
         used
     }
 

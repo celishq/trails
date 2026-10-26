@@ -14,10 +14,10 @@ const SECTIONS: &[(&str, &str, &[&str])] = &[
         "Read",
         "",
         &[
+            "search <ask>",
+            "patterns",
             "tree [<id>]",
             "grep <pattern>",
-            "search <text>",
-            "rules [<file>]...",
             "stats [<id>]",
         ],
     ),
@@ -25,13 +25,13 @@ const SECTIONS: &[(&str, &str, &[&str])] = &[
         "Record work",
         "your agents run these",
         &[
+            "pattern",
             "step add",
             "step start <id>",
             "step done <id>",
             "step drop <id>",
             "step edit <id>",
-            "decide",
-            "name <trail> <name>",
+            "step note <id>",
         ],
     ),
     (
@@ -52,16 +52,18 @@ const SECTIONS: &[(&str, &str, &[&str])] = &[
 /// What each command of one word does, in a phrase.
 const PHRASES: &[(&str, &str)] = &[
     ("tree", "Show your trails and their steps"),
-    ("name", "Name a trail, so other work can use it by its name"),
     ("grep", "Search every trail with grep"),
     (
         "search",
-        "Find the rules and steps alike in meaning to a text",
+        "Show the rules, patterns and past asks that fit an ask",
     ),
     ("setup", "Choose and download the model that search uses"),
-    ("rules", "Show the rules of the files you will touch"),
+    (
+        "patterns",
+        "Show your patterns with their good and bad examples",
+    ),
     ("stats", "Show what later work reused, and how work went"),
-    ("decide", "Record a rule that later work must keep"),
+    ("pattern", "Record a pattern that later work must keep"),
     (
         "link",
         "Keep this project's trails in a folder to commit or share",
@@ -75,6 +77,12 @@ const PHRASES: &[(&str, &str)] = &[
 
 /// What celis keeps: each one's mark, the look of its mark, its word, and what it is.
 const WORDS: &[(&str, Style, &str, &str)] = &[
+    (
+        "§",
+        MAGENTA,
+        "pattern",
+        "what to choose in a context, and why; a rule binds",
+    ),
     ("◆", MAGENTA, "trail", "each task you give"),
     (
         "○",
@@ -82,18 +90,12 @@ const WORDS: &[(&str, Style, &str, &str)] = &[
         "step",
         "each piece of work your agents do in it",
     ),
-    (
-        "§",
-        MAGENTA,
-        "rule",
-        "each lesson they learn, kept for later work",
-    ),
 ];
 
 /// The flags only the plugin's hooks pass, left off the page.
 const HIDDEN: &[&str] = &["--session"];
 
-/// The marks celis prints for a step, a revision, a change and a rule.
+/// The marks celis prints for a step, a revision, a change and a pattern.
 const MARKS: &[(State, &str)] = &[
     (State::Open, "open"),
     (State::Working, "working"),
@@ -111,7 +113,7 @@ const FLAGS: usize = 18;
 /// The page: what celis is, then each command with what it does and its flags, then the marks.
 pub fn page() -> Vec<Styled> {
     let mut lines = vec![
-        Styled::raw("celis remembers how your agents do your tasks."),
+        Styled::raw("celis remembers what your agents learn, and how they do your tasks."),
         Styled::default(),
     ];
     for (mark, look, word, said) in WORDS {
@@ -265,18 +267,14 @@ fn flags(verb: &Verb) -> Vec<(&'static str, Option<&'static str>, &'static str)>
     flags
 }
 
-/// The line of marks: each state's mark in its look, then the signs of a revision, a change and a rule.
+/// The line of marks: each state's mark in its look, then the signs of a revision and a change.
 fn marks() -> Styled {
     let mut spans = vec![Span::raw("  ")];
     for (state, name) in MARKS {
         spans.push(Span::styled(look(*state).mark, look(*state).text));
         spans.push(Span::raw(format!(" {name}  ")));
     }
-    for (sign, name, style) in [
-        ("↻", "revised", GREEN),
-        ("~", "changed", YELLOW),
-        ("§", "rule", MAGENTA),
-    ] {
+    for (sign, name, style) in [("↻", "revised", GREEN), ("~", "changed", YELLOW)] {
         spans.push(Span::styled(sign, style));
         spans.push(Span::raw(format!(" {name}  ")));
     }

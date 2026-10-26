@@ -70,13 +70,13 @@ fn start_refuses_unknown_and_closed_steps_and_starts_a_step_once() {
     assert_eq!(files(), before);
 }
 
-/// `start` prints no rule at the step's places; the agent asks `celis rules` for them.
+/// `start` prints no pattern at the step's places; `celis search` gives them.
 #[test]
-fn start_prints_no_rule_at_the_steps_places() {
+fn start_prints_no_pattern_at_the_steps_places() {
     let repo = Repo::new();
     let o = cli(
         &repo,
-        &["decide", "--scope", "at:src/a.rs", "--", "a.rs holds cents"],
+        &["pattern", "--path", "src/a.rs", "--", "a.rs holds cents"],
     );
     assert!(o.status.success(), "{}", err(&o));
     let trail = add(&repo, &["--", "the trail"]);
@@ -118,32 +118,26 @@ fn start_does_not_run_the_steps_check() {
     assert!(!repo.path().join("ran").exists());
 }
 
-/// `start` prints the live rules of the step's trail, each rule its ask uses, and the rules of the
-/// trail of each step its ask uses; not a rule none of them names.
+/// `start` prints the notes of the step's trail, each pattern its ask uses, and the notes of the trail of
+/// each step its ask uses; not a pattern none of them names (`spec/02-cli.md`, "Step").
 #[test]
-fn start_prints_the_trails_rules_and_the_rules_its_ask_uses() {
+fn start_prints_the_trails_notes_and_the_patterns_its_ask_uses() {
     let repo = Repo::new();
     let decide = |args: &[&str]| {
-        let o = cli(&repo, &[&["decide"], args].concat());
+        let o = cli(&repo, &[&["pattern"], args].concat());
         assert!(o.status.success(), "{}", err(&o));
         out(&o).lines().next().unwrap().to_string()
     };
     let past = add(&repo, &["--", "past work"]);
-    decide(&[
-        "--scope",
-        &format!("trail:{}", &past[..8]),
-        "--",
-        "past keeps tabs",
-    ]);
+    let note = |id: &str, text: &str| {
+        let o = cli(&repo, &["step", "note", id, "--", text]);
+        assert!(o.status.success(), "{}", err(&o));
+    };
+    note(&past[..8], "past keeps tabs");
     let used = decide(&["--", "use the shared Badge"]);
     decide(&["--", "never deploy on friday"]);
     let trail = add(&repo, &["--", "the trail"]);
-    decide(&[
-        "--scope",
-        &format!("trail:{}", &trail[..8]),
-        "--",
-        "this trail rule",
-    ]);
+    note(&trail[..8], "this trail rule");
     let ask = add(
         &repo,
         &[

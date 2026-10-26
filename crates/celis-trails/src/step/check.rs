@@ -1,6 +1,6 @@
 //! A step's check: a shell command whose exit says whether the work holds.
 
-use crate::Refusal;
+use celis_store::Refusal;
 use std::os::unix::process::CommandExt;
 use std::path::Path;
 use std::time::{Duration, Instant};

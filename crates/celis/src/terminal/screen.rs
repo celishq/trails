@@ -5,7 +5,7 @@ use super::legend::legend;
 use super::wake::{keys, signals, Key, Wake};
 use crate::command::Command;
 use crate::failure::Failure;
-use celis_trails::Link;
+use celis_store::Link;
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use ratatui::text::Span;
 use std::io::Write;

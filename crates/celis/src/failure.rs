@@ -1,6 +1,6 @@
 //! Why a command did not finish.
 
-use celis_trails::Refusal;
+use celis_store::Refusal;
 
 /// A command that did not finish: the name `--json` prints, the message a person reads, and the exit code.
 #[derive(Debug)]
@@ -25,21 +25,14 @@ impl Failure {
         )
     }
 
-    /// No live rule has this id.
-    pub fn no_rule(id: &str) -> Self {
+    /// No live pattern has this id.
+    pub fn no_pattern(id: &str) -> Self {
         Self::new(
-            "no-decision",
+            "no-pattern",
             1,
-            format!("no live rule has the id {id}; see the live ones with `celis grep \" live \"`"),
-        )
-    }
-
-    /// No trail in the store has this id.
-    pub fn no_trail(id: &str) -> Self {
-        Self::new(
-            "no-trail",
-            1,
-            format!("no trail has the id {id}; find it with `celis tree --all`"),
+            format!(
+                "no live pattern has the id {id}; see the live ones with `celis grep \" live \"`"
+            ),
         )
     }
 
@@ -59,7 +52,20 @@ impl Failure {
             1,
             format!(
                 "the step {id} has an open step under it; see it with `celis tree {}`",
-                celis_trails::records::id::short(id)
+                celis_store::records::id::short(id)
+            ),
+        )
+    }
+
+    /// The ask changed files and names no one who checked it.
+    pub fn unjudged(id: &str) -> Self {
+        Self::new(
+            "unjudged",
+            1,
+            format!(
+                "the ask {} changed files; run the celis:judge agent with the brief above, then close it \
+                 --by judge, or --by person with the person's answer",
+                celis_store::records::id::short(id)
             ),
         )
     }
@@ -92,8 +98,7 @@ impl From<Refusal> for Failure {
         match refusal {
             Refusal::Usage(message) => Self::usage(message),
             Refusal::NoStep(id) => Self::no_step(&id),
-            Refusal::NoRule(id) => Self::no_rule(&id),
-            Refusal::NoTrail(id) => Self::no_trail(&id),
+            Refusal::NoPattern(id) => Self::no_pattern(&id),
             Refusal::Closed(id) => Self::closed(&id),
             Refusal::OpenSteps(id) => Self::open_steps(&id),
             Refusal::CheckFailed(output) => Self::check_failed(&output),

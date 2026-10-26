@@ -55,9 +55,9 @@ def sh(*args, cwd, env=None, check=True):
 
 
 def rules(home):
-    """The live rules of celis-trails and the `me` rules of the store at `home`, as `<id8> {<scope>} <text>`."""
+    """The live patterns of celis-trails and the `me` patterns of the store at `home`, as `<id8> {<scope>} <text>`."""
     env = dict(os.environ, CELIS_HOME=str(home), PATH=f"{BINS['new']}:{os.environ['PATH']}")
-    text = sh("celis", "grep", "-E", " rule [0-9a-f]{8} live ", cwd=MAIN, env=env, check=False)
+    text = sh("celis", "grep", "-E", " pattern [0-9a-f]{8} live ", cwd=MAIN, env=env, check=False)
     lines, project = [], None
     for line in text.splitlines():
         if not line.startswith(" "):
@@ -67,7 +67,7 @@ def rules(home):
         line = line.strip()
         own = re.match(r"\[([^]]+)\] (.*)", line)
         where, line = (own.group(1), own.group(2)) if own else (project, line)
-        got = re.match(r"rule ([0-9a-f]{8}) live (\{[^}]*\})(?: trigger| situation| promoted)* (.*)", line)
+        got = re.match(r"pattern ([0-9a-f]{8}) live (\{[^}]*\})(?: trigger| binds| recalled:\S+)* (.*)", line)
         if got and (where == "celis-trails" or got.group(2) == "{me}"):
             lines.append(f"{got.group(1)} {got.group(2)} {got.group(3)}")
     return lines

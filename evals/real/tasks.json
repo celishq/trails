@@ -24,20 +24,20 @@
     "prompt": "Add a `--since <yyyy-mm-dd>` flag to `celis grep` that keeps only the lines of that day or later."
   },
   {
-    "id": "rules-trigger-json",
-    "prompt": "Make `celis rules --json` give each rule's trigger too, as the decision json of `step start --json` does."
+    "id": "search-rule-json",
+    "prompt": "Let `celis search --kind rule --json` print one JSON object a line for each rule it finds, with its id, scope, paths and content."
   },
   {
     "id": "pinned-rule",
-    "prompt": "Add a pinned rule: `celis decide --pinned` writes the label `[\"l\", \"pinned\", \"celis.decision\"]`, and `celis rules` prints pinned rules first. Write it into the spec first."
+    "prompt": "Add a pinned rule: `celis decide --pinned` writes the label `[\"l\", \"pinned\", \"celis.decision\"]`, and `celis search` prints pinned rules first. Write it into the spec first."
   },
   {
-    "id": "rename-given",
-    "prompt": "The type `Given` in crates/celis/src/command/rules/given.rs is named after what it does. Give it a better name and update every use."
+    "id": "rename-part",
+    "prompt": "The enum `Part` in crates/celis/src/command/read/search.rs says little. Give it a better name and update every use."
   },
   {
-    "id": "index-tests",
-    "prompt": "Add unit tests for crates/celis/src/command/rules/index.rs: the counts of words, the words it leaves out, and the wrap of long lines."
+    "id": "search-tests",
+    "prompt": "Add unit tests for the words that crates/celis/src/command/read/search.rs takes from an ask: the short words, the common words and the plural s it leaves out."
   },
   {
     "id": "card-missing",
@@ -52,8 +52,8 @@
     "prompt": "Make `celis decide` refuse a rule whose text does not start with \"When \", as a usage error that shows the form \"When X: do Y, because Z\"."
   },
   {
-    "id": "readme-rules",
-    "prompt": "Describe `celis rules` and its index of words in README.md, for a person who installs celis."
+    "id": "readme-search",
+    "prompt": "Describe `celis search` and the three parts it prints in README.md, for a person who installs celis."
   },
   {
     "id": "stats-empty",

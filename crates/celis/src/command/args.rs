@@ -13,9 +13,7 @@ pub(crate) struct Args {
     pub demo: bool,
     pub new: bool,
     pub planned: bool,
-    pub situation: bool,
-    pub promoted: bool,
-    pub diff: bool,
+    pub binds: bool,
     pub next: bool,
     pub off: bool,
     pub markdown: bool,
@@ -27,7 +25,6 @@ pub(crate) struct Args {
     pub replaces: Option<String>,
     pub uses: Vec<String>,
     pub check: Option<String>,
-    pub pitfall: Option<String>,
     pub changed: Option<String>,
     pub by: Option<String>,
     pub session: Option<String>,
@@ -38,8 +35,10 @@ pub(crate) struct Args {
     pub page: Option<String>,
     pub paths: Vec<String>,
     pub files: Vec<String>,
-    pub good: Option<String>,
-    pub bad: Option<String>,
+    pub good: Vec<String>,
+    pub within: Vec<String>,
+    pub cells: Vec<String>,
+    pub bad: Vec<String>,
 }
 
 impl Args {
@@ -76,9 +75,7 @@ impl Args {
                 "--demo" => parsed.demo = true,
                 "--new" => parsed.new = true,
                 "--as-planned" => parsed.planned = true,
-                "--situation" => parsed.situation = true,
-                "--promoted" => parsed.promoted = true,
-                "--diff" => parsed.diff = true,
+                "--binds" => parsed.binds = true,
                 "--next" => parsed.next = true,
                 "--off" => parsed.off = true,
                 "--markdown" => parsed.markdown = true,
@@ -88,7 +85,6 @@ impl Args {
                 "--replaces" => parsed.replaces = Some(value(arg, rest.next())?),
                 "--uses" => parsed.uses.push(value(arg, rest.next())?),
                 "--check" => parsed.check = Some(value(arg, rest.next())?),
-                "--pitfall" => parsed.pitfall = Some(value(arg, rest.next())?),
                 "--changed" => parsed.changed = Some(value(arg, rest.next())?),
                 "--by" => parsed.by = Some(value(arg, rest.next())?),
                 "--session" => parsed.session = Some(value(arg, rest.next())?),
@@ -99,8 +95,10 @@ impl Args {
                 "--page" => parsed.page = Some(value(arg, rest.next())?),
                 "--path" => parsed.paths.push(value(arg, rest.next())?),
                 "--file" => parsed.files.push(value(arg, rest.next())?),
-                "--good" => parsed.good = Some(value(arg, rest.next())?),
-                "--bad" => parsed.bad = Some(value(arg, rest.next())?),
+                "--good" => parsed.good.push(value(arg, rest.next())?),
+                "--within" => parsed.within.push(value(arg, rest.next())?),
+                "--cell" => parsed.cells.push(value(arg, rest.next())?),
+                "--bad" => parsed.bad.push(value(arg, rest.next())?),
                 flag if flag.starts_with("--") => {
                     bad.get_or_insert(Failure::usage(format!("{flag} is not a flag")));
                 }

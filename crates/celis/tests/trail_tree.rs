@@ -18,18 +18,18 @@ fn printed(repo: &Repo, args: &[&str]) -> Vec<String> {
 }
 
 /// `tree <id>` prints the trail as a block: its mark, id and title, then two spaces in its progress and
-/// worked time, its open steps, its rules, then its closed steps, each group newest first and each step
+/// worked time, its open steps, its notes, then its closed steps, each group newest first and each step
 /// followed by its own two spaces further in, in the same order; `--full` adds the proof and grade of a
 /// done one.
 #[test]
-fn tree_prints_the_trail_its_rules_and_the_steps_under_it() {
+fn tree_prints_the_trail_its_notes_and_the_steps_under_it() {
     let repo = Repo::new();
     let by = support::account();
     let at = support::now() - 600;
     let trail = support::step_note(&repo, &by, None, "build the CRM", at);
     let scope = format!("trail:{}", trail.id);
     let project = (repo.project_id(), "repo");
-    let rule = support::stored_rule(
+    let pattern = support::stored_pattern(
         &repo,
         (&project.0, project.1),
         &by,
@@ -49,7 +49,7 @@ fn tree_prints_the_trail_its_rules_and_the_steps_under_it() {
     let footer = support::step_note(&repo, &by, Some(&trail), "footer", at + 6);
     let ids = |text: &str| {
         text.replace("{t}", short(&trail.id))
-            .replace("{r}", short(&rule.id))
+            .replace("{r}", short(&pattern.id))
             .replace("{c}", short(&colours.id))
             .replace("{p}", short(&page.id))
             .replace("{b}", short(&badge.id))
@@ -123,7 +123,7 @@ fn tree_prints_the_expect_line_in_the_label_column() {
     );
 }
 
-/// `tree <id>` prints an expired step with the closed steps, after the rules.
+/// `tree <id>` prints an expired step with the closed steps, after the notes.
 #[test]
 fn tree_prints_an_expired_step_with_the_closed_ones() {
     let repo = Repo::new();
@@ -132,7 +132,7 @@ fn tree_prints_an_expired_step_with_the_closed_ones() {
     let trail = support::step_note(&repo, &by, None, "the trail", at);
     let scope = format!("trail:{}", trail.id);
     let project = (repo.project_id(), "repo");
-    let rule = support::stored_rule(
+    let pattern = support::stored_pattern(
         &repo,
         (&project.0, project.1),
         &by,
@@ -147,7 +147,7 @@ fn tree_prints_an_expired_step_with_the_closed_ones() {
     assert_eq!(
         lines[2..],
         [
-            format!("  § {} a rule", short(&rule.id)),
+            format!("  § {} a rule", short(&pattern.id)),
             format!("  ◌ {} left part", short(&left.id)),
             format!("  ✓ {} done part · 30s", short(&done.id)),
         ],
@@ -155,18 +155,17 @@ fn tree_prints_an_expired_step_with_the_closed_ones() {
     );
 }
 
-/// `tree <id>` of an ask prints its trail's rules on its block.
+/// `tree <id>` of an ask prints its trail's notes on its block.
 #[test]
-fn tree_of_an_ask_prints_its_trails_rules() {
+fn tree_of_an_ask_prints_its_trails_notes() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "build the CRM"]);
-    let scope = format!("trail:{}", short(&trail));
     let o = cli(
         &repo,
-        &["decide", "--scope", &scope, "--", "colours are tokens"],
+        &["step", "note", short(&trail), "--", "colours are tokens"],
     );
     assert!(o.status.success(), "{}", err(&o));
-    let rule = out(&o).trim()[..8].to_string();
+    let pattern = out(&o).trim()[..8].to_string();
     let ask = add(&repo, &["--under", short(&trail), "--", "customers page"]);
     let badge = add(&repo, &["--under", short(&ask), "--", "badge"]);
     assert_eq!(
@@ -175,7 +174,7 @@ fn tree_of_an_ask_prints_its_trails_rules() {
             format!("○ {} customers page", short(&ask)),
             "  0/1 step".to_string(),
             format!("  ○ {} badge", short(&badge)),
-            format!("  § {rule} colours are tokens"),
+            format!("  § {pattern} colours are tokens"),
         ]
     );
 }
@@ -312,9 +311,8 @@ fn the_agent_view_prints_whole_lines_with_no_colour() {
     let repo = Repo::new();
     let title = "a trail whose words run well past thirty characters";
     let trail = add(&repo, &["--", title]);
-    let rule = "When you price a senior: use cents, because floats lost a cent on the receipt.";
-    let scope = format!("trail:{}", short(&trail));
-    let o = cli(&repo, &["decide", "--scope", &scope, "--", rule]);
+    let pattern = "When you price a senior: use cents, because floats lost a cent on the receipt.";
+    let o = cli(&repo, &["step", "note", short(&trail), "--", pattern]);
     assert!(o.status.success(), "{}", err(&o));
     let part = add(
         &repo,
@@ -331,7 +329,7 @@ fn the_agent_view_prints_whole_lines_with_no_colour() {
     let o = repo.run(&repo.path(), &["tree", short(&trail)], &env, "");
     let text = out(&o);
     assert!(!text.contains('\x1b') && !text.contains('…'), "{text:?}");
-    assert!(text.contains(title) && text.contains(rule), "{text}");
+    assert!(text.contains(title) && text.contains(pattern), "{text}");
     assert!(
         text.contains(&format!(
             "  ○ {} a part whose words run long · shelf/prices.py:40\n",
@@ -454,7 +452,7 @@ fn the_tree_folds_a_trails_twin_first_ask() {
 }
 
 /// `tree --demo` prints made-up trails of two projects with a step or a trail in each state, a change,
-/// rules and a dropped reason, `--all` a past day too, in a folder it removes, and writes nothing to
+/// patterns and a dropped reason, `--all` a past day too, in a folder it removes, and writes nothing to
 /// the store; with an id it refuses.
 #[test]
 fn tree_demo_prints_every_state_and_writes_nothing() {
@@ -499,7 +497,7 @@ fn tree_demo_prints_every_state_and_writes_nothing() {
 /// `tree <id> --graph` prints the trail as a graph: its path, its steps by state with its bar, done of
 /// all and time worked, then each step right under it as a card in a chain from left to right in the
 /// order they were added, a done one closed to its time, an open one with steps under it the bar of
-/// those done, and the trail's rules.
+/// those done, and the trail's notes.
 #[test]
 fn tree_graph_prints_the_trail_as_a_chain_of_cards() {
     let repo = Repo::new();
@@ -508,7 +506,7 @@ fn tree_graph_prints_the_trail_as_a_chain_of_cards() {
     let trail = support::step_note(&repo, &by, None, "build the CRM", at);
     let scope = format!("trail:{}", trail.id);
     let project = (repo.project_id(), "repo");
-    support::stored_rule(
+    support::stored_pattern(
         &repo,
         (&project.0, project.1),
         &by,
@@ -539,7 +537,7 @@ fn tree_graph_prints_the_trail_as_a_chain_of_cards() {
         "  ╰─────────────────────╯   ╎ ━━━━━━━━━━━━ 1/3    ╎   ╎ open                ╎",
         "                            ╰╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╯   ╰╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╯",
         "",
-        "  ╭─ § Rules 1 ──────────────────────────────────────────────────────────────────────────────────────────╮",
+        "  ╭─ § Notes 1 ──────────────────────────────────────────────────────────────────────────────────────────╮",
         "  │ § <id>  colours are tokens                                                                       │",
         "  ╰──────────────────────────────────────────────────────────────────────────────────────────────────────╯",
     ];
@@ -559,7 +557,7 @@ fn unnamed(line: &str) -> String {
 }
 
 /// With `--next`, `tree --demo` prints made-up trails of two projects with a step or a trail in each state, a change,
-/// rules and a dropped reason, `--all` a past day too, in a folder it removes, and writes nothing to
+/// patterns and a dropped reason, `--all` a past day too, in a folder it removes, and writes nothing to
 /// the store; with an id it refuses.
 #[test]
 fn next_tree_demo_prints_every_state_and_writes_nothing() {

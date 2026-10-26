@@ -1,36 +1,16 @@
 //! One run of `celis`.
 
 mod args;
-mod auth;
-mod close;
-mod graph;
-mod grep;
-mod hook;
-mod issue;
-mod link;
-mod name;
-mod names;
-mod prompt;
-pub(crate) mod report;
-mod rule;
-mod rules;
-#[cfg(feature = "search")]
-mod search;
-#[cfg(not(feature = "search"))]
-#[path = "command/search/off.rs"]
-mod search;
-mod stats;
-mod step;
-pub(crate) mod tree;
-mod update;
-mod view;
+mod read;
+mod record;
+mod setup;
 
 use crate::failure::Failure;
 use crate::help::{self, VERBS};
 pub(crate) use args::Args;
 use celis_nostr::Note;
-use celis_trails::records::id::short;
-use celis_trails::{Link, Name, Project, Store, Trails};
+use celis_store::records::id::short;
+use celis_store::{Home, Link, Project, Store};
 use serde_json::json;
 use std::collections::HashMap;
 use std::io::{IsTerminal, Write};
@@ -89,10 +69,9 @@ impl Command {
     fn go(&self, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> Result<(), Failure> {
         match args.words.first().map(String::as_str).unwrap_or("") {
             "step" => self.step(args, out, err, &self.project_of(args)?),
-            "decide" => self.decide(args, out, err, &self.project_of(args)?),
-            "name" => self.name(args, out),
+            "pattern" => self.pattern(args, out, err, &self.project_of(args)?),
             "tree" => self.tree(args, out),
-            "rules" => self.rules(args, out),
+            "patterns" => self.patterns(args, out),
             "grep" => self.grep(&self.args[1..], out),
             "search" => self.search(args, out, err),
             "stats" => self.stats(args, out),
@@ -140,20 +119,14 @@ impl Command {
         Project::at(&self.folder)
     }
 
-    /// The project `--project` names, `skill:<name>` or a project of the store with the name of its
-    /// newest record, else the project of the working folder; any other id is a usage error.
+    /// The project `--project` names, a project of the store with the name of its newest record, else the project of the working folder; any other id is a usage error.
     fn project_of(&self, args: &Args) -> Result<Project, Failure> {
         let project = self.project();
         let Some(id) = &args.project else {
             return Ok(project);
         };
-        if let Some(name) = id.strip_prefix("skill:").and_then(Name::parse) {
-            return Ok(project.skill(&name));
-        }
         let anchor = self.trails()?.anchor(id).ok_or_else(|| {
-            Failure::usage(format!(
-                "--project takes skill:<name> or a project of the store, not {id}"
-            ))
+            Failure::usage(format!("--project takes a project of the store, not {id}"))
         })?;
         Ok(project.with(anchor))
     }
@@ -187,7 +160,7 @@ impl Command {
 
     /// Whether the store exists.
     pub(crate) fn held(&self) -> Result<bool, Failure> {
-        Ok(Store::exists(&self.home()?))
+        Ok(Home::exists(&self.home()?))
     }
 
     /// The file whose presence says the opening scene was shown: `$CELIS_OPENING`, else `opening` in
@@ -209,7 +182,7 @@ impl Command {
 
     /// The trails of the store, with the working folder's linked folders that are on, opened now; a check
     /// runs for `CELIS_CHECK_SECONDS`, 600 when not set.
-    pub(crate) fn trails(&self) -> Result<Trails, Failure> {
+    pub(crate) fn trails(&self) -> Result<Store, Failure> {
         let limit = self
             .env
             .get("CELIS_CHECK_SECONDS")
@@ -217,8 +190,8 @@ impl Command {
             .unwrap_or(600);
         let home = self.home()?;
         let links = Link::all(&home, &self.folder);
-        let store = links.into_iter().fold(Store::open(&home)?, Store::with);
-        Ok(Trails::open(store, now(), limit))
+        let store = links.into_iter().fold(Home::open(&home)?, Home::with);
+        Ok(Store::open(store, now(), limit))
     }
 
     /// Prints the id of `note`: its first 8 characters on a terminal, else whole; `{"id"}` with

@@ -168,8 +168,8 @@ fn prompts(repo: &Repo, step: &str) -> Vec<String> {
 }
 
 /// Each agent's session start gives the card; an agent other than Claude Code also gets its session, to
-/// pass with `--session`. Antigravity has no session start, and gets both before each call of the
-/// model.
+/// pass with `--session`, and the path of `judge.md`. Antigravity has no session start, and gets both
+/// before each call of the model.
 #[test]
 fn each_agents_session_start_gives_the_card_and_its_session() {
     let repo = Repo::new();
@@ -183,37 +183,41 @@ fn each_agents_session_start_gives_the_card_and_its_session() {
         );
         let named = context.contains("celis session: s1. Pass --session s1");
         assert_eq!(named, agent.name != "claude", "{}: {context}", agent.name);
+        let judged = context.contains("agents/judge.md. With no subagents");
+        assert_eq!(judged, agent.name != "claude", "{}: {context}", agent.name);
     }
 }
 
-/// Each agent's session start lists the named trails that `celis name --limit 20` prints, under the
-/// line that says how to use one; with none, it lists none.
+/// Claude Code's session start asks to offer `/celis:tidy` while the store holds a pattern and no tidy began
+/// in the last 7 days.
 #[test]
-fn each_agents_session_start_lists_the_named_trails() {
+fn claudes_session_start_asks_to_offer_a_tidy() {
     let repo = Repo::new();
-    for agent in AGENTS {
-        let stdout = agent.run(&repo, agent.start, &agent.payload("s1", &repo.path(), ""));
-        let context = agent.context(&stdout);
-        assert!(
-            !context.contains("Named trails:"),
-            "{}: {context}",
-            agent.name
-        );
-    }
-    let trail = support::add(&repo, &["--", "Review a pull request"]);
-    let o = support::cli(&repo, &["name", &trail[..8], "review"]);
+    let claude = &AGENTS[0];
+    let start = claude.payload("s1", &repo.path(), "");
+    assert!(!claude
+        .run(&repo, claude.start, &start)
+        .contains("/celis:tidy"));
+    let o = repo.run(
+        &repo.path(),
+        &["pattern", "--", "When you test: set A=1."],
+        &[],
+        "",
+    );
     assert!(o.status.success(), "{}", err(&o));
-    let line = format!("review {} Review a pull request", &trail[..8]);
-    for agent in AGENTS {
-        let stdout = agent.run(&repo, agent.start, &agent.payload("s2", &repo.path(), ""));
-        let context = agent.context(&stdout);
-        assert!(
-            context.contains("Named trails:"),
-            "{}: {context}",
-            agent.name
-        );
-        assert!(context.contains(&line), "{}: {context}", agent.name);
-    }
+    let said = claude.run(&repo, claude.start, &start);
+    assert!(said.contains("no tidy has run yet"), "{said}");
+    assert!(said.contains("offer them /celis:tidy"), "{said}");
+    let o = repo.run(
+        &repo.path(),
+        &["step", "add", "--new", "--", "Tidy the celis trails"],
+        &[],
+        "",
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    assert!(!claude
+        .run(&repo, claude.start, &start)
+        .contains("/celis:tidy"));
 }
 
 /// Each agent's prompt hook writes the prompt on its session's trail while a step works, in the person's
@@ -247,57 +251,57 @@ fn each_agents_prompt_hook_writes_a_prompt_on_its_sessions_trail() {
     }
 }
 
-/// Claude Code's prompt hook asks for the past agent once a session, and again after a compaction's
-/// session start.
+/// Claude Code's prompt hook asks for `celis search` at each prompt, not only at the first of a session.
 #[test]
-fn claudes_hooks_ask_for_the_past_agent_again_after_a_compaction() {
+fn claudes_prompt_hook_asks_for_search_at_each_prompt() {
     let repo = Repo::new();
     let o = repo.run(
         &repo.path(),
-        &["decide", "--", "When you test: set A=1."],
+        &["pattern", "--", "When you test: set A=1."],
         &[],
         "",
     );
     assert!(o.status.success(), "{}", err(&o));
     let claude = &AGENTS[0];
-    let ask = claude.payload("s1", &repo.path(), "make it blue");
-    assert!(claude
-        .run(&repo, claude.ask, &ask)
-        .contains("celis:past agent"));
-    assert!(!claude
-        .run(&repo, claude.ask, &ask)
-        .contains("celis:past agent"));
-    let compact = serde_json::json!({"session_id": "s1", "cwd": repo.path(), "source": "compact"});
-    claude.run(&repo, claude.start, &compact.to_string());
-    assert!(claude
-        .run(&repo, claude.ask, &ask)
-        .contains("celis:past agent"));
-}
-
-/// The prompt hooks of Codex and Gemini CLI ask to do what past.md says in place of the past agent.
-#[test]
-fn codex_and_gemini_prompt_hooks_name_past_md_for_the_past_agent() {
-    let repo = Repo::new();
+    for prompt in ["make it blue", "now add a test"] {
+        let ask = claude.payload("s1", &repo.path(), prompt);
+        let said = claude.run(&repo, claude.ask, &ask);
+        assert!(said.contains("celis search"), "{prompt}: {said}");
+    }
     let o = repo.run(
         &repo.path(),
-        &["decide", "--", "When you test: set A=1."],
+        &["step", "add", "--session", "s1", "--", "make it blue"],
         &[],
         "",
     );
     assert!(o.status.success(), "{}", err(&o));
-    for agent in [&AGENTS[1], &AGENTS[3]] {
-        let said = agent.run(
-            &repo,
-            agent.ask,
-            &agent.payload(agent.name, &repo.path(), "make it blue"),
-        );
+    let ask = claude.payload("s1", &repo.path(), "and the border too");
+    let said = claude.run(&repo, claude.ask, &ask);
+    assert!(said.contains("celis search"), "{said}");
+}
+
+/// The prompt hooks of Claude Code, Codex and Gemini CLI give one line, with no past agent and no
+/// `past.md`.
+#[test]
+fn each_prompt_hook_gives_one_line() {
+    let repo = Repo::new();
+    let o = repo.run(
+        &repo.path(),
+        &["pattern", "--", "When you test: set A=1."],
+        &[],
+        "",
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    for agent in [&AGENTS[0], &AGENTS[1], &AGENTS[3]] {
+        let ask = agent.payload(agent.name, &repo.path(), "make it blue");
+        let said = agent.run(&repo, agent.ask, &ask);
         let said = agent.context(&said);
+        assert_eq!(said.trim_end().lines().count(), 1, "{}: {said}", agent.name);
         assert!(
-            said.contains("do what past.md says"),
+            !said.contains("celis:past") && !said.contains("past.md"),
             "{}: {said}",
             agent.name
         );
-        assert!(!said.contains("celis:past"), "{}: {said}", agent.name);
     }
 }
 

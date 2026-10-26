@@ -11,7 +11,7 @@ use crate::command::Command;
 use crate::failure::Failure;
 use crate::progress::Model;
 use celis_nostr::Note;
-use celis_trails::Trails;
+use celis_store::Store;
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender};
@@ -56,7 +56,7 @@ pub(crate) trait Live {
 struct Batch {
     landed: bool,
     linked: bool,
-    store: Option<Box<Result<Trails, Failure>>>,
+    store: Option<Box<Result<Store, Failure>>>,
     paths: Vec<PathBuf>,
 }
 
@@ -68,7 +68,7 @@ impl Command {
         &self,
         out: &mut dyn Write,
         empty: Page,
-        start: impl FnOnce(&Trails) -> Result<P, Failure>,
+        start: impl FnOnce(&Store) -> Result<P, Failure>,
     ) -> Result<(), Failure> {
         let opening = self.opening();
         self.screen(out, |out, wakes| {
@@ -102,7 +102,7 @@ impl Command {
     fn follow(
         &self,
         page: &mut impl Live,
-        mut trails: Trails,
+        mut trails: Store,
         screen: &mut Screen,
         out: &mut dyn Write,
         (send, events): (Sender<Wake>, Receiver<Wake>),

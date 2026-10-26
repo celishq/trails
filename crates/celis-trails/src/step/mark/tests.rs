@@ -1,5 +1,6 @@
 use super::*;
-use crate::{By, Done, ProofFile};
+use crate::{By, Done};
+use celis_store::ProofFile;
 
 /// A `done` carries its proof, what changed from the plan and who gave the proof, and reads back the
 /// same (`spec/03-steps.md`, "Closing").
@@ -69,13 +70,36 @@ fn an_empty_done_or_drop_is_no_mark() {
     }
 }
 
-/// A name carries the name on its trail, and reads back the same (`spec/07-names.md`, "Names").
+/// A reader ignores a name, which older versions wrote on a trail (`spec/README.md`, "Names").
 #[test]
-fn a_name_carries_its_name() {
+fn a_name_reads_as_no_mark() {
     let account = Account::new(&[1u8; 32]).unwrap();
-    let name = Mark::Name {
-        name: "review".into(),
+    let prompt = Mark::Prompt {
+        text: "review".into(),
     };
-    let note = name.record(&account, "t", 10).unwrap();
-    assert_eq!(Mark::read(&note), Some(("t".to_string(), name)));
+    let mut note = prompt.record(&account, "t", 10).unwrap();
+    for tag in note.tags.iter_mut().filter(|t| t[0] == "l") {
+        tag[1] = "name".into();
+    }
+    assert_eq!(Mark::read(&note), None);
+}
+
+/// A note carries its text and the step it is on, reads back the same, and reads as no mark with no
+/// text (`spec/03-steps.md`, "Notes").
+#[test]
+fn a_note_carries_its_text() {
+    let account = Account::new(&[1u8; 32]).unwrap();
+    let note = Mark::Note {
+        text: "keep the old table".into(),
+    };
+    let record = note.record(&account, "s", 10).unwrap();
+    assert!(record.tags.contains(&vec![
+        "l".to_string(),
+        "note".to_string(),
+        "celis.step".to_string()
+    ]));
+    assert_eq!(Mark::read(&record), Some(("s".to_string(), note)));
+    let empty = Mark::Note { text: " ".into() };
+    let record = empty.record(&account, "s", 10).unwrap();
+    assert_eq!(Mark::read(&record), None);
 }

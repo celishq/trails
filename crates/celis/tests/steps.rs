@@ -130,3 +130,26 @@ fn a_steps_line_holds_its_title_and_the_full_tree_its_detail() {
     assert!(lines[2].ends_with(" Round down"), "{full}");
     assert_eq!(lines[3], "    The test expects 7.99.", "{full}");
 }
+
+/// A step with no `at` and no `check` takes and closes like any other (`spec/03-steps.md`, "Steps").
+#[test]
+fn a_step_with_no_place_or_check_closes() {
+    let repo = Repo::new();
+    let trail = support::add(&repo, &["--", "the trail"]);
+    let step = support::add(&repo, &["--under", &trail[..8], "--", "a bare step"]);
+    let note = stored(&repo).into_iter().find(|n| n.id == step).unwrap();
+    assert!(tag_values(&note, "at").is_empty() && tag_values(&note, "check").is_empty());
+    assert!(run(&repo, &["step", "start", &step[..8]]).status.success());
+    let o = run(
+        &repo,
+        &[
+            "step",
+            "done",
+            &step[..8],
+            "--as-planned",
+            "--",
+            "it reads well",
+        ],
+    );
+    assert!(o.status.success(), "{}", support::err(&o));
+}

@@ -1,6 +1,8 @@
 use super::*;
-use celis_nostr::Account;
-use celis_trails::{Anchor, RuleId, Scope, StepId, StepRecord};
+use celis_nostr::{Account, Note};
+use celis_patterns::{PatternRecord, Scope};
+use celis_store::{Anchor, PatternId, StepId};
+use celis_trails::StepRecord;
 
 fn account() -> Account {
     Account::new(&[1u8; 32]).unwrap()
@@ -29,28 +31,29 @@ fn step(text: &str, at: u64, under: Option<&Note>, uses: &[&str]) -> Note {
     .unwrap()
 }
 
-/// A rule of `text` at `at` that replaces `replaces`.
-fn rule(text: &str, at: u64, replaces: Option<&Note>) -> Note {
-    Rule {
+/// A pattern of `text` at `at` that replaces `replaces`.
+fn pattern(text: &str, at: u64, replaces: Option<&Note>) -> Note {
+    PatternRecord {
         anchor: anchor(),
         scope: Scope::Project,
-        replaces: replaces.map(|n| RuleId::new(&n.id)),
+        replaces: replaces.map(|n| PatternId::new(&n.id)),
         content: text.into(),
         paths: vec![],
-        situation: false,
-        promoted: false,
-        pair: Default::default(),
+        binds: false,
+        within: vec![],
+        cells: vec![],
+        examples: Default::default(),
     }
     .record(&account(), at)
     .unwrap()
 }
 
-/// Reuse counts the follows, and the uses of a live rule, not of a replaced one (`spec/06-reuse.md`,
+/// Reuse counts the follows, and the uses of a live pattern, not of a replaced one (`spec/06-reuse.md`,
 /// "Uses").
 #[test]
-fn reuse_counts_the_follows_and_live_rule_uses() {
-    let old = rule("old", 1, None);
-    let new = rule("new", 2, Some(&old));
+fn reuse_counts_the_follows_and_live_pattern_uses() {
+    let old = pattern("old", 1, None);
+    let new = pattern("new", 2, Some(&old));
     let trail = step("trail", 10, None, &[]);
     let source = step("source", 11, Some(&trail), &[]);
     let both = step("both", 21, Some(&trail), &[&source.id, &new.id, &old.id]);
@@ -58,30 +61,30 @@ fn reuse_counts_the_follows_and_live_rule_uses() {
     let live = new.id.clone();
     let records = vec![old, new, trail, source, both.clone(), other];
     let steps = Steps::new(&records, 50);
-    let rules = Rules::new(&records);
+    let patterns = Patterns::new(&records);
     let reuse = Reuse::new(&steps);
-    let used = reuse.used(&rules);
+    let used = reuse.used(&patterns);
     assert_eq!(reuse.total(), 1);
     assert_eq!(used.len(), 1);
-    assert_eq!((used[0].0.id.as_str(), used[0].2), (live.as_str(), 2));
+    assert_eq!((used[0].0.id(), used[0].1), (live.as_str(), 2));
 }
 
-/// Reuse counts the follows of some steps, and their uses of a live rule, not of a replaced one
+/// Reuse counts the follows of some steps, and their uses of a live pattern, not of a replaced one
 /// (`spec/06-reuse.md`, "Uses").
 #[test]
-fn reuse_counts_the_follows_and_live_rule_uses_of_some_steps() {
-    let old = rule("old", 1, None);
-    let new = rule("new", 2, Some(&old));
+fn reuse_counts_the_follows_and_live_pattern_uses_of_some_steps() {
+    let old = pattern("old", 1, None);
+    let new = pattern("new", 2, Some(&old));
     let trail = step("trail", 10, None, &[]);
     let source = step("source", 11, Some(&trail), &[]);
     let both = step("both", 21, Some(&trail), &[&source.id, &new.id, &old.id]);
     let other = step("other", 22, Some(&trail), &[&new.id]);
     let records = vec![old, new, trail, source, both.clone(), other];
     let steps = Steps::new(&records, 50);
-    let rules = Rules::new(&records);
+    let patterns = Patterns::new(&records);
     let reuse = Reuse::new(&steps);
     let picked = vec![steps.get(&both.id).unwrap()];
     assert_eq!(reuse.follows_of(&picked), 1);
-    assert_eq!(reuse.uses_of(&picked, &rules), 1);
-    assert_eq!(reuse.uses_of(&steps.all(), &rules), 2);
+    assert_eq!(reuse.uses_of(&picked, &patterns), 1);
+    assert_eq!(reuse.uses_of(&steps.all(), &patterns), 2);
 }

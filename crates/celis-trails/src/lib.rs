@@ -1,47 +1,24 @@
-//! celis-trails — the trails of steps and the rules agents leave for each other on one machine.
+//! celis-trails — the trails of steps that agents take and close on one machine.
 //!
-//! A [`step`] is one part of the work, a [`trail`] is one task as its steps, and a [`rule`] is what later
-//! work must keep. [`Trails`] writes them, signed by the account, into the [`records`] store.
+//! A [`step`] is one part of the work, and a [`trail`] is one task as its steps. [`TrailStore`] reads
+//! them from a store and writes them, signed by the account.
 
-pub mod name;
-pub mod records;
-pub mod refusal;
-pub mod rule;
 pub mod step;
 pub mod trail;
-pub mod trails;
+pub mod trail_store;
 
-pub use name::named_trail::NamedTrail;
-pub use name::Name;
-pub use records::anchor::Anchor;
-pub use records::id::rule_id::RuleId;
-pub use records::id::step_id::StepId;
-pub use records::link::Link;
-pub use records::phrase::Phrase;
-pub use records::place::Place;
-pub use records::project::Project;
-pub use records::store::Store;
-pub use refusal::Refusal;
-pub use rule::fit::Fit;
-pub use rule::glob::Glob;
-pub use rule::pair::Pair;
-pub use rule::rule_end::RuleEnd;
-pub use rule::rule_entry::RuleEntry;
-pub use rule::rules::Rules;
-pub use rule::scope::Scope;
-pub use rule::Rule;
 pub use step::by::By;
 pub use step::check::Check;
 pub use step::done::Done;
 pub use step::mark::Mark;
-pub use step::proof_file::ProofFile;
+pub use step::notes::Notes;
 pub use step::state::State;
 pub use step::step_record::StepRecord;
 pub use step::steps::Steps;
 pub use step::used::Used;
 pub use step::Step;
 pub use trail::Trail;
-pub use trails::draft::Draft;
-pub use trails::notice::Notice;
-pub use trails::written::Written;
-pub use trails::Trails;
+pub use trail_store::draft::Draft;
+pub use trail_store::notice::Notice;
+pub use trail_store::written::Written;
+pub use trail_store::TrailStore;

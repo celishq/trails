@@ -37,7 +37,7 @@ fn copied(repo: &Repo) -> String {
     std::fs::read_to_string(repo.home().join("copied")).unwrap()
 }
 
-/// On a terminal, `stats` draws its cards: the effect, reuse, rules, work, time, outcome and projects,
+/// On a terminal, `stats` draws its cards: the effect, reuse, patterns, work, time, outcome and projects,
 /// a number from fewer than 10 records says so, and the keys it reads end the screen.
 #[test]
 fn stats_on_a_terminal_draws_its_cards() {
@@ -51,7 +51,7 @@ fn stats_on_a_terminal_draws_its_cards() {
         "00 EFFECT",
         "AS PLANNED",
         "01 REUSE",
-        "02 RULES USED",
+        "02 PATTERNS USED",
         "03 WORK · 14 DAYS",
         "04 TIME A STEP TOOK",
         "05 OUTCOME",
@@ -221,7 +221,7 @@ fn stats_at_a_narrow_width_prints_plain_numbers() {
 }
 
 /// `stats --demo` fills every card from made-up trails: each number of the effect shows its change, and
-/// steps were followed and rules used.
+/// steps were followed and patterns used.
 #[test]
 fn stats_demo_fills_every_card() {
     let repo = Repo::new();
@@ -232,7 +232,7 @@ fn stats_demo_fills_every_card() {
     for empty in [
         "few records",
         "no step followed another yet",
-        "no rule used yet",
+        "no pattern used yet",
         "—",
     ] {
         assert!(!shown.contains(empty), "{empty:?} in\n{shown}");
@@ -249,7 +249,7 @@ fn stats_demo_prints_and_writes_nothing() {
     let o = repo.run(&repo.path(), &["stats", "--demo"], &env, "");
     assert!(o.status.success(), "{}", err(&o));
     let text = out(&o);
-    for part in [" · followed ", "rule ", "total "] {
+    for part in [" · followed ", "pattern ", "total "] {
         assert!(text.contains(part), "{part:?}: {text}");
     }
     assert_eq!(std::fs::read_dir(temp.path()).unwrap().count(), 0);
@@ -344,9 +344,9 @@ fn next_stats_scrolls_through_a_tall_section() {
     watch.press("\r");
     watch.until("▾ Learning");
     watch.until("enter close");
-    watch.without("weekly rule usage");
+    watch.without("weekly pattern usage");
     watch.press("\x1b[B");
-    watch.until("weekly rule usage");
+    watch.until("weekly pattern usage");
     watch.until("enter close");
     watch.press("\x1b[B\x1b[B\x1b[B");
     watch.until("enter open");

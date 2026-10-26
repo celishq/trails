@@ -4,15 +4,16 @@ pub mod by;
 pub mod check;
 pub mod done;
 pub mod mark;
-pub mod proof_file;
+pub mod notes;
 pub mod state;
 pub mod step_record;
 pub mod steps;
 pub mod used;
 
 use crate::step::steps::{Close, Entry, LIFE};
-use crate::{Done, Mark, NamedTrail, State, StepId, StepRecord, Steps, Trail, Used};
+use crate::{Done, Mark, State, StepRecord, Steps, Trail, Used};
 use celis_nostr::Note;
+use celis_store::StepId;
 use std::collections::HashSet;
 
 /// One step of a store as it stands: its record with its edits, where it sits in its trail, and how its
@@ -50,11 +51,6 @@ impl<'a> Step<'a> {
         self.entry.step.title()
     }
 
-    /// It, with the name it holds first (CIP-07); `None` when it holds none.
-    pub fn named(self) -> Option<NamedTrail<'a>> {
-        self.steps.named_of(self)
-    }
-
     pub fn is_trail(self) -> bool {
         self.entry.step.under.is_none()
     }
@@ -65,7 +61,7 @@ impl<'a> Step<'a> {
     }
 
     /// What each of its `uses` names, once each, in the order it names them; an id that names no step
-    /// and no rule is left out.
+    /// and no pattern is left out.
     pub fn uses(self) -> Vec<Used<'a>> {
         let mut seen = HashSet::new();
         let ids = self
@@ -76,19 +72,18 @@ impl<'a> Step<'a> {
             .filter(|id| seen.insert(id.as_str()));
         ids.filter_map(|id| match self.steps.get(id) {
             Some(step) => Some(Used::Follow(step)),
-            None => self.steps.holds_rule(id).then_some(Used::Rule(id)),
+            None => self.steps.holds_pattern(id).then_some(Used::Pattern(id)),
         })
         .collect()
     }
 
-    /// The trails that the steps on its `under` chain follow, then, past each named trail (CIP-07), the
-    /// trails that its steps follow, at any depth; each once.
+    /// The trails that the steps on its `under` chain follow, each once.
     pub fn followed(self) -> Vec<Step<'a>> {
         let follows = |s: Step<'a>| {
             let used = s.uses().into_iter();
             used.filter_map(|u| match u {
                 Used::Follow(step) => Some(step.trail()),
-                Used::Rule(_) => None,
+                Used::Pattern(_) => None,
             })
         };
         let chain = std::iter::successors(Some(self), |s| s.under());
@@ -98,9 +93,6 @@ impl<'a> Step<'a> {
         while let Some(trail) = next.pop() {
             if found.iter().any(|f| f.id() == trail.id()) {
                 continue;
-            }
-            if trail.named().is_some() {
-                next.extend(trail.tree().into_iter().flat_map(follows));
             }
             found.push(trail);
         }
@@ -145,6 +137,11 @@ impl<'a> Step<'a> {
     /// Whether it sits right under its trail.
     pub fn is_ask(self) -> bool {
         self.under().is_some_and(|u| u.is_trail())
+    }
+
+    /// Whether a judge confirms it: an ask, or another step with steps under it, but not a trail.
+    pub fn is_judged(self) -> bool {
+        self.is_ask() || (!self.is_trail() && !self.entry.children.is_empty())
     }
 
     /// The first start record that names it.

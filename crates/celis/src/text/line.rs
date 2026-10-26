@@ -3,21 +3,48 @@
 use super::clock::took;
 use crate::progress::Grade;
 use celis_nostr::Note;
-use celis_trails::records::id::short;
-use celis_trails::{ProofFile, Rule, Step, Trails};
+use celis_patterns::{Example, Pattern};
+use celis_store::records::id::short;
+use celis_store::{ProofFile, Store};
+use celis_trails::{Step, TrailStore};
 
-/// `<id, first 8> <scope> <text>` of the rule that `note` holds, then the proof and the blobs of
-/// `trails` for the good and the bad step of its pair.
-pub(crate) fn rule(note: &Note, rule: &Rule, trails: &Trails) -> String {
+/// `<id, first 8> note <first line>` of the note `note`, then each next line of its text.
+pub(crate) fn note(note: &Note) -> String {
+    let mut text = note.content.lines();
+    let head = format!("{} note {}", short(&note.id), text.next().unwrap_or(""));
+    let lines = std::iter::once(head).chain(text.map(|l| format!("  {l}")));
+    lines.collect::<Vec<_>>().join("\n")
+}
+
+/// `<id, first 8> <scope> <first line>` of `pattern`, then each next line of its
+/// text, then each of its examples: a step with its proof and blobs, a file with its blob, or a URL.
+pub(crate) fn pattern(pattern: &Pattern, trails: &Store) -> String {
+    let (note, pattern) = (pattern.note, &pattern.record);
     let steps = trails.steps();
+    let mut text = pattern.content.lines();
     let head = format!(
         "{} {} {}",
         short(&note.id),
-        rule.scope.short(),
-        rule.content
+        pattern.scope.text(),
+        text.next().unwrap_or("")
     );
     let mut lines = vec![head];
-    for (side, id) in rule.pair.sides() {
+    lines.extend(text.map(|l| format!("  {l}")));
+    let cells = pattern.cells.iter();
+    lines.extend(cells.map(|c| format!("  cell    {}", c.name())));
+    for (side, example) in pattern.examples.sides() {
+        let id = match example {
+            Example::Step(id) => id,
+            Example::File(file) => {
+                lines.push(format!("  {side:<4}    {}", file.place));
+                lines.push(format!("          {}", blob(file, trails)));
+                continue;
+            }
+            Example::Url(url) => {
+                lines.push(format!("  {side:<4}    {url}"));
+                continue;
+            }
+        };
         let Ok(step) = steps.find(id) else {
             continue;
         };
@@ -55,7 +82,7 @@ pub(crate) fn plural(n: usize, word: &str) -> String {
 }
 
 /// Where `trails` keeps the blob of `file`; its place and sha256 when the store lacks it.
-pub(crate) fn blob(file: &ProofFile, trails: &Trails) -> String {
+pub(crate) fn blob(file: &ProofFile, trails: &Store) -> String {
     match trails.blob(&file.sha256) {
         Some(path) => path.display().to_string(),
         None => format!("{} · {} missing", file.place, file.sha256),

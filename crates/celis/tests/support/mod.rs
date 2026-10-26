@@ -2,7 +2,7 @@
 #![allow(dead_code)]
 
 use celis_nostr::{Account, Note};
-use celis_trails::{Project, Store};
+use celis_store::{Home, Project};
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::io::Write;
@@ -158,7 +158,7 @@ fn shared(repo: &Repo) -> std::path::PathBuf {
 }
 
 pub fn put(repo: &Repo, note: &Note) {
-    Store::open(&repo.home()).unwrap().write(note).unwrap();
+    Home::open(&repo.home()).unwrap().write(note).unwrap();
 }
 
 /// A cairn on the repo that `by` signed at `at`, with the extra tags `extra`.
@@ -278,9 +278,9 @@ pub fn refusal(o: &Output, code: i32, name: &str) {
     assert_eq!(object["error"], name, "{}", err(o));
 }
 
-/// A rule of `by` on `project` (id, name) saying `content`, with the tags `scope` and `replaces`
+/// A pattern of `by` on `project` (id, name) saying `content`, with the tags `scope` and `replaces`
 /// when given, written at `created`, put in the store.
-pub fn stored_rule(
+pub fn stored_pattern(
     repo: &Repo,
     project: (&str, &str),
     by: &Account,
@@ -288,11 +288,11 @@ pub fn stored_rule(
     content: &str,
     created: u64,
 ) -> Note {
-    tagged_rule(repo, project, by, place, Vec::new(), content, created)
+    tagged_pattern(repo, project, by, place, Vec::new(), content, created)
 }
 
-/// A rule as [`stored_rule`] writes it, with the tags `extra` too.
-pub fn tagged_rule(
+/// A pattern as [`stored_rule`] writes it, with the tags `extra` too.
+pub fn tagged_pattern(
     repo: &Repo,
     project: (&str, &str),
     by: &Account,
@@ -308,8 +308,8 @@ pub fn tagged_rule(
         vec!["i".into(), anchor],
         vec!["k".into(), "project".into()],
         vec!["project".into(), project.1.into()],
-        vec!["L".into(), "celis.decision".into()],
-        vec!["l".into(), "decision".into(), "celis.decision".into()],
+        vec!["L".into(), "celis.pattern".into()],
+        vec!["l".into(), "pattern".into(), "celis.pattern".into()],
     ];
     if let Some(scope) = place.0 {
         tags.push(vec!["scope".into(), scope.into()]);
@@ -380,15 +380,15 @@ pub fn sharing_a_start_with(by: &Account, at: u64, tags: &[Vec<String>]) -> (Not
 
 /// The tags of a step on `project` (id, name).
 pub fn step_tags(project: (&str, &str)) -> Vec<Vec<String>> {
-    let mut tags = rule_tags(project);
+    let mut tags = pattern_tags(project);
     tags.truncate(5);
     tags.push(vec!["L".into(), "celis.step".into()]);
     tags.push(vec!["l".into(), "step".into(), "celis.step".into()]);
     tags
 }
 
-/// The tags of a rule on `project` (id, name).
-pub fn rule_tags(project: (&str, &str)) -> Vec<Vec<String>> {
+/// The tags of a pattern on `project` (id, name).
+pub fn pattern_tags(project: (&str, &str)) -> Vec<Vec<String>> {
     let anchor = format!("project:{}", project.0);
     vec![
         vec!["I".into(), anchor.clone()],
@@ -396,8 +396,8 @@ pub fn rule_tags(project: (&str, &str)) -> Vec<Vec<String>> {
         vec!["i".into(), anchor],
         vec!["k".into(), "project".into()],
         vec!["project".into(), project.1.into()],
-        vec!["L".into(), "celis.decision".into()],
-        vec!["l".into(), "decision".into(), "celis.decision".into()],
+        vec!["L".into(), "celis.pattern".into()],
+        vec!["l".into(), "pattern".into(), "celis.pattern".into()],
     ]
 }
 
@@ -443,7 +443,7 @@ pub fn objects(repo: &Repo, args: &[&str]) -> Vec<serde_json::Value> {
         .collect()
 }
 
-/// The ids, first 8 characters, of the rules `step start` prints in `folder` for a new step that
+/// The ids, first 8 characters, of the patterns `step start` prints in `folder` for a new step that
 /// `step add --new <args>` adds, in order.
 pub fn read_ids(repo: &Repo, folder: &Path, args: &[&str]) -> Vec<String> {
     let text = format!("a step that reads {}", args.join(" "));
@@ -459,26 +459,24 @@ pub fn read_ids(repo: &Repo, folder: &Path, args: &[&str]) -> Vec<String> {
         .lines()
         .filter_map(|l| {
             let v: serde_json::Value = serde_json::from_str(l).unwrap();
-            Some(v.get("decision")?["id"].as_str()?[..8].to_string())
+            Some(v.get("pattern")?["id"].as_str()?[..8].to_string())
         })
         .collect()
 }
 
-/// The ids, first 8 characters, of the rules `celis rules` prints in `folder` for the places of each
-/// `--at` of `args`, in order.
+/// The ids, first 8 characters, of the patterns `celis search --kind pattern` prints in `folder` for the
+/// places of each `--at` of `args`, in order.
 pub fn place_ids(repo: &Repo, folder: &Path, args: &[&str]) -> Vec<String> {
-    let mut all = vec!["rules", "--json"];
+    let mut all = vec!["search"];
     let pairs = args.windows(2).filter(|w| w[0] == "--at");
     all.extend(pairs.map(|w| w[1]));
+    all.extend(["--kind", "pattern", "--", "x"]);
     let o = repo.run(folder, &all, &[], "");
     assert!(o.status.success(), "{}", err(&o));
-    out(&o)
-        .lines()
-        .filter_map(|l| {
-            let v: serde_json::Value = serde_json::from_str(l).unwrap();
-            Some(v.get("id")?.as_str()?[..8].to_string())
-        })
-        .collect()
+    let shown = out(&o);
+    let lines = shown.lines().filter(|l| !l.starts_with(' '));
+    let patterns = lines.filter(|l| *l != "patterns" && *l != "nothing fits this ask");
+    patterns.map(|l| l[..8].to_string()).collect()
 }
 
 /// A `TZ` where it is now about noon, so the hours before now fall on the same day.
@@ -487,16 +485,23 @@ pub fn noon() -> String {
     format!("NOON{}", (secs / 3600 % 24) as i64 - 12)
 }
 
-/// The ids, first 8 characters, of the live rules of the project `name` that `celis grep` prints in
+/// The ids, first 8 characters, of the live patterns of the project `name` that `celis grep` prints in
 /// `folder`, in order.
 pub fn live_ids(repo: &Repo, folder: &Path, name: &str) -> Vec<String> {
-    let o = repo.run(folder, &["grep", " rule [0-9a-f]* live "], &[], "");
+    let o = repo.run(folder, &["grep", " pattern [0-9a-f]* live "], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     let project = format!("[{name}]");
     found(&out(&o))
         .into_iter()
         .filter(|(of, line)| *of == project && line.split(' ').nth(2) == Some("live"))
-        .filter_map(|(_, line)| Some(line.strip_prefix("rule ")?.split(' ').next()?.to_string()))
+        .filter_map(|(_, line)| {
+            Some(
+                line.strip_prefix("pattern ")?
+                    .split(' ')
+                    .next()?
+                    .to_string(),
+            )
+        })
         .collect()
 }
 

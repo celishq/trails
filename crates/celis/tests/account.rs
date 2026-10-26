@@ -26,7 +26,7 @@ fn one_fresh_home_race() {
             .map(|_| {
                 scope.spawn(|| {
                     barrier.wait();
-                    repo.run(&root, &["decide", "--", "Show a tier."], &env, "")
+                    repo.run(&root, &["pattern", "--", "Show a tier."], &env, "")
                 })
             })
             .collect();
@@ -43,7 +43,7 @@ fn one_fresh_home_race() {
     let first = std::fs::read_to_string(&phrase).unwrap();
     assert!(Identity::from_phrase(first.trim()).is_ok(), "{first}");
     assert_eq!(first.split_whitespace().count(), 12);
-    let o = repo.run(&root, &["decide", "--", "Show a tier."], &env, "");
+    let o = repo.run(&root, &["pattern", "--", "Show a tier."], &env, "");
     assert!(o.status.success(), "{o:?}");
     assert_eq!(std::fs::read_to_string(&phrase).unwrap(), first);
 }
@@ -79,7 +79,7 @@ fn every_command_signs_as_the_account() {
     let step = run(&["step", "add", "--", "work"]);
     run(&["step", "start", &step[..8]]);
     run(&["step", "done", &step[..8], "--as-planned", "--", "proof"]);
-    run(&["decide", "--", "When you price: use cents."]);
+    run(&["pattern", "--", "When you price: use cents."]);
     let files: Vec<_> = std::fs::read_dir(repo.store().join("shared"))
         .unwrap()
         .map(|e| std::fs::read_to_string(e.unwrap().path()).unwrap())

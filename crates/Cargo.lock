@@ -273,7 +273,9 @@ dependencies = [
  "candle-nn",
  "candle-transformers",
  "celis-nostr",
+ "celis-patterns",
  "celis-search",
+ "celis-store",
  "celis-trails",
  "libc",
  "notify",
@@ -307,6 +309,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "celis-patterns"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "celis-nostr",
+ "celis-store",
+ "regex",
+]
+
+[[package]]
 name = "celis-search"
 version = "0.1.0"
 dependencies = [
@@ -322,17 +334,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "celis-store"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "celis-nostr",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+]
+
+[[package]]
 name = "celis-trails"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "celis-nostr",
+ "celis-patterns",
+ "celis-store",
  "libc",
- "regex",
- "serde",
- "serde_json",
- "sha2",
- "tempfile",
 ]
 
 [[package]]

@@ -2,15 +2,18 @@
 
 ## Layout
 
-- `crates/` is one Cargo workspace. Run cargo from there.
+- `DESIGN.md` holds the design decisions. Before you change the design, read it, and change it first.
+- `crates/` is one Cargo workspace. Run cargo from there. `celis-trails` uses `celis-patterns`, and both
+  use `celis-store`. `celis-patterns` never uses `celis-trails`.
 - `spec/` holds the contract, as CIPs. `spec/fixtures/` holds what two ends must match. Before you change
   `spec/`, read and follow `spec/README.md`, "How a CIP works".
 - `plugins/celis/` is the plugin: one manifest per agent, and the same hooks. Gemini CLI installs from the
   repo root, so `gemini-extension.json` and `hooks/` are there. Antigravity does too, so
   `.antigravity-plugin/` and `hooks.json` are there. The card's command lines match the usage in
   `crates/celis/src/help.rs`; `crates/celis/tests/help.rs` checks it.
-- `crates/celis/src` groups code by feature (tree, stats, graph, report). Only code that all features
-  share goes in `terminal/`.
+- `crates/celis/src/command` groups the commands as `celis help` does: `read/`, `record/` and `setup/`.
+  Within each, code goes by feature (tree, stats, graph). Only code that all features share goes in
+  `terminal/`.
 - Workflows, the Makefile and scripts run a script as `sh scripts/<name>.sh`.
 - Data from a real celis store never goes into the repo.
 
@@ -19,8 +22,8 @@
 - Say it once, in the fewest words that keep the meaning. Short sentences, never fragments.
 - A name is a noun for what a thing is. No `-er`/`-or` agent names (`Manager`, `Handler`).
 - One primary type per file; the filename matches it.
-- The record that later work must keep is a rule. The wire names (`celis.decision`, `celis decide`, the
-  `--json` keys) stay.
+- The record that later work must keep is a pattern, and a pattern that binds is a rule. A pattern is
+  `pattern` in `celis.pattern`, and a reader reads `decision` in `celis.decision` as it.
 
 ## Docstrings
 

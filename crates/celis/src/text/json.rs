@@ -1,7 +1,8 @@
 //! The `--json` object of each record.
 
 use celis_nostr::Note;
-use celis_trails::{Rule, StepRecord};
+use celis_patterns::Pattern;
+use celis_trails::{Notes, StepRecord};
 use serde_json::{json, Value};
 
 /// The object of the step `record` that `note` holds.
@@ -30,17 +31,28 @@ pub(crate) fn links(record: &StepRecord) -> Value {
     Value::Array(links.collect())
 }
 
-/// The object of the rule that `note` holds.
-pub(crate) fn rule(note: &Note, rule: &Rule) -> Value {
+/// The object of the note `note`.
+pub(crate) fn note(note: &Note) -> Value {
     json!({
         "id": note.id,
         "created_at": note.created_at,
-        "project": rule.anchor.project,
-        "scope": rule.scope.text(),
-        "replaces": rule.replaces,
-        "content": rule.content,
-        "paths": rule.paths,
-        "situation": rule.situation,
-        "promoted": rule.promoted,
+        "step": Notes::step(note),
+        "content": note.content,
+    })
+}
+
+/// The object of `pattern`.
+pub(crate) fn pattern(pattern: &Pattern) -> Value {
+    let (note, pattern) = (pattern.note, &pattern.record);
+    json!({
+        "id": note.id,
+        "created_at": note.created_at,
+        "project": pattern.anchor.project,
+        "scope": pattern.scope.text(),
+        "replaces": pattern.replaces,
+        "content": pattern.content,
+        "paths": pattern.paths,
+        "binds": pattern.binds,
+        "cells": pattern.cells.iter().map(|c| c.name()).collect::<Vec<_>>(),
     })
 }

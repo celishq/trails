@@ -85,27 +85,27 @@ fn a_second_link_copies_nothing() {
     assert_eq!(listed.lines().count(), 1, "{listed}");
 }
 
-/// A link holds no `me` rule and no record of another project, and holds a status record by the
+/// A link holds no `me` pattern and no record of another project, and holds a status record by the
 /// step it names (`spec/01-records.md`, "Links").
 #[test]
-fn a_link_holds_only_the_projects_records_and_no_me_rule() {
+fn a_link_holds_only_the_projects_records_and_no_me_pattern() {
     let repo = Repo::new();
     let mine = run(
         &repo,
         &[
-            "decide",
+            "pattern",
             "--scope",
             "me",
             "--",
             "Write plain commit messages.",
         ],
     );
-    let kept = run(&repo, &["decide", "--", "Keep prices in cents."]);
+    let kept = run(&repo, &["pattern", "--", "Keep prices in cents."]);
     let step = run(&repo, &["step", "add", "--", "Round the price down."]);
     let step = step.lines().next().unwrap().to_string();
     let started = run(&repo, &["step", "start", &step]);
     let other = repo.other("crm");
-    let elsewhere = repo.run(&other, &["decide", "--", "Use the shared table."], &[], "");
+    let elsewhere = repo.run(&other, &["pattern", "--", "Use the shared table."], &[], "");
     run(&repo, &["link"]);
     let held = ids(&linked(&repo));
     assert!(!held.contains(&mine.trim().to_string()), "{held:?}");
@@ -127,11 +127,11 @@ fn a_link_holds_only_the_projects_records_and_no_me_rule() {
 fn when_the_link_is_on_a_new_record_is_written_to_it() {
     let repo = Repo::new();
     run(&repo, &["link"]);
-    let kept = run(&repo, &["decide", "--", "Keep prices in cents."]);
+    let kept = run(&repo, &["pattern", "--", "Keep prices in cents."]);
     let mine = run(
         &repo,
         &[
-            "decide",
+            "pattern",
             "--scope",
             "me",
             "--",
@@ -147,7 +147,7 @@ fn when_the_link_is_on_a_new_record_is_written_to_it() {
 #[test]
 fn a_link_that_is_not_on_is_not_read() {
     let repo = Repo::new();
-    run(&repo, &["decide", "--", "Keep prices in cents."]);
+    run(&repo, &["pattern", "--", "Keep prices in cents."]);
     let note = strangers_step(&repo);
     let shown = run(&repo, &["tree", "--all"]);
     assert!(!shown.contains("Ben's step"), "{shown}");
@@ -180,18 +180,17 @@ fn a_checkout_without_the_folder_writes_no_link() {
     let repo = Repo::new();
     let tree = repo.worktree("feat-a");
     run(&repo, &["link"]);
-    let o = repo.run(&tree, &["decide", "--", "Keep prices in cents."], &[], "");
+    let o = repo.run(&tree, &["pattern", "--", "Keep prices in cents."], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     assert!(!tree.join(".celis").exists());
 }
 
 /// When the top folder has `.celis/trails/` and the link is not on, `prompt` asks, once a session, to
-/// ask the person whether to link, and names `celis link`; never on the prompt that asks for the past
-/// agent.
+/// ask the person whether to link, and names `celis link`.
 #[test]
 fn prompt_asks_to_link_a_project_whose_folder_is_not_linked() {
     let repo = Repo::new();
-    run(&repo, &["decide", "--", "Keep prices in cents."]);
+    run(&repo, &["pattern", "--", "Keep prices in cents."]);
     strangers_step(&repo);
     let hook = |session: &str| {
         let json =
@@ -199,17 +198,13 @@ fn prompt_asks_to_link_a_project_whose_folder_is_not_linked() {
         support::prompt(&repo, &repo.path(), &[], &json)
     };
     let first = err(&hook("s1"));
-    assert!(first.contains("celis:past"), "{first}");
-    assert!(!first.contains("celis link"), "{first}");
+    assert!(first.contains("celis link"), "{first}");
     run(
         &repo,
         &["step", "add", "--session", "s1", "--", "Fix the cart."],
     );
     let second = err(&hook("s1"));
-    assert!(second.contains("celis link"), "{second}");
-    assert!(second.contains("link"), "{second}");
-    let third = err(&hook("s1"));
-    assert!(!third.contains("celis link"), "{third}");
+    assert!(!second.contains("celis link"), "{second}");
     run(&repo, &["link"]);
     hook("s2");
     let on = err(&hook("s2"));
@@ -220,7 +215,7 @@ fn prompt_asks_to_link_a_project_whose_folder_is_not_linked() {
 #[test]
 fn prompt_does_not_ask_to_link_a_project_with_no_folder() {
     let repo = Repo::new();
-    run(&repo, &["decide", "--", "Keep prices in cents."]);
+    run(&repo, &["pattern", "--", "Keep prices in cents."]);
     let json = serde_json::json!({"session_id": "s1", "prompt": "Fix the cart."}).to_string();
     let said = err(&support::prompt(&repo, &repo.path(), &[], &json));
     assert!(!said.contains("celis link"), "{said}");
@@ -243,7 +238,7 @@ fn unlink_stops_the_sync_and_keeps_the_folder() {
     let listed = std::fs::read_to_string(repo.home().join("links")).unwrap();
     assert!(!listed.contains(&repo.project_id()), "{listed}");
     assert!(repo.path().join(".celis/trails/README.md").exists());
-    run(&repo, &["decide", "--", "Keep prices in cents."]);
+    run(&repo, &["pattern", "--", "Keep prices in cents."]);
     assert!(ids(&linked(&repo)).is_empty());
     let note = strangers_step(&repo);
     let tree = run(&repo, &["tree", "--all"]);
@@ -316,7 +311,7 @@ fn a_folder_outside_the_repo_links_by_its_full_path() {
         .unwrap()
         .join("celis/shop");
     let place = folder.display().to_string();
-    let kept = run(&repo, &["decide", "--", "Keep prices in cents."]);
+    let kept = run(&repo, &["pattern", "--", "Keep prices in cents."]);
     let shown = run(&repo, &["link", &place]);
     assert_eq!(shown.trim(), format!("{place} · 1 out · 0 in"));
     assert_eq!(ids(&folder), vec![kept.trim().to_string()]);
@@ -325,7 +320,7 @@ fn a_folder_outside_the_repo_links_by_its_full_path() {
     let listed = std::fs::read_to_string(repo.home().join("links")).unwrap();
     assert_eq!(listed, format!("{}\t{place}\n", repo.project_id()));
     let tree = repo.worktree("feat-a");
-    let o = repo.run(&tree, &["decide", "--", "Round the price down."], &[], "");
+    let o = repo.run(&tree, &["pattern", "--", "Round the price down."], &[], "");
     assert_eq!(ids(&folder).len(), 2, "{}", err(&o));
     run(&repo, &["link", &place, "--off"]);
     assert!(std::fs::read_to_string(repo.home().join("links"))

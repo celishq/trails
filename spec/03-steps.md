@@ -31,7 +31,8 @@ and closes it with a proof, or drops it.
 - `under`: optional; the step this one is a part of. A step with none is a trail (CIP-04).
 - `replaces`: optional; an open step whose plan it takes over, or a done step it revises (CIP-06).
 - `at`: zero or more; a place of the work (CIP-01, "Places").
-- `check`: optional; the command that proves the work.
+- `check`: optional; the command that proves the work. A step with steps under it MAY have one too, for
+  the work of its steps as a whole.
 - `session`: optional; CIP-04, "Sessions".
 - content: the work, so a stranger with only the step can do it. Its first line is the title.
 
@@ -42,7 +43,7 @@ and closes it with a proof, or drops it.
 **Readers**
 
 - A reader MUST count a kind 1111 record as a step only with the label `step` in `celis.step`, and never
-  as a rule.
+  as a pattern.
 
 ## Starting
 
@@ -74,7 +75,8 @@ dropped   a `drop` names it
 - content: the proof, the check that failed before and passes now.
 - `changed`: optional; with none, the work went as planned.
 - `by`: optional; who gave the proof: `judge`, a reader that did not do the work, or `person`. With none,
-  the proof is the agent's own.
+  the proof is the agent's own. A step with steps under it is done when its check passes and a `judge`
+  or the `person` confirms its `expect`.
 
 **Writers**
 
@@ -103,8 +105,7 @@ dropped   a `drop` names it
 **Readers**
 
 - A reader MUST ignore a drop with no content.
-- A drop of a done trail MUST keep it done. The trail is then **dropped after done**: it holds no name
-  (CIP-07). Its rules stay live.
+- A drop of a done trail MUST keep it done. The trail is then **dropped after done**.
 
 ## Editing
 
@@ -121,6 +122,19 @@ dropped   a `drop` names it
 - One line of content MUST change only the title. More lines MUST replace the text. No content MUST keep
   it.
 - `at` tags MUST replace the step's places, and a `check` its check.
+
+## Notes
+
+```json
+{ "kind": 1985, "content": "<what holds for the work of the step's trail>",
+  "tags": [["L", "celis.step"], ["l", "note", "celis.step"], ["e", "<step id>"]] }
+```
+
+- content: text for an agent. A reader MAY show it, and does not parse it.
+
+**Readers**
+
+- A reader MUST ignore a note with no content.
 
 ## Sources
 

@@ -1,8 +1,10 @@
 # CIPs — Trails
 
-These specs hold the contract of the trail, the crates `celis-trails` and `celis`. A trail is one task the
-person gives, broken into steps that agents take and close, with the rules learned on the way. The trails
-of every project on the machine share one store. Records are nostr notes your account signs.
+These specs hold the contract of the patterns and of the trails that are their evidence, for the crates
+`celis-store`, `celis-patterns`, `celis-trails` and `celis`. A pattern says what to choose in a context,
+and why. A pattern that binds is a rule. A trail is one task the person gives, broken into steps that
+agents take and close with proofs. The patterns and trails of every project on the machine share one
+store. Records are nostr notes your account signs.
 
 ## How a CIP works
 
@@ -14,7 +16,7 @@ section opens with a JSON example of its record, then one line for each tag, the
 Every change of `spec/` MUST keep these rules:
 
 1. **A CIP holds a rule only when another end breaks if it changes:** another `celis` version that reads
-   the same store or a linked folder, the plugin with its hooks and `past.md`, or a script that reads the
+   the same store or a linked folder, the plugin with its hooks, or a script that reads the
    `--json` of a record. What only `celis` reads or shows — text for a person or an agent, and values it
    works out, such as states by time, grades or reuse — is the app's, and its tests own it.
 2. **Data first.** A section opens with the record, then one line for each tag.
@@ -24,7 +26,7 @@ Every change of `spec/` MUST keep these rules:
 6. **The base CIP says once that a reader ignores what it does not know.**
 7. **This README is the one registry** of kinds, tags, scopes, errors and deprecated names.
 8. **Examples are real records or commands,** not stories.
-9. **A rule states what, never how or why.** How belongs in the code, why in the plan.
+9. **A rule states what, never how or why.** How belongs in the code, why in `DESIGN.md` or the plan.
 10. **A section heading is stable.** Tests cite it, so a rename or removal changes each citation in the same
     commit.
 11. **The spec changes first.** A test of a spec rule cites its section: ``(`spec/03-steps.md`,
@@ -38,12 +40,11 @@ Every change of `spec/` MUST keep these rules:
 |---|---|---|---|
 | 01 | Records | the record, the store, the account, projects, places, links | — |
 | 02 | The command line | usage, the records each command writes, errors, and the output the plugin reads | CIP-01 |
-| 03 | Steps | the step, its start, done, drop and edit | CIP-01 |
-| 04 | Trails | the trail, its sessions and prompts, its rules | CIP-01, 03, 05 |
-| 05 | Rules | the rule and its scope | CIP-01 |
-| 06 | Reuse | the steps and rules a step uses, revisions | CIP-03, 04, 05 |
-| 07 | Names | the name of a trail, skill projects, the rules of a name, overrides | CIP-01, 03, 04, 05, 06 |
-| 08 | Files | the files of a done, and their blobs | CIP-01, 03 |
+| 03 | Steps | the step, its start, done, drop, edit and note | CIP-01 |
+| 04 | Trails | the trail, its sessions and prompts, its notes | CIP-01, 03, 05 |
+| 05 | Patterns | the pattern, the rule, its scope and its examples | CIP-01 |
+| 06 | Reuse | the steps and patterns a step uses, revisions | CIP-03, 04, 05 |
+| 08 | Files | the files of a done and of a pattern, and their blobs | CIP-01, 03, 05 |
 
 ## Names
 
@@ -51,28 +52,30 @@ Every change of `spec/` MUST keep these rules:
 |---|---|---|
 | `project:<id>` · `project` | anchor of a project, its `K`, and its name tag | 01 |
 | `figma:<key>` · `web:<host>` | the project id of a record outside git | 01 |
-| `skill:<name>` | the project id of a trail from a skill file | 07 |
 | `$CELIS_HOME` · `$CELIS_HOME/trails/` · `$CELIS_HOME/phrase` · `$CELIS_HOME/links` | the home, the store, the phrase, the links | 01, 02 |
-| `celis` and its commands and flags, `rules` among them | the command line | 02 |
-| `usage` · `no-decision` · `no-trail` · `no-step` · `closed` · `open-steps` · `check-failed` · `error` | errors | 02 |
+| `celis` and its commands and flags, `search` among them | the command line | 02 |
+| `usage` · `no-pattern` · `no-step` · `closed` · `open-steps` · `check-failed` · `unjudged` · `error` | errors | 02 |
 | 1111 with `step` in `celis.step` | kind: a step (NIP-22) | 03 |
 | `under` · `replaces` · `at` · `check` | step tags | 03 |
-| 1985 with `start` · `done` · `drop` · `edit` in `celis.step` | kinds: a start, a done, a drop, an edit (NIP-32) | 03 |
+| 1985 with `start` · `done` · `drop` · `edit` · `note` in `celis.step` | kinds: a start, a done, a drop, an edit, a note (NIP-32) | 03 |
 | `changed` · `by` | done tags | 03 |
 | `session` | step tag | 04 |
 | 1985 with `prompt` in `celis.step` | kind: a person's prompt, on the trail (NIP-32) | 04 |
-| 1111 with `decision` in `celis.decision` | kind: a rule (NIP-22) | 05 |
-| `scope` · `replaces` | rule tags | 05 |
-| `path` | rule tag: the trigger | 05 |
-| `good` · `bad` | rule tags: the steps of a pair | 05 |
-| `situation` · `promoted` in `celis.decision` | rule labels | 05 |
-| `me` · `project` · `trail:<id>` · `at:<place>` | the scopes of a rule | 05 |
+| 1111 with `pattern` in `celis.pattern` | kind: a pattern (NIP-22) | 05 |
+| `scope` · `replaces` | pattern tags | 05 |
+| `path` | pattern tag: the trigger | 05 |
+| `good` · `bad` | pattern tags: its examples | 05 |
+| `within` | pattern tag: the larger pattern it completes | 05 |
+| `cell` | pattern tag: a topic it is in | 05 |
+| `binds` in `celis.pattern` | a pattern label: the pattern is a rule | 05 |
+| `me` · `project` | the scopes of a pattern | 05 |
 | `uses` | step tag | 06 |
-| 1985 with `name` in `celis.step` | kind: the name of a trail (NIP-32) | 07 |
 | `imeta` with `url` · `x` · `m` · `size` · `path` | done tag: a file of the proof (NIP-92, BUD-10) | 08 |
 | `$CELIS_HOME/trails/blobs/` · `<folder>/blobs/` | the blobs of the store and of a linked folder | 08 |
+| `$CELIS_HOME/recalled/<id>` | a pattern `search` gave on this machine: one byte a time, last changed on the last day; no record | 02 |
 
-**Deprecated.** A reader ignores each of these. Older versions wrote them.
+**Deprecated.** A reader ignores each of these, unless its row says how it reads it. Older versions wrote
+them.
 
 | Name | Was |
 |---|---|
@@ -82,6 +85,18 @@ Every change of `spec/` MUST keep these rules:
 | a `done` with a `step` tag in place of `e` | a done of a step in the code |
 | `$CELIS_HOME/key` | the key, now the phrase; `auth login` removes it |
 | `tool` | a rule tag: the other tool calls a rule acted on |
+| 1985 with `name` in `celis.step` · `skill:<name>` | the name of a trail, and the project of a trail from a skill file |
+| `situation` in `celis.decision` | a pattern label: the pattern also held where no file shows it ahead |
+| `celis decide` | the command, now `celis pattern` |
+| `promoted` in `celis.decision` | a pattern label, now `binds` |
+| `at:<place>` as the `scope` of a pattern | a scope, now `path` globs; a reader reads it as CIP-05, "Reading", states |
+| `promoted` in the `--json` of a decision | the same value as `binds` |
+| 1111 with `decision` in `celis.decision` | a pattern, now `pattern` in `celis.pattern`; a reader reads it as CIP-05, "Reading", states |
+| `binds` in `celis.decision` | a pattern label, now `binds` in `celis.pattern`; a reader reads it as CIP-05, "Reading", states |
+| `decision` as the `--json` key of a pattern | the key, now `pattern` |
+| `no-decision` | the error, now `no-pattern` |
+| `trail:<id>` as the `scope` of a pattern | a scope, now a note on the trail; a reader reads it as CIP-05, "Reading", states |
+| `no-trail` | the error of a `trail:<id>` scope that no open trail had |
 
 ## Words
 
@@ -91,15 +106,15 @@ Every change of `spec/` MUST keep these rules:
 | `record` | one signed nostr note in the store |
 | `account` | the key the phrase gives, that signs every record this machine writes |
 | `project` | the code an agent works on, named by its repo's first commit |
-| `place` | a file, a `file:line`, a folder or a URL that a step or a rule is at |
+| `place` | a file, a `file:line`, a folder or a URL that a step or a pattern is at |
 | `step` | one part of the work, at a place |
 | `trail` | one task you give: a step with no `under`, and the steps under it |
 | `ask` | a step right under a trail: one thing you asked for |
 | `session` | one run of an agent |
 | `prompt` | what you wrote to the agent while a trail was open |
-| `rule` | one sentence that holds in its scope until another replaces it |
-| `live` | a rule no other rule replaces and no drop names |
+| `pattern` | what to choose in a context, and why, that holds in its scope until another replaces it |
+| `rule` | a pattern with the `binds` label: a result must keep it |
+| `note` | what holds for the work of one trail, on a step of it |
+| `live` | a pattern no other pattern replaces and no drop names |
 | `revised` | done work that a later step replaces |
 | `blob` | the bytes of a file, named by their sha256 |
-| `named trail` | a trail that holds a name |
-| `override` | a rule that replaces a trail's rule of another project, in its own project only |

@@ -1,83 +1,54 @@
 ---
 name: tidy
-description: Tidies the celis trails. Drops stale trails and rules, merges rules that say the same thing, settles rules that conflict, moves rules into the place's own checks, and turns work done many times into named trails. Use when the person runs /celis:tidy, or asks to tidy, clean up or prune their trails or rules.
+description: Tidies the celis trails. Drops stale trails and patterns, merges patterns that say the same thing, settles rules that conflict and moves rules into the place's own checks. Use when the person runs /celis:tidy, when celis asks to offer it, or when the person asks to tidy, clean up or prune their trails or patterns.
 ---
 
-You tidy the trails in five parts, in this order: stale, merge, conflicts, moves, templates. Write
-nothing before the person says yes.
+You tidy the trails in four parts, in this order: stale, merge, conflicts, moves. A rule is a pattern
+whose grep fields say ` binds`.
 
-1. Ask the person what to clean: this project, this project and the `me` rules, or all projects.
-2. Add the tidy as one ask, as the card says, and one step under it for each part. Take the parts one
-   at a time.
-3. For each change, show the person the records it touches, with their ids, and ask: yes, no, or yes to
-   all in this part. Write a change only after a yes.
-4. To write into another project, add `--project <its id>` to `decide` and `step add`. The id is the
-   `project` that `celis tree <a trail of it> --json` gives. `step drop` takes an id of any project.
+1. Ask the person what to clean: this project, this project and the `me` patterns, or all projects.
+2. Add one ask titled `Tidy the celis trails`, so that celis knows when the last tidy was, and one step
+   under it for each part. Take the parts one at a time.
+3. Read the store once: `celis grep -E " (trail|pattern) [0-9a-f]{8} "` gives each trail and pattern
+   line. A pattern's fields say ` trigger`, ` binds`, `cell:<cell>` and `recalled:<day>`.
+4. For each change, show the person the records it touches, with their ids, and ask: yes, no, or yes to
+   all in this part. Write nothing before a yes.
+5. To write into another project, add `--project <its id>` to `pattern` and `step add`; the id is the
+   `project` that `celis tree <a trail of it> --json` gives.
 
 ## Stale
 
-Find what no longer holds:
+Drop with `celis step drop <id> -- "<why>"`:
 
-- a trail that expired, or that is open and no one worked on for weeks;
-- an `at:` rule whose place the project no longer has. Check the place only in the working folder's
-  project;
-- a rule that names code, a file or a command that the project no longer has;
-- a rule of a trail whose done work was revised (`revised-by`) when the new work says otherwise;
-- a one-off note: a rule about one event, not about work to come.
-
-Drop each one with `celis step drop <id> -- "<why it no longer holds>"`. A dropped trail keeps its
-rules: drop each of its rules that is stale too. When you drop a named trail, tell the person that its
-name is free.
+- a trail that expired, or that is open and untouched for weeks;
+- a pattern that names a place, code or a command the project no longer has;
+- a pattern of revised work (`revised-by`) that the new work contradicts;
+- a one-off note about one event;
+- a pattern older than 60 days with no `recalled:<day>` in the last 60 days.
 
 ## Merge
 
-Find live rules of one project and one scope that say the same thing, in any words. When one of them
-says it best, keep it, and drop each other with `-- "merged into <its id8>"`. Else write one rule that
-says it best with `decide --scope <their scope> --replaces <the newest of them>`, and drop each other
-with `-- "merged into <the new id8>"`.
-
-When two or more projects hold the same `project` rule, and it holds for that kind of work anywhere,
-offer one `me` rule in place of them.
+Find live patterns of one project and scope that say the same thing, or whose good examples make one
+point. Keep the one that says it best, or write one in the four lines with `pattern --replaces <the
+newest>`; drop each other with `-- "merged into <id8>"`. A merged pattern gives `--good` and `--bad`
+again for the examples of each pattern it does not replace, and `--binds` when one of them binds. When
+two or more projects hold the same `project` pattern, offer one `me` pattern in its place. Merge cells
+that name the same topic: write each pattern of the other cell again with `--cell <the kept cell>` and
+no `--replaces`, because a replacement keeps each cell, and drop the old one as merged.
 
 ## Conflicts
 
-Find live rules that hold together, by scope (`me`, `project`, `trail:<id>`, `at:<place>`) or along a
-named trail, for the same case, and that say to do different things. Show the person each pair, and ask
-which one holds, or for a new rule. Drop the rule that loses with `-- "conflicts with <the winner's
-id8>"`. Write a new rule with `decide --replaces <one of them>`, and drop the other.
-
-A rule of a named trail from another project ends only in this project: write the winner with
-`decide --replaces <its id>`, as `steps.md` says for named trails.
+Find live patterns that hold together for the same case and say to do different things. When both
+guide, a pattern may name why it wins in its `Forces`; when a rule is one of them, or both bind, ask the
+person which holds, or for a new one, and drop the loser with `-- "conflicts with <id8>"`.
 
 ## Moves
 
-Find live rules that the place can hold itself. Leave out rules that grep marks ` promoted`.
-
-- A rule that a tool of the place can check: propose the change to that tool, such as the repo's
-  linter, tests or CI, or a Figma project's styles.
-- A rule that holds for all work in the project, that no tool can check: propose a line in the project's
-  agent instruction file, `AGENTS.md` when it has none.
-
-Show the person the rule and the change. After a yes, make the change, and run the check when there is
-one. Then mark the rule with `decide --replaces <its id> --scope <its scope> --promoted -- "<the same
-text>"`: celis keeps it, and knows that the place checks it.
-
-## Templates
-
-Find groups of 4 or more done trails, of any project, that did the same work in any words. Leave out
-named trails and trails dropped after done.
-
-- When `celis name` shows a named trail that does this work, add to it: add an ask under its trail with
-  `--project <its project id>`, write each new rule, write each changed rule with `--replaces <its id>`,
-  and close the ask.
-- Else write a named trail as `steps.md` says, under "Named trails". Give the ask `--uses` with the id
-  of each trail of the group. Write the steps that the trails share and the rules that hold for this
-  work, in words that hold in any project. Each step's proof is "From <the id8 of each trail>.", and the
-  ask's proof is "Made from <n> trails."
-- Then offer to drop each `trail:` rule of the group that the named trail now holds, with
-  `-- "held by <name>"`.
+Find live rules that the place can hold itself: a check of a tool, such as the linter, the tests, CI or
+a Figma project's styles, or else a line in the project's agent file, `AGENTS.md` when it has none.
+After a yes, make the change and run the check. Then drop the rule with `-- "<the check> holds it"`.
 
 ## End
 
-Close each part's step with what it changed: how many trails and rules it dropped, faded, merged, moved
-and wrote. Close the ask. Tell the person what each part changed, and each named trail it wrote.
+Close each part's step with how many trails and patterns it dropped, merged, moved and wrote, and close
+the ask. Tell the person what each part changed.

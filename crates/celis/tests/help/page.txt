@@ -1,8 +1,8 @@
-celis remembers how your agents do your tasks.
+celis remembers what your agents learn, and how they do your tasks.
 
+  § pattern what to choose in a context, and why; a rule binds
   ◆ trail   each task you give
   ○ step    each piece of work your agents do in it
-  § rule    each lesson they learn, kept for later work
 
 Your agents record them through the celis plugin.
 
@@ -10,61 +10,57 @@ Usage
   celis <command> [<args>] [flags]
 
 Read
+  search <ask>        Show the rules, patterns and past asks that fit an ask
+  ├ --kind <kind>     Only rule (a pattern that binds), pattern, trail, or step
+  └ --limit <n>       Show <n> patterns and past asks; 20 for trail or step
+
+  patterns            Show your patterns with their good and bad examples
+  └ --markdown        Print one Markdown page, each file a link to its blob
+
   tree [<id>]         Show your trails and their steps
   ├ --graph           Show today's trails as live graphs of cards
   ├ --full            Show each step's proof, grade, and reason
   ├ --all             Show every trail of every project, by day
-  ├ --markdown        Show the trails as Markdown for a pull request
   └ --demo            Show sample trails in every state
 
   grep <pattern>      Search every trail with grep
-  search <text>       Find the rules and steps alike in meaning to a text
-  ├ --kind <kind>     Only rule, step, or trail
-  └ --limit <n>       Show the first <n> only; 20 when not given
-
-  rules [<file>]...   Show the rules of the files you will touch
-  └ --diff            Each file git shows changed or new
-
   stats [<id>]        Show what later work reused, and how work went
   └ --demo            Show four weeks of sample trails
 
 Record work · your agents run these
+  pattern             Record a pattern that later work must keep
+  ├ --scope <scope>   Where it applies: me, or project
+  ├ --replaces <id>   The pattern this one replaces
+  ├ --path <glob>     A file it acts on; * and ? within a folder, ** across
+  ├ --binds           It is a rule: a result must keep it
+  ├ --within <id>     The larger pattern it completes
+  ├ --cell <topic>    A topic it is in, such as cli-help
+  ├ --good <example>  A step, a file, or a URL that shows it, such as a pick
+  ├ --bad <example>   A step, a file, or a URL that breaks it
+  └ --project <id>    The id of a project in the store
+
   step add            Add a step to a trail, or start a new trail
   ├ --under <id>      The open step this step is part of
   ├ --replaces <id>   A step this one takes over, or a finished step it fixes
-  ├ --uses <id>       A rule or a past step it follows, or a trail's name
+  ├ --uses <id>       A pattern or a past step it follows
   ├ --at <place>      Where the work happens: a file:line, a URL, or any text
   ├ --check <command> A command that proves the work
   ├ --new             Start a new trail, not a step of the session's trail
-  └ --project <id>    skill:<name>, or the id of a project in the store
+  └ --project <id>    The id of a project in the store
 
-  step start <id>     Start a step and show the rules its plan links
+  step start <id>     Start a step and show the patterns and notes it keeps
   step done <id>      Finish a step with proof that it works
   ├ --changed <text>  How the result differs from its expect line
   ├ --as-planned      The result matches its expect line; else use --changed
   ├ --by <who>        judge, a reader that did not do the work, or person
-  ├ --file <path>     A file of the proof, kept as it is now
-  └ --pitfall <text>  A rule from what went wrong, kept at the step's places
+  └ --file <path>     A file of the proof, kept as it is now
 
   step drop <id>      Drop a step and the open steps under it
   step edit <id>      Change a step's title, where it works, or its check
   ├ --at <place>      Where the work happens, in place of the old places
   └ --check <command> A command that proves the work, in place of the old one
 
-  decide              Record a rule that later work must keep
-  ├ --scope <scope>   Where it applies: at:<place>, trail:<id>, me, or project
-  ├ --replaces <id>   The rule this one replaces
-  ├ --path <glob>     A file it acts on; * and ? within a folder, ** across
-  ├ --situation       No file shows it ahead
-  ├ --promoted        A tool of the place, like a linter, now checks it
-  ├ --good <id>       A step whose result shows the rule, such as a pick or a
-  │                   fix
-  ├ --bad <id>        A step whose result breaks it, such as a variant not
-  │                   picked
-  └ --project <id>    skill:<name>, or the id of a project in the store
-
-  name <trail> <name> Name a trail, so other work can use it by its name
-  └ --limit <n>       Show the first <n> named trails only
+  step note <id>      Leave a note for the work of the step's trail
 
 Set up
   link [<folder>]     Keep this project's trails in a folder to commit or share
@@ -80,7 +76,7 @@ Set up
   issue [<id>]...     Write a problem report for the celis team
 
 Marks
-  ○ open  ⠏ working  ✓ done  ✗ dropped  ◌ expired  ↻ revised  ~ changed  § rule
+  ○ open  ⠏ working  ✓ done  ✗ dropped  ◌ expired  ↻ revised  ~ changed
 
 celis keeps your recovery phrase and records in $CELIS_HOME.
 
