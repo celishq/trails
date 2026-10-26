@@ -1,6 +1,7 @@
 use super::*;
 use crate::command::read::graph::seen::Seen;
 use crate::command::read::graph::tests::{text, Bench};
+use celis_trails::TrailStore;
 use std::collections::HashSet;
 use std::time::Instant;
 

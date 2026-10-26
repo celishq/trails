@@ -13,8 +13,8 @@ use crate::terminal::wake::Key;
 use crate::text::clock::weekday;
 use cards::{empty, status};
 use celis_nostr::Note;
-use celis_trails::records::id::short;
-use celis_trails::Trail;
+use celis_store::records::id::short;
+use celis_trails::{Trail, TrailStore};
 use std::io::Write;
 use std::time::{Duration, Instant};
 

@@ -3,8 +3,9 @@
 use crate::command::read::report::markdown;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use celis_trails::records::id::short;
-use celis_trails::{Phrase, Steps, Store};
+use celis_store::records::id::short;
+use celis_store::{Home, Phrase};
+use celis_trails::{Steps, TrailStore};
 use serde_json::json;
 use std::io::Write;
 
@@ -67,7 +68,7 @@ impl Command {
             true => "kept",
             false => "missing",
         };
-        let files = std::fs::read_dir(Store::root(&home).join("shared"))
+        let files = std::fs::read_dir(Home::root(&home).join("shared"))
             .into_iter()
             .flatten()
             .filter(|e| {
@@ -77,7 +78,7 @@ impl Command {
             .count();
         let (read, steps) = match self.held()? {
             true => {
-                let records = Store::open(&home)?.records();
+                let records = Home::open(&home)?.records();
                 (records.len(), Steps::new(&records, 0).all().len())
             }
             false => (0, 0),

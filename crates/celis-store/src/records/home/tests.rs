@@ -1,4 +1,4 @@
-use super::Store;
+use super::Home;
 use celis_nostr::{Account, Note};
 
 /// A read of named files gives each record of them it lacks once, from `shared/` or another folder, adds
@@ -8,8 +8,8 @@ use celis_nostr::{Account, Note};
 fn take_gives_each_record_of_the_named_files_once() {
     let home = tempfile::tempdir().unwrap();
     let elsewhere = tempfile::tempdir().unwrap();
-    let ours = Store::open(home.path()).unwrap();
-    let theirs = Store::open(home.path()).unwrap();
+    let ours = Home::open(home.path()).unwrap();
+    let theirs = Home::open(home.path()).unwrap();
     let account = Account::generate().unwrap();
     let note =
         |text: &str| Note::write(&account, 1u16, 1, Vec::<Vec<String>>::new(), text).unwrap();
@@ -42,10 +42,10 @@ fn a_read_verifies_again_only_files_that_changed() {
     let account = Account::generate().unwrap();
     let note =
         |text: &str| Note::write(&account, 1u16, 1, Vec::<Vec<String>>::new(), text).unwrap();
-    let first = Store::open(home.path()).unwrap();
+    let first = Home::open(home.path()).unwrap();
     let kept = first.write(&note("kept")).unwrap();
     let changed = first.write(&note("changed")).unwrap();
-    assert_eq!(Store::open(home.path()).unwrap().records().len(), 2);
+    assert_eq!(Home::open(home.path()).unwrap().records().len(), 2);
     let cache = std::fs::read_to_string(home.path().join("cache/verified")).unwrap();
     assert_eq!(cache.lines().count(), 2, "{cache}");
     let tamper = |path: &std::path::Path, from: &str, to: &str| {
@@ -57,7 +57,7 @@ fn a_read_verifies_again_only_files_that_changed() {
     };
     tamper(&kept, "\"kept\"", "\"kelp\"");
     tamper(&changed, "\"changed\"", "\"changes!\"");
-    let texts: Vec<String> = Store::open(home.path())
+    let texts: Vec<String> = Home::open(home.path())
         .unwrap()
         .records()
         .into_iter()
@@ -71,7 +71,7 @@ fn a_read_verifies_again_only_files_that_changed() {
 #[test]
 fn a_kept_file_is_a_blob_named_by_its_sha256() {
     let home = tempfile::tempdir().unwrap();
-    let store = Store::open(home.path()).unwrap();
+    let store = Home::open(home.path()).unwrap();
     let sha = store.keep(b"abc").unwrap();
     assert_eq!(
         sha,

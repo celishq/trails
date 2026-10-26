@@ -3,7 +3,7 @@
 use crate::command::read::tree::classic::row::Row;
 use crate::command::read::tree::classic::Tree;
 use crate::terminal::canvas::{Styled, DIM};
-use celis_trails::records::id::short;
+use celis_store::records::id::short;
 use celis_trails::{Step, Used};
 
 impl Tree<'_> {

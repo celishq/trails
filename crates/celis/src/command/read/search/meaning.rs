@@ -6,6 +6,7 @@ use crate::command::read::view::row::Row;
 use crate::command::read::view::View;
 use crate::command::Command;
 use crate::failure::Failure;
+use celis_patterns::PatternStore;
 use celis_search::{Index, Model};
 use serde_json::json;
 use std::collections::HashSet;
@@ -89,7 +90,7 @@ impl Command {
         let project = self.project();
         let live = trails.patterns().live(&project.anchor.project).into_iter();
         let patterns: HashSet<String> = live
-            .map(|p| celis_trails::records::id::short(p.id()))
+            .map(|p| celis_store::records::id::short(p.id()))
             .collect();
         let rows = View::of(&trails).into_rows().into_iter();
         Ok(rows

@@ -1,7 +1,7 @@
 //! How a pattern stopped holding.
 
-use crate::records::id::short;
 use celis_nostr::Note;
+use celis_store::records::id::short;
 
 /// How a pattern stopped holding: a pattern replaced it, or a drop named it (CIP-05, "Patterns").
 #[derive(Debug, Clone, Copy)]

@@ -1,7 +1,9 @@
 use super::month::Month;
 use crate::progress::Model;
 use crate::text::clock::midnight;
-use celis_trails::{Anchor, Draft, PatternRecord, Scope, Store, Trails};
+use celis_patterns::{PatternRecord, PatternStore, Scope};
+use celis_store::{Anchor, Home, Store};
+use celis_trails::{Draft, TrailStore};
 use tempfile::TempDir;
 
 /// Noon of a day, the time a desk reads its month at.
@@ -12,13 +14,13 @@ pub(super) fn noon() -> u64 {
 /// A store the tests write in at the times they pick: its folder and its trails.
 pub(super) struct Desk {
     pub home: TempDir,
-    pub trails: Trails,
+    pub trails: Store,
 }
 
 impl Desk {
     pub fn new() -> Desk {
         let home = tempfile::tempdir().unwrap();
-        let trails = Trails::open(Store::open(home.path()).unwrap(), noon(), 600);
+        let trails = Store::open(Home::open(home.path()).unwrap(), noon(), 600);
         Desk { home, trails }
     }
 
@@ -90,9 +92,7 @@ impl Desk {
             within: vec![],
             examples: Default::default(),
         };
-        let id = self.trails.decide(pattern, None).unwrap().records[0]
-            .id
-            .clone();
+        let id = self.trails.decide(pattern, None).unwrap().id;
         self.trails.at(noon() - ago);
         id
     }

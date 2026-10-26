@@ -1,6 +1,8 @@
 use super::*;
 use celis_nostr::{Account, Note};
-use celis_trails::{Anchor, PatternId, PatternRecord, Scope, StepId, StepRecord};
+use celis_patterns::{PatternRecord, Scope};
+use celis_store::{Anchor, PatternId, StepId};
+use celis_trails::StepRecord;
 
 fn account() -> Account {
     Account::new(&[1u8; 32]).unwrap()

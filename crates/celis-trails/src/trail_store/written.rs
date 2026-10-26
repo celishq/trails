@@ -1,7 +1,8 @@
 //! What one write of the trails gives back.
 
-use crate::{Notice, Pattern};
+use crate::Notice;
 use celis_nostr::Note;
+use celis_patterns::Pattern;
 
 /// What one write gives back: the records it wrote or found, the patterns and notes the work must keep,
 /// and the notices for the agent.

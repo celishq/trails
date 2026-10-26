@@ -1,6 +1,7 @@
 use super::*;
-use crate::{Anchor, State, StepId};
+use crate::State;
 use celis_nostr::Account;
+use celis_store::{Anchor, StepId};
 
 fn account() -> Account {
     Account::new(&[1u8; 32]).unwrap()

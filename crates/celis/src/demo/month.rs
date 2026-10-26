@@ -4,7 +4,9 @@
 use super::{anchor, Demo, DAY, TASKS};
 use crate::failure::Failure;
 use crate::text::clock::midnight;
-use celis_trails::{Anchor, Draft, Scope};
+use celis_patterns::Scope;
+use celis_store::Anchor;
+use celis_trails::{Draft, TrailStore};
 use std::collections::VecDeque;
 
 impl Demo {

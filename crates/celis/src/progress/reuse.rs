@@ -1,6 +1,8 @@
 //! What later work reused of the steps and patterns of a store.
 
-use celis_trails::{Pattern, Patterns, Step, Steps, Used};
+use celis_patterns::{Pattern, Patterns};
+
+use celis_trails::{Step, Steps, Used};
 use std::cmp::Reverse;
 use std::collections::{HashMap, HashSet};
 

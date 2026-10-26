@@ -4,8 +4,9 @@ use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::progress::{Flags, Grade, Reuse};
 use crate::text::line::plural;
-use celis_trails::records::id::short;
-use celis_trails::{Step, Trail};
+use celis_patterns::PatternStore;
+use celis_store::records::id::short;
+use celis_trails::{Step, Trail, TrailStore};
 use serde_json::json;
 use std::io::{IsTerminal, Write};
 

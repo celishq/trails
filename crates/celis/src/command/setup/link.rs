@@ -2,7 +2,7 @@
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use celis_trails::{Link, Place, Project, Store};
+use celis_store::{Home, Link, Place, Project};
 use serde_json::json;
 use std::io::Write;
 
@@ -25,7 +25,7 @@ impl Command {
         let link = Link::new(project, &self.link_path(args, project));
         link.turn_on(&home)?;
         let place = link.path.clone();
-        let (went, came) = Store::open(&home)?.with(link).sync()?;
+        let (went, came) = Home::open(&home)?.with(link).sync()?;
         let value = json!({"folder": place, "out": went, "in": came});
         let line = format!("{place} · {went} out · {came} in");
         crate::command::put(out, &if args.json { value.to_string() } else { line })

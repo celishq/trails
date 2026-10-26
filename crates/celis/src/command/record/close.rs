@@ -6,8 +6,10 @@ mod review;
 
 use crate::command::Command;
 use crate::failure::Failure;
-use celis_trails::records::id::short;
-use celis_trails::{ProofFile, Step, Trails};
+use celis_patterns::PatternStore;
+use celis_store::records::id::short;
+use celis_store::{ProofFile, Store};
+use celis_trails::{Step, TrailStore};
 pub(crate) use end::End;
 pub(crate) use proof::Proof;
 pub(crate) use review::Review;
@@ -20,7 +22,7 @@ impl Command {
     pub(crate) fn review(
         &self,
         review: &Review,
-        (trails, changed): (&Trails, &[String]),
+        (trails, changed): (&Store, &[String]),
         linked: bool,
         err: &mut dyn Write,
     ) -> Result<(), Failure> {
@@ -94,7 +96,7 @@ impl Command {
 
     /// The lines of the patterns that the `changed` files match, after a line that asks to check the
     /// change against each; none when none matches.
-    fn changed_patterns(&self, trails: &Trails, changed: &[String]) -> Vec<String> {
+    fn changed_patterns(&self, trails: &Store, changed: &[String]) -> Vec<String> {
         let project = self.project();
         let paths: Vec<String> = changed
             .iter()
@@ -115,7 +117,7 @@ impl Command {
 
     /// What `done` of the ask `ask` with no `--by` prints before it refuses: the patterns of the `changed`
     /// files and the judge brief; none with no changed file.
-    pub(crate) fn unjudged(&self, ask: Step, trails: &Trails, changed: &[String]) -> Vec<String> {
+    pub(crate) fn unjudged(&self, ask: Step, trails: &Store, changed: &[String]) -> Vec<String> {
         if changed.is_empty() {
             return vec![];
         }
@@ -127,7 +129,7 @@ impl Command {
     /// The judge brief of `ask`, an ask or a step with steps under it: its title, its intent lines, the
     /// patterns that fit its title and the changed files, the notes of its trail, the changed files, and
     /// its check.
-    fn brief(&self, ask: Step, trails: &Trails, files: &[String]) -> Vec<String> {
+    fn brief(&self, ask: Step, trails: &Store, files: &[String]) -> Vec<String> {
         let record = ask.record();
         let mut lines = vec![
             format!(

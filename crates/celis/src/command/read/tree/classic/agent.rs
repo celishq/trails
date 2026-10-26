@@ -4,7 +4,7 @@ use super::{Level, Row, Styled, Summary, Tree};
 use crate::progress::Flags;
 use crate::terminal::classic::signs;
 use crate::text::clock::took;
-use celis_trails::records::id::short;
+use celis_store::records::id::short;
 use celis_trails::{Step, Trail};
 
 impl Tree<'_> {

@@ -5,8 +5,9 @@ use crate::progress::Tally;
 use crate::terminal::look::look;
 use crate::text::clock::took;
 use crate::text::line::time;
-use celis_trails::records::id::short;
-use celis_trails::{Mark, Notes, Patterns, State, Step, Steps, Trail};
+use celis_patterns::Patterns;
+use celis_store::records::id::short;
+use celis_trails::{Mark, Notes, State, Step, Steps, Trail};
 
 /// The trail of the step each of `ids` names, once, in their order.
 fn chosen<'a>(steps: &'a Steps<'a>, ids: &[String]) -> Result<Vec<Step<'a>>, Failure> {

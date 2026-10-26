@@ -2,8 +2,10 @@
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use celis_trails::records::id::short;
-use celis_trails::{Example, Pattern, Trails};
+use celis_patterns::{Example, Pattern, PatternStore};
+use celis_store::records::id::short;
+use celis_store::Store;
+use celis_trails::TrailStore;
 use std::io::Write;
 
 impl Command {
@@ -39,7 +41,7 @@ impl Command {
 /// The section of `pattern`: its first line as a heading, its id, scope and `rule` when it binds, the rest
 /// of its text, then a line for each smaller pattern in scope in `project` and each example, a file as a
 /// link to its blob.
-fn markdown(pattern: &Pattern, trails: &Trails, project: &str) -> Vec<String> {
+fn markdown(pattern: &Pattern, trails: &Store, project: &str) -> Vec<String> {
     let (note, pattern) = (pattern.note, &pattern.record);
     let mut text = pattern.content.lines();
     let mut head = vec![pattern.scope.text()];

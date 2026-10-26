@@ -1,7 +1,9 @@
 //! What a tree, a report and the cards of stats are drawn from.
 
 use super::Reuse;
-use celis_trails::{Notes, Patterns, Steps, Trails};
+use celis_patterns::{PatternStore, Patterns};
+use celis_store::Store;
+use celis_trails::{Notes, Steps, TrailStore};
 
 /// The steps, patterns, notes and reuse of a store at one moment.
 pub struct Model<'a> {
@@ -13,7 +15,7 @@ pub struct Model<'a> {
 
 impl Model<'_> {
     /// What `body` gives from the model of `trails`.
-    pub fn of<T>(trails: &Trails, body: impl FnOnce(&Model) -> T) -> T {
+    pub fn of<T>(trails: &Store, body: impl FnOnce(&Model) -> T) -> T {
         let (steps, patterns, notes) = (trails.steps(), trails.patterns(), trails.notes());
         let reuse = Reuse::new(&steps);
         body(&Model {

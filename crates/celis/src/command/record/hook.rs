@@ -2,6 +2,8 @@
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
+use celis_patterns::PatternStore;
+use celis_trails::TrailStore;
 use serde_json::{json, Value};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};

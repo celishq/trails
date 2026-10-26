@@ -2,7 +2,8 @@
 //! steps, written before the view opens, and the rest of their events written live, one a beat.
 
 use crate::failure::Failure;
-use celis_trails::{Anchor, Draft, Store, Trails};
+use celis_store::{Anchor, Home, Store};
+use celis_trails::{Draft, TrailStore};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -66,7 +67,7 @@ impl Play {
     /// trail within its life before `now`; then, when `live`, starts writing the rest one a beat.
     pub fn start(home: &Path, now: u64, live: bool) -> Result<Play, Failure> {
         let mut trails: Vec<Written> = PLANS.iter().map(Written::of).collect();
-        let mut store = Trails::open(Store::open(home)?, now, 600);
+        let mut store = Store::open(Home::open(home)?, now, 600);
         for (n, trail) in trails.iter_mut().enumerate() {
             let count = trail.before.len().max(1) as u64;
             let (from, to) = (START[n], 120 + 10 * n as u64);
@@ -96,10 +97,10 @@ impl Play {
             if !pause(OPEN) {
                 return;
             }
-            let Ok(store) = Store::open(&home) else {
+            let Ok(store) = Home::open(&home) else {
                 return;
             };
-            let mut store = Trails::open(store, crate::command::now(), 600);
+            let mut store = Store::open(store, crate::command::now(), 600);
             for (n, event) in queue {
                 if !pause(BEAT) {
                     return;
@@ -221,7 +222,7 @@ impl Written {
     /// pattern of the trail.
     fn write(
         &mut self,
-        store: &mut Trails,
+        store: &mut Store,
         home: &Path,
         event: Event,
         at: u64,

@@ -13,8 +13,10 @@ use crate::command::read::view::kind::Kind;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::text::clock::date;
-use celis_trails::records::id::short;
-use celis_trails::{Pattern, Step, Trails};
+use celis_patterns::{Pattern, PatternStore};
+use celis_store::records::id::short;
+use celis_store::Store;
+use celis_trails::{Step, TrailStore};
 use recalls::Recalls;
 use std::collections::{HashMap, HashSet};
 use std::io::Write;
@@ -117,7 +119,7 @@ impl Command {
     /// `Patterns::fitting` gives.
     pub(crate) fn fits<'a>(
         &self,
-        trails: &'a Trails,
+        trails: &'a Store,
         ask: &str,
         files: &[String],
         err: &mut dyn Write,

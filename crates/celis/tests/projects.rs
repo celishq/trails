@@ -3,7 +3,7 @@
 mod support;
 
 use celis_nostr::Note;
-use celis_trails::{Project, Store};
+use celis_store::{Home, Project};
 use std::process::Command;
 use support::Repo;
 
@@ -80,7 +80,7 @@ fn the_name_must_not_change_the_project_id() {
 
 /// The one trail in the store.
 fn written(repo: &Repo) -> Note {
-    let records = Store::open(&repo.home()).unwrap().records();
+    let records = Home::open(&repo.home()).unwrap().records();
     records.into_iter().find(|n| n.kind == 1111).unwrap()
 }
 

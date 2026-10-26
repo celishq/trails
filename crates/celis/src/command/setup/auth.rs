@@ -3,7 +3,7 @@
 use crate::command::{put, show, Args, Command};
 use crate::failure::Failure;
 use celis_nostr::Identity;
-use celis_trails::Phrase;
+use celis_store::Phrase;
 use serde_json::json;
 use std::io::{IsTerminal, Read, Write};
 

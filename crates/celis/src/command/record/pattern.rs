@@ -2,7 +2,9 @@
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use celis_trails::{Example, Examples, PatternId, PatternRecord, Place, Project, Scope, Trails};
+use celis_patterns::{Example, Examples, PatternRecord, PatternStore, Scope};
+use celis_store::{PatternId, Place, Project, Store};
+use celis_trails::{TrailStore, Written};
 use std::io::Write;
 
 impl Command {
@@ -46,7 +48,10 @@ impl Command {
             within: args.within.iter().map(PatternId::new).collect(),
             examples,
         };
-        let written = trails.decide(pattern, args.replaces.as_deref())?;
+        let written = Written {
+            records: vec![trails.decide(pattern, args.replaces.as_deref())?],
+            ..Written::default()
+        };
         self.print(written, args, out, err)?;
         match args.scope {
             Some(_) => Ok(()),
@@ -56,7 +61,7 @@ impl Command {
 
     /// The example `value` names: a URL, else a file of the working folder, kept as a blob, else a
     /// step of the store.
-    fn example(&self, trails: &Trails, project: &Project, value: &str) -> Result<Example, Failure> {
+    fn example(&self, trails: &Store, project: &Project, value: &str) -> Result<Example, Failure> {
         if value.contains("://") {
             return Ok(Example::Url(value.to_string()));
         }

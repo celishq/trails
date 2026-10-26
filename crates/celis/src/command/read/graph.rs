@@ -15,7 +15,7 @@ use crate::terminal::wake::Key;
 use crate::text::clock::took;
 use card::{inside, put, Card};
 use celis_nostr::Note;
-use celis_trails::{State, Step, Trail};
+use celis_trails::{State, Step, Trail, TrailStore};
 use folders::folders;
 use layout::{breadth, columns, Layout, GAP};
 use moment::{tally, Moment, LIGHT};

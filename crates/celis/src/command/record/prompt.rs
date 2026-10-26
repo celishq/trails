@@ -3,7 +3,8 @@
 use crate::command::read::tree::today;
 use crate::command::Command;
 use crate::failure::Failure;
-use celis_trails::{Link, Project};
+use celis_store::{Link, Project};
+use celis_trails::TrailStore;
 use hook::Prompt;
 use std::io::Write;
 use std::path::Path;
@@ -45,7 +46,7 @@ impl Command {
         if prompt.task {
             return Ok(());
         }
-        let id = trail.map(|t| celis_trails::records::id::short(t.id()));
+        let id = trail.map(|t| celis_store::records::id::short(t.id()));
         let line = note(!trails.is_empty(), id.as_deref(), !today(&steps).is_empty());
         crate::command::put(err, &line)?;
         self.offer(err, project, &offered)

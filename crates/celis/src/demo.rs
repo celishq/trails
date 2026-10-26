@@ -3,7 +3,9 @@
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use celis_trails::{Anchor, Draft, PatternRecord, Scope, Store, Trails};
+use celis_patterns::{PatternRecord, PatternStore, Scope};
+use celis_store::{Anchor, Home, Store};
+use celis_trails::{Draft, TrailStore};
 use std::cell::{RefCell, RefMut};
 use std::io::{IsTerminal, Write};
 use std::path::PathBuf;
@@ -76,7 +78,7 @@ impl Command {
 struct Demo {
     home: PathBuf,
     now: u64,
-    trails: RefCell<Option<Trails>>,
+    trails: RefCell<Option<Store>>,
 }
 
 impl Demo {
@@ -363,10 +365,10 @@ impl Demo {
     }
 
     /// The trails as they stand `ago` seconds before now, writing at that time.
-    fn trails(&self, ago: u64) -> Result<RefMut<'_, Trails>, Failure> {
+    fn trails(&self, ago: u64) -> Result<RefMut<'_, Store>, Failure> {
         let mut trails = self.trails.borrow_mut();
         if trails.is_none() {
-            *trails = Some(Trails::open(Store::open(&self.home)?, self.now - ago, 600));
+            *trails = Some(Store::open(Home::open(&self.home)?, self.now - ago, 600));
         }
         let mut trails = RefMut::map(trails, |t| t.as_mut().expect("opened"));
         trails.at(self.now - ago);
@@ -477,8 +479,7 @@ impl Demo {
             examples: Default::default(),
         };
         let trails = self.trails(ago)?;
-        let written = trails.decide(pattern, None)?;
-        Ok(written.records[0].id.clone())
+        Ok(trails.decide(pattern, None)?.id)
     }
 }
 

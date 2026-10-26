@@ -8,6 +8,8 @@ name = "celis"
 path = "src/main.rs"
 
 [dependencies]
+celis-store = { path = "../celis-store" }
+celis-patterns = { path = "../celis-patterns" }
 celis-trails = { path = "../celis-trails" }
 celis-nostr = { path = "../celis-nostr" }
 anyhow = "1"
@@ -25,6 +27,8 @@ default = ["search"]
 search = ["dep:celis-search"]
 
 [dev-dependencies]
+celis-store = { path = "../celis-store" }
+celis-patterns = { path = "../celis-patterns" }
 celis-trails = { path = "../celis-trails" }
 celis-nostr = { path = "../celis-nostr" }
 libc = "0.2"

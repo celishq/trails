@@ -1,8 +1,9 @@
 //! What a pattern says.
 
-use crate::{Anchor, Examples, Fit, Glob, PatternId, Place, Scope};
+use crate::{Examples, Fit, Glob, Scope};
 use anyhow::Result;
 use celis_nostr::{Account, Note};
+use celis_store::{Anchor, PatternId, Place};
 
 /// What one pattern says: written on a project, it holds in its scope; with the globs of the files it
 /// acts on, the larger patterns it completes, its examples, and its `binds` label, which makes it a rule.

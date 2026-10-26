@@ -9,7 +9,7 @@ use crate::terminal::canvas::{cut, paint, BOLD, DIM};
 use crate::terminal::look::lane;
 use crate::terminal::unfold::faded_style;
 use crate::text::clock::took;
-use celis_trails::records::id::short;
+use celis_store::records::id::short;
 use celis_trails::{State, Step};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;

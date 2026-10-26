@@ -1,9 +1,10 @@
 //! What an agent does to a step.
 
 use crate::step::step_record::NAMESPACE;
-use crate::{By, Done, ProofFile};
+use crate::{By, Done};
 use anyhow::Result;
 use celis_nostr::{Account, Note};
+use celis_store::ProofFile;
 use std::collections::HashMap;
 
 /// What an agent does to a step: takes it up, closes it done, or drops it with the reason its work is no

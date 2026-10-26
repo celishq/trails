@@ -1,5 +1,6 @@
 use super::*;
 use crate::command::read::graph::tests::Bench;
+use celis_trails::TrailStore;
 use std::time::Duration;
 
 /// What stood on the first look plays nothing; a step added later, and a step whose state changed,

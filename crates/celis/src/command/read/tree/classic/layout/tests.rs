@@ -3,9 +3,9 @@ use super::Layout;
 use crate::progress::{Model, Reuse};
 use crate::text::clock::day;
 use celis_nostr::{Account, Note};
-use celis_trails::{
-    Anchor, Mark, Notes, PatternRecord, Patterns, Scope, StepId, StepRecord, Steps,
-};
+use celis_patterns::{PatternRecord, Patterns, Scope};
+use celis_store::{Anchor, StepId};
+use celis_trails::{Mark, Notes, StepRecord, Steps};
 use std::cell::Cell;
 
 /// The time the newest record was written.

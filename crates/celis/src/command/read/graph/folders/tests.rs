@@ -1,9 +1,10 @@
 use super::*;
 use crate::command::read::graph::tests::Bench;
-use celis_trails::Trails;
+use celis_store::Store;
+use celis_trails::TrailStore;
 
 /// The titles of the trails `folders` gives for `trails`, in order.
-fn titles(trails: &Trails) -> Vec<String> {
+fn titles(trails: &Store) -> Vec<String> {
     let steps = trails.steps();
     folders(&steps)
         .iter()

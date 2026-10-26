@@ -1,6 +1,8 @@
 use super::*;
-use crate::{Anchor, Patterns, StepId, StepRecord, Steps};
+use crate::{StepRecord, Steps};
 use celis_nostr::Account;
+use celis_patterns::Patterns;
+use celis_store::{Anchor, StepId};
 
 fn account() -> Account {
     Account::new(&[1u8; 32]).unwrap()

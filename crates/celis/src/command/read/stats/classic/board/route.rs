@@ -5,7 +5,7 @@ use super::{head, legend, Board, NARROW};
 use crate::progress::Model;
 use crate::terminal::canvas::{paint, Styled, DIM};
 use crate::terminal::live::Page;
-use celis_trails::records::id::short;
+use celis_store::records::id::short;
 use celis_trails::Step;
 use face::face;
 use link::Links;

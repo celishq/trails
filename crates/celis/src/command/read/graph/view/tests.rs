@@ -1,5 +1,6 @@
 use super::*;
 use crate::command::read::graph::tests::Bench;
+use celis_trails::TrailStore;
 
 /// A view inside the trail `trail` of `ids`, its cards one a row in their order.
 fn inside(trail: &str, ids: &[&str]) -> View {

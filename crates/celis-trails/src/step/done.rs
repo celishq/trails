@@ -1,6 +1,7 @@
 //! A step closed done.
 
-use crate::{By, ProofFile};
+use crate::By;
+use celis_store::ProofFile;
 
 /// A step closed done: its proof, what changed from its plan, who gave the proof, and the files it
 /// keeps.

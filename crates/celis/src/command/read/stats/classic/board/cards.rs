@@ -8,7 +8,7 @@ use crate::terminal::canvas::{paint, Styled, BOLD};
 use crate::terminal::frame::Frame;
 use crate::terminal::live::Page;
 use crate::text::clock::weekday;
-use celis_trails::records::id::short;
+use celis_store::records::id::short;
 use celis_trails::Steps;
 
 impl Board<'_> {

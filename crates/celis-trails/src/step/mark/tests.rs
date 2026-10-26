@@ -1,5 +1,6 @@
 use super::*;
-use crate::{By, Done, ProofFile};
+use crate::{By, Done};
+use celis_store::ProofFile;
 
 /// A `done` carries its proof, what changed from the plan and who gave the proof, and reads back the
 /// same (`spec/03-steps.md`, "Closing").

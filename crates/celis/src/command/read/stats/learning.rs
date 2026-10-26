@@ -6,7 +6,7 @@ use super::panel::Panel;
 use super::sheet::{Group, Sheet};
 use crate::terminal::canvas::{cut, paint, BOLD, CYAN, DIM, MAGENTA};
 use crate::terminal::unfold::ease;
-use celis_trails::records::id::short;
+use celis_store::records::id::short;
 use ratatui::style::Style;
 
 /// The panels of Learning: reuse, then patterns.

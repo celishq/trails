@@ -2,7 +2,7 @@
 
 use crate::text::clock::date;
 use celis_nostr::Note;
-use celis_trails::records::id::short;
+use celis_store::records::id::short;
 use std::collections::HashMap;
 use std::io::Write;
 use std::path::{Path, PathBuf};

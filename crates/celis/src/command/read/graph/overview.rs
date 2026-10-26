@@ -9,7 +9,7 @@ use crate::terminal::canvas::{cut, paint, BOLD, CYAN, DIM, GREEN, RED};
 use crate::terminal::look::lane;
 use crate::terminal::unfold::toward;
 use crate::text::line::plural;
-use celis_trails::records::id::short;
+use celis_store::records::id::short;
 use celis_trails::{State, Step, Trail};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;

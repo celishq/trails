@@ -1,7 +1,9 @@
 //! The steps of a store, as they stand at one moment.
 
-use crate::{Mark, PatternRecord, Refusal, Step, StepRecord};
+use crate::{Mark, Step, StepRecord};
 use celis_nostr::Note;
+use celis_patterns::PatternRecord;
+use celis_store::Refusal;
 use std::cell::Cell;
 use std::collections::{HashMap, HashSet};
 
@@ -50,7 +52,7 @@ impl<'a> Steps<'a> {
     pub fn find(&'a self, id: &str) -> Result<Step<'a>, Refusal> {
         let note = match self.index.entries.get(id) {
             Some(entry) => Some(entry.note),
-            None => crate::records::id::find(self.index.all.iter().copied(), id),
+            None => celis_store::records::id::find(self.index.all.iter().copied(), id),
         };
         note.and_then(|n| self.get(&n.id))
             .ok_or_else(|| Refusal::NoStep(id.to_string()))

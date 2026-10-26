@@ -81,6 +81,20 @@ impl ProofFile {
         })
     }
 
+    /// The file the values of a tag name as a Blossom URI and a place; none when the first is no Blossom
+    /// URI.
+    pub fn blossom(values: &[String]) -> Option<ProofFile> {
+        let blob = values.first()?.strip_prefix("blossom:")?;
+        let (sha256, query) = blob.split_once('.')?;
+        let size = query
+            .split(['?', '&'])
+            .find_map(|q| q.strip_prefix("sz="))
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0);
+        let place = values.get(1).cloned().unwrap_or_default();
+        Some(ProofFile::new(place, sha256.to_string(), size))
+    }
+
     /// The lower-case extension of `place`; empty when it has none.
     fn extension(place: &str) -> String {
         std::path::Path::new(place)

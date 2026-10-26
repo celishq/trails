@@ -7,8 +7,10 @@ pub(crate) mod row;
 use crate::command::read::search::recalls::Recalls;
 use crate::text::clock::date;
 use celis_nostr::Note;
-use celis_trails::records::id::short;
-use celis_trails::{Mark, Notes, Pattern, PatternEnd, Step, Trails};
+use celis_patterns::{Pattern, PatternEnd, PatternStore};
+use celis_store::records::id::short;
+use celis_store::Store;
+use celis_trails::{Mark, Notes, Step, TrailStore};
 use header::Header;
 use kind::Kind;
 use row::Row;
@@ -25,12 +27,12 @@ pub(crate) struct View {
 }
 
 impl View {
-    pub fn of(trails: &Trails) -> View {
+    pub fn of(trails: &Store) -> View {
         View::recalled(trails, &Recalls::default())
     }
 
     /// The view of `trails`, each pattern with the day `recalled` gives for its short id.
-    pub fn recalled(trails: &Trails, recalled: &Recalls) -> View {
+    pub fn recalled(trails: &Store, recalled: &Recalls) -> View {
         let (steps, patterns, notes) = (trails.steps(), trails.patterns(), trails.notes());
         let mut blocks: Vec<(u64, &str, Vec<Row>)> = Vec::new();
         for entry in patterns.every() {

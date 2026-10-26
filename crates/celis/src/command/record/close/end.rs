@@ -1,7 +1,8 @@
 //! What the person must look at when an ask closes.
 
 use super::Proof;
-use celis_trails::{Done, Step, StepId};
+use celis_store::StepId;
+use celis_trails::{Done, Step};
 
 /// What the person must look at when an ask closes: each done step with who stands behind its proof and
 /// what changed from its plan, the places of its steps, and the minutes since the ask began.

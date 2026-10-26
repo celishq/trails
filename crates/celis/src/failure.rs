@@ -1,6 +1,6 @@
 //! Why a command did not finish.
 
-use celis_trails::Refusal;
+use celis_store::Refusal;
 
 /// A command that did not finish: the name `--json` prints, the message a person reads, and the exit code.
 #[derive(Debug)]
@@ -52,7 +52,7 @@ impl Failure {
             1,
             format!(
                 "the step {id} has an open step under it; see it with `celis tree {}`",
-                celis_trails::records::id::short(id)
+                celis_store::records::id::short(id)
             ),
         )
     }
@@ -65,7 +65,7 @@ impl Failure {
             format!(
                 "the ask {} changed files; run the celis:judge agent with the brief above, then close it \
                  --by judge, or --by person with the person's answer",
-                celis_trails::records::id::short(id)
+                celis_store::records::id::short(id)
             ),
         )
     }

@@ -5,15 +5,15 @@ pub mod check;
 pub mod done;
 pub mod mark;
 pub mod notes;
-pub mod proof_file;
 pub mod state;
 pub mod step_record;
 pub mod steps;
 pub mod used;
 
 use crate::step::steps::{Close, Entry, LIFE};
-use crate::{Done, Mark, State, StepId, StepRecord, Steps, Trail, Used};
+use crate::{Done, Mark, State, StepRecord, Steps, Trail, Used};
 use celis_nostr::Note;
+use celis_store::StepId;
 use std::collections::HashSet;
 
 /// One step of a store as it stands: its record with its edits, where it sits in its trail, and how its

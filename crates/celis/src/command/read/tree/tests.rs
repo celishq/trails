@@ -1,6 +1,7 @@
 use super::*;
 use celis_nostr::{Account, Note};
-use celis_trails::{Anchor, Mark, Notes, StepRecord};
+use celis_store::Anchor;
+use celis_trails::{Mark, Notes, StepRecord};
 
 fn account() -> Account {
     Account::new(&[1u8; 32]).unwrap()
@@ -12,7 +13,7 @@ fn step(under: Option<&Note>, at: u64, content: &str) -> Note {
             project: "p".into(),
             name: "repo".into(),
         },
-        under: under.map(|n| celis_trails::StepId::new(&n.id)),
+        under: under.map(|n| celis_store::StepId::new(&n.id)),
         replaces: None,
         uses: Vec::new(),
         places: Vec::new(),

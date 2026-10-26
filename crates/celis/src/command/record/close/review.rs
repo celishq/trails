@@ -2,7 +2,8 @@
 
 use super::End;
 use celis_nostr::Note;
-use celis_trails::{Done, Mark, ProofFile, Step, StepId};
+use celis_store::{ProofFile, StepId};
+use celis_trails::{Done, Mark, Step};
 
 /// How a done step went against its plan: its expect line and its own changed, the steps under it planned
 /// before the first started, added after, dropped with their reasons and changed, the person's prompts on

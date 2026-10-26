@@ -1,6 +1,6 @@
 //! One example of a pattern.
 
-use crate::{ProofFile, StepId};
+use celis_store::{ProofFile, StepId};
 
 /// One example of a pattern: a done step, a file kept as a blob, or a URL (CIP-05, "Patterns").
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -25,19 +25,8 @@ impl Example {
     /// The example the values of a `good` or `bad` tag name.
     pub fn read(values: &[String]) -> Option<Example> {
         let value = values.first()?;
-        if let Some(blob) = value.strip_prefix("blossom:") {
-            let (sha256, query) = blob.split_once('.')?;
-            let size = query
-                .split(['?', '&'])
-                .find_map(|q| q.strip_prefix("sz="))
-                .and_then(|s| s.parse().ok())
-                .unwrap_or(0);
-            let place = values.get(1).cloned().unwrap_or_default();
-            return Some(Example::File(ProofFile::new(
-                place,
-                sha256.to_string(),
-                size,
-            )));
+        if let Some(file) = ProofFile::blossom(values) {
+            return Some(Example::File(file));
         }
         match value.contains("://") {
             true => Some(Example::Url(value.clone())),

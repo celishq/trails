@@ -1,4 +1,4 @@
-//! The records of every project on this machine.
+//! The records of every project on this machine, as a celis home keeps them.
 
 mod blobs;
 
@@ -15,7 +15,7 @@ use std::path::{Path, PathBuf};
 /// The records in `$CELIS_HOME/trails/`, and the account of `$CELIS_HOME/phrase` that signs new ones. It
 /// reads the records from disk once, keeps those it writes after, and the names of the files of
 /// `shared/` it holds, and the blobs of `blobs/`. It reads and writes its linked folders too.
-pub struct Store {
+pub struct Home {
     root: PathBuf,
     phrase: Phrase,
     links: Vec<Link>,
@@ -26,17 +26,17 @@ pub struct Store {
     blobs: Blobs,
 }
 
-impl Store {
+impl Home {
     /// Whether `home` holds a store.
     pub fn exists(home: &Path) -> bool {
-        Store::root(home).is_dir()
+        Home::root(home).is_dir()
     }
 
     /// The store in `home`, created when it is missing.
-    pub fn open(home: &Path) -> Result<Store, Refusal> {
-        let root = Store::root(home);
+    pub fn open(home: &Path) -> Result<Home, Refusal> {
+        let root = Home::root(home);
         std::fs::create_dir_all(root.join("shared")).map_err(|e| unwritten(&root, e))?;
-        Ok(Store {
+        Ok(Home {
             phrase: Phrase::at(home),
             links: vec![],
             account: OnceCell::new(),
@@ -49,7 +49,7 @@ impl Store {
     }
 
     /// The store that also reads and writes the folder of `link`.
-    pub fn with(mut self, link: Link) -> Store {
+    pub fn with(mut self, link: Link) -> Home {
         self.links.push(link);
         self
     }
@@ -101,9 +101,9 @@ impl Store {
         self.blobs.get(sha256)
     }
 
-    /// Copies each record a linked folder holds and lacks into it, with the blobs its files and file
-    /// examples name, and each record of a linked folder the store lacks into `shared/`. Returns the
-    /// counts of records copied out and in.
+    /// Copies each record a linked folder holds and lacks into it, with the blobs its tags name, and each
+    /// record of a linked folder the store lacks into `shared/`. Returns the counts of records copied out
+    /// and in.
     pub fn sync(&self) -> Result<(usize, usize)> {
         let mut kept = read(&self.root.join("shared"), |_| true, &self.verified);
         let came = self.take_in(&mut kept)?;
@@ -112,13 +112,11 @@ impl Store {
         for link in &self.links {
             for record in kept.iter().filter(|r| link.holds(r, &all)) {
                 went += usize::from(put(&link.folder, record)?.1);
-                let proofs = record.tags.iter().filter_map(|t| ProofFile::read(t));
-                let examples = crate::Examples::read(record);
-                let examples = examples.sides().filter_map(|(_, e)| match e {
-                    crate::Example::File(file) => Some(file.clone()),
-                    _ => None,
-                });
-                for file in proofs.chain(examples) {
+                let files = record
+                    .tags
+                    .iter()
+                    .filter_map(|t| ProofFile::read(t).or_else(|| ProofFile::blossom(t.get(1..)?)));
+                for file in files {
                     link_blobs(link).copy(&self.blobs, &file.sha256)?;
                 }
             }

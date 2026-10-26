@@ -1,8 +1,9 @@
 //! The patterns of a store.
 
-use crate::{Fit, Mark, Pattern, PatternEnd, PatternRecord, Refusal, Scope, Step, Used};
+use crate::{Fit, Pattern, PatternEnd, PatternRecord, Scope};
 use celis_nostr::Note;
-use std::collections::{HashMap, HashSet};
+use celis_store::Refusal;
+use std::collections::HashMap;
 
 /// The patterns of a store, read once, newest first, then by id.
 pub struct Patterns<'a> {
@@ -19,7 +20,7 @@ impl<'a> Patterns<'a> {
             .iter()
             .filter_map(|(n, d)| Some((d.replaces.as_ref()?.to_string(), *n)))
             .collect();
-        let drops = Mark::drops(records);
+        let drops = drops(records);
         let mut every: Vec<Pattern<'a>> = read
             .into_iter()
             .map(|(note, record)| Pattern {
@@ -29,7 +30,7 @@ impl<'a> Patterns<'a> {
                     .get(note.id.as_str())
                     .copied()
                     .map(PatternEnd::Replaced)
-                    .or(drops.get(&note.id).map(|d| PatternEnd::Dropped(d))),
+                    .or(drops.get(note.id.as_str()).map(|d| PatternEnd::Dropped(d))),
             })
             .collect();
         every.sort_by(|a, b| (b.note.created_at, &a.note.id).cmp(&(a.note.created_at, &b.note.id)));
@@ -56,7 +57,7 @@ impl<'a> Patterns<'a> {
             .filter(|p| p.is_live())
             .filter(|p| project.is_none_or(|project| self.holds(p, project)))
             .collect();
-        let note = crate::records::id::find(live.iter().map(|p| p.note), id);
+        let note = celis_store::records::id::find(live.iter().map(|p| p.note), id);
         let note = note.ok_or_else(|| Refusal::NoPattern(id.to_string()))?;
         let found = live.into_iter().find(|p| p.note.id == note.id);
         Ok(found.cloned().expect("the note is of a live pattern"))
@@ -88,23 +89,27 @@ impl<'a> Patterns<'a> {
             .collect()
     }
 
-    /// The live patterns the plan of `step` links, each once: each pattern a step on its `under` chain
-    /// uses.
-    pub fn kept(&self, step: Step) -> Vec<Pattern<'a>> {
-        let mut found = Vec::new();
-        let chain = std::iter::successors(Some(step), |s| s.under());
-        for used in chain.flat_map(Step::uses) {
-            if let Used::Pattern(id) = used {
-                found.extend(self.find(None, id));
-            }
-        }
-        let mut seen = HashSet::new();
-        found.retain(|p| seen.insert(p.note.id.clone()));
-        found
-    }
-
     /// Whether `pattern` holds in `project`.
     fn holds(&self, pattern: &Pattern, project: &str) -> bool {
         pattern.record.scope == Scope::Me || pattern.record.anchor.project == project
     }
+}
+
+/// The first drop of each record id that `records` holds, by when it was written, then by id: a kind
+/// 1985 record with the label `drop` in `celis.step`, a reason, and an `e` tag (CIP-03, "Dropping").
+fn drops(records: &[Note]) -> HashMap<&str, &Note> {
+    let mut drops: HashMap<&str, &Note> = HashMap::new();
+    let drop = |n: &Note| {
+        let label = |t: &Vec<String>| t.len() >= 3 && t[0] == "l" && t[2] == "celis.step";
+        let label = n.tags.iter().find(|t| label(t));
+        n.kind == 1985 && label.is_some_and(|t| t[1] == "drop") && !n.content.trim().is_empty()
+    };
+    for note in records.iter().filter(|n| drop(n)) {
+        let Some(id) = note.tag("e") else { continue };
+        let first = drops.entry(id).or_insert(note);
+        if (note.created_at, &note.id) < (first.created_at, &first.id) {
+            *first = note;
+        }
+    }
+    drops
 }

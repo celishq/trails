@@ -1,5 +1,6 @@
 use super::*;
 use crate::command::read::graph::tests::Bench;
+use celis_trails::TrailStore;
 use std::time::Duration;
 
 /// The steps by state count each state with its mark, and its word when asked, leaving out a state

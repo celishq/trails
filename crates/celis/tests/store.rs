@@ -3,7 +3,7 @@
 mod support;
 
 use celis_nostr::Note;
-use celis_trails::Store;
+use celis_store::Home;
 use support::{account, err, out, Repo, PHRASE};
 
 /// A command opens the store in `$CELIS_HOME`, so a trail written in one folder lists in another, inside
@@ -56,7 +56,7 @@ fn with_no_store_pattern_and_step_add_create_it() {
 #[test]
 fn a_record_must_be_written_to_a_file_named_by_its_time_and_id() {
     let repo = Repo::new();
-    let store = Store::open(&repo.home()).ok().unwrap();
+    let store = Home::open(&repo.home()).ok().unwrap();
     let record = Note::write(&account(), 1111u16, 1759400060, vec![], "first").unwrap();
     let path = store.write(&record).unwrap();
     assert_eq!(
@@ -72,7 +72,7 @@ fn a_record_must_be_written_to_a_file_named_by_its_time_and_id() {
 #[test]
 fn a_record_file_must_not_change_once_written() {
     let repo = Repo::new();
-    let store = Store::open(&repo.home()).ok().unwrap();
+    let store = Home::open(&repo.home()).ok().unwrap();
     let record = Note::write(&account(), 1111u16, 1759400060, vec![], "first").unwrap();
     let shared = repo.store().join("shared");
     let path = shared.join(format!("{}-{}.json", record.created_at, record.id));
@@ -95,7 +95,7 @@ fn a_record_file_must_not_change_once_written() {
 fn a_record_file_must_never_be_seen_half_written() {
     use std::sync::atomic::{AtomicBool, Ordering};
     let repo = Repo::new();
-    let store = Store::open(&repo.home()).ok().unwrap();
+    let store = Home::open(&repo.home()).ok().unwrap();
     let shared = repo.store().join("shared");
     let content = "x".repeat(32 * 1024 * 1024);
     let record = Note::write(&account(), 1111u16, 1759400060, vec![], &content).unwrap();
@@ -126,7 +126,7 @@ fn a_record_file_must_never_be_seen_half_written() {
 #[test]
 fn a_reader_must_skip_a_file_that_does_not_parse_or_verify() {
     let repo = Repo::new();
-    let store = Store::open(&repo.home()).ok().unwrap();
+    let store = Home::open(&repo.home()).ok().unwrap();
     let good = Note::write(&account(), 1111u16, 1759400060, vec![], "good").unwrap();
     store.write(&good).unwrap();
 

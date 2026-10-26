@@ -1,6 +1,6 @@
 //! A step as an agent asks to write it.
 
-use crate::Anchor;
+use celis_store::Anchor;
 
 /// A step as an agent asks to write it: its words, its anchor, places and check, the ids it names as
 /// given, and where it may go.

@@ -9,8 +9,8 @@ use crate::failure::Failure;
 use crate::help::{self, VERBS};
 pub(crate) use args::Args;
 use celis_nostr::Note;
-use celis_trails::records::id::short;
-use celis_trails::{Link, Project, Store, Trails};
+use celis_store::records::id::short;
+use celis_store::{Home, Link, Project, Store};
 use serde_json::json;
 use std::collections::HashMap;
 use std::io::{IsTerminal, Write};
@@ -160,7 +160,7 @@ impl Command {
 
     /// Whether the store exists.
     pub(crate) fn held(&self) -> Result<bool, Failure> {
-        Ok(Store::exists(&self.home()?))
+        Ok(Home::exists(&self.home()?))
     }
 
     /// The file whose presence says the opening scene was shown: `$CELIS_OPENING`, else `opening` in
@@ -182,7 +182,7 @@ impl Command {
 
     /// The trails of the store, with the working folder's linked folders that are on, opened now; a check
     /// runs for `CELIS_CHECK_SECONDS`, 600 when not set.
-    pub(crate) fn trails(&self) -> Result<Trails, Failure> {
+    pub(crate) fn trails(&self) -> Result<Store, Failure> {
         let limit = self
             .env
             .get("CELIS_CHECK_SECONDS")
@@ -190,8 +190,8 @@ impl Command {
             .unwrap_or(600);
         let home = self.home()?;
         let links = Link::all(&home, &self.folder);
-        let store = links.into_iter().fold(Store::open(&home)?, Store::with);
-        Ok(Trails::open(store, now(), limit))
+        let store = links.into_iter().fold(Home::open(&home)?, Home::with);
+        Ok(Store::open(store, now(), limit))
     }
 
     /// Prints the id of `note`: its first 8 characters on a terminal, else whole; `{"id"}` with

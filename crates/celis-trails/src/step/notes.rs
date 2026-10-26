@@ -1,7 +1,8 @@
 //! The notes of a store.
 
-use crate::{Mark, PatternRecord, Step};
+use crate::{Mark, Step};
 use celis_nostr::Note;
+use celis_patterns::PatternRecord;
 use std::collections::{HashMap, HashSet};
 
 /// The notes of a store by the step they are on, oldest first: each note mark, and each live pattern with

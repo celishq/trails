@@ -1,15 +1,17 @@
 use super::super::window::DAY;
 use super::*;
-use celis_trails::{Anchor, Draft, PatternRecord, Scope, Store, Trails};
+use celis_patterns::{PatternRecord, PatternStore, Scope};
+use celis_store::{Anchor, Home, Store};
+use celis_trails::{Draft, TrailStore};
 use tempfile::TempDir;
 
 /// The second a store's one step closed.
 const AT: u64 = 1_800_000_000;
 
 /// A store with a trail and one step under it done as planned at `AT`, seen at `AT + later`.
-fn worked(later: u64) -> (TempDir, Trails) {
+fn worked(later: u64) -> (TempDir, Store) {
     let home = tempfile::tempdir().unwrap();
-    let mut trails = Trails::open(Store::open(home.path()).unwrap(), AT - 60, 600);
+    let mut trails = Store::open(Home::open(home.path()).unwrap(), AT - 60, 600);
     let draft = |text: &str, under: Option<String>| Draft {
         content: text.to_string(),
         anchor: Anchor {
@@ -46,12 +48,12 @@ fn worked(later: u64) -> (TempDir, Trails) {
 }
 
 /// The cards of `trails`, 92 and 43 characters wide inside.
-fn drawn(trails: &Trails) -> [Card; CARDS] {
+fn drawn(trails: &Store) -> [Card; CARDS] {
     Model::of(trails, |model| cards(model, 92, 43, false))
 }
 
 /// The face of the card of `trails` whose title starts with `title`, its rows joined by new lines.
-fn face(trails: &Trails, title: &str) -> String {
+fn face(trails: &Store, title: &str) -> String {
     let cards = drawn(trails);
     let card = cards.iter().find(|s| s.title.starts_with(title));
     let face = card.expect(title).face.iter().map(|r| r.to_string());
@@ -110,7 +112,7 @@ fn the_effect_says_what_each_share_counts() {
 
 /// `worked`, with a new trail added at `AT` and a step under it that follows the done step and uses a
 /// pattern.
-fn reused(later: u64) -> (TempDir, Trails) {
+fn reused(later: u64) -> (TempDir, Store) {
     let (home, mut trails) = worked(later);
     let part = Model::of(&trails, |m| m.steps.all()[1].id().to_string());
     let anchor = Anchor {
@@ -128,7 +130,7 @@ fn reused(later: u64) -> (TempDir, Trails) {
         examples: Default::default(),
     };
     trails.at(AT);
-    let pattern = trails.decide(pattern, None).unwrap().records[0].id.clone();
+    let pattern = trails.decide(pattern, None).unwrap().id;
     trails.at(AT);
     let draft = |content: &str, under: Option<String>, uses: Vec<String>| Draft {
         content: content.into(),

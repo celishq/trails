@@ -1,4 +1,4 @@
-//! Why a write or a read of the trails did not go through.
+//! Why a write or a read of the store did not go through.
 
 /// Why a write or a read did not go through, by the error names of CIP-02: each with the id, text or
 /// output it is about.

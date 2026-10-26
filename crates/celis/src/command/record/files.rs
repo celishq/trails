@@ -1,6 +1,6 @@
 //! The files of a project that git gives.
 
-use celis_trails::{Place, Project};
+use celis_store::{Place, Project};
 use std::path::Path;
 
 /// The files `git <args>` lists in `folder`; none when git fails.

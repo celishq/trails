@@ -6,7 +6,7 @@ use super::view::View;
 use crate::command::read::tree::wrap;
 use crate::terminal::canvas::{paint, BOLD, DIM, EDGE, MAGENTA};
 use crate::text::clock::clock;
-use celis_trails::records::id::short;
+use celis_store::records::id::short;
 use celis_trails::Step;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;

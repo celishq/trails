@@ -1,7 +1,8 @@
 //! What an id of a command names.
 
-use crate::{Refusal, Step};
+use crate::Step;
 use celis_nostr::Note;
+use celis_store::Refusal;
 
 /// What an id names: a pattern or a step.
 pub(crate) enum Target<'a> {

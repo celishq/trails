@@ -1,15 +1,6 @@
 //! CIP-05: a pattern, what to choose in a context and why, that holds in its scope until another replaces
 //! it.
 
-pub mod example;
-pub mod examples;
-pub mod fit;
-pub mod glob;
-pub mod pattern_end;
-pub mod pattern_record;
-pub mod patterns;
-pub mod scope;
-
 use crate::{PatternEnd, PatternRecord};
 use celis_nostr::Note;
 

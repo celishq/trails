@@ -1,7 +1,8 @@
 //! The `--json` object of each record.
 
 use celis_nostr::Note;
-use celis_trails::{Notes, Pattern, StepRecord};
+use celis_patterns::Pattern;
+use celis_trails::{Notes, StepRecord};
 use serde_json::{json, Value};
 
 /// The object of the step `record` that `note` holds.

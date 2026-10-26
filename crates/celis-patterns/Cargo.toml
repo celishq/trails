@@ -1,0 +1,14 @@
+[package]
+name = "celis-patterns"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "celis_patterns"
+path = "src/lib.rs"
+
+[dependencies]
+celis-store = { path = "../celis-store" }
+celis-nostr = { path = "../celis-nostr" }
+anyhow = "1"
+regex = "1"

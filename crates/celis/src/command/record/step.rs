@@ -3,8 +3,9 @@
 use crate::command::record::close::Review;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use celis_trails::records::id::short;
-use celis_trails::{By, Done, Draft, Link, Notice, Place, Project, Written};
+use celis_store::records::id::short;
+use celis_store::{Link, Place, Project};
+use celis_trails::{By, Done, Draft, Notice, TrailStore, Written};
 use std::io::Write;
 
 impl Command {
@@ -28,7 +29,7 @@ impl Command {
         }
     }
 
-    /// Writes the step `args` states on `project`, and prints the ids `Trails::add` gives.
+    /// Writes the step `args` states on `project`, and prints the ids `TrailStore::add` gives.
     fn step_add(
         &self,
         args: &Args,

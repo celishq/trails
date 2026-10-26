@@ -1,8 +1,8 @@
 # CIPs — Trails
 
-These specs hold the contract of the trail, the crates `celis-trails` and `celis`. A trail is one task the
-person gives, broken into steps that agents take and close, with the patterns learned on the way. The trails
-of every project on the machine share one store. Records are nostr notes your account signs.
+These specs hold the contract of the trail, the crates `celis-store`, `celis-patterns`, `celis-trails`
+and `celis`. A trail is one task the person gives, broken into steps that agents take and close, with the
+patterns learned on the way. The trails of every project on the machine share one store. Records are nostr notes your account signs.
 
 ## How a CIP works
 

@@ -16,8 +16,8 @@ use crate::terminal::live::{Live, Page};
 use crate::terminal::screen::Screen;
 use crate::terminal::wake::Key;
 use celis_nostr::Note;
-use celis_trails::records::id::short;
-use celis_trails::Trail;
+use celis_store::records::id::short;
+use celis_trails::{Trail, TrailStore};
 use std::io::Write;
 use std::time::{Duration, Instant};
 

@@ -1,5 +1,6 @@
 use super::*;
-use celis_trails::{Anchor, Draft, Store, Trails};
+use celis_store::{Anchor, Home, Store};
+use celis_trails::{Draft, TrailStore};
 use tempfile::TempDir;
 
 /// The second the first record of a bench is written.
@@ -9,14 +10,14 @@ const AT: u64 = 1_800_000_000;
 /// the second of the last record.
 pub(super) struct Bench {
     pub home: TempDir,
-    pub trails: Trails,
+    pub trails: Store,
     pub at: u64,
 }
 
 impl Bench {
     pub fn new() -> Bench {
         let home = tempfile::tempdir().unwrap();
-        let trails = Trails::open(Store::open(home.path()).unwrap(), AT, 600);
+        let trails = Store::open(Home::open(home.path()).unwrap(), AT, 600);
         Bench {
             home,
             trails,

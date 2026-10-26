@@ -339,7 +339,8 @@ fn grep_q_prints_nothing_on_a_match() {
 /// `steps.md` prints exactly the lines it keeps (`spec/02-cli.md`, "Grep").
 #[test]
 fn the_view_and_the_steps_pattern_search_match_the_fixture() {
-    use celis_trails::{Anchor, Mark, StepId, StepRecord};
+    use celis_store::{Anchor, StepId};
+    use celis_trails::{Mark, StepRecord};
     use support::{account, put, stored_pattern, tagged_pattern};
     let fixture: serde_json::Value =
         serde_json::from_str(include_str!("../../../spec/fixtures/grep-view.json")).unwrap();

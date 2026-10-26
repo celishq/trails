@@ -3,8 +3,10 @@
 use super::clock::took;
 use crate::progress::Grade;
 use celis_nostr::Note;
-use celis_trails::records::id::short;
-use celis_trails::{Example, Pattern, ProofFile, Step, Trails};
+use celis_patterns::{Example, Pattern};
+use celis_store::records::id::short;
+use celis_store::{ProofFile, Store};
+use celis_trails::{Step, TrailStore};
 
 /// `<id, first 8> note <first line>` of the note `note`, then each next line of its text.
 pub(crate) fn note(note: &Note) -> String {
@@ -16,7 +18,7 @@ pub(crate) fn note(note: &Note) -> String {
 
 /// `<id, first 8> <scope> <first line>` of `pattern`, then each next line of its
 /// text, then each of its examples: a step with its proof and blobs, a file with its blob, or a URL.
-pub(crate) fn pattern(pattern: &Pattern, trails: &Trails) -> String {
+pub(crate) fn pattern(pattern: &Pattern, trails: &Store) -> String {
     let (note, pattern) = (pattern.note, &pattern.record);
     let steps = trails.steps();
     let mut text = pattern.content.lines();
@@ -78,7 +80,7 @@ pub(crate) fn plural(n: usize, word: &str) -> String {
 }
 
 /// Where `trails` keeps the blob of `file`; its place and sha256 when the store lacks it.
-pub(crate) fn blob(file: &ProofFile, trails: &Trails) -> String {
+pub(crate) fn blob(file: &ProofFile, trails: &Store) -> String {
     match trails.blob(&file.sha256) {
         Some(path) => path.display().to_string(),
         None => format!("{} · {} missing", file.place, file.sha256),

@@ -9,6 +9,7 @@ use crate::terminal::live::{Live, Page};
 use crate::terminal::screen::{until, Screen};
 use crate::terminal::wake::Key;
 use celis_nostr::Note;
+use celis_trails::TrailStore;
 use std::io::Write;
 
 impl Command {

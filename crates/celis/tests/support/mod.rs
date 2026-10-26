@@ -2,7 +2,7 @@
 #![allow(dead_code)]
 
 use celis_nostr::{Account, Note};
-use celis_trails::{Project, Store};
+use celis_store::{Home, Project};
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::io::Write;
@@ -158,7 +158,7 @@ fn shared(repo: &Repo) -> std::path::PathBuf {
 }
 
 pub fn put(repo: &Repo, note: &Note) {
-    Store::open(&repo.home()).unwrap().write(note).unwrap();
+    Home::open(&repo.home()).unwrap().write(note).unwrap();
 }
 
 /// A cairn on the repo that `by` signed at `at`, with the extra tags `extra`.
