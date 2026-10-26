@@ -14,7 +14,7 @@ celis keeps the knowledge that agents need to do work well, and the evidence for
   and a way to resolve them. When its forces are present, the agent resolves them in its own way. When
   they are not present, the pattern does not apply. A pattern is never "broken". Pairs show taste: good
   and bad examples, made from the person's picks and corrections.
-- **Trails are the evidence.** A trail records an ask, its steps and their proofs. It gives observability,
+- **Trails are the evidence.** A trail is one ask, with its steps and their proofs. It gives observability,
   and it is the feedback loop that shows whether a pattern is still useful: its examples, its uses, its
   recalls, the judge and tidy.
 
@@ -73,6 +73,12 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
 10. **A step is open, done or dropped.** A start gives an open step a start time, and is not a state. A
     done trail that a drop names is dropped. An open step of an ended trail stays open, and the app
     shows it as stale, because a state by time is the app's.
+11. **A trail is one ask.** The ask is a step with no `under`, and the steps of its work go under it. A
+    session does not group its asks into a trail, so the agent never chooses between a trail and a new
+    one: a new ask is a new trail, and the agent continues an open ask with `--under`. The prompts and
+    notes of an ask are on it. A reader reads an older trail, which held the asks of a session, as one
+    ask with those asks as its steps. `step add --new` is accepted and ignored. The migrate skill closes
+    each older trail after the person agrees.
 
 ## What we do not do
 

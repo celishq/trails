@@ -18,10 +18,8 @@ agent recalled for it.
 
 **Writers**
 
-- A writer MUST write the whole id, once. An id that names a trail MUST be written as its first ask when
-  that ask has the trail's text (CIP-04, "Sessions"), else as the trail.
+- A writer MUST write the whole id, once.
 - A writer MUST NOT write a `uses` that names a step of the step's own trail.
-- A writer of a trail and its first ask together MUST put `uses` and `replaces` on the ask only.
 
 **Readers**
 

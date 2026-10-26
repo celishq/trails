@@ -23,7 +23,7 @@ celis grep <grep option>... <pattern>                 every trail, through the s
 celis stats [<id>] [--demo]                           what later work reused
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
 celis link [<folder>] [--off]                         keep this project's trails in a folder, or stop
-celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--recalled <id>]... [--at <place>]... [--check <command>] [--new] [--session <id>] [--project <id>] -- <text>
+celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--recalled <id>]... [--at <place>]... [--check <command>] [--session <id>] [--project <id>] -- <text>
                                                        leave a step
 celis step start <id>                                 take up a step, and see the patterns and notes its plan links
 celis step done <id> [--changed <text>] [--as-planned] [--by <who>] [--file <path>]... -- <proof>
@@ -143,13 +143,13 @@ note  json  {"id", "created_at", "step", "content"}
 **Rules**
 
 - `add` MUST write the whole id of `--under`, `--replaces`, each `--uses` and each `--recalled`
-  (CIP-06, "Recalls"), each `--at` (CIP-01, "Places") and the `--check` as tags. A `--replaces` that names a trail MUST name its first ask.
+  (CIP-06, "Recalls"), each `--at` (CIP-01, "Places") and the `--check` as tags.
 - `add` MUST write no step when an open step of the same project and `under` has the same text, and
   print that step's id. With `--uses` or `--recalled`, or a `--replaces` of a done step, it MUST refuse it as a usage
   error.
-- `add` of a session's first ask MUST print the ask's id, then the trail's.
+- `add` MUST accept `--new` and ignore it.
 - `add` MUST refuse empty text as a usage error; a closed `--under`, and a `--replaces` of a dropped step,
-  with `closed`; a `--replaces` of a trail with no first ask as a usage error; a `--uses` that no live
+  with `closed`; a `--uses` that no live
   pattern and no step has, with `no-step`; and a `--uses` of a step of its own trail, or that starts both
   a pattern's and a step's id, as a usage error.
 - `add` MUST refuse a `--recalled` that no live pattern in scope has, with `no-pattern`, and a
