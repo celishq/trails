@@ -7,7 +7,7 @@ mod review;
 
 use crate::command::Command;
 use crate::failure::Failure;
-use celis_patterns::PatternStore;
+use celis_patterns::{Pattern, PatternStore};
 use celis_store::records::id::short;
 use celis_store::{ProofFile, Store};
 use celis_trails::{Step, TrailStore};
@@ -96,17 +96,20 @@ impl Command {
         changed
     }
 
-    /// The lines of the patterns that the `changed` files match, after a line that asks to check the
-    /// change against each; none when none matches.
-    fn changed_patterns(&self, trails: &Store, changed: &[String]) -> Vec<String> {
+    /// The live patterns in scope that the `files` match, as `Patterns::matching` orders them.
+    fn matched<'a>(&self, trails: &'a Store, files: &[String]) -> Vec<Pattern<'a>> {
         let project = self.project();
-        let paths: Vec<String> = changed
+        let paths: Vec<String> = files
             .iter()
             .flat_map(|f| crate::command::record::files::paths(&project, &self.folder, f))
             .collect();
-        let patterns = trails
-            .patterns()
-            .fitting(&project.anchor.project, &paths, |_| false);
+        trails.patterns().matching(&project.anchor.project, &paths)
+    }
+
+    /// The lines of the patterns that the `changed` files match, after a line that asks to check the
+    /// change against each; none when none matches.
+    fn changed_patterns(&self, trails: &Store, changed: &[String]) -> Vec<String> {
+        let patterns = self.matched(trails, changed);
         if patterns.is_empty() {
             return vec![];
         }
@@ -129,8 +132,7 @@ impl Command {
     }
 
     /// The judge brief of `ask`, an ask or a step with steps under it: its title, its intent lines, the
-    /// patterns that fit its title and the changed files, the notes of its trail, the changed files, and
-    /// its check.
+    /// patterns of the changed files, the notes of its trail, the changed files, and its check.
     fn brief(&self, ask: Step, trails: &Store, files: &[String]) -> Vec<String> {
         let record = ask.record();
         let mut lines = vec![
@@ -151,7 +153,7 @@ impl Command {
                 None => format!("          {line}"),
             });
         }
-        for pattern in self.fits(trails, ask.title(), files) {
+        for pattern in self.matched(trails, files) {
             let text = crate::text::line::pattern(&pattern, trails);
             let mut pattern = text.lines();
             lines.extend(pattern.next().map(|first| format!("  pattern {first}")));

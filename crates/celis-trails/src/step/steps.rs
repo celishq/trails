@@ -37,6 +37,13 @@ impl<'a> Steps<'a> {
         all.filter_map(|n| self.get(&n.id)).collect()
     }
 
+    /// The asks whose `recalled` names `id`, newest first.
+    pub fn recalls(&'a self, id: &str) -> Vec<Step<'a>> {
+        let all = self.all().into_iter().rev();
+        all.filter(|s| s.is_ask() && s.record().recalled.iter().any(|r| r == id))
+            .collect()
+    }
+
     /// Whether a pattern record has the id `id`.
     pub(crate) fn holds_pattern(&self, id: &str) -> bool {
         self.index.patterns.contains(id)

@@ -10,11 +10,7 @@ Usage
   celis <command> [<args>] [flags]
 
 Read
-  search <ask>        Show the patterns and past asks that fit an ask
-  ├ --kind <kind>     Only pattern
-  └ --limit <n>       Show <n> patterns and past asks
-
-  patterns            Show your patterns with their good and bad examples
+  patterns            Show the index of your patterns
   └ --markdown        Print one Markdown page, each file a link to its blob
 
   tree [<id>]         Show your trails and their steps
@@ -41,6 +37,7 @@ Record work · your agents run these
   ├ --under <id>      The open step this step is part of
   ├ --replaces <id>   A step this one takes over, or a finished step it fixes
   ├ --uses <id>       A pattern or a past step it follows
+  ├ --recalled <id>   A pattern you read because it bears on the ask
   ├ --at <place>      Where the work happens: a file:line, a URL, or any text
   ├ --check <command> A command that proves the work
   ├ --new             Start a new trail, not a step of the session's trail

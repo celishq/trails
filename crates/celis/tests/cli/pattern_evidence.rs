@@ -1,21 +1,14 @@
-//! CIP-02, "Search": the rank of the patterns `celis search` prints.
+//! CIP-02, "Step": the order of the patterns `celis step done` prints.
 
 use crate::support;
 
 use celis_nostr::Note;
-use support::{account, err, out, pattern_tags, put, Repo, DAY};
+use support::{account, pattern_tags, put, Repo, DAY};
 
-/// The texts of the patterns `celis search <file> --kind pattern` gives for an ask that shares no word with
-/// a pattern.
+/// The texts of the patterns `celis step done` prints for a step that changed `file`.
 fn patterns(repo: &Repo, file: &str) -> Vec<String> {
-    let args = ["search", file, "--kind", "pattern", "--", "x"];
-    let o = repo.run(&repo.path(), &args, &[], "");
-    assert!(o.status.success(), "{}", err(&o));
-    let shown = out(&o);
-    let patterns = shown
-        .lines()
-        .filter(|l| !l.starts_with(' ') && *l != "patterns");
-    patterns
+    let lines = support::matched(repo, &repo.path(), &[file]).into_iter();
+    lines
         .map(|l| l.splitn(3, ' ').nth(2).unwrap().to_string())
         .collect()
 }
@@ -29,8 +22,8 @@ fn tagged(repo: &Repo, tags: &[(&str, &str)], content: &str, at: u64) -> Note {
     note
 }
 
-/// Patterns rank narrowest first, then within each a pattern made by a correction first, then newest
-/// (`spec/02-cli.md`, "Search").
+/// Patterns come narrowest first, then within each a pattern made by a correction first, then newest
+/// (`spec/02-cli.md`, "Step").
 #[test]
 fn patterns_rank_the_narrowest_then_a_correction() {
     let repo = Repo::new();

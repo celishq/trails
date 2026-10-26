@@ -48,6 +48,15 @@ impl PatternRecord {
         Note::write(signer, 1111u16, at, tags, self.content.clone())
     }
 
+    /// The first line of its text; of a text of one line, the part before its first `:`.
+    pub fn when(&self) -> &str {
+        let first = self.content.lines().next().unwrap_or("");
+        match self.content.trim_end().contains('\n') {
+            true => first,
+            false => first.split_once(':').map_or(first, |(when, _)| when),
+        }
+    }
+
     /// When it applies and what to do, on one line: `<When>: <Do>`, or its first line when it has no `Do`.
     pub fn brief(&self) -> String {
         let when = self.content.lines().next().unwrap_or("");

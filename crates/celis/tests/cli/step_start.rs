@@ -70,7 +70,7 @@ fn start_refuses_unknown_and_closed_steps_and_starts_a_step_once() {
     assert_eq!(files(), before);
 }
 
-/// `start` prints no pattern at the step's places; `celis search` gives them.
+/// `start` prints no pattern at the step's places; `celis step done` gives them.
 #[test]
 fn start_prints_no_pattern_at_the_steps_places() {
     let repo = Repo::new();

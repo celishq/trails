@@ -78,9 +78,11 @@ impl TrailStore for Store {
         let mut uses = uses.collect::<Result<Vec<String>, _>>()?;
         let mut seen = std::collections::HashSet::new();
         uses.retain(|id| seen.insert(id.clone()));
+        let recalled = recalled(self, &draft, under)?;
         let mut written = Written::default();
         if let Some(same) = same_open(&steps, &draft, under) {
-            if !uses.is_empty() || replaced.is_some_and(|r| r.done_record().is_some()) {
+            let linked = !uses.is_empty() || !recalled.is_empty();
+            if linked || replaced.is_some_and(|r| r.done_record().is_some()) {
                 return Err(Refusal::Usage(format!(
                     "the open step {} has the same text, and keeps its own links; give the new step other words",
                     short(same.id())
@@ -98,6 +100,7 @@ impl TrailStore for Store {
             under: under.map(|u| u.step_id()),
             replaces: replaced.map(|s| s.step_id()),
             uses,
+            recalled,
             places: draft.places,
             check: draft.check,
             session: draft.session,
@@ -224,6 +227,7 @@ fn start_trail(store: &Store, ask: StepRecord) -> Result<Written<'_>, Refusal> {
     let head = StepRecord {
         replaces: None,
         uses: Vec::new(),
+        recalled: Vec::new(),
         places: Vec::new(),
         check: None,
         ..ask.clone()
@@ -269,6 +273,34 @@ fn used(
         ));
     }
     Ok(step.id().to_string())
+}
+
+/// The whole id of each live pattern in scope that `draft` recalls, once each, in `store`; refuses an id
+/// that names none with `no-pattern`, and a recall on a step under `under` that is not an ask as a usage
+/// error.
+fn recalled(store: &Store, draft: &Draft, under: Option<Step>) -> Result<Vec<String>, Refusal> {
+    if draft.recalled.is_empty() {
+        return Ok(Vec::new());
+    }
+    let ask = match under {
+        Some(under) => under.is_trail(),
+        None => draft.session.is_some(),
+    };
+    if !ask {
+        return Err(Refusal::Usage(
+            "step add --recalled takes an ask: a step right under a trail".into(),
+        ));
+    }
+    let patterns = store.patterns();
+    let mut seen = HashSet::new();
+    let mut found = Vec::new();
+    for id in &draft.recalled {
+        let pattern = patterns.find(Some(&draft.anchor.project), id)?;
+        if seen.insert(pattern.note.id.clone()) {
+            found.push(pattern.note.id.clone());
+        }
+    }
+    Ok(found)
 }
 
 /// Drops each open step of the tree of `step` with `reason`, in `store`.

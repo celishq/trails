@@ -1,4 +1,4 @@
-//! CIP-05, "Triggers", and CIP-02, "Search".
+//! CIP-05, "Triggers", and CIP-02, "Step".
 
 use crate::support;
 
@@ -28,26 +28,18 @@ fn tagged(repo: &Repo, tags: &[(&str, &str)], content: &str, at: u64) -> Note {
     note
 }
 
-/// The pattern lines `celis search <files> --kind pattern` prints in `folder`, for an ask that shares no word
-/// with a pattern.
+/// The pattern lines `celis step done` prints in `folder` for a step that changed `files`.
 fn found(repo: &Repo, folder: &Path, files: &[&str]) -> Vec<String> {
-    let mut all = vec!["search"];
-    all.extend(files);
-    all.extend(["--kind", "pattern", "--", "x"]);
-    let o = repo.run(folder, &all, &[], "");
-    assert!(o.status.success(), "{}", err(&o));
-    let shown = out(&o);
-    let lines = shown.lines().filter(|l| !l.starts_with(' '));
-    let patterns = lines.filter(|l| *l != "patterns" && *l != "nothing fits this ask");
-    patterns.map(str::to_string).collect()
+    support::matched(repo, folder, files)
 }
 
-/// The pattern lines `celis search <files> --kind pattern` prints in the main checkout.
+/// The pattern lines `celis step done` prints in the main checkout for a step that changed `files`.
 fn patterns(repo: &Repo, files: &[&str]) -> Vec<String> {
     found(repo, &repo.path(), files)
 }
 
-/// The text of each pattern `celis search <files> --kind pattern` prints, without its id and scope.
+/// The text of each pattern `celis step done` prints for a step that changed `args`, without its id
+/// and scope.
 fn texts(repo: &Repo, args: &[&str]) -> Vec<String> {
     let lines = patterns(repo, args).into_iter();
     lines
@@ -70,8 +62,8 @@ fn a_path_glob_matches_the_file() {
     assert!(texts(&repo, &["c.rs"]).is_empty());
 }
 
-/// A folder counts as a read of each file git gives under it, ignored files left out
-/// (`spec/02-cli.md`, "Search").
+/// A change under a folder gives the patterns of each changed file, ignored files left out
+/// (`spec/02-cli.md`, "Step").
 #[test]
 fn a_folder_gives_the_patterns_of_its_files() {
     let repo = Repo::new();
@@ -119,7 +111,7 @@ fn an_at_pattern_comes_at_its_place() {
 }
 
 /// A pattern with no trigger and no `at:<place>` never comes by a file, and a pattern with a trigger comes at
-/// its files (`spec/05-patterns.md`, "Triggers"; `spec/02-cli.md`, "Search").
+/// its files (`spec/05-patterns.md`, "Triggers"; `spec/02-cli.md`, "Step").
 #[test]
 fn a_pattern_with_no_trigger_never_comes() {
     let repo = Repo::new();
@@ -157,7 +149,7 @@ fn situation_is_no_flag_and_its_label_is_ignored() {
 }
 
 /// Patterns come with a named file first, then a glob; newest first within each (`spec/02-cli.md`,
-/// "Search").
+/// "Step").
 #[test]
 fn patterns_come_narrowest_first_then_newest() {
     let repo = Repo::new();
@@ -177,7 +169,7 @@ fn patterns_come_narrowest_first_then_newest() {
     );
 }
 
-/// Every pattern that matches comes, on each call of a session (`spec/02-cli.md`, "Search").
+/// Every pattern that matches comes, on each close (`spec/02-cli.md`, "Step").
 #[test]
 fn every_pattern_comes_on_each_call() {
     let repo = Repo::new();
@@ -312,7 +304,7 @@ fn an_older_pattern_with_a_cell_still_reads() {
         "When a flag gets help: keep it short.",
         support::now() - DAY,
     );
-    let o = repo.run(&repo.path(), &["search", "--", "a flag gets help"], &[], "");
+    let o = repo.run(&repo.path(), &["patterns"], &[], "");
     let shown = out(&o);
     assert!(shown.contains(&old.id[..8]), "{shown}");
     assert!(!shown.contains("cell"), "{shown}");

@@ -1,4 +1,4 @@
-//! `celis patterns`: the board of the person's patterns.
+//! `celis patterns`: the index of the person's patterns.
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
@@ -6,11 +6,13 @@ use celis_patterns::{Example, Pattern, PatternStore};
 use celis_store::records::id::short;
 use celis_store::Store;
 use celis_trails::TrailStore;
+use std::collections::HashSet;
 use std::io::Write;
 
 impl Command {
-    /// Prints each live pattern in scope, newest first, with its examples, as lines or with `--markdown`
-    /// as one page. Writes no record.
+    /// Prints the index of the live patterns in scope, oldest first: each one's id, scope and When, with
+    /// its paths and larger patterns; with `--markdown`, each whole as one page, newest first. Writes no
+    /// record.
     pub(crate) fn patterns(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         if !self.held()? {
             return crate::command::put(out, NONE);
@@ -30,11 +32,30 @@ impl Command {
             );
             return crate::command::put(out, &page.join("\n"));
         }
-        for pattern in &patterns {
-            crate::command::put(out, &crate::text::line::pattern(pattern, &trails))?;
+        let every = trails.patterns();
+        let held: HashSet<&str> = every.every().iter().map(|p| p.id()).collect();
+        for pattern in patterns.iter().rev() {
+            crate::command::put(out, &index(pattern, &held))?;
         }
         Ok(())
     }
+}
+
+/// The lines of `pattern` in the index: `<id8> <scope> <When>`, then each of its paths, and each larger
+/// pattern of the `held` ids.
+fn index(pattern: &Pattern, held: &HashSet<&str>) -> String {
+    let record = &pattern.record;
+    let head = format!(
+        "{} {} {}",
+        short(pattern.id()),
+        record.scope.text(),
+        record.when()
+    );
+    let paths = record.paths.iter().map(|p| format!("  path   {p}"));
+    let within = record.within.iter().filter(|w| held.contains(&**w as &str));
+    let within = within.map(|w| format!("  within {}", short(w)));
+    let lines = std::iter::once(head).chain(paths).chain(within);
+    lines.collect::<Vec<_>>().join("\n")
 }
 
 /// The section of `pattern`: its first line as a heading, its id and scope, the rest of its text, then a line for each smaller pattern in scope in `project` and each example, a file as a

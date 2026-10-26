@@ -43,7 +43,7 @@ Every change of `spec/` MUST keep these rules:
 | 03 | Steps | the step, its start, done, drop, edit and note | CIP-01 |
 | 04 | Trails | the trail, its sessions and prompts, its notes | CIP-01, 03, 05 |
 | 05 | Patterns | the pattern, its scope and its examples | CIP-01 |
-| 06 | Reuse | the steps and patterns a step uses, revisions | CIP-03, 04, 05 |
+| 06 | Reuse | the steps and patterns a step uses, the patterns an ask recalled, revisions | CIP-03, 04, 05 |
 | 08 | Files | the files of a done and of a pattern, and their blobs | CIP-01, 03, 05 |
 
 ## Names
@@ -53,7 +53,7 @@ Every change of `spec/` MUST keep these rules:
 | `project:<id>` · `project` | anchor of a project, its `K`, and its name tag | 01 |
 | `figma:<key>` · `web:<host>` | the project id of a record outside git | 01 |
 | `$CELIS_HOME` · `$CELIS_HOME/trails/` · `$CELIS_HOME/phrase` · `$CELIS_HOME/links` | the home, the store, the phrase, the links | 01, 02 |
-| `celis` and its commands and flags, `search` among them | the command line | 02 |
+| `celis` and its commands and flags | the command line | 02 |
 | `usage` · `no-pattern` · `no-step` · `closed` · `open-steps` · `check-failed` · `unjudged` · `error` | errors | 02 |
 | 1111 with `step` in `celis.step` | kind: a step (NIP-22) | 03 |
 | `under` · `replaces` · `at` · `check` | step tags | 03 |
@@ -68,9 +68,9 @@ Every change of `spec/` MUST keep these rules:
 | `within` | pattern tag: the larger pattern it completes | 05 |
 | `me` · `project` | the scopes of a pattern | 05 |
 | `uses` | step tag | 06 |
+| `recalled` | ask tag | 06 |
 | `imeta` with `url` · `x` · `m` · `size` · `path` | done tag: a file of the proof (NIP-92, BUD-10) | 08 |
 | `$CELIS_HOME/trails/blobs/` · `<folder>/blobs/` | the blobs of the store and of a linked folder | 08 |
-| `$CELIS_HOME/recalled/<id>` | a pattern `search` gave on this machine: one byte a time, last changed on the last day; no record | 02 |
 
 **Deprecated.** A reader ignores each of these, unless its row says how it reads it. Older versions wrote
 them.
@@ -101,6 +101,8 @@ them.
 | `no-decision` | the error, now `no-pattern` |
 | `trail:<id>` as the `scope` of a pattern | a scope, now a note on the trail; a reader reads it as CIP-05, "Reading", states |
 | `no-trail` | the error of a `trail:<id>` scope that no open trail had |
+| `celis search` | the command that gave the patterns and the past asks that fit an ask; it refuses as CIP-02, "Commands", states |
+| `$CELIS_HOME/recalled/<id>` | a pattern `search` gave on this machine, now a `recalled` tag on the ask |
 
 ## Words
 

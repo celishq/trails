@@ -1,12 +1,12 @@
 //! `celis pattern`: write a pattern.
 
-use crate::command::read::search::{when, words};
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use celis_patterns::{Example, Examples, Pattern, PatternRecord, PatternStore, Scope};
 use celis_store::records::id::short;
 use celis_store::{PatternId, Place, Project, Store};
 use celis_trails::{TrailStore, Written};
+use std::collections::HashSet;
 use std::io::Write;
 
 impl Command {
@@ -138,3 +138,30 @@ const SCOPES: &str = "celis: the pattern holds in this project. When it holds fo
 const TRAIL: &str =
     "a pattern holds in the project or for me; write what holds only for one trail with \
                      celis step note <id> -- <text>";
+
+/// Words too common to tell patterns apart.
+const COMMON: &[&str] = &[
+    "about", "after", "all", "also", "always", "and", "any", "are", "before", "but", "can", "did",
+    "does", "done", "each", "for", "from", "has", "have", "how", "into", "its", "just", "keep",
+    "make", "more", "most", "must", "never", "new", "not", "one", "only", "other", "our", "out",
+    "over", "per", "should", "some", "such", "than", "that", "the", "their", "them", "then",
+    "there", "they", "this", "use", "via", "was", "were", "what", "when", "where", "which", "who",
+    "why", "will", "with", "would", "you", "your",
+];
+
+/// The part of a pattern's first line before its first `:`: the case it acts on.
+fn when(content: &str) -> &str {
+    let first = content.lines().next().unwrap_or("");
+    first.split_once(':').map_or(first, |(when, _)| when)
+}
+
+/// The words of `text` that tell cases apart: 4 or more letters, not common, lower case, without a
+/// plural `s`.
+fn words(text: &str) -> HashSet<String> {
+    let lower = text.to_lowercase();
+    lower
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|w| w.chars().count() >= 4 && !COMMON.contains(w))
+        .map(|w| w.strip_suffix('s').unwrap_or(w).to_string())
+        .collect()
+}

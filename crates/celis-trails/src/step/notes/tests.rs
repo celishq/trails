@@ -17,6 +17,7 @@ fn step(under: Option<&Note>, at: u64) -> Note {
         under: under.map(|u| StepId::new(&u.id)),
         replaces: None,
         uses: Vec::new(),
+        recalled: Vec::new(),
         places: Vec::new(),
         check: None,
         session: None,

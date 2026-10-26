@@ -131,6 +131,7 @@ impl Demo {
             under: None,
             replaces: None,
             uses: vec![],
+            recalled: Vec::new(),
             session: None,
             new: true,
         };

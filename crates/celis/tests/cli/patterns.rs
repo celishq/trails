@@ -57,27 +57,18 @@ fn pattern_names_the_good_and_the_bad_step() {
         .unwrap();
     assert_eq!(pattern.tag("good"), Some(b.as_str()));
     assert_eq!(pattern.tag("bad"), Some(a.as_str()));
-    let patterns = cli(
-        &repo,
-        &["search", "logo.svg", "--kind", "pattern", "--", "x"],
-    );
-    let said = out(&patterns);
-    let blob = |text: &str| {
-        use sha2::{Digest, Sha256};
-        repo.home()
-            .join("trails/blobs")
-            .join(format!("{:x}", Sha256::digest(text.as_bytes())))
-            .display()
-            .to_string()
-    };
-    let lines: Vec<&str> = said.lines().skip(2).collect();
+    let id = out(&o).lines().next().unwrap().to_string();
+    let said = out(&cli(&repo, &["grep", &id[..8]]));
+    let lines: Vec<&str> = said.lines().skip(2).take(2).collect();
     assert_eq!(
         lines,
         [
-            format!("  good    {} a sharp logo · sharp", &b[..8]),
-            format!("          {}", blob("<svg id=\"b\"/>\n")),
-            format!("  bad     {} a round logo · round", &a[..8]),
-            format!("          {}", blob("<svg id=\"a\"/>\n")),
+            format!(
+                "  [repo] good {} {} a sharp logo · sharp",
+                &id[..8],
+                &b[..8]
+            ),
+            format!("  [repo] bad {} {} a round logo · round", &id[..8], &a[..8]),
         ],
         "{said}"
     );
@@ -144,7 +135,7 @@ fn pattern_refuses_an_unknown_step() {
 }
 
 /// `pattern` takes `--good` and `--bad` again and again, as a file it keeps as a blob or a URL, and
-/// `search` prints each (`spec/05-patterns.md`, "Examples").
+/// `grep` prints each (`spec/05-patterns.md`, "Examples").
 #[test]
 fn a_pattern_keeps_files_and_urls_as_examples() {
     let repo = Repo::new();
@@ -178,15 +169,17 @@ fn a_pattern_keeps_files_and_urls_as_examples() {
     assert!(values[0][1].starts_with("blossom:"), "{values:?}");
     assert_eq!(values[0][2], "a.svg");
     assert_eq!(values[2][1], url);
-    let o = cli(&repo, &["search", "--", "draw a logo"]);
-    let said = out(&o);
+    let said = out(&cli(&repo, &["grep", &pattern.id[..8]]));
     let blob = |text: &str| {
         use sha2::{Digest, Sha256};
         format!("{:x}", Sha256::digest(text.as_bytes()))
     };
     assert!(said.contains(&blob("<svg id=\"a\"/>\n")), "{said}");
     assert!(said.contains(&blob("<svg id=\"b\"/>\n")), "{said}");
-    assert!(said.contains(&format!("  bad     {url}")), "{said}");
+    assert!(
+        said.contains(&format!(" bad {} {url}", &pattern.id[..8])),
+        "{said}"
+    );
     assert!(!said.contains("missing"), "{said}");
 }
 
@@ -235,46 +228,6 @@ fn a_replacing_pattern_keeps_the_old_examples() {
     assert_eq!(good, [second, first]);
 }
 
-/// `patterns` lists each live pattern in scope with its examples, newest first (`spec/02-cli.md`,
-/// "Patterns").
-#[test]
-fn patterns_lists_each_pattern_with_its_examples() {
-    let repo = Repo::new();
-    let url = "https://example.com/flat.png";
-    let decide = |args: &[&str]| {
-        let o = cli(&repo, args);
-        assert!(o.status.success(), "{}", err(&o));
-        out(&o).lines().next().unwrap().to_string()
-    };
-    let old = decide(&[
-        "pattern",
-        "--good",
-        url,
-        "--",
-        "When a logo is drawn: keep it flat.",
-    ]);
-    std::thread::sleep(std::time::Duration::from_millis(1100));
-    let new = decide(&[
-        "pattern",
-        "--bad",
-        url,
-        "--",
-        "When an icon is drawn: keep it bold.",
-    ]);
-    let said = out(&cli(&repo, &["patterns"]));
-    let lines: Vec<&str> = said.lines().collect();
-    assert_eq!(
-        lines,
-        [
-            format!("{} project When an icon is drawn: keep it bold.", &new[..8]),
-            format!("  bad     {url}"),
-            format!("{} project When a logo is drawn: keep it flat.", &old[..8]),
-            format!("  good    {url}"),
-        ],
-        "{said}"
-    );
-}
-
 /// `patterns` says when the store holds none.
 #[test]
 fn patterns_says_when_there_is_none() {
@@ -282,8 +235,8 @@ fn patterns_says_when_there_is_none() {
     assert_eq!(out(&cli(&repo, &["patterns"])).trim(), "no pattern yet");
 }
 
-/// `tree --full` names each pattern a step uses, and `stats` counts each pattern's examples and how often
-/// `search` brought it.
+/// `tree --full` names each pattern a step uses, and `stats` counts each pattern's examples and the
+/// asks that recalled it.
 #[test]
 fn tree_and_stats_show_the_patterns() {
     let repo = Repo::new();
@@ -304,11 +257,6 @@ fn tree_and_stats_show_the_patterns() {
     );
     assert!(o.status.success(), "{}", err(&o));
     let pattern = out(&o).lines().next().unwrap().to_string();
-    for _ in 0..2 {
-        assert!(cli(&repo, &["search", "logo.svg", "--", "draw a logo"])
-            .status
-            .success());
-    }
     let trail = add(&repo, &["--", "the logo"]);
     add(
         &repo,
@@ -316,6 +264,8 @@ fn tree_and_stats_show_the_patterns() {
             "--under",
             &trail[..8],
             "--uses",
+            &pattern[..8],
+            "--recalled",
             &pattern[..8],
             "--",
             "draw it flat",
@@ -332,7 +282,7 @@ fn tree_and_stats_show_the_patterns() {
     let stats = out(&cli(&repo, &["stats"]));
     assert!(
         stats.contains(&format!(
-            "pattern {} When a logo is drawn: keep it flat. · 2 examples · recalled 2",
+            "pattern {} When a logo is drawn: keep it flat. · 2 examples · recalled 1",
             &pattern[..8]
         )),
         "{stats}"
@@ -366,7 +316,7 @@ fn a_link_carries_a_pattern_and_its_files() {
     let home = other.path().display().to_string();
     let env = [("CELIS_HOME", home.as_str())];
     assert!(repo.run(&repo.path(), &["link"], &env, "").status.success());
-    let said = out(&repo.run(&repo.path(), &["patterns"], &env, ""));
+    let said = out(&repo.run(&repo.path(), &["patterns", "--markdown"], &env, ""));
     assert!(said.contains("keep it flat"), "{said}");
     assert!(!said.contains("keep it bold"), "{said}");
     let blob = other.path().join("trails/blobs").join(&sha);

@@ -7,7 +7,8 @@ depends: [CIP-03, CIP-04, CIP-05]
 
 # CIP-06 — Reuse
 
-A step names the past work it builds on, and the earlier result it fixes.
+A step names the past work it builds on, and the earlier result it fixes. An ask names the patterns the
+agent recalled for it.
 
 ## Uses
 
@@ -26,6 +27,23 @@ A step names the past work it builds on, and the earlier result it fixes.
 
 - A `uses` that names a pattern is a use of it. One that names a step is a follow of that step.
 - A reader MUST ignore a `uses` that names no record it holds.
+
+## Recalls
+
+```
+["recalled", "<id of a live pattern in scope>"]     an ask's tag, zero or more
+```
+
+**Writers**
+
+- A writer MUST write the whole id, once, and only on an ask (CIP-04).
+- A writer MUST write only the id of a pattern that is live in scope in the ask's project (CIP-05,
+  "Scope") when it writes the ask.
+
+**Readers**
+
+- A `recalled` is a recall of the pattern it names by the ask: the agent read the pattern for the ask.
+- A reader MUST ignore a `recalled` that names no record it holds.
 
 ## Revisions
 

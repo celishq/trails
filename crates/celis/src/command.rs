@@ -73,7 +73,6 @@ impl Command {
             "tree" => self.tree(args, out),
             "patterns" => self.patterns(args, out),
             "grep" => self.grep(&self.args[1..], out),
-            "search" => self.search(args, out, err),
             "stats" => self.stats(args, out),
             "issue" => self.issue(args, out),
             "link" => self.link(args, out, &self.project()),

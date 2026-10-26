@@ -15,7 +15,7 @@ const NOTHING: &str = "Nothing was reused yet.";
 
 impl Command {
     /// Prints the step `args` names with the steps it follows and the steps that follow it, or with no id
-    /// each followed step, each used pattern, each pattern with examples and the total; on a terminal
+    /// each followed step, each used pattern, each pattern with examples or recalls and the total; on a terminal
     /// with no `--json`, draws them as cards, or as the board with `--next`. Writes no record.
     pub(crate) fn stats(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let id = args.words.get(1);
@@ -49,7 +49,8 @@ impl Command {
                 let live = patterns.live(&self.project().anchor.project);
                 let patterns: Vec<_> = live
                     .iter()
-                    .filter(|p| !p.record.examples.is_empty())
+                    .map(|p| (p, steps.recalls(&p.note.id).len()))
+                    .filter(|(p, recalled)| !p.record.examples.is_empty() || *recalled > 0)
                     .collect();
                 if reuse.followed().is_empty() && used.is_empty() && patterns.is_empty() {
                     return match args.json {
@@ -80,11 +81,9 @@ impl Command {
                     );
                     crate::command::show(out, args.json, "used", value, &line)?;
                 }
-                let recalls = self.recalls();
-                for pattern in patterns {
+                for (pattern, recalled) in patterns {
                     let (note, pattern) = (pattern.note, &pattern.record);
                     let examples = pattern.examples.sides().count();
-                    let recalled = recalls.count(&note.id);
                     let value = json!({"id": note.id, "content": pattern.content,
                         "examples": examples, "recalled": recalled});
                     let line = format!(

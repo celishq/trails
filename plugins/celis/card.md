@@ -4,8 +4,9 @@ not apply. Search gives those that fit an ask. Write one only for a choice that 
 steps with proofs of the work.
 
 ```
-celis search [<file>]... -- "<ask>"
-celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--check <command>] [--new] -- "<title>"
+celis patterns
+celis grep <id>
+celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--recalled <id>]... [--check <command>] [--new] -- "<title>"
 celis step start <id>
 celis step done <id> [--changed "<what differs>"] [--as-planned] [--by <who>] [--file <path>]... -- "<proof>"
 celis step note <id> -- "<note>"

@@ -47,6 +47,7 @@ impl Desk {
             under: under.map(str::to_string),
             replaces: replaces.map(str::to_string),
             uses: uses.iter().map(|u| u.to_string()).collect(),
+            recalled: Vec::new(),
             session: None,
             new: under.is_none(),
         };

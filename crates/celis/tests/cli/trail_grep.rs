@@ -348,7 +348,7 @@ fn the_view_and_the_steps_pattern_search_match_the_fixture() {
     let repo = Repo::new();
     let (by, id) = (account(), repo.project_id());
     let t = 1_768_478_400;
-    let step = |under: Option<&str>, places: &[&str], text: &str, at: u64| {
+    let step = |under: Option<&str>, places: &[&str], recalled: &[&str], text: &str, at: u64| {
         let record = StepRecord {
             anchor: Anchor {
                 project: id.clone(),
@@ -357,6 +357,7 @@ fn the_view_and_the_steps_pattern_search_match_the_fixture() {
             under: under.map(StepId::new),
             replaces: None,
             uses: Vec::new(),
+            recalled: recalled.iter().map(|r| r.to_string()).collect(),
             places: places.iter().map(|p| p.to_string()).collect(),
             check: None,
             session: None,
@@ -367,14 +368,20 @@ fn the_view_and_the_steps_pattern_search_match_the_fixture() {
         note
     };
     let mark = |mark: Mark, step: &str, at: u64| put(&repo, &mark.record(&by, step, at).unwrap());
-    let trail = step(None, &[], "Build the Vendors page", t);
-    let table = step(Some(&trail.id), &["src/vendors.rs"], "Add the table", t + 1);
+    let trail = step(None, &[], &[], "Build the Vendors page", t);
+    let table = step(
+        Some(&trail.id),
+        &["src/vendors.rs"],
+        &[],
+        "Add the table",
+        t + 1,
+    );
     let done = Mark::Done(celis_trails::Done::new(
         "the table shows".into(),
         Some("a list, not a table".into()),
     ));
     mark(done, &table.id, t + 2);
-    let chart = step(Some(&trail.id), &[], "Add the chart", t + 3);
+    let chart = step(Some(&trail.id), &[], &[], "Add the chart", t + 3);
     mark(
         Mark::Drop {
             reason: "no data for it".into(),
@@ -432,7 +439,10 @@ fn the_view_and_the_steps_pattern_search_match_the_fixture() {
         project,
         &by,
         (Some("me"), None),
-        tag(&["path", ".github/workflows/*.yml"]),
+        vec![
+            vec!["path".into(), ".github/workflows/*.yml".into()],
+            vec!["good".into(), "https://example.com/ci".into()],
+        ],
         "When you push: run the tests first.",
         t + 10,
     );
@@ -440,6 +450,9 @@ fn the_view_and_the_steps_pattern_search_match_the_fixture() {
         text: "Keep the table sortable.".into(),
     };
     mark(note, &table.id, t + 11);
+    let prices = step(Some(&trail.id), &[], &[&new.id], "Print the prices", t + 12);
+    let done = Mark::Done(celis_trails::Done::new("the prices print".into(), None));
+    mark(done, &prices.id, t + 13);
     let names = [
         ("trail", &trail),
         ("table", &table),
@@ -449,6 +462,7 @@ fn the_view_and_the_steps_pattern_search_match_the_fixture() {
         ("me", &me),
         ("situation", &situation),
         ("push", &push),
+        ("prices", &prices),
     ];
     let fill = |line: &serde_json::Value| {
         let mut line = line.as_str().unwrap().to_string();

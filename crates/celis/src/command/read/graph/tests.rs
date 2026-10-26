@@ -45,6 +45,7 @@ impl Bench {
             under: under.map(str::to_string),
             replaces: None,
             uses: vec![],
+            recalled: Vec::new(),
             session: None,
             new: false,
         };

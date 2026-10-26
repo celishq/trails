@@ -501,19 +501,88 @@ pub fn read_ids(repo: &Repo, folder: &Path, args: &[&str]) -> Vec<String> {
         .collect()
 }
 
-/// The ids, first 8 characters, of the patterns `celis search --kind pattern` prints in `folder` for the
-/// places of each `--at` of `args`, in order.
+/// The ids, first 8 characters, of the patterns `celis step done` prints in `folder` for a step that
+/// changed the places of each `--at` of `args`, in order.
 pub fn place_ids(repo: &Repo, folder: &Path, args: &[&str]) -> Vec<String> {
-    let mut all = vec!["search"];
     let pairs = args.windows(2).filter(|w| w[0] == "--at");
-    all.extend(pairs.map(|w| w[1]));
-    all.extend(["--kind", "pattern", "--", "x"]);
-    let o = repo.run(folder, &all, &[], "");
+    let places: Vec<&str> = pairs.map(|w| w[1]).collect();
+    let lines = matched(repo, folder, &places).into_iter();
+    lines.map(|l| l[..8].to_string()).collect()
+}
+
+/// The head line of each pattern `celis step done` prints in `folder` for a step under an ask that
+/// changed only `files`, each file or each file git gives under a folder, in order.
+pub fn matched(repo: &Repo, folder: &Path, files: &[&str]) -> Vec<String> {
+    let git = |args: &[&str]| {
+        let mut all = vec!["-c", "user.name=t", "-c", "user.email=t@t"];
+        all.extend(args);
+        let o = Command::new("git").args(all).current_dir(folder).output();
+        String::from_utf8_lossy(&o.unwrap().stdout).to_string()
+    };
+    git(&["add", "-A"]);
+    git(&["commit", "-q", "--allow-empty", "-m", "before"]);
+    for file in files {
+        let path = folder.join(file);
+        let under: Vec<PathBuf> = match path.is_dir() {
+            true => git(&["ls-files", "--", file])
+                .lines()
+                .map(|f| folder.join(f))
+                .collect(),
+            false => vec![path],
+        };
+        for path in under {
+            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+            let f = std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(path);
+            f.unwrap().write_all(b"\n").unwrap();
+        }
+    }
+    let step = |args: &[&str]| {
+        let o = repo.run(folder, args, &[], "");
+        assert!(o.status.success(), "{}", err(&o));
+        out(&o).lines().next().unwrap().to_string()
+    };
+    let n = UNIX_EPOCH.elapsed().unwrap().as_nanos().to_string();
+    let trail = step(&[
+        "step",
+        "add",
+        "--new",
+        "--",
+        &format!("Change the files {n}"),
+    ]);
+    let ask = step(&[
+        "step",
+        "add",
+        "--under",
+        &trail,
+        "--",
+        &format!("Change them {n}"),
+    ]);
+    let part = step(&[
+        "step",
+        "add",
+        "--under",
+        &ask,
+        "--",
+        &format!("Change one {n}"),
+    ]);
+    let o = repo.run(
+        folder,
+        &["step", "done", &part, "--as-planned", "--", "done"],
+        &[],
+        "",
+    );
     assert!(o.status.success(), "{}", err(&o));
-    let shown = out(&o);
-    let lines = shown.lines().filter(|l| !l.starts_with(' '));
-    let patterns = lines.filter(|l| *l != "patterns" && *l != "nothing fits this ask");
-    patterns.map(|l| l[..8].to_string()).collect()
+    let said = err(&o);
+    let head = "celis: check the change against each pattern";
+    let after = said.lines().skip_while(|l| !l.starts_with(head)).skip(1);
+    let lines = after.take_while(|l| !l.starts_with("celis:"));
+    lines
+        .filter(|l| !l.starts_with(' '))
+        .map(str::to_string)
+        .collect()
 }
 
 /// A `TZ` where it is now about noon, so the hours before now fall on the same day.

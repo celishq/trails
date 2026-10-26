@@ -63,22 +63,15 @@ impl<'a> Patterns<'a> {
         Ok(found.cloned().expect("the note is of a live pattern"))
     }
 
-    /// The live patterns in scope in `project` that match one of `paths` or that `also` takes, in the
-    /// order `search` prints them: those of a named file, of a glob, and the rest; within each, those
-    /// with a `replaces` tag first, newest first (CIP-02, "Search").
-    pub fn fitting(
-        &self,
-        project: &str,
-        paths: &[String],
-        also: impl Fn(&Pattern<'a>) -> bool,
-    ) -> Vec<Pattern<'a>> {
-        let mut found: Vec<(Option<Fit>, Pattern<'a>)> = self
+    /// The live patterns in scope in `project` that match one of `paths`: those of a named file, then of a
+    /// glob; within each, those with a `replaces` tag first, newest first.
+    pub fn matching(&self, project: &str, paths: &[String]) -> Vec<Pattern<'a>> {
+        let mut found: Vec<(Fit, Pattern<'a>)> = self
             .live(project)
             .into_iter()
-            .map(|p| (p.record.fit(paths), p))
-            .filter(|(fit, p)| fit.is_some() || also(p))
+            .filter_map(|p| Some((p.record.fit(paths)?, p)))
             .collect();
-        found.sort_by_key(|(fit, p)| (fit.is_none(), *fit, p.record.replaces.is_none()));
+        found.sort_by_key(|(fit, p)| (*fit, p.record.replaces.is_none()));
         found.into_iter().map(|(_, p)| p).collect()
     }
 

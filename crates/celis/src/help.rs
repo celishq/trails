@@ -268,21 +268,6 @@ pub const VERBS: &[Verb] = &[
         ],
     },
     Verb {
-        command: "search",
-        usage: &["celis search [<file>]... [--kind <kind>] [--limit <n>] -- <ask>"],
-        summary: "Show what fits an ask: the patterns of this project that its files or its words match, each with its good and bad examples, then up to 2 done asks of any project like it, with their steps. Changes nothing.",
-        args: &[
-            ("<file>", "A file or folder the ask will touch"),
-            ("--kind", "Only pattern"),
-            ("--limit", "Show <n> patterns and past asks"),
-            ("<ask>", "The ask, in any words and any language"),
-        ],
-        examples: &[
-            "celis search -- \"cut the release\"",
-            "celis search shelf/prices.py -- \"round the prices\"",
-        ],
-    },
-    Verb {
         command: "stats",
         usage: &["celis stats [<id>] [--demo]"],
         summary: "Show each step that later work reused and how often, then each pattern that steps followed, then the total. With an id, show what that step reused and what reused it. On a terminal, show the totals of all time, then the last 14 days against the 14 before: reuse rate, first-pass success, resolved steps and median step time, then Learning, Quality, Output and speed, and Resources, each opened with enter, updating as work lands. Changes nothing.",
@@ -318,7 +303,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "pattern",
         usage: &["celis pattern [--scope <scope>] [--replaces <id>] [--path <glob>]... [--within <id>]... [--good <example>]... [--bad <example>]... [--project <id>] -- <text>"],
-        summary: "Record a pattern that guides later work: when it applies, its forces, what to do, and why. With no --scope, it holds for the whole project. Its paths name the files it acts on, so celis search gives it for them. Where its forces are present, the work resolves them in its own way.",
+        summary: "Record a pattern that guides later work: when it applies, its forces, what to do, and why. With no --scope, it holds for the whole project. Its paths name the files it acts on, so celis step done gives it for them. Where its forces are present, the work resolves them in its own way.",
         args: &[
             ("--scope <scope>", "Where it applies: me, or project"),
             ("--replaces <id>", "The pattern this one replaces"),
@@ -339,7 +324,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "patterns",
         usage: &["celis patterns [--markdown]"],
-        summary: "Show each pattern of this project and of you, the newest first, with its good and bad examples: the steps with their proofs, the files with their blobs, and the URLs. With --markdown, print them as one page, each file a link to its blob, for a review or a skill file. Changes nothing.",
+        summary: "Show the index of the patterns of this project and of you, the oldest first: each one's id, scope and When, with its paths and the larger patterns it completes. celis grep <id> shows the whole of one. With --markdown, print each whole as one page, with its examples, each file a link to its blob, for a review or a skill file. Changes nothing.",
         args: &[("--markdown", "Print one Markdown page, each file a link to its blob")],
         examples: &["celis patterns", "celis patterns --markdown > patterns.md"],
     },
@@ -405,12 +390,13 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "step add",
-        usage: &["celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>]... [--check <command>] [--new] [--session <id>] [--project <id>] -- <text>"],
+        usage: &["celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--recalled <id>]... [--at <place>]... [--check <command>] [--new] [--session <id>] [--project <id>] -- <text>"],
         summary: "Add a step. With no --under, it goes under the session's trail, or starts a new trail.",
         args: &[
             ("--under <id>", "The open step this step is part of"),
             ("--replaces <id>", "A step this one takes over, or a finished step it fixes"),
             ("--uses <id>", "A pattern or a past step it follows"),
+            ("--recalled <id>", "A pattern you read because it bears on the ask"),
             ("--at <place>", "Where the work happens: a file:line, a URL, or any text"),
             ("--check <command>", "A command that proves the work"),
             ("--new", "Start a new trail, not a step of the session's trail"),
