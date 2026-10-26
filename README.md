@@ -46,7 +46,7 @@ index that `celis patterns` gives, and opens the ones that bear on it.
                   ▲                 │
    examples, uses, recalls          │ activates
                   │                 ▼
-  evidence     trail ──► step ──► done: proof, changed, judge ──► note
+  evidence     trail ──► step ──► done: proof, changed, by ──► note
 ```
 
 Trails are the evidence. Your agent works one step at a time, tries the part it's least sure of
@@ -85,8 +85,8 @@ followed old rules far less often. Real repos already have 80 to 280 rules in on
 
 **Why?** The rules fit in the context window, but the agent's attention doesn't stretch that far. The
 one rule that matters gets lost among hundreds of others. Celis gives the agent a short index of your
-patterns when a job starts. The agent opens the ones that bear on the job, and the judge checks the
-result against them before the job is done.
+patterns when a job starts. The agent opens the ones that bear on the job, and when it closes a step,
+Celis gives it the patterns of the files it changed to check the result against.
 
 We treat the agent as a capable collaborator that owns its work. Celis doesn't tell it how to do the
 job; it gives it what it needs to do the job well.

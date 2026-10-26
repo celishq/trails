@@ -68,23 +68,24 @@ dropped   a `drop` settles it, or names it as a done trail
 { "kind": 1985, "content": "<the proof>",
   "tags": [["L", "celis.step"], ["l", "done", "celis.step"], ["e", "<step id>"],
            ["changed", "<how the work differs from the plan>"],
-           ["by", "judge"]] }
+           ["by", "person"]] }
 ```
 
 - content: the proof, the check that failed before and passes now.
 - `changed`: optional; with none, the work went as planned.
-- `by`: optional; who gave the proof: `judge`, a reader that did not do the work, or `person`. With none,
-  the proof is the agent's own. A step with steps under it is done when its check passes and a `judge`
-  or the `person` confirms its `expect`.
+- `by`: optional; who gave the proof: `person`. With none, the proof is the agent's own, or its check's.
 
 **Writers**
 
 - A writer MUST NOT write a `done` for a step with an open step under it, or whose check fails.
+- A writer MUST write `by` only as `person`.
 
 **Readers**
 
 - The first `done` or `drop` that names a step MUST settle it.
 - A reader MUST ignore a `done` with no content.
+- A reader MUST read a `by` of `judge`, which older writers wrote, as a proof by a reader that did not do
+  the work.
 
 ## Dropping
 

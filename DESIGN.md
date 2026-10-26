@@ -16,7 +16,7 @@ celis keeps the knowledge that agents need to do work well, and the evidence for
   and bad examples, made from the person's picks and corrections.
 - **Trails are the evidence.** A trail is one ask, with its steps and their proofs. It gives observability,
   and it is the feedback loop that shows whether a pattern is still useful: its examples, its uses, its
-  recalls, the judge and tidy.
+  recalls and tidy.
 
 The store, the query, the card's method, the log, tidy and the tree are the core, because no model can
 know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model can outgrow.
@@ -30,7 +30,7 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
                   ▲                 │
    examples, uses, recalls          │ activates
                   │                 ▼
-  evidence     trail ──► step ──► done: proof, changed, judge ──► note
+  evidence     trail ──► step ──► done: proof, changed, by ──► note
 ```
 
 ## Decisions
@@ -81,6 +81,10 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
     notes of an ask are on it. A reader reads an older trail, which held the asks of a session, as one
     ask with those asks as its steps. `step add --new` is accepted and ignored. The migrate skill closes
     each older trail after the person agrees.
+12. **No judge.** celis keeps patterns, and to check work is the orchestration's. A step proves its work
+    with its own check or its proof, and `done` gives the patterns of the changed files to check the
+    change against. `done --by person` says that the person confirms the result. A reader reads an old
+    `by judge` as a proof by a reader that did not do the work.
 
 ## What we do not do
 

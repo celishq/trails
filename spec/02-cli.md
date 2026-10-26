@@ -26,7 +26,7 @@ celis link [<folder>] [--off]                         keep this project's trails
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--recalled <id>]... [--at <place>]... [--check <command>] [--session <id>] [--project <id>] -- <text>
                                                        leave a step
 celis step start <id>                                 take up a step, and see the patterns and notes its plan links
-celis step done <id> [--changed <text>] [--as-planned] [--by <who>] [--file <path>]... -- <proof>
+celis step done <id> [--changed <text>] [--as-planned] [--by person] [--file <path>]... -- <proof>
                                                        close a step with its proof
 celis step drop <id> -- <reason>                      end a step, a done trail or a pattern no longer wanted
 celis step edit <id> [--at <place>]... [--check <command>] [-- <text>]
@@ -104,7 +104,7 @@ celis pattern --path "**/prices*.py" -- "When you change prices: keep them in ce
 - A command MUST NOT ask a question, but `auth login`.
 - A command MUST exit 0 when done, 2 on a usage error, and 1 on any other error.
 - An error MUST be named `usage`, `no-pattern`, `no-step`, `closed`, `open-steps`, `check-failed`,
-  `unjudged`, else `error`. With `--json`, it MUST be one object on stderr,
+  else `error`. With `--json`, it MUST be one object on stderr,
   `{"error": "<name>", "message": "<text>"}`.
 
 ## Update
@@ -162,18 +162,13 @@ note  json  {"id", "created_at", "step", "content"}
   error. It MUST refuse a step with an open step under it, with `open-steps`.
 - The changed files of a `done` are each file that `git diff --name-only HEAD` or
   `git ls-files --others --exclude-standard` gives in the working folder, and each `--file`.
-- `done` of an ask, or of another step with steps under it, with no `--by` and a changed file MUST refuse
-  with `unjudged`, and print the brief that the judge needs. The
-  brief MUST give the whole text, with the examples, of each live pattern that its ask recalled
-  (CIP-06, "Recalls") and of each live pattern in scope that a changed file matches, each once.
 - `done` MUST run the step's `check` in the project's top folder, and refuse with `check-failed` when it
   fails or runs past `CELIS_CHECK_SECONDS`, 600 when not set.
 - `done --changed` MUST write its text as `changed`, and `done --by` its value as `by`; a `--by` other
-  than `judge` or `person` is a usage error. Each `done --file` MUST be kept as a blob and named by an
+  than `person` is a usage error. Each `done --file` MUST be kept as a blob and named by an
   `imeta` tag (CIP-08), and a file that is not there is a usage error.
 - `done` of a step that is not an ask MUST print each live pattern in scope that a changed file matches
-  (CIP-05, "Paths"), whole with its examples, once: in the judge brief when it prints one, else as
-  a list, by id.
+  (CIP-05, "Paths"), whole with its examples, once, as a list, by id.
 - `drop` MUST refuse an empty reason, and `edit` one with no text, `--at` or `--check`, as usage errors.
 - `note` MUST write its text as a note on the step (CIP-03, "Notes"), and refuse empty text as a usage
   error.

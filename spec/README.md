@@ -54,7 +54,7 @@ Every change of `spec/` MUST keep these rules:
 | `figma:<key>` · `web:<host>` | the project id of a record outside git | 01 |
 | `$CELIS_HOME` · `$CELIS_HOME/trails/` · `$CELIS_HOME/phrase` · `$CELIS_HOME/links` | the home, the store, the phrase, the links | 01, 02 |
 | `celis` and its commands and flags | the command line | 02 |
-| `usage` · `no-pattern` · `no-step` · `closed` · `open-steps` · `check-failed` · `unjudged` · `error` | errors | 02 |
+| `usage` · `no-pattern` · `no-step` · `closed` · `open-steps` · `check-failed` · `error` | errors | 02 |
 | 1111 with `step` in `celis.step` | kind: a step (NIP-22) | 03 |
 | `under` · `replaces` · `at` · `check` | step tags | 03 |
 | 1985 with `start` · `done` · `drop` · `edit` · `note` in `celis.step` | kinds: a start, a done, a drop, an edit, a note (NIP-32) | 03 |
@@ -91,6 +91,7 @@ them.
 | `at:<place>` as the `scope` of a pattern | a scope, now `path` globs; a reader reads it as CIP-05, "Reading", states |
 | `trail:<id>` as the `scope` of a pattern | a scope, now a note on the trail; a reader reads it as CIP-05, "Reading", states |
 | `uses` that names a step | a step tag: a follow of a past step; a reader ignores it, as CIP-06, "Uses", states |
+| `judge` as the `by` of a `done` | a proof by a reader that did not do the work; a reader reads it as CIP-03, "Closing", states |
 
 ## Words
 
