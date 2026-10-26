@@ -10,9 +10,10 @@ celis keeps the knowledge that agents need to do work well, and the evidence for
 
 - **Patterns are the core.** A pattern is a piece of knowledge: in a context, choose this, because of
   that. It activates in each trail whose context matches it.
-- **Rules are correctness.** A rule is a pattern with `binds`. A result must keep it.
-- **Patterns are quality and taste.** A pattern guides, and work may depart from it with a named reason.
-  Pairs show taste: good and bad examples, made from the person's picks and corrections.
+- **A pattern guides.** As in Christopher Alexander's pattern language, it names the forces of a context
+  and a way to resolve them. When its forces are present, the agent resolves them in its own way. When
+  they are not present, the pattern does not apply. A pattern is never "broken". Pairs show taste: good
+  and bad examples, made from the person's picks and corrections.
 - **Trails are the evidence.** A trail records an ask, its steps and their proofs. It gives observability,
   and it is the feedback loop that shows whether a pattern is still useful: its examples, its uses, its
   recalls, the judge and tidy.
@@ -21,7 +22,7 @@ The store, the query, the card's method, the log, tidy and the tree are the core
 know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model can outgrow.
 
 ```
-  knowledge    cell ◄── tag, many to many ── pattern ── binds ──► rule
+  knowledge    cell ◄── tag, many to many ── pattern
                (a topic)                     When · Forces · Do · Because
                                              good / bad examples, path globs
                                              scope: project | me
@@ -37,11 +38,11 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
 1. **A pattern holds in a project or for me, never in one trail.** The `trail:<id>` scope goes. What
    holds for one trail only is a note on its step. A reader reads an old trail pattern as a note of
    that trail.
-2. **A rule and a pattern are one record.** The `binds` label splits them. The label becomes `pattern`
-   in `celis.pattern`. A writer writes the new label, and a reader still reads `decision` in
-   `celis.decision`.
-3. **Search finds every rule, and the best patterns.**
-   - A rule is never cut from the output. It gets a narrow trigger, such as a `path`.
+2. **One record: the pattern.** Its label is `pattern` in `celis.pattern`. A writer writes this label, and
+   a reader still reads `decision` in `celis.decision`. A reader reads an old `binds` record as a plain
+   pattern. Only the `grep` view marks it `old-rule`, so that tidy can find it. `pattern --binds` is
+   accepted and ignored, so an older plugin still works with a newer `celis`.
+3. **Search finds the best patterns.**
    - Patterns are ranked by how well they fit: by path, then by cell, then by words. The output shows
      only a budget of them.
    - The past of like asks is a helper part, and it is short.
@@ -63,7 +64,6 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
 
 ## What we do not do
 
-- No new record kind for rules.
 - No rank or grade of work by time.
 - No sharing across a team or an org yet.
 
