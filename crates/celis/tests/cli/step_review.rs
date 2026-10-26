@@ -117,7 +117,7 @@ fn done_on_an_ask_prints_the_end_to_fill() {
             "- [!] **Not proven:** <what the judge could not check, and each file git diff --stat shows changed outside a.rs, b.rs>".to_string(),
             "- [+] **I chose:** claim: it took the cache · <the pattern that decided it, or none>".to_string(),
             "- [+] **I chose:** <each choice you took yourself> · <the pattern that decided it, or none>".to_string(),
-            "- [+] **Learned:** <each pattern you wrote, as its id and When>".to_string(),
+            "- [+] **Learned:** <each pattern you wrote, as its id and When> · <the guessed why, or none>".to_string(),
             String::new(),
             "celis · 4 steps · 1 checked · 1 judged · 1 person · 1 not proven · 10m".to_string(),
         ]
@@ -147,7 +147,7 @@ fn an_end_whose_steps_share_one_proof_totals_them_as_all() {
 
 /// The head of the learn brief of the ask `a`.
 fn learn(a: &str) -> String {
-    format!("celis: before you answer, learn from the ask {a}. Write a pattern with celis pattern for each choice of the ask that will come back, such as those below. A wish or a correction that says always, never or from now on is a pattern whose forces say why. A reaction to a result, such as \"this one\" or \"too busy\", keeps the person's taste with --good and --bad. Give --path for the files it acts on, --within for the larger pattern it completes, --scope me when it holds in any project, and --replaces <id> for a pattern that misled you or a near copy. Write nothing when the ask taught nothing. What holds only for this trail is a note: celis step note {a}.")
+    format!("celis: before you answer, learn from the ask {a}. Write a pattern with celis pattern for each choice of the ask that will come back, such as those below. A wish or a correction that says always, never or from now on is a pattern whose forces say why. Take the why from the person's words or the work; when neither gives it, write your best guess, and name it on the Learned line for the person to confirm. A reaction to a result, such as \"this one\" or \"too busy\", keeps the person's taste with --good and --bad. Give --path for the files it acts on, --within for the larger pattern it completes, --scope me when it holds in any project, and --replaces <id> for a pattern that misled you or a near copy. Write nothing when the ask taught nothing. What holds only for this trail is a note: celis step note {a}.")
 }
 
 /// `done` of an ask begins with the learn brief: each `changed` of the ask and of its steps, each note of

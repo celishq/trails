@@ -60,7 +60,9 @@ impl Learn {
         let mut lines = vec![format!(
             "celis: before you answer, learn from the ask {ask}. Write a pattern with celis pattern for \
              each choice of the ask that will come back, such as those below. A wish or a correction \
-             that says always, never or from now on is a pattern whose forces say why. A reaction to a \
+             that says always, never or from now on is a pattern whose forces say why. Take the why \
+             from the person's words or the work; when neither gives it, write your best guess, and name \
+             it on the Learned line for the person to confirm. A reaction to a \
              result, such as \"this one\" or \"too busy\", keeps the person's taste with --good and \
              --bad. Give --path for the files it acts on, --within for the larger pattern it completes, \
              --scope me when it holds in any project, and --replaces <id> for a pattern that misled you \

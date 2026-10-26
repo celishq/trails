@@ -83,7 +83,7 @@ impl End {
         lines.push(format!(
             "- [+] **I chose:** <each choice you took yourself> · {DECIDED}"
         ));
-        lines.push("- [+] **Learned:** <each pattern you wrote, as its id and When>".to_string());
+        lines.push("- [+] **Learned:** <each pattern you wrote, as its id and When> · <the guessed why, or none>".to_string());
         lines.push(String::new());
         lines.push(self.total());
         lines

@@ -44,7 +44,7 @@ Read all that celis prints, never cut by `head` or `grep`, and do the next move 
    - [?] **Needs you:** <each decision only the person can take>
    - [!] **Not proven:** <each claim step, and what the judge could not check>
    - [+] **I chose:** <each choice you took yourself, and each step that went otherwise than planned> · <the pattern that decided it, or none>
-   - [+] **Learned:** <each pattern you wrote, as its id and When>
+   - [+] **Learned:** <each pattern you wrote, as its id and When> · <the guessed why, or none>
 
    <the total line that done prints>
    ```
