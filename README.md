@@ -2,7 +2,7 @@
 
 <h3 align="center">Stop babysitting your coding agent</h3>
 
-<p align="center">Celis keeps your rules and patterns and gives your agent the discipline to follow them, in every project
+<p align="center">Celis keeps the patterns you teach and gives your agent the judgement to use them, in every project
 and every agent.</p>
 
 <p align="center">

@@ -2,7 +2,7 @@
 
 Stop babysitting your coding agent.
 
-Celis keeps your rules and patterns and gives your agent the discipline to follow them, in every project and every agent.
+Celis keeps the patterns you teach and gives your agent the judgement to use them, in every project and every agent.
 Your trails and patterns stay on your machine.
 
 ## Before you install
