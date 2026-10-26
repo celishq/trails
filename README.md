@@ -34,8 +34,8 @@ done.
 
 Patterns are the core. A pattern says what to choose in a context, and why. It guides your agent's
 judgement: when its forces are present, the agent resolves them in its own way. Good and bad examples
-show your taste. They come from your corrections and code reviews. At each job, your agent reads the
-index that `celis patterns` gives, and opens the ones that bear on it.
+show your taste. They come from your corrections and code reviews. Your agent has the index of the
+patterns from the session start, and reads a pattern whole at the choice it bears on.
 
 ```
   knowledge    pattern
@@ -44,7 +44,7 @@ index that `celis patterns` gives, and opens the ones that bear on it.
                scope: project | me
                within ──► a larger pattern
                   ▲                 │
-   examples, uses, recalls          │ activates
+   examples, uses, misled           │ activates
                   │                 ▼
   evidence     trail ──► step ──► done: proof, changed, by ──► note
 ```

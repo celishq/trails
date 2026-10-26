@@ -11,7 +11,7 @@ Forces: each extra argument is one more thing to read and keep alike.
 Do: call requests.get(url) with its defaults and add no arguments.
 Because: calls with the defaults stay short and alike." 2>/dev/null | id)
 say "Write fetch_prices() in prices.py: it gets https://shop.example/prices.json and returns the dict."
-ask=$(celis step add --recalled "$p" --json -- "Write fetch_prices() in prices.py" 2>/dev/null | id)
+ask=$(celis step add --json -- "Write fetch_prices() in prices.py" 2>/dev/null | id)
 a=$(celis step add --under "$ask" --uses "$p" --json -- "Get the price list with requests.get in fetch_prices" 2>/dev/null | id)
 say "Always give every requests call a timeout of 10 seconds: a hung server froze our nightly import for six hours last month."
 printf 'import requests\n\nURL = "https://shop.example/prices.json"\n\n\ndef fetch_prices():\n    return requests.get(URL, timeout=10).json()\n' > prices.py

@@ -168,8 +168,8 @@ fn prompts(repo: &Repo, step: &str) -> Vec<String> {
 }
 
 /// Each agent's session start gives the card; an agent other than Claude Code also gets its session, to
-/// pass with `--session`, and the paths of `lesson.md` and `recall.md`. Antigravity has no session start, and gets both
-/// before each call of the model.
+/// pass with `--session`, and the path of `lesson.md`; no agent gets a path of `recall.md`, which is
+/// gone. Antigravity has no session start, and gets both before each call of the model.
 #[test]
 fn each_agents_session_start_gives_the_card_and_its_session() {
     let repo = Repo::new();
@@ -185,18 +185,13 @@ fn each_agents_session_start_gives_the_card_and_its_session() {
         assert_eq!(named, agent.name != "claude", "{}: {context}", agent.name);
         let taught = context.contains("agents/lesson.md. With no subagents");
         assert_eq!(taught, agent.name != "claude", "{}: {context}", agent.name);
-        let recalled = context.contains("agents/recall.md. With no subagents");
-        assert_eq!(
-            recalled,
-            agent.name != "claude",
-            "{}: {context}",
-            agent.name
-        );
+        assert!(!context.contains("recall.md"), "{}: {context}", agent.name);
     }
 }
 
 /// Each agent's session start gives, after the card, the index of the patterns in scope in the person's
-/// project, under one heading line; none while the store holds no pattern (`spec/02-cli.md`, "Hooks").
+/// project, under one heading line, and Claude Code's gives it again after a compaction; none while the
+/// store holds no pattern (`spec/02-cli.md`, "Hooks").
 #[test]
 fn each_agents_session_start_gives_the_index_of_the_patterns() {
     let repo = Repo::new();
@@ -227,6 +222,10 @@ fn each_agents_session_start_gives_the_index_of_the_patterns() {
         let context = start(&agent);
         assert!(context.contains(&index), "{}: {context}", agent.name);
     }
+    let claude = &AGENTS[0];
+    let compact = serde_json::json!({"session_id": "s1", "cwd": repo.path(), "source": "compact"});
+    let said = claude.run(&repo, claude.start, &compact.to_string());
+    assert!(said.contains(&index), "{said}");
 }
 
 /// Claude Code's session start asks to offer `/celis:tidy` while `patterns --tidy` lists a pattern and no
@@ -293,10 +292,10 @@ fn each_agents_prompt_hook_writes_a_prompt_on_its_sessions_trail() {
     }
 }
 
-/// Claude Code's prompt hook asks for the patterns of the ask at each prompt, not only at the first of a
-/// session.
+/// Claude Code's prompt hook says when to read a pattern of the index at each prompt, not only at the
+/// first of a session.
 #[test]
-fn claudes_prompt_hook_asks_for_recall_at_each_prompt() {
+fn claudes_prompt_hook_says_when_to_read_a_pattern_at_each_prompt() {
     let repo = Repo::new();
     let o = repo.run(
         &repo.path(),
@@ -309,7 +308,7 @@ fn claudes_prompt_hook_asks_for_recall_at_each_prompt() {
     for prompt in ["make it blue", "now add a test"] {
         let ask = claude.payload("s1", &repo.path(), prompt);
         let said = claude.run(&repo, claude.ask, &ask);
-        assert!(said.contains("celis patterns"), "{prompt}: {said}");
+        assert!(said.contains("celis grep <id>"), "{prompt}: {said}");
     }
     let o = repo.run(
         &repo.path(),
@@ -320,7 +319,7 @@ fn claudes_prompt_hook_asks_for_recall_at_each_prompt() {
     assert!(o.status.success(), "{}", err(&o));
     let ask = claude.payload("s1", &repo.path(), "and the border too");
     let said = claude.run(&repo, claude.ask, &ask);
-    assert!(said.contains("celis patterns"), "{said}");
+    assert!(said.contains("celis grep <id>"), "{said}");
 }
 
 /// The prompt hooks of Claude Code, Codex and Gemini CLI give one line, with no past agent and no

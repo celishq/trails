@@ -37,20 +37,16 @@ impl<'a> Steps<'a> {
         all.filter_map(|n| self.get(&n.id)).collect()
     }
 
-    /// The asks whose `recalled` names `id`, newest first.
-    pub fn recalls(&'a self, id: &str) -> Vec<Step<'a>> {
+    /// The steps whose `uses` names `id`, newest first.
+    pub fn uses(&'a self, id: &str) -> Vec<Step<'a>> {
         let all = self.all().into_iter().rev();
-        all.filter(|s| s.is_trail() && s.record().recalled.iter().any(|r| r == id))
-            .collect()
+        all.filter(|s| s.uses().contains(&id)).collect()
     }
 
-    /// The steps whose `uses` names `id` and the asks whose `recalled` names it, each once, that a later
-    /// step revised (CIP-06, "Revisions").
+    /// The steps whose `uses` names `id` that a later step revised (CIP-06, "Revisions").
     pub fn misled(&'a self, id: &str) -> Vec<Step<'a>> {
         let all = self.all().into_iter();
-        let named = all.filter(|s| {
-            s.uses().contains(&id) || (s.is_trail() && s.record().recalled.iter().any(|r| r == id))
-        });
+        let named = all.filter(|s| s.uses().contains(&id));
         named.filter(|s| !s.revised().is_empty()).collect()
     }
 

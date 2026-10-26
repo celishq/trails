@@ -20,11 +20,11 @@ celis patterns [<file>]... [--markdown] [--tidy]       the index of the patterns
 celis tree [<id>]... [--graph] [--full] [--all] [--demo]
                                                        a trail and its steps; again on each change
 celis grep <grep option>... <pattern>                 every trail, through the system grep
-celis stats [<id>] [--demo]                           what later work reused
+celis stats [<id>] [--demo]                           the use of the patterns, or a step's grade
 celis lesson <id>                                     what an ask or a step taught, for a lesson
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
 celis link [<folder>] [--off]                         keep this project's trails in a folder, or stop
-celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--recalled <id>]... [--at <place>]... [--check <command>] [--session <id>] [--project <id>] -- <text>
+celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>]... [--check <command>] [--session <id>] [--project <id>] -- <text>
                                                        leave a step
 celis step start <id>                                 take up a step, and see the patterns and notes its plan links
 celis step done <id> [--changed <text>] [--as-planned] [--by person] [--file <path>]... -- <proof>
@@ -143,17 +143,15 @@ note  json  {"id", "created_at", "step", "content"}
 
 **Rules**
 
-- `add` MUST write the whole id of `--under`, `--replaces`, each `--uses` and each `--recalled`
-  (CIP-06, "Recalls"), each `--at` (CIP-01, "Places") and the `--check` as tags.
+- `add` MUST write the whole id of `--under`, `--replaces` and each `--uses`, each `--at` (CIP-01,
+  "Places") and the `--check` as tags.
 - `add` MUST write no step when an open step of the same project and `under` has the same text, and
-  print that step's id. With `--uses` or `--recalled`, or a `--replaces` of a done step, it MUST refuse it as a usage
+  print that step's id. With `--uses`, or a `--replaces` of a done step, it MUST refuse it as a usage
   error.
-- `add` MUST accept `--new` and ignore it.
+- `add` MUST accept `--new` and `--recalled <id>`, which older plugins give, and write nothing for them.
 - `add` MUST refuse empty text as a usage error; a closed `--under`, and a `--replaces` of a dropped step,
   with `closed`; a `--uses` that no live pattern and no step has, with `no-step`; and a `--uses` that
   names a step, or that starts both a pattern's and a step's id, as a usage error.
-- `add` MUST refuse a `--recalled` that no live pattern in scope has, with `no-pattern`, and a
-  `--recalled` on a step that is not an ask, as a usage error.
 - `start` and `done` MUST refuse a closed step, with `closed`. `start` of a step that a `start` names
   MUST write nothing and print the id of its first `start`.
 - `drop` MUST take the id of a step or a pattern. It MUST refuse a dropped step, a done step that is not a
@@ -185,9 +183,8 @@ celis: before you answer, learn from <id8>. …           what the agent keeps, 
   note    <text>                                          each note of its trail (CIP-04, "Notes")
   asked   <text>                                          each prompt on its trail (CIP-04, "Sessions") since
                                                           the newest one before the ask, that one too
-  pattern <id8> <When>                                    each live pattern its ask recalled (CIP-06, "Recalls")
-                                                          and each one a step of its ask uses (CIP-06, "Uses"),
-                                                          once each
+  pattern <id8> <When>                                    each live pattern a step of its ask's tree uses
+                                                          (CIP-06, "Uses"), once each
 ```
 
 **Examples**
@@ -237,11 +234,11 @@ celis patterns --tidy
 
 A pattern's reasons, in this order:
 
-- `misled`: it misled 2 or more steps and asks (CIP-06, "Revisions").
+- `misled`: it misled 2 or more steps (CIP-06, "Revisions").
 - `near:<id8>`: the When of another live pattern in scope shares 2 or more words with its When, as the
   `like` lines of `pattern` count them; the id is of the one that shares the most.
-- `unrecalled`: it was made 60 or more days ago, and no ask recalled it in the last 60 days (CIP-06,
-  "Recalls"), while an ask of the project recalled a pattern.
+- `unused`: it was made 60 or more days ago, and no step used it in the last 60 days (CIP-06, "Uses"),
+  while a step of the project used a pattern.
 - `churn`: it ends a chain of 3 or more `replaces` (CIP-05).
 
 **Rules**
@@ -262,6 +259,45 @@ celis patterns
 celis patterns shelf/prices.py shelf/
 celis patterns --markdown > patterns.md
 celis patterns --tidy
+```
+
+## Stats
+
+`stats` with no `<id>`, off a terminal or with `--json`, gives the use of the live patterns in scope in
+the working folder's project (CIP-05).
+
+```
+<id8> uses:<n> misled:<n> replaces:<n> used:<yyyy-mm-dd | -> examples:<n> tidy:<reason>[,<reason>]... | - <When>
+                                         each live pattern in scope
+total <n> patterns in the index · last 7 days: <n> written, <n> replaced, <n> gaps
+                                         last, with `1 pattern` for one
+```
+
+```
+pattern  json  {"id", "uses", "misled", "replaces", "used", "examples", "tidy": [], "when"}
+total    json  {"index", "written", "replaced", "gaps"}
+```
+
+A pattern's fields: `uses`, how many steps name it in `uses` (CIP-06, "Uses"); `misled`, how many steps
+it misled (CIP-06, "Revisions"); `replaces`, how many `replaces` its chain holds (CIP-05); `used`, the
+day of the newest step that uses it, `-` or `null` when none; `examples`, how many examples it has
+(CIP-05, "Examples"); `tidy`, its reasons as `patterns --tidy` gives them ("Patterns"), `-` when none.
+
+The total's fields: `index`, how many patterns are live in scope; `written`, the patterns in scope made
+in the last 7 days; `replaced`, those of them with a `replaces`; `gaps`, the steps of the project made in
+the last 7 days that fix done work (CIP-06, "Revisions") in a trail whose steps use no pattern.
+
+**Rules**
+
+- With no `<id>`, off a terminal or with `--json`, `stats` MUST print a line for each live pattern in
+  scope, oldest first, then the total. With no record in the store, it MUST print `Nothing was reused
+  yet.`, and nothing with `--json`.
+
+**Examples**
+
+```
+celis stats
+celis stats --json
 ```
 
 ## Lesson
@@ -295,7 +331,8 @@ antigravity     {"injectSteps": [{"ephemeralMessage": "<text>"}]}
 - `hook start` MUST read the card from `card.md` and the plugin's version from `.claude-plugin/plugin.json`
   in `<plugin folder>`.
 - After the card, `hook start` MUST print the line `The patterns in scope here:`, then what `patterns`
-  prints with no `<file>` ("Patterns"). It MUST print neither when no pattern is live in scope.
+  prints with no `<file>` ("Patterns"), at a session start and after a compaction alike. It MUST print
+  neither when no pattern is live in scope.
 - When `patterns --tidy` lists `<n>` patterns, 1 or more, and no ask whose title starts with `Tidy the
   celis trails` began in the last 7 days, `hook start` asks the agent to offer `/celis:tidy` once in the
   session, after the person's first ask, and names `<n>`.
@@ -318,7 +355,7 @@ trails with it.
 view    <yyyy-mm-dd> <trail id8 | -> [<project name>] <kind> <id8> <fields> <text>
           trail | step   <open | done | dropped>[ revised-by <id>,…][ at:<place>]…
           pattern        <live | replaced-by <id> | dropped> {<me | project>}
-                           [ old-rule][ recalls:<n> uses:<n>][ misled:<n>][ recalled:<yyyy-mm-dd>]
+                           [ old-rule][ uses:<n>][ misled:<n>][ used:<yyyy-mm-dd>]
           proof | changed | dropped | note                       the step's or pattern's id, no fields
           prompt                                                 the trail's id, no fields (CIP-04, "Sessions")
           good | bad                                             the pattern's id, no fields, and an example:
@@ -334,10 +371,9 @@ end     project [<project name>]
 
 `<id8>` is the first 8 characters of an id. A text holds each newline as a space. After its state and
 scope, a pattern's fields give ` old-rule` when it has the `binds` label that older writers wrote (CIP-05,
-"Reading"), ` recalls:<n> uses:<n>` with how many asks name it in `recalled` and how many steps name it in
-`uses` (CIP-06, "Uses"), when one is not 0, ` misled:<n>` with how many steps and asks it misled (CIP-06,
-"Revisions"), when not 0, and ` recalled:<day>` with the day of the newest ask whose
-`recalled` names it (CIP-06, "Recalls").
+"Reading"), ` uses:<n>` with how many steps name it in `uses` (CIP-06, "Uses"), when not 0, ` misled:<n>` with how
+many steps it misled (CIP-06, "Revisions"), when not 0, and ` used:<day>` with the day of the newest step
+whose `uses` names it.
 
 **Rules**
 

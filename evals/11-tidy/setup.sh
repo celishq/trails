@@ -19,7 +19,7 @@ printf '# shop\n\nAgents read this file before they work here.\n' > AGENTS.md
 lines=$(celis pattern -- "When you write Python: keep each line at most 100 characters, because the team reviews code side by side." | head -1)
 told=$(celis pattern -- "When you finish a change: tell the person which files you changed and why, because they review each change by hand." | head -1)
 for n in 1 2 3; do
-  ask=$(celis step add --recalled "$lines" --recalled "$told" --uses "$lines" --uses "$told" -- "Change cart.py, part $n" 2>/dev/null)
+  ask=$(celis step add --uses "$lines" --uses "$told" -- "Change cart.py, part $n" 2>/dev/null)
   celis step done "$ask" --as-planned --by person -- "cart.py has part $n, and pytest passes." >/dev/null 2>&1
 done
 celis pattern --path "test/*.py" -- "When you write a test: give each test one assert, because a failure must name one cause." >/dev/null

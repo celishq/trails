@@ -1,6 +1,8 @@
 celis keeps what the person taught you as patterns. A pattern guides your
 judgement: when its forces are present here, resolve them in your own way; when they are not, it does
-not apply. At each ask, you take those that bear on it.
+not apply. Their index, one `<id> <scope> <When>` line each, is in your context from the session start.
+When a choice of the work matches a When, read that pattern whole with `celis grep <id>` before you
+choose, and name it with `--uses <id>` on the step of that choice.
 celis keeps guides: a must goes into the project's own files, `AGENTS.md`, `CLAUDE.md` or a check, when
 the person agrees in `celis:tidy`, which learns from the trails. Each ask is a trail of steps with proofs
 of the work.
@@ -9,7 +11,7 @@ of the work.
 celis patterns [<file>]...
 celis grep <id>
 celis lesson <id>
-celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--recalled <id>]... [--check <command>] -- "<title>"
+celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--check <command>] -- "<title>"
 celis step start <id>
 celis step done <id> [--changed "<what differs>"] [--as-planned] [--by person] [--file <path>]... -- "<proof>"
 celis step note <id> -- "<note>"
@@ -18,11 +20,7 @@ celis pattern [--scope me] [--replaces <id>] [--path <glob>]... [--within <id>].
 
 Read all that celis prints, never cut by `head` or `grep`, and do the next move it names.
 
-1. **Recall.** At a new ask, before you change a file, find the patterns that bear on it. The index is
-   in your context from the session start; read it again with `celis patterns <file>...` when patterns
-   may have changed. Open what bears on the ask with `celis grep <id>` or through the `celis:recall`
-   agent, and name each on the ask with `--recalled <id>`.
-2. **Work.** An ask that changes a file, or works toward a result someone can check, gets a step; a
+1. **Work.** An ask that changes a file, or works toward a result someone can check, gets a step; a
    question, an explanation or a review you only report on gets none. Its title names what it changes,
    in words that hold in another project. Before the work, the person needs to see what they will be
    able to check when it is done, why they want it, its limits and the one-way doors ahead: write them
@@ -30,11 +28,10 @@ Read all that celis prints, never cut by `head` or `grep`, and do the next move 
    `not: …` and `ask me: …`, send them to the person, and start in the same turn. Each part a person
    can check alone is a step of its own, closed with a proof a person can check. A change to done work,
    wherever you are, is a new step `celis step add --replaces <the id of that step>`, whose proof says
-   what changed. At each choice the ask leaves open, resolve the forces of the patterns that bear on
-   it, and name each with `--uses`. Act, and tell after: ask only when you
-   cannot write `expect` without a guess, or at a one-way door, such as a new dependency, a schema,
-   money or a deploy. Take every other choice yourself, and name it in the end.
-3. **Close.** When the work of the ask is done, close it with its proof. When only the person can check
+   what changed. Act, and tell after: ask only when you cannot write `expect` without a guess, or at a
+   one-way door, such as a new dependency, a schema, money or a deploy. Take every other choice
+   yourself, and name it in the end.
+2. **Close.** When the work of the ask is done, close it with its proof. When only the person can check
    it, ask them, and close it `--by person` with their answer. Learn from it, then answer with the end
    that celis prints, alone: fill each `<…>`, and remove each line you do not need.
 
@@ -49,7 +46,7 @@ Read all that celis prints, never cut by `head` or `grep`, and do the next move 
    <the total line that done prints>
    ```
 
-4. **Learn.** A lesson is a correction, a pick, a reaction to a result, a wish such as "from now on",
+3. **Learn.** A lesson is a correction, a pick, a reaction to a result, a wish such as "from now on",
    or a fix of done work. When you see one, run `celis lesson <the ask's id>`; `done` of an ask or of a
    fix prints the same brief. Give the brief to the `celis:lesson` agent, and name what it wrote on the
    Learned line of the end.

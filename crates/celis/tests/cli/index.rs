@@ -1,4 +1,4 @@
-//! CIP-02, "Patterns", and CIP-06, "Recalls": the index of patterns, and the asks that recall them.
+//! CIP-02, "Patterns", and CIP-06, "Uses": the index of patterns, and the steps that use them.
 
 use crate::support;
 
@@ -225,116 +225,48 @@ fn a_promoted_pattern_guides() {
     assert!(!line.contains(" old-rule"), "{line}");
 }
 
-/// `step add --recalled` writes the whole id of each pattern, once, as a `recalled` tag on the ask, a step
-/// with no `under` (`spec/06-reuse.md`, "Recalls"; `spec/02-cli.md`, "Step").
+/// `step add` accepts `--recalled`, which older plugins give, with any id and on any step, and writes
+/// nothing for it (`spec/02-cli.md`, "Step").
 #[test]
-fn step_add_writes_each_recall_on_the_ask() {
+fn step_add_accepts_recalled_and_writes_nothing_for_it() {
     let repo = Repo::new();
     let a = decide(&repo, &[], "When a logo is drawn: keep it flat.");
-    let b = decide(
-        &repo,
-        &["--scope", "me"],
-        "When you commit: use plain words.",
-    );
-    let ask = add(
+    let ask = add(&repo, &["--recalled", &a[..8], "--", "Draw the logo"]);
+    add(
         &repo,
         &[
-            "--session",
-            "s1",
-            "--recalled",
-            &a[..8],
-            "--recalled",
-            &b,
-            "--recalled",
-            &a[..8],
-            "--",
-            "Draw the logo",
-        ],
-    );
-    let steps = labelled(&repo, "step");
-    let recalled = |id: &str| -> Vec<String> {
-        let step = steps.iter().find(|n| n.id == id).unwrap();
-        let tags = step.tags.iter().filter(|t| t[0] == "recalled");
-        tags.map(|t| t[1].clone()).collect()
-    };
-    assert_eq!(steps.len(), 1);
-    assert_eq!(recalled(&ask), [a.clone(), b.clone()]);
-    let more = add(&repo, &["--recalled", &b[..8], "--", "Draw the icon"]);
-    let steps = labelled(&repo, "step");
-    let step = steps.iter().find(|n| n.id == more).unwrap();
-    assert_eq!(step.tag("recalled"), Some(b.as_str()));
-}
-
-/// `step add` refuses a `--recalled` that no live pattern in scope has with `no-pattern`, and one on a
-/// step that is not an ask as a usage error (`spec/02-cli.md`, "Step").
-#[test]
-fn step_add_refuses_a_recall_of_no_pattern_or_off_an_ask() {
-    let repo = Repo::new();
-    let a = decide(&repo, &[], "When a logo is drawn: keep it flat.");
-    let o = cli(
-        &repo,
-        &[
-            "step",
-            "add",
-            "--json",
-            "--session",
-            "s1",
+            "--under",
+            &ask[..8],
             "--recalled",
             "0000aaaa",
-            "--",
-            "Draw it",
-        ],
-    );
-    refusal(&o, 1, "no-pattern");
-    let ids = add(&repo, &["--session", "s1", "--", "Draw the logo"]);
-    let ask = ids.lines().next().unwrap();
-    let o = cli(
-        &repo,
-        &[
-            "step",
-            "add",
-            "--json",
-            "--under",
-            ask,
-            "--recalled",
-            &a[..8],
             "--",
             "A part",
         ],
     );
-    refusal(&o, 2, "usage");
-    assert!(labelled(&repo, "step")
-        .iter()
-        .all(|n| n.tag("recalled").is_none()));
+    let steps = labelled(&repo, "step");
+    assert_eq!(steps.len(), 2);
+    assert!(steps.iter().all(|n| n.tag("recalled").is_none()));
 }
 
-/// `stats` counts the asks that recalled a pattern, and the `grep` view gives the day of the newest
-/// (`spec/06-reuse.md`, "Recalls"; `spec/02-cli.md`, "Grep").
+/// The `grep` view counts the steps that use a pattern, and gives the day of the newest
+/// (`spec/02-cli.md`, "Grep").
 #[test]
-fn stats_and_grep_count_the_recalls_of_the_asks() {
+fn grep_counts_the_uses_and_gives_the_day_of_the_newest() {
     let repo = Repo::new();
     let id = decide(&repo, &[], "When a logo is drawn: keep it flat.");
     let other = decide(&repo, &[], "When a release is cut: tag it.");
-    let index = out(&cli(&repo, &["patterns"]));
-    assert!(index.contains(&id[..8]), "{index}");
+    let ask = add(&repo, &["--", "Draw the logo"]);
     add(
         &repo,
         &[
-            "--session",
-            "s1",
-            "--recalled",
+            "--under",
+            &ask[..8],
+            "--uses",
             &id[..8],
             "--",
-            "Draw the logo",
+            "Draw it flat",
         ],
     );
-    let stats = out(&cli(&repo, &["stats"]));
-    let line = format!(
-        "pattern {} When a logo is drawn: keep it flat. · 0 examples · recalled 1",
-        &id[..8]
-    );
-    assert!(stats.lines().any(|l| l == line), "{stats}");
-    assert!(!stats.contains(&other[..8]), "{stats}");
     let grep = out(&cli(&repo, &["grep", " pattern "]));
     let made = format!("^[0-9-]* - .repo. pattern {}", &id[..8]);
     let made = out(&cli(&repo, &["grep", "-o", &made]));
@@ -345,21 +277,24 @@ fn stats_and_grep_count_the_recalls_of_the_asks() {
             .unwrap()
             .to_string()
     };
-    assert!(line(&id).contains(&format!(" recalled:{day} ")), "{grep}");
-    assert!(!line(&other).contains("recalled:"), "{grep}");
+    assert!(
+        line(&id).contains(&format!(" uses:1 used:{day} ")),
+        "{grep}"
+    );
+    assert!(!line(&other).contains("uses:"), "{grep}");
+    assert!(!line(&other).contains("used:"), "{grep}");
 }
 
-/// A reader ignores a `recalled` that names no record (`spec/06-reuse.md`, "Recalls").
+/// A reader ignores the `recalled` tag that older writers wrote on an ask (`spec/README.md`,
+/// "Names").
 #[test]
-fn a_recall_of_no_record_is_ignored() {
+fn an_old_recalled_tag_is_ignored() {
     let repo = Repo::new();
     let id = decide(&repo, &[], "When a logo is drawn: keep it flat.");
-    let trail = add(&repo, &["--", "the logo"]);
     let mut tags = pattern_tags((&repo.project_id(), "repo"));
     tags.truncate(5);
     tags.extend([
-        vec!["under".to_string(), trail.clone()],
-        vec!["recalled".to_string(), "f".repeat(64)],
+        vec!["recalled".to_string(), id.clone()],
         vec!["L".to_string(), "celis.step".to_string()],
         vec![
             "l".to_string(),
@@ -367,12 +302,11 @@ fn a_recall_of_no_record_is_ignored() {
             "celis.step".to_string(),
         ],
     ]);
-    put(
-        &repo,
-        &Note::write(&account(), 1111u16, now(), tags, "Draw it").unwrap(),
-    );
-    let stats = out(&cli(&repo, &["stats"]));
-    assert!(!stats.contains("recalled"), "{stats}");
+    let ask = Note::write(&account(), 1111u16, now(), tags, "Draw the logo").unwrap();
+    put(&repo, &ask);
     let grep = out(&cli(&repo, &["grep", &id[..8]]));
-    assert!(!grep.contains("recalled:"), "{grep}");
+    assert!(!grep.contains("uses:"), "{grep}");
+    assert!(!grep.contains("used:"), "{grep}");
+    let lesson = out(&cli(&repo, &["lesson", &ask.id[..8]]));
+    assert!(!lesson.contains("  pattern "), "{lesson}");
 }

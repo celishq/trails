@@ -172,9 +172,8 @@ fn step(root: Step, step: Step, kind: Kind) -> Row {
     }
 }
 
-/// The rows of the pattern `entry`: its own, with how many asks of `steps` recalled it and steps used it
-/// when not none, how many it misled when not none, and the day of the newest recall; then each of its examples, then its drop's reason when a drop
-/// names it.
+/// The rows of the pattern `entry`: its own, with how many steps of `steps` used it, how many it misled,
+/// and the day of the newest use; then each of its examples, then its drop's reason when a drop names it.
 fn pattern(entry: &Pattern, steps: &Steps, trails: &Store) -> Vec<Row> {
     let (note, pattern) = (entry.note, &entry.record);
     let state = entry.end.map_or("live".to_string(), PatternEnd::text);
@@ -191,19 +190,16 @@ fn pattern(entry: &Pattern, steps: &Steps, trails: &Store) -> Vec<Row> {
     if pattern.old_rule {
         fields.push("old-rule".to_string());
     }
-    let recalls = steps.recalls(&note.id);
-    let uses = steps.all().into_iter();
-    let uses = uses.filter(|s| s.record().uses.contains(&note.id));
-    let counts = (recalls.len(), uses.count());
-    if counts != (0, 0) {
-        fields.push(format!("recalls:{} uses:{}", counts.0, counts.1));
+    let uses = steps.uses(&note.id);
+    if !uses.is_empty() {
+        fields.push(format!("uses:{}", uses.len()));
     }
     let misled = steps.misled(&note.id).len();
     if misled > 0 {
         fields.push(format!("misled:{misled}"));
     }
-    let newest = recalls.first().map(|ask| date(ask.note().created_at));
-    fields.extend(newest.map(|day| format!("recalled:{day}")));
+    let newest = uses.first().map(|step| date(step.note().created_at));
+    fields.extend(newest.map(|day| format!("used:{day}")));
     let mut rows = vec![row(Kind::Pattern, note, fields, &pattern.content)];
     for (side, example) in pattern.examples.sides() {
         let kind = match side {

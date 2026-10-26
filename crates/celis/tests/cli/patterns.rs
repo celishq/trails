@@ -235,8 +235,7 @@ fn patterns_says_when_there_is_none() {
     assert_eq!(out(&cli(&repo, &["patterns"])).trim(), "no pattern yet");
 }
 
-/// `tree --full` names each pattern a step uses, and `stats` counts each pattern's examples and the
-/// asks that recalled it.
+/// `tree --full` names each pattern a step uses, and `stats` counts each pattern's uses and examples.
 #[test]
 fn tree_and_stats_show_the_patterns() {
     let repo = Repo::new();
@@ -257,7 +256,7 @@ fn tree_and_stats_show_the_patterns() {
     );
     assert!(o.status.success(), "{}", err(&o));
     let pattern = out(&o).lines().next().unwrap().to_string();
-    let trail = add(&repo, &["--recalled", &pattern[..8], "--", "the logo"]);
+    let trail = add(&repo, &["--", "the logo"]);
     add(
         &repo,
         &[
@@ -278,13 +277,15 @@ fn tree_and_stats_show_the_patterns() {
         "{tree}"
     );
     let stats = out(&cli(&repo, &["stats"]));
+    let line = stats
+        .lines()
+        .find(|l| l.starts_with(&pattern[..8]))
+        .unwrap();
     assert!(
-        stats.contains(&format!(
-            "pattern {} When a logo is drawn: keep it flat. · 2 examples · recalled 1",
-            &pattern[..8]
-        )),
+        line.starts_with(&format!("{} uses:1 ", &pattern[..8])),
         "{stats}"
     );
+    assert!(line.contains(" examples:2 "), "{stats}");
 }
 
 /// A linked folder carries a pattern and the blob of each file example to a second store, and keeps a

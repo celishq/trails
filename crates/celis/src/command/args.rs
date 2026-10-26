@@ -23,7 +23,6 @@ pub(crate) struct Args {
     pub scope: Option<String>,
     pub replaces: Option<String>,
     pub uses: Vec<String>,
-    pub recalled: Vec<String>,
     pub check: Option<String>,
     pub changed: Option<String>,
     pub by: Option<String>,
@@ -81,7 +80,9 @@ impl Args {
                 "--scope" => parsed.scope = Some(value(arg, rest.next())?),
                 "--replaces" => parsed.replaces = Some(value(arg, rest.next())?),
                 "--uses" => parsed.uses.push(value(arg, rest.next())?),
-                "--recalled" => parsed.recalled.push(value(arg, rest.next())?),
+                "--recalled" => {
+                    value(arg, rest.next())?;
+                }
                 "--check" => parsed.check = Some(value(arg, rest.next())?),
                 "--changed" => parsed.changed = Some(value(arg, rest.next())?),
                 "--by" => parsed.by = Some(value(arg, rest.next())?),
