@@ -1,4 +1,4 @@
-//! `celis search`: the rules, the other patterns and the past asks that fit an ask.
+//! `celis search`: the patterns and the past asks that fit an ask.
 
 #[cfg(feature = "search")]
 mod meaning;
@@ -22,9 +22,9 @@ use std::collections::{HashMap, HashSet};
 use std::io::Write;
 
 impl Command {
-    /// Prints every live rule in scope that fits the ask of `args`, then the first other patterns that fit
-    /// it and a line that names the rest, each with its examples, then the done asks like it, and marks
-    /// each printed pattern as recalled now; with `--kind`, only that part. Writes no record.
+    /// Prints the first live patterns in scope that fit the ask of `args` and a line that names the rest,
+    /// each with its examples, then the done asks like it, and marks each printed pattern as recalled
+    /// now; with `--kind`, only that part. Writes no record.
     pub(crate) fn search(
         &self,
         args: &Args,
@@ -34,8 +34,7 @@ impl Command {
         let ask = args.required_text("search needs the ask after --")?;
         let limit = Args::number("--limit", &args.limit)?;
         let parts = match args.kind.as_deref() {
-            None => vec![Part::Rules, Part::Patterns, Part::Past],
-            Some("rule") => vec![Part::Rules],
+            None => vec![Part::Patterns, Part::Past],
             Some("pattern") => vec![Part::Patterns],
             Some("trail") => {
                 return self.listed(
@@ -51,7 +50,7 @@ impl Command {
             }
             Some(kind) => {
                 return Err(Failure::usage(format!(
-                    "--kind takes rule, pattern, trail or step, not {kind}"
+                    "--kind takes pattern, trail or step, not {kind}"
                 )))
             }
         };
@@ -77,15 +76,9 @@ impl Command {
                     .take(limit.unwrap_or(PAST).min(PAST))
                     .flat_map(|a| lines(*a))
                     .collect(),
-                _ => {
-                    let all: Vec<&Pattern> = found
-                        .iter()
-                        .filter(|pattern| pattern.record.binds == (part == Part::Rules))
-                        .collect();
-                    let shown = match part {
-                        Part::Rules => all.len(),
-                        _ => limit.unwrap_or(BUDGET).min(all.len()),
-                    };
+                Part::Patterns => {
+                    let all: Vec<&Pattern> = found.iter().collect();
+                    let shown = limit.unwrap_or(BUDGET).min(all.len());
                     let part = &all[..shown];
                     if let Ok(home) = self.home() {
                         Recalls::mark(&home, part.iter().map(|pattern| pattern.note));
@@ -226,7 +219,6 @@ impl Command {
 /// A part of what `search` prints.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Part {
-    Rules,
     Patterns,
     Past,
 }
@@ -234,7 +226,6 @@ enum Part {
 impl Part {
     fn heading(self) -> &'static str {
         match self {
-            Part::Rules => "rules",
             Part::Patterns => "patterns",
             Part::Past => "past",
         }
@@ -243,7 +234,6 @@ impl Part {
     /// What the agent does with the part.
     fn next(self) -> &'static str {
         match self {
-            Part::Rules => "keep each rule: it binds",
             Part::Patterns => {
                 "at each choice the ask leaves open, weigh the forces of each pattern that bears on it, \
                  choose like its good examples and unlike its bad ones, and name the pattern you \
@@ -298,7 +288,7 @@ const COMMON: &[&str] = &[
 /// The most smaller patterns `search` prints under a pattern.
 const NEXT: usize = 5;
 
-/// The most patterns that are not rules `search` prints when no `--limit` is given.
+/// The most patterns `search` prints when no `--limit` is given.
 const BUDGET: usize = 8;
 
 /// The most patterns a word of the ask may be in and still fit, whatever their share.

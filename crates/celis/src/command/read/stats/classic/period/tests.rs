@@ -87,7 +87,7 @@ fn a_period_counts_its_done_steps_that_use_a_pattern() {
         replaces: None,
         content: "keep cents".into(),
         paths: vec![],
-        binds: false,
+        old_rule: false,
         within: vec![],
         cells: vec![],
         examples: Default::default(),

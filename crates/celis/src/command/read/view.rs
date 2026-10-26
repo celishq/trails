@@ -172,7 +172,7 @@ fn pattern(entry: &Pattern, recalled: &Recalls) -> Vec<Row> {
     let mut fields = vec![state, format!("{{{}}}", pattern.scope.text())];
     let marks = [
         (!pattern.paths.is_empty(), "trigger"),
-        (pattern.binds, "binds"),
+        (pattern.old_rule, "old-rule"),
     ];
     fields.extend(
         marks

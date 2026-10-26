@@ -40,6 +40,7 @@ fn search_refuses_a_bad_text_kind_or_limit() {
     for args in [
         &["search", "--json", "--", " "][..],
         &["search", "--json", "--kind", "proof", "--", "prices"],
+        &["search", "--json", "--kind", "rule", "--", "prices"],
         &["search", "--json", "--limit", "0", "--", "prices"],
         &["search", "--json", "--limit", "many", "--", "prices"],
         &["search", "--json", "--", "prices"],
@@ -134,8 +135,8 @@ fn done(repo: &Repo, id: &str, changed: Option<&str>, proof: &str) {
     assert!(o.status.success(), "{}", err(&o));
 }
 
-/// A store of 3 rules and 1 pattern, and the ids of the rule of `src/*.rs`, of the release rule, of the
-/// logo rule and of the pattern.
+/// A store of 4 patterns, and the ids of the pattern of `src/*.rs`, of the release pattern, of the logo
+/// export pattern and of the logo pattern with a good example.
 fn store(repo: &Repo) -> [String; 4] {
     let trail = add(repo, &["--", "the logo"]);
     let pick = add(repo, &["--under", &trail[..8], "--", "a sharp logo"]);
@@ -143,17 +144,17 @@ fn store(repo: &Repo) -> [String; 4] {
     [
         decide(
             repo,
-            &["--path", "src/*.rs", "--binds"],
+            &["--path", "src/*.rs"],
             "When Rust code changes: run cargo fmt, because CI checks it.",
         ),
         decide(
             repo,
-            &["--binds"],
+            &[],
             "When a release is cut: tag it from main, because the build reads the tag.",
         ),
         decide(
             repo,
-            &["--path", "*.svg", "--binds"],
+            &["--path", "*.svg"],
             "When a logo is drawn: export it as SVG, because the site scales it.",
         ),
         decide(
@@ -192,26 +193,53 @@ fn search_finds_a_pattern_by_its_meaning() {
     assert!(said.contains(&pattern[..8]), "{said}");
 }
 
-/// `search` prints the rules first, then the other patterns with their examples (`spec/02-cli.md`,
-/// "Search").
+/// `search` prints the patterns in one part, each with its examples (`spec/02-cli.md`, "Search").
 #[test]
-fn search_prints_the_rules_before_the_other_patterns() {
+fn search_prints_one_part_of_patterns() {
     let repo = Repo::new();
     let [_, _, logo, pattern] = store(&repo);
     let said = search(&repo, &["logo.svg", "--", "draw a new logo"]);
     let lines: Vec<&str> = said.lines().collect();
     let at = |id: &str| lines.iter().position(|l| l.starts_with(&id[..8])).unwrap();
-    let rules = lines.iter().position(|l| *l == "rules").unwrap();
-    let patterns = lines.iter().position(|l| *l == "patterns").unwrap();
-    assert!(rules < at(&logo) && at(&logo) < patterns, "{said}");
-    assert!(patterns < at(&pattern), "{said}");
+    assert_eq!(lines[0], "patterns", "{said}");
+    assert!(!lines.contains(&"rules"), "{said}");
+    assert!(at(&logo) > 0 && at(&pattern) > 0, "{said}");
     assert!(
         lines[at(&pattern) + 1].trim_start().starts_with("good"),
         "{said}"
     );
 }
 
-/// A pattern with the deprecated `promoted` label guides, and is no rule (`spec/README.md`, "Names").
+/// A pattern with the `binds` label that older writers wrote reads as a plain pattern in `search`, and
+/// the `grep` view marks it `old-rule` (`spec/05-patterns.md`, "Reading").
+#[test]
+fn an_old_rule_reads_as_a_plain_pattern() {
+    let repo = Repo::new();
+    let id = repo.project_id();
+    let label = vec![vec![
+        "l".to_string(),
+        "binds".to_string(),
+        "celis.pattern".to_string(),
+    ]];
+    let old = tagged_pattern(
+        &repo,
+        (&id, "repo"),
+        &account(),
+        (None, None),
+        label,
+        "When a logo is drawn: keep it flat.",
+        now() - DAY,
+    );
+    let said = search(&repo, &["--", "draw a logo"]);
+    let lines: Vec<&str> = said.lines().collect();
+    assert_eq!(lines[0], "patterns", "{said}");
+    assert!(lines[1].starts_with(&old.id[..8]), "{said}");
+    let line = out(&cli(&repo, &["grep", &old.id[..8]]));
+    assert!(line.contains(" old-rule"), "{line}");
+}
+
+/// A pattern with the deprecated `promoted` label reads as a plain pattern, with no `old-rule` mark
+/// (`spec/README.md`, "Names").
 #[test]
 fn a_promoted_pattern_guides() {
     let repo = Repo::new();
@@ -230,10 +258,10 @@ fn a_promoted_pattern_guides() {
         "When a logo is drawn: keep it flat.",
         now() - DAY,
     );
-    let rules = search(&repo, &["--kind", "rule", "--", "draw a logo"]);
-    assert!(!rules.contains(&old.id[..8]), "{rules}");
+    let said = search(&repo, &["--", "draw a logo"]);
+    assert!(said.contains(&old.id[..8]), "{said}");
     let line = out(&cli(&repo, &["grep", &old.id[..8]]));
-    assert!(!line.contains(" binds"), "{line}");
+    assert!(!line.contains(" old-rule"), "{line}");
 }
 
 /// `search` prints a pattern's first line after its id and scope, and each next line of its text under
@@ -258,24 +286,17 @@ fn search_prints_each_line_of_a_pattern() {
     );
 }
 
-/// With `--kind rule` or `--kind pattern`, `search` prints only that part (`spec/02-cli.md`,
-/// "Search").
+/// With `--kind pattern`, `search` prints only that part (`spec/02-cli.md`, "Search").
 #[test]
 fn search_prints_only_the_kind_asked() {
     let repo = Repo::new();
-    let [_, _, logo, pattern] = store(&repo);
-    let rules = search(&repo, &["logo.svg", "--kind", "rule", "--", "draw a logo"]);
-    assert!(
-        rules.contains(&logo[..8]) && !rules.contains(&pattern[..8]),
-        "{rules}"
-    );
-    assert!(!rules.contains("patterns"), "{rules}");
+    let [_, _, _, pattern] = store(&repo);
     let patterns = search(
         &repo,
         &["logo.svg", "--kind", "pattern", "--", "draw a logo"],
     );
     assert!(patterns.contains(&pattern[..8]), "{patterns}");
-    assert!(!patterns.contains(&logo[..8]), "{patterns}");
+    assert!(!patterns.contains("past"), "{patterns}");
 }
 
 /// `search` prints the done asks like the ask, at most 2, each with the `changed` lines of the steps
@@ -390,7 +411,7 @@ fn search_prints_at_most_two_past_asks() {
     );
 }
 
-/// `search` says that nothing fits when no rule, pattern or past ask does.
+/// `search` says that nothing fits when no pattern or past ask does.
 #[test]
 fn search_says_when_nothing_fits() {
     let repo = Repo::new();
@@ -407,7 +428,7 @@ fn search_needs_the_ask() {
     assert_eq!(o.status.code(), Some(2), "{}", err(&o));
 }
 
-/// `grep` marks a rule, and the day `search` last brought a pattern.
+/// `grep` marks the day `search` last brought a pattern.
 #[test]
 fn grep_marks_patterns_and_the_day_of_a_search() {
     let repo = Repo::new();
@@ -421,9 +442,8 @@ fn grep_marks_patterns_and_the_day_of_a_search() {
             .unwrap()
             .to_string()
     };
-    assert!(line(&logo).contains(" binds recalled:"), "{said}");
+    assert!(line(&logo).contains(" recalled:"), "{said}");
     assert!(line(&pattern).contains(" recalled:"), "{said}");
-    assert!(!line(&pattern).contains(" binds"), "{said}");
     assert!(!line(&rust).contains("recalled:"), "{said}");
 }
 
@@ -431,29 +451,6 @@ fn grep_marks_patterns_and_the_day_of_a_search() {
 fn heads<'a>(said: &'a str, ids: &[String]) -> Vec<&'a str> {
     let head = |l: &&str| ids.iter().any(|id| l.starts_with(&id[..8]));
     said.lines().filter(head).collect()
-}
-
-/// `search` prints each rule that fits, more than 8 and also with `--limit 1` (`spec/02-cli.md`,
-/// "Search").
-#[test]
-fn search_never_cuts_a_rule() {
-    let repo = Repo::new();
-    let rules: Vec<String> = (0..10)
-        .map(|n| {
-            let text = format!("When Rust code {n} changes: run cargo fmt.");
-            decide(&repo, &["--path", "src/*.rs", "--binds"], &text)
-        })
-        .collect();
-    for args in [
-        &["src/main.rs", "--"][..],
-        &["src/main.rs", "--limit", "1", "--"],
-    ] {
-        let mut args = args.to_vec();
-        args.push("tidy the code");
-        let said = search(&repo, &args);
-        assert_eq!(heads(&said, &rules).len(), 10, "{said}");
-        assert!(!said.contains(" more: "), "{said}");
-    }
 }
 
 /// `search` prints the first 8 patterns, or the first `--limit`, then the `more` line, and only a

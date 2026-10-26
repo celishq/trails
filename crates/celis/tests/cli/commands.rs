@@ -76,7 +76,6 @@ fn the_json_form_of_a_pattern_has_the_listed_fields() {
     assert_eq!(
         keys,
         [
-            "binds",
             "cells",
             "content",
             "created_at",

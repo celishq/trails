@@ -1,6 +1,6 @@
 celis remembers what your agents learn, and how they do your tasks.
 
-  § pattern what to choose in a context, and why; a rule binds
+  § pattern a guide: what to choose in a context, and why
   ◆ trail   each task you give
   ○ step    each piece of work your agents do in it
 
@@ -10,8 +10,8 @@ Usage
   celis <command> [<args>] [flags]
 
 Read
-  search <ask>        Show the rules, patterns and past asks that fit an ask
-  ├ --kind <kind>     Only rule (a pattern that binds), pattern, trail, or step
+  search <ask>        Show the patterns and past asks that fit an ask
+  ├ --kind <kind>     Only pattern, trail, or step
   └ --limit <n>       Show <n> patterns and past asks; 20 for trail or step
 
   patterns            Show your patterns with their good and bad examples

@@ -51,7 +51,7 @@ impl Command {
             replaces: None,
             content,
             paths,
-            binds: args.binds,
+            old_rule: false,
             within: args.within.iter().map(PatternId::new).collect(),
             cells: Cell::all(args.cells.iter().map(String::as_str)),
             examples,
@@ -135,8 +135,8 @@ const LIKE: usize = 3;
 const SHARED: usize = 2;
 
 /// What `pattern` with no scope says of the pattern's scope.
-const SCOPES: &str = "celis: the rule holds in this project. When it holds for that kind of work in any \
-                      project, such as a rule about a framework, a platform or a review's convention, \
+const SCOPES: &str = "celis: the pattern holds in this project. When it holds for that kind of work in any \
+                      project, such as a pattern about a framework, a platform or a review's convention, \
                       replace it with --scope me; when it holds only for this trail, drop it and write \
                       it with celis step note <id>.";
 

@@ -474,7 +474,7 @@ impl Demo {
             replaces: None,
             content: text.to_string(),
             paths: vec![],
-            binds: false,
+            old_rule: false,
             within: vec![],
             cells: vec![],
             examples: Default::default(),

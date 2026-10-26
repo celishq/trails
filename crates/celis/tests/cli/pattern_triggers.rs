@@ -189,9 +189,9 @@ fn every_pattern_comes_on_each_call() {
     assert_eq!(texts(&repo, &["README.md"]), first);
 }
 
-/// The grep view marks a pattern with a trigger and a rule (`spec/02-cli.md`, "Grep").
+/// The grep view marks a pattern with a trigger, and gives no mark for `--binds` (`spec/02-cli.md`, "Grep").
 #[test]
-fn grep_marks_triggers_and_rules() {
+fn grep_marks_triggers() {
     let repo = Repo::new();
     let trigger = decide(&repo, &["--path", "Makefile"], "trigger");
     let all = decide(&repo, &["--path", "*.md", "--binds"], "all");
@@ -210,15 +210,15 @@ fn grep_marks_triggers_and_rules() {
         "{shown}"
     );
     assert!(
-        line(&all).ends_with("live {project} trigger binds all"),
+        line(&all).ends_with("live {project} trigger all"),
         "{shown}"
     );
     assert!(line(&plain).ends_with("live {project} plain"), "{shown}");
 }
 
-/// `pattern` writes each `--path` from the project's top folder and `--binds`, and a reader reads them
-/// back; `--promoted`, `--tool`, `--content` and `--command` are no flags (`spec/02-cli.md`,
-/// "Commands").
+/// `pattern` writes each `--path` from the project's top folder, and a reader reads them back; it takes
+/// `--binds` and writes nothing for it; `--promoted`, `--tool`, `--content` and `--command` are no
+/// flags (`spec/02-cli.md`, "Commands").
 #[test]
 fn pattern_writes_the_trigger_and_labels() {
     let repo = Repo::new();
@@ -238,7 +238,7 @@ fn pattern_writes_the_trigger_and_labels() {
     let shown = objects(&repo, &["step", "start", step]);
     let pattern = shown.iter().find_map(|v| v.get("pattern")).unwrap();
     assert_eq!(pattern["paths"], json!(["shelf/*.py", "shelf/b.md"]));
-    assert_eq!(pattern["binds"], json!(true));
+    assert!(pattern.get("binds").is_none(), "{pattern}");
     let o = repo.run(&repo.path(), &["pattern", "--promoted", "--", "t"], &[], "");
     assert_eq!(o.status.code(), Some(2), "{o:?}");
     for flag in ["--tool", "--content", "--command"] {
@@ -269,7 +269,6 @@ fn an_older_pattern_with_no_trigger_still_reads() {
     let pattern = shown.iter().find_map(|v| v.get("pattern")).unwrap();
     assert_eq!(pattern["paths"], json!(["a.py", "a.py/**"]));
     assert_eq!(pattern["scope"], json!("project"));
-    assert_eq!(pattern["binds"], json!(false));
     assert_eq!(texts(&repo, &["a.py"]), ["old"]);
 }
 

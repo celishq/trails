@@ -6,8 +6,8 @@ use celis_nostr::{Account, Note};
 use celis_store::{Anchor, PatternId, Place};
 
 /// What one pattern says: written on a project, it holds in its scope; with the globs of the files it
-/// acts on, the larger patterns it completes, its cells, its examples, and its `binds` label, which makes
-/// it a rule.
+/// acts on, the larger patterns it completes, its cells, its examples, and whether an older writer gave it
+/// the `binds` label.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PatternRecord {
     pub anchor: Anchor,
@@ -15,7 +15,7 @@ pub struct PatternRecord {
     pub replaces: Option<PatternId>,
     pub content: String,
     pub paths: Vec<String>,
-    pub binds: bool,
+    pub old_rule: bool,
     pub within: Vec<PatternId>,
     pub cells: Vec<Cell>,
     pub examples: Examples,
@@ -43,12 +43,11 @@ impl PatternRecord {
         let cells = self.cells.iter();
         tags.extend(cells.map(|c| vec!["cell".to_string(), c.name().to_string()]));
         tags.push(vec!["L".to_string(), NAMESPACE.to_string()]);
-        let labels = [("pattern", true), ("binds", self.binds)].into_iter();
-        tags.extend(
-            labels
-                .filter(|(_, on)| *on)
-                .map(|(label, _)| vec!["l".to_string(), label.to_string(), NAMESPACE.to_string()]),
-        );
+        tags.push(vec![
+            "l".to_string(),
+            "pattern".to_string(),
+            NAMESPACE.to_string(),
+        ]);
         Note::write(signer, 1111u16, at, tags, self.content.clone())
     }
 
@@ -65,11 +64,10 @@ impl PatternRecord {
     /// The pattern `note` holds; `None` when it is not a pattern, or names a scope no reader knows, such
     /// as `trail:<id>`.
     pub fn read(note: &Note) -> Option<PatternRecord> {
-        let namespace = [(NAMESPACE, "pattern"), (OLD_NAMESPACE, "decision")]
+        let pattern = [(NAMESPACE, "pattern"), (OLD_NAMESPACE, "decision")]
             .into_iter()
-            .find(|(namespace, label)| labelled(note, label, namespace))?
-            .0;
-        if note.kind != 1111 || note.tag("K")? != "project" {
+            .any(|(namespace, label)| labelled(note, label, namespace));
+        if !pattern || note.kind != 1111 || note.tag("K")? != "project" {
             return None;
         }
         let mut paths: Vec<String> = note
@@ -99,7 +97,9 @@ impl PatternRecord {
             replaces: owned("replaces").map(PatternId::new),
             content: note.content.clone(),
             paths,
-            binds: labelled(note, "binds", namespace),
+            old_rule: [NAMESPACE, OLD_NAMESPACE]
+                .iter()
+                .any(|namespace| labelled(note, "binds", namespace)),
             within: note
                 .tags
                 .iter()

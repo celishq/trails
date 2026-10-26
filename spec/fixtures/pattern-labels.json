@@ -1,33 +1,33 @@
 {
   "about": [
     "The labels of a pattern, as CIP-05 gives them. celis writes them and every reader reads them, so both",
-    "must match this file: the CLI test writes a rule with `celis pattern --binds` and finds the labels of",
-    "the form with `written` on it, then puts a record of each form in the store, and `celis patterns`",
-    "shows each as a pattern, and as a rule when `binds` is true.",
+    "must match this file: the CLI test writes a pattern with `celis pattern --binds` and finds the labels",
+    "of the form with `written` on it, then puts a record of each form in the store, and `celis patterns`",
+    "shows each as a plain pattern. The `grep` view marks it `old-rule` when `old_rule` is true.",
     "",
     "`labels` are the `L` and `l` tags of the record. The other tags are those of CIP-05, \"Patterns\"."
   ],
   "forms": [
     {
-      "name": "a rule as celis writes it",
-      "labels": [["L", "celis.pattern"], ["l", "pattern", "celis.pattern"], ["l", "binds", "celis.pattern"]],
-      "binds": true,
+      "name": "a pattern as celis writes it",
+      "labels": [["L", "celis.pattern"], ["l", "pattern", "celis.pattern"]],
+      "old_rule": false,
       "written": true
     },
     {
-      "name": "a pattern as celis writes it",
-      "labels": [["L", "celis.pattern"], ["l", "pattern", "celis.pattern"]],
-      "binds": false
-    },
-    {
       "name": "a rule as older versions wrote it",
-      "labels": [["L", "celis.decision"], ["l", "decision", "celis.decision"], ["l", "binds", "celis.decision"]],
-      "binds": true
+      "labels": [["L", "celis.pattern"], ["l", "pattern", "celis.pattern"], ["l", "binds", "celis.pattern"]],
+      "old_rule": true
     },
     {
-      "name": "a pattern as older versions wrote it",
+      "name": "a rule as the oldest versions wrote it",
+      "labels": [["L", "celis.decision"], ["l", "decision", "celis.decision"], ["l", "binds", "celis.decision"]],
+      "old_rule": true
+    },
+    {
+      "name": "a pattern as the oldest versions wrote it",
       "labels": [["L", "celis.decision"], ["l", "decision", "celis.decision"]],
-      "binds": false
+      "old_rule": false
     }
   ]
 }

@@ -270,10 +270,10 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "search",
         usage: &["celis search [<file>]... [--kind <kind>] [--limit <n>] -- <ask>"],
-        summary: "Show what fits an ask: the patterns of this project that its files, its words or its meaning match, the rules first, then the other patterns, each with its good and bad examples, then up to 2 done asks of any project like it, with their steps. With --kind trail or step, show the records of that kind most alike in meaning, by the model celis setup chose, with their score; with no model, says to use celis grep. Changes nothing.",
+        summary: "Show what fits an ask: the patterns of this project that its files, its words or its meaning match, each with its good and bad examples, then up to 2 done asks of any project like it, with their steps. With --kind trail or step, show the records of that kind most alike in meaning, by the model celis setup chose, with their score; with no model, says to use celis grep. Changes nothing.",
         args: &[
             ("<file>", "A file or folder the ask will touch"),
-            ("--kind", "Only rule (a pattern that binds), pattern, trail, or step"),
+            ("--kind", "Only pattern, trail, or step"),
             ("--limit", "Show <n> patterns and past asks; 20 for trail or step"),
             ("<ask>", "The ask, in any words and any language"),
         ],
@@ -309,7 +309,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "link",
         usage: &["celis link [<folder>] [--off]"],
-        summary: "Keep this project's trails in a folder, and keep the folder in sync with the store. Use .celis/trails/ in the repo to commit them, or any folder, like a synced drive. Rules with the me scope stay private. With --off, stop keeping them there; the folder and its records stay.",
+        summary: "Keep this project's trails in a folder, and keep the folder in sync with the store. Use .celis/trails/ in the repo to commit them, or any folder, like a synced drive. Patterns with the me scope stay private. With --off, stop keeping them there; the folder and its records stay.",
         args: &[
             ("<folder>", "The folder (default: .celis/trails at the repo root)"),
             ("--off", "Stop keeping the trails in the folder"),

@@ -9,16 +9,15 @@ use celis_trails::TrailStore;
 use std::io::Write;
 
 impl Command {
-    /// Prints each live pattern in scope, the rules first, newest first within each, with its examples,
-    /// as lines or with `--markdown` as one page. Writes no record.
+    /// Prints each live pattern in scope, newest first, with its examples, as lines or with `--markdown`
+    /// as one page. Writes no record.
     pub(crate) fn patterns(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         if !self.held()? {
             return crate::command::put(out, NONE);
         }
         let trails = self.trails()?;
         let project = self.project().anchor.project;
-        let mut patterns = trails.patterns().live(&project);
-        patterns.sort_by_key(|pattern| !pattern.record.binds);
+        let patterns = trails.patterns().live(&project);
         if patterns.is_empty() {
             return crate::command::put(out, NONE);
         }
@@ -38,19 +37,16 @@ impl Command {
     }
 }
 
-/// The section of `pattern`: its first line as a heading, its id, scope and `rule` when it binds, the rest
-/// of its text, then a line for each smaller pattern in scope in `project` and each example, a file as a
+/// The section of `pattern`: its first line as a heading, its id and scope, the rest of its text, then a line for each smaller pattern in scope in `project` and each example, a file as a
 /// link to its blob.
 fn markdown(pattern: &Pattern, trails: &Store, project: &str) -> Vec<String> {
     let (note, pattern) = (pattern.note, &pattern.record);
     let mut text = pattern.content.lines();
-    let mut head = vec![pattern.scope.text()];
-    head.extend(pattern.binds.then(|| "rule".to_string()));
     let mut lines = vec![
         String::new(),
         format!("## {}", text.next().unwrap_or("")),
         String::new(),
-        format!("`{}` · {}", short(&note.id), head.join(" · ")),
+        format!("`{}` · {}", short(&note.id), pattern.scope.text()),
         String::new(),
     ];
     let rest: Vec<String> = text.map(|l| format!("{l}  ")).collect();

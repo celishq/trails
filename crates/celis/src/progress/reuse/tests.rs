@@ -39,7 +39,7 @@ fn pattern(text: &str, at: u64, replaces: Option<&Note>) -> Note {
         replaces: replaces.map(|n| PatternId::new(&n.id)),
         content: text.into(),
         paths: vec![],
-        binds: false,
+        old_rule: false,
         within: vec![],
         cells: vec![],
         examples: Default::default(),

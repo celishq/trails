@@ -235,8 +235,8 @@ fn a_replacing_pattern_keeps_the_old_examples() {
     assert_eq!(good, [second, first]);
 }
 
-/// `patterns` lists each live pattern in scope with its examples, the rules first, newest first within
-/// each (`spec/02-cli.md`, "Patterns").
+/// `patterns` lists each live pattern in scope with its examples, newest first (`spec/02-cli.md`,
+/// "Patterns").
 #[test]
 fn patterns_lists_each_pattern_with_its_examples() {
     let repo = Repo::new();
@@ -246,7 +246,6 @@ fn patterns_lists_each_pattern_with_its_examples() {
         assert!(o.status.success(), "{}", err(&o));
         out(&o).lines().next().unwrap().to_string()
     };
-    let rule = decide(&["pattern", "--binds", "--", "When you test: set A=1."]);
     let old = decide(&[
         "pattern",
         "--good",
@@ -267,7 +266,6 @@ fn patterns_lists_each_pattern_with_its_examples() {
     assert_eq!(
         lines,
         [
-            format!("{} project When you test: set A=1.", &rule[..8]),
             format!("{} project When an icon is drawn: keep it bold.", &new[..8]),
             format!("  bad     {url}"),
             format!("{} project When a logo is drawn: keep it flat.", &old[..8]),
@@ -431,17 +429,18 @@ fn forms() -> Vec<serde_json::Value> {
     fixture["forms"].as_array().unwrap().clone()
 }
 
-/// A new pattern carries the labels in `celis.pattern` (`spec/05-patterns.md`, "Patterns").
+/// A new pattern carries the labels in `celis.pattern`, and no `binds` label with `--binds`
+/// (`spec/05-patterns.md`, "Patterns").
 #[test]
-fn a_new_rule_carries_the_labels_in_celis_pattern() {
+fn a_new_pattern_carries_the_labels_in_celis_pattern() {
     let repo = Repo::new();
     let o = cli(
         &repo,
         &["pattern", "--binds", "--", "When you test: set A=1."],
     );
     assert!(o.status.success(), "{}", err(&o));
-    let rule = support::labelled(&repo, "pattern").remove(0);
-    let labels: Vec<Vec<String>> = rule
+    let pattern = support::labelled(&repo, "pattern").remove(0);
+    let labels: Vec<Vec<String>> = pattern
         .tags
         .iter()
         .filter(|t| t[0] == "L" || t[0] == "l")
@@ -452,10 +451,10 @@ fn a_new_rule_carries_the_labels_in_celis_pattern() {
     assert_eq!(labels, want);
 }
 
-/// A record in each form of the fixture reads as a pattern, and as a rule with `binds`, in
-/// `celis.decision` too (`spec/05-patterns.md`, "Reading").
+/// A record in each form of the fixture reads as a plain pattern, and the `grep` view marks it
+/// `old-rule` when it has `binds` (`spec/05-patterns.md`, "Reading").
 #[test]
-fn each_form_of_the_labels_reads_as_a_pattern_and_a_rule() {
+fn each_form_of_the_labels_reads_as_a_plain_pattern() {
     let repo = Repo::new();
     let by = support::account();
     let mut want = Vec::new();
@@ -467,15 +466,15 @@ fn each_form_of_the_labels_reads_as_a_pattern_and_a_rule() {
         let note = celis_nostr::Note::write(&by, 1111u16, 1_700_000_000 + n as u64, tags, content)
             .unwrap();
         support::put(&repo, &note);
-        let head = match form["binds"] == true {
-            true => format!("`{}` · project · rule", &note.id[..8]),
-            false => format!("`{}` · project", &note.id[..8]),
-        };
-        want.push(head);
+        want.push((note.id[..8].to_string(), form["old_rule"] == true));
     }
     let said = out(&cli(&repo, &["patterns", "--markdown"]));
-    for head in &want {
+    let grep = out(&cli(&repo, &["grep", " pattern "]));
+    for (id, old_rule) in &want {
+        let head = format!("`{id}` · project");
         assert!(said.lines().any(|l| l == head), "{head}\n{said}");
+        let line = grep.lines().find(|l| l.contains(id.as_str())).unwrap();
+        assert_eq!(line.contains(" old-rule"), *old_rule, "{line}");
     }
 }
 

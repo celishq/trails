@@ -125,7 +125,7 @@ fn reused(later: u64) -> (TempDir, Store) {
         replaces: None,
         content: "When a rule holds: keep it, because it works.".into(),
         paths: vec![],
-        binds: false,
+        old_rule: false,
         within: vec![],
         cells: vec![],
         examples: Default::default(),

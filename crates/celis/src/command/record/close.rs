@@ -152,14 +152,9 @@ impl Command {
         }
         let fits = self.fits(trails, ask.title(), files, &mut std::io::sink());
         for pattern in fits.unwrap_or_default() {
-            let kind = if pattern.record.binds {
-                "rule"
-            } else {
-                "pattern"
-            };
             let text = crate::text::line::pattern(&pattern, trails);
             let mut pattern = text.lines();
-            lines.extend(pattern.next().map(|first| format!("  {kind:<7} {first}")));
+            lines.extend(pattern.next().map(|first| format!("  pattern {first}")));
             lines.extend(pattern.map(|line| format!("        {line}")));
         }
         for note in trails.notes().of(ask.trail()) {

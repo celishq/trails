@@ -54,10 +54,7 @@ const SECTIONS: &[(&str, &str, &[&str])] = &[
 const PHRASES: &[(&str, &str)] = &[
     ("tree", "Show your trails and their steps"),
     ("grep", "Search every trail with grep"),
-    (
-        "search",
-        "Show the rules, patterns and past asks that fit an ask",
-    ),
+    ("search", "Show the patterns and past asks that fit an ask"),
     ("setup", "Choose and download the model that search uses"),
     (
         "patterns",
@@ -82,7 +79,7 @@ const WORDS: &[(&str, Style, &str, &str)] = &[
         "§",
         MAGENTA,
         "pattern",
-        "what to choose in a context, and why; a rule binds",
+        "a guide: what to choose in a context, and why",
     ),
     ("◆", MAGENTA, "trail", "each task you give"),
     (
