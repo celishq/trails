@@ -151,15 +151,18 @@ fn learn(a: &str) -> String {
 }
 
 /// `done` of an ask ends with the learn brief: each `changed` of the ask and of its steps, each note of
-/// its trail and each prompt on its trail (`spec/02-cli.md`, "Step").
+/// its trail and each prompt on its trail since the ask began, the one that began it first
+/// (`spec/02-cli.md`, "Step").
 #[test]
 fn done_on_an_ask_ends_with_the_learn_brief() {
     let repo = Repo::new();
     let by = &account();
     let began = now() - 60;
-    let trail = step_note(&repo, by, None, "the trail", began);
+    let trail = step_note(&repo, by, None, "the trail", began - 10);
+    mark_note(&repo, by, "prompt", &trail.id, "make it red", began - 9);
+    mark_note(&repo, by, "prompt", &trail.id, "make it blue", began - 1);
     let ask = step_note(&repo, by, Some(&trail), "the ask", began);
-    mark_note(&repo, by, "prompt", &trail.id, "make it blue", began + 1);
+    mark_note(&repo, by, "prompt", &trail.id, "and bigger", began + 1);
     let a = &ask.id[..8];
     let part = add(&repo, &["--under", a, "--", "part"]);
     done(&repo, &part, &["--changed", "it took the cache"]);
@@ -192,6 +195,7 @@ fn done_on_an_ask_ends_with_the_learn_brief() {
             "  note    keep the old table".to_string(),
             "          until the release".to_string(),
             "  asked   make it blue".to_string(),
+            "  asked   and bigger".to_string(),
         ]
     );
 }

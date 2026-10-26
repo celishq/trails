@@ -51,9 +51,9 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
    - Past trails serve the learn and tidy, not recall.
 4. **What goes in matters more than recall.** The agent learns at each close, and only there: when an
    ask closes, celis gives it the learn brief, with the ask's `changed` lines, its trail's notes and the
-   person's prompts on its trail. The brief is the one place that says what to keep. The agent writes a
-   pattern only for a choice that will come back. It replaces a pattern that misled it instead of adding
-   a near copy, and writes nothing when the ask taught nothing.
+   person's prompts since the ask began. The brief is the one place that says what to keep. The agent
+   writes a pattern only for a choice that will come back. It replaces a pattern that misled it instead
+   of adding a near copy, and writes nothing when the ask taught nothing.
 5. **The agent writes each record with a celis call.** A hook may give the agent context, such as the
    patterns that fit, but it never captures the agent's tools to write records.
 6. **Patterns lead.** The card, the help and the README start with patterns, and trails come after.

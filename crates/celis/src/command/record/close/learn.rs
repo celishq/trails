@@ -5,8 +5,8 @@ use celis_store::records::id::short;
 use celis_store::StepId;
 use celis_trails::{Done, Mark, Notes, Step};
 
-/// What an ask taught: each `changed` of its steps and of the ask, each note of its trail and each prompt
-/// on its trail.
+/// What an ask taught: each `changed` of its steps and of the ask, each note of its trail, and each prompt
+/// on its trail since the ask began, the prompt that began it first.
 pub(crate) struct Learn {
     pub ask: StepId,
     pub changed: Vec<(StepId, String)>,
@@ -23,12 +23,25 @@ impl Learn {
             .filter_map(|s| Some((s.step_id(), s.done()?.changed?)));
         let own = done.changed.clone().map(|c| (step.step_id(), c));
         let trail = step.trail();
-        let asked = records.iter().filter_map(|record| {
-            let (on, Mark::Prompt { text }) = Mark::read(record)? else {
-                return None;
-            };
-            (on == trail.id()).then_some(text)
-        });
+        let prompts: Vec<(u64, String)> = records
+            .iter()
+            .filter_map(|record| {
+                let (on, Mark::Prompt { text }) = Mark::read(record)? else {
+                    return None;
+                };
+                (on == trail.id()).then_some((record.created_at, text))
+            })
+            .collect();
+        let began = step.note().created_at;
+        let since = prompts
+            .iter()
+            .map(|(at, _)| *at)
+            .filter(|at| *at <= began)
+            .max()
+            .unwrap_or(began);
+        let asked = prompts
+            .into_iter()
+            .filter_map(|(at, text)| (at >= since).then_some(text));
         Learn {
             ask: step.step_id(),
             changed: parts.chain(own).collect(),

@@ -187,7 +187,8 @@ The output of `done` of an ask ends with the learn brief:
 celis: before you answer, learn from the ask <id8>. …     what the agent keeps, and how
   changed <id8> <text>                                    each `changed` of the ask and of its steps
   note    <text>                                          each note of its trail (CIP-04, "Notes")
-  asked   <text>                                          each prompt on its trail (CIP-04, "Sessions")
+  asked   <text>                                          each prompt on its trail (CIP-04, "Sessions") since
+                                                          the newest one before the ask, that one too
 ```
 
 **Examples**
