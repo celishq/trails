@@ -21,13 +21,13 @@ told=$(celis pattern -- "When you finish a change: tell the person which files y
 for n in 1 2 3; do
   trail=$(celis step add --new -- "Change the cart, part $n" 2>/dev/null)
   ask=$(celis step add --under "$trail" --recalled "$lines" --recalled "$told" --uses "$lines" --uses "$told" -- "Change cart.py, part $n" 2>/dev/null)
-  celis step done "$ask" --as-planned -- "cart.py has part $n, and pytest passes." >/dev/null 2>&1
+  celis step done "$ask" --as-planned --by person -- "cart.py has part $n, and pytest passes." >/dev/null 2>&1
   celis step done "$trail" --as-planned -- "cart.py has part $n, and pytest passes." >/dev/null 2>&1
 done
 celis pattern --path "test/*.py" -- "When you write a test: give each test one assert, because a failure must name one cause." >/dev/null
 trail=$(celis step add --new -- "Add tests for the cart" 2>/dev/null)
 for n in 1 2 3; do
   step=$(celis step add --under "$trail" --at tests/test_cart.py -- "Add test $n to tests/test_cart.py" 2>/dev/null)
-  celis step done "$step" --as-planned -- "tests/test_cart.py has test $n, and pytest passes." >/dev/null 2>&1
+  celis step done "$step" --as-planned --by person -- "tests/test_cart.py has test $n, and pytest passes." >/dev/null 2>&1
 done
 celis step done "$trail" --as-planned -- "tests/test_cart.py has 3 tests, and pytest passes." >/dev/null 2>&1
