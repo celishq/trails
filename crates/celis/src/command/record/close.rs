@@ -1,6 +1,7 @@
 //! What `celis step done` prints when a step closes: its review, and on an ask its end.
 
 mod end;
+mod learn;
 mod proof;
 mod review;
 
@@ -11,6 +12,7 @@ use celis_store::records::id::short;
 use celis_store::{ProofFile, Store};
 use celis_trails::{Step, TrailStore};
 pub(crate) use end::End;
+pub(crate) use learn::Learn;
 pub(crate) use proof::Proof;
 pub(crate) use review::Review;
 use std::io::Write;
