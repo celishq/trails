@@ -33,7 +33,7 @@ fn resolution(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
         (Outcomes::first_pass, "first pass", GREEN, Some(true)),
         (|o| o.reworked, "reworked", YELLOW, Some(false)),
         (|o| o.dropped, "dropped", RED, Some(false)),
-        (|o| o.expired, "expired", DIM, Some(false)),
+        (|o| o.stale, "stale", DIM, Some(false)),
     ];
     let prior = m.before(|o| o.resolved() as i64);
     let changed = |kind: Kind, now: i64, value: &dyn Fn(Outcomes) -> i64, up: bool| {
@@ -72,7 +72,7 @@ fn resolution(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
         (now.first_pass() as f64 * k, GREEN),
         (now.reworked as f64 * k, YELLOW),
         (now.dropped as f64 * k, RED),
-        (now.expired as f64 * k, DIM),
+        (now.stale as f64 * k, DIM),
     ];
     s.stack(x + 2, y + 2, &parts, w - 4);
     let mut row = y + 4;

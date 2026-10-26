@@ -130,7 +130,7 @@ fn noted(root: Step, step: Step, notes: &Notes) -> Vec<Row> {
 /// The row of the step `step` of the trail `root`, as `kind`.
 fn step(root: Step, step: Step, kind: Kind) -> Row {
     let record = step.record();
-    let mut fields = vec![step.state_word().to_string()];
+    let mut fields = vec![step.state().text().to_string()];
     let by: Vec<String> = step.revised().iter().map(|s| short(s.id())).collect();
     if !by.is_empty() {
         fields.push(format!("revised-by {}", by.join(",")));

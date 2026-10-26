@@ -67,7 +67,7 @@ impl<'a> Steps<'a> {
         }
     }
 
-    /// Whether a step that is not a trail has ended: done, dropped or expired.
+    /// Whether a step that is not a trail has ended: done, dropped or stale.
     pub fn closed_any(&'a self) -> bool {
         let all = self.all().into_iter();
         all.filter(|s| !s.is_trail())

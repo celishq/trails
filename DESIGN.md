@@ -61,6 +61,9 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
 8. **`within` is the one link between patterns.** It goes from a smaller pattern to the larger one that
    it completes, as in Alexander's pattern language. A pattern can complete several larger ones. There
    are no other link types: `replaces` takes a pattern's place, and tidy settles conflicts.
+10. **A step is open, done or dropped.** A start gives an open step a start time, and is not a state. A
+    done trail that a drop names is dropped. An open step of an ended trail stays open, and the app
+    shows it as stale, because a state by time is the app's.
 
 ## What we do not do
 

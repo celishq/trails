@@ -2,9 +2,9 @@
 //! marks it prints.
 
 use super::{Verb, GROUPS};
+use crate::progress::Phase;
 use crate::terminal::canvas::{Styled, BOLD, DIM, GREEN, MAGENTA, YELLOW};
 use crate::terminal::look::look;
-use celis_trails::State;
 use ratatui::style::Style;
 use ratatui::text::Span;
 use std::path::Path;
@@ -92,12 +92,12 @@ const WORDS: &[(&str, Style, &str, &str)] = &[
 const HIDDEN: &[&str] = &["--session"];
 
 /// The marks celis prints for a step, a revision, a change and a pattern.
-const MARKS: &[(State, &str)] = &[
-    (State::Open, "open"),
-    (State::Working, "working"),
-    (State::Done, "done"),
-    (State::Dropped, "dropped"),
-    (State::Expired, "expired"),
+const MARKS: &[(Phase, &str)] = &[
+    (Phase::Open, "open"),
+    (Phase::Started, "started"),
+    (Phase::Done, "done"),
+    (Phase::Dropped, "dropped"),
+    (Phase::Stale, "stale"),
 ];
 
 /// The width of the column of command names with their arguments.

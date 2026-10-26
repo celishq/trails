@@ -3,6 +3,7 @@
 use super::level::Level;
 use super::row::Row;
 use super::{Item, Tree, PATTERNS, PROJECT};
+use crate::progress::Phase;
 use crate::terminal::canvas::{paint, Styled, BOLD, DIM};
 use crate::terminal::classic::look;
 use crate::text::clock::{stride, took};
@@ -63,7 +64,7 @@ impl Tree<'_> {
     /// grade; then its tree: its active steps, its patterns, then its closed steps.
     pub(super) fn block(&self, note: Step, lines: &mut Vec<Row>) {
         let step = note.record();
-        let state = note.state();
+        let state = Phase::of(&note);
         let work = self.work(note);
         let summary = self.summary(note, work);
         let hair = Styled::from(vec![Span::raw("  "), paint(DIM, "│ ")]);
@@ -102,7 +103,7 @@ impl Tree<'_> {
     /// time.
     pub(super) fn line(&self, note: Step, lines: &mut Vec<Row>) {
         let step = note.record();
-        let state = note.state();
+        let state = Phase::of(&note);
         let work = self.work(note);
         let summary = self.summary(note, work);
         let steps = match (summary.all, summary.done) {

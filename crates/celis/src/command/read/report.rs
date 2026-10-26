@@ -1,13 +1,13 @@
 //! The trails that ids name, as Markdown, for `celis issue` and the copy key of the watch.
 
 use crate::failure::Failure;
-use crate::progress::Tally;
+use crate::progress::{Phase, Tally};
 use crate::terminal::look::look;
 use crate::text::clock::took;
 use crate::text::line::time;
 use celis_patterns::Patterns;
 use celis_store::records::id::short;
-use celis_trails::{Mark, Notes, State, Step, Steps, Trail};
+use celis_trails::{Mark, Notes, Step, Steps, Trail};
 
 /// The trail of the step each of `ids` names, once, in their order.
 fn chosen<'a>(steps: &'a Steps<'a>, ids: &[String]) -> Result<Vec<Step<'a>>, Failure> {
@@ -38,8 +38,8 @@ pub(crate) fn markdown(steps: &Steps, notes: &Notes, ids: &[String]) -> Result<S
             format!(
                 "| `{}` | {} {} | {ran} | {} | {} | {} | {} | {} |",
                 short(trail.id()),
-                look(trail.state()).mark,
-                trail.state().text(),
+                look(Phase::of(&trail)).mark,
+                Phase::of(&trail).text(),
                 tree.len(),
                 kept.len(),
                 tally.revised,
@@ -101,7 +101,7 @@ fn table(steps: Vec<Step>) -> Vec<String> {
     let mut rows = vec![];
     let mut notes = vec![];
     for (depth, at) in deep(steps, 0) {
-        let state = at.state();
+        let state = Phase::of(&at);
         let mark = look(state).mark;
         let lead = match depth {
             0 => String::new(),
@@ -123,7 +123,7 @@ fn table(steps: Vec<Step>) -> Vec<String> {
         let mut under: Vec<String> = step.detail().map(str::to_string).collect();
         under.extend(step.places.iter().map(|p| format!("at `{p}`")));
         if let Some(check) = &step.check {
-            match state == State::Done {
+            match state == Phase::Done {
                 true => under.push(format!("check passed `{check}`")),
                 false => under.push(format!("check `{check}`")),
             }

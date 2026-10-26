@@ -4,6 +4,7 @@
 use super::super::card::{Card, CARDS};
 use super::super::grid::grid;
 use super::{head, legend, Board};
+use crate::progress::Phase;
 use crate::terminal::canvas::{paint, Styled, BOLD};
 use crate::terminal::frame::Frame;
 use crate::terminal::live::Page;
@@ -101,7 +102,7 @@ pub(super) fn status(steps: &Steps) -> String {
     let active = steps
         .roots()
         .into_iter()
-        .filter(|s| s.state().active())
+        .filter(|s| Phase::of(s).active())
         .count();
     format!("● {active} active · {}", weekday(steps.now()))
 }

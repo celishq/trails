@@ -55,7 +55,7 @@ fn next(records: &[Note], now: u64) -> Option<u64> {
     tree.next.get()
 }
 
-/// The tree changes next when the first time it shows changes: a working step's time in seconds the next
+/// The tree changes next when the first time it shows changes: a started step's time in seconds the next
 /// second, in hours the next minute, else when the trail ends; a closed tree, never.
 #[test]
 fn the_tree_changes_next_when_its_first_time_changes() {

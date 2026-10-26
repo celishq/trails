@@ -68,9 +68,9 @@ fn a_trail_with_no_open_step_under_it_is_reached_at_once() {
     assert!(!o.status.success(), "{}", out(&o));
 }
 
-/// A trail ends 30 minutes after the newest record of its tree: reached when nothing under it is open,
-/// expired when a step is, and active again when a new record lands; an ended trail's steps are
-/// not open.
+/// A trail ends 30 minutes after the newest record of its tree: done when nothing under it is open, else
+/// still open and shown stale with its open steps, and active again when a new record lands
+/// (`spec/02-cli.md`, "Grep").
 #[test]
 fn a_trail_ends_thirty_minutes_after_its_newest_record() {
     use support::{account, mark_note, now, step_note};
@@ -82,7 +82,7 @@ fn a_trail_ends_thirty_minutes_after_its_newest_record() {
     let left = step_note(&repo, &account(), None, "left", old);
     let open = step_note(&repo, &account(), Some(&left), "open part", old);
     assert_eq!(state(&repo, &finished.id), "done");
-    assert_eq!(state(&repo, &left.id), "expired");
+    assert_eq!(state(&repo, &left.id), "open");
     let tree = out(&cli(&repo, &["tree", &left.id[..8]]));
     assert!(
         tree.lines()
@@ -94,16 +94,16 @@ fn a_trail_ends_thirty_minutes_after_its_newest_record() {
     let read = out(&cli(&repo, &["grep", "left\\|open part"]));
     assert!(
         read.lines()
-            .any(|l| l == format!("  trail {} expired", &left.id[..8])),
+            .any(|l| l == format!("  trail {} open", &left.id[..8])),
         "{read}"
     );
     assert!(
-        read.contains(&format!(" step {} expired open part", &open.id[..8])),
+        read.contains(&format!(" step {} open open part", &open.id[..8])),
         "{read}"
     );
     let o = cli(&repo, &["step", "start", &open.id[..8]]);
     assert!(o.status.success(), "{}", err(&o));
-    assert_eq!(state(&repo, &left.id), "working");
+    assert_eq!(state(&repo, &left.id), "open");
 }
 
 /// A trail whose session wrote no end ends 30 minutes after the newest record of its tree.

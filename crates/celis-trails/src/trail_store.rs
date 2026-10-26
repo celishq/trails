@@ -27,7 +27,7 @@ pub trait TrailStore {
     /// open step with the same place and words is given back.
     fn add(&self, draft: Draft) -> Result<Written<'_>, Refusal>;
 
-    /// Starts the open step `id`, or gives back the first start of a working step; then the patterns
+    /// Starts the open step `id`, or gives back the first start of a started step; then the patterns
     /// the step must keep, and the notes of its trail and of each trail it follows.
     fn start(&self, id: &str) -> Result<Written<'_>, Refusal>;
 

@@ -92,7 +92,7 @@ fn opened_sections_show_their_details() {
         "TOP PATTERNS · most hits",
         "RESOLVED STEPS · how they ended",
         "4 resolved  ▲ 3  ·  2 first pass  ▼ 50 pp  ·  1 reworked  ▲ 25 pp  ·  1 dropped  ▲ 25 pp",
-        "0 expired",
+        "0 stale",
         "RESOLVED STEPS · by week",
         "STEP TIME · successful steps, start to done",
         "DAILY ACTIVITY",

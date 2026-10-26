@@ -134,7 +134,7 @@ impl Command {
         let done: Vec<Step> = steps
             .iter()
             .copied()
-            .filter(|s| s.is_ask() && s.state_word() == "done")
+            .filter(|s| s.is_ask() && s.state() == celis_trails::State::Done)
             .collect();
         let asked = words(ask);
         let mut shared: Vec<(usize, Step)> = done

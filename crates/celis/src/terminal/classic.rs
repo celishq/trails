@@ -3,8 +3,7 @@
 
 use super::canvas::{BOLD, DIM};
 use super::look::Look;
-use crate::progress::Flags;
-use celis_trails::State;
+use crate::progress::{Flags, Phase};
 use ratatui::style::{Color, Style};
 
 pub(crate) const GREEN: Style = Style::new().fg(Color::Green);
@@ -16,13 +15,13 @@ pub(crate) const RED: Style = Style::new().fg(Color::Red);
 pub(crate) const SPINNER: Style = Style::new().fg(Color::LightYellow);
 
 /// How a step or a trail in `state` prints.
-pub(crate) fn look(state: State) -> Look {
+pub(crate) fn look(state: Phase) -> Look {
     let (mark, text, title) = match state {
-        State::Open => ("○", Style::new(), Style::new()),
-        State::Working => ("◐", YELLOW, BOLD),
-        State::Done => ("✓", GREEN, Style::new()),
-        State::Dropped => ("✗", RED, DIM),
-        State::Expired => ("◌", RED, DIM),
+        Phase::Open => ("○", Style::new(), Style::new()),
+        Phase::Started => ("◐", YELLOW, BOLD),
+        Phase::Done => ("✓", GREEN, Style::new()),
+        Phase::Dropped => ("✗", RED, DIM),
+        Phase::Stale => ("◌", RED, DIM),
     };
     Look { mark, text, title }
 }

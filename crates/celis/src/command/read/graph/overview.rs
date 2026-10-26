@@ -4,13 +4,14 @@ use super::card::{closed, fade, frame, put, WIDTH};
 use super::layout::{columns, GAP, LEFT};
 use super::moment::{tally, Moment, LIGHT, SEL};
 use super::view::View;
+use crate::progress::Phase;
 use crate::terminal::bar::bar;
 use crate::terminal::canvas::{cut, paint, BOLD, CYAN, DIM, GREEN, RED};
 use crate::terminal::look::lane;
 use crate::terminal::unfold::toward;
 use crate::text::line::plural;
 use celis_store::records::id::short;
-use celis_trails::{State, Step, Trail};
+use celis_trails::{Step, Trail};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::Style;
@@ -97,11 +98,11 @@ fn line(buf: &mut Buffer, trail: Step, y: u16, width: u16, picked: bool, m: &Mom
     let (mark, look) = m.mark(trail);
     buf.set_string(4, y, mark, look);
     let steps: Vec<Step> = trail.tree().into_iter().skip(1).collect();
-    let done = steps.iter().filter(|s| s.state() == State::Done).count();
+    let done = steps.iter().filter(|s| Phase::of(s) == Phase::Done).count();
     let tail = format!("  {done}/{} · {}", steps.len(), super::worked(trail, m.at));
     let right = width.saturating_sub(2 + tail.chars().count() as u16);
-    let state = trail.state();
-    let ended = state.closed() || state == State::Expired;
+    let state = Phase::of(&trail);
+    let ended = state.closed() || state == Phase::Stale;
     let title = match (picked, ended) {
         (true, _) => Style::new().fg(LIGHT).patch(BOLD),
         (false, true) => DIM.patch(BOLD),
@@ -110,9 +111,9 @@ fn line(buf: &mut Buffer, trail: Step, y: u16, width: u16, picked: bool, m: &Mom
     let room = usize::from(right.saturating_sub(6 + 22));
     buf.set_string(6, y, cut(trail.title(), room), title);
     let end = match state {
-        State::Done => Some(("finished", GREEN)),
-        State::Dropped => Some(("dropped", RED)),
-        State::Expired => Some(("expired", DIM)),
+        Phase::Done => Some(("finished", GREEN)),
+        Phase::Dropped => Some(("dropped", RED)),
+        Phase::Stale => Some(("stale", DIM)),
         _ => None,
     };
     match end {
@@ -135,7 +136,7 @@ fn strip(buf: &mut Buffer, trail: Step, y: u16, width: u16, m: &Moment) {
     let fit = columns(width.saturating_sub(2));
     let first = tops
         .iter()
-        .position(|s| matches!(s.state(), State::Working | State::Open))
+        .position(|s| matches!(Phase::of(s), Phase::Started | Phase::Open))
         .unwrap_or(tops.len().saturating_sub(1));
     let mut start = first.saturating_sub(1);
     let room = |start: usize| usize::from(fit) - usize::from(start > 0);
@@ -173,9 +174,9 @@ fn strip(buf: &mut Buffer, trail: Step, y: u16, width: u16, m: &Moment) {
         let area = Rect::new(x, y, w, 4);
         small(buf, *step, area, m);
         if n > 0 || start > 0 {
-            let state = step.state();
+            let state = Phase::of(step);
             let (glyph, look) = match state {
-                State::Done | State::Working => ("━", lane(state)),
+                Phase::Done | Phase::Started => ("━", lane(state)),
                 _ => ("┄", DIM),
             };
             let edge = format!("{}▶", glyph.repeat(usize::from(GAP) - 1));
@@ -198,8 +199,8 @@ fn strip(buf: &mut Buffer, trail: Step, y: u16, width: u16, m: &Moment) {
 /// Draws the small card of `step` over `area`: its mark and id in its border, its title, and under it
 /// its counts and time when closed, its bar while it works with steps, else its state.
 fn small(buf: &mut Buffer, step: Step, area: Rect, m: &Moment) {
-    let state = step.state();
-    frame(buf, area, m.border(step, false), state == State::Open);
+    let state = Phase::of(&step);
+    frame(buf, area, m.border(step, false), state == Phase::Open);
     let (mark, look) = m.mark(step);
     let mut label = vec![paint(Style::new(), " ")];
     if !step.children().is_empty() {
@@ -212,19 +213,19 @@ fn small(buf: &mut Buffer, step: Step, area: Rect, m: &Moment) {
     let inner = usize::from(area.width - 4);
     let x = area.x + 2;
     match state {
-        State::Done | State::Dropped | State::Expired => closed(buf, step, area, m),
+        Phase::Done | Phase::Dropped | Phase::Stale => closed(buf, step, area, m),
         _ => {
-            let look = if state == State::Working {
+            let look = if state == Phase::Started {
                 BOLD
             } else {
                 m.tone(state)
             };
             buf.set_string(x, area.y + 1, cut(step.title(), inner), look);
             let under: Vec<Step> = step.tree().into_iter().skip(1).collect();
-            if state == State::Working && !under.is_empty() {
+            if state == Phase::Started && !under.is_empty() {
                 let (d, w) = m.shares(&under);
                 let end = put(buf, x, area.y + 2, &bar(d, w, 10).spans);
-                let done = under.iter().filter(|s| s.state() == State::Done).count();
+                let done = under.iter().filter(|s| Phase::of(s) == Phase::Done).count();
                 buf.set_string(end + 1, area.y + 2, format!("{done}/{}", under.len()), DIM);
             } else {
                 buf.set_string(x, area.y + 2, state.text(), DIM);
