@@ -424,13 +424,13 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "step done",
-        usage: &["celis step done <id> [--changed <text>] [--as-planned] [--by <who>] [--file <path>]... -- <proof>"],
+        usage: &["celis step done <id> [--changed <text>] [--as-planned] [--by person] [--file <path>]... -- <proof>"],
         summary: "Finish a step with its proof and what changed. Finish the steps under it first.",
         args: &[
             ("<id>", "A step id, or its first 4 or more characters"),
             ("--changed", "How the result differs from its expect line"),
             ("--as-planned", "The result matches its expect line; else use --changed"),
-            ("--by", "judge, a reader that did not do the work, or person"),
+            ("--by", "person: the person confirms the result"),
             ("--file", "A file of the proof, kept as it is now"),
             ("<proof>", "The check that failed before and passes now"),
         ],

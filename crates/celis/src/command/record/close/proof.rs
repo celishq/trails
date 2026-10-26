@@ -2,8 +2,8 @@
 
 use celis_trails::{By, Done, Step};
 
-/// Who stands behind the proof of a done step: the check that celis ran, a judge that did not do the work,
-/// the person, or only the agent's word.
+/// Who stands behind the proof of a done step: the check that celis ran, a reader that did not do the work
+/// in an old record, the person, or only the agent's word.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Proof {
     Checked,

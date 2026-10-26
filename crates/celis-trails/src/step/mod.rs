@@ -94,11 +94,6 @@ impl<'a> Step<'a> {
         top
     }
 
-    /// Whether a judge confirms it: an ask, or another step with steps under it.
-    pub fn is_judged(self) -> bool {
-        self.is_trail() || !self.entry.children.is_empty()
-    }
-
     /// The first start record that names it.
     pub fn start(self) -> Option<&'a Note> {
         self.entry.start
