@@ -235,9 +235,9 @@ impl Part {
     fn next(self) -> &'static str {
         match self {
             Part::Patterns => {
-                "at each choice the ask leaves open, weigh the forces of each pattern that bears on it, \
-                 choose like its good examples and unlike its bad ones, and name the pattern you \
-                 followed, or why you departed from it; a rule wins over a pattern"
+                "each pattern guides your judgement: at each choice the ask leaves open, when its \
+                 forces are present, resolve them in your own way, near its good examples and away \
+                 from its bad ones, and name it; when they are not present, it does not apply"
             }
             Part::Past => "take each past step that fits as yours, with step add --uses <its id>",
         }

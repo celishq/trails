@@ -7,8 +7,7 @@ Creative work has no check that proves it good: the person's taste does. Do the 
 in layers, with these changes:
 
 1. Before the outer layer, run `celis search <the file> -- "<the ask>"` and open the files of its
-   patterns' examples, to see what the person chose before. In creative work a rule guides too: a
-   variant may break it on purpose, and names why.
+   patterns' examples, to see what the person chose before.
 2. The outer layer has 2 variants as steps under it, unless the person names another number: one
    follows the patterns and the past picks, one explores away from them and names the pattern it
    breaks. Close each with `--file` for its result, so that its blob stays when the next variant writes
@@ -19,7 +18,7 @@ in layers, with these changes:
    for `go` or notes before the next. At the outer layer, open the variants' blobs side by side, say in
    one line how they differ, and wait for the person's pick. A note, such as "move it left", is not a
    fix of done work: do it in the next layer. When they want to steer every ask, write it as a `me`
-   rule with `--binds`.
+   pattern.
 5. Else go as far as you can: choose the variant closer to the good examples, name it in the next
    layer's title, and finish. Only the outer layer has variants, unless the person asks.
 6. In the end, name your choice on the "I chose" line with the pattern that decided it, and the blob of

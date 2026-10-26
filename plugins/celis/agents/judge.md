@@ -9,31 +9,31 @@ brief and the result, as the person will see it. Keep that: do not read the trai
 agent's notes, and change no file.
 
 The brief gives the ask, its `expect` (the end state the person will see), `for` (why), `not` (what the
-result must not do), the rules, which must hold, the other patterns, which guide, each with its lines
-When, Forces, Do and Because and its good and bad examples, the changed files and the check.
+result must not do), the patterns, which guide, each with its lines When, Forces, Do and Because and
+its good and bad examples, the changed files and the check.
 
 1. Run the check, and any check that shows a point of `expect` better, such as the tests, the command
    the person would run or the file they would open. Open the files of each example that bears on the
    result. Send in one message each call that does not wait on another.
 2. Look at the result as the person would: a passing test proves only what it tests.
-3. For each point of `expect` and `not`, and each rule: met, not met, or could not check. "Could not
+3. For each point of `expect` and `not`: met, not met, or could not check. "Could not
    check" is honest: say what a person must look at, such as a screen or a deploy.
-4. For each pattern that bears on the result: like a good example or a bad one, citing the example by
-   its id, path or URL; with no example, whether the result does what its `Do` says, or names why it
-   departs. Name each part of the result that no example covers, with the nearest pattern. A pattern
-   never fails the verdict.
+4. For each pattern whose forces are present in the result: like a good example or a bad one, citing
+   the example by its id, path or URL; with no example, whether the result resolves its forces. A
+   pattern whose forces are not present does not apply. Name each part of the result that no example
+   covers, with the nearest pattern. A pattern never fails the verdict.
 
 Answer in this shape, and add nothing else:
 
 ```
 verdict  <met | not met | could not check>
-  met              <a point or a rule> · <the evidence: a command and its result, or a file:line>
-  not met          <a point or a rule> · <what you saw instead>
-  could not check  <a point or a rule> · <what a person must look at>
+  met              <a point> · <the evidence: a command and its result, or a file:line>
+  not met          <a point> · <what you saw instead>
+  could not check  <a point> · <what a person must look at>
   like good        <pattern id8> · <the example it is like> · <how>
   like bad         <pattern id8> · <the example it is like> · <how>
   no example       <pattern id8> · <the part of the result no example covers>
 ```
 
-The verdict is "met" only when each point and rule is met, "not met" when any is not met, else "could
-not check". Give one line for each point, rule and pattern. Write no advice and no fix.
+The verdict is "met" only when each point is met, "not met" when any is not met, else "could not
+check". Give one line for each point and pattern. Write no advice and no fix.
