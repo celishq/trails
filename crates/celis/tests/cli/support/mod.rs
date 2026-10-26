@@ -602,9 +602,9 @@ pub fn links(step: &serde_json::Value, kind: &str) -> Vec<String> {
         .collect()
 }
 
-/// A BERT model with random weights, set up in the home of `repo` as `e5-small`. Its vocabulary
-/// holds the words `keep prices in cents rust release`; any other word, such as a prefix, is one
-/// unknown token, so a query and a record of the same words get the same vector.
+/// A BERT model with fixed weights, the same each run, set up in the home of `repo` as `e5-small`.
+/// Its vocabulary holds the words `keep prices in cents rust release`; any other word, such as a
+/// prefix, is one unknown token, so a query and a record of the same words get the same vector.
 pub fn tiny_model(repo: &Repo) {
     use candle_core::{DType, Device};
     use candle_nn::{VarBuilder, VarMap};
@@ -623,6 +623,15 @@ pub fn tiny_model(repo: &Repo) {
     let map = VarMap::new();
     let vb = VarBuilder::from_varmap(&map, DType::F32, &Device::Cpu);
     BertModel::load(vb, &serde_json::from_str::<Config>(config).unwrap()).unwrap();
+    for (name, var) in map.data().lock().unwrap().iter() {
+        let seed = name.bytes().map(f32::from).sum::<f32>();
+        let n = var.elem_count();
+        let values = (0..n)
+            .map(|i| 0.05 * (seed + i as f32).sin())
+            .collect::<Vec<_>>();
+        let fixed = candle_core::Tensor::from_vec(values, var.shape(), &Device::Cpu).unwrap();
+        var.set(&fixed).unwrap();
+    }
     map.save(folder.join("model.safetensors")).unwrap();
 }
 
