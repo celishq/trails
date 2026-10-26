@@ -1,5 +1,7 @@
 #!/bin/sh
 set -e
+export GIT_CEILING_DIRECTORIES="$(dirname "$PWD")"
+unset CLAUDE_CODE_SESSION_ID CODEX_THREAD_ID CELIS_SESSION_ID
 printf '# shop\n' > README.md
 id() { head -1 | sed 's/.*"id":"\([0-9a-f]*\)".*/\1/'; }
 trail=$(celis step add --new --json -- "Build the cart" | id)
