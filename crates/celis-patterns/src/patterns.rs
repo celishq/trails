@@ -64,14 +64,14 @@ impl<'a> Patterns<'a> {
     }
 
     /// The live patterns in scope in `project` that match one of `paths`: those of a named file, then of a
-    /// glob; within each, those with a `replaces` tag first, newest first.
+    /// glob; within each, by id.
     pub fn matching(&self, project: &str, paths: &[String]) -> Vec<Pattern<'a>> {
         let mut found: Vec<(Fit, Pattern<'a>)> = self
             .live(project)
             .into_iter()
             .filter_map(|p| Some((p.record.fit(paths)?, p)))
             .collect();
-        found.sort_by_key(|(fit, p)| (*fit, p.record.replaces.is_none()));
+        found.sort_by_key(|(fit, p)| (*fit, p.id()));
         found.into_iter().map(|(_, p)| p).collect()
     }
 

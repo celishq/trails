@@ -148,25 +148,28 @@ fn situation_is_no_flag_and_its_label_is_ignored() {
     assert!(line.ends_with("live {project} older"), "{shown}");
 }
 
-/// Patterns come with a named file first, then a glob; newest first within each (`spec/02-cli.md`,
-/// "Step").
+/// Patterns come with a named file first, then a glob; by id within each, whatever their time
+/// (`spec/02-cli.md`, "Step").
 #[test]
-fn patterns_come_narrowest_first_then_newest() {
+fn patterns_come_narrowest_first_then_by_id() {
     let repo = Repo::new();
     let at = support::now() - DAY;
-    let order = [
-        (&[("path", "*.py")][..], "wide old", at),
-        (&[("path", "*.py")], "wide new", at + 1),
-        (&[("path", "a.py")], "named old", at + 4),
-        (&[("scope", "at:a.py")], "at new", at + 5),
+    let mut named = [
+        tagged(&repo, &[("path", "a.py")], "named old", at + 4),
+        tagged(&repo, &[("scope", "at:a.py")], "at new", at + 5),
     ];
-    for (tags, content, made) in order {
-        tagged(&repo, tags, content, made);
-    }
-    assert_eq!(
-        texts(&repo, &["a.py"]),
-        ["at new", "named old", "wide new", "wide old"]
-    );
+    let mut wide = [
+        tagged(&repo, &[("path", "*.py")], "wide old", at),
+        tagged(&repo, &[("path", "*.py")], "wide new", at + 1),
+    ];
+    named.sort_by(|a, b| a.id.cmp(&b.id));
+    wide.sort_by(|a, b| a.id.cmp(&b.id));
+    let want: Vec<&str> = named
+        .iter()
+        .chain(&wide)
+        .map(|n| n.content.as_str())
+        .collect();
+    assert_eq!(texts(&repo, &["a.py"]), want);
 }
 
 /// Every pattern that matches comes, on each close (`spec/02-cli.md`, "Step").
@@ -179,7 +182,6 @@ fn every_pattern_comes_on_each_call() {
     }
     let first = texts(&repo, &["README.md"]);
     assert_eq!(first.len(), 7, "{first:?}");
-    assert_eq!((first[0].as_str(), first[6].as_str()), ("rule 6", "rule 0"));
     assert_eq!(texts(&repo, &["README.md"]), first);
 }
 

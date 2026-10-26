@@ -510,8 +510,8 @@ pub fn place_ids(repo: &Repo, folder: &Path, args: &[&str]) -> Vec<String> {
     lines.map(|l| l[..8].to_string()).collect()
 }
 
-/// The head line of each pattern `celis step done` prints in `folder` for a step under an ask that
-/// changed only `files`, each file or each file git gives under a folder, in order.
+/// The head line of each pattern `celis step done` prints in `folder` for a step under an ask, beside an
+/// open step, that changed only `files`, each file or each file git gives under a folder, in order.
 pub fn matched(repo: &Repo, folder: &Path, files: &[&str]) -> Vec<String> {
     let git = |args: &[&str]| {
         let mut all = vec!["-c", "user.name=t", "-c", "user.email=t@t"];
@@ -567,6 +567,14 @@ pub fn matched(repo: &Repo, folder: &Path, files: &[&str]) -> Vec<String> {
         &ask,
         "--",
         &format!("Change one {n}"),
+    ]);
+    step(&[
+        "step",
+        "add",
+        "--under",
+        &ask,
+        "--",
+        &format!("Change two {n}"),
     ]);
     let o = repo.run(
         folder,

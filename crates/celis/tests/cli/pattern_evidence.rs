@@ -22,24 +22,26 @@ fn tagged(repo: &Repo, tags: &[(&str, &str)], content: &str, at: u64) -> Note {
     note
 }
 
-/// Patterns come narrowest first, then within each a pattern made by a correction first, then newest
+/// Patterns come narrowest first, then by id: a pattern made by a correction comes no sooner
 /// (`spec/02-cli.md`, "Step").
 #[test]
-fn patterns_rank_the_narrowest_then_a_correction() {
+fn patterns_rank_the_narrowest_then_by_id() {
     let repo = Repo::new();
     let at = support::now() - DAY;
     let gone = tagged(&repo, &[("path", "*.py")], "gone", at);
-    tagged(
-        &repo,
-        &[("path", "*.py"), ("replaces", &gone.id)],
-        "correction",
-        at + 1,
-    );
-    tagged(&repo, &[("path", "*.py")], "older", at + 2);
+    let mut wide = vec![
+        tagged(
+            &repo,
+            &[("path", "*.py"), ("replaces", &gone.id)],
+            "correction",
+            at + 1,
+        ),
+        tagged(&repo, &[("path", "*.py")], "older", at + 2),
+        tagged(&repo, &[("path", "*.py")], "wide", at + 4),
+    ];
     tagged(&repo, &[("path", "a.py")], "named", at + 3);
-    tagged(&repo, &[("path", "*.py")], "wide", at + 4);
-    assert_eq!(
-        patterns(&repo, "a.py"),
-        ["named", "correction", "wide", "older"]
-    );
+    wide.sort_by(|a, b| a.id.cmp(&b.id));
+    let mut want = vec!["named".to_string()];
+    want.extend(wide.into_iter().map(|n| n.content));
+    assert_eq!(patterns(&repo, "a.py"), want);
 }

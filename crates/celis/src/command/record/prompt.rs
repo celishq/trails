@@ -27,7 +27,7 @@ impl Command {
     }
 
     /// Writes `prompt` on its session's open trail, signed now; then, unless it is a task, gives on `err`
-    /// one line: how a new ask recalls and joins a trail, and how a correction or a reaction is kept.
+    /// one line: how a new ask recalls and joins a trail.
     fn ask(&self, err: &mut dyn Write, project: &Project, prompt: Prompt) -> Result<(), Failure> {
         let offered = self.offered(&prompt.session)?;
         if !self.held()? {
@@ -85,9 +85,8 @@ fn mark(path: &Path) -> Result<(), Failure> {
 }
 
 /// The line on a prompt: a new ask takes the patterns that bear on it when the store holds a record,
-/// then joins the
-/// session's trail `trail`, else a trail of `today`, else a new one; how done work is fixed; and how a
-/// correction or a reaction becomes a pattern.
+/// then joins the session's trail `trail`, else a trail of `today`, else a new one; and how done work
+/// is fixed.
 fn note(recall: bool, trail: Option<&str>, today: bool) -> String {
     let join = match (trail, today) {
         (Some(id), _) => {
@@ -113,10 +112,5 @@ fn note(recall: bool, trail: Option<&str>, today: bool) -> String {
         ),
         None => String::new(),
     };
-    format!(
-        "celis: when this prompt is a new ask, {ask}{fix}; when it says always or never, or states a \
-         convention, write it as a pattern with celis pattern before you change a file, with --scope me \
-         when it holds in any project; when it reacts to a result, such as \"this one\" or \"too much\", write a \
-         pattern with celis pattern --good <what the person liked> --bad <what they did not>."
-    )
+    format!("celis: when this prompt is a new ask, {ask}{fix}.")
 }

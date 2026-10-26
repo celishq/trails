@@ -82,20 +82,24 @@ fn a_pattern_at_a_file_is_at_that_file_whatever_line_and_a_folder_holds_what_lie
     let sibling = at("src/xy/c.rs:1", 2);
     let other = at("src/x/ab.rs:1", 1);
     let folder = repo.path();
+    let sorted = |mut ids: Vec<String>| {
+        ids.sort();
+        ids
+    };
     assert_eq!(
-        place_ids(&repo, &folder, &["--at", "src/x/a.rs"])[..3],
-        [bare.clone(), line99.clone(), line3.clone()]
+        place_ids(&repo, &folder, &["--at", "src/x/a.rs"]),
+        sorted(vec![bare.clone(), line99.clone(), line3.clone()])
     );
     assert_eq!(
         place_ids(&repo, &folder, &["--at", "src/x"]),
-        [other, deep, bare, line99, line3]
+        sorted(vec![other, deep, bare, line99, line3])
     );
     assert_eq!(place_ids(&repo, &folder, &["--at", "src/xy"]), [sibling]);
 }
 
-/// A reader orders the patterns at a place newest first, then by id.
+/// A reader orders the patterns at a place by id, whatever their time (`spec/02-cli.md`, "Step").
 #[test]
-fn a_reader_orders_patterns_newest_first_then_by_id() {
+fn a_reader_orders_patterns_at_a_place_by_id() {
     let repo = Repo::new();
     let id = repo.project_id();
     let project = (id.as_str(), "repo");
@@ -104,13 +108,10 @@ fn a_reader_orders_patterns_newest_first_then_by_id() {
         short(&stored_pattern(&repo, project, &account(), (scope, None), text, at).id)
     };
     let same = now() - 3 * DAY;
-    let mut tied: Vec<String> = ["a", "b", "c"].iter().map(|t| make(t, same)).collect();
-    tied.sort();
-    let newest = make("n", now() - 2 * DAY);
-    let oldest = make("o", now() - 5 * DAY);
-    let mut want = vec![newest];
-    want.extend(tied);
-    want.push(oldest);
+    let mut want: Vec<String> = ["a", "b", "c"].iter().map(|t| make(t, same)).collect();
+    want.push(make("n", now() - 2 * DAY));
+    want.push(make("o", now() - 5 * DAY));
+    want.sort();
     assert_eq!(place_ids(&repo, &repo.path(), &["--at", "src/a.rs"]), want);
 }
 
@@ -136,4 +137,28 @@ fn a_place_reads_as_a_path_from_the_projects_top_folder() {
     assert_eq!(place_ids(&repo, &src, &["--at", "../src"]), [id.as_str()]);
     let pattern = support::labelled(&repo, "pattern").pop().unwrap();
     assert_eq!(pattern.tag("path"), Some("src/a.rs"));
+}
+
+/// A pattern whose scope is `at:` of the top folder is a pattern of the project with no path: it holds
+/// in the whole project, and no changed file brings it (`spec/05-patterns.md`, "Reading").
+#[test]
+fn a_pattern_at_the_top_folder_has_no_path() {
+    let repo = Repo::new();
+    repo.write("src/a.rs", "fn main() {}\n");
+    let id = repo.project_id();
+    let project = (id.as_str(), "repo");
+    let mut tops = vec![];
+    for (n, scope) in ["at:.", "at:./", "at:.:3"].iter().enumerate() {
+        let made = now() - (n as u64 + 2) * DAY;
+        let note = stored_pattern(&repo, project, &account(), (Some(scope), None), "top", made);
+        tops.push(short(&note.id));
+    }
+    let found = place_ids(&repo, &repo.path(), &["--at", "src/a.rs"]);
+    assert!(found.iter().all(|f| !tops.contains(f)), "{found:?}");
+    let o = repo.run(&repo.path(), &["grep", " pattern "], &[], "");
+    let shown = support::out(&o);
+    for top in &tops {
+        let line = shown.lines().find(|l| l.contains(top.as_str())).unwrap();
+        assert!(line.ends_with("live {project} top"), "{shown}");
+    }
 }

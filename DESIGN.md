@@ -49,8 +49,9 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
      agent. celis has no vector, no word match and no rank.
    - The ask records the patterns the agent recalled as `recalled` tags. Tidy reads them with the uses.
    - Past trails serve the learn and tidy, not recall.
-4. **What goes in matters more than recall.** The agent learns at each close: when an ask closes, celis
-   gives it the ask's `changed` lines, its trail's notes and the person's prompts on its trail. The agent
+4. **What goes in matters more than recall.** The agent learns at each close, and only there: when an
+   ask closes, celis gives it the learn brief, with the ask's `changed` lines, its trail's notes and the
+   person's prompts since the ask began. The brief is the one place that says what to keep. The agent
    writes a pattern only for a choice that will come back. It replaces a pattern that misled it instead
    of adding a near copy, and writes nothing when the ask taught nothing.
 5. **The agent writes each record with a celis call.** A hook may give the agent context, such as the

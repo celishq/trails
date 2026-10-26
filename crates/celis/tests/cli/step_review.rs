@@ -147,19 +147,22 @@ fn an_end_whose_steps_share_one_proof_totals_them_as_all() {
 
 /// The head of the learn brief of the ask `a`.
 fn learn(a: &str) -> String {
-    format!("celis: before you answer, learn from the ask {a}. Write a pattern with celis pattern for each choice of the ask that will come back, such as those below, and give --replaces <id> to a pattern that misled you. Write nothing when the ask taught nothing.")
+    format!("celis: before you answer, learn from the ask {a}. Write a pattern with celis pattern for each choice of the ask that will come back, such as those below. A correction that says always or never is a pattern whose forces say why. A reaction to a result, such as \"this one\" or \"too busy\", keeps the person's taste with --good and --bad. Give --path for the files it acts on, --within for the larger pattern it completes, --scope me when it holds in any project, and --replaces <id> for a pattern that misled you or a near copy. Write nothing when the ask taught nothing. What holds only for this trail is a note: celis step note {a}.")
 }
 
 /// `done` of an ask ends with the learn brief: each `changed` of the ask and of its steps, each note of
-/// its trail and each prompt on its trail (`spec/02-cli.md`, "Step").
+/// its trail and each prompt on its trail since the ask began, the one that began it first
+/// (`spec/02-cli.md`, "Step").
 #[test]
 fn done_on_an_ask_ends_with_the_learn_brief() {
     let repo = Repo::new();
     let by = &account();
     let began = now() - 60;
-    let trail = step_note(&repo, by, None, "the trail", began);
+    let trail = step_note(&repo, by, None, "the trail", began - 10);
+    mark_note(&repo, by, "prompt", &trail.id, "make it red", began - 9);
+    mark_note(&repo, by, "prompt", &trail.id, "make it blue", began - 1);
     let ask = step_note(&repo, by, Some(&trail), "the ask", began);
-    mark_note(&repo, by, "prompt", &trail.id, "make it blue", began + 1);
+    mark_note(&repo, by, "prompt", &trail.id, "and bigger", began + 1);
     let a = &ask.id[..8];
     let part = add(&repo, &["--under", a, "--", "part"]);
     done(&repo, &part, &["--changed", "it took the cache"]);
@@ -192,6 +195,7 @@ fn done_on_an_ask_ends_with_the_learn_brief() {
             "  note    keep the old table".to_string(),
             "          until the release".to_string(),
             "  asked   make it blue".to_string(),
+            "  asked   and bigger".to_string(),
         ]
     );
 }
@@ -253,7 +257,8 @@ fn done_prints_the_patterns_of_the_changed_files() {
 }
 
 /// When no step is open under the ask, `done` of its last step prints the judge brief: the ask, its
-/// intent lines, the patterns of the changed files, the changed files, and its check.
+/// intent lines, the patterns of the changed files, each once, the changed files, and its check
+/// (`spec/02-cli.md`, "Step").
 #[test]
 fn done_of_the_last_step_prints_the_judge_brief() {
     let repo = Repo::new();
@@ -292,6 +297,7 @@ fn done_of_the_last_step_prints_the_judge_brief() {
         said.contains(&format!("  pattern {}", &pattern[..8])),
         "{said}"
     );
+    assert_eq!(said.matches(&pattern[..8]).count(), 1, "{said}");
 }
 
 /// `pattern` with no scope says that the pattern holds in the project, and names `--scope me` and
@@ -317,8 +323,8 @@ fn pattern_with_no_scope_names_the_scopes() {
 }
 
 /// `done` of an ask with no `--by`, while git shows a changed file, refuses with `unjudged`, writes
-/// nothing, and prints the patterns of the changed files and the judge brief with the trail's notes;
-/// `--by judge` closes it (`spec/02-cli.md`, "Step").
+/// nothing, and prints the judge brief with the patterns of the changed files, once, and the trail's
+/// notes; `--by judge` closes it (`spec/02-cli.md`, "Step").
 #[test]
 fn done_of_an_ask_with_changed_files_needs_a_judge() {
     let repo = Repo::new();
@@ -363,7 +369,7 @@ fn done_of_an_ask_with_changed_files_needs_a_judge() {
     assert!(err(&o).contains("\"error\":\"unjudged\""), "{}", err(&o));
     assert!(err(&o).contains("celis:judge"), "{}", err(&o));
     assert!(err(&o).contains("  expect  cents"), "{}", err(&o));
-    assert!(err(&o).contains(&pattern[..8]), "{}", err(&o));
+    assert_eq!(err(&o).matches(&pattern[..8]).count(), 1, "{}", err(&o));
     assert!(
         err(&o).contains("  note    keep the old table"),
         "{}",

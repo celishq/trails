@@ -195,8 +195,8 @@ fn each_agents_session_start_gives_the_card_and_its_session() {
     }
 }
 
-/// Claude Code's session start asks to offer `/celis:tidy` while the store holds a pattern and no tidy began
-/// in the last 7 days.
+/// Claude Code's session start asks to offer `/celis:tidy` while the store holds a pattern and no step whose
+/// title starts with "Tidy the celis trails" began in the last 7 days.
 #[test]
 fn claudes_session_start_asks_to_offer_a_tidy() {
     let repo = Repo::new();
@@ -217,7 +217,13 @@ fn claudes_session_start_asks_to_offer_a_tidy() {
     assert!(said.contains("offer them /celis:tidy"), "{said}");
     let o = repo.run(
         &repo.path(),
-        &["step", "add", "--new", "--", "Tidy the celis trails"],
+        &[
+            "step",
+            "add",
+            "--new",
+            "--",
+            "Tidy the celis trails of this project",
+        ],
         &[],
         "",
     );
