@@ -16,7 +16,6 @@ use crate::terminal::live::{Live, Page};
 use crate::terminal::screen::Screen;
 use crate::terminal::wake::Key;
 use celis_nostr::Note;
-use celis_store::records::id::short;
 use celis_trails::{Trail, TrailStore};
 use std::io::Write;
 use std::time::{Duration, Instant};
@@ -54,17 +53,13 @@ const WIDTHS: (u16, u16) = (32, 120);
 /// The width below which a route draws its numbers as plain text.
 const NARROW: usize = 60;
 
-/// Where a board stands: the step whose route it shows with the selected row, the routes it came from
-/// and the id of each row it last drew; the month it read and when; when it opened; the section
+/// Where a board stands: the step whose route it shows; the month it read and when; when it opened; the section
 /// picked, the sections opened, the day picked, the first row shown, whether it scrolls to the
 /// section picked, the rows each section took in the last frame, the rows of that frame, and the rows
 /// the screen shows.
 struct Board<'a> {
     command: &'a Command,
     route: Option<String>,
-    row: usize,
-    back: Vec<String>,
-    rows: Vec<Option<String>>,
     month: Option<(Month, Total, Instant)>,
     opened: Instant,
     focus: usize,
@@ -82,9 +77,6 @@ impl<'a> Board<'a> {
         Board {
             command,
             route,
-            row: 0,
-            back: vec![],
-            rows: vec![],
             month: None,
             opened: Instant::now(),
             focus: 0,
@@ -144,31 +136,6 @@ impl<'a> Board<'a> {
             _ => {}
         }
     }
-
-    /// Moves along a route as `key` asks: ↑↓ select a row, enter or → goes to its step, ← back.
-    fn walk(&mut self, key: Key) {
-        let last = self.rows.len().saturating_sub(1);
-        match key {
-            Key::Up => self.row = self.row.saturating_sub(1),
-            Key::Down => self.row = (self.row + 1).min(last),
-            Key::Enter | Key::Right => {
-                if let (Some(Some(id)), Some(from)) =
-                    (self.rows.get(self.row).cloned(), &self.route)
-                {
-                    self.back.push(from.clone());
-                    self.route = Some(id);
-                    self.row = 0;
-                }
-            }
-            Key::Left => {
-                if let Some(id) = self.back.pop() {
-                    self.route = Some(id);
-                    self.row = 0;
-                }
-            }
-            _ => {}
-        }
-    }
 }
 
 impl Live for Board<'_> {
@@ -183,7 +150,7 @@ impl Live for Board<'_> {
         let width = breadth(self.command);
         if let Some(id) = self.route.clone() {
             if let Some(step) = model.steps.get(&id) {
-                return Ok(self.route(model, step, usize::from(width)));
+                return Ok(self.route(step, usize::from(width)));
             }
         }
         if !model.steps.closed_any() {
@@ -237,13 +204,9 @@ impl Live for Board<'_> {
         })
     }
 
-    fn press(&mut self, key: Key, _: &Model, screen: &mut Screen) -> Result<(), Failure> {
-        match self.route {
-            Some(_) => {
-                self.walk(key);
-                screen.follow = true;
-            }
-            None => self.go(key),
+    fn press(&mut self, key: Key, _: &Model, _: &mut Screen) -> Result<(), Failure> {
+        if self.route.is_none() {
+            self.go(key);
         }
         Ok(())
     }
@@ -311,13 +274,6 @@ fn route_head(place: &str, right: &str, width: usize) -> Vec<Styled> {
         paint(DIM, right),
     ]);
     vec![line, Styled::default()]
-}
-
-/// The key line of a route: `keys`, then `c copy <id>` for the id `copy` names, then the copy and quit
-/// keys.
-fn legend(keys: &str, copy: Option<&str>) -> String {
-    let copy = copy.map_or(String::new(), |id| format!(" · c copy {}", short(id)));
-    format!("{keys}{copy} · m copy markdown · q quit")
 }
 
 mod route;

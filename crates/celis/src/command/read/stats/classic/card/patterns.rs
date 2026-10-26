@@ -31,7 +31,7 @@ pub(super) fn patterns(model: &Model, window: &Window, inside: usize, ink: Ink) 
         })
         .collect();
     Card {
-        title: format!("02 PATTERNS USED · {DAYS} DAYS"),
+        title: format!("01 PATTERNS USED · {DAYS} DAYS"),
         face,
         table: Table {
             head: vec!["Rule", "Used"],

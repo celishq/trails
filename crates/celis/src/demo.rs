@@ -273,7 +273,7 @@ impl Demo {
     }
 
     /// Writes a trail of three steps each day from 27 days to 3 days ago, in turn in each project: the
-    /// first uses a pattern, the others follow the steps of a week before and take less time. The later
+    /// first uses a pattern, the others take less time than the steps of a week before. The later
     /// two weeks change, revise and take longer less often, and use patterns more.
     fn history(&self, shop: &Anchor, crm: &Anchor) -> Result<(), Failure> {
         let start = 28 * DAY;
@@ -323,16 +323,8 @@ impl Demo {
             let ago = days.len().checked_sub(7).map(|w| days[w].clone());
             let mut ids = vec![(a, took)];
             for (k, title) in [(1, third), (2, "Try it on the staging shop")] {
-                let uses: Vec<String> = ago.iter().map(|w| w[k].0.clone()).collect();
-                let id = self.write_step(
-                    at - 180 - took,
-                    anchor,
-                    Some(&trail),
-                    title,
-                    &[],
-                    None,
-                    &uses,
-                )?;
+                let id =
+                    self.write_step(at - 180 - took, anchor, Some(&trail), title, &[], None, &[])?;
                 let less = match (&ago, recent) {
                     (Some(w), true) => (w[k].1 / 2).max(60),
                     (Some(w), false) => (w[k].1 * 4 / 5).max(60),

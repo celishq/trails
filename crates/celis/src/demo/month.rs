@@ -22,10 +22,8 @@ impl Demo {
             patterns.push(self.write_pattern(ago(first - DAY), anchor, Scope::Project, text)?);
         }
         self.write_pattern(ago(first + 16 * DAY), &crm, Scope::Project, LATE)?;
-        let mut sources: Vec<String> = vec![];
         let mut reworked: VecDeque<String> = VecDeque::new();
         let mut applied = 0;
-        let mut follows = 0;
         for day in 0..28 {
             let trails: Vec<(&Anchor, Vec<&Step>)> = [&shop, &crm]
                 .into_iter()
@@ -49,7 +47,6 @@ impl Demo {
                     .max(midnight(self.now) + 60),
                 d => first + d as u64 * DAY + 9 * 3_600,
             };
-            let mut source = None;
             for (anchor, steps) in trails {
                 let task = TASKS[(day + usize::from(anchor.name == "crm")) % TASKS.len()];
                 let title = format!("{} · {}", task[0], crate::text::clock::day(at));
@@ -57,21 +54,13 @@ impl Demo {
                 for (n, &&(_, _, kind, took, pattern)) in steps.iter().enumerate() {
                     at += 30;
                     let mut uses = vec![];
-                    if kind == 'r' {
-                        let from = match day {
-                            d if d < 14 => sources[d - 3].clone(),
-                            _ => sources[follows % 9].clone(),
-                        };
-                        follows += usize::from(day >= 14);
-                        uses.push(from);
-                    }
-                    if pattern {
+                    if kind == 'r' || pattern {
                         let own = if anchor.name == "shop" {
                             applied % 2
                         } else {
                             2
                         };
-                        applied += 1;
+                        applied += usize::from(pattern);
                         uses.push(patterns[own].clone());
                     }
                     let replaces = match kind {
@@ -105,13 +94,10 @@ impl Demo {
                     at += took + 60;
                     if kind == 'w' {
                         reworked.push_back(id.clone());
-                    } else if matches!(kind, 'r' | 'n' | 'f') && source.is_none() {
-                        source = Some(id);
                     }
                 }
                 at += 60;
             }
-            sources.push(source.unwrap_or_default());
         }
         for (anchor, task, since) in [(&shop, TASKS[2], 600), (&crm, TASKS[5], 420)] {
             let trail = self.trail(since, anchor, task[0])?;
@@ -150,7 +136,7 @@ const PATTERNS: [(&str, &str); 3] = [
 const LATE: &str =
     "When you change a contact field: keep the old value in its history, because sales asks for it.";
 
-/// A step of the month: its day, the oldest 0; its project; how it ends, `r` done following past work,
+/// A step of the month: its day, the oldest 0; its project; how it ends, `r` done with a pattern,
 /// `n` done new, `f` done new revising the oldest reworked step not yet revised, `w` done and revised
 /// later, `d` dropped, `e` left open to expire; the seconds it takes; whether it applies a pattern.
 type Step = (usize, &'static str, char, u64, bool);

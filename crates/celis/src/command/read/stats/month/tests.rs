@@ -1,7 +1,7 @@
 use super::super::tests::shop;
 use super::*;
 
-/// A done step that a later step revises is reworked, else one that follows past work is reused, else
+/// A done step that a later step revises is reworked, else one that uses a pattern is reused, else
 /// new; a dropped step is dropped, and a done step that uses a pattern applied it.
 #[test]
 fn each_closed_step_counts_once_by_how_it_ended() {
@@ -35,8 +35,8 @@ fn a_step_of_20_days_ago_counts_in_the_prior_half() {
 }
 
 /// Each project's time sums its steps with none under them, with the time of a revised step as rework
-/// and of a dropped one as dropped; the reused step names the trail it followed, and the pattern it used
-/// counts as applied in its project.
+/// and of a dropped one as dropped; the pattern the reused step used counts as
+/// applied in its project.
 #[test]
 fn time_rework_and_patterns_come_from_the_steps() {
     let month = shop().month();
@@ -48,7 +48,6 @@ fn time_rework_and_patterns_come_from_the_steps() {
     };
     assert_eq!(month.projects, vec![shop]);
     assert_eq!(month.prior_active, 600);
-    assert_eq!(month.sources, 1);
     assert_eq!((month.patterns, month.learned, month.kept), (1, 1, 1));
     assert_eq!(month.applied, vec![("shop".to_string(), 1)]);
 }

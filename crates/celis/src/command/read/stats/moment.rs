@@ -80,11 +80,3 @@ pub(super) fn plural(n: usize, word: &str) -> String {
         _ => format!("{word}s"),
     }
 }
-
-/// `n` and `word`, `s` after it when `n` is not one: `2 reworked steps`.
-pub(super) fn counted(n: usize, word: &str) -> String {
-    match n {
-        1 => format!("{n} {word}"),
-        _ => format!("{n} {word}s"),
-    }
-}

@@ -30,12 +30,10 @@ fn step(under: Option<&Note>, at: u64, content: &str) -> Note {
 fn next(records: &[Note], now: u64) -> Option<u64> {
     let steps = Steps::new(records, now);
     let (patterns, notes) = (Patterns::new(records), Notes::new(records));
-    let reuse = Reuse::new(&steps);
     let tree = Tree {
         steps: &steps,
         patterns: &patterns,
         notes: &notes,
-        reuse: &reuse,
         layout: None,
         grouped: false,
         width: None,

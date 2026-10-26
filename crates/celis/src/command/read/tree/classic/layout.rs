@@ -70,7 +70,7 @@ impl Layout {
 }
 
 /// The trail the records `notes` change in `model`, at most one: each is a step or a mark of a step of
-/// it, uses nothing, and names no step another follows. `None` when a record does otherwise.
+/// it, and uses nothing. `None` when a record does otherwise.
 fn touched(model: &Model, notes: &[Note]) -> Option<HashSet<String>> {
     let mut trails = HashSet::new();
     for note in notes {
@@ -86,9 +86,6 @@ fn touched(model: &Model, notes: &[Note]) -> Option<HashSet<String>> {
         };
         for id in ids {
             let step = model.steps.get(&id)?;
-            if model.reuse.followers(step) > 0 {
-                return None;
-            }
             trails.insert(step.trail().id().to_string());
         }
     }

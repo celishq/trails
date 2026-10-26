@@ -85,7 +85,7 @@ fn opened_sections_show_their_details() {
     let month = shop().month();
     let text = board(&month, 108, [true; 4]).join("\n");
     for part in [
-        "REUSE · past steps reapplied",
+        "REUSE · steps done with a pattern",
         "1 reused step   ▲ 1",
         "PATTERNS · learned patterns applied",
         "§ 1 pattern kept  ·  1 applied  ·  +1 new",

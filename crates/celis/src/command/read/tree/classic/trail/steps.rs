@@ -85,7 +85,7 @@ impl Tree<'_> {
             self.pick(item, lines, first);
             if open {
                 self.closing(note, &below, true, lines);
-                self.followed(note, &below, lines);
+                self.used(note, &below, lines);
             }
             if !folded {
                 self.level(level, vec![], &rail, note.id(), lines);
@@ -133,9 +133,7 @@ impl Tree<'_> {
     fn opens(&self, note: Step) -> bool {
         let lines = note.record().detail().next().is_some()
             || note.done_record().is_some()
-            || note.dropped().is_some()
-            || !self.reuse.sources(note).is_empty()
-            || self.reuse.followers(note) > 0;
+            || note.dropped().is_some();
         lines || (note.state() != State::Open && !note.children().is_empty())
     }
 

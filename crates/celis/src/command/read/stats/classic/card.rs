@@ -10,7 +10,6 @@ use effect::effect;
 use outcome::outcome;
 use patterns::patterns;
 use projects::projects;
-use reuse::reuse;
 use time::time;
 use work::work;
 
@@ -21,8 +20,8 @@ pub(crate) struct Card {
     pub table: Table,
 }
 
-/// The count of cards: effect, reuse, patterns used, work, time, outcome and projects.
-pub(crate) const CARDS: usize = 7;
+/// The count of cards: effect, patterns used, work, time, outcome and projects.
+pub(crate) const CARDS: usize = 6;
 
 /// The cards of `model` at its time: the effect `full` characters wide inside, the others `inside`;
 /// their numbers plain text when `plain`.
@@ -31,7 +30,6 @@ pub(crate) fn cards(model: &Model, full: usize, inside: usize, plain: bool) -> [
     let ink = Ink { plain };
     [
         effect(&window, full, ink),
-        reuse(model, &window, inside, ink),
         patterns(model, &window, inside, ink),
         work(&window, inside, ink),
         time(&window.last, inside, ink),
@@ -52,7 +50,6 @@ mod face;
 mod outcome;
 mod patterns;
 mod projects;
-mod reuse;
 #[cfg(test)]
 mod tests;
 mod time;

@@ -2,7 +2,7 @@
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use crate::progress::{Flags, Grade, Model, Phase, Reuse, Tally};
+use crate::progress::{Flags, Grade, Model, Phase, Tally};
 pub(crate) use crate::terminal::canvas::visible;
 use crate::terminal::canvas::{line as line_text, paint, width, Styled};
 use crate::terminal::canvas::{BOLD, DIM};
@@ -74,7 +74,6 @@ impl Command {
             steps,
             patterns: model.patterns,
             notes: model.notes,
-            reuse: model.reuse,
             layout,
             grouped: id.is_none(),
             width: width.map(|w| w.saturating_sub(2 * usize::from(view.watch))),
@@ -163,7 +162,6 @@ pub(crate) struct Tree<'a> {
     pub steps: &'a Steps<'a>,
     pub patterns: &'a Patterns<'a>,
     pub notes: &'a Notes<'a>,
-    pub reuse: &'a Reuse<'a>,
     pub layout: Option<&'a Layout>,
     pub grouped: bool,
     pub width: Option<usize>,

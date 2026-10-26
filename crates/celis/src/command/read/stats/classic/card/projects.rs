@@ -46,7 +46,7 @@ pub(super) fn projects(last: &Period, inside: usize, ink: Ink) -> Card {
         })
         .collect();
     Card {
-        title: "06 PROJECTS · TIME".into(),
+        title: "05 PROJECTS · TIME".into(),
         face,
         table: Table {
             head: vec!["Project", "Time", "Steps"],

@@ -1,6 +1,6 @@
 //! How the steps of a span of days ended, and the shares stats reads from them.
 
-/// How the steps that closed in a span ended, each step once: done following past work, done new, done
+/// How the steps that closed in a span ended, each step once: done using a pattern, done new, done
 /// and revised later, dropped, or stale; and how many of the done ones applied a pattern.
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
 pub(super) struct Outcomes {

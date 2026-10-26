@@ -48,10 +48,10 @@ fn pattern(text: &str, at: u64, replaces: Option<&Note>) -> Note {
     .unwrap()
 }
 
-/// Reuse counts the follows, and the uses of a live pattern, not of a replaced one (`spec/06-reuse.md`,
+/// Reuse counts the uses of a live pattern, not of a replaced one or of a step (`spec/06-reuse.md`,
 /// "Uses").
 #[test]
-fn reuse_counts_the_follows_and_live_pattern_uses() {
+fn reuse_counts_live_pattern_uses() {
     let old = pattern("old", 1, None);
     let new = pattern("new", 2, Some(&old));
     let trail = step("trail", 10, None, &[]);
@@ -64,15 +64,14 @@ fn reuse_counts_the_follows_and_live_pattern_uses() {
     let patterns = Patterns::new(&records);
     let reuse = Reuse::new(&steps);
     let used = reuse.used(&patterns);
-    assert_eq!(reuse.total(), 1);
     assert_eq!(used.len(), 1);
     assert_eq!((used[0].0.id(), used[0].1), (live.as_str(), 2));
 }
 
-/// Reuse counts the follows of some steps, and their uses of a live pattern, not of a replaced one
+/// Reuse counts the uses of a live pattern by some steps, not of a replaced one or of a step
 /// (`spec/06-reuse.md`, "Uses").
 #[test]
-fn reuse_counts_the_follows_and_live_pattern_uses_of_some_steps() {
+fn reuse_counts_live_pattern_uses_of_some_steps() {
     let old = pattern("old", 1, None);
     let new = pattern("new", 2, Some(&old));
     let trail = step("trail", 10, None, &[]);
@@ -84,7 +83,6 @@ fn reuse_counts_the_follows_and_live_pattern_uses_of_some_steps() {
     let patterns = Patterns::new(&records);
     let reuse = Reuse::new(&steps);
     let picked = vec![steps.get(&both.id).unwrap()];
-    assert_eq!(reuse.follows_of(&picked), 1);
     assert_eq!(reuse.uses_of(&picked, &patterns), 1);
     assert_eq!(reuse.uses_of(&steps.all(), &patterns), 2);
 }

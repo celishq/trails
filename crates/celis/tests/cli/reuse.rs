@@ -2,8 +2,12 @@
 
 use crate::support;
 
+use celis_nostr::Note;
 use serde_json::Value;
-use support::{add, added, cli, err, finish, links, objects, out, refusal, step, Repo};
+use support::{
+    account, add, added, cli, err, finish, links, now, objects, out, put, refusal, step, step_tags,
+    Repo,
+};
 
 /// The id `pattern -- <text>` prints.
 fn decide(repo: &Repo, text: &str) -> String {
@@ -12,18 +16,17 @@ fn decide(repo: &Repo, text: &str) -> String {
     out(&o).trim().to_string()
 }
 
-/// `step add --uses` takes a live pattern and a step of another trail, writes each whole id, and gives
-/// a trail id as its first ask (`spec/06-reuse.md`, "Uses").
+/// `step add --uses` takes a live pattern and writes its whole id, and refuses a step of another trail
+/// as a usage error (`spec/06-reuse.md`, "Uses").
 #[test]
-fn uses_takes_a_pattern_and_a_step_of_another_trail() {
+fn uses_takes_a_pattern_and_refuses_a_step() {
     let repo = Repo::new();
     let pattern = decide(
         &repo,
         "When a test adds two steps: wait 1.1 s between them.",
     );
     let past = added(&repo, "s1", &["--", "the senior price"]);
-    let (past_ask, past_trail) = (&past[0], &past[1]);
-    finish(&repo, &past_ask[..8]);
+    finish(&repo, &past[0][..8]);
     let trail = add(&repo, &["--new", "--", "the student price"]);
     let id = add(
         &repo,
@@ -32,15 +35,27 @@ fn uses_takes_a_pattern_and_a_step_of_another_trail() {
             &trail[..8],
             "--uses",
             &pattern[..8],
-            "--uses",
-            &past_trail[..8],
             "--",
             "a student pays 70%",
         ],
     );
     let json = step(&repo, &trail, &id);
-    assert_eq!(links(&json, "uses"), [pattern, past_ask.clone()], "{json}");
-    assert_eq!(links(&json, "under"), [trail], "{json}");
+    assert_eq!(links(&json, "uses"), [pattern], "{json}");
+    let o = cli(
+        &repo,
+        &[
+            "step",
+            "add",
+            "--json",
+            "--under",
+            &trail[..8],
+            "--uses",
+            &past[1][..8],
+            "--",
+            "a member pays 90%",
+        ],
+    );
+    refusal(&o, 2, "usage");
 }
 
 /// `step add --uses` refuses an id no pattern or step has with `no-step`, and a step of its own trail
@@ -170,35 +185,6 @@ fn replaces_refuses_a_dropped_step() {
     refusal(&o, 1, "closed");
 }
 
-/// A chain of follows: the ask `a` of one trail, `b` of a second that uses `a` and the pattern, and
-/// `c` of a third that uses `b` and the pattern; each done. Gives `(a, b, c, pattern)`.
-fn chain(repo: &Repo) -> (String, String, String, String) {
-    let pattern = decide(repo, "When a price rounds: round down to the cent.");
-    let a = added(repo, "s1", &["--", "a senior pays 80%"]).remove(0);
-    finish(repo, &a[..8]);
-    let follow = |source: &str, text: &str| {
-        let trail = add(repo, &["--new", "--", text]);
-        let step = add(
-            repo,
-            &[
-                "--under",
-                &trail[..8],
-                "--uses",
-                &source[..8],
-                "--uses",
-                &pattern[..8],
-                "--",
-                text,
-            ],
-        );
-        finish(repo, &step[..8]);
-        step
-    };
-    let b = follow(&a, "a student pays 70%");
-    let c = follow(&b, "a member pays 90%");
-    (a, b, c, pattern)
-}
-
 /// The line of `text` that holds `id`.
 fn line<'a>(text: &'a str, id: &str) -> &'a str {
     text.lines().find(|l| l.contains(&id[..8])).unwrap_or("")
@@ -218,80 +204,74 @@ fn stats_says_when_nothing_was_reused() {
     refusal(&cli(&repo, &["stats", "--json", "ffffffff"]), 1, "no-step");
 }
 
-/// `stats` prints each followed step, most followed at any depth first, then each used pattern, then
-/// the total.
+/// A step and the pattern it uses, each done: gives `(step, pattern)`.
+fn used(repo: &Repo) -> (String, String) {
+    let pattern = decide(repo, "When a price rounds: round down to the cent.");
+    let trail = add(repo, &["--new", "--", "the student price"]);
+    let id = add(
+        repo,
+        &[
+            "--under",
+            &trail[..8],
+            "--uses",
+            &pattern[..8],
+            "--",
+            "a student pays 70%",
+        ],
+    );
+    finish(repo, &id[..8]);
+    (id, pattern)
+}
+
+/// `stats` prints each used pattern, then the total.
 #[test]
-fn stats_prints_the_followed_steps_the_used_patterns_and_the_total() {
+fn stats_prints_the_used_patterns_and_the_total() {
     let repo = Repo::new();
-    let (a, b, _, pattern) = chain(&repo);
+    let (_, pattern) = used(&repo);
     let text = out(&cli(&repo, &["stats"]));
     let lines: Vec<&str> = text.lines().collect();
-    assert!(lines[0].starts_with(&a[..8]), "{text}");
-    assert!(!text.contains("saved"), "{text}");
-    assert!(lines[0].contains(" · followed 2"), "{text}");
-    assert!(lines[1].starts_with(&b[..8]), "{text}");
-    assert!(lines[1].contains(" · followed 1"), "{text}");
     assert!(
-        lines[2].starts_with(&format!("pattern {}", &pattern[..8])),
+        lines[0].starts_with(&format!("pattern {}", &pattern[..8])),
         "{text}"
     );
-    assert!(lines[2].ends_with(" · used 2"), "{text}");
-    assert_eq!(lines[3], "total 2 follows · 2 uses", "{text}");
+    assert!(lines[0].ends_with(" · used 1"), "{text}");
+    assert_eq!(lines[1], "total 1 use", "{text}");
     let json = objects(&repo, &["stats"]);
-    assert_eq!(json[0]["followed"]["id"], a, "{json:?}");
-    assert_eq!(json[0]["followed"]["followed"], 2, "{json:?}");
-    assert_eq!(json[2]["used"]["used"], 2, "{json:?}");
-    assert_eq!(json[3]["total"]["follows"], 2, "{json:?}");
-    assert!(json[3]["total"].get("saved").is_none(), "{json:?}");
+    assert_eq!(json[0]["used"]["used"], 1, "{json:?}");
+    assert_eq!(json[1]["total"]["uses"], 1, "{json:?}");
 }
 
-/// `stats <id>` prints the step, then each step it follows, then each step that follows it, two spaces
-/// further in a level.
+/// `stats <id>` prints the step with its grade, and nothing more.
 #[test]
-fn stats_of_a_step_prints_its_sources_then_its_followers() {
+fn stats_of_a_step_prints_the_step() {
     let repo = Repo::new();
-    let (a, b, c, _) = chain(&repo);
-    let text = out(&cli(&repo, &["stats", &c[..8]]));
-    let lines: Vec<&str> = text.lines().collect();
-    assert!(lines[0].starts_with(&c[..8]), "{text}");
-    assert!(
-        lines[1].starts_with(&format!("  follows {}", &b[..8])),
-        "{text}"
-    );
-    assert!(
-        lines[2].starts_with(&format!("    follows {}", &a[..8])),
-        "{text}"
-    );
-    let text = out(&cli(&repo, &["stats", &a[..8]]));
-    assert!(line(&text, &b).starts_with("  followed "), "{text}");
-    assert!(!text.contains("saved"), "{text}");
-    assert!(line(&text, &c).starts_with("    followed "), "{text}");
+    let (id, _) = used(&repo);
+    let text = out(&cli(&repo, &["stats", &id[..8]]));
+    assert_eq!(text.lines().count(), 1, "{text}");
+    assert!(line(&text, &id).starts_with(&id[..8]), "{text}");
 }
 
-/// `tree --full` prints a `follows` line under a step for each step it follows, and a `followed` line
-/// when steps follow it; `tree --json` gives the count.
+/// A reader ignores a `uses` that names a step, which older writers wrote: `stats` counts only the
+/// pattern, and `tree` shows no link to the step (`spec/06-reuse.md`, "Uses").
 #[test]
-fn tree_prints_follows_and_followed_lines() {
+fn a_uses_that_names_a_step_is_ignored() {
     let repo = Repo::new();
-    let (a, b, _, _) = chain(&repo);
-    let tree = out(&cli(&repo, &["tree", &b[..8], "--full"]));
-    let follows = format!("follows  {} a senior pays 80%", &a[..8]);
-    assert!(
-        tree.lines()
-            .any(|l| l.trim_start_matches([' ', '│']) == follows),
-        "{tree}"
-    );
-    assert!(
-        tree.lines()
-            .any(|l| l.trim_start_matches([' ', '│']) == "followed 1"),
-        "{tree}"
-    );
-    let json = objects(&repo, &["tree", &b[..8]]);
-    let at = json
-        .iter()
-        .find_map(|v| v.get("step").or(v.get("trail")))
-        .unwrap();
-    assert_eq!(at["followed"], 1, "{json:?}");
+    let pattern = decide(&repo, "When a price rounds: round down to the cent.");
+    let past = add(&repo, &["--", "the senior price"]);
+    finish(&repo, &past[..8]);
+    let trail = add(&repo, &["--", "the student price"]);
+    let mut tags = step_tags((&repo.project_id(), "repo"));
+    tags.push(vec!["under".into(), trail.clone()]);
+    tags.push(vec!["uses".into(), past.clone()]);
+    tags.push(vec!["uses".into(), pattern.clone()]);
+    let old = Note::write(&account(), 1111u16, now(), tags, "a student pays 70%").unwrap();
+    put(&repo, &old);
+    let json = objects(&repo, &["stats"]);
+    assert_eq!(json.last().unwrap()["total"]["uses"], 1, "{json:?}");
+    assert!(!format!("{json:?}").contains(&past[..8]), "{json:?}");
+    let tree = out(&cli(&repo, &["tree", &trail[..8], "--full"]));
+    assert!(tree.contains("a student pays 70%"), "{tree}");
+    assert!(!tree.contains(&past[..8]), "{tree}");
 }
 
 /// A session's first ask that `--replaces` a done step carries the link, and its trail does not: the done
@@ -388,46 +368,6 @@ fn uses_writes_each_id_once() {
         ],
     );
     assert_eq!(links(&step(&repo, &trail, &id), "uses"), [pattern]);
-}
-
-/// `--uses` of a trail with no first ask of its text names the trail, and `stats` and `tree` count the
-/// follow on it (`spec/06-reuse.md`, "Uses").
-#[test]
-fn uses_of_a_trail_with_no_twin_names_the_trail() {
-    let repo = Repo::new();
-    let past = add(&repo, &["--", "the senior price"]);
-    let part = add(&repo, &["--under", &past[..8], "--", "a part"]);
-    finish(&repo, &part[..8]);
-    let trail = add(&repo, &["--new", "--", "the student price"]);
-    let id = add(
-        &repo,
-        &["--under", &trail[..8], "--uses", &past[..8], "--", "a step"],
-    );
-    assert_eq!(links(&step(&repo, &trail, &id), "uses"), [past.as_str()]);
-    let text = out(&cli(&repo, &["stats", &past[..8]]));
-    assert!(line(&text, &id).starts_with("  followed "), "{text}");
-    assert_eq!(step(&repo, &past, &past)["followed"], 1);
-}
-
-/// A session trail's line counts `followed` on its first ask in text and in `--json` alike.
-#[test]
-fn a_session_trail_counts_followed_on_its_first_ask() {
-    let repo = Repo::new();
-    let past = added(&repo, "s1", &["--", "the senior price"]);
-    finish(&repo, &past[0][..8]);
-    let trail = add(&repo, &["--new", "--", "the student price"]);
-    add(
-        &repo,
-        &[
-            "--under",
-            &trail[..8],
-            "--uses",
-            &past[1][..8],
-            "--",
-            "a step",
-        ],
-    );
-    assert_eq!(step(&repo, &past[1], &past[1])["followed"], 1);
 }
 
 /// A dropped trail's line shows its own drop, not its first ask's done.
