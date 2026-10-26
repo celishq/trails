@@ -1,6 +1,6 @@
 //! The patterns of a store.
 
-use crate::{Fit, Pattern, PatternEnd, PatternRecord, Scope};
+use crate::{Pattern, PatternEnd, PatternRecord, Scope};
 use celis_nostr::Note;
 use celis_store::Refusal;
 use std::collections::HashMap;
@@ -63,16 +63,15 @@ impl<'a> Patterns<'a> {
         Ok(found.cloned().expect("the note is of a live pattern"))
     }
 
-    /// The live patterns in scope in `project` that match one of `paths`: those of a named file, then of a
-    /// glob; within each, by id.
+    /// The live patterns in scope in `project` that match one of `paths`, by id.
     pub fn matching(&self, project: &str, paths: &[String]) -> Vec<Pattern<'a>> {
-        let mut found: Vec<(Fit, Pattern<'a>)> = self
+        let mut found: Vec<Pattern<'a>> = self
             .live(project)
             .into_iter()
-            .filter_map(|p| Some((p.record.fit(paths)?, p)))
+            .filter(|p| p.record.matches(paths))
             .collect();
-        found.sort_by_key(|(fit, p)| (*fit, p.id()));
-        found.into_iter().map(|(_, p)| p).collect()
+        found.sort_by_key(|p| p.id());
+        found
     }
 
     /// The live patterns in scope in `project` whose `within` names `id`, newest first.

@@ -174,8 +174,7 @@ note  json  {"id", "created_at", "step", "content"}
   `imeta` tag (CIP-08), and a file that is not there is a usage error.
 - `done` of a step that is not an ask MUST print each live pattern in scope that a changed file matches
   (CIP-05, "Triggers"), whole with its examples, once: in the judge brief when it prints one, else as
-  a list. The list gives first those that match a named file (a `path` with no `*` or `?`), then those
-  that match a glob; within each, by id.
+  a list, by id.
 - `drop` MUST refuse an empty reason, and `edit` one with no text, `--at` or `--check`, as usage errors.
 - `note` MUST write its text as a note on the step (CIP-03, "Notes"), and refuse empty text as a usage
   error.

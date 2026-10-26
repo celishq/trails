@@ -1,6 +1,6 @@
 //! What a pattern says.
 
-use crate::{Examples, Fit, Glob, Scope};
+use crate::{Examples, Glob, Scope};
 use anyhow::Result;
 use celis_nostr::{Account, Note};
 use celis_store::{Anchor, PatternId, Place};
@@ -126,18 +126,12 @@ impl PatternRecord {
         (pattern && note.kind == 1111 && !trail.is_empty()).then_some(trail)
     }
 
-    /// How narrowly the pattern fits the narrowest of `paths`; `None` when it matches none of them
-    /// (CIP-05, "Triggers").
-    pub fn fit(&self, paths: &[String]) -> Option<Fit> {
+    /// Whether the pattern matches one of `paths` (CIP-05, "Triggers").
+    pub fn matches(&self, paths: &[String]) -> bool {
         let globs: Vec<Glob> = self.paths.iter().map(|p| Glob::new(p)).collect();
-        let fits = paths.iter().flat_map(|path| {
-            let globs = globs.iter().filter(|g| g.matches(path));
-            globs.map(|g| match g.is_literal() {
-                true => Fit::Named,
-                false => Fit::Glob,
-            })
-        });
-        fits.min()
+        paths
+            .iter()
+            .any(|path| globs.iter().any(|g| g.matches(path)))
     }
 }
 

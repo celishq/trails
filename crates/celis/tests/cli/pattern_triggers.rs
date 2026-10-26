@@ -148,27 +148,20 @@ fn situation_is_no_flag_and_its_label_is_ignored() {
     assert!(line.ends_with("live {project} older"), "{shown}");
 }
 
-/// Patterns come with a named file first, then a glob; by id within each, whatever their time
+/// Patterns come by id, whatever their time and whether they name the file or a glob
 /// (`spec/02-cli.md`, "Step").
 #[test]
-fn patterns_come_narrowest_first_then_by_id() {
+fn patterns_come_by_id() {
     let repo = Repo::new();
     let at = support::now() - DAY;
-    let mut named = [
+    let mut all = [
         tagged(&repo, &[("path", "a.py")], "named old", at + 4),
         tagged(&repo, &[("scope", "at:a.py")], "at new", at + 5),
-    ];
-    let mut wide = [
         tagged(&repo, &[("path", "*.py")], "wide old", at),
         tagged(&repo, &[("path", "*.py")], "wide new", at + 1),
     ];
-    named.sort_by(|a, b| a.id.cmp(&b.id));
-    wide.sort_by(|a, b| a.id.cmp(&b.id));
-    let want: Vec<&str> = named
-        .iter()
-        .chain(&wide)
-        .map(|n| n.content.as_str())
-        .collect();
+    all.sort_by(|a, b| a.id.cmp(&b.id));
+    let want: Vec<&str> = all.iter().map(|n| n.content.as_str()).collect();
     assert_eq!(texts(&repo, &["a.py"]), want);
 }
 

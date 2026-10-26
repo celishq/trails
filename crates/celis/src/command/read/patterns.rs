@@ -74,9 +74,7 @@ fn entry(pattern: &Pattern, held: &HashSet<&str>, files: &[(&str, Vec<String>)])
         record.when()
     );
     let paths = record.paths.iter().map(|p| format!("  path   {p}"));
-    let matched = files
-        .iter()
-        .filter(|(_, paths)| record.fit(paths).is_some());
+    let matched = files.iter().filter(|(_, paths)| record.matches(paths));
     let matched = matched.map(|(file, _)| format!("  match  {file}"));
     let within = record.within.iter().filter(|w| held.contains(&**w as &str));
     let within = within.map(|w| format!("  within {}", short(w)));

@@ -30,10 +30,8 @@ fn a_question_mark_matches_one_character() {
 #[test]
 fn a_literal_matches_only_its_own_path() {
     let glob = Glob::new("./shelf/prices.py");
-    assert!(glob.is_literal());
     assert!(glob.matches("shelf/prices.py"));
     assert!(!glob.matches("shelf/prices.pyc"));
-    assert!(!Glob::new("**/*.py").is_literal());
 }
 
 #[test]

@@ -18,11 +18,6 @@ impl Glob {
         Glob::Pattern(Regex::new(&regex(pattern)).expect("an escaped glob compiles"))
     }
 
-    /// Whether it names one file: it holds no `*` and no `?`.
-    pub fn is_literal(&self) -> bool {
-        matches!(self, Glob::Literal(_))
-    }
-
     /// Whether `path` matches the whole pattern.
     pub fn matches(&self, path: &str) -> bool {
         let path = path.strip_prefix("./").unwrap_or(path);
