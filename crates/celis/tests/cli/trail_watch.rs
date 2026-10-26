@@ -1072,9 +1072,10 @@ fn next_watch_counts_a_closed_trails_steps_by_mark() {
     assert!(row.ends_with(" ✓ 1 · ✗ 1"), "{rows:?}");
 }
 
-/// With `--next`, The watch cuts a long step title and a long trail line's title with `…` to fit the width.
+/// With `--next`, The watch wraps a long step title and a long trail line's title whole onto the rows under them, in
+/// their title's column, a step's rail kept down to the step after it, with no `…`.
 #[test]
-fn next_watch_cuts_long_titles_to_the_width() {
+fn next_watch_wraps_long_titles_whole() {
     let repo = Repo::new();
     let words = "one two three four five six seven eight nine ten eleven twelve";
     let (by, at) = (support::account(), support::now() - 3_600);
@@ -1087,22 +1088,39 @@ fn next_watch_cuts_long_titles_to_the_width() {
         &repo,
         &["--under", &trail[..8], "--", &format!("open step {words}")],
     );
+    std::thread::sleep(Duration::from_millis(1100));
+    add(&repo, &["--under", &trail[..8], "--", "next step"]);
     let mut watch = Watch::start(&repo, &["tree", "--next"]);
     watch.size(24, 40);
-    watch.until("open step");
-    watch.press("\x1b[B\x1b[B\x1b[B\r");
+    watch.until("next step");
     watch.until("done trail");
     let rows = watch.rows();
     assert!(rows.iter().all(|r| r.chars().count() <= 40), "{rows:?}");
-    for title in ["done trail one", "open step one"] {
-        let row = rows.iter().find(|r| r.contains(title));
-        assert!(row.is_some_and(|r| r.contains('…')), "{rows:?}");
-    }
-    assert!(!rows.join("\n").contains("twelve"), "{rows:?}");
+    assert!(!rows.join("\n").contains('…'), "{rows:?}");
+    let at = |text: &str| rows.iter().position(|r| r.contains(text)).unwrap();
+    let step = at("open step one");
+    assert_eq!(
+        rows[step + 1],
+        "      │      four five six seven",
+        "{rows:?}"
+    );
+    assert_eq!(rows[step + 3], "      │      twelve", "{rows:?}");
+    assert!(rows[step + 4].contains("next step"), "{rows:?}");
+    let line = at("done trail one");
+    assert_eq!(
+        rows[line + 1],
+        "         four five six seven eight",
+        "{rows:?}"
+    );
+    assert_eq!(
+        rows[line + 2],
+        "         nine ten eleven twelve",
+        "{rows:?}"
+    );
 }
 
 /// With `--next`, With no id, the watch heads today with a line with 🗓️, the day and its counts, groups the trails by
-/// project under a 📁 heading, each trail's mark under the project's name, its active trails first, then lists the five earlier days folded on one line each, and
+/// project under a 📁 heading in the calendar's column, each trail's mark under the project's name, its active trails first, then lists the five earlier days folded on one line each, and
 /// only with more days past them a grey `Show more`, which `enter` turns into the rest of the days folded and
 /// `Show less`, the selection on the first day it added.
 #[test]
@@ -1121,10 +1139,10 @@ fn next_watch_groups_today_by_project_and_shows_more() {
         rows[0].starts_with("  🗓\u{fe0f}  ") && rows[0].ends_with(" · 1 active · 0 done"),
         "{rows:?}"
     );
-    assert_eq!(rows[1..4], ["  ", "      📁  repo", "  "], "{rows:?}");
+    assert_eq!(rows[1..4], ["  ", "  📁  repo", "  "], "{rows:?}");
     assert_eq!(
         support::watch::still(&rows[4]),
-        "          ⠿  the trail",
+        "      ⠿  the trail",
         "{rows:?}"
     );
     let days = |rows: &[String]| {
@@ -1171,10 +1189,10 @@ fn next_watch_cuts_a_deep_row_to_the_width() {
     assert!(rows.iter().any(|r| r.ends_with('…')), "{rows:?}");
 }
 
-/// With `--next`, A trail with more than five closed steps folds them into one `✓ <n> closed` line before the rest, its
-/// expired ones among them, and opens it to them.
+/// With `--next`, A trail lists its closed steps one by one among the rest, its expired ones too, with no
+/// `✓ <n> closed` line.
 #[test]
-fn next_watch_holds_expired_steps_in_the_closed_line() {
+fn next_watch_lists_every_closed_step() {
     let repo = Repo::new();
     let by = support::account();
     let at = support::now() - 2 * 3600;
@@ -1187,20 +1205,12 @@ fn next_watch_holds_expired_steps_in_the_closed_line() {
     support::step_note(&repo, &by, Some(&trail), "left part", at + 9);
     let mut watch = Watch::start(&repo, &["tree", "--next", &trail.id[..8]]);
     watch.size(24, 80);
-    watch.until("6 closed");
-    let rows = watch.rows();
-    assert_eq!(rows[1], "    └ ▸ ✓  6 closed", "{rows:?}");
-    assert!(rows[0].ends_with("✓ 5 · ◌ 1"), "{rows:?}");
-    assert!(!rows.join("\n").contains("left part"), "{rows:?}");
-    watch.press("\x1b[B\x1b[B\x1b[C");
     watch.until("left part");
-    assert!(
-        watch
-            .rows()
-            .contains(&"        └── ◌  left part".to_string()),
-        "{:?}",
-        watch.rows()
-    );
+    let rows = watch.rows();
+    assert!(rows[0].ends_with("✓ 5 · ◌ 1"), "{rows:?}");
+    assert_eq!(rows[1], "    ├── ✓  done part 1", "{rows:?}");
+    assert_eq!(rows[6], "    └── ◌  left part", "{rows:?}");
+    assert!(!rows.join("\n").contains("closed"), "{rows:?}");
 }
 
 /// With `--next`, No line of the watch reaches the last column, so clearing to the end of a line never erases its
@@ -1228,7 +1238,9 @@ fn next_watch_leaves_the_last_column_empty() {
         .position(|r| r.contains("a trail whose"))
         .unwrap_or_else(|| panic!("{rows:?}"));
     assert!(
-        rows[at + 1].ends_with("runs well past forty") && rows[at + 2].ends_with("characters"),
+        rows[at].contains("title runs")
+            && rows[at + 1].ends_with("well past forty")
+            && rows[at + 2].ends_with("characters"),
         "{rows:?}"
     );
 }
@@ -1339,8 +1351,8 @@ fn next_watch_folds_closed_steps_and_done_branches() {
     );
 }
 
-/// With `--next`, A project's closed trails fold into one line that opens to a line a trail, each its steps counted by
-/// state dim at the right of its title, with no time and no count of its notes.
+/// With `--next`, A project's closed trails list under its 📁 a line a trail, with no `<n> closed` line, each its steps
+/// counted by state dim at the right of its title, with no time and no count of its notes.
 #[test]
 fn next_watch_prints_a_trail_lines_details_under_its_title() {
     let repo = Repo::new();
@@ -1368,23 +1380,21 @@ fn next_watch_prints_a_trail_lines_details_under_its_title() {
     }
     let mut watch = Watch::start(&repo, &["tree", "--next"]);
     watch.size(24, 100);
-    watch.until("2 closed");
-    assert!(!watch.rows().join("\n").contains("first"));
-    watch.press("\x1b[B\r");
     watch.until("second");
     let rows = watch.rows();
     let row = |what: &str| rows.iter().find(|l| l.contains(what)).unwrap();
     let first = row("first");
     assert!(
-        first.starts_with("            ▸ ✓  first ") && first.ends_with(" ✓ 1"),
+        first.starts_with("    ▸ ✓  first ") && first.ends_with(" ✓ 1"),
         "{rows:?}"
     );
     let second = row("second");
     assert!(
-        second.starts_with("            ▸ ✓  second ") && second.ends_with(" ✓ 12"),
+        second.starts_with("    ▸ ✓  second ") && second.ends_with(" ✓ 12"),
         "{rows:?}"
     );
     assert!(!rows.join("\n").contains("rule"), "{rows:?}");
+    assert!(!rows.join("\n").contains("closed"), "{rows:?}");
     let colour = watch.coloured(Duration::ZERO);
     assert!(colour.contains("\x1b[2m 12"), "{colour:?}");
 }
@@ -1457,7 +1467,7 @@ fn next_watch_keeps_a_selection_when_its_line_leaves() {
     watch.press(&"\x1b[B".repeat(7));
     std::thread::sleep(Duration::from_millis(300));
     watch.press("a");
-    watch.until_spun("▌         ⠿  the trail");
+    watch.until_spun("▌     ⠿  the trail");
     watch.press("\x1b[B");
     watch.until("▌ ▸ ");
 }
@@ -1757,14 +1767,14 @@ fn next_watch_shows_a_live_session_on_top_in_all() {
         .unwrap();
     assert!(live < idle, "{rows:?}");
     assert!(
-        support::watch::still(&rows[live]).starts_with("        ▾ ⠿  an old live trail"),
+        support::watch::still(&rows[live]).starts_with("    ▾ ⠿  an old live trail"),
         "{rows:?}"
     );
     assert!(rows[0].ends_with(" · 1 active · 0 done"), "{rows:?}");
 }
 
-/// With `--next`, `↓` selects a line with a `▌` in the cursor column, `enter` opens the fold of a project's closed
-/// trails, the selected trail's title prints bold, and `enter` opens a done trail into a block and closes it again.
+/// With `--next`, `↓` selects a line with a `▌` in the cursor column, the selected trail's title prints bold, and
+/// `enter` opens a done trail into a block and closes it again.
 #[test]
 fn next_watch_selects_a_trail_and_opens_it_with_enter() {
     let repo = Repo::new();
@@ -1774,19 +1784,15 @@ fn next_watch_selects_a_trail_and_opens_it_with_enter() {
     support::mark_note(&repo, &by, "done", &part.id, "proof", at + 2);
     add(&repo, &["--", "an active trail"]);
     let mut watch = Watch::start(&repo, &["tree", "--next"]);
-    watch.until("1 closed");
-    watch.press("\x1b[B\x1b[B");
-    watch.until("\r\n▌       ▸ ✓  1 closed");
-    watch.press("\r");
     watch.until("an ended trail");
-    watch.press("\x1b[B");
-    watch.until("\r\n▌           ▸ ✓  an ended trail");
+    watch.press("\x1b[B\x1b[B");
+    watch.until("\r\n▌   ▸ ✓  an ended trail");
     std::thread::sleep(Duration::from_millis(300));
     let raw = watch.coloured(Duration::ZERO);
     assert!(raw.contains("\x1b[1man ended trail"), "{raw:?}");
     let last = watch.trees(Duration::ZERO).pop().unwrap();
     assert!(
-        support::watch::still(&last).contains("\r\n          ⠿  an active trail"),
+        support::watch::still(&last).contains("\r\n      ⠿  an active trail"),
         "{last:?}"
     );
     watch.press("\r");
@@ -1925,8 +1931,8 @@ fn next_watch_keeps_a_trails_rows_still_as_it_opens_and_closes() {
         .position(|r| r.contains("the first trail"))
         .unwrap();
     assert!(!rows.join("\n").contains("expect"), "{rows:?}");
-    assert_eq!(rows[at + 1], "          └── ○  its step", "{rows:?}");
-    assert_eq!(column(&rows[at], "the first trail"), 13, "{rows:?}");
+    assert_eq!(rows[at + 1], "      └── ○  its step", "{rows:?}");
+    assert_eq!(column(&rows[at], "the first trail"), 9, "{rows:?}");
     let meta = |row: &str| {
         row.split("the first trail")
             .nth(1)
@@ -1936,11 +1942,11 @@ fn next_watch_keeps_a_trails_rows_still_as_it_opens_and_closes() {
     };
     let open = meta(&rows[at]);
     watch.press("\x1b[B");
-    watch.until_spun("▌         ⠿  the second trail");
+    watch.until_spun("▌     ⠿  the second trail");
     watch.press("\x1b[B");
-    watch.until_spun("▌       ▾ ⠿  the first trail");
+    watch.until_spun("▌   ▾ ⠿  the first trail");
     watch.press("\x1b[D");
-    watch.until_spun("▌       ▸ ⠿  the first trail");
+    watch.until_spun("▌   ▸ ⠿  the first trail");
     let rows = watch.rows();
     let closed = rows
         .iter()
