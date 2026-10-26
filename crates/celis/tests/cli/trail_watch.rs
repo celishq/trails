@@ -1101,22 +1101,14 @@ fn next_watch_wraps_long_titles_whole() {
     let step = at("open step one");
     assert_eq!(
         rows[step + 1],
-        "      │      four five six seven",
+        "      │      three four five six",
         "{rows:?}"
     );
-    assert_eq!(rows[step + 3], "      │      twelve", "{rows:?}");
+    assert_eq!(rows[step + 3], "      │      eleven twelve", "{rows:?}");
     assert!(rows[step + 4].contains("next step"), "{rows:?}");
     let line = at("done trail one");
-    assert_eq!(
-        rows[line + 1],
-        "         four five six seven eight",
-        "{rows:?}"
-    );
-    assert_eq!(
-        rows[line + 2],
-        "         nine ten eleven twelve",
-        "{rows:?}"
-    );
+    assert_eq!(rows[line + 1], "         three four five six", "{rows:?}");
+    assert_eq!(rows[line + 3], "         eleven twelve", "{rows:?}");
 }
 
 /// With `--next`, With no id, the watch heads today with a line with 🗓️, the day and its counts, groups the trails by
@@ -1238,8 +1230,8 @@ fn next_watch_leaves_the_last_column_empty() {
         .position(|r| r.contains("a trail whose"))
         .unwrap_or_else(|| panic!("{rows:?}"));
     assert!(
-        rows[at].contains("title runs")
-            && rows[at + 1].ends_with("well past forty")
+        rows[at].contains("whose title")
+            && rows[at + 1].ends_with("runs well past forty")
             && rows[at + 2].ends_with("characters"),
         "{rows:?}"
     );

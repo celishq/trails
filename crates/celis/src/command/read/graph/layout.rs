@@ -1,15 +1,14 @@
-//! Where the cards of a trail's graph stand: chained left to right, wrapped into rows.
+//! Where the cards of a trail's graph stand: chained left to right on the grid's tracks, wrapped into
+//! rows.
 
 use super::card::{Card, WIDTH};
 use super::moment::Moment;
+use crate::terminal::grid::{Grid, GUTTER, TRACKS};
 use celis_trails::Step;
 use std::collections::HashSet;
 
-/// The gap between two cards of a row, where the edge into the second runs.
-pub(super) const GAP: u16 = 3;
-
-/// The column the first card of a row starts at.
-pub(super) const LEFT: u16 = 2;
+/// The gap between two cards of a row, where the edge into the second runs: the grid's gutter.
+pub(super) const GAP: u16 = GUTTER;
 
 /// The cards of a trail's graph: each card's place, and the rows they take.
 pub(super) struct Layout<'a> {
@@ -17,23 +16,25 @@ pub(super) struct Layout<'a> {
     pub height: u16,
 }
 
-/// Where one card stands: its step, its column and row, its height, the height of its row, and the
-/// columns of cards it spans.
+/// Where one card stands: its step, its column and row, its width, its height, and the height of its
+/// row.
 #[derive(Clone, Copy)]
 pub(super) struct Place<'a> {
     pub step: Step<'a>,
     pub x: u16,
     pub y: u16,
+    pub w: u16,
     pub height: u16,
     pub row: u16,
-    pub span: u16,
 }
 
 impl<'a> Layout<'a> {
-    /// The places of the cards of `tops`, `columns` to a row, each row as tall as its tallest card and
-    /// a blank row after it; a card the person `opened` takes a whole row.
-    pub fn of(tops: &[Step<'a>], columns: u16, opened: &HashSet<String>, m: &Moment) -> Layout<'a> {
-        let columns = columns.max(1);
+    /// The places of the cards of `tops` on `grid`, each on the tracks `tracks` gives, as many to a row
+    /// as fit, each row as tall as its tallest card and a blank row after it; a card the person
+    /// `opened` takes a whole row.
+    pub fn of(tops: &[Step<'a>], grid: Grid, opened: &HashSet<String>, m: &Moment) -> Layout<'a> {
+        let per = tracks(grid);
+        let columns = TRACKS / per;
         let mut rows: Vec<Vec<(Step<'a>, u16, u16)>> = vec![];
         let mut used = columns;
         for step in tops {
@@ -53,19 +54,24 @@ impl<'a> Layout<'a> {
         let mut places = vec![];
         let mut y = 0;
         for row in rows {
+            let spans: Vec<(u16, u16)> = row
+                .iter()
+                .map(|(_, column, span)| grid.span(column * per, (column + span) * per))
+                .collect();
             let heights: Vec<u16> = row
                 .iter()
-                .map(|(s, _, span)| Card::height(*s, opened.contains(s.id()), breadth(*span), m))
+                .zip(&spans)
+                .map(|((s, _, _), (_, w))| Card::height(*s, opened.contains(s.id()), *w, m))
                 .collect();
             let tall = heights.iter().copied().max().unwrap_or(0);
-            for ((step, column, span), height) in row.into_iter().zip(heights) {
+            for (((step, _, _), (x, w)), height) in row.into_iter().zip(spans).zip(heights) {
                 places.push(Place {
                     step,
-                    x: LEFT + column * (WIDTH + GAP),
+                    x,
                     y,
+                    w,
                     height,
                     row: tall,
-                    span,
                 });
             }
             y += tall + 1;
@@ -74,12 +80,11 @@ impl<'a> Layout<'a> {
     }
 }
 
-/// The width of a card that spans `span` columns.
-pub(super) fn breadth(span: u16) -> u16 {
-    span * WIDTH + span.saturating_sub(1) * GAP
-}
-
-/// The columns of cards that fit `width` cells.
-pub(super) fn columns(width: u16) -> u16 {
-    ((width.saturating_sub(LEFT) + GAP) / (WIDTH + GAP)).max(1)
+/// The tracks a card takes on `grid`: the fewest of three, four and six that hold a small card, else
+/// all twelve.
+pub(super) fn tracks(grid: Grid) -> u16 {
+    [3, 4, 6]
+        .into_iter()
+        .find(|t| grid.span(0, *t).1 >= WIDTH - 1)
+        .unwrap_or(TRACKS)
 }

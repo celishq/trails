@@ -7,6 +7,7 @@ use crate::failure::Failure;
 use crate::progress::{Grade, Model};
 use crate::terminal::bar::bar;
 use crate::terminal::canvas::{cut, lines, paint, Styled, BOLD, CYAN, DIM, FRAME, GREEN};
+use crate::terminal::grid::Grid;
 use crate::terminal::live::{Live, Page};
 use crate::terminal::look::lane;
 use crate::terminal::screen::Screen;
@@ -17,7 +18,7 @@ use card::{inside, put, Card};
 use celis_nostr::Note;
 use celis_trails::{State, Step, Trail, TrailStore};
 use folders::folders;
-use layout::{breadth, columns, Layout, GAP};
+use layout::{Layout, GAP};
 use moment::{tally, Moment, LIGHT};
 use overview::{Overview, TALL};
 use patterns::{Learned, Patterns};
@@ -381,7 +382,7 @@ fn head(
 /// card lists, and the newest card.
 fn chain(trail: Step, width: u16, view: &mut View, m: &Moment) -> (Buffer, Option<(u16, u16)>) {
     let tops = Trail::new(trail).parts();
-    let layout = Layout::of(&tops, columns(width), &view.opened, m);
+    let layout = Layout::of(&tops, Grid::of(width), &view.opened, m);
     let mut buf = Buffer::empty(Rect::new(0, 0, width, layout.height.max(1)));
     view.cards = layout
         .places
@@ -412,7 +413,7 @@ fn chain(trail: Step, width: u16, view: &mut View, m: &Moment) -> (Buffer, Optio
         let opened = view.opened.contains(id);
         let card = Card {
             step: place.step,
-            area: Rect::new(place.x, place.y, breadth(place.span), place.height),
+            area: Rect::new(place.x, place.y, place.w, place.height),
             opened,
             selected,
             row: if selected { view.row.as_deref() } else { None },
@@ -420,7 +421,7 @@ fn chain(trail: Step, width: u16, view: &mut View, m: &Moment) -> (Buffer, Optio
         };
         let rows = card.draw(&mut buf, m);
         if selected && opened {
-            let inner = usize::from(breadth(place.span).saturating_sub(4));
+            let inner = usize::from(place.w.saturating_sub(4));
             view.listed = inside(place.step, m, inner)
                 .into_iter()
                 .filter(|r| r.first)
@@ -468,7 +469,7 @@ fn edge(buf: &mut Buffer, layout: &Layout, i: usize, alpha: f64) {
         _ => ("┄", "┆"),
     };
     let w = buf.area.width;
-    let right = before.x + breadth(before.span);
+    let right = before.x + before.w;
     let turn = w.saturating_sub(4);
     let back = before.y + before.row;
     buf.set_string(

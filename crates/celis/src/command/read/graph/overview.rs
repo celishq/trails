@@ -1,11 +1,12 @@
 //! All trails at once: each trail of today under its project's folder, with its front of cards.
 
-use super::card::{closed, fade, frame, put, WIDTH};
-use super::layout::{columns, GAP, LEFT};
+use super::card::{closed, fade, frame, put};
+use super::layout::{tracks, GAP};
 use super::moment::{tally, Moment, LIGHT, SEL};
 use super::view::View;
 use crate::terminal::bar::bar;
 use crate::terminal::canvas::{cut, paint, BOLD, CYAN, DIM, GREEN, RED};
+use crate::terminal::grid::{Grid, TRACKS};
 use crate::terminal::look::lane;
 use crate::terminal::unfold::toward;
 use crate::text::line::plural;
@@ -132,7 +133,9 @@ fn line(buf: &mut Buffer, trail: Step, y: u16, width: u16, picked: bool, m: &Mom
 /// still at work, as many as fit with the cards before folded into one, and how many come after.
 fn strip(buf: &mut Buffer, trail: Step, y: u16, width: u16, m: &Moment) {
     let tops = Trail::new(trail).parts();
-    let fit = columns(width.saturating_sub(2));
+    let grid = Grid::of(width);
+    let per = tracks(grid);
+    let fit = TRACKS / per;
     let first = tops
         .iter()
         .position(|s| matches!(s.state(), State::Working | State::Open))
@@ -143,14 +146,15 @@ fn strip(buf: &mut Buffer, trail: Step, y: u16, width: u16, m: &Moment) {
         start = tops.len().saturating_sub(room(start));
     }
     if tops.is_empty() {
-        buf.set_string(LEFT + 4, y + 1, "no steps", DIM);
+        buf.set_string(grid.column(0), y + 1, "no steps", DIM);
         return;
     }
     let cards = &tops[start..(start + room(start)).min(tops.len())];
     let after = tops.len() - start - cards.len();
-    let w = WIDTH - 1;
-    let mut x = LEFT + 2;
+    let place = |n: usize| grid.span(n as u16 * per, (n as u16 + 1) * per);
+    let mut n = 0;
     if start > 0 {
+        let (x, w) = place(n);
         let before = &tops[..start];
         let under: Vec<Step> = before.iter().flat_map(|s| s.tree()).collect();
         let area = Rect::new(x, y, w, 4);
@@ -167,12 +171,14 @@ fn strip(buf: &mut Buffer, trail: Step, y: u16, width: u16, m: &Moment) {
         );
         put(buf, x + 2, y + 1, &tally(before, m.spin(), false));
         buf.set_string(x + 2, y + 2, plural(under.len(), "step"), DIM);
-        x += w + GAP;
+        n += 1;
     }
-    for (n, step) in cards.iter().enumerate() {
+    let mut end = 0;
+    for step in cards {
+        let (x, w) = place(n);
         let area = Rect::new(x, y, w, 4);
         small(buf, *step, area, m);
-        if n > 0 || start > 0 {
+        if n > 0 {
             let state = step.state();
             let (glyph, look) = match state {
                 State::Done | State::Working => ("━", lane(state)),
@@ -181,10 +187,11 @@ fn strip(buf: &mut Buffer, trail: Step, y: u16, width: u16, m: &Moment) {
             let edge = format!("{}▶", glyph.repeat(usize::from(GAP) - 1));
             buf.set_string(x - GAP, y + 2, edge, look);
         }
-        x += w + GAP;
+        end = x + w;
+        n += 1;
     }
     if after > 0 {
-        buf.set_string(x - GAP + 1, y + 2, "┄", DIM);
+        buf.set_string(end, y + 2, "┄", DIM);
         let more = format!("+{after} after");
         buf.set_string(
             width.saturating_sub(2 + more.len() as u16),
