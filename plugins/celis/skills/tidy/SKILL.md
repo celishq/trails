@@ -6,14 +6,16 @@ description: Tidies the celis trails and patterns. Drops stale trails and patter
 The person wants a small index of patterns that guide, and no musts in celis: a must goes into the
 project's own files. Ask what to tidy: this project, this project and the `me` patterns, or all
 projects. Do the tidy as one ask titled `Tidy the celis trails`, so that celis knows when the last tidy
-was. `celis patterns` gives the index, and `celis grep` gives each pattern with its recalls, uses and
-replaces; an older pattern that its grep line marks ` old-rule` was written as a rule.
+was. Start from `celis patterns --tidy`: each pattern that needs tidy, and why. `celis patterns` gives
+the index, and `celis grep` gives each pattern with its recalls, uses, misled and replaces; an older
+pattern that its grep line marks ` old-rule` was written as a rule.
 
 A good tidy:
 
 - drops stale trails and patterns: a trail left open and untouched for weeks, a pattern that names a
   place, code or command the project no longer has, or that later work contradicts, a one-off note, and
   a pattern older than 60 days that no ask recalled in 60 days;
+- replaces a pattern that misled the work, so that it says what the fixes showed;
 - merges patterns that say the same thing into one that keeps all their examples, and settles patterns
   that say to do different things in the same case, with the drop reason `merged into <id8>` or
   `conflicts with <id8>`;
