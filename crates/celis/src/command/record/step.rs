@@ -58,8 +58,12 @@ impl Command {
             session: args.session.clone().or_else(|| self.session()),
             new: args.new,
         };
+        let session = draft.session.clone();
         let trails = self.trails()?;
         let written = trails.add(draft)?;
+        if let (Some(session), Some(step)) = (session, written.records.first()) {
+            self.place_kept(&session, &step.id)?;
+        }
         self.print(written, args, out, err)
     }
 

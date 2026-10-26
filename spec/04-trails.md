@@ -43,8 +43,9 @@ A session is one run of an agent; a subagent shares it. Many sessions can work o
   ask with the same text.
 - A step with no `under` MUST go under its session's open trail, unless it asks for a new trail, else be
   a new trail. It MUST NOT join another session's trail without `under`.
-- The prompt hook MUST write a prompt on its session's open trail only, and nothing with no open trail.
-  It MUST write nothing for a prompt that starts with `<task-notification>` or `<agent-message`.
+- The prompt hook MUST write a prompt on its session's open trail only. With no open trail, the
+  session's next `step add` MUST write the prompt on the trail of its step. The hook MUST write nothing
+  for a prompt that starts with `<task-notification>` or `<agent-message`.
 
 ## Notes
 

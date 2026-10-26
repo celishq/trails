@@ -7,7 +7,7 @@ use celis_store::{Link, Project};
 use celis_trails::TrailStore;
 use hook::Prompt;
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 mod hook;
 
@@ -26,11 +26,12 @@ impl Command {
         }
     }
 
-    /// Writes `prompt` on its session's open trail, signed now; then, unless it is a task, gives on `err`
-    /// one line: how a new ask recalls and joins a trail.
+    /// Writes `prompt` on its session's open trail, signed now, else keeps it for the session's next step;
+    /// then, unless it is a task, gives on `err` one line: how a new ask recalls and joins a trail.
     fn ask(&self, err: &mut dyn Write, project: &Project, prompt: Prompt) -> Result<(), Failure> {
         let offered = self.offered(&prompt.session)?;
         if !self.held()? {
+            self.keep(&prompt)?;
             if !prompt.task {
                 crate::command::put(err, &note(false, None, false))?;
                 self.offer(err, project, &offered)?;
@@ -40,8 +41,11 @@ impl Command {
         let trails = self.trails()?;
         let steps = trails.steps();
         let trail = steps.session(&project.anchor.project, &prompt.session);
-        if let Some(trail) = trail {
-            trails.prompt(trail, prompt.text)?;
+        match trail {
+            Some(trail) => {
+                trails.prompt(trail, prompt.text.clone())?;
+            }
+            None => self.keep(&prompt)?,
         }
         if prompt.task {
             return Ok(());
@@ -50,6 +54,35 @@ impl Command {
         let line = note(!trails.is_empty(), id.as_deref(), !today(&steps).is_empty());
         crate::command::put(err, &line)?;
         self.offer(err, project, &offered)
+    }
+
+    /// The file that keeps the newest prompt of `session` that came with no open trail.
+    fn kept(&self, session: &str) -> Result<PathBuf, Failure> {
+        let name = session.replace(['/', '.'], "_");
+        Ok(self.home()?.join("prompts").join(name))
+    }
+
+    /// Keeps `prompt` for its session's next step.
+    fn keep(&self, prompt: &Prompt) -> Result<(), Failure> {
+        let path = self.kept(&prompt.session)?;
+        if let Some(folder) = path.parent() {
+            std::fs::create_dir_all(folder).map_err(anyhow::Error::from)?;
+        }
+        std::fs::write(path, &prompt.text).map_err(anyhow::Error::from)?;
+        Ok(())
+    }
+
+    /// Writes the prompt kept for `session` on the trail of `step`, and forgets it.
+    pub(crate) fn place_kept(&self, session: &str, step: &str) -> Result<(), Failure> {
+        let path = self.kept(session)?;
+        let Ok(text) = std::fs::read_to_string(&path) else {
+            return Ok(());
+        };
+        let trails = self.trails()?;
+        let steps = trails.steps();
+        trails.prompt(steps.find(step)?.trail(), text)?;
+        std::fs::remove_file(path).map_err(anyhow::Error::from)?;
+        Ok(())
     }
 
     /// The file that marks that `session` was asked to link the project.

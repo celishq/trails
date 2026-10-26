@@ -115,8 +115,7 @@ fn hook(repo: &Repo, json: serde_json::Value) -> std::process::Output {
 }
 
 /// `prompt` writes a hook's prompt as a prompt mark on the session's open trail, also while a step
-/// works, its first line cut to 200 characters; with no such trail, it writes nothing
-/// (`spec/04-trails.md`, "Sessions").
+/// works, its first line cut to 200 characters (`spec/04-trails.md`, "Sessions").
 #[test]
 fn prompt_writes_the_prompt_as_a_prompt_mark_on_the_sessions_trail() {
     let repo = Repo::new();
@@ -124,9 +123,6 @@ fn prompt_writes_the_prompt_as_a_prompt_mark_on_the_sessions_trail() {
         let json = serde_json::json!({"session_id": session, "prompt": prompt}).to_string();
         support::prompt(&repo, &repo.path(), &[], &json)
     };
-    let o = hook("s1", "before any trail");
-    assert!(o.status.success(), "{}", err(&o));
-    assert_eq!(out(&o), "");
     let trail = start(&repo, "s1", "the trail");
     let o = hook("s1", "make it blue\nand more");
     assert!(o.status.success(), "{}", err(&o));
@@ -145,6 +141,43 @@ fn prompt_writes_the_prompt_as_a_prompt_mark_on_the_sessions_trail() {
             (trail.clone(), "make it blue".to_string()),
             (trail.clone(), "x".repeat(200))
         ]
+    );
+}
+
+/// A prompt with no open trail goes on the trail of the session's next `step add`, once, and not on
+/// another session's trail; the learn brief of that ask gives it (`spec/04-trails.md`, "Sessions").
+#[test]
+fn a_prompt_with_no_open_trail_goes_on_the_trail_of_the_sessions_next_step() {
+    let repo = Repo::new();
+    let json =
+        serde_json::json!({"session_id": "s1", "prompt": "From now on, add type hints\nand more"});
+    hook(&repo, json);
+    start(&repo, "s2", "another session");
+    let written = ids(&repo, Some("s1"), "the trail");
+    add(&repo, Some("s1"), "a step");
+    assert_eq!(
+        marks(&repo, "prompt"),
+        [(
+            written[1].clone(),
+            "From now on, add type hints".to_string()
+        )]
+    );
+    let done = [
+        "step",
+        "done",
+        &written[0][..8],
+        "--as-planned",
+        "--by",
+        "person",
+        "--",
+        "p",
+    ];
+    let o = repo.run(&repo.path(), &done, &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+    assert!(
+        err(&o).contains("\n  asked   From now on, add type hints\n"),
+        "{}",
+        err(&o)
     );
 }
 
