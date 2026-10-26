@@ -102,10 +102,9 @@ impl Command {
             .iter()
             .flat_map(|f| crate::command::record::files::paths(&project, &self.folder, f))
             .collect();
-        let patterns =
-            trails
-                .patterns()
-                .fitting(&project.anchor.project, &paths, |_| false, |_| false);
+        let patterns = trails
+            .patterns()
+            .fitting(&project.anchor.project, &paths, |_| false);
         if patterns.is_empty() {
             return vec![];
         }

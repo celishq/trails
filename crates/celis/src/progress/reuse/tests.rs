@@ -41,7 +41,6 @@ fn pattern(text: &str, at: u64, replaces: Option<&Note>) -> Note {
         paths: vec![],
         old_rule: false,
         within: vec![],
-        cells: vec![],
         examples: Default::default(),
     }
     .record(&account(), at)

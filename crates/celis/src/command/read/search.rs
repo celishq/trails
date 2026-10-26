@@ -96,7 +96,7 @@ impl Command {
         }
     }
 
-    /// The live patterns in scope that fit `ask` by its `files`, their cells or its words, in the order
+    /// The live patterns in scope that fit `ask` by its `files` or its words, in the order
     /// `Patterns::fitting` gives.
     pub(crate) fn fits<'a>(
         &self,
@@ -115,8 +115,7 @@ impl Command {
             .iter()
             .map(|p| words(when(&p.record.content)))
             .collect();
-        let named = words(ask);
-        let asked: HashSet<String> = named
+        let asked: HashSet<String> = words(ask)
             .iter()
             .filter(|w| {
                 let n = whens.iter().filter(|when| when.contains(*w)).count();
@@ -124,18 +123,7 @@ impl Command {
             })
             .cloned()
             .collect();
-        let filed: HashSet<String> = live
-            .iter()
-            .filter(|p| p.record.fit(&paths).is_some())
-            .flat_map(|p| p.record.cells.iter().map(|c| c.name().to_string()))
-            .collect();
-        let cell = |p: &Pattern| {
-            let cells = p.record.cells.iter();
-            cells
-                .map(|c| c.name())
-                .any(|c| filed.contains(c) || !words(c).is_disjoint(&named))
-        };
-        patterns.fitting(&project.anchor.project, &paths, cell, |p| {
+        patterns.fitting(&project.anchor.project, &paths, |p| {
             !words(when(&p.record.content)).is_disjoint(&asked)
         })
     }

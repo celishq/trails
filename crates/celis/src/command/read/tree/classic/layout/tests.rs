@@ -111,7 +111,6 @@ fn a_record_forgets_only_the_group_of_its_trail() {
         paths: vec![],
         old_rule: false,
         within: vec![],
-        cells: vec![],
         examples: Default::default(),
     }
     .record(&account(), NOW)

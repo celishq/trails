@@ -1,13 +1,13 @@
 //! What a pattern says.
 
-use crate::{Cell, Examples, Fit, Glob, Scope};
+use crate::{Examples, Fit, Glob, Scope};
 use anyhow::Result;
 use celis_nostr::{Account, Note};
 use celis_store::{Anchor, PatternId, Place};
 
 /// What one pattern says: written on a project, it holds in its scope; with the globs of the files it
-/// acts on, the larger patterns it completes, its cells, its examples, and whether an older writer gave it
-/// the `binds` label.
+/// acts on, the larger patterns it completes, its examples, and whether an older writer gave it the
+/// `binds` label.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PatternRecord {
     pub anchor: Anchor,
@@ -17,7 +17,6 @@ pub struct PatternRecord {
     pub paths: Vec<String>,
     pub old_rule: bool,
     pub within: Vec<PatternId>,
-    pub cells: Vec<Cell>,
     pub examples: Examples,
 }
 
@@ -40,8 +39,6 @@ impl PatternRecord {
         tags.extend(paths.map(|p| vec!["path".to_string(), p.clone()]));
         let within = self.within.iter();
         tags.extend(within.map(|id| vec!["within".to_string(), id.to_string()]));
-        let cells = self.cells.iter();
-        tags.extend(cells.map(|c| vec!["cell".to_string(), c.name().to_string()]));
         tags.push(vec!["L".to_string(), NAMESPACE.to_string()]);
         tags.push(vec![
             "l".to_string(),
@@ -106,12 +103,6 @@ impl PatternRecord {
                 .filter(|t| t.len() >= 2 && t[0] == "within")
                 .map(|t| PatternId::new(&t[1]))
                 .collect(),
-            cells: Cell::all(
-                note.tags
-                    .iter()
-                    .filter(|t| t.len() >= 2 && t[0] == "cell")
-                    .map(|t| t[1].as_str()),
-            ),
             examples: Examples::read(note),
         })
     }

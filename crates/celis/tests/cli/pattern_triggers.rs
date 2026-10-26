@@ -5,7 +5,9 @@ use crate::support;
 use celis_nostr::Note;
 use serde_json::json;
 use std::path::Path;
-use support::{account, add, err, objects, out, pattern_tags, put, stored_pattern, Repo, DAY};
+use support::{
+    account, add, err, labelled, objects, out, pattern_tags, put, stored_pattern, Repo, DAY,
+};
 
 /// The id `celis pattern <args> -- <text>` prints in the main checkout.
 fn decide(repo: &Repo, args: &[&str], text: &str) -> String {
@@ -283,4 +285,40 @@ fn an_at_scope_is_no_scope() {
         "",
     );
     assert_eq!(o.status.code(), Some(2), "{o:?}");
+}
+
+/// `pattern` takes `--cell` and writes nothing for it (`spec/02-cli.md`, "Commands").
+#[test]
+fn pattern_takes_a_cell_and_writes_nothing_for_it() {
+    let repo = Repo::new();
+    let id = decide(
+        &repo,
+        &["--cell", "cli-help"],
+        "When a flag gets help: keep it short.",
+    );
+    let notes = labelled(&repo, "pattern");
+    let note = notes.iter().find(|n| n.id == id).unwrap();
+    assert!(note.tags.iter().all(|t| t[0] != "cell"), "{:?}", note.tags);
+}
+
+/// A pattern with a `cell` tag, which older writers wrote, still reads, and shows no cell
+/// (`spec/05-patterns.md`, "Reading").
+#[test]
+fn an_older_pattern_with_a_cell_still_reads() {
+    let repo = Repo::new();
+    let old = tagged(
+        &repo,
+        &[("cell", "cli-help")],
+        "When a flag gets help: keep it short.",
+        support::now() - DAY,
+    );
+    let o = repo.run(&repo.path(), &["search", "--", "a flag gets help"], &[], "");
+    let shown = out(&o);
+    assert!(shown.contains(&old.id[..8]), "{shown}");
+    assert!(!shown.contains("cell"), "{shown}");
+    let step = add(&repo, &["--new", "--uses", &old.id, "--", "t"]);
+    let step = step.lines().next().unwrap();
+    let shown = objects(&repo, &["step", "start", step]);
+    let pattern = shown.iter().find_map(|v| v.get("pattern")).unwrap();
+    assert!(pattern.get("cells").is_none(), "{pattern}");
 }

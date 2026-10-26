@@ -421,35 +421,6 @@ fn search_prints_the_first_eight_patterns_and_the_more_line() {
     );
 }
 
-/// A pattern in a cell that fits ranks under one that matches a file and over one that fits by words
-/// (`spec/02-cli.md`, "Search").
-#[test]
-fn a_cell_fit_ranks_between_a_path_and_a_word() {
-    let repo = Repo::new();
-    let path = decide(
-        &repo,
-        &["--path", "*.svg", "--cell", "brand"],
-        "When an icon ships: keep it flat.",
-    );
-    let named = decide(
-        &repo,
-        &["--cell", "logo"],
-        "When a mark ships: keep two colours.",
-    );
-    let filed = decide(
-        &repo,
-        &["--cell", "brand"],
-        "When a font ships: keep one family.",
-    );
-    let word = decide(&repo, &[], "When prices show: keep cents.");
-    let ids = [path.clone(), named.clone(), filed.clone(), word.clone()];
-    let said = search(&repo, &["logo.svg", "--", "draw a logo with the prices"]);
-    let shown = heads(&said, &ids);
-    let at = |id: &str| shown.iter().position(|l| l.starts_with(&id[..8])).unwrap();
-    assert!(at(&path) < at(&named) && at(&path) < at(&filed), "{said}");
-    assert!(at(&named) < at(&word) && at(&filed) < at(&word), "{said}");
-}
-
 /// A word in the first line of more than 5% of the live patterns, and of more than 5, does not fit
 /// (`spec/02-cli.md`, "Search").
 #[test]

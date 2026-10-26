@@ -52,6 +52,5 @@ pub(crate) fn pattern(pattern: &Pattern) -> Value {
         "replaces": pattern.replaces,
         "content": pattern.content,
         "paths": pattern.paths,
-        "cells": pattern.cells.iter().map(|c| c.name()).collect::<Vec<_>>(),
     })
 }
