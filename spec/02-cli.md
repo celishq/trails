@@ -175,6 +175,15 @@ note  json  {"id", "created_at", "step", "content"}
   error.
 - `start` MUST print the notes of the step's trail and of each trail it follows (CIP-04, "Notes").
 
+The output of `done` of an ask ends with the learn brief:
+
+```
+celis: before you answer, learn from the ask <id8>. …     what the agent writes, and when it writes nothing
+  changed <id8> <text>                                    each `changed` of the ask and of its steps
+  note    <text>                                          each note of its trail (CIP-04, "Notes")
+  asked   <text>                                          each prompt on its trail (CIP-04, "Sessions")
+```
+
 **Examples**
 
 ```
