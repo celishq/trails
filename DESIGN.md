@@ -61,8 +61,9 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
    step of the ask used, so that a lesson can replace one that misled. `done` of an ask, or of a step
    that fixes done work, because a fix is a correction, prints the same brief. The `celis:lesson` agent
    writes the patterns from it, in its own context. The brief is the one place that says what to keep.
-   A pattern is written only for a choice that will come back. A lesson replaces a pattern that misled
-   the work instead of adding a near copy, and writes nothing when the ask taught nothing.
+   A pattern is written only for a choice that will come back in other work, and never records what
+   the ask did. A lesson replaces a pattern that misled the work instead of adding a near copy, and
+   writes nothing when the ask taught nothing.
 5. **The agent writes each record with a celis call.** A hook may give the agent context, such as the
    patterns that fit, but it never captures the agent's tools to write records.
 6. **Patterns lead.** The card, the help and the README start with patterns, and trails come after.

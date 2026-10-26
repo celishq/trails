@@ -64,8 +64,9 @@ impl Learn {
         let ask = short(&self.ask);
         let mut lines = vec![format!(
             "celis: before you answer, learn from {ask}. Write a pattern with celis pattern for each \
-             choice of the work that will come back, such as those below; a wish or a correction that \
-             says always, never or from now on is one too. Its When names the work, never the person or \
+             choice that will come back in other work; a wish or a correction that says always, never \
+             or from now on is one too. The lines below are its evidence: a pattern never records what \
+             this ask did, such as its function, its file or its fix. Its When names the work, never the person or \
              the project: --scope says where it holds. Its Because says why the choice is good for the \
              work; \"the person asked\" is not a why. Take it from the person's words or the work; when \
              neither gives it, write your best guess, and name it on the Learned line for the person to \
