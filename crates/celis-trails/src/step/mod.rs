@@ -166,6 +166,14 @@ impl<'a> Step<'a> {
         later.filter_map(|n| self.steps.get(&n.id)).collect()
     }
 
+    /// Whether it fixes done work: the step it replaces is done.
+    pub fn fixes(self) -> bool {
+        let replaced = self.entry.step.replaces.as_deref();
+        replaced
+            .and_then(|id| self.steps.get(id))
+            .is_some_and(|s| s.done_record().is_some())
+    }
+
     /// The steps of its tree that a later step revised.
     pub fn reworked(self) -> Vec<Step<'a>> {
         let tree = self.tree().into_iter();

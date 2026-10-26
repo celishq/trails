@@ -58,16 +58,18 @@ impl Learn {
     pub fn lines(&self) -> Vec<String> {
         let ask = short(&self.ask);
         let mut lines = vec![format!(
-            "celis: before you answer, learn from the ask {ask}. Write a pattern with celis pattern for \
-             each choice of the ask that will come back, such as those below. A wish or a correction \
-             that says always, never or from now on is a pattern whose forces say why. Take the why \
-             from the person's words or the work; when neither gives it, write your best guess, and name \
-             it on the Learned line for the person to confirm. A reaction to a \
-             result, such as \"this one\" or \"too busy\", keeps the person's taste with --good and \
-             --bad. Give --path for the files it acts on, --within for the larger pattern it completes, \
-             --scope me when it holds in any project, and --replaces <id> for a pattern that misled you \
-             or a near copy. Write nothing when the ask taught nothing. What holds only for this trail is \
-             a note: celis step note {ask}."
+            "celis: before you answer, learn from {ask}. Write a pattern with celis pattern for each \
+             choice of the work that will come back, such as those below; a wish or a correction that \
+             says always, never or from now on is one too. Its When names the work, never the person or \
+             the project: --scope says where it holds. Its Because says why the choice is good for the \
+             work; \"the person asked\" is not a why. Take it from the person's words or the work; when \
+             neither gives it, write your best guess, and name it on the Learned line for the person to \
+             confirm. A reaction to a result, such as \"this one\" or \"too busy\", is a pattern of the \
+             person's taste: --good the result they liked and --bad the one they did not, each a step \
+             id, a file or a URL. Give --path for the files it acts on, --within for the larger pattern \
+             it completes, --scope me when it holds in any project, and --replaces <id> for a pattern \
+             that misled you or a near copy. Write nothing when the work taught nothing. What holds only \
+             for this trail is a note: celis step note {ask}."
         )];
         for (id, text) in &self.changed {
             lines.push(format!("  changed {} {text}", short(id)));

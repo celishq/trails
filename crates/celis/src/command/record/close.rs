@@ -69,6 +69,7 @@ impl Command {
             Some(ask) => lines.extend(self.brief(ask, trails, changed)),
             None => lines.extend(self.changed_patterns(trails, changed)),
         }
+        lines.extend(review.learn.iter().flat_map(Learn::lines));
         let under = review.under.as_deref().map(short);
         lines.extend(match (review.as_planned, under) {
             (false, Some(u)) => Some(format!("celis: it went otherwise than planned; replace or drop each open step it voids, then add one step under {u}.")),

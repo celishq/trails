@@ -128,7 +128,7 @@ fn an_end_whose_steps_share_one_proof_totals_them_as_all() {
 
 /// The head of the learn brief of the ask `a`.
 fn learn(a: &str) -> String {
-    format!("celis: before you answer, learn from the ask {a}. Write a pattern with celis pattern for each choice of the ask that will come back, such as those below. A wish or a correction that says always, never or from now on is a pattern whose forces say why. Take the why from the person's words or the work; when neither gives it, write your best guess, and name it on the Learned line for the person to confirm. A reaction to a result, such as \"this one\" or \"too busy\", keeps the person's taste with --good and --bad. Give --path for the files it acts on, --within for the larger pattern it completes, --scope me when it holds in any project, and --replaces <id> for a pattern that misled you or a near copy. Write nothing when the ask taught nothing. What holds only for this trail is a note: celis step note {a}.")
+    format!("celis: before you answer, learn from {a}. Write a pattern with celis pattern for each choice of the work that will come back, such as those below; a wish or a correction that says always, never or from now on is one too. Its When names the work, never the person or the project: --scope says where it holds. Its Because says why the choice is good for the work; \"the person asked\" is not a why. Take it from the person's words or the work; when neither gives it, write your best guess, and name it on the Learned line for the person to confirm. A reaction to a result, such as \"this one\" or \"too busy\", is a pattern of the person's taste: --good the result they liked and --bad the one they did not, each a step id, a file or a URL. Give --path for the files it acts on, --within for the larger pattern it completes, --scope me when it holds in any project, and --replaces <id> for a pattern that misled you or a near copy. Write nothing when the work taught nothing. What holds only for this trail is a note: celis step note {a}.")
 }
 
 /// `done` of an ask begins with the learn brief: each `changed` of the ask and of its steps, each note of
@@ -177,6 +177,47 @@ fn done_on_an_ask_begins_with_the_learn_brief() {
             "  asked   make it blue".to_string(),
             "  asked   and bigger".to_string(),
         ]
+    );
+}
+
+/// `done` of a step that fixes done work ends with the learn brief, with what the fix changed, before
+/// the next move; `done` of another step gives none (`spec/02-cli.md`, "Step").
+#[test]
+fn done_of_a_fix_of_done_work_ends_with_the_learn_brief() {
+    let repo = Repo::new();
+    let ask = add(&repo, &["--", "the ask"]);
+    let a = &ask[..8];
+    let first = add(&repo, &["--under", a, "--", "the blurb"]);
+    assert!(!done(&repo, &first, &["--as-planned"])
+        .iter()
+        .any(|l| l.starts_with("celis: before you answer")));
+    let fix = add(
+        &repo,
+        &[
+            "--under",
+            a,
+            "--replaces",
+            &first[..8],
+            "--",
+            "a shorter blurb",
+        ],
+    );
+    let lines = done(&repo, &fix, &["--changed", "three short sentences"]);
+    let brief = lines
+        .iter()
+        .position(|l| l.starts_with("celis: before you answer"))
+        .unwrap();
+    assert_eq!(lines[brief], learn(&fix[..8]));
+    assert_eq!(
+        lines[brief + 1],
+        format!("  changed {} three short sentences", &fix[..8])
+    );
+    assert!(
+        lines
+            .last()
+            .unwrap()
+            .starts_with("celis: it went otherwise"),
+        "{lines:?}"
     );
 }
 
