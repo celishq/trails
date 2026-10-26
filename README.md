@@ -90,9 +90,6 @@ the right time: when a job starts, before it changes a file, and before it says 
 We treat the agent as a capable collaborator that owns its work. Celis doesn't tell it how to do the
 job; it gives it what it needs to do the job well.
 
-**It works across agents, too.** In another test, Claude Code learned the review rules of real
-Supabase pull requests. Codex then broke 0.25 of them per job with Celis, against 2.38 without.
-
 ## Install
 
 **1. Install `celis`:**
