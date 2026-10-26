@@ -81,28 +81,15 @@ them.
 | 1985 with `steer` in `celis.step` | a steer, now a prompt |
 | 1111 in `celis.cairn` · kind 7 · `celis.outcome` · `celis.source` · splits | cairns, ratings, outcomes, sources, splits |
 | a `done` with a `step` tag in place of `e` | a done of a step in the code |
-| `$CELIS_HOME/key` | the key, now the phrase; `auth login` removes it |
-| `tool` | a rule tag: the other tool calls a rule acted on |
 | 1985 with `name` in `celis.step` · `skill:<name>` | the name of a trail, and the project of a trail from a skill file |
-| `situation` in `celis.decision` | a pattern label: the pattern also held where no file shows it ahead |
-| `celis decide` | the command, now `celis pattern` |
-| `promoted` in `celis.decision` | a pattern label, later `binds` |
-| `at:<place>` as the `scope` of a pattern | a scope, now `path` globs; a reader reads it as CIP-05, "Reading", states |
-| `promoted` in the `--json` of a decision | the same value as `binds` |
 | 1111 with `decision` in `celis.decision` | a pattern, now `pattern` in `celis.pattern`; a reader reads it as CIP-05, "Reading", states |
-| `binds` in `celis.decision` | a pattern label, later `binds` in `celis.pattern`; a reader reads it as CIP-05, "Reading", states |
-| `binds` in `celis.pattern` | a pattern label: the pattern was a rule; a reader reads it as CIP-05, "Reading", states |
-| `binds` in the `--json` of a pattern | the value of that label |
-| `--binds` on `celis pattern` | the flag that wrote that label; `pattern` accepts it and writes nothing for it |
+| `binds` in `celis.pattern` or `celis.decision` | a pattern label: the pattern was a rule; a reader reads it as CIP-05, "Reading", states |
+| `promoted` in `celis.decision` | a pattern label, later `binds` |
+| `situation` in `celis.decision` | a pattern label: the pattern also held where no file shows it ahead |
+| `tool` | a rule tag: the other tool calls a rule acted on |
 | `cell` | a pattern tag: a topic the pattern was in; a reader ignores it, as CIP-05, "Reading", states |
-| `cells` in the `--json` of a pattern | the values of those tags |
-| `--cell` on `celis pattern` | the flag that wrote that tag; `pattern` accepts it and writes nothing for it |
-| `decision` as the `--json` key of a pattern | the key, now `pattern` |
-| `no-decision` | the error, now `no-pattern` |
+| `at:<place>` as the `scope` of a pattern | a scope, now `path` globs; a reader reads it as CIP-05, "Reading", states |
 | `trail:<id>` as the `scope` of a pattern | a scope, now a note on the trail; a reader reads it as CIP-05, "Reading", states |
-| `no-trail` | the error of a `trail:<id>` scope that no open trail had |
-| `celis search` | the command that gave the patterns and the past asks that fit an ask; it refuses as CIP-02, "Commands", states |
-| `$CELIS_HOME/recalled/<id>` | a pattern `search` gave on this machine, now a `recalled` tag on the ask |
 
 ## Words
 
