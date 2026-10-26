@@ -32,8 +32,8 @@ Read all that celis prints, never cut by `head` or `grep`, and do the next move 
    the end, and write nothing else until then.
 3. **Check.** Run the `celis:judge` agent with the brief that `done` prints. Take what it could not
    check as far as you can, then ask the person. Close the ask `--by judge` or `--by person`, never the
-   trail, and answer with the end that celis prints, alone: fill each `<…>`, remove each line you do
-   not need, and add each pattern you wrote.
+   trail. Learn from it, then answer with the end that celis prints, alone: fill each `<…>`, and remove
+   each line you do not need.
 
    ```markdown
    **<what was done, in one line>**
@@ -41,13 +41,15 @@ Read all that celis prints, never cut by `head` or `grep`, and do the next move 
    - [?] **Needs you:** <each decision only the person can take>
    - [!] **Not proven:** <each claim step, and what the judge could not check>
    - [+] **I chose:** <each choice you took yourself, and each step that went otherwise than planned> · <the pattern that decided it, or none>
+   - [+] **Learned:** <each pattern you wrote, as its id and When>
 
    <the total line that done prints>
    ```
 
-4. **Learn.** When the person corrects you or reacts to a result, or something surprises you, write
-   it with `pattern` before you go on. A correction that says "always" or "never", or names a
-   convention, is a pattern whose forces say when it applies. A reaction to a result, such as "this
+4. **Learn.** When an ask closes, `done` gives what it taught: its `changed` lines, its trail's notes
+   and the person's prompts. Write a pattern for each choice that will come back, with `--replaces <id>`
+   for a pattern that misled you, and nothing when the ask taught nothing. A correction that says
+   "always" or "never", or names a convention, is a pattern whose forces say when it applies. A reaction to a result, such as "this
    one" or "too busy", is a pattern with `--good` and `--bad` (`steps.md`, "Patterns"). Give it the narrowest `--path`, name
    the larger pattern it completes with `--within <id>`, and replace a wrong pattern or a near copy
    with `--replaces <id>`. Give it one to three cells with `--cell <topic>`, and reuse a cell that
