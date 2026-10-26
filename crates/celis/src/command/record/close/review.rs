@@ -43,7 +43,7 @@ impl Review {
             Some((s.step_id(), changed.to_string()))
         });
         let own = changed.map(|c| (step.step_id(), c.to_string()));
-        let ask = step.is_ask();
+        let ask = step.is_trail();
         let expect = step
             .record()
             .detail()

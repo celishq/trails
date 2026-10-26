@@ -280,9 +280,8 @@ fn each_agents_prompt_hook_writes_a_prompt_on_its_sessions_trail() {
             "",
         );
         assert!(add.status.success(), "{}", err(&add));
-        let lines: Vec<String> = out(&add).lines().map(str::to_string).collect();
-        let (step, trail) = (&lines[0], &lines[1]);
-        let start = repo.run(&repo.path(), &["step", "start", &step[..8]], &[], "");
+        let trail = out(&add).trim().to_string();
+        let start = repo.run(&repo.path(), &["step", "start", &trail[..8]], &[], "");
         assert!(start.status.success(), "{}", err(&start));
         let stdout = agent.run(
             &repo,
@@ -290,7 +289,7 @@ fn each_agents_prompt_hook_writes_a_prompt_on_its_sessions_trail() {
             &agent.payload("s1", &repo.path(), "make it blue"),
         );
         assert_eq!(
-            prompts(&repo, trail),
+            prompts(&repo, &trail),
             ["make it blue"],
             "{}: {stdout}",
             agent.name

@@ -54,7 +54,18 @@ fn done_runs_the_check_at_the_top_folder_and_stops_a_slow_one() {
     let repo = Repo::new();
     repo.write("marker", "");
     repo.write("sub/keep", "");
-    let top = add(&repo, &["--check", "test -f marker", "--", "at the top"]);
+    let ask = add(&repo, &["--", "the ask"]);
+    let top = add(
+        &repo,
+        &[
+            "--under",
+            &ask[..8],
+            "--check",
+            "test -f marker",
+            "--",
+            "at the top",
+        ],
+    );
     let o = repo.run(
         &repo.path().join("sub"),
         &["step", "done", &top[..8], "--as-planned", "--", "p"],
@@ -62,7 +73,10 @@ fn done_runs_the_check_at_the_top_folder_and_stops_a_slow_one() {
         "",
     );
     assert!(o.status.success(), "{}", err(&o));
-    let slow = add(&repo, &["--check", "sleep 30", "--", "slow"]);
+    let slow = add(
+        &repo,
+        &["--under", &ask[..8], "--check", "sleep 30", "--", "slow"],
+    );
     let started = std::time::Instant::now();
     let o = repo.run(
         &repo.path(),

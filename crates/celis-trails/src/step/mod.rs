@@ -16,7 +16,7 @@ use celis_store::StepId;
 use std::collections::HashSet;
 
 /// One step of a store as it stands: its record with its edits, where it sits in its trail, and how its
-/// marks left it. A step under no other is a trail.
+/// marks left it. A step under no other is an ask, and its trail.
 #[derive(Clone, Copy)]
 pub struct Step<'a> {
     steps: &'a Steps<'a>,
@@ -94,23 +94,9 @@ impl<'a> Step<'a> {
         top
     }
 
-    /// The step on its `under` chain right under its trail; `None` for a trail.
-    pub fn ask(self) -> Option<Step<'a>> {
-        let mut ask = self;
-        while let Some(up) = ask.under().filter(|u| !u.is_trail()) {
-            ask = up;
-        }
-        (!ask.is_trail()).then_some(ask)
-    }
-
-    /// Whether it sits right under its trail.
-    pub fn is_ask(self) -> bool {
-        self.under().is_some_and(|u| u.is_trail())
-    }
-
-    /// Whether a judge confirms it: an ask, or another step with steps under it, but not a trail.
+    /// Whether a judge confirms it: an ask, or another step with steps under it.
     pub fn is_judged(self) -> bool {
-        self.is_ask() || (!self.is_trail() && !self.entry.children.is_empty())
+        self.is_trail() || !self.entry.children.is_empty()
     }
 
     /// The first start record that names it.
@@ -197,10 +183,8 @@ impl<'a> Step<'a> {
 
     /// Where it stands at the time of its store.
     pub fn state(self) -> State {
-        if self.is_trail() {
-            return self.trail_state();
-        }
         match self.entry.close {
+            _ if self.entry.drop.is_some() => State::Dropped,
             Some((_, Close::Done)) => State::Done,
             Some((_, Close::Dropped)) => State::Dropped,
             None => State::Open,
@@ -240,16 +224,6 @@ impl<'a> Step<'a> {
         let asked = self.entry.asked > self.entry.shut;
         let idle = !self.entry.children.is_empty() && !self.entry.loose && !asked;
         idle || self.steps.now().saturating_sub(self.newest()) >= LIFE
-    }
-
-    /// Where it stands as a trail: dropped once a drop names it; open until it ends, or when it ended
-    /// with a step open; else done.
-    fn trail_state(self) -> State {
-        match self.entry.close {
-            _ if self.entry.drop.is_some() => State::Dropped,
-            None if !self.ended() || self.entry.loose => State::Open,
-            _ => State::Done,
-        }
     }
 }
 

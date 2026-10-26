@@ -5,7 +5,7 @@ pub mod notice;
 mod target;
 pub mod written;
 
-use crate::{Check, Done, Draft, Mark, Notes, Notice, Step, StepRecord, Steps, Trail, Written};
+use crate::{Check, Done, Draft, Mark, Notes, Notice, Step, StepRecord, Steps, Written};
 use celis_nostr::Note;
 use celis_patterns::{Pattern, PatternStore, Patterns};
 use celis_store::records::id::short;
@@ -20,9 +20,8 @@ pub trait TrailStore {
 
     fn notes(&self) -> Notes<'_>;
 
-    /// Writes the step `draft` states, where `parent` puts it; a session's new trail holds its first ask,
-    /// which takes the uses. A replaced open step's open tree drops; a replaced done step stays done. An
-    /// open step with the same place and words is given back.
+    /// Writes the step `draft` states, where `parent` puts it. A replaced open step's open tree drops; a
+    /// replaced done step stays done. An open step with the same place and words is given back.
     fn add(&self, draft: Draft) -> Result<Written<'_>, Refusal>;
 
     /// Starts the open step `id`, or gives back the first start of a started step; then the patterns
@@ -88,10 +87,6 @@ impl TrailStore for Store {
             written.records.push(same.note().clone());
             return Ok(written);
         }
-        let joined = match (&draft.under, under, replaced) {
-            (None, Some(trail), None) => Some(trail.step_id()),
-            _ => None,
-        };
         let record = StepRecord {
             anchor: draft.anchor,
             under: under.map(|u| u.step_id()),
@@ -103,20 +98,14 @@ impl TrailStore for Store {
             session: draft.session,
             content: draft.content,
         };
-        if record.under.is_none() && record.session.is_some() {
-            return start_trail(self, record);
-        }
         written.notices.extend(ahead(under).map(Notice::NotStarted));
         let note = self.sign(|account, now| record.record(account, now))?;
         let reason = format!("replaced by {}", short(&note.id));
-        let ask = under
-            .is_some_and(|u| u.is_trail())
-            .then(|| StepId::new(&note.id));
+        let ask = under.is_none().then(|| StepId::new(&note.id));
         written.records.push(note);
         if let Some(old) = moved {
             written.records.extend(drop_open(self, old, &reason)?);
         }
-        written.notices.extend(joined.map(Notice::Joined));
         written.notices.extend(ask.map(Notice::Ask));
         Ok(written)
     }
@@ -214,36 +203,6 @@ impl TrailStore for Store {
     }
 }
 
-/// Writes `ask` in `store` as a new trail with no links, places or check, then `ask` under it; the ask
-/// first.
-fn start_trail(store: &Store, ask: StepRecord) -> Result<Written<'_>, Refusal> {
-    let head = StepRecord {
-        replaces: None,
-        uses: Vec::new(),
-        recalled: Vec::new(),
-        places: Vec::new(),
-        check: None,
-        ..ask.clone()
-    };
-    let trail = store.sign(|account, now| head.record(account, now))?;
-    let ask = StepRecord {
-        under: Some(StepId::new(&trail.id)),
-        ..ask
-    };
-    let ask = store.sign(|account, now| ask.record(account, now))?;
-    Ok(Written {
-        notices: vec![
-            Notice::Started {
-                ask: StepId::new(&ask.id),
-                trail: StepId::new(&trail.id),
-            },
-            Notice::Ask(StepId::new(&ask.id)),
-        ],
-        records: vec![ask, trail],
-        ..Written::default()
-    })
-}
-
 /// The whole id of the live pattern of `project` that `id` names, in `store`; refuses a step as a usage
 /// error.
 fn used(store: &Store, steps: &Steps, project: &str, id: &str) -> Result<String, Refusal> {
@@ -264,13 +223,9 @@ fn recalled(store: &Store, draft: &Draft, under: Option<Step>) -> Result<Vec<Str
     if draft.recalled.is_empty() {
         return Ok(Vec::new());
     }
-    let ask = match under {
-        Some(under) => under.is_trail(),
-        None => draft.session.is_some(),
-    };
-    if !ask {
+    if under.is_some() {
         return Err(Refusal::Usage(
-            "step add --recalled takes an ask: a step right under a trail".into(),
+            "step add --recalled takes an ask: a step with no --under".into(),
         ));
     }
     let patterns = store.patterns();
@@ -310,23 +265,17 @@ fn kept<'a>(patterns: &Patterns<'a>, step: Step) -> Vec<Pattern<'a>> {
     found
 }
 
-/// The step `id` names for `--replaces`, a trail as its first ask: open, or done; refuses a trail with no
-/// first ask as a usage error and a dropped step with `closed`.
+/// The step `id` names for `--replaces`: open, or done; refuses a dropped step with `closed`.
 fn replaced<'a>(steps: &'a Steps<'a>, id: &str) -> Result<Step<'a>, Refusal> {
-    let step = Trail::new(steps.find(id)?).work();
-    if step.is_trail() {
-        return Err(Refusal::Usage(
-            "step add --replaces takes a step under a trail; edit a trail's title instead".into(),
-        ));
-    }
+    let step = steps.find(id)?;
     match step.dropped() {
         Some(_) => Err(Refusal::Closed(step.id().to_string())),
         None => Ok(step),
     }
 }
 
-/// Where `draft` goes: under its `--under`, else under the replaced open step `moved`'s `under`, else under
-/// the session's open trail unless `--new`; none starts a trail. The step it goes under must be open.
+/// Where `draft` goes: under its `--under`, else under the replaced open step `moved`'s `under`; none
+/// starts a trail. The step it goes under must be open.
 fn parent<'a>(
     steps: &'a Steps<'a>,
     draft: &Draft,
@@ -336,13 +285,7 @@ fn parent<'a>(
         .under
         .clone()
         .or(moved.and_then(|m| m.record().under.as_ref().map(|u| u.to_string())));
-    if let Some(id) = named {
-        return steps.find_open(&id).map(Some);
-    }
-    Ok(match (&draft.session, draft.new) {
-        (Some(session), false) => steps.session(&draft.anchor.project, session),
-        _ => None,
-    })
+    named.map(|id| steps.find_open(&id)).transpose()
 }
 
 /// The open step of the project of `draft`, under `under`, with the same words.
@@ -359,7 +302,7 @@ fn same_open<'a>(steps: &'a Steps<'a>, draft: &Draft, under: Option<Step<'a>>) -
 
 /// The first open step under `under` that has not started, when `under` is below an ask.
 fn ahead(under: Option<Step>) -> Option<StepId> {
-    let parent = under.filter(|p| p.ask().is_some_and(|a| a.id() != p.id()))?;
+    let parent = under.filter(|p| !p.is_trail())?;
     let children = parent.children().into_iter();
     let open = children
         .into_iter()

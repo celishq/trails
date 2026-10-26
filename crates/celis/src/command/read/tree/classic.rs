@@ -278,13 +278,9 @@ impl Tree<'_> {
         }
     }
 
-    /// The notes of the trail of `note`: its own, or its trail's when it is an ask.
+    /// The notes of the tree of `note`.
     fn notes(&self, note: Step) -> Vec<&Note> {
-        let owner = match note.is_ask() {
-            true => note.trail(),
-            false => note,
-        };
-        self.notes.of(owner)
+        self.notes.of(note)
     }
 
     /// The time the steps of `tree` with no step under them worked: what a done one took, and the time

@@ -11,7 +11,6 @@ pub(crate) struct Args {
     pub full: bool,
     pub all: bool,
     pub demo: bool,
-    pub new: bool,
     pub planned: bool,
     pub next: bool,
     pub off: bool,
@@ -69,7 +68,7 @@ impl Args {
                 "--full" => parsed.full = true,
                 "--all" => parsed.all = true,
                 "--demo" => parsed.demo = true,
-                "--new" => parsed.new = true,
+                "--new" => {}
                 "--as-planned" => parsed.planned = true,
                 "--binds" => {}
                 "--next" => parsed.next = true,

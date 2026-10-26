@@ -40,7 +40,7 @@ impl<'a> Steps<'a> {
     /// The asks whose `recalled` names `id`, newest first.
     pub fn recalls(&'a self, id: &str) -> Vec<Step<'a>> {
         let all = self.all().into_iter().rev();
-        all.filter(|s| s.is_ask() && s.record().recalled.iter().any(|r| r == id))
+        all.filter(|s| s.is_trail() && s.record().recalled.iter().any(|r| r == id))
             .collect()
     }
 

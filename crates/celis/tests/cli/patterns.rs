@@ -257,15 +257,13 @@ fn tree_and_stats_show_the_patterns() {
     );
     assert!(o.status.success(), "{}", err(&o));
     let pattern = out(&o).lines().next().unwrap().to_string();
-    let trail = add(&repo, &["--", "the logo"]);
+    let trail = add(&repo, &["--recalled", &pattern[..8], "--", "the logo"]);
     add(
         &repo,
         &[
             "--under",
             &trail[..8],
             "--uses",
-            &pattern[..8],
-            "--recalled",
             &pattern[..8],
             "--",
             "draw it flat",

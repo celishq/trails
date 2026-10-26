@@ -56,7 +56,6 @@ impl Command {
             uses: args.uses.clone(),
             recalled: args.recalled.clone(),
             session: args.session.clone().or_else(|| self.session()),
-            new: args.new,
         };
         let session = draft.session.clone();
         let trails = self.trails()?;
@@ -216,19 +215,10 @@ impl Command {
 
     fn notice(&self, notice: &Notice, err: &mut dyn Write) -> Result<(), Failure> {
         let line = match notice {
-            Notice::Started { ask, trail } => format!(
-                "celis: {} is the ask, under its new trail {}.",
-                short(ask),
-                short(trail)
-            ),
             Notice::Ask(ask) => format!(
                 "celis: when {0} holds more than one job, a part a person can check alone such as an item of its list, \
                  add only its first job with step add --under {0}, and each next job after you close one.",
                 short(ask)
-            ),
-            Notice::Joined(trail) => format!(
-                "celis: the step joined the trail {}; edit its title when it no longer covers the work.",
-                short(trail)
             ),
             Notice::NotStarted(step) => format!(
                 "celis: {} has not started; keep one step ahead: take it first, or drop it.",

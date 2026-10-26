@@ -361,7 +361,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "hook ask",
         usage: &["celis hook ask <agent>"],
-        summary: "Read a prompt hook's JSON from stdin, record the prompt on the open trail of its session, and print the note the agent reads. The plugin runs this on each prompt.",
+        summary: "Read a prompt hook's JSON from stdin, record the prompt on the open ask of its session, and print the note the agent reads. The plugin runs this on each prompt.",
         args: &[("<agent>", "claude, codex, cursor, gemini or antigravity")],
         examples: &["celis hook ask codex < hook.json"],
     },
@@ -397,8 +397,8 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "step add",
-        usage: &["celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--recalled <id>]... [--at <place>]... [--check <command>] [--new] [--session <id>] [--project <id>] -- <text>"],
-        summary: "Add a step. With no --under, it goes under the session's trail, or starts a new trail.",
+        usage: &["celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--recalled <id>]... [--at <place>]... [--check <command>] [--session <id>] [--project <id>] -- <text>"],
+        summary: "Add a step. With no --under, it is a new ask, and starts its trail.",
         args: &[
             ("--under <id>", "The open step this step is part of"),
             ("--replaces <id>", "A step this one takes over, or a finished step it fixes"),
@@ -406,7 +406,6 @@ pub const VERBS: &[Verb] = &[
             ("--recalled <id>", "A pattern you read because it bears on the ask"),
             ("--at <place>", "Where the work happens: a file:line, a URL, or any text"),
             ("--check <command>", "A command that proves the work"),
-            ("--new", "Start a new trail, not a step of the session's trail"),
             ("--session <id>", "The session, when the hook names it"),
             ("--project <id>", "The id of a project in the store"),
             ("<text>", "What the person wants done, then its expect: line"),

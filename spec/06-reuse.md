@@ -20,7 +20,6 @@ agent recalled for it.
 
 - A writer MUST write the whole id, once, and only the id of a pattern that is live in scope in the
   step's project (CIP-05, "Scope") when it writes the step.
-- A writer of a trail and its first ask together MUST put `uses` and `replaces` on the ask only.
 
 **Readers**
 

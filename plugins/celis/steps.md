@@ -24,7 +24,7 @@ To add an example, replace the pattern: the new one keeps the old examples.
 
 - When the intent changes, run `celis step edit <the ask's id> -- "<its title and new lines>"`.
 - When a step grows past one action, or you try the same thing twice, split it.
-- To go on with another session's trail, add your first step `--under <its id>`.
+- To go on with an open ask of another session, add your steps `--under <its id>`.
 - To hand a step to an agent, put in its task: `celis step <id>: run celis step start <id> first and
   celis step done <id> last.`
 

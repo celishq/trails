@@ -102,8 +102,8 @@ them.
 | `project` | the code an agent works on, named by its repo's first commit |
 | `place` | a file, a `file:line`, a folder or a URL that a step or a pattern is at |
 | `step` | one part of the work, at a place |
-| `trail` | one task you give: a step with no `under`, and the steps under it |
-| `ask` | a step right under a trail: one thing you asked for |
+| `trail` | one ask, and the steps under it |
+| `ask` | a step with no `under`: one thing you asked for |
 | `session` | one run of an agent |
 | `prompt` | what you wrote to the agent while a trail was open |
 | `pattern` | what to choose in a context, and why, that holds in its scope until another replaces it |

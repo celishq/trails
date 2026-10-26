@@ -25,7 +25,6 @@ fn worked(later: u64) -> (TempDir, Store) {
         uses: vec![],
         recalled: Vec::new(),
         session: None,
-        new: false,
     };
     let trail = trails.add(draft("the trail", None)).unwrap().records[0]
         .id
@@ -136,7 +135,6 @@ fn reused(later: u64) -> (TempDir, Store) {
         anchor: anchor.clone(),
         places: vec![],
         check: None,
-        new: under.is_none(),
         under,
         replaces: None,
         uses,
@@ -196,7 +194,6 @@ fn the_projects_card_aligns_its_times() {
         anchor: anchor.clone(),
         places: vec![],
         check: None,
-        new: under.is_none(),
         under,
         replaces: None,
         uses: vec![],

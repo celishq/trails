@@ -7,16 +7,18 @@ depends: [CIP-01, CIP-03, CIP-05]
 
 # CIP-04 — Trails
 
-A trail is one task the person gives, in their words, and the steps agents take toward it.
+A trail is one ask of the person, in their words, and the steps agents take toward it.
 
 ## Trails
 
-A trail is a step with no `under` (CIP-03). The steps under it, at any depth, are its tree. An ask is a
-step right under a trail.
+A trail is a step with no `under` (CIP-03), and that step is its ask. The steps under it, at any depth,
+are its tree.
 
 **Readers**
 
 - A reader MUST count a step in the tree of the trail at the top of its `under` chain.
+- A reader MUST read an older trail, which held the asks of a session as steps right under it, by the
+  same rule: as one ask, with those asks as its steps.
 
 ## Sessions
 
@@ -39,10 +41,7 @@ A session is one run of an agent; a subagent shares it. Many sessions can work o
 
 - A writer MUST write a `session` tag on each step that has a session.
 - A session's open trail is the trail of its newest step, while it is not done or dropped.
-- A trail with a session MUST hold each ask under it, the first too: the writer writes the trail, then the
-  ask with the same text.
-- A step with no `under` MUST go under its session's open trail, unless it asks for a new trail, else be
-  a new trail. It MUST NOT join another session's trail without `under`.
+- A step with no `under` MUST be a new trail. A session does not join steps to its open trail.
 - The prompt hook MUST write a prompt on its session's open trail only. With no open trail, the
   session's next `step add` MUST write the prompt on the trail of its step. The hook MUST write nothing
   for a prompt that starts with `<task-notification>` or `<agent-message`.
@@ -56,4 +55,4 @@ A trail's notes are the notes on the steps of its tree (CIP-03, "Notes"), and ea
 
 **Readers**
 
-- A trail takes the states of a step (CIP-03, "Starting") from its own records.
+- A trail takes the state of its ask (CIP-03, "Starting"): its own `done` or `drop` settles it.

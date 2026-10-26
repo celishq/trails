@@ -8,7 +8,7 @@ of the work.
 ```
 celis patterns [<file>]...
 celis grep <id>
-celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--recalled <id>]... [--check <command>] [--new] -- "<title>"
+celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--recalled <id>]... [--check <command>] -- "<title>"
 celis step start <id>
 celis step done <id> [--changed "<what differs>"] [--as-planned] [--by <who>] [--file <path>]... -- "<proof>"
 celis step note <id> -- "<note>"
@@ -34,9 +34,9 @@ Read all that celis prints, never cut by `head` or `grep`, and do the next move 
    cannot write `expect` without a guess, or at a one-way door, such as a new dependency, a schema,
    money or a deploy. Take every other choice yourself, and name it in the end.
 3. **Check.** Run the `celis:judge` agent with the brief that `done` prints. Take what it could not
-   check as far as you can, then ask the person. Close the ask `--by judge` or `--by person`, never the
-   trail. Learn from it, then answer with the end that celis prints, alone: fill each `<…>`, and remove
-   each line you do not need.
+   check as far as you can, then ask the person. Close the ask `--by judge` or `--by person`. Learn
+   from it, then answer with the end that celis prints, alone: fill each `<…>`, and remove each line
+   you do not need.
 
    ```markdown
    **<what was done, in one line>**

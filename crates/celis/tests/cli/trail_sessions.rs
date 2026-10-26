@@ -21,54 +21,29 @@ fn add(repo: &Repo, session: Option<&str>, text: &str) -> String {
     ids(repo, session, text).remove(0)
 }
 
-/// The trail of a session's first ask: the second id `step add` prints.
-fn start(repo: &Repo, session: &str, text: &str) -> String {
-    ids(repo, Some(session), text).remove(1)
+/// A step with no `--under` is a new trail, in a session or in none, also while the session has an open
+/// trail (`spec/04-trails.md`, "Sessions").
+#[test]
+fn a_step_with_no_under_is_a_new_trail() {
+    let repo = Repo::new();
+    let first = ids(&repo, Some("s1"), "make the badges orange");
+    assert_eq!(first.len(), 1, "{first:?}");
+    std::thread::sleep(std::time::Duration::from_millis(1100));
+    let next = add(&repo, Some("s1"), "now the buttons too");
+    let none = add(&repo, None, "no session");
+    for id in [&first[0], &next, &none] {
+        let tree = objects(&repo, &["tree", &id[..8]]);
+        assert_eq!(tree.len(), 1, "{tree:?}");
+        assert_eq!(tree[0]["trail"]["id"], id.as_str(), "{tree:?}");
+    }
 }
 
-/// A session's first `step add` writes the trail and the ask under it with the same text, and prints
-/// the ask's id first; with no session, it writes the trail alone (`spec/04-trails.md`,
+/// A trail carries its session, and `--under` joins another session's trail (`spec/04-trails.md`,
 /// "Sessions").
 #[test]
-fn a_sessions_first_ask_is_a_step_under_its_trail() {
+fn a_trail_carries_its_session_and_under_joins_another_sessions_trail() {
     let repo = Repo::new();
-    let written = ids(&repo, Some("s1"), "make the badges orange");
-    assert_eq!(written.len(), 2, "{written:?}");
-    let tree = objects(&repo, &["tree", &written[1][..8]]);
-    assert_eq!(
-        tree[0]["trail"]["content"], "make the badges orange",
-        "{tree:?}"
-    );
-    assert_eq!(tree[1]["step"]["id"], written[0].as_str(), "{tree:?}");
-    assert_eq!(
-        tree[1]["step"]["content"], "make the badges orange",
-        "{tree:?}"
-    );
-    let o = repo.run(
-        &repo.path(),
-        &["step", "done", &written[0][..8], "--as-planned", "--", "p"],
-        &[],
-        "",
-    );
-    assert!(o.status.success(), "{}", err(&o));
-    std::thread::sleep(std::time::Duration::from_millis(1100));
-    let next = add(&repo, Some("s1"), "now the buttons too");
-    let tree = objects(&repo, &["tree", &written[1][..8]]);
-    assert_eq!(tree[2]["step"]["id"], next.as_str(), "{tree:?}");
-    assert_eq!(ids(&repo, None, "no session").len(), 1);
-}
-
-/// A trail carries its session, and a session's next step with no `--under` goes under its trail; a
-/// session with no trail, or no session, starts a trail, and `--under` joins another session's trail
-/// (`spec/04-trails.md`, "Sessions").
-#[test]
-fn a_sessions_steps_go_under_its_trail_and_a_session_with_no_trail_starts_one() {
-    let repo = Repo::new();
-    let trail = start(&repo, "s1", "make the badges orange");
-    std::thread::sleep(std::time::Duration::from_millis(1100));
-    let next = add(&repo, Some("s1"), "now the buttons too");
-    std::thread::sleep(std::time::Duration::from_millis(1100));
-    let other = ids(&repo, Some("s2"), "another session");
+    let trail = add(&repo, Some("s1"), "make the badges orange");
     let o = repo.run(
         &repo.path(),
         &[
@@ -84,16 +59,9 @@ fn a_sessions_steps_go_under_its_trail_and_a_session_with_no_trail_starts_one() 
     );
     assert!(o.status.success(), "{}", err(&o));
     let joined = out(&o).trim().to_string();
-    let none = add(&repo, None, "no session");
     let tree = objects(&repo, &["tree", &trail[..8]]);
     assert_eq!(tree[0]["trail"]["session"], "s1", "{tree:?}");
-    assert_eq!(tree[2]["step"]["id"], next.as_str(), "{tree:?}");
-    assert_eq!(tree[3]["step"]["id"], joined.as_str(), "{tree:?}");
-    assert_eq!(other.len(), 2, "{other:?}");
-    let own = objects(&repo, &["tree", &other[1][..8]]);
-    assert_eq!(own[0]["trail"]["session"], "s2", "{own:?}");
-    let head = objects(&repo, &["tree", &none[..8]]);
-    assert!(head[0].get("trail").is_some(), "{head:?}");
+    assert_eq!(tree[1]["step"]["id"], joined.as_str(), "{tree:?}");
 }
 
 /// The marks labelled `label` in the store, as (the step they name, their text).
@@ -123,10 +91,10 @@ fn prompt_writes_the_prompt_as_a_prompt_mark_on_the_sessions_trail() {
         let json = serde_json::json!({"session_id": session, "prompt": prompt}).to_string();
         support::prompt(&repo, &repo.path(), &[], &json)
     };
-    let trail = start(&repo, "s1", "the trail");
+    let trail = add(&repo, Some("s1"), "the trail");
     let o = hook("s1", "make it blue\nand more");
     assert!(o.status.success(), "{}", err(&o));
-    let step = add(&repo, Some("s1"), "a step");
+    let step = support::added(&repo, "s1", &["--under", &trail[..8], "--", "a step"]).remove(0);
     let o = repo.run(&repo.path(), &["step", "start", &step[..8]], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     let long = "x".repeat(300);
@@ -152,13 +120,13 @@ fn a_prompt_with_no_open_trail_goes_on_the_trail_of_the_sessions_next_step() {
     let json =
         serde_json::json!({"session_id": "s1", "prompt": "From now on, add type hints\nand more"});
     hook(&repo, json);
-    start(&repo, "s2", "another session");
+    add(&repo, Some("s2"), "another session");
     let written = ids(&repo, Some("s1"), "the trail");
     add(&repo, Some("s1"), "a step");
     assert_eq!(
         marks(&repo, "prompt"),
         [(
-            written[1].clone(),
+            written[0].clone(),
             "From now on, add type hints".to_string()
         )]
     );
@@ -185,26 +153,22 @@ fn a_prompt_with_no_open_trail_goes_on_the_trail_of_the_sessions_next_step() {
 #[test]
 fn a_trail_asked_twice_is_reached() {
     let repo = Repo::new();
-    let written = ids(&repo, Some("s1"), "the trail");
-    let trail = &written[1];
+    let trail = add(&repo, Some("s1"), "the trail");
     hook(
         &repo,
         serde_json::json!({"session_id": "s1", "prompt": "and more"}),
     );
-    support::finish(&repo, &written[0][..8]);
     support::finish(&repo, &trail[..8]);
     let head = objects(&repo, &["tree", &trail[..8]]);
     assert_eq!(head[0]["trail"]["state"], "done", "{head:?}");
 }
 
-/// `step add --new` starts a second trail, which takes the session's next steps
-/// (`spec/04-trails.md`, "Sessions").
+/// `step add` accepts `--new` and ignores it: the step is a new trail either way (`spec/02-cli.md`,
+/// "Step").
 #[test]
-fn new_starts_a_trail_that_takes_the_sessions_next_steps() {
+fn add_accepts_new_and_ignores_it() {
     let repo = Repo::new();
-    ids(&repo, Some("s1"), "the trail");
     let env = [("CLAUDE_CODE_SESSION_ID", "s1")];
-    std::thread::sleep(std::time::Duration::from_millis(1100));
     let o = repo.run(
         &repo.path(),
         &["step", "add", "--new", "--", "second"],
@@ -212,12 +176,10 @@ fn new_starts_a_trail_that_takes_the_sessions_next_steps() {
         "",
     );
     assert!(o.status.success(), "{}", err(&o));
-    let second = out(&o).lines().nth(1).unwrap_or("").to_string();
-    std::thread::sleep(std::time::Duration::from_millis(1100));
-    let third = add(&repo, Some("s1"), "under the second");
+    let second = out(&o);
+    assert_eq!(second.lines().count(), 1, "{second}");
     let head = objects(&repo, &["tree", &second[..8]]);
-    assert!(head[0].get("trail").is_some(), "{head:?}");
-    assert_eq!(head[2]["step"]["id"], third.as_str(), "{head:?}");
+    assert_eq!(head[0]["trail"]["id"], second.trim(), "{head:?}");
 }
 
 /// `step add` in the session `session` with `env` set too, as `args`; the ids it prints.
@@ -232,13 +194,13 @@ fn run_add(repo: &Repo, session: Option<&str>, env: &[(&str, &str)], args: &[&st
 }
 
 /// A session's open trail is the trail of its newest step: after a step `--under` another session's
-/// trail, its next steps go there (`spec/04-trails.md`, "Sessions").
+/// trail, its prompt goes there (`spec/04-trails.md`, "Sessions").
 #[test]
 fn a_sessions_open_trail_is_the_trail_of_its_newest_step() {
     let repo = Repo::new();
-    let first = ids(&repo, Some("s1"), "the trail")[1].clone();
+    let first = add(&repo, Some("s1"), "the trail");
     std::thread::sleep(std::time::Duration::from_millis(1100));
-    let other = run_add(&repo, Some("s2"), &[], &["--new", "--", "its own"])[1].clone();
+    add(&repo, Some("s2"), "its own");
     std::thread::sleep(std::time::Duration::from_millis(1100));
     run_add(
         &repo,
@@ -246,17 +208,15 @@ fn a_sessions_open_trail_is_the_trail_of_its_newest_step() {
         &[],
         &["--under", &first[..8], "--", "a part"],
     );
-    std::thread::sleep(std::time::Duration::from_millis(1100));
-    let next = add(&repo, Some("s2"), "another part");
-    let head = objects(&repo, &["tree", &first[..8]]);
-    assert_eq!(head[3]["step"]["id"], next.as_str(), "{head:?}");
-    let own = objects(&repo, &["tree", &other[..8]]);
-    assert_eq!(own.len(), 2, "{own:?}");
+    hook(
+        &repo,
+        serde_json::json!({"session_id": "s2", "prompt": "and more"}),
+    );
+    assert_eq!(marks(&repo, "prompt"), [(first, "and more".to_string())]);
 }
 
-/// `prompt` gives one line on stderr: search, join the session's trail, replace done work by its id in
-/// `celis tree`, and keep a correction as a pattern and a reaction as a pattern; a working step changes
-/// nothing of it.
+/// `prompt` gives one line on stderr: search, add a new ask, go on with the session's open ask under its
+/// id, and replace done work by its id in `celis tree`; a working step changes nothing of it.
 #[test]
 fn the_prompt_hook_gives_one_line() {
     let repo = Repo::new();
@@ -264,13 +224,18 @@ fn the_prompt_hook_gives_one_line() {
         let json = serde_json::json!({"session_id": "s1", "prompt": prompt}).to_string();
         support::prompt(&repo, &repo.path(), &[], &json)
     };
-    let trail = start(&repo, "s1", "the trail");
-    let line = format!("{}\n", note(true, Some(&trail[..8]), true));
+    let trail = add(&repo, Some("s1"), "the trail");
+    let line = format!("{}\n", note(true, Some(&trail[..8])));
     let o = hook("first");
     assert!(o.status.success(), "{}", err(&o));
     assert_eq!(err(&o), line);
-    let step = add(&repo, Some("s1"), "Cache the price list");
-    let o = repo.run(&repo.path(), &["step", "start", &step[..8]], &[], "");
+    let step = run_add(
+        &repo,
+        Some("s1"),
+        &[],
+        &["--under", &trail[..8], "--", "Cache the price list"],
+    );
+    let o = repo.run(&repo.path(), &["step", "start", &step[0][..8]], &[], "");
     assert!(o.status.success(), "{}", err(&o));
     let o = hook("now make it blue");
     assert!(o.status.success(), "{}", err(&o));
@@ -278,61 +243,24 @@ fn the_prompt_hook_gives_one_line() {
 }
 
 /// The line `prompt` gives: a new ask takes the patterns that bear on it when the store holds a record,
-/// then joins the session's trail `trail`, else a trail of `today`, else a new one; and how done work
-/// is fixed.
-fn note(recall: bool, trail: Option<&str>, today: bool) -> String {
-    let join = match (trail, today) {
-        (Some(id), _) => {
-            format!("add it under the session's trail {id} when it fits, else with --new")
-        }
-        (None, true) => {
-            "add it --under a related trail of today that celis tree shows, else with --new"
-                .to_string()
-        }
-        (None, false) => "add it with --new".to_string(),
-    };
+/// and is a new step; a prompt that goes on with the open ask `open` adds steps under it; and how done
+/// work is fixed.
+fn note(recall: bool, open: Option<&str>) -> String {
     let ask = match recall {
-        true => format!(
-            "take the patterns that bear on it, from the index you got at the session start or from celis \
-             patterns <file>... again, before you change a file, then {join}, with --recalled <the id \
-             of each>"
-        ),
-        false => join,
+        true => "take the patterns that bear on it, from the index you got at the session start or from celis \
+                 patterns <file>... again, before you change a file, then add it with celis step add \
+                 --recalled <the id of each>"
+            .to_string(),
+        false => "add it with celis step add".to_string(),
     };
-    let fix = match trail {
-        Some(id) => format!(
-            "; when it changes done work, add it with step add --replaces <the id of that step, as celis \
-             tree {id} shows it>"
-        ),
+    let more = match open {
+        Some(id) => format!("; when it goes on with the open ask {id}, add its steps --under {id}"),
         None => String::new(),
     };
-    format!("celis: when this prompt is a new ask, {ask}{fix}.")
-}
-
-/// A prompt with no open trail gives the hint to join a trail of today, of any project; with no trail
-/// of today, it asks for a new trail.
-#[test]
-fn a_later_prompt_with_no_open_trail_hints_at_todays_trails() {
-    let repo = Repo::new();
-    let hook = |session: &str| {
-        let json = serde_json::json!({"session_id": session, "prompt": "Add a filter"});
-        let o = support::prompt(&repo, &repo.path(), &[], &json.to_string());
-        assert!(o.status.success(), "{}", err(&o));
-        err(&o)
-    };
-    assert_eq!(hook("s9"), format!("{}\n", note(false, None, false)));
-    let shop = repo.other("shop");
-    let o = repo.run(&shop, &["step", "add", "--", "a shop trail"], &[], "");
-    assert!(o.status.success(), "{}", err(&o));
-    assert_eq!(hook("s9"), format!("{}\n", note(true, None, true)));
-    let o = repo.run(
-        &repo.path(),
-        &["pattern", "--", "When you test: set A=1."],
-        &[],
-        "",
-    );
-    assert!(o.status.success(), "{}", err(&o));
-    assert_eq!(hook("s8"), format!("{}\n", note(true, None, true)));
+    format!(
+        "celis: when this prompt is a new ask, {ask}{more}; when it changes done work, add it with step add \
+         --replaces <the id of that step, as celis tree shows it>."
+    )
 }
 
 /// `prompt` writes and prints nothing for a prompt that is a task notification or an agent's message of
@@ -340,7 +268,7 @@ fn a_later_prompt_with_no_open_trail_hints_at_todays_trails() {
 #[test]
 fn prompt_skips_a_harness_message() {
     let repo = Repo::new();
-    start(&repo, "s1", "the trail");
+    add(&repo, Some("s1"), "the trail");
     for prompt in [
         "<task-notification>\n<task-id>b1</task-id>\n</task-notification>",
         "<agent-message from=\"a1\">\nThe report.\n</agent-message>",
@@ -355,7 +283,7 @@ fn prompt_skips_a_harness_message() {
 }
 
 /// With no open trail in the session, `prompt` writes nothing, and prints on stderr the recall line once
-/// the store holds any record, then how to add a new trail; a session start or a compaction prints
+/// the store holds any record, then how to add a new ask; a session start or a compaction prints
 /// nothing.
 #[test]
 fn a_prompt_with_no_open_trail_asks_for_recall_and_a_new_trail() {
@@ -367,7 +295,7 @@ fn a_prompt_with_no_open_trail_asks_for_recall_and_a_new_trail() {
         err(&o)
     };
     let ask = serde_json::json!({"session_id": "s9", "prompt": "Build a Vendors table"});
-    assert_eq!(hook(ask.clone()), format!("{}\n", note(false, None, false)));
+    assert_eq!(hook(ask.clone()), format!("{}\n", note(false, None)));
     let o = repo.run(
         &repo.path(),
         &["pattern", "--", "When you test: set SHELF_OFFLINE=1."],
@@ -375,21 +303,13 @@ fn a_prompt_with_no_open_trail_asks_for_recall_and_a_new_trail() {
         "",
     );
     assert!(o.status.success(), "{}", err(&o));
-    assert_eq!(hook(ask.clone()), format!("{}\n", note(true, None, false)));
+    assert_eq!(hook(ask.clone()), format!("{}\n", note(true, None)));
     for source in ["startup", "compact"] {
         let start = serde_json::json!({"session_id": "s9", "source": source});
         assert_eq!(hook(start), "");
     }
-    assert_eq!(hook(ask), format!("{}\n", note(true, None, false)));
+    assert_eq!(hook(ask), format!("{}\n", note(true, None)));
     assert!(marks(&repo, "prompt").is_empty());
-}
-
-/// The steps `tree <trail>` shows.
-fn under(repo: &Repo, trail: &str) -> Vec<String> {
-    objects(repo, &["tree", &trail[..8]])
-        .iter()
-        .filter_map(|o| o["step"]["id"].as_str().map(str::to_string))
-        .collect()
 }
 
 /// `step add` takes its session from `--session`, else from the first set variable of
@@ -404,7 +324,6 @@ fn a_session_comes_from_the_flag_else_the_first_set_variable() {
         assert!(o.status.success(), "{}", err(&o));
         out(&o).lines().next().unwrap().to_string()
     };
-    let trail = ids(&repo, Some("c1"), "the trail").remove(1);
     let steps = [
         add(&[], &["--session", "c1"]),
         add(&[("CODEX_THREAD_ID", "c1")], &[]),
@@ -415,9 +334,9 @@ fn a_session_comes_from_the_flag_else_the_first_set_variable() {
             &[],
         ),
     ];
-    let found = under(&repo, &trail);
     for step in steps {
-        assert!(found.contains(&step), "{step} not in {found:?}");
+        let tree = objects(&repo, &["tree", &step[..8]]);
+        assert_eq!(tree[0]["trail"]["session"], "c1", "{tree:?}");
     }
 }
 
@@ -426,7 +345,7 @@ fn a_session_comes_from_the_flag_else_the_first_set_variable() {
 #[test]
 fn prompt_takes_the_conversation_id_first() {
     let repo = Repo::new();
-    let trail = start(&repo, "c1", "the trail");
+    let trail = add(&repo, Some("c1"), "the trail");
     hook(
         &repo,
         serde_json::json!({"conversation_id": "c1", "session_id": "c9", "prompt": "make it blue"}),
@@ -435,34 +354,6 @@ fn prompt_takes_the_conversation_id_first() {
         marks(&repo, "prompt"),
         [(trail, "make it blue".to_string())]
     );
-}
-
-/// A session's first `step add` says on stderr which printed id is the ask and which the new trail.
-#[test]
-fn a_sessions_first_ask_names_its_ids() {
-    let repo = Repo::new();
-    let env = [("CLAUDE_CODE_SESSION_ID", "s1")];
-    let o = repo.run(
-        &repo.path(),
-        &["step", "add", "--", "make the badges orange"],
-        &env,
-        "",
-    );
-    assert!(o.status.success(), "{}", err(&o));
-    let ids: Vec<String> = out(&o).lines().map(str::to_string).collect();
-    let line = format!(
-        "celis: {} is the ask, under its new trail {}.",
-        &ids[0][..8],
-        &ids[1][..8]
-    );
-    assert!(err(&o).contains(&line), "{}", err(&o));
-    let o = repo.run(
-        &repo.path(),
-        &["step", "add", "--", "now the buttons"],
-        &env,
-        "",
-    );
-    assert!(!err(&o).contains("is the ask"), "{}", err(&o));
 }
 
 /// A session's first prompt that names a step, as a worker gets it, writes and prints nothing
