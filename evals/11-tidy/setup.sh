@@ -29,3 +29,15 @@ for n in 1 2 3; do
   celis step done "$step" --as-planned --by person -- "tests/test_cart.py has test $n, and pytest passes." >/dev/null 2>&1
 done
 celis step done "$trail" --as-planned --by person -- "tests/test_cart.py has 3 tests, and pytest passes." >/dev/null 2>&1
+id() { head -1 | sed 's/.*"id":"\([0-9a-f]*\)".*/\1/'; }
+shown=$(celis pattern --json -- "When a price is shown: divide the cents by 100 and format the float, because it is short." | id)
+for n in 1 2; do
+  step=$(celis step add --uses "$shown" --json -- "Show the price on page $n" 2>/dev/null | id)
+  celis step done "$step" --as-planned -- "page $n shows the price." >/dev/null 2>&1
+  fix=$(celis step add --replaces "$step" --json -- "Show the price on page $n without float error" 2>/dev/null | id)
+  celis step done "$fix" --changed "was: 19.990000000000002 / now: 19.99, from integer cents" -- "page $n shows 19.99." >/dev/null 2>&1
+done
+csv=$(celis pattern --json -- "When a CSV is exported: use commas, because spreadsheets read them." | id)
+for sep in "semicolons, because Excel in Germany reads them" "tabs, because names hold commas" "commas and quote each field, because names hold commas"; do
+  csv=$(celis pattern --replaces "$csv" --json -- "When a CSV is exported: use $sep." | id)
+done
