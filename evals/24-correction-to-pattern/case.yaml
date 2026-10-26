@@ -1,4 +1,4 @@
 schema_version: "1.1"
-name: 24-correction-to-rule
+name: 24-correction-to-pattern
 context:
   scaffold_script: ./setup.sh

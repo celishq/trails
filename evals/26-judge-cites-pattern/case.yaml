@@ -1,4 +1,4 @@
 schema_version: "1.1"
-name: 23-search-each-ask
+name: 26-judge-cites-pattern
 context:
   scaffold_script: ./setup.sh

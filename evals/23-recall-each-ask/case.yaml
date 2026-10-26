@@ -1,4 +1,4 @@
 schema_version: "1.1"
-name: 26-judge-cites-rule
+name: 23-recall-each-ask
 context:
   scaffold_script: ./setup.sh
