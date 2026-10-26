@@ -71,6 +71,35 @@ fn patterns_prints_the_index_oldest_first() {
     );
 }
 
+/// `patterns <file>...` prints a `match` line under each pattern for each file that one of its paths
+/// matches, a folder as each file in it, and still prints every pattern in the same order
+/// (`spec/02-cli.md`, "Patterns").
+#[test]
+fn patterns_marks_each_pattern_that_a_file_matches() {
+    let repo = Repo::new();
+    repo.write("shelf/prices.py", "x = 1\n");
+    let page = decide(&repo, &[], "When a page is drawn: keep one bold thing.");
+    std::thread::sleep(std::time::Duration::from_millis(1100));
+    let logo = decide(
+        &repo,
+        &["--path", "*.svg", "--path", "shelf/*.py"],
+        "When a logo is drawn: keep it flat.",
+    );
+    let said = out(&cli(&repo, &["patterns", "logo.svg", "shelf", "notes.md"]));
+    assert_eq!(
+        said.lines().collect::<Vec<_>>(),
+        [
+            format!("{} project When a page is drawn", &page[..8]),
+            format!("{} project When a logo is drawn", &logo[..8]),
+            "  path   *.svg".to_string(),
+            "  path   shelf/*.py".to_string(),
+            "  match  logo.svg".to_string(),
+            "  match  shelf".to_string(),
+        ],
+        "{said}"
+    );
+}
+
 /// `patterns` leaves out the patterns of another project (`spec/02-cli.md`, "Patterns").
 #[test]
 fn patterns_leaves_out_the_patterns_of_another_project() {

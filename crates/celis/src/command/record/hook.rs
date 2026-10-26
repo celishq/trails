@@ -53,7 +53,8 @@ impl Command {
         }
     }
 
-    /// The card, where the plugin's files are and a version notice.
+    /// The card, where the plugin's files are, the index of the patterns in the project the JSON names,
+    /// and a version notice.
     fn start(&self, agent: &str, json: &Value, root: &Path) -> String {
         let card = std::fs::read_to_string(root.join("card.md")).unwrap_or_default();
         let mut text = format!(
@@ -81,6 +82,9 @@ impl Command {
                 "\nrecall.md: {recall}. With no subagents, do what it says yourself, with the ask \
                  and its files."
             ));
+        }
+        if let Some(index) = self.here(json).index(&[]).ok().flatten() {
+            text.push_str(&format!("\n\nThe patterns in scope here:\n{index}"));
         }
         if let Some(line) = self.tidy() {
             text.push_str(&format!("\n\n{line}"));
@@ -127,20 +131,26 @@ impl Command {
 
     /// The note on the prompt, after it is acted on in the project the JSON names.
     fn note(&self, json: &Value) -> String {
-        let folder = json["cwd"]
-            .as_str()
-            .or(json["workspace_roots"][0].as_str())
-            .map_or(self.folder.clone(), PathBuf::from);
-        let here = Command {
-            args: vec![],
-            env: self.env.clone(),
-            folder,
-        };
         let mut note = Vec::new();
-        if here.act_on(json, &mut note).is_err() {
+        if self.here(json).act_on(json, &mut note).is_err() {
             return String::new();
         }
         String::from_utf8_lossy(&note).trim_end().to_string()
+    }
+
+    /// This run in the folder the JSON names in `cwd`, else in the first of `workspace_roots` or of
+    /// `workspacePaths`, else in its own.
+    fn here(&self, json: &Value) -> Command {
+        let folder = json["cwd"]
+            .as_str()
+            .or(json["workspace_roots"][0].as_str())
+            .or(json["workspacePaths"][0].as_str())
+            .map_or(self.folder.clone(), PathBuf::from);
+        Command {
+            args: vec![],
+            env: self.env.clone(),
+            folder,
+        }
     }
 }
 

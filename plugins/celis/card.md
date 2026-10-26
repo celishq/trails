@@ -6,7 +6,7 @@ the person agrees in `celis:tidy`, which learns from the trails. Each ask is a t
 of the work.
 
 ```
-celis patterns
+celis patterns [<file>]...
 celis grep <id>
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--recalled <id>]... [--check <command>] [--new] -- "<title>"
 celis step start <id>
@@ -17,17 +17,20 @@ celis pattern [--scope me] [--replaces <id>] [--path <glob>]... [--within <id>].
 
 Read all that celis prints, never cut by `head` or `grep`, and do the next move it names.
 
-1. **Recall.** At a new ask, before you change a file, find the patterns that bear on it, from the
-   index that `celis patterns` gives or through the `celis:recall` agent, as you choose. Name each on
-   the ask with `--recalled <id>`.
+1. **Recall.** At a new ask, before you change a file, find the patterns that bear on it. The index is
+   in your context from the session start; read it again with `celis patterns <file>...` when patterns
+   may have changed. Open what bears on the ask with `celis grep <id>` or through the `celis:recall`
+   agent, and name each on the ask with `--recalled <id>`.
 2. **Work.** An ask that changes a file, or works toward a result someone can check, gets a step; a
    question, an explanation or a review you only report on gets none. Its title names what it changes,
    in words that hold in another project. Before the work, the person needs to see what they will be
    able to check when it is done, why they want it, its limits and the one-way doors ahead: write them
-   under the ask as `expect:`, `for:`, `not:` and `ask me:`, send them to the person, and start in the
-   same turn. Each part a person can check alone is a step of its own,
-   closed with a proof a person can check. At each choice the ask leaves open, resolve the forces of
-   the patterns that bear on it, and name each with `--uses`. Act, and tell after: ask only when you
+   in the text of the ask's `celis step add`, after its title, as the lines `expect: …`, `for: …`,
+   `not: …` and `ask me: …`, send them to the person, and start in the same turn. Each part a person
+   can check alone is a step of its own, closed with a proof a person can check. A change to done work,
+   wherever you are, is a new step `celis step add --replaces <the id of that step>`, whose proof says
+   what changed. At each choice the ask leaves open, resolve the forces of the patterns that bear on
+   it, and name each with `--uses`. Act, and tell after: ask only when you
    cannot write `expect` without a guess, or at a one-way door, such as a new dependency, a schema,
    money or a deploy. Take every other choice yourself, and name it in the end.
 3. **Check.** Run the `celis:judge` agent with the brief that `done` prints. Take what it could not
