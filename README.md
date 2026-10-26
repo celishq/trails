@@ -32,13 +32,13 @@ one rule that matters is lost among hundreds of others. Celis is a checklist. It
 few rules that apply right now: when a job starts, before it changes a file, and before it says it's
 done.
 
-Patterns are the core. A pattern says what to choose in a context, and why. A pattern that binds is a
-rule, which the result must keep. Good and bad examples show your taste, and cells group patterns by
-topic. They come from your corrections and code reviews, and `celis search` gives your agent the ones
-that fit the job.
+Patterns are the core. A pattern says what to choose in a context, and why. It guides your agent's
+judgement: when its forces are present, the agent resolves them in its own way. Good and bad examples
+show your taste, and cells group patterns by topic. They come from your corrections and code reviews,
+and `celis search` gives your agent the ones that fit the job.
 
 ```
-  knowledge    cell ◄── tag, many to many ── pattern ── binds ──► rule
+  knowledge    cell ◄── tag, many to many ── pattern
                (a topic)                     When · Forces · Do · Because
                                              good / bad examples, path globs
                                              scope: project | me
