@@ -1,7 +1,9 @@
 celis keeps what the person taught you as patterns. A pattern guides your
 judgement: when its forces are present here, resolve them in your own way; when they are not, it does
 not apply. At each ask, you take those that bear on it. Write one only for a choice that will come back.
-Each ask is a trail of steps with proofs of the work.
+celis keeps guides: a must goes into the project's own files, `AGENTS.md`, `CLAUDE.md` or a check, when
+the person agrees in `celis:tidy`, which learns from the trails. Each ask is a trail of steps with proofs
+of the work.
 
 ```
 celis patterns
