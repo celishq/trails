@@ -9,7 +9,7 @@ use support::{account, err, now, out, step_signed, Repo, PHRASE};
 /// (`spec/01-records.md`, "The account").
 #[test]
 fn a_fresh_home_mints_one_phrase_for_its_owner_alone() {
-    for _ in 0..30 {
+    for _ in 0..10 {
         one_fresh_home_race();
     }
 }

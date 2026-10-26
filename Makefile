@@ -3,7 +3,7 @@
 verify:
 	cd crates && cargo fmt --check
 	cd crates && cargo clippy --workspace --all-targets -- -D warnings
-	cd crates && RUST_TEST_THREADS=$$((4 * $$(getconf _NPROCESSORS_ONLN))) cargo test --workspace --no-fail-fast
+	cd crates && cargo test --workspace --no-fail-fast
 
 fmt:
 	cd crates && cargo fmt

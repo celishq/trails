@@ -85,6 +85,7 @@ impl Command {
                         return Ok(());
                     }
                 }
+                let _ = wakes.0.send(Wake::Rescan);
             }
             let trails = self.trails()?;
             let mut page = start(&trails)?;

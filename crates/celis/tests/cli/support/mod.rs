@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
+use std::sync::OnceLock;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tempfile::TempDir;
 
@@ -26,20 +27,7 @@ impl Repo {
     pub fn new() -> Repo {
         let dir = tempfile::tempdir().expect("a temp folder");
         let repo = Repo { dir };
-        std::fs::create_dir_all(repo.path()).unwrap();
-        repo.git(&["init", "-q", "-b", "main"]);
-        repo.write("README.md", "a repo\n");
-        repo.git(&["add", "."]);
-        repo.git(&[
-            "-c",
-            "user.name=t",
-            "-c",
-            "user.email=t@t",
-            "commit",
-            "-q",
-            "-m",
-            "first",
-        ]);
+        copy(template(), &repo.path());
         std::fs::create_dir_all(repo.home()).unwrap();
         std::fs::write(repo.home().join("phrase"), format!("{PHRASE}\n")).unwrap();
         repo
@@ -142,6 +130,42 @@ impl Repo {
     }
 }
 
+/// The git repo every [`Repo::new`] copies: `main` with one commit of `README.md`, made once a run.
+fn template() -> &'static Path {
+    static TEMPLATE: OnceLock<TempDir> = OnceLock::new();
+    TEMPLATE
+        .get_or_init(|| {
+            let dir = tempfile::tempdir_in(env!("CARGO_TARGET_TMPDIR")).expect("a temp folder");
+            std::fs::write(dir.path().join("README.md"), "a repo\n").unwrap();
+            let commit = ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q"];
+            let mut first = commit.to_vec();
+            first.extend(["-m", "first"]);
+            for args in [vec!["init", "-q", "-b", "main"], vec!["add", "."], first] {
+                let run = Command::new("git")
+                    .args(args)
+                    .current_dir(dir.path())
+                    .status();
+                assert!(run.unwrap().success());
+            }
+            dir
+        })
+        .path()
+}
+
+/// Copies the folder `from` with all it holds to `to`.
+fn copy(from: &Path, to: &Path) {
+    std::fs::create_dir_all(to).unwrap();
+    for entry in std::fs::read_dir(from).unwrap() {
+        let entry = entry.unwrap();
+        let target = to.join(entry.file_name());
+        if entry.file_type().unwrap().is_dir() {
+            copy(&entry.path(), &target);
+        } else {
+            std::fs::copy(entry.path(), target).unwrap();
+        }
+    }
+}
+
 pub const DAY: u64 = 86_400;
 
 pub fn now() -> u64 {
@@ -239,10 +263,8 @@ pub fn sharing_a_start(repo: &Repo, by: &Account, first: &str, second: &str) -> 
         ]
     };
     let tags_of = [tags(first), tags(second)];
-    let id_of = |side: usize, n: u32| {
-        let body = serde_json::json!([0, pubkey, at, 1111, tags_of[side], format!("note {n}")]);
-        format!("{:x}", Sha256::digest(body.to_string().as_bytes()))
-    };
+    let heads = tags_of.clone().map(|t| head(&pubkey, at, &t));
+    let id_of = |side: usize, n: u32| id(&heads[side], n);
     let write = |side: usize, n: u32, id: &str| {
         let note =
             Note::write(by, 1111u16, at, tags_of[side].clone(), format!("note {n}")).unwrap();
@@ -365,17 +387,32 @@ pub fn step_signed(repo: &Repo, by: &Account, content: &str, at: u64) -> Note {
 /// Two distinct kind 1111 records of `by` at `at` with `tags`, whose ids share their first 8 characters.
 /// Nothing is written to the store.
 pub fn sharing_a_start_with(by: &Account, at: u64, tags: &[Vec<String>]) -> (Note, Note) {
-    let pubkey = by.pubkey().hex();
+    let head = head(&by.pubkey().hex(), at, tags);
     let mut seen: HashMap<String, u32> = HashMap::new();
     for n in 0u32.. {
-        let body = serde_json::json!([0, pubkey, at, 1111, tags, format!("note {n}")]);
-        let id = format!("{:x}", Sha256::digest(body.to_string().as_bytes()));
+        let id = id(&head, n);
         if let Some(m) = seen.insert(id[..8].to_string(), n) {
             let write = |k: u32| Note::write(by, 1111u16, at, tags.to_vec(), format!("note {k}"));
             return (write(m).unwrap(), write(n).unwrap());
         }
     }
     unreachable!()
+}
+
+/// The hash state of a kind 1111 record of `pubkey` at `at` with `tags`, up to its content.
+fn head(pubkey: &str, at: u64, tags: &[Vec<String>]) -> Sha256 {
+    let body = serde_json::json!([0, pubkey, at, 1111, tags]).to_string();
+    Sha256::new_with_prefix(format!("{},", &body[..body.len() - 1]))
+}
+
+/// The id of the record that `head` starts, with the content `note <n>`.
+fn id(head: &Sha256, n: u32) -> String {
+    format!(
+        "{:x}",
+        head.clone()
+            .chain_update(format!("\"note {n}\"]"))
+            .finalize()
+    )
 }
 
 /// The tags of a step on `project` (id, name).
