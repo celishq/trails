@@ -1,0 +1,47 @@
+//! The CLI tests, as one binary so that cargo runs them all in one pool.
+
+mod support;
+
+mod account;
+mod closing;
+mod commands;
+mod files;
+mod help;
+mod issue;
+mod link;
+mod log;
+mod output;
+mod pattern_cells;
+mod pattern_ends;
+mod pattern_evidence;
+mod pattern_graph;
+mod pattern_triggers;
+mod patterns;
+mod plugin;
+mod projects;
+mod reading;
+mod reuse;
+mod scope;
+mod search;
+mod setup;
+mod spec_citations;
+mod stats_watch;
+mod step_commands;
+mod step_drop;
+mod step_edit;
+mod step_grades;
+mod step_projects;
+mod step_review;
+mod step_sources;
+mod step_start;
+mod step_under;
+mod steps;
+mod store;
+mod trail_grep;
+mod trail_notes;
+mod trail_sessions;
+mod trail_state;
+mod trail_tree;
+mod trail_watch;
+mod trails;
+mod update;

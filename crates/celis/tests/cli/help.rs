@@ -1,0 +1,318 @@
+//! CIP-02, "Help".
+
+use crate::support;
+
+use std::process::{Command, Output};
+use std::time::Duration;
+use support::watch::Watch;
+use support::Repo;
+
+const CLI: &str = include_str!("../../../../spec/02-cli.md");
+const CARD: &str = include_str!("../../../../plugins/celis/card.md");
+const PAGE: &str = include_str!("help/page.txt");
+const STEP: &str = include_str!("help/step.txt");
+
+fn run(args: &[&str]) -> Output {
+    let home = tempfile::tempdir().unwrap();
+    Command::new(env!("CARGO_BIN_EXE_celis"))
+        .args(args)
+        .env("CELIS_HOME", home.path())
+        .stdin(std::process::Stdio::null())
+        .output()
+        .unwrap()
+}
+
+/// What a help page prints: exit 0, the page on stdout, nothing on stderr.
+fn page(args: &[&str]) -> String {
+    let out = run(args);
+    let err = String::from_utf8_lossy(&out.stderr).to_string();
+    assert_eq!(out.status.code(), Some(0), "{args:?}: {err:?}");
+    assert!(err.is_empty(), "{args:?}: stderr {err:?}");
+    String::from_utf8(out.stdout).unwrap()
+}
+
+/// The fenced blocks under `## <heading>` of a spec.
+fn blocks(doc: &str, heading: &str) -> Vec<String> {
+    let start = doc.find(&format!("\n## {heading}\n")).expect("section") + 1;
+    let rest = &doc[start + 1..];
+    let end = rest.find("\n## ").unwrap_or(rest.len());
+    let mut found = Vec::new();
+    let mut open: Option<Vec<&str>> = None;
+    for line in rest[..end].lines() {
+        match (&mut open, line.starts_with("```")) {
+            (None, true) => open = Some(Vec::new()),
+            (Some(_), true) => found.push(open.take().unwrap().join("\n")),
+            (Some(lines), false) => lines.push(line),
+            (None, false) => {}
+        }
+    }
+    found
+}
+
+fn squeeze(text: &str) -> String {
+    text.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+/// Each command of the spec with its usage, as CIP-02 lists them.
+fn usages() -> Vec<(String, String)> {
+    let mut found = Vec::new();
+    for line in blocks(CLI, "Commands")[0]
+        .lines()
+        .filter(|l| l.starts_with("celis ") && !l.contains(" | "))
+    {
+        let usage = line.split("   ").next().unwrap().trim().to_string();
+        let words: Vec<&str> = usage.split(' ').collect();
+        let command = match words[1] {
+            "step" | "auth" | "hook" => format!("{} {}", words[1], words[2]),
+            word => word.to_string(),
+        };
+        found.push((command, usage));
+    }
+    found
+}
+
+/// The arguments and flags a usage names, a flag's value not counted.
+fn names(usage: &str) -> Vec<String> {
+    let mut found: Vec<String> = Vec::new();
+    let mut before = "";
+    for word in usage.split_whitespace() {
+        let token = word.trim_matches(|c| c == '[' || c == ']' || c == '.');
+        let flag = token.starts_with("--") && token.len() > 2;
+        let positional = token.starts_with('<') && !(before.starts_with("--") && before != "--");
+        if (flag || positional) && !found.iter().any(|n| n == token) {
+            found.push(token.to_string());
+        }
+        before = token;
+    }
+    found
+}
+
+/// `celis`, `celis help` and `celis --help` print the page `help/page.txt` holds, and exit 0.
+#[test]
+fn celis_and_celis_help_print_the_page() {
+    for args in [&[][..], &["help"], &["--help"], &["-h"]] {
+        assert_eq!(page(args).trim_end(), PAGE.trim_end(), "{args:?}");
+    }
+}
+
+/// `--help` anywhere in a command prints the command page its words name, and else the page
+/// (`spec/02-cli.md`, "Help").
+#[test]
+fn help_anywhere_prints_the_command_page_its_words_name() {
+    let commands = usages();
+    assert_eq!(commands.len(), 21, "{commands:?}");
+    for (command, usage) in &commands {
+        let mut args: Vec<&str> = command.split(' ').collect();
+        args.extend(["4c1d22e0", "--help", "--json"]);
+        let shown = page(&args);
+        assert!(
+            squeeze(&shown).starts_with(&squeeze(usage)),
+            "{command}:\n{shown}"
+        );
+    }
+    let args = ["nope", "--help"];
+    assert_eq!(page(&args).trim_end(), PAGE.trim_end(), "{args:?}");
+}
+
+/// `-h` prints what `--help` prints.
+#[test]
+fn h_prints_what_help_prints() {
+    for args in [&["tree"][..], &["step", "add"], &["step"]] {
+        let short: Vec<&str> = args.iter().copied().chain(["-h"]).collect();
+        let long: Vec<&str> = args.iter().copied().chain(["--help"]).collect();
+        assert_eq!(page(&short), page(&long), "{args:?}");
+    }
+}
+
+/// `celis help <words>` prints what `celis <words> --help` prints.
+#[test]
+fn help_before_words_prints_their_page() {
+    for args in [
+        &["tree"][..],
+        &["step", "add"],
+        &["step"],
+        &["auth"],
+        &["nope"],
+    ] {
+        let before: Vec<&str> = ["help"].into_iter().chain(args.iter().copied()).collect();
+        let after: Vec<&str> = args.iter().copied().chain(["--help"]).collect();
+        assert_eq!(page(&before), page(&after), "{args:?}");
+    }
+}
+
+/// `celis step` prints the group page `help/step.txt` holds.
+#[test]
+fn celis_step_prints_the_group_page() {
+    assert_eq!(page(&["step"]).trim_end(), STEP.trim_end());
+}
+
+/// A usage error inside a group names the group page.
+#[test]
+fn a_usage_error_inside_a_group_names_the_group_page() {
+    let out = run(&["step", "nope"]);
+    assert_eq!(out.status.code(), Some(2));
+    let err = String::from_utf8_lossy(&out.stderr);
+    assert!(err.contains("See `celis step --help`."), "{err}");
+}
+
+/// A group's name alone, with or without `--help`, prints the group page: each of its commands
+/// with what it does.
+#[test]
+fn help_after_a_group_prints_its_commands() {
+    for (group, commands) in [
+        ("auth", &["login", "status", "phrase"][..]),
+        ("step", &["add", "start", "done", "drop", "edit"]),
+    ] {
+        let shown = page(&[group, "--help"]);
+        assert_eq!(page(&[group]), shown, "{group}");
+        assert!(
+            shown.starts_with(&format!("celis {group} <command>")),
+            "{shown}"
+        );
+        for command in commands {
+            let line = format!("  {command} ");
+            assert!(
+                shown.lines().any(|l| l.starts_with(&line)),
+                "{group} {command}:\n{shown}"
+            );
+        }
+        assert!(
+            shown.contains(&format!("celis {group} <command> --help")),
+            "{shown}"
+        );
+        for line in shown.lines() {
+            assert!(line.chars().count() <= 80, "{line:?}");
+        }
+    }
+}
+
+/// A command page gives one line to each argument and flag its usage names, and at least one
+/// example.
+#[test]
+fn a_command_page_gives_a_line_to_each_argument_and_an_example() {
+    for (command, usage) in usages() {
+        let mut args: Vec<&str> = command.split(' ').collect();
+        args.push("--help");
+        let shown = page(&args);
+        let body: Vec<&str> = shown.lines().map(str::trim).collect();
+        for name in names(&usage) {
+            let lines = body
+                .iter()
+                .skip_while(|l| !l.is_empty())
+                .filter(|l| {
+                    !l.starts_with("celis ")
+                        && l.strip_prefix(name.as_str())
+                            .is_some_and(|r| r.is_empty() || r.starts_with(' '))
+                })
+                .count();
+            assert_eq!(lines, 1, "{command}: lines for {name}:\n{shown}");
+        }
+        let at = body
+            .iter()
+            .position(|l| *l == "Examples")
+            .expect("Examples");
+        assert!(
+            body[at + 1..].iter().any(|l| l.starts_with("celis ")),
+            "{command}: no example:\n{shown}"
+        );
+    }
+}
+
+/// No line of a help page is longer than 80 characters, and no page names a spec file.
+#[test]
+fn every_help_page_fits_80_columns_and_names_no_spec() {
+    let mut pages = vec![page(&["help"])];
+    for (command, _) in usages() {
+        let mut args: Vec<&str> = command.split(' ').collect();
+        args.push("--help");
+        pages.push(page(&args));
+    }
+    for shown in pages {
+        for line in shown.lines() {
+            assert!(line.chars().count() <= 80, "{line:?}");
+        }
+        assert!(!shown.contains("spec/"), "{shown}");
+    }
+}
+
+/// No argument or flag text says "optional" or "zero or more", because the usage line shows them.
+#[test]
+fn no_help_page_says_optional_or_zero_or_more() {
+    for (command, _) in usages() {
+        let mut args: Vec<&str> = command.split(' ').collect();
+        args.push("--help");
+        let shown = page(&args).to_lowercase();
+        for word in ["optional", "zero or more"] {
+            assert!(!shown.contains(word), "{command}: {word:?}:\n{shown}");
+        }
+    }
+}
+
+/// `celis --version` prints `celis <version>` and the first 8 characters of the commit the build came
+/// from (`spec/02-cli.md`, "Help").
+#[test]
+fn celis_version_names_the_commit_the_build_came_from() {
+    let head = Command::new("git")
+        .args(["rev-parse", "HEAD"])
+        .current_dir(env!("CARGO_MANIFEST_DIR"))
+        .output()
+        .ok()
+        .filter(|o| o.status.success())
+        .map(|o| String::from_utf8(o.stdout).unwrap().trim().to_string());
+    let Some(head) = head else { return };
+    let version = env!("CARGO_PKG_VERSION");
+    assert_eq!(
+        page(&["--version"]).trim_end(),
+        format!("celis {version} ({})", &head[..8])
+    );
+}
+
+/// Each command line of the trail card names only flags its command's usage names
+/// (`spec/02-cli.md`, "Help").
+#[test]
+fn the_card_names_each_commands_flags() {
+    let flags = |usage: &str| -> Vec<String> {
+        let mut found: Vec<String> = names(usage)
+            .into_iter()
+            .filter(|n| n.starts_with("--"))
+            .collect();
+        found.sort();
+        found
+    };
+    let card = &blocks(&format!("\n## Card\n{CARD}"), "Card")[0];
+    let commands = usages();
+    for line in card.lines() {
+        let words: Vec<&str> = line.split(' ').collect();
+        let command = match words[1] {
+            "step" => format!("step {}", words[2]),
+            word => word.to_string(),
+        };
+        let (_, usage) = commands
+            .iter()
+            .find(|(c, _)| *c == command)
+            .unwrap_or_else(|| panic!("{command} is no command"));
+        let usage = flags(usage);
+        let extra: Vec<String> = flags(line)
+            .into_iter()
+            .filter(|f| !usage.contains(f))
+            .collect();
+        assert!(extra.is_empty(), "{line}: {extra:?}");
+    }
+}
+
+/// On a terminal, the page prints in celis's looks: the command names bold, each state's mark in its
+/// colour; the same text as off a terminal.
+#[test]
+fn on_a_terminal_the_page_prints_in_celis_looks() {
+    let repo = Repo::plain();
+    let mut watch = Watch::start(&repo, &["help"]);
+    watch.shown(Duration::from_secs(2));
+    let shown = String::from_utf8_lossy(&watch.seen).to_string();
+    for code in ["\x1b[1mcelis", "\x1b[1mstep add", "\x1b[38;2;52;230;140m✓"] {
+        assert!(shown.contains(code), "{code:?} in {shown:?}");
+    }
+    let plain = support::watch::plain(&shown).replace("\r\n", "\n");
+    let lines: Vec<&str> = plain.lines().collect();
+    let page: Vec<&str> = PAGE.lines().collect();
+    assert_eq!(lines, page);
+}
