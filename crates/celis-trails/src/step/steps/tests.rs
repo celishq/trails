@@ -93,6 +93,28 @@ fn an_open_step_of_an_ended_trail_is_stale() {
     assert!(!Steps::new(&records, 13).get(&open.id).unwrap().stale());
 }
 
+/// An open step is active until its trail ends, and a closed one is not.
+#[test]
+fn an_open_step_is_active_until_its_trail_ends() {
+    let trail = step("trail", 10);
+    let mut open = step("open", 11);
+    let mut closed = step("closed", 12);
+    for child in [&mut open, &mut closed] {
+        *child = StepRecord {
+            under: Some(StepId::new(&trail.id)),
+            ..StepRecord::read(child).unwrap()
+        }
+        .record(&account(), child.created_at)
+        .unwrap();
+    }
+    let proof = done(&closed.id, "proof", 13);
+    let records = vec![trail, open.clone(), closed.clone(), proof];
+    let active = |now: u64, id: &str| Steps::new(&records, now).get(id).unwrap().active();
+    assert!(active(13, &open.id));
+    assert!(!active(13 + LIFE, &open.id));
+    assert!(!active(13, &closed.id));
+}
+
 /// A started step stays open, and works until its trail ends (`spec/03-steps.md`, "Starting").
 #[test]
 fn a_started_step_stays_open() {
