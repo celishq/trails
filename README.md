@@ -17,11 +17,11 @@ https://github.com/user-attachments/assets/8cb59450-fb36-4fa6-82ae-5bcd59b1384b
 
 ## Why
 
-- **Your agent follows through.** It gets the rule that matters right before it acts, not buried in a
+- **Your agent uses your judgement.** Before it acts, it picks the patterns that bear on the job, not a
   manual it read an hour ago. You stop catching the same mistake twice.
-- **Correct it once.** A correction in chat or a code review becomes a rule that Celis keeps, in every
-  project. On a new job, your agent also starts from similar work that went well.
-- **Every agent keeps the same rules.** What you tell Claude Code, Codex and Cursor follow too.
+- **Correct it once.** A correction in chat or a code review becomes a pattern that Celis keeps. When a
+  job closes, your agent writes down what it learned.
+- **Every agent shares the same patterns.** What you teach Claude Code, Codex and Cursor use too.
 - **You can check its work.** Every step comes with proof, like a passing test or a command's output, on
   a trail you can watch.
 
@@ -84,8 +84,9 @@ the old version of a rule that changed. With Celis, the agent broke fewer rules 
 followed old rules far less often. Real repos already have 80 to 280 rules in one agent file.
 
 **Why?** The rules fit in the context window, but the agent's attention doesn't stretch that far. The
-one rule that matters gets lost among hundreds of others. Celis gives the agent the right rules at
-the right time: when a job starts, before it changes a file, and before it says it's done.
+one rule that matters gets lost among hundreds of others. Celis gives the agent a short index of your
+patterns when a job starts. The agent opens the ones that bear on the job, and the judge checks the
+result against them before the job is done.
 
 We treat the agent as a capable collaborator that owns its work. Celis doesn't tell it how to do the
 job; it gives it what it needs to do the job well.
