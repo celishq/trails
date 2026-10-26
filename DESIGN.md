@@ -43,11 +43,13 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
    pattern. Only the `grep` view marks it `old-rule`, so that tidy can find it. `pattern --binds` is
    accepted and ignored, so an older plugin still works with a newer `celis`. A pattern has no cell: a
    reader ignores an old `cell` tag, and `pattern --cell` is accepted and ignored in the same way.
-3. **Search finds the best patterns.**
-   - Patterns are ranked by how well they fit: by path, then by words. The output shows
-     only a budget of them.
-   - The past of like asks is a helper part, and it is short.
-4. **What goes in matters more than search.** The agent learns at each close: when an ask closes, celis
+3. **The agent reads the index of all patterns in scope and opens what bears on the ask.**
+   - `celis patterns` gives the index: each live pattern in scope as its id and its When. `celis grep
+     <id>` gives the whole pattern. The agent reads the index itself or through the `celis:recall`
+     agent. celis has no vector, no word match and no rank.
+   - The ask records the patterns the agent recalled as `recalled` tags. Tidy reads them with the uses.
+   - Past trails serve the learn and tidy, not recall.
+4. **What goes in matters more than recall.** The agent learns at each close: when an ask closes, celis
    gives it the ask's `changed` lines, its trail's notes and the person's prompts on its trail. The agent
    writes a pattern only for a choice that will come back. It replaces a pattern that misled it instead
    of adding a near copy, and writes nothing when the ask taught nothing.
@@ -74,5 +76,4 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
 ## Open questions
 
 - Which step duties can move from the agent to hooks, while decision 5 holds?
-- How many patterns does the search budget show?
 - Which `--json` keys change with the label?
