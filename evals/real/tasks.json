@@ -24,20 +24,20 @@
     "prompt": "Add a `--since <yyyy-mm-dd>` flag to `celis grep` that keeps only the lines of that day or later."
   },
   {
-    "id": "search-rule-json",
-    "prompt": "Let `celis search --kind rule --json` print one JSON object a line for each rule it finds, with its id, scope, paths and content."
+    "id": "patterns-json",
+    "prompt": "Let `celis patterns --json` print one JSON object a line for each pattern of the index, with its id, scope, When, paths and the ids it is within."
   },
   {
-    "id": "pinned-rule",
-    "prompt": "Add a pinned rule: `celis decide --pinned` writes the label `[\"l\", \"pinned\", \"celis.decision\"]`, and `celis search` prints pinned rules first. Write it into the spec first."
+    "id": "pinned-pattern",
+    "prompt": "Add a pinned pattern: `celis pattern --pinned` writes the label `[\"l\", \"pinned\", \"celis.pattern\"]`, and `celis patterns` prints pinned patterns first. Write it into the spec first."
   },
   {
-    "id": "rename-part",
-    "prompt": "The enum `Part` in crates/celis/src/command/read/search.rs says little. Give it a better name and update every use."
+    "id": "rename-kind",
+    "prompt": "The enum `Kind` in crates/celis/src/command/read/view/kind.rs says little. Give it a better name and update every use."
   },
   {
-    "id": "search-tests",
-    "prompt": "Add unit tests for the words that crates/celis/src/command/read/search.rs takes from an ask: the short words, the common words and the plural s it leaves out."
+    "id": "patterns-tests",
+    "prompt": "Add unit tests for the When that `celis patterns` gives for a pattern: the first line of its text, and of a text of one line, the part before its first `:`."
   },
   {
     "id": "card-missing",
@@ -48,12 +48,12 @@
     "prompt": "Add `celis tree --project <name>`: it shows only the trails of that project."
   },
   {
-    "id": "decide-when",
-    "prompt": "Make `celis decide` refuse a rule whose text does not start with \"When \", as a usage error that shows the form \"When X: do Y, because Z\"."
+    "id": "pattern-when",
+    "prompt": "Make `celis pattern` refuse a pattern whose text does not start with \"When \", as a usage error that shows the four lines When, Forces, Do and Because."
   },
   {
-    "id": "readme-search",
-    "prompt": "Describe `celis search` and the three parts it prints in README.md, for a person who installs celis."
+    "id": "readme-patterns",
+    "prompt": "Describe `celis patterns` and the index it prints in README.md, for a person who installs celis."
   },
   {
     "id": "stats-empty",

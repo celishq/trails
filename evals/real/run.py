@@ -67,7 +67,7 @@ def rules(home):
         line = line.strip()
         own = re.match(r"\[([^]]+)\] (.*)", line)
         where, line = (own.group(1), own.group(2)) if own else (project, line)
-        got = re.match(r"pattern ([0-9a-f]{8}) live (\{[^}]*\})(?: trigger| binds| recalled:\S+)* (.*)", line)
+        got = re.match(r"pattern ([0-9a-f]{8}) live (\{[^}]*\})(?: trigger| old-rule| recalled:\S+)* (.*)", line)
         if got and (where == "celis-trails" or got.group(2) == "{me}"):
             lines.append(f"{got.group(1)} {got.group(2)} {got.group(3)}")
     return lines
