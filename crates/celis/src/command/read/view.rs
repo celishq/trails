@@ -16,8 +16,8 @@ use row::Row;
 use std::collections::HashMap;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
-/// Every trail of every project with its notes and steps, and each pattern, newest made first; with the
-/// header of each trail.
+/// Every trail of every project with its notes, prompts and steps, and each pattern, newest made first;
+/// with the header of each trail.
 #[derive(Default)]
 pub(crate) struct View {
     rows: Vec<Row>,
@@ -34,11 +34,24 @@ impl View {
             let note = entry.note;
             blocks.push((note.created_at, &note.id, pattern(entry, &steps, trails)));
         }
+        let mut prompts: HashMap<String, Vec<(&Note, String)>> = HashMap::new();
+        for record in trails.records() {
+            if let Some((on, Mark::Prompt { text })) = Mark::read(record) {
+                prompts.entry(on).or_default().push((record, text));
+            }
+        }
         let mut headers = HashMap::new();
         for root in steps.roots() {
             headers.insert(short(root.id()), Header::of(root));
             let mut rows = vec![step(root, root, Kind::Trail)];
             rows.extend(noted(root, root, &notes));
+            let mut asked: Vec<_> = prompts.get(root.id()).into_iter().flatten().collect();
+            asked.sort_by_key(|(note, _)| (note.created_at, &note.id));
+            rows.extend(
+                asked
+                    .into_iter()
+                    .map(|(note, text)| prompt(root, note, text)),
+            );
             level(root, root, &notes, &mut rows);
             blocks.push((root.note().created_at, root.id(), rows));
         }
@@ -126,6 +139,19 @@ fn noted(root: Step, step: Step, notes: &Notes) -> Vec<Row> {
     .collect()
 }
 
+/// The row of the prompt `note`, that says `text`, on the trail `root`.
+fn prompt(root: Step, note: &Note, text: &str) -> Row {
+    Row {
+        trail: Some(short(root.id())),
+        kind: Kind::Prompt,
+        day: date(note.created_at),
+        project: root.record().anchor.name.clone(),
+        id: short(root.id()),
+        fields: vec![],
+        text: flat(text),
+    }
+}
+
 /// The row of the step `step` of the trail `root`, as `kind`.
 fn step(root: Step, step: Step, kind: Kind) -> Row {
     let record = step.record();
@@ -146,8 +172,9 @@ fn step(root: Step, step: Step, kind: Kind) -> Row {
     }
 }
 
-/// The rows of the pattern `entry`: its own, with the day of the newest ask of `steps` that recalled it,
-/// then each of its examples, then its drop's reason when a drop names it.
+/// The rows of the pattern `entry`: its own, with how many asks of `steps` recalled it and steps used it
+/// when not none, and the day of the newest recall; then each of its examples, then its drop's reason when a drop
+/// names it.
 fn pattern(entry: &Pattern, steps: &Steps, trails: &Store) -> Vec<Row> {
     let (note, pattern) = (entry.note, &entry.record);
     let state = entry.end.map_or("live".to_string(), PatternEnd::text);
@@ -172,6 +199,12 @@ fn pattern(entry: &Pattern, steps: &Steps, trails: &Store) -> Vec<Row> {
             .map(|(_, mark)| mark.to_string()),
     );
     let recalls = steps.recalls(&note.id);
+    let uses = steps.all().into_iter();
+    let uses = uses.filter(|s| s.record().uses.contains(&note.id));
+    let counts = (recalls.len(), uses.count());
+    if counts != (0, 0) {
+        fields.push(format!("recalls:{} uses:{}", counts.0, counts.1));
+    }
     let newest = recalls.first().map(|ask| date(ask.note().created_at));
     fields.extend(newest.map(|day| format!("recalled:{day}")));
     let mut rows = vec![row(Kind::Pattern, note, fields, &pattern.content)];

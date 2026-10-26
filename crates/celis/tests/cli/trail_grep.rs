@@ -349,6 +349,7 @@ fn the_view_and_the_steps_pattern_search_match_the_fixture() {
     let (by, id) = (account(), repo.project_id());
     let t = 1_768_478_400;
     let step = |under: Option<&str>, places: &[&str], recalled: &[&str], text: &str, at: u64| {
+        let uses = recalled.iter().map(|r| r.to_string()).collect();
         let record = StepRecord {
             anchor: Anchor {
                 project: id.clone(),
@@ -356,7 +357,7 @@ fn the_view_and_the_steps_pattern_search_match_the_fixture() {
             },
             under: under.map(StepId::new),
             replaces: None,
-            uses: Vec::new(),
+            uses,
             recalled: recalled.iter().map(|r| r.to_string()).collect(),
             places: places.iter().map(|p| p.to_string()).collect(),
             check: None,
@@ -450,9 +451,13 @@ fn the_view_and_the_steps_pattern_search_match_the_fixture() {
         text: "Keep the table sortable.".into(),
     };
     mark(note, &table.id, t + 11);
-    let prices = step(Some(&trail.id), &[], &[&new.id], "Print the prices", t + 12);
+    let asked = Mark::Prompt {
+        text: "Show the prices in cents.".into(),
+    };
+    mark(asked, &trail.id, t + 12);
+    let prices = step(Some(&trail.id), &[], &[&new.id], "Print the prices", t + 13);
     let done = Mark::Done(celis_trails::Done::new("the prices print".into(), None));
-    mark(done, &prices.id, t + 13);
+    mark(done, &prices.id, t + 14);
     let names = [
         ("trail", &trail),
         ("table", &table),

@@ -278,8 +278,9 @@ trails with it.
 view    <yyyy-mm-dd> <trail id8 | -> [<project name>] <kind> <id8> <fields> <text>
           trail | step   <open | done | dropped>[ revised-by <id>,…][ at:<place>]…
           pattern        <live | replaced-by <id> | dropped> {<me | project>}
-                           [ trigger][ old-rule][ recalled:<yyyy-mm-dd>]
+                           [ trigger][ old-rule][ recalls:<n> uses:<n>][ recalled:<yyyy-mm-dd>]
           proof | changed | dropped | note                       the step's or pattern's id, no fields
+          prompt                                                 the trail's id, no fields (CIP-04, "Sessions")
           good | bad                                             the pattern's id, no fields, and an example:
                                                                  <step id8> <title> · <the first line of its proof>,
                                                                  <path> · <its blob>, or <url> (CIP-05, "Examples")
@@ -291,18 +292,20 @@ lines   <id8> [<project name>] <its title> · <yyyy-mm-dd>        each trail of 
 end     project [<project name>]
 ```
 
-`<id8>` is the first 8 characters of an id. A text holds each newline as a space. A pattern's fields end with
-` trigger` when it has a trigger tag (CIP-05), ` old-rule` when it has the `binds` label that older
-writers wrote (CIP-05, "Reading"), and ` recalled:<day>` with the day of the newest ask whose `recalled`
-names it (CIP-06, "Recalls").
+`<id8>` is the first 8 characters of an id. A text holds each newline as a space. After its state and
+scope, a pattern's fields give ` trigger` when it has a trigger tag (CIP-05), ` old-rule` when it has the
+`binds` label that older writers wrote (CIP-05, "Reading"), ` recalls:<n> uses:<n>` with how many asks
+name it in `recalled` and how many steps name it in `uses` (CIP-06, "Uses"), when one is not 0, and
+` recalled:<day>` with the day of the newest ask whose `recalled` names it (CIP-06, "Recalls").
 
 **Rules**
 
 - `grep` MUST give each word after it to the system `grep` as it is, with the view on its stdin.
 - The view MUST hold every trail of every project, newest first, and each live or replaced pattern by
-  when it was made. A trail MUST print as its line, then the notes on it, then its steps, each level
-  newest first, each step with its proof, `changed`, drop and note lines, then its own steps. A pattern
-  MUST print as its line, then a line for each example, then its drop line.
+  when it was made. A trail MUST print as its line, then the notes on it, then its prompts, oldest first,
+  then its steps, each level newest first, each step with its proof, `changed`, drop and note lines,
+  then its own steps. A pattern MUST print as its line, then a line for each example, then its drop
+  line.
 - `grep` MUST print each matched line under its trail's header, the trails with most lines first, and each
   line with no trail under `- patterns of no trail`. A matched line that is no line of the view MUST NOT
   print. When no matched line is a line of the view, as with `-c` or `-l`, it MUST print what `grep`

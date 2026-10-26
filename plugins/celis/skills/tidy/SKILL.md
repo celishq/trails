@@ -12,10 +12,10 @@ some patterns as rules; their grep fields say ` old-rule`.
    under it for each part. Take the parts one at a time.
 3. Read the evidence once:
    - `celis patterns` gives the index: each live pattern in scope, as its id and its When.
-   - `celis grep -E " (trail|pattern) [0-9a-f]{8} "` gives each trail and pattern line. A pattern's
-     fields give its state (`live`, `replaced-by <id>` or `dropped`), ` old-rule` and ` recalled:<day>`.
-   - `celis stats --json` gives how often each pattern was used, and how often each pattern in scope of
-     the working folder was recalled.
+   - `celis grep -E " (trail|pattern|prompt) [0-9a-f]{8} "` gives each trail, pattern and prompt line, of
+     every project. A pattern's fields give its state (`live`, `replaced-by <id>` or `dropped`),
+     ` old-rule`, ` recalls:<n> uses:<n>` (none when both are 0) and ` recalled:<day>`. A prompt line
+     gives what the person wrote on its trail.
    - A replace counts as one only when the new pattern says another Do. A replace that keeps the Do, as
      a new When does, is tuning and does not count. The grep line of a pattern gives its whole text.
 4. For each change, show the person the records it touches, with their ids, and ask: yes, no, or yes to
@@ -74,9 +74,9 @@ Show the person the chain, and ask what they want the pattern to say.
 
 ## New patterns
 
-Find the choices and corrections in past trails that came back, in `changed` lines, notes, drops and
-revised steps of two trails or more, and that no live pattern holds. Offer each as a pattern in the
-four lines, with the narrowest `--path`.
+Find the choices and corrections in past trails that came back, in `changed` lines, notes, prompts,
+drops and revised steps of two trails or more, and that no live pattern holds. Offer each as a
+pattern in the four lines, with the narrowest `--path`.
 
 ## End
 
