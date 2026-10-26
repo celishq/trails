@@ -106,7 +106,9 @@ fn done_on_an_ask_prints_the_end_to_fill() {
     assert_eq!(
         done(&repo, &ask.id, &["--as-planned", "--by", "person"]),
         [
-            format!("celis: the ask {a} is done. Do the learn below the total line first. Then answer the person with the lines down to the total line alone: fill each <…>, and remove each line you do not need."),
+            learn(a),
+            format!("  changed {} it took the cache", &claim[..8]),
+            format!("celis: the ask {a} is done. When you have kept what it taught, answer the person with the lines below alone: fill each <…>, and remove each line you do not need."),
             String::new(),
             "**<what was done, in one line>**".to_string(),
             String::new(),
@@ -118,8 +120,6 @@ fn done_on_an_ask_prints_the_end_to_fill() {
             "- [+] **Learned:** <each pattern you wrote, as its id and When>".to_string(),
             String::new(),
             "celis · 4 steps · 1 checked · 1 judged · 1 person · 1 not proven · 10m".to_string(),
-            learn(a),
-            format!("  changed {} it took the cache", &claim[..8]),
         ]
     );
 }
@@ -150,11 +150,11 @@ fn learn(a: &str) -> String {
     format!("celis: before you answer, learn from the ask {a}. Write a pattern with celis pattern for each choice of the ask that will come back, such as those below. A wish or a correction that says always, never or from now on is a pattern whose forces say why. A reaction to a result, such as \"this one\" or \"too busy\", keeps the person's taste with --good and --bad. Give --path for the files it acts on, --within for the larger pattern it completes, --scope me when it holds in any project, and --replaces <id> for a pattern that misled you or a near copy. Write nothing when the ask taught nothing. What holds only for this trail is a note: celis step note {a}.")
 }
 
-/// `done` of an ask ends with the learn brief: each `changed` of the ask and of its steps, each note of
+/// `done` of an ask begins with the learn brief: each `changed` of the ask and of its steps, each note of
 /// its trail and each prompt on its trail since the ask began, the one that began it first
 /// (`spec/02-cli.md`, "Step").
 #[test]
-fn done_on_an_ask_ends_with_the_learn_brief() {
+fn done_on_an_ask_begins_with_the_learn_brief() {
     let repo = Repo::new();
     let by = &account();
     let began = now() - 60;
@@ -182,12 +182,12 @@ fn done_on_an_ask_ends_with_the_learn_brief() {
         &ask.id,
         &["--changed", "it went blue", "--by", "person"],
     );
-    let total = lines
+    let end = lines
         .iter()
-        .position(|l| l.starts_with("celis · "))
+        .position(|l| l.starts_with("celis: the ask "))
         .unwrap();
     assert_eq!(
-        lines[total + 1..],
+        lines[..end],
         [
             learn(a),
             format!("  changed {} it took the cache", &part[..8]),

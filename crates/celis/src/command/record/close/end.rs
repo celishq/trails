@@ -51,8 +51,8 @@ impl End {
         }
     }
 
-    /// The lines to give the agent: what to do, the draft it fills for the person, with a `<…>` for each
-    /// part only the agent knows, then the learn brief.
+    /// The lines to give the agent: the learn brief, then the draft it fills for the person, with a `<…>`
+    /// for each part only the agent knows.
     pub fn lines(&self) -> Vec<String> {
         let outside = match self.places.is_empty() {
             true => String::new(),
@@ -61,13 +61,14 @@ impl End {
                 self.places.join(", ")
             ),
         };
-        let mut lines = vec![
-            format!("celis: the ask {} is done. Do the learn below the total line first. Then answer the person with the lines down to the total line alone: fill each <…>, and remove each line you do not need.", &self.ask[..8]),
+        let mut lines = self.learn.lines();
+        lines.extend([
+            format!("celis: the ask {} is done. When you have kept what it taught, answer the person with the lines below alone: fill each <…>, and remove each line you do not need.", &self.ask[..8]),
             String::new(),
             "**<what was done, in one line>**".to_string(),
             String::new(),
             "- [?] **Needs you:** <each decision only the person can take>".to_string(),
-        ];
+        ]);
         let claims = self.proofs.iter().filter(|(_, p)| *p == Proof::Claim);
         lines.extend(claims.map(|(title, _)| format!("- [!] **Not proven:** {title}")));
         lines.push(format!(
@@ -85,7 +86,6 @@ impl End {
         lines.push("- [+] **Learned:** <each pattern you wrote, as its id and When>".to_string());
         lines.push(String::new());
         lines.push(self.total());
-        lines.extend(self.learn.lines());
         lines
     }
 

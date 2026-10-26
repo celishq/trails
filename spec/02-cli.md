@@ -180,7 +180,7 @@ note  json  {"id", "created_at", "step", "content"}
   error.
 - `start` MUST print the notes of the step's trail and of each trail it follows (CIP-04, "Notes").
 
-The output of `done` of an ask ends with the learn brief:
+The output of `done` of an ask begins with the learn brief, before the end the agent answers with:
 
 ```
 celis: before you answer, learn from the ask <id8>. …     what the agent keeps, and how
