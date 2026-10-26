@@ -56,20 +56,6 @@ fn done_changed_asks_to_reshape_the_plan() {
     );
 }
 
-/// A trail's review names no next move.
-#[test]
-fn a_trails_review_names_no_next_move() {
-    let repo = Repo::new();
-    let trail = add(&repo, &["--", "the trail"]);
-    assert_eq!(
-        done(&repo, &trail, &["--as-planned"]),
-        [format!(
-            "celis: {} is done; compare the result with its plan:",
-            &trail[..8]
-        )]
-    );
-}
-
 /// `done` on an ask prints the end to fill and give the person: a line for each decision, each step whose
 /// proof is the agent's own claim, what the judge could not check outside its places, each changed step,
 /// the new intent and each choice, then a total of its steps, proofs by kind and minutes.
@@ -78,8 +64,7 @@ fn done_on_an_ask_prints_the_end_to_fill() {
     let repo = Repo::new();
     let by = &account();
     let began = now() - 10 * 60 - 30;
-    let trail = step_note(&repo, by, None, "the trail", began);
-    let ask = step_note(&repo, by, Some(&trail), "the ask", began);
+    let ask = step_note(&repo, by, None, "the ask", began);
     let a = &ask.id[..8];
     let checked = add(
         &repo,
@@ -128,11 +113,7 @@ fn done_on_an_ask_prints_the_end_to_fill() {
 #[test]
 fn an_end_whose_steps_share_one_proof_totals_them_as_all() {
     let repo = Repo::new();
-    let trail = add(&repo, &["--", "the trail"]);
-    let ask = add(
-        &repo,
-        &["--under", &trail[..8], "--check", "true", "--", "the ask"],
-    );
+    let ask = add(&repo, &["--check", "true", "--", "the ask"]);
     let part = add(
         &repo,
         &["--under", &ask[..8], "--check", "true", "--", "part"],
@@ -151,18 +132,17 @@ fn learn(a: &str) -> String {
 }
 
 /// `done` of an ask begins with the learn brief: each `changed` of the ask and of its steps, each note of
-/// its trail and each prompt on its trail since the ask began, the one that began it first
+/// its trail and each prompt on it since the ask began, the one that began it first
 /// (`spec/02-cli.md`, "Step").
 #[test]
 fn done_on_an_ask_begins_with_the_learn_brief() {
     let repo = Repo::new();
     let by = &account();
     let began = now() - 60;
-    let trail = step_note(&repo, by, None, "the trail", began - 10);
-    mark_note(&repo, by, "prompt", &trail.id, "make it red", began - 9);
-    mark_note(&repo, by, "prompt", &trail.id, "make it blue", began - 1);
-    let ask = step_note(&repo, by, Some(&trail), "the ask", began);
-    mark_note(&repo, by, "prompt", &trail.id, "and bigger", began + 1);
+    let ask = step_note(&repo, by, None, "the ask", began);
+    mark_note(&repo, by, "prompt", &ask.id, "make it red", began - 9);
+    mark_note(&repo, by, "prompt", &ask.id, "make it blue", began - 1);
+    mark_note(&repo, by, "prompt", &ask.id, "and bigger", began + 1);
     let a = &ask.id[..8];
     let part = add(&repo, &["--under", a, "--", "part"]);
     done(&repo, &part, &["--changed", "it took the cache"]);
@@ -273,12 +253,8 @@ fn done_of_the_last_step_prints_the_judge_brief() {
         ],
     );
     let pattern = out(&pattern);
-    let trail = add(&repo, &["--", "the trail"]);
     let intent = "Round the prices\nexpect: prices show cents\nfor: the shop\nnot: the cart";
-    let ask = add(
-        &repo,
-        &["--under", &trail[..8], "--check", "true", "--", intent],
-    );
+    let ask = add(&repo, &["--check", "true", "--", intent]);
     let piece = add(&repo, &["--under", &ask[..8], "--", "piece"]);
     repo.write("new.py", "x = 1\n");
     let said = done(&repo, &piece, &["--as-planned"]).join("\n");
@@ -339,19 +315,10 @@ fn done_of_an_ask_with_changed_files_needs_a_judge() {
         ],
     );
     let pattern = out(&pattern);
-    let trail = add(&repo, &["--", "the trail"]);
-    let ask = add(
-        &repo,
-        &[
-            "--under",
-            &trail[..8],
-            "--",
-            "Round the prices\nexpect: cents",
-        ],
-    );
+    let ask = add(&repo, &["--", "Round the prices\nexpect: cents"]);
     let note = cli(
         &repo,
-        &["step", "note", &trail[..8], "--", "keep the old table"],
+        &["step", "note", &ask[..8], "--", "keep the old table"],
     );
     assert!(note.status.success(), "{}", err(&note));
     repo.write("new.py", "x = 1\n");
@@ -406,8 +373,7 @@ fn the_files_of_a_done_count_as_changed_without_git() {
         ],
     );
     let pattern = out(&pattern);
-    let trail = add(&repo, &["--", "the trail"]);
-    let ask = add(&repo, &["--under", &trail[..8], "--", "Round the prices"]);
+    let ask = add(&repo, &["--", "Round the prices"]);
     repo.write("new.py", "x = 1\n");
     let args = [
         "step",

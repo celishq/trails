@@ -174,29 +174,3 @@ fn a_step_under_a_trail_closes_the_store() {
     assert!(Steps::new(&closed, 13).closed_any());
     assert!(Steps::new(&records[..2], 11 + LIFE).closed_any());
 }
-
-/// A trail whose steps are all closed is done, but a prompt after the last close opens it again, until
-/// 30 minutes pass after it.
-#[test]
-fn a_prompt_after_the_last_close_opens_its_trail_again() {
-    let trail = step("trail", 10);
-    let part = StepRecord {
-        under: Some(StepId::new(&trail.id)),
-        ..StepRecord::read(&step("part", 11)).unwrap()
-    }
-    .record(&account(), 11)
-    .unwrap();
-    let proof = done(&part.id, "proof", 12);
-    let records = vec![trail.clone(), part, proof];
-    let state =
-        |records: &[Note], now: u64| Steps::new(records, now).get(&trail.id).unwrap().state();
-    assert_eq!(state(&records, 13), State::Done);
-    let ask = Mark::Prompt {
-        text: "more".into(),
-    }
-    .record(&account(), &trail.id, 14)
-    .unwrap();
-    let asked = [records, vec![ask]].concat();
-    assert_eq!(state(&asked, 15), State::Open);
-    assert_eq!(state(&asked, 14 + LIFE), State::Done);
-}

@@ -340,7 +340,6 @@ fn draft(anchor: &Anchor, text: &str, under: Option<String>) -> Draft {
         uses: vec![],
         recalled: Vec::new(),
         session: None,
-        new: false,
     }
 }
 

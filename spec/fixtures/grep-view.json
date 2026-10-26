@@ -8,9 +8,9 @@
     "",
     "Each <name> stands for the first 8 characters of a record's id, which a test knows only once it",
     "has written the record. All records are made on 2026-01-15 at noon UTC, in the order of `lines`",
-    "read from the bottom of each block: the trail, then the table step, its done, the chart step, its",
+    "read from the bottom of each block: the trail, an ask that recalls the cents pattern, then the table step, its done, the chart step, its",
     "drop, an older pattern of the trail's scope, the floats pattern, the cents pattern that replaces it, the me pattern with a tag that older writers wrote and the view leaves out, a pattern with the",
-    "older situation label, the me pattern with a trigger and a good URL, a note on the table step, a prompt on the trail, and the prices ask that recalls and uses the cents pattern, with its done. The older trail pattern prints as a note on the trail."
+    "older situation label, the me pattern with a trigger and a good URL, a note on the table step, a prompt on the trail, the prices step that uses the cents pattern, with its done, and the done of the trail. The older trail pattern prints as a note on the trail."
   ],
   "lines": [
     "2026-01-15 - [repo] pattern <push> live {me} trigger When you push: run the tests first.",

@@ -225,8 +225,8 @@ fn a_promoted_pattern_guides() {
     assert!(!line.contains(" old-rule"), "{line}");
 }
 
-/// `step add --recalled` writes the whole id of each pattern, once, as a `recalled` tag on the ask, and
-/// on a session's first ask, not on its trail (`spec/06-reuse.md`, "Recalls"; `spec/02-cli.md`, "Step").
+/// `step add --recalled` writes the whole id of each pattern, once, as a `recalled` tag on the ask, a step
+/// with no `under` (`spec/06-reuse.md`, "Recalls"; `spec/02-cli.md`, "Step").
 #[test]
 fn step_add_writes_each_recall_on_the_ask() {
     let repo = Repo::new();
@@ -236,7 +236,7 @@ fn step_add_writes_each_recall_on_the_ask() {
         &["--scope", "me"],
         "When you commit: use plain words.",
     );
-    let ids = add(
+    let ask = add(
         &repo,
         &[
             "--session",
@@ -251,27 +251,15 @@ fn step_add_writes_each_recall_on_the_ask() {
             "Draw the logo",
         ],
     );
-    let mut ids = ids.lines();
-    let (ask, trail) = (ids.next().unwrap(), ids.next().unwrap());
     let steps = labelled(&repo, "step");
     let recalled = |id: &str| -> Vec<String> {
         let step = steps.iter().find(|n| n.id == id).unwrap();
         let tags = step.tags.iter().filter(|t| t[0] == "recalled");
         tags.map(|t| t[1].clone()).collect()
     };
-    assert_eq!(recalled(ask), [a.clone(), b.clone()]);
-    assert!(recalled(trail).is_empty());
-    let more = add(
-        &repo,
-        &[
-            "--under",
-            trail,
-            "--recalled",
-            &b[..8],
-            "--",
-            "Draw the icon",
-        ],
-    );
+    assert_eq!(steps.len(), 1);
+    assert_eq!(recalled(&ask), [a.clone(), b.clone()]);
+    let more = add(&repo, &["--recalled", &b[..8], "--", "Draw the icon"]);
     let steps = labelled(&repo, "step");
     let step = steps.iter().find(|n| n.id == more).unwrap();
     assert_eq!(step.tag("recalled"), Some(b.as_str()));
@@ -298,19 +286,6 @@ fn step_add_refuses_a_recall_of_no_pattern_or_off_an_ask() {
         ],
     );
     refusal(&o, 1, "no-pattern");
-    let o = cli(
-        &repo,
-        &[
-            "step",
-            "add",
-            "--json",
-            "--recalled",
-            &a[..8],
-            "--",
-            "A trail",
-        ],
-    );
-    refusal(&o, 2, "usage");
     let ids = add(&repo, &["--session", "s1", "--", "Draw the logo"]);
     let ask = ids.lines().next().unwrap();
     let o = cli(

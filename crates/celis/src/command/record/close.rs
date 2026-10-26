@@ -137,7 +137,7 @@ impl Command {
             ),
             format!(
                 "  {:<7} {}",
-                if ask.is_ask() { "ask" } else { "step" },
+                if ask.is_trail() { "ask" } else { "step" },
                 ask.title()
             ),
         ];
@@ -148,7 +148,7 @@ impl Command {
             });
         }
         let patterns = trails.patterns();
-        let recalled = ask.ask().into_iter().flat_map(|a| &a.record().recalled);
+        let recalled = ask.trail().record().recalled.iter();
         let mut brought: Vec<Pattern> = recalled
             .filter_map(|id| patterns.find(None, id).ok())
             .collect();

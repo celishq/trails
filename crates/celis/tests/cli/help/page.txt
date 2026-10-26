@@ -40,7 +40,6 @@ Record work · your agents run these
   ├ --recalled <id>   A pattern you read because it bears on the ask
   ├ --at <place>      Where the work happens: a file:line, a URL, or any text
   ├ --check <command> A command that proves the work
-  ├ --new             Start a new trail, not a step of the session's trail
   └ --project <id>    The id of a project in the store
 
   step start <id>     Start a step and show the patterns and notes it keeps

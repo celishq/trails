@@ -47,7 +47,6 @@ impl Bench {
             uses: vec![],
             recalled: Vec::new(),
             session: None,
-            new: false,
         };
         let id = self.trails.add(draft).unwrap().records[0].id.clone();
         self.trails.at(self.at);

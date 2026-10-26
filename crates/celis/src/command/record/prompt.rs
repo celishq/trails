@@ -1,6 +1,5 @@
 //! The prompt hook: what a session's prompt writes on the trail it works on.
 
-use crate::command::read::tree::today;
 use crate::command::Command;
 use crate::failure::Failure;
 use celis_store::{Link, Project};
@@ -27,13 +26,14 @@ impl Command {
     }
 
     /// Writes `prompt` on its session's open trail, signed now, else keeps it for the session's next step;
-    /// then, unless it is a task, gives on `err` one line: how a new ask recalls and joins a trail.
+    /// then, unless it is a task, gives on `err` one line: how a new ask recalls, and how a step joins the
+    /// open ask.
     fn ask(&self, err: &mut dyn Write, project: &Project, prompt: Prompt) -> Result<(), Failure> {
         let offered = self.offered(&prompt.session)?;
         if !self.held()? {
             self.keep(&prompt)?;
             if !prompt.task {
-                crate::command::put(err, &note(false, None, false))?;
+                crate::command::put(err, &note(false, None))?;
                 self.offer(err, project, &offered)?;
             }
             return Ok(());
@@ -51,7 +51,7 @@ impl Command {
             return Ok(());
         }
         let id = trail.map(|t| celis_store::records::id::short(t.id()));
-        let line = note(!trails.is_empty(), id.as_deref(), !today(&steps).is_empty());
+        let line = note(!trails.is_empty(), id.as_deref());
         crate::command::put(err, &line)?;
         self.offer(err, project, &offered)
     }
@@ -117,34 +117,23 @@ fn mark(path: &Path) -> Result<(), Failure> {
     Ok(())
 }
 
-/// The line on a prompt: a new ask takes the patterns that bear on it when the store holds a record,
-/// then joins the session's trail `trail`, else a trail of `today`, else a new one; and how done work
-/// is fixed.
-fn note(recall: bool, trail: Option<&str>, today: bool) -> String {
-    let join = match (trail, today) {
-        (Some(id), _) => {
-            format!("add it under the session's trail {id} when it fits, else with --new")
-        }
-        (None, true) => {
-            "add it --under a related trail of today that celis tree shows, else with --new"
-                .to_string()
-        }
-        (None, false) => "add it with --new".to_string(),
-    };
+/// The line on a prompt: a new ask takes the patterns that bear on it when the store holds a record, and
+/// is a new step; a prompt that goes on with the open ask `open` adds steps under it; and how done work is
+/// fixed.
+fn note(recall: bool, open: Option<&str>) -> String {
     let ask = match recall {
-        true => format!(
-            "take the patterns that bear on it, from the index you got at the session start or from celis \
-             patterns <file>... again, before you change a file, then {join}, with --recalled <the id \
-             of each>"
-        ),
-        false => join,
+        true => "take the patterns that bear on it, from the index you got at the session start or from celis \
+                 patterns <file>... again, before you change a file, then add it with celis step add \
+                 --recalled <the id of each>"
+            .to_string(),
+        false => "add it with celis step add".to_string(),
     };
-    let fix = match trail {
-        Some(id) => format!(
-            "; when it changes done work, add it with step add --replaces <the id of that step, as celis \
-             tree {id} shows it>"
-        ),
+    let more = match open {
+        Some(id) => format!("; when it goes on with the open ask {id}, add its steps --under {id}"),
         None => String::new(),
     };
-    format!("celis: when this prompt is a new ask, {ask}{fix}.")
+    format!(
+        "celis: when this prompt is a new ask, {ask}{more}; when it changes done work, add it with step add \
+         --replaces <the id of that step, as celis tree shows it>."
+    )
 }

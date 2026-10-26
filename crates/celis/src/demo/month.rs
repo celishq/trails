@@ -133,7 +133,6 @@ impl Demo {
             uses: vec![],
             recalled: Vec::new(),
             session: None,
-            new: true,
         };
         Ok(self.trails(ago)?.add(draft)?.records[0].id.clone())
     }
