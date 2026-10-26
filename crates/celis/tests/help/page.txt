@@ -78,6 +78,7 @@ Set up
 Marks
   ○ open  ⠏ working  ✓ done  ✗ dropped  ◌ expired  ↻ revised  ~ changed
 
-celis keeps your recovery phrase and records in $CELIS_HOME.
+celis keeps your recovery phrase and records in $CELIS_HOME:
+  <home>
 
 To learn more about a command, run `celis <command> --help`.

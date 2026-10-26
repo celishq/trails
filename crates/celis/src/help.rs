@@ -3,6 +3,7 @@
 use crate::failure::Failure;
 use crate::terminal::canvas::{line, Styled, BOLD, DIM};
 use ratatui::text::Span;
+use std::path::Path;
 
 mod page;
 
@@ -17,30 +18,31 @@ pub fn text(lines: &[Styled], colour: bool) -> String {
     lines.join("\n")
 }
 
-/// The page the words of a command line name, before any `--`; none when they run a command.
-pub fn named(args: &[String]) -> Option<Vec<Styled>> {
+/// The page the words of a command line name, before any `--`, with the store folder `home`; none
+/// when they run a command.
+pub fn named(args: &[String], home: Option<&Path>) -> Option<Vec<Styled>> {
     if raw(args) {
         return None;
     }
     let words = words(args);
     if words.first() == Some(&"help") {
-        return Some(page_of(&words[1..]));
+        return Some(page_of(&words[1..], home));
     }
     let asked = args
         .iter()
         .take_while(|a| *a != "--")
         .any(|a| a == "--help" || a == "-h");
     let group = words.len() == 1 && GROUPS.iter().any(|(name, ..)| words[0] == *name);
-    (words.is_empty() || asked || group).then(|| page_of(&words))
+    (words.is_empty() || asked || group).then(|| page_of(&words, home))
 }
 
 /// The page of `words`: the command page they name, else the group page, else the page.
-fn page_of(words: &[&str]) -> Vec<Styled> {
+fn page_of(words: &[&str], home: Option<&Path>) -> Vec<Styled> {
     let group = GROUPS.iter().find(|(name, ..)| words == [*name]);
     match (Verb::of(words), group) {
         (Some(verb), _) => verb.lines(),
         (None, Some(group)) => group_page(group),
-        (None, None) => page::page(),
+        (None, None) => page::page(home),
     }
 }
 
