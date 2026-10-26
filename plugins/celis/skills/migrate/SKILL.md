@@ -19,5 +19,8 @@ nothing to the store before the person says yes.
    -- "<the four lines>"`. Keep its scope, a done trail's too, and each `path` that
    `celis tree <its trail> --json` or its grep line shows; `{project}` takes no `--scope`. Its examples
    stay. To write into another project, add `--project <its id>`.
-7. Run step 3 again: no pattern must be left. Close the ask with the counts, and tell them to the person:
-   patterns rewritten, and patterns left as they were.
+7. Ask the person whether to remove what celis no longer uses from its home, the folder that
+   `celis help` names: `models/`, `index/`, `recalled/`, `asked/`, `cache/` and `retrieval.log`. After a
+   yes, remove each of them that is there, and nothing else.
+8. Run step 3 again: no pattern must be left. Close the ask with the counts, and tell them to the person:
+   patterns rewritten, patterns left as they were, and the items removed from the home.
