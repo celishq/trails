@@ -15,8 +15,8 @@ celis keeps the knowledge that agents need to do work well, and the evidence for
   they are not present, the pattern does not apply. A pattern is never "broken". Pairs show taste: good
   and bad examples, made from the person's picks and corrections.
 - **Trails are the evidence.** A trail is one ask, with its steps and their proofs. It gives observability,
-  and it is the feedback loop that shows whether a pattern is still useful: its examples, its uses, its
-  recalls and tidy.
+  and it is the feedback loop that shows whether a pattern is still useful: its examples, its uses and
+  tidy.
 
 The store, the query, the card's method, the log, tidy and the tree are the core, because no model can
 know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model can outgrow.
@@ -28,7 +28,7 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
                scope: project | me
                within ──► a larger pattern
                   ▲                 │
-   examples, uses, recalls          │ activates
+   examples, uses, misled           │ activates
                   │                 ▼
   evidence     trail ──► step ──► done: proof, changed, by ──► note
 ```
@@ -43,24 +43,26 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
    pattern. Only the `grep` view marks it `old-rule`, so that tidy can find it. `pattern --binds` is
    accepted and ignored, so an older plugin still works with a newer `celis`. A pattern has no cell: a
    reader ignores an old `cell` tag, and `pattern --cell` is accepted and ignored in the same way.
-3. **The agent reads the index of all patterns in scope and opens what bears on the ask.**
+3. **The agent loads a pattern at the choice it bears on.**
    - `celis patterns` gives the index: each live pattern in scope as its id and its When. `celis grep
-     <id>` gives the whole pattern. The agent reads the index itself or through the `celis:recall`
-     agent. celis has no vector, no word match and no rank. The session start gives the index, so the
-     agent has it before the first ask.
-   - The ask records the patterns the agent recalled as `recalled` tags. Tidy reads them with the uses.
-   - Past trails serve the learn and tidy, not recall. Nothing follows a past step: a step's `uses`
-     names only a pattern, and a reader ignores a `uses` that names a step, which older writers wrote.
-4. **What goes in matters more than recall.** The agent decides when there is a lesson: a correction, a
-   pick, a reaction to a result, a wish such as "from now on", or a fix of done work. It then runs
-   `celis lesson <id>`, which prints the learn brief of an ask or a step, open or closed: the ask's
-   `changed` lines, its trail's notes, the person's prompts since the ask began, and the patterns in
-   play, each one the ask recalled and each one a step of it used, so that a lesson can replace one that
-   misled. `done` of an ask, or of a step that fixes done work, because a fix is a correction, prints the
-   same brief. The `celis:lesson` agent writes the patterns from it, in its own context. The brief is the
-   one place that says what to keep. A pattern is written only for a choice that will come back. A
-   lesson replaces a pattern that misled the work instead of adding a near copy, and writes nothing when
-   the ask taught nothing.
+     <id>` gives the whole pattern. celis has no vector, no word match and no rank. The session start
+     gives the index, and gives it again after each compaction, so the agent has it before the first
+     ask.
+   - When a choice of the work matches a When, the agent reads that pattern whole before it chooses,
+     and names it with `--uses` on the step of that choice. There is no step at an ask that reads the
+     patterns, and no agent for it. The uses are the evidence. `step add --recalled` is accepted and
+     ignored, and a reader ignores the `recalled` tag that older writers wrote on an ask.
+   - Past trails serve the learn and tidy. Nothing follows a past step: a step's `uses` names only a
+     pattern, and a reader ignores a `uses` that names a step, which older writers wrote.
+4. **What goes in matters most.** The agent decides when there is a lesson: a correction, a pick, a
+   reaction to a result, a wish such as "from now on", or a fix of done work. It then runs `celis lesson
+   <id>`, which prints the learn brief of an ask or a step, open or closed: the ask's `changed` lines,
+   its trail's notes, the person's prompts since the ask began, and the patterns in play, each one a
+   step of the ask used, so that a lesson can replace one that misled. `done` of an ask, or of a step
+   that fixes done work, because a fix is a correction, prints the same brief. The `celis:lesson` agent
+   writes the patterns from it, in its own context. The brief is the one place that says what to keep.
+   A pattern is written only for a choice that will come back. A lesson replaces a pattern that misled
+   the work instead of adding a near copy, and writes nothing when the ask taught nothing.
 5. **The agent writes each record with a celis call.** A hook may give the agent context, such as the
    patterns that fit, but it never captures the agent's tools to write records.
 6. **Patterns lead.** The card, the help and the README start with patterns, and trails come after.
@@ -73,7 +75,7 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
    are no other link types: `replaces` takes a pattern's place, and tidy settles conflicts.
 9. **A must leaves celis.** celis keeps guides. A choice that must always hold goes into the project's
    own files: `AGENTS.md`, `CLAUDE.md`, or a check such as a test, a lint or CI. Tidy learns from the
-   trails. From the recalls, the uses and the replaces of each pattern, it offers to promote it, or to
+   trails. From the uses, the misled and the replaces of each pattern, it offers to promote it, or to
    narrow or widen its When, and it draws new patterns from the choices of past trails. It writes a file
    only after the person agrees, and then drops the pattern with the reason "promoted to <file>".
 10. **A step is open, done or dropped.** A start gives an open step a start time, and is not a state. A
@@ -91,9 +93,9 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
     `by judge` as a proof by a reader that did not do the work. `done --by judge` is accepted and writes
     no `by`, so an older plugin still works with a newer `celis`.
 13. **The outcomes are evidence, and celis lists what needs tidy.** A pattern misled a step that used
-    it, or an ask that recalled it, when a later step fixed that work. `celis patterns --tidy` lists each
-    live pattern that misled twice or more, that has a near copy, that no ask recalled in 60 days, or
-    that was replaced three times or more, with the reason. The session start offers tidy when the list
+    it when a later step fixed that work. `celis patterns --tidy` lists each live pattern that misled
+    twice or more, that has a near copy, that no step used in 60 days, or that was replaced three times
+    or more, with the reason. Tidy narrows a pattern that misled, and drops or widens one unused. The session start offers tidy when the list
     is not empty, and not within 7 days of a tidy, so that a person who kept a pattern is not asked each
     session.
 

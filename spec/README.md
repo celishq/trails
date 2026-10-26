@@ -43,7 +43,7 @@ Every change of `spec/` MUST keep these rules:
 | 03 | Steps | the step, its start, done, drop, edit and note | CIP-01 |
 | 04 | Trails | the trail, its sessions and prompts, its notes | CIP-01, 03, 05 |
 | 05 | Patterns | the pattern, its scope and its examples | CIP-01 |
-| 06 | Reuse | the patterns a step uses, the patterns an ask recalled, revisions | CIP-03, 04, 05 |
+| 06 | Reuse | the patterns a step uses, revisions | CIP-03, 04, 05 |
 | 08 | Files | the files of a done and of a pattern, and their blobs | CIP-01, 03, 05 |
 
 ## Names
@@ -68,7 +68,6 @@ Every change of `spec/` MUST keep these rules:
 | `within` | pattern tag: the larger pattern it completes | 05 |
 | `me` · `project` | the scopes of a pattern | 05 |
 | `uses` | step tag | 06 |
-| `recalled` | ask tag | 06 |
 | `imeta` with `url` · `x` · `m` · `size` · `path` | done tag: a file of the proof (NIP-92, BUD-10) | 08 |
 | `$CELIS_HOME/trails/blobs/` · `<folder>/blobs/` | the blobs of the store and of a linked folder | 08 |
 
@@ -91,6 +90,7 @@ them.
 | `at:<place>` as the `scope` of a pattern | a scope, now `path` globs; a reader reads it as CIP-05, "Reading", states |
 | `trail:<id>` as the `scope` of a pattern | a scope, now a note on the trail; a reader reads it as CIP-05, "Reading", states |
 | `uses` that names a step | a step tag: a follow of a past step; a reader ignores it, as CIP-06, "Uses", states |
+| `recalled` | an ask tag: a pattern the agent read for the ask |
 | `judge` as the `by` of a `done` | a proof by a reader that did not do the work; a reader reads it as CIP-03, "Closing", states |
 
 ## Words
