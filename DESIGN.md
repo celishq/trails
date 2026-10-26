@@ -51,12 +51,16 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
    - The ask records the patterns the agent recalled as `recalled` tags. Tidy reads them with the uses.
    - Past trails serve the learn and tidy, not recall. Nothing follows a past step: a step's `uses`
      names only a pattern, and a reader ignores a `uses` that names a step, which older writers wrote.
-4. **What goes in matters more than recall.** The agent learns at each close, and only there: when an
-   ask closes, or a step that fixes done work, because a fix is a correction, celis gives it the learn
-   brief, with the ask's `changed` lines, its trail's notes and the
-   person's prompts since the ask began. The brief is the one place that says what to keep. The agent
-   writes a pattern only for a choice that will come back. It replaces a pattern that misled it instead
-   of adding a near copy, and writes nothing when the ask taught nothing.
+4. **What goes in matters more than recall.** The agent decides when there is a lesson: a correction, a
+   pick, a reaction to a result, a wish such as "from now on", or a fix of done work. It then runs
+   `celis lesson <id>`, which prints the learn brief of an ask or a step, open or closed: the ask's
+   `changed` lines, its trail's notes, the person's prompts since the ask began, and the patterns in
+   play, each one the ask recalled and each one a step of it used, so that a lesson can replace one that
+   misled. `done` of an ask, or of a step that fixes done work, because a fix is a correction, prints the
+   same brief. The `celis:lesson` agent writes the patterns from it, in its own context. The brief is the
+   one place that says what to keep. A pattern is written only for a choice that will come back. A
+   lesson replaces a pattern that misled the work instead of adding a near copy, and writes nothing when
+   the ask taught nothing.
 5. **The agent writes each record with a celis call.** A hook may give the agent context, such as the
    patterns that fit, but it never captures the agent's tools to write records.
 6. **Patterns lead.** The card, the help and the README start with patterns, and trails come after.

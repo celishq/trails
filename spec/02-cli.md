@@ -21,6 +21,7 @@ celis tree [<id>]... [--graph] [--full] [--all] [--demo]
                                                        a trail and its steps; again on each change
 celis grep <grep option>... <pattern>                 every trail, through the system grep
 celis stats [<id>] [--demo]                           what later work reused
+celis lesson <id>                                     what an ask or a step taught, for a lesson
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
 celis link [<folder>] [--off]                         keep this project's trails in a folder, or stop
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--recalled <id>]... [--at <place>]... [--check <command>] [--session <id>] [--project <id>] -- <text>
@@ -189,6 +190,9 @@ celis: before you answer, learn from <id8>. …           what the agent keeps, 
   note    <text>                                          each note of its trail (CIP-04, "Notes")
   asked   <text>                                          each prompt on its trail (CIP-04, "Sessions") since
                                                           the newest one before the ask, that one too
+  pattern <id8> <When>                                    each live pattern its ask recalled (CIP-06, "Recalls")
+                                                          and each one a step of its ask uses (CIP-06, "Uses"),
+                                                          once each
 ```
 
 **Examples**
@@ -244,6 +248,19 @@ no pattern yet           when there is none
 celis patterns
 celis patterns shelf/prices.py shelf/
 celis patterns --markdown > patterns.md
+```
+
+## Lesson
+
+**Rules**
+
+- `lesson` MUST print the learn brief ("Step") of the ask or step `<id>`, open or closed, and write no
+  record.
+
+**Examples**
+
+```
+celis lesson 3fa2c1d0
 ```
 
 ## Hooks
