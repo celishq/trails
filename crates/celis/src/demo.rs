@@ -84,7 +84,7 @@ struct Demo {
 impl Demo {
     /// Writes the made-up trails: the history of four weeks; a done one of a past day; today, an active
     /// one with a step in each state, patterns and a change, a revised one, and in a second project an
-    /// active, an expired and a dropped one.
+    /// active, a stale and a dropped one.
     fn write(&self) -> Result<(), Failure> {
         let (shop, crm) = (anchor("shop"), anchor("crm"));
         self.history(&shop, &crm)?;

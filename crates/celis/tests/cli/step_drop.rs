@@ -149,7 +149,7 @@ fn a_step_that_replaces_another_drops_it() {
     assert_eq!(o.status.code(), Some(2), "{}", err(&o));
 }
 
-/// `drop` takes a done trail, keeps it done, and refuses it once it is dropped
+/// `drop` takes a done trail, makes it dropped, and refuses it once it is dropped
 /// (`spec/02-cli.md`, "Step"; `spec/03-steps.md`, "Dropping").
 #[test]
 fn drop_takes_a_done_trail_once() {
@@ -168,7 +168,7 @@ fn drop_takes_a_done_trail_once() {
     assert!(o.status.success(), "{}", err(&o));
     assert_eq!(out(&o).lines().count(), 1, "{}", out(&o));
     let state = &objects(&repo, &["tree", &trail[..8]])[0]["trail"]["state"];
-    assert_eq!(state, "done");
+    assert_eq!(state, "dropped");
     refusal(
         &cli(&repo, &["step", "drop", &trail[..8], "--json", "--", "x"]),
         1,

@@ -1,14 +1,14 @@
 //! How the steps of a span of days ended, and the shares stats reads from them.
 
 /// How the steps that closed in a span ended, each step once: done following past work, done new, done
-/// and revised later, dropped, or expired; and how many of the done ones applied a pattern.
+/// and revised later, dropped, or stale; and how many of the done ones applied a pattern.
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
 pub(super) struct Outcomes {
     pub reused: usize,
     pub new: usize,
     pub reworked: usize,
     pub dropped: usize,
-    pub expired: usize,
+    pub stale: usize,
     pub applied: usize,
 }
 
@@ -20,7 +20,7 @@ impl Outcomes {
             new: a.new + s.new,
             reworked: a.reworked + s.reworked,
             dropped: a.dropped + s.dropped,
-            expired: a.expired + s.expired,
+            stale: a.stale + s.stale,
             applied: a.applied + s.applied,
         })
     }
@@ -30,9 +30,9 @@ impl Outcomes {
         self.reused + self.new + self.reworked
     }
 
-    /// The steps that ended: successful, dropped and expired.
+    /// The steps that ended: successful, dropped and stale.
     pub fn resolved(self) -> usize {
-        self.successful() + self.dropped + self.expired
+        self.successful() + self.dropped + self.stale
     }
 
     /// The steps done that no later step revised.

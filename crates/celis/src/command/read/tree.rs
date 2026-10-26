@@ -2,7 +2,7 @@
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use crate::progress::{Flags, Grade, Model, Reuse, Tally};
+use crate::progress::{Flags, Grade, Model, Phase, Reuse, Tally};
 pub(crate) use crate::terminal::canvas::{cut, visible};
 use crate::terminal::canvas::{line as line_text, paint, width, Styled};
 use crate::terminal::canvas::{BOLD, DIM, EDGE, GREEN, YELLOW};
@@ -13,7 +13,7 @@ use celis_nostr::Note;
 use celis_patterns::Patterns;
 use celis_store::records::id::short;
 use celis_trails::step::steps::LIFE;
-use celis_trails::{Notes, State, Step, Steps, Trail};
+use celis_trails::{Notes, Step, Steps, Trail};
 pub(crate) use layout::Layout;
 use level::Level;
 use ratatui::style::Style;
@@ -116,15 +116,15 @@ pub(crate) fn today<'a>(steps: &'a Steps<'a>) -> Vec<Step<'a>> {
     let midnight = midnight(steps.now());
     let roots = steps.roots().into_iter().rev();
     roots
-        .filter(|s| s.state().active() || s.newest() >= midnight)
+        .filter(|s| Phase::of(s).active() || s.newest() >= midnight)
         .collect()
 }
 
 /// Whether the trail `note` is a live session at `now`: active, or not dropped with a record in the
 /// last `LIFE` seconds, as when its agent just answered and waits for the person.
 pub(crate) fn live(note: Step, now: u64) -> bool {
-    let recent = now.saturating_sub(note.newest()) < LIFE && note.state() != State::Dropped;
-    note.state().active() || recent
+    let recent = now.saturating_sub(note.newest()) < LIFE && Phase::of(&note) != Phase::Dropped;
+    Phase::of(&note).active() || recent
 }
 
 /// How a tree shows: in a watch, with a cursor column; full; all with no id; and in a watch, with the
@@ -299,7 +299,7 @@ impl Tree<'_> {
     /// What the tree says of the trail `note`, whose work `work` holds: the steps it prints under it, the
     /// done ones, the time they worked, and its notes. An active one lowers `next` to its end.
     fn summary(&self, note: Step, work: Step) -> Summary<'_> {
-        if note.state().active() {
+        if Phase::of(&note).active() {
             self.until(note.newest() + LIFE);
         }
         let parts = Trail::new(note).parts().into_iter();
@@ -327,7 +327,7 @@ impl Tree<'_> {
     }
 
     /// The time the steps of `tree` with no step under them worked: what a done one took, and the time
-    /// since a working one started; `None` when none worked. A working one lowers `next`.
+    /// since a started one started; `None` when none worked. A started one lowers `next`.
     fn worked(&self, tree: &[Step]) -> Option<u64> {
         let now = self.steps.now();
         let leaves = tree.iter().filter(|s| s.children().is_empty());
@@ -335,7 +335,7 @@ impl Tree<'_> {
         for leaf in leaves {
             match (Grade::of(*leaf), leaf.start()) {
                 (Some(grade), _) => total += grade.took,
-                (None, Some(start)) if leaf.state() == State::Working => {
+                (None, Some(start)) if Phase::of(leaf) == Phase::Started => {
                     total += now.saturating_sub(start.created_at);
                     running = true;
                 }
@@ -394,21 +394,21 @@ impl Tree<'_> {
     /// while one under it works, and a check drawn stroke by stroke for 2 seconds after a step was done.
     fn marked(&self, note: Step) -> Styled {
         let flags = Flags::of(note);
-        let sign = match note.state() {
-            State::Working if flags.revised => Some(paint(GREEN, "↻")),
-            State::Done if flags.changed => Some(paint(YELLOW, "˜")),
+        let sign = match Phase::of(&note) {
+            Phase::Started if flags.revised => Some(paint(GREEN, "↻")),
+            Phase::Done if flags.changed => Some(paint(YELLOW, "˜")),
             _ => None,
         };
         let fresh = note
             .closed_at()
             .is_some_and(|at| at + FRESH > self.steps.now());
-        let mark = match (note.state(), fresh && self.view.spin) {
-            _ if self.spins(note) => self.mark(State::Working),
-            _ if !note.is_trail() && self.busy(note) => self.mark(State::Working),
-            (State::Done, true) => {
+        let mark = match (Phase::of(&note), fresh && self.view.spin) {
+            _ if self.spins(note) => self.mark(Phase::Started),
+            _ if !note.is_trail() && self.busy(note) => self.mark(Phase::Started),
+            (Phase::Done, true) => {
                 self.spun.set(true);
                 self.until(note.closed_at().unwrap_or_default() + FRESH);
-                paint(look(State::Done).text, DRAWN)
+                paint(look(Phase::Done).text, DRAWN)
             }
             (state, _) => self.mark(state),
         };
@@ -436,10 +436,10 @@ impl Tree<'_> {
         EDGE
     }
 
-    /// The mark of a step in `state` in its colour; in a watch, a working one's is the spinner.
-    fn mark(&self, state: State) -> Span<'static> {
+    /// The mark of a step in `state` in its colour; in a watch, a started one's is the spinner.
+    fn mark(&self, state: Phase) -> Span<'static> {
         let look = look(state);
-        if state == State::Working && self.view.spin {
+        if state == Phase::Started && self.view.spin {
             self.spun.set(true);
             return paint(SPINNER, SPUN);
         }

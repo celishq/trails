@@ -3,13 +3,14 @@
 use crate::command::read::tree::classic::level::Level;
 use crate::command::read::tree::classic::row::Row;
 use crate::command::read::tree::classic::{after, Item, Tree};
+use crate::progress::Phase;
 use crate::terminal::canvas::{paint, Styled, DIM};
 use crate::terminal::classic::look;
 use crate::text::clock::took;
 use crate::text::line::plural;
 use celis_nostr::Note;
 use celis_trails::step::steps::LIFE;
-use celis_trails::{State, Step};
+use celis_trails::Step;
 use ratatui::text::Span;
 
 impl Tree<'_> {
@@ -48,7 +49,7 @@ impl Tree<'_> {
         let all = notes.len();
         for (n, note) in notes.into_iter().enumerate() {
             let step = note.record();
-            let state = note.state();
+            let state = Phase::of(&note);
             if state.active() {
                 self.until(note.trail().newest() + LIFE);
             }
@@ -57,7 +58,7 @@ impl Tree<'_> {
             let (lead, rail) = self.branch(rail, last, self.opens(note).then_some(open));
             let size = note.tree().len() - 1;
             let level = Level::of(note.children());
-            let folded = state == State::Done && size > 0 && !open;
+            let folded = state == Phase::Done && size > 0 && !open;
             let below = match note.children().is_empty() || folded {
                 true => after(&rail, Span::raw("  ")),
                 false => after(&rail, paint(DIM, "│ ")),
@@ -135,7 +136,7 @@ impl Tree<'_> {
             || note.dropped().is_some()
             || !self.reuse.sources(note).is_empty()
             || self.reuse.followers(note) > 0;
-        lines || (note.state().closed() && !note.children().is_empty())
+        lines || (Phase::of(&note).closed() && !note.children().is_empty())
     }
 
     /// Whether the step or pattern `id` shows what `--full` shows: with `--full`, unless the watch closed

@@ -4,18 +4,17 @@ use super::super::glyph::strip;
 use super::super::table::{Row, Table};
 use super::super::Period;
 use super::{nothing, Card};
-use crate::progress::Tally;
+use crate::progress::{Phase, Tally};
 use crate::terminal::canvas::Styled;
 use crate::terminal::classic::look;
 use crate::terminal::ink::Ink;
-use celis_trails::State;
 
 /// The outcome: the steps closed in the last 14 days by how they ended, as a strip of shares, with the
 /// count of revised done steps beside the done share.
 pub(super) fn outcome(last: &Period, inside: usize, ink: Ink) -> Card {
     let closed = last.closed();
     let tally = Tally::of(&closed);
-    let states = [State::Done, State::Dropped, State::Expired];
+    let states = [Phase::Done, Phase::Dropped, Phase::Stale];
     let counts: Vec<usize> = states.iter().map(|&st| tally.count(st)).collect();
     let total: usize = counts.iter().sum();
     let face = match total {
@@ -30,7 +29,7 @@ pub(super) fn outcome(last: &Period, inside: usize, ink: Ink) -> Card {
                     ink.paint(look.text, look.mark),
                     format!(" {:<10}{n:>4} {share:>5}%", state.text()).into(),
                 ]);
-                if state == State::Done && tally.revised > 0 {
+                if state == Phase::Done && tally.revised > 0 {
                     line.push_span(format!(" · {} revised", tally.revised));
                 }
                 face.push(line);
@@ -43,7 +42,7 @@ pub(super) fn outcome(last: &Period, inside: usize, ink: Ink) -> Card {
         .map(|s| Row {
             id: Some(s.id().to_string()),
             cells: vec![
-                format!("{} {}", look(s.state()).mark, s.state().text()),
+                format!("{} {}", look(Phase::of(s)).mark, Phase::of(s).text()),
                 s.title().to_string(),
             ],
         })

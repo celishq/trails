@@ -191,7 +191,7 @@ impl Command {
         let done: Vec<Step> = steps
             .iter()
             .copied()
-            .filter(|s| s.is_ask() && s.state_word() == "done")
+            .filter(|s| s.is_ask() && s.state() == celis_trails::State::Done)
             .collect();
         let ids: HashSet<String> = done.iter().map(|s| short(s.id())).collect();
         let meant = self.meant(ask, (Kind::Step, &ids), err)?;

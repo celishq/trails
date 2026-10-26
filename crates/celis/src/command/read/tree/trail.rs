@@ -3,10 +3,11 @@
 use super::level::Level;
 use super::row::Row;
 use super::{Item, Summary, Tree, PATTERNS};
+use crate::progress::Phase;
 use crate::terminal::canvas::{paint, Styled, BOLD, DIM};
 use crate::terminal::look::look;
 use celis_nostr::Note;
-use celis_trails::{State, Step, Trail};
+use celis_trails::{Step, Trail};
 use ratatui::text::Span;
 
 impl Tree<'_> {
@@ -57,7 +58,7 @@ impl Tree<'_> {
     /// many.
     pub(super) fn block(&self, note: Step, lines: &mut Vec<Row>) {
         let step = note.record();
-        let state = note.state();
+        let state = Phase::of(&note);
         let work = self.work(note);
         let summary = self.summary(note, work);
         let level = Level::of(Trail::new(note).parts());
@@ -97,7 +98,7 @@ impl Tree<'_> {
     /// done/all while active, else its steps counted by state.
     pub(super) fn line(&self, note: Step, lines: &mut Vec<Row>) {
         let step = note.record();
-        let state = note.state();
+        let state = Phase::of(&note);
         let work = self.work(note);
         let summary = self.summary(note, work);
         let under = !(Trail::new(note).parts().is_empty() && summary.notes.is_empty());
@@ -119,7 +120,7 @@ impl Tree<'_> {
 }
 
 /// The look of a trail's title in `state`: bold while active, else as its state's titles look.
-fn trail_tone(state: State) -> ratatui::style::Style {
+fn trail_tone(state: Phase) -> ratatui::style::Style {
     match state.active() {
         true => BOLD,
         false => look(state).title,
@@ -128,7 +129,7 @@ fn trail_tone(state: State) -> ratatui::style::Style {
 
 /// What a trail's steps came to: done/all while `active`, else their count by state; none with no
 /// steps.
-fn came(state: State, summary: &Summary) -> Option<Vec<Span<'static>>> {
+fn came(state: Phase, summary: &Summary) -> Option<Vec<Span<'static>>> {
     match (state.active(), summary.all) {
         (_, 0) => None,
         (true, all) => Some(vec![paint(DIM, &format!("{}/{all}", summary.done))]),

@@ -14,17 +14,17 @@ fn state(repo: &Repo, trail: &str, id: &str) -> String {
         .unwrap()
 }
 
-/// A step is open, then working once a `start` names it, then done; a `start` does not close it, and
-/// `tree` marks a working step `◐` (`spec/03-steps.md`, "Starting").
+/// A step is open until it is done; a `start` does not close it and keeps it open, and `tree` marks a
+/// started step `◐` (`spec/03-steps.md`, "Starting").
 #[test]
-fn a_started_step_is_working_until_it_closes() {
+fn a_started_step_stays_open_until_it_closes() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the trail"]);
     let step = add(&repo, &["--under", &trail[..8], "--", "the step"]);
     assert_eq!(state(&repo, &trail, &step), "open");
     let o = cli(&repo, &["step", "start", &step[..8]]);
     assert!(o.status.success(), "{}", err(&o));
-    assert_eq!(state(&repo, &trail, &step), "working");
+    assert_eq!(state(&repo, &trail, &step), "open");
     let tree = out(&cli(&repo, &["tree", &trail[..8]]));
     assert!(
         tree.lines()
@@ -35,7 +35,7 @@ fn a_started_step_is_working_until_it_closes() {
     assert_eq!(state(&repo, &trail, &step), "done");
 }
 
-/// `start` refuses an unknown step with `no-step` and a closed step with `closed`; on a working step it
+/// `start` refuses an unknown step with `no-step` and a closed step with `closed`; on a started step it
 /// writes nothing and prints the id of the first `start`; it prints the id it wrote, and `{"id"}` with
 /// `--json` (`spec/02-cli.md`, "Step").
 #[test]

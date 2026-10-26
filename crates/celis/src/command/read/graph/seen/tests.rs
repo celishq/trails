@@ -25,7 +25,7 @@ fn only_what_changes_after_the_first_look_plays() {
     note(&mut seen, &bench, later);
     let soon = later + Duration::from_millis(500);
     assert_eq!(seen.changed(&a, soon), Some(0.5));
-    assert_eq!(seen.step(&a).and_then(|c| c.before), Some(State::Open));
+    assert_eq!(seen.step(&a).and_then(|c| c.before), Some(Phase::Open));
     assert_eq!(seen.added(&a, soon), None);
     assert_eq!(seen.added(&b, soon), Some(0.5));
 }

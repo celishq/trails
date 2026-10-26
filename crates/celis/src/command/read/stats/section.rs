@@ -151,8 +151,8 @@ impl Section {
                     dot(),
                     paint(RED.patch(BOLD), &now.dropped.to_string()),
                     paint(DIM, " dropped "),
-                    paint(DIM.patch(BOLD), &now.expired.to_string()),
-                    paint(DIM, " expired"),
+                    paint(DIM.patch(BOLD), &now.stale.to_string()),
+                    paint(DIM, " stale"),
                 ],
             ],
             Section::Output => vec![vec![
@@ -204,7 +204,7 @@ impl Section {
                     (now.first_pass() as f64, GREEN),
                     (now.reworked as f64, YELLOW),
                     (now.dropped as f64, RED),
-                    (now.expired as f64, DIM),
+                    (now.stale as f64, DIM),
                 ];
                 s.stack(x, y, &parts, 16);
             }

@@ -123,9 +123,9 @@ fn tree_prints_the_expect_line_in_the_label_column() {
     );
 }
 
-/// `tree <id>` prints an expired step with the closed steps, after the notes.
+/// `tree <id>` prints a stale step with the closed steps, after the notes.
 #[test]
-fn tree_prints_an_expired_step_with_the_closed_ones() {
+fn tree_prints_a_stale_step_with_the_closed_ones() {
     let repo = Repo::new();
     let by = support::account();
     let at = support::now() - 2 * 3600;

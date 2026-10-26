@@ -162,12 +162,12 @@ impl<'a> Step<'a> {
     }
 
     /// The second it ended: when a done or a drop closed it, or the newest record of its trail when it
-    /// expired; none while it is open.
+    /// is stale; none while it is open.
     pub fn closed_at(self) -> Option<u64> {
-        match (self.closed(), self.state()) {
-            (Some(close), _) => Some(close.created_at),
-            (None, State::Expired) => Some(self.trail().newest()),
-            _ => None,
+        match self.closed() {
+            Some(close) => Some(close.created_at),
+            None if self.stale() => Some(self.trail().newest()),
+            None => None,
         }
     }
 
@@ -199,14 +199,6 @@ impl<'a> Step<'a> {
     /// (CIP-03, "Dropping").
     pub fn drop_mark(self) -> Option<&'a Note> {
         self.entry.drop
-    }
-
-    /// The word for its state that `grep` gives: `done-dropped` for a done trail a drop names.
-    pub fn state_word(self) -> &'static str {
-        match (self.state(), self.drop_mark()) {
-            (State::Done, Some(_)) => "done-dropped",
-            (state, _) => state.text(),
-        }
     }
 
     /// The steps that replace it after it was done, oldest first.
@@ -242,10 +234,22 @@ impl<'a> Step<'a> {
         match self.entry.close {
             Some((_, Close::Done)) => State::Done,
             Some((_, Close::Dropped)) => State::Dropped,
-            None if self.trail().ended() => State::Expired,
-            None if self.start().is_some() => State::Working,
             None => State::Open,
         }
+    }
+
+    /// Whether it is open and its trail ended.
+    pub fn stale(self) -> bool {
+        self.state() == State::Open && self.trail().ended()
+    }
+
+    /// Whether it is open and not stale, and a start names it, or, as a trail, a step of it.
+    pub fn works(self) -> bool {
+        let started = match self.is_trail() {
+            true => self.entry.busy,
+            false => self.start().is_some(),
+        };
+        started && self.state() == State::Open && !self.stale()
     }
 
     /// The time of the newest record of its tree: its steps, and the marks that name them.
@@ -264,16 +268,12 @@ impl<'a> Step<'a> {
         idle || self.steps.now().saturating_sub(self.newest()) >= LIFE
     }
 
-    /// Where it stands as a trail: working while open and a step of it works, else open; expired when
-    /// it ended with a step open; dropped; else done.
+    /// Where it stands as a trail: dropped once a drop names it; open until it ends, or when it ended
+    /// with a step open; else done.
     fn trail_state(self) -> State {
         match self.entry.close {
-            Some((_, Close::Dropped)) => State::Dropped,
-            None if !self.ended() => match self.entry.busy {
-                true => State::Working,
-                false => State::Open,
-            },
-            None if self.entry.loose => State::Expired,
+            _ if self.entry.drop.is_some() => State::Dropped,
+            None if !self.ended() || self.entry.loose => State::Open,
             _ => State::Done,
         }
     }

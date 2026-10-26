@@ -625,9 +625,9 @@ fn watch_prints_open_steps_then_notes_then_closed_steps() {
     }
 }
 
-/// The closed line holds a trail's expired steps too, and marks them `◌` after `✓` and `✗`.
+/// The closed line holds a trail's stale steps too, and marks them `◌` after `✓` and `✗`.
 #[test]
-fn watch_holds_expired_steps_in_the_closed_line() {
+fn watch_holds_stale_steps_in_the_closed_line() {
     let repo = Repo::new();
     let by = support::account();
     let at = support::now() - 2 * 3600;
@@ -1172,9 +1172,9 @@ fn next_watch_cuts_a_deep_row_to_the_width() {
 }
 
 /// With `--next`, A trail with more than five closed steps folds them into one `✓ <n> closed` line before the rest, its
-/// expired ones among them, and opens it to them.
+/// stale ones among them, and opens it to them.
 #[test]
-fn next_watch_holds_expired_steps_in_the_closed_line() {
+fn next_watch_holds_stale_steps_in_the_closed_line() {
     let repo = Repo::new();
     let by = support::account();
     let at = support::now() - 2 * 3600;

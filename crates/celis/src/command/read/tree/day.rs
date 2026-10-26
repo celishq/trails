@@ -6,12 +6,12 @@ use super::row::Row;
 use super::trail::counts;
 use super::{live, Frame, Item, Tree, DAY, PROJECT, TRAILS};
 use crate::failure::Failure;
-use crate::progress::Tally;
+use crate::progress::{Phase, Tally};
 use crate::terminal::canvas::{paint, Styled, BOLD, DIM};
 use crate::terminal::look::look;
 use crate::text::clock::{day, weekday};
 use celis_trails::step::steps::LIFE;
-use celis_trails::{State, Step};
+use celis_trails::Step;
 use ratatui::style::Style;
 use ratatui::text::Span;
 use std::cell::{Cell, RefCell};
@@ -141,7 +141,7 @@ impl Tree<'_> {
     /// Adds `trails` as `day` does off a box: its active trails, then the rest by project.
     fn active_first(&self, trails: Vec<Step>, lines: &mut Vec<Row>) {
         let (active, rest): (Vec<Step>, Vec<Step>) =
-            trails.into_iter().partition(|s| s.state().active());
+            trails.into_iter().partition(|s| Phase::of(s).active());
         let mut after = false;
         if !active.is_empty() {
             lines.push(self.gap());
@@ -195,7 +195,7 @@ impl Tree<'_> {
         let id = format!("{TRAILS}{}", trails[0].id());
         let open = self.view.flipped.contains(&id);
         let first = lines.len();
-        let done = look(State::Done);
+        let done = look(Phase::Done);
         lines.push(Row::Lined {
             lead: arrow(open),
             marks: Styled::from(paint(done.text, done.mark)),
@@ -296,7 +296,7 @@ impl Tree<'_> {
     fn lively(&self, note: Step) -> bool {
         match self.view.watch {
             true => live(note, self.steps.now()),
-            false => note.state().active(),
+            false => Phase::of(&note).active(),
         }
     }
 

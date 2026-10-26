@@ -3,14 +3,14 @@
 
 use super::moment::{tally, Moment, LIGHT, SEL};
 use crate::command::read::tree::wrap;
-use crate::progress::Grade;
+use crate::progress::{Grade, Phase};
 use crate::terminal::bar::bar;
 use crate::terminal::canvas::{cut, paint, BOLD, DIM};
 use crate::terminal::look::lane;
 use crate::terminal::unfold::faded_style;
 use crate::text::clock::took;
 use celis_store::records::id::short;
-use celis_trails::{State, Step};
+use celis_trails::Step;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::Style;
@@ -58,9 +58,9 @@ impl<'a> Card<'a> {
             }
             return rows as u16;
         }
-        match step.state() {
-            State::Done | State::Dropped | State::Expired => 4,
-            State::Working if shown => {
+        match Phase::of(&step) {
+            Phase::Done | Phase::Dropped | Phase::Stale => 4,
+            Phase::Started if shown => {
                 let (rows, more) = listed(step);
                 (5 + 2 + rows.len() + usize::from(more > 0)) as u16
             }
@@ -71,9 +71,9 @@ impl<'a> Card<'a> {
     /// Draws it on `buf` at the moment `m`; the row of each step it lists, by its id.
     pub fn draw(&self, buf: &mut Buffer, m: &Moment) -> HashMap<String, u16> {
         let (step, area) = (self.step, self.area);
-        let state = step.state();
+        let state = Phase::of(&step);
         let border = m.border(step, self.selected && self.row.is_none());
-        let dashed = matches!(state, State::Open) && !self.selected;
+        let dashed = matches!(state, Phase::Open) && !self.selected;
         frame(buf, area, border, dashed);
         let mut label = vec![paint(Style::new(), " ")];
         if !step.children().is_empty() {
@@ -91,12 +91,12 @@ impl<'a> Card<'a> {
         let mut rows = HashMap::new();
         if self.opened {
             self.opened_body(buf, m, inner, &mut rows);
-        } else if matches!(state, State::Done | State::Dropped | State::Expired) {
+        } else if matches!(state, Phase::Done | Phase::Dropped | Phase::Stale) {
             closed(buf, step, area, m);
         } else {
             let titles = wrap(step.title(), inner);
             let look = match state {
-                State::Working => BOLD,
+                Phase::Started => BOLD,
                 _ => m.tone(state),
             };
             for (n, line) in titles.iter().take(2).enumerate() {
@@ -107,8 +107,8 @@ impl<'a> Card<'a> {
                 buf.set_string(x, area.y + 1 + n as u16, line, look);
             }
             match state {
-                State::Working => {
-                    let meta = format!("working · {}", spent(step, m.at));
+                Phase::Started => {
+                    let meta = format!("open · {}", spent(step, m.at));
                     buf.set_string(x, area.y + 3, meta, DIM);
                 }
                 _ if !step.children().is_empty() => {
@@ -118,7 +118,7 @@ impl<'a> Card<'a> {
                     buf.set_string(x, area.y + 3, "open", DIM);
                 }
             }
-            if state == State::Working && !step.children().is_empty() {
+            if state == Phase::Started && !step.children().is_empty() {
                 self.working_body(buf, m, inner, &mut rows);
             }
         }
@@ -152,7 +152,12 @@ impl<'a> Card<'a> {
         for kid in &listed {
             let (mark, look) = m.mark(*kid);
             buf.set_string(x, y, mark, look);
-            buf.set_string(x + 2, y, cut(kid.title(), inner - 2), m.tone(kid.state()));
+            buf.set_string(
+                x + 2,
+                y,
+                cut(kid.title(), inner - 2),
+                m.tone(Phase::of(kid)),
+            );
             let alpha = m.arrived(m.seen.added(kid.id(), m.now), 0.4);
             if alpha < 1.0 {
                 fade(buf, Rect::new(x, y, area.width - 4, 1), alpha);
@@ -188,15 +193,15 @@ impl<'a> Card<'a> {
         let x = area.x + 2;
         let mut y = area.y + 1;
         for line in wrap(step.title(), inner) {
-            buf.set_string(x, y, line, m.tone(step.state()).patch(BOLD));
+            buf.set_string(x, y, line, m.tone(Phase::of(&step)).patch(BOLD));
             y += 1;
         }
-        let state = step.state();
+        let state = Phase::of(&step);
         let meta = match state {
-            State::Done if step.changed().is_some() => {
+            Phase::Done if step.changed().is_some() => {
                 format!("done otherwise than planned · {}", spent(step, m.at))
             }
-            State::Done | State::Working => format!("{} · {}", state.text(), spent(step, m.at)),
+            Phase::Done | Phase::Started => format!("{} · {}", state.text(), spent(step, m.at)),
             _ => state.text().to_string(),
         };
         buf.set_string(x, y, meta, DIM);
@@ -240,9 +245,9 @@ impl<'a> Card<'a> {
 /// newest closed, at most `ROWS`; and how many it leaves out.
 fn listed(step: Step) -> (Vec<Step>, usize) {
     let mut kids = step.children();
-    let rank = |s: &Step| match s.state() {
-        State::Working => 0,
-        State::Open => 1,
+    let rank = |s: &Step| match Phase::of(s) {
+        Phase::Started => 0,
+        Phase::Open => 1,
         _ => 2,
     };
     kids.sort_by_key(|s| (rank(s), std::cmp::Reverse(s.newest())));
@@ -275,7 +280,7 @@ fn walk<'a>(
     rows: &mut Vec<Row<'a>>,
 ) {
     let kids = step.children();
-    let colour = lane(step.state());
+    let colour = lane(Phase::of(&step));
     for (n, kid) in kids.iter().enumerate() {
         let last = n + 1 == kids.len();
         let nested = !kid.children().is_empty();
@@ -292,15 +297,15 @@ fn walk<'a>(
         head.extend(m.sign(*kid));
         head.push(paint(Style::new(), " "));
         let used: usize = head.iter().map(|s| s.content.width()).sum();
-        let state = kid.state();
+        let state = Phase::of(kid);
         let under: Vec<Step> = kid.tree().into_iter().skip(1).collect();
         let mut meta = short(kid.id());
         meta += &match state {
-            State::Done => format!(" · {}", spent(*kid, m.at)),
+            Phase::Done => format!(" · {}", spent(*kid, m.at)),
             _ => format!(" · {}", state.text()),
         };
         if !under.is_empty() {
-            let done = under.iter().filter(|s| s.state() == State::Done).count();
+            let done = under.iter().filter(|s| Phase::of(s) == Phase::Done).count();
             meta = format!("{done}/{} · {meta}", under.len());
         }
         let room = width.saturating_sub(used + meta.width() + 2).max(8);
@@ -342,22 +347,22 @@ pub(super) fn closed(buf: &mut Buffer, step: Step, area: Rect, m: &Moment) {
         x,
         area.y + 1,
         cut(step.title(), inner),
-        m.tone(step.state()),
+        m.tone(Phase::of(&step)),
     );
     let under: Vec<Step> = step.tree().into_iter().skip(1).collect();
     let end = match under.is_empty() {
         true => x,
         false => put(buf, x, area.y + 2, &tally(&under, m.spin(), false)),
     };
-    let state = step.state();
+    let state = Phase::of(&step);
     let mut right = match state {
-        State::Done if step.changed().is_some() => format!("changed · {}", spent(step, m.at)),
-        State::Done => spent(step, m.at),
+        Phase::Done if step.changed().is_some() => format!("changed · {}", spent(step, m.at)),
+        Phase::Done => spent(step, m.at),
         _ => state.text().to_string(),
     };
     if usize::from(end) + right.width() + 1 > usize::from(x) + inner {
         right = match state {
-            State::Done => spent(step, m.at),
+            Phase::Done => spent(step, m.at),
             _ => state.text().to_string(),
         };
     }
@@ -371,7 +376,7 @@ fn progress(buf: &mut Buffer, x: u16, y: u16, step: Step, m: &Moment, cells: usi
     let under: Vec<Step> = step.tree().into_iter().skip(1).collect();
     let (done, working) = m.shares(&under);
     let end = put(buf, x, y, &bar(done, working, cells).spans);
-    let finished = under.iter().filter(|s| s.state() == State::Done).count();
+    let finished = under.iter().filter(|s| Phase::of(s) == Phase::Done).count();
     let end = put(
         buf,
         end + 1,
@@ -387,10 +392,10 @@ fn progress(buf: &mut Buffer, x: u16, y: u16, step: Step, m: &Moment, cells: usi
 pub(super) fn spent(step: Step, at: u64) -> String {
     match (Grade::of(step), step.start()) {
         (Some(grade), _) => took(grade.took),
-        (None, Some(start)) if step.state() == State::Working => {
+        (None, Some(start)) if Phase::of(&step) == Phase::Started => {
             took(at.saturating_sub(start.created_at))
         }
-        _ => step.state().text().to_string(),
+        _ => Phase::of(&step).text().to_string(),
     }
 }
 

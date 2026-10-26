@@ -29,15 +29,15 @@ pub(super) const OUTCOMES: [(&str, Style); 4] = [
     ("first pass", GREEN),
     ("reworked", YELLOW),
     ("dropped", RED),
-    ("expired", DIM),
+    ("stale", DIM),
 ];
 
 /// Where a successful step's approach came from: its name and look.
 const SOURCES: [(&str, Style); 2] = [("reused", GREEN), ("new", SLATE)];
 
-/// The counts of `day` by outcome: first pass, reworked, dropped, expired.
+/// The counts of `day` by outcome: first pass, reworked, dropped, stale.
 pub(super) fn outcomes(day: Outcomes) -> [usize; 4] {
-    [day.first_pass(), day.reworked, day.dropped, day.expired]
+    [day.first_pass(), day.reworked, day.dropped, day.stale]
 }
 
 /// The most steps one day of `month` resolved, at least one: the top of the chart.

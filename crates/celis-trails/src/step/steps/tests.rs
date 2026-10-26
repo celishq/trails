@@ -66,10 +66,10 @@ fn a_prefix_two_steps_share_finds_neither() {
     assert_eq!(steps.find(&a.id).unwrap().id(), a.id);
 }
 
-/// A step of an ended trail that is not done or dropped is expired, and a closed one keeps its
-/// status.
+/// A step of an ended trail that is not done or dropped stays open and is stale, and a closed one keeps
+/// its state.
 #[test]
-fn an_open_step_of_an_ended_trail_is_expired() {
+fn an_open_step_of_an_ended_trail_is_stale() {
     let trail = step("trail", 10);
     let mut open = step("open", 11);
     let mut closed = step("closed", 12);
@@ -85,12 +85,53 @@ fn an_open_step_of_an_ended_trail_is_expired() {
     let records = vec![trail, open.clone(), closed.clone(), proof];
     let steps = Steps::new(&records, 13 + LIFE);
     let state = |steps: &Steps, id: &str| steps.get(id).unwrap().state();
-    assert_eq!(state(&steps, &open.id), State::Expired);
+    assert_eq!(state(&steps, &open.id), State::Open);
+    assert!(steps.get(&open.id).unwrap().stale());
     assert_eq!(state(&steps, &closed.id), State::Done);
-    assert_eq!(state(&Steps::new(&records, 13), &open.id), State::Open);
+    assert!(!steps.get(&closed.id).unwrap().stale());
+    assert!(!Steps::new(&records, 13).get(&open.id).unwrap().stale());
 }
 
-/// A store has a closed step once a step under a trail is done or expired; a done trail alone does not
+/// A started step stays open, and works until its trail ends (`spec/03-steps.md`, "Starting").
+#[test]
+fn a_started_step_stays_open() {
+    let trail = step("trail", 10);
+    let part = StepRecord {
+        under: Some(StepId::new(&trail.id)),
+        ..StepRecord::read(&step("part", 11)).unwrap()
+    }
+    .record(&account(), 11)
+    .unwrap();
+    let start = Mark::Start.record(&account(), &part.id, 12).unwrap();
+    let records = vec![trail.clone(), part.clone(), start];
+    let steps = Steps::new(&records, 13);
+    let started = steps.get(&part.id).unwrap();
+    assert_eq!(started.state(), State::Open);
+    assert!(started.works() && steps.get(&trail.id).unwrap().works());
+    assert!(!Steps::new(&records, 12 + LIFE)
+        .get(&part.id)
+        .unwrap()
+        .works());
+}
+
+/// A done trail that a drop names is dropped, and keeps its proof (`spec/03-steps.md`, "Dropping").
+#[test]
+fn a_done_trail_that_a_drop_names_is_dropped() {
+    let trail = step("trail", 10);
+    let proof = done(&trail.id, "proof", 11);
+    let drop = Mark::Drop {
+        reason: "stale".into(),
+    }
+    .record(&account(), &trail.id, 12)
+    .unwrap();
+    let records = vec![trail.clone(), proof.clone(), drop];
+    let steps = Steps::new(&records, 13);
+    let dropped = steps.get(&trail.id).unwrap();
+    assert_eq!(dropped.state(), State::Dropped);
+    assert_eq!(dropped.done_record().map(|n| &n.id), Some(&proof.id));
+}
+
+/// A store has a closed step once a step under a trail is done or stale; a done trail alone does not
 /// count.
 #[test]
 fn a_step_under_a_trail_closes_the_store() {

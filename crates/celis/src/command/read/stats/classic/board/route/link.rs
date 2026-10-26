@@ -1,6 +1,7 @@
 //! The steps linked to the step of a route: a line each, as the route lists them and as its Markdown.
 
 use crate::command::read::stats::classic::table::Row;
+use crate::progress::Phase;
 use crate::terminal::canvas::{cut, paint, visible, Styled, DIM};
 use crate::terminal::classic::look;
 use crate::text::line::time;
@@ -33,8 +34,8 @@ impl Links {
 
     /// Adds `at`, linked as `kind`, `depth` links away: its mark, title and time, `▌` when selected.
     pub fn add(&mut self, kind: &str, at: Step, depth: usize) {
-        let look = look(at.state());
-        let tail = time(at).unwrap_or_else(|| at.state().text().to_string());
+        let look = look(Phase::of(&at));
+        let tail = time(at).unwrap_or_else(|| Phase::of(&at).text().to_string());
         let lead = "  ".repeat(depth.saturating_sub(1));
         let room = self.width.saturating_sub(visible(&tail) + lead.len() + 8);
         let name = cut(at.title(), room);

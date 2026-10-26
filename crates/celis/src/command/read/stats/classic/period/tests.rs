@@ -122,10 +122,10 @@ fn a_period_counts_its_done_steps_that_use_a_pattern() {
     assert_eq!(period.ruled(), 1);
 }
 
-/// A period's closed steps are those done or dropped in it, and those that expired with a trail whose
+/// A period's closed steps are those done or dropped in it, and those that went stale with a trail whose
 /// newest record is in it.
 #[test]
-fn a_period_closes_done_dropped_and_expired_steps() {
+fn a_period_closes_done_dropped_and_stale_steps() {
     let trail = step("trail", 100, None, &[], None);
     let finished = step("finished", 101, Some(&trail), &[], None);
     let gone = step("gone", 102, Some(&trail), &[], None);

@@ -2,9 +2,9 @@
 
 use super::outcomes::Outcomes;
 use super::project::Project;
-use crate::progress::{Grade, Model};
+use crate::progress::{Grade, Model, Phase};
 use crate::text::clock::midnight;
-use celis_trails::{State, Step, Used};
+use celis_trails::{Step, Used};
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 /// The seconds of one day.
@@ -75,8 +75,8 @@ impl Month {
             let last = at >= half;
             let name = &step.record().anchor.name;
             let outcome = &mut month.days[day];
-            match step.state() {
-                State::Done => {
+            match Phase::of(&step) {
+                Phase::Done => {
                     let uses = step.uses();
                     let follows: Vec<Step> = uses
                         .iter()
@@ -117,9 +117,9 @@ impl Month {
                         false => earlier.push(grade),
                     }
                 }
-                State::Dropped => outcome.dropped += 1,
-                State::Expired => outcome.expired += 1,
-                State::Open | State::Working => {}
+                Phase::Dropped => outcome.dropped += 1,
+                Phase::Stale => outcome.stale += 1,
+                Phase::Open | Phase::Started => {}
             }
             if !step.children().is_empty() {
                 continue;
@@ -136,9 +136,9 @@ impl Month {
                 dropped: 0,
             });
             project.active += spent;
-            match step.state() {
-                State::Done if !step.revised().is_empty() => project.rework += spent,
-                State::Dropped => project.dropped += spent,
+            match Phase::of(&step) {
+                Phase::Done if !step.revised().is_empty() => project.rework += spent,
+                Phase::Dropped => project.dropped += spent,
                 _ => {}
             }
         }
@@ -178,7 +178,7 @@ impl Month {
         applied.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
         month.applied = applied;
         let roots = steps.roots().into_iter();
-        month.active = roots.filter(|s| s.state().active()).count();
+        month.active = roots.filter(|s| Phase::of(s).active()).count();
         month
     }
 
@@ -210,9 +210,9 @@ impl Month {
 
 /// The seconds `step` took: from its start, or its record, to its done; from its start to its drop.
 pub(super) fn spent(step: Step) -> u64 {
-    match (step.state(), step.start(), step.dropped()) {
-        (State::Done, _, _) => Grade::of(step).map_or(0, |g| g.took),
-        (State::Dropped, Some(start), Some(drop)) => {
+    match (Phase::of(&step), step.start(), step.dropped()) {
+        (Phase::Done, _, _) => Grade::of(step).map_or(0, |g| g.took),
+        (Phase::Dropped, Some(start), Some(drop)) => {
             drop.created_at.saturating_sub(start.created_at)
         }
         _ => 0,

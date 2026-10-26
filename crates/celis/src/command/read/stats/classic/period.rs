@@ -60,7 +60,7 @@ impl<'a> Period<'a> {
         done.filter(|s| s.uses().iter().any(pattern)).count()
     }
 
-    /// The steps done or dropped in it, and those expired with a trail whose newest record is in it,
+    /// The steps done or dropped in it, and those stale with a trail whose newest record is in it,
     /// oldest first.
     pub fn closed(&self) -> Vec<Step<'a>> {
         self.parts()
