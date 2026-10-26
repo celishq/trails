@@ -11,8 +11,8 @@ Usage
 
 Read
   search <ask>        Show the patterns and past asks that fit an ask
-  ├ --kind <kind>     Only pattern, trail, or step
-  └ --limit <n>       Show <n> patterns and past asks; 20 for trail or step
+  ├ --kind <kind>     Only pattern
+  └ --limit <n>       Show <n> patterns and past asks
 
   patterns            Show your patterns with their good and bad examples
   └ --markdown        Print one Markdown page, each file a link to its blob
@@ -68,9 +68,6 @@ Set up
   auth login          Save a recovery phrase and use its account
   auth status         Show your account and where its phrase is kept
   auth phrase         Show your recovery phrase
-  setup               Choose and download the model that search uses
-  └ --model <model>   embeddinggemma, e5-small, or none
-
   update [<version>]  Update celis to the latest version, or to one you choose
   issue [<id>]...     Write a problem report for the celis team
 

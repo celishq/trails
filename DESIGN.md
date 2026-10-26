@@ -65,6 +65,7 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
 ## What we do not do
 
 - No rank or grade of work by time.
+- No model, no index and no vector search in celis. The agent's own model reads the patterns.
 - No sharing across a team or an org yet.
 
 ## Open questions
@@ -72,4 +73,3 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
 - Which step duties can move from the agent to hooks, while decision 5 holds?
 - How many patterns does the search budget show?
 - Which `--json` keys change with the label?
-- Which bench proves a search change: the `--uses` links and the judge's citations as an offline set?

@@ -79,7 +79,6 @@ impl Command {
             "link" => self.link(args, out, &self.project()),
             "hook" => self.hook(args, out),
             "auth" => self.auth(args, out, err),
-            "setup" => self.setup(args, out, err),
             "update" => self.update(args),
             "" => Err(Failure::usage("expected: celis <command>")),
             verb => Err(help::unknown(verb, verbs())),

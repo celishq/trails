@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["celis", "celis-store", "celis-patterns", "celis-trails", "celis-nostr", "celis-search"]
+members = ["celis", "celis-store", "celis-patterns", "celis-trails", "celis-nostr"]
 
 [profile.dev]
 debug = "line-tables-only"

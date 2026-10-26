@@ -22,7 +22,6 @@ celis tree [<id>]... [--graph] [--full] [--all] [--demo]
 celis grep <grep option>... <pattern>                 every trail, through the system grep
 celis search [<file>]... [--kind <kind>] [--limit <n>] -- <ask>
                                                        the patterns and the past asks that fit an ask
-celis setup [--model <model>]                         the model that search uses
 celis stats [<id>] [--demo]                           what later work reused
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
 celis link [<folder>] [--off]                         keep this project's trails in a folder, or stop
@@ -102,7 +101,7 @@ celis pattern --path "**/prices*.py" -- "When you change prices: keep them in ce
 - With `--json`, a command but `grep` MUST print one JSON object a line, and nothing else, to stdout. A
   printed id is `{"id"}`.
 - Only `pattern`, `step` and `hook ask` MAY write a record. A command that refuses MUST write nothing.
-- A command MUST NOT ask a question, but `auth login` and `setup` on a terminal.
+- A command MUST NOT ask a question, but `auth login`.
 - A command MUST exit 0 when done, 2 on a usage error, and 1 on any other error.
 - An error MUST be named `usage`, `no-pattern`, `no-step`, `closed`, `open-steps`, `check-failed`,
   `unjudged`, else `error`. With `--json`, it MUST be one object on stderr,
@@ -315,76 +314,34 @@ past
 none          nothing fits this ask
 ```
 
-With `--kind trail` or `--kind step`, `search` gives the records of that kind most alike in meaning to
-the text, by the model that `setup` chose.
-
-```
-line     <score> <grep view line>
-json     {"id", "kind", "score", "project", "content"}
-no model celis search has no model: search with celis grep, or run celis setup.
-```
-
-`<score>` is the cosine of the text and the record, with two decimals.
-
 **Rules**
 
 - Each `<file>` MUST count as that file. A `<file>` that is a folder MUST count as each file that
   `git ls-files --cached --others --exclude-standard -- <folder>` gives in the project.
-- A pattern fits the ask when it matches a file, when one of its cells fits, when its first line before
-  its first `:` shares a word with the ask, or when the model finds it among the 5 most alike in meaning,
-  at a cosine of 0.3 or more.
+- A pattern fits the ask when it matches a file, when one of its cells fits, or when its first line before
+  its first `:` shares a word with the ask.
 - A cell fits when a word of its name is a word of the ask, or when a pattern in the cell matches a file.
 - A word of the ask is shared only when at most 5% of the live patterns in scope, or at most 5 of them,
   have it in their first line before its first `:`.
-- A done ask is like the ask when the model finds it among the 5 most alike in meaning, at a cosine of
-  0.3 or more, or when its title and its trail's title share 2 words with the ask. `search` MUST print at most 2.
+- A done ask is like the ask when its title and its trail's title share 2 words with the ask. `search` MUST
+  print at most 2.
 - `search` MUST print the parts in the order patterns, past, and leave out a part with no line.
   Within a part, first come the patterns that match a named file (a `path` with no `*` or `?`), then
-  those that match a glob, then those in a cell that fits, then those that fit by words or meaning.
+  those that match a glob, then those in a cell that fits, then those that fit by words.
   Within each, a pattern with a `replaces` tag comes first, then the rest, newest first.
 - `search` MUST print the first 8 patterns, or the first `--limit` when given, then the `more` line when
   more fit.
 - With `--kind pattern`, `search` MUST print only that part.
-- With `--kind trail` or `--kind step`, `search` MUST print at most `--limit` records, 20 when not
-  given, highest score first; with no model, it MUST print the `no model` line and exit 0.
 - Under each pattern, `search` MUST print each of its smaller patterns in scope, newest first, at most 5.
 - `--limit` MUST cap the patterns and the past asks.
 - Only a pattern that `search` prints counts as recalled.
-- `search` MUST refuse empty text, a `--kind` that is not `pattern`, `trail` or `step`, a
-  `--limit` that is not a positive number, and `--json` without `--kind trail` or `--kind step`, as a
-  usage error.
+- `search` MUST refuse empty text, a `--kind` that is not `pattern`, a `--limit` that is not a positive
+  number, and `--json`, as a usage error.
 
 **Examples**
 
 ```
 celis search -- "cut the release"
 celis search shelf/prices.py -- "round the prices"
-celis search --kind trail --limit 5 -- "make retrieval faster"
 ```
 
-## Setup
-
-`setup` chooses the model that `search` uses, downloads it, and builds its index.
-
-```
-model    embeddinggemma | e5-small | none
-list     <model> <download size> <speed> <license>[ recommended] <note>
-```
-
-**Rules**
-
-- On a terminal with no `--model`, `setup` MUST ask for the model from the list. Else with no `--model`,
-  it MUST print the list.
-- With a model, `setup` MUST download it from Hugging Face at a pinned revision, check its sha256, and
-  index every record that `search` gives. When the download or the check fails, it MUST keep the model
-  it had.
-- `none` MUST turn `search` off and remove the downloaded models.
-- `setup` MUST refuse a model that is not in the list as a usage error.
-
-**Examples**
-
-```
-celis setup
-celis setup --model embeddinggemma
-celis setup --model none
-```

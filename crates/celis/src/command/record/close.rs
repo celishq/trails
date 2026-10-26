@@ -150,8 +150,7 @@ impl Command {
                 None => format!("          {line}"),
             });
         }
-        let fits = self.fits(trails, ask.title(), files, &mut std::io::sink());
-        for pattern in fits.unwrap_or_default() {
+        for pattern in self.fits(trails, ask.title(), files) {
             let text = crate::text::line::pattern(&pattern, trails);
             let mut pattern = text.lines();
             lines.extend(pattern.next().map(|first| format!("  pattern {first}")));
