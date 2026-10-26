@@ -16,6 +16,8 @@ some patterns as rules; their grep fields say ` old-rule`.
      fields give its state (`live`, `replaced-by <id>` or `dropped`), ` old-rule` and ` recalled:<day>`.
    - `celis stats --json` gives how often each pattern was used, and how often each pattern in scope of
      the working folder was recalled.
+   - A replace counts as one only when the new pattern says another Do. A replace that keeps the Do, as
+     a new When does, is tuning and does not count. The grep line of a pattern gives its whole text.
 4. For each change, show the person the records it touches, with their ids, and ask: yes, no, or yes to
    all in this part. Write nothing, in celis or in a file, before a yes.
 5. To write into another project, add `--project <its id>` to `pattern` and `step add`; the id is the
