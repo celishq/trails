@@ -8,11 +8,6 @@ A pattern of one file or folder takes it as `--path`, such as `shelf/**`. To fin
 run `celis grep -i -E " pattern [0-9a-f]{8} live .*(<word>|<word>)"`. When you move a file,
 replace each pattern of its old place with one of the new `--path`.
 
-## Past work
-
-A past step that fits is yours with `--uses <its id>`, in your ask's words; keep its `changed` line in
-mind.
-
 ## Patterns
 
 Keep a pattern from:
