@@ -85,6 +85,12 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
     notes of an ask are on it. A reader reads an older trail, which held the asks of a session, as one
     ask with those asks as its steps. `step add --new` is accepted and ignored. The migrate skill closes
     each older trail after the person agrees.
+12. **The outcomes are evidence, and celis lists what needs tidy.** A pattern misled a step that used
+    it, or an ask that recalled it, when a later step fixed that work. `celis patterns --tidy` lists each
+    live pattern that misled twice or more, that has a near copy, that no ask recalled in 60 days, or
+    that was replaced three times or more, with the reason. The session start offers tidy when the list
+    is not empty, and not within 7 days of a tidy, so that a person who kept a pattern is not asked each
+    session.
 
 ## What we do not do
 

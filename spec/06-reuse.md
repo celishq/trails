@@ -8,7 +8,7 @@ depends: [CIP-03, CIP-04, CIP-05]
 # CIP-06 — Reuse
 
 A step names the patterns it uses, and the earlier result it fixes. An ask names the patterns the
-agent recalled for it.
+agent recalled for it. A fix of a step or an ask tells which patterns misled it.
 
 ## Uses
 
@@ -51,3 +51,5 @@ A step's `replaces` (CIP-03, "Steps") MAY name a done step of any trail.
 
 - The done step MUST stay done. It is revised by each step whose `replaces` names it, written at or after
   its `done`.
+- A step whose `uses` names a pattern, and an ask whose `recalled` names it, misled the pattern when the
+  step or the ask is revised. A step that names it in both misled it once.
