@@ -24,10 +24,12 @@ Read all that celis prints, never cut by `head` or `grep`, and do the next move 
    question, an explanation or a review you only report on gets none. Its title names what it changes,
    in words that hold in another project. Before the work, the person needs to see what they will be
    able to check when it is done, why they want it, its limits and the one-way doors ahead: write them
-   under the ask as `expect:`, `for:`, `not:` and `ask me:`, send them to the person, and start in the
-   same turn. Each part a person can check alone is a step of its own,
-   closed with a proof a person can check. At each choice the ask leaves open, resolve the forces of
-   the patterns that bear on it, and name each with `--uses`. Act, and tell after: ask only when you
+   in the text of the ask's `celis step add`, after its title, as the lines `expect: …`, `for: …`,
+   `not: …` and `ask me: …`, send them to the person, and start in the same turn. Each part a person
+   can check alone is a step of its own, closed with a proof a person can check. A change to done work,
+   wherever you are, is a new step `celis step add --replaces <the id of that step>`, whose proof says
+   what changed. At each choice the ask leaves open, resolve the forces of the patterns that bear on
+   it, and name each with `--uses`. Act, and tell after: ask only when you
    cannot write `expect` without a guess, or at a one-way door, such as a new dependency, a schema,
    money or a deploy. Take every other choice yourself, and name it in the end.
 3. **Check.** Run the `celis:judge` agent with the brief that `done` prints. Take what it could not
