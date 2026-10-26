@@ -211,7 +211,7 @@ fn search_prints_the_rules_before_the_other_patterns() {
     );
 }
 
-/// A pattern with the deprecated `promoted` label guides, and is no rule (`spec/05-patterns.md`, "Rules").
+/// A pattern with the deprecated `promoted` label guides, and is no rule (`spec/README.md`, "Names").
 #[test]
 fn a_promoted_pattern_guides() {
     let repo = Repo::new();

@@ -14,14 +14,14 @@ read. What a command shows a person is not part of it.
 ## Commands
 
 ```
-celis pattern [--scope <scope>] [--replaces <id>] [--path <glob>]... [--binds] [--within <id>]... [--cell <topic>]... [--good <example>]... [--bad <example>]... [--project <id>] -- <text>
+celis pattern [--scope <scope>] [--replaces <id>] [--path <glob>]... [--within <id>]... [--cell <topic>]... [--good <example>]... [--bad <example>]... [--project <id>] -- <text>
                                                        a pattern, in its scope
-celis patterns [--markdown]                           the patterns, the rules first, and their examples
+celis patterns [--markdown]                           the patterns and their examples
 celis tree [<id>]... [--graph] [--full] [--all] [--demo]
                                                        a trail and its steps; again on each change
 celis grep <grep option>... <pattern>                 every trail, through the system grep
 celis search [<file>]... [--kind <kind>] [--limit <n>] -- <ask>
-                                                       the rules, the other patterns and the past asks that fit an ask
+                                                       the patterns and the past asks that fit an ask
 celis setup [--model <model>]                         the model that search uses
 celis stats [<id>] [--demo]                           what later work reused
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
@@ -48,7 +48,7 @@ $CELIS_HOME   where celis keeps the phrase and the store
 
 ```
 pattern  json  {"id", "created_at", "project", "scope", "replaces", "content",
-                "paths", "binds", "cells"}
+                "paths", "cells"}
 ```
 
 **Rules**
@@ -57,11 +57,12 @@ pattern  json  {"id", "created_at", "project", "scope", "replaces", "content",
 - A command that "Commands" does not name, and a flag no command takes, is a usage error.
 - `pattern` MUST write a pattern of the working folder's project (CIP-05), with `--scope` and
   `--replaces` as its tags, and no `scope` tag for `project`; each `--path`, from the project's top
-  folder, as a `path` tag, `--binds` as its label, each `--within` as a `within` tag (CIP-05, "Graph"),
+  folder, as a `path` tag, each `--within` as a `within` tag (CIP-05, "Graph"),
   refusing an id that no live pattern of the store has with `no-pattern`, each `--cell` as a `cell` tag
   (CIP-05, "Cells"), refusing one with no letter or digit as a usage error, and each `--good` and `--bad`
   as an example (CIP-05, "Examples"): a value with `://` as a URL, a file of the working folder as its
   blob, else the whole id of a step, refusing a step the store lacks with `no-step`.
+- `pattern` MUST accept `--binds`, which older plugins give, and write nothing for it.
 - `--project` on `pattern` and `step add` MUST write the records of the project it names in place of the
   working folder's: a project id that a record of the store has, with that record's project name. It MUST refuse any other id as a usage error.
 - `pattern` MUST refuse empty text, and a scope that is not `me` or `project`, as a usage error, with a
@@ -71,7 +72,7 @@ pattern  json  {"id", "created_at", "project", "scope", "replaces", "content",
 **Examples**
 
 ```
-celis pattern --path shelf/prices.py --binds -- "When you change prices
+celis pattern --path shelf/prices.py -- "When you change prices
 Forces: floats are simple, but they lose cents
 Do: keep prices in cents
 Because: floats lost a cent"
@@ -205,7 +206,7 @@ Each agent's hooks give `hook` the JSON of a prompt or of a session start.
 `patterns` gives the live patterns in scope in the working folder's project (CIP-05).
 
 ```
-<line>     each pattern, as "Search" gives it, the rules first, newest first within each
+<line>     each pattern, as "Search" gives it, newest first
 none       no pattern yet
 ```
 
@@ -252,7 +253,7 @@ trails with it.
 view    <yyyy-mm-dd> <trail id8 | -> [<project name>] <kind> <id8> <fields> <text>
           trail | step   <open | working | done | done-dropped | dropped | expired>[ revised-by <id>,…][ at:<place>]…
           pattern        <live | replaced-by <id> | dropped> {<me | project>}
-                           [ trigger][ binds][ cell:<cell>]…[ recalled:<yyyy-mm-dd>]
+                           [ trigger][ old-rule][ cell:<cell>]…[ recalled:<yyyy-mm-dd>]
           proof | changed | dropped | note                       the step's or pattern's id, no fields
 lines   <id8> [<project name>] <its title> · <yyyy-mm-dd>        each trail of the lines
           trail <id8> <fields>                                    the trail's own line
@@ -263,9 +264,9 @@ end     project [<project name>]
 ```
 
 `<id8>` is the first 8 characters of an id. A text holds each newline as a space. A pattern's fields end with
-` trigger` when it has a trigger tag (CIP-05), ` binds` when it is a rule (CIP-05, "Rules"),
-` cell:<cell>` for each of its cells (CIP-05, "Cells"), and ` recalled:<day>` with the day `search` last
-gave it.
+` trigger` when it has a trigger tag (CIP-05), ` old-rule` when it has the `binds` label that older
+writers wrote (CIP-05, "Reading"), ` cell:<cell>` for each of its cells (CIP-05, "Cells"), and
+` recalled:<day>` with the day `search` last gave it.
 
 **Rules**
 
@@ -291,12 +292,12 @@ celis grep -A3 9b0e11aa
 
 ## Search
 
-`search` gives what fits an ask: the live patterns in scope in the working folder's project (CIP-05), the
-rules first, then the other patterns, and the done asks of every project like it (CIP-04).
+`search` gives what fits an ask: the live patterns in scope in the working folder's project (CIP-05), and
+the done asks of every project like it (CIP-04).
 
 ```
-rules
-<line>        <id8> <scope> <first line>, each rule that fits (CIP-05, "Rules")
+patterns
+<line>        <id8> <scope> <first line>, each pattern that fits, at most 8
                 <each next line of its text>
                 cell    <cell>                                           each of its cells (CIP-05, "Cells")
                 next    <id8> <first line>                               a smaller pattern (CIP-05, "Graph")
@@ -305,8 +306,6 @@ rules
                 good    <path>                                           a file example
                         <the path of its blob>
                 bad     <url>                                            a URL example
-patterns
-<line>        each other pattern that fits, as a rule prints, at most 8
 <n> more: celis search [<file>]... --kind pattern --limit <all> -- "<ask>"
               when <n> more patterns fit; <all> is the count of all that fit
 past
@@ -339,19 +338,19 @@ no model celis search has no model: search with celis grep, or run celis setup.
   have it in their first line before its first `:`.
 - A done ask is like the ask when the model finds it among the 5 most alike in meaning, at a cosine of
   0.3 or more, or when its title and its trail's title share 2 words with the ask. `search` MUST print at most 2.
-- `search` MUST print the parts in the order rules, patterns, past, and leave out a part with no line.
+- `search` MUST print the parts in the order patterns, past, and leave out a part with no line.
   Within a part, first come the patterns that match a named file (a `path` with no `*` or `?`), then
   those that match a glob, then those in a cell that fits, then those that fit by words or meaning.
   Within each, a pattern with a `replaces` tag comes first, then the rest, newest first.
-- `search` MUST print each rule that fits. It MUST print the first 8 patterns, or the first `--limit`
-  when given, then the `more` line when more fit.
-- With `--kind rule` or `--kind pattern`, `search` MUST print only that part.
+- `search` MUST print the first 8 patterns, or the first `--limit` when given, then the `more` line when
+  more fit.
+- With `--kind pattern`, `search` MUST print only that part.
 - With `--kind trail` or `--kind step`, `search` MUST print at most `--limit` records, 20 when not
   given, highest score first; with no model, it MUST print the `no model` line and exit 0.
 - Under each pattern, `search` MUST print each of its smaller patterns in scope, newest first, at most 5.
-- `--limit` MUST cap the patterns and the past asks, and never the rules.
+- `--limit` MUST cap the patterns and the past asks.
 - Only a pattern that `search` prints counts as recalled.
-- `search` MUST refuse empty text, a `--kind` that is not `rule`, `pattern`, `trail` or `step`, a
+- `search` MUST refuse empty text, a `--kind` that is not `pattern`, `trail` or `step`, a
   `--limit` that is not a positive number, and `--json` without `--kind trail` or `--kind step`, as a
   usage error.
 

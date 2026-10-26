@@ -28,11 +28,10 @@ Read
   └ --demo            Show four weeks of sample trails
 
 Record work · your agents run these
-  pattern             Record a pattern that later work must keep
+  pattern             Record a pattern that guides later work
   ├ --scope <scope>   Where it applies: me, or project
   ├ --replaces <id>   The pattern this one replaces
   ├ --path <glob>     A file it acts on; * and ? within a folder, ** across
-  ├ --binds           It is a rule: a result must keep it
   ├ --within <id>     The larger pattern it completes
   ├ --cell <topic>    A topic it is in, such as cli-help
   ├ --good <example>  A step, a file, or a URL that shows it, such as a pick

@@ -9,7 +9,7 @@ celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--check <comma
 celis step start <id>
 celis step done <id> [--changed "<what differs>"] [--as-planned] [--by <who>] [--file <path>]... -- "<proof>"
 celis step note <id> -- "<note>"
-celis pattern [--scope me] [--replaces <id>] [--path <glob>]... [--binds] [--within <id>]... [--cell <topic>]... [--good <example>]... [--bad <example>]... -- "<pattern>"
+celis pattern [--scope me] [--replaces <id>] [--path <glob>]... [--within <id>]... [--cell <topic>]... [--good <example>]... [--bad <example>]... -- "<pattern>"
 ```
 
 Read all that celis prints, never cut by `head` or `grep`, and do the next move it names.

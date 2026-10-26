@@ -8,8 +8,8 @@ depends: [CIP-01]
 # CIP-05 — Patterns
 
 A pattern says what to choose in a context, and why. It holds in its scope until another replaces it. An
-agent writes it when it learns what later work must keep. A pattern guides; a pattern with the `binds`
-label is a rule, which binds.
+agent writes it when it learns a choice that later work will meet again. A pattern guides: where its
+forces are present, work resolves them; where they are not, it does not apply.
 
 ## Patterns
 
@@ -43,20 +43,6 @@ A drop (CIP-03, "Dropping") MAY name a pattern, with why it no longer holds.
 
 - A pattern is live until another pattern names it in `replaces`, or a drop names it.
 
-## Rules
-
-```json
-{ "kind": 1111,
-  "tags": [ …, ["l", "binds", "celis.pattern"] ],
-  "content": "When a secret is named\nForces: …\nDo: name it by where it lives, never by its value\nBecause: a record is signed and cannot be deleted" }
-```
-
-- `binds`: optional label; the pattern is a rule, which a result must keep.
-
-**Readers**
-
-- A pattern with no `binds` guides: work MAY depart from it with a named reason.
-
 ## Scope
 
 ```
@@ -78,8 +64,10 @@ me        in every project
 
 **Readers**
 
-- A reader MUST read `decision` and `binds` in `celis.decision`, which older writers wrote, as `pattern`
-  and `binds` in `celis.pattern`.
+- A reader MUST read `decision` in `celis.decision`, which older writers wrote, as `pattern` in
+  `celis.pattern`.
+- A reader MUST read a pattern with the `binds` label in `celis.pattern` or `celis.decision`, which older
+  writers wrote, as a plain pattern.
 - A reader MUST read the scope `at:<place>`, which older writers wrote, as `project`, with two more
   `path` globs: the place's path without its line, and that path with `/**` after it.
 - A reader MUST read a live pattern with the scope `trail:<id>`, which older writers wrote, as a note on

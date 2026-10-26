@@ -64,7 +64,7 @@ const PHRASES: &[(&str, &str)] = &[
         "Show your patterns with their good and bad examples",
     ),
     ("stats", "Show what later work reused, and how work went"),
-    ("pattern", "Record a pattern that later work must keep"),
+    ("pattern", "Record a pattern that guides later work"),
     (
         "link",
         "Keep this project's trails in a folder to commit or share",
