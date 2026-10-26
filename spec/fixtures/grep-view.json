@@ -9,7 +9,7 @@
     "Each <name> stands for the first 8 characters of a record's id, which a test knows only once it",
     "has written the record. All records are made on 2026-01-15 at noon UTC, in the order of `lines`",
     "read from the bottom of each block: the trail, then the table step, its done, the chart step, its",
-    "drop, an older pattern of the trail's scope, the floats pattern, the cents pattern that replaces it, the me pattern with an old `cell` tag, which the view leaves out, a pattern with the",
+    "drop, an older pattern of the trail's scope, the floats pattern, the cents pattern that replaces it, the me pattern with a tag that older writers wrote and the view leaves out, a pattern with the",
     "older situation label, the me pattern with a trigger, and a note on the table step. The older trail pattern prints as a note on the trail."
   ],
   "lines": [

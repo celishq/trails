@@ -1,4 +1,4 @@
-celis keeps what the person taught you as patterns, in cells by topic. A pattern guides your
+celis keeps what the person taught you as patterns. A pattern guides your
 judgement: when its forces are present here, resolve them in your own way; when they are not, it does
 not apply. Search gives those that fit an ask. Write one only for a choice that will come back. Each ask is a trail of
 steps with proofs of the work.
@@ -50,8 +50,7 @@ Read all that celis prints, never cut by `head` or `grep`, and do the next move 
    convention, is a pattern whose forces say when it applies. A reaction to a result, such as "this
    one" or "too busy", is a pattern with `--good` and `--bad` (`steps.md`, "Patterns"). Give it the narrowest `--path`, name
    the larger pattern it completes with `--within <id>`, and replace a wrong pattern or a near copy
-   with `--replaces <id>`. Give it one to three cells with `--cell <topic>`, and reuse a cell that
-   search shows before you make a new one. What holds only for this trail is a note:
+   with `--replaces <id>`. What holds only for this trail is a note:
    `step note <the ask's id>`.
 
 A pattern has four lines. Its "When" names the work, such as "When a Raycast extension changes", never

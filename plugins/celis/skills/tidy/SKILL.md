@@ -10,7 +10,7 @@ some patterns as rules; their grep fields say ` old-rule`.
 2. Add one ask titled `Tidy the celis trails`, so that celis knows when the last tidy was, and one step
    under it for each part. Take the parts one at a time.
 3. Read the store once: `celis grep -E " (trail|pattern) [0-9a-f]{8} "` gives each trail and pattern
-   line. A pattern's fields say ` trigger`, ` old-rule`, `cell:<cell>` and `recalled:<day>`.
+   line. A pattern's fields say ` trigger`, ` old-rule` and `recalled:<day>`.
 4. For each change, show the person the records it touches, with their ids, and ask: yes, no, or yes to
    all in this part. Write nothing before a yes.
 5. To write into another project, add `--project <its id>` to `pattern` and `step add`; the id is the
@@ -32,9 +32,7 @@ Find live patterns of one project and scope that say the same thing, or whose go
 point. Keep the one that says it best, or write one in the four lines with `pattern --replaces <the
 newest>`; drop each other with `-- "merged into <id8>"`. A merged pattern gives `--good` and `--bad`
 again for the examples of each pattern it does not replace. When
-two or more projects hold the same `project` pattern, offer one `me` pattern in its place. Merge cells
-that name the same topic: write each pattern of the other cell again with `--cell <the kept cell>` and
-no `--replaces`, because a replacement keeps each cell, and drop the old one as merged.
+two or more projects hold the same `project` pattern, offer one `me` pattern in its place.
 
 ## Conflicts
 
