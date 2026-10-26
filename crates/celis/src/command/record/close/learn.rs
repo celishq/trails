@@ -43,11 +43,15 @@ impl Learn {
 
     /// The learn brief: what the agent writes, then each line the ask taught.
     pub fn lines(&self) -> Vec<String> {
+        let ask = short(&self.ask);
         let mut lines = vec![format!(
-            "celis: before you answer, learn from the ask {}. Write a pattern with celis pattern for each \
-             choice of the ask that will come back, such as those below, and give --replaces <id> to a \
-             pattern that misled you. Write nothing when the ask taught nothing.",
-            short(&self.ask)
+            "celis: before you answer, learn from the ask {ask}. Write a pattern with celis pattern for \
+             each choice of the ask that will come back, such as those below. A correction that says \
+             always or never is a pattern whose forces say why. A reaction to a result, such as \"this \
+             one\" or \"too busy\", keeps the person's taste with --good and --bad. Give --path for the \
+             files it acts on, --within for the larger pattern it completes, --scope me when it holds in \
+             any project, and --replaces <id> for a pattern that misled you or a near copy. Write nothing \
+             when the ask taught nothing. What holds only for this trail is a note: celis step note {ask}."
         )];
         for (id, text) in &self.changed {
             lines.push(format!("  changed {} {text}", short(id)));

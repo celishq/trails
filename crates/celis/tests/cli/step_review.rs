@@ -147,7 +147,7 @@ fn an_end_whose_steps_share_one_proof_totals_them_as_all() {
 
 /// The head of the learn brief of the ask `a`.
 fn learn(a: &str) -> String {
-    format!("celis: before you answer, learn from the ask {a}. Write a pattern with celis pattern for each choice of the ask that will come back, such as those below, and give --replaces <id> to a pattern that misled you. Write nothing when the ask taught nothing.")
+    format!("celis: before you answer, learn from the ask {a}. Write a pattern with celis pattern for each choice of the ask that will come back, such as those below. A correction that says always or never is a pattern whose forces say why. A reaction to a result, such as \"this one\" or \"too busy\", keeps the person's taste with --good and --bad. Give --path for the files it acts on, --within for the larger pattern it completes, --scope me when it holds in any project, and --replaces <id> for a pattern that misled you or a near copy. Write nothing when the ask taught nothing. What holds only for this trail is a note: celis step note {a}.")
 }
 
 /// `done` of an ask ends with the learn brief: each `changed` of the ask and of its steps, each note of

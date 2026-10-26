@@ -184,7 +184,7 @@ note  json  {"id", "created_at", "step", "content"}
 The output of `done` of an ask ends with the learn brief:
 
 ```
-celis: before you answer, learn from the ask <id8>. …     what the agent writes, and when it writes nothing
+celis: before you answer, learn from the ask <id8>. …     what the agent keeps, and how
   changed <id8> <text>                                    each `changed` of the ask and of its steps
   note    <text>                                          each note of its trail (CIP-04, "Notes")
   asked   <text>                                          each prompt on its trail (CIP-04, "Sessions")

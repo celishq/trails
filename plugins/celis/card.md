@@ -1,6 +1,6 @@
 celis keeps what the person taught you as patterns. A pattern guides your
 judgement: when its forces are present here, resolve them in your own way; when they are not, it does
-not apply. At each ask, you take those that bear on it. Write one only for a choice that will come back.
+not apply. At each ask, you take those that bear on it.
 celis keeps guides: a must goes into the project's own files, `AGENTS.md`, `CLAUDE.md` or a check, when
 the person agrees in `celis:tidy`, which learns from the trails. Each ask is a trail of steps with proofs
 of the work.
@@ -46,12 +46,8 @@ Read all that celis prints, never cut by `head` or `grep`, and do the next move 
    <the total line that done prints>
    ```
 
-4. **Learn.** When an ask closes, `done` gives what it taught. Write a pattern for each choice that will
-   come back, and nothing when the ask taught nothing. A pattern that misled you, or a near copy, gets
-   `--replaces <id>`. A correction that says "always" or "never" is a pattern whose forces say why. A
-   reaction to a result, such as "this one" or "too busy", keeps the person's taste with `--good` and
-   `--bad`. A pattern acts on the files of its `--path`, and completes the larger pattern of its
-   `--within`. What holds only for this trail is a note: `step note <the ask's id>`.
+4. **Learn.** When an ask closes, `done` prints the learn brief. Keep what the ask taught as it says,
+   before you answer.
 
 A pattern has four lines. Its "When" names the work, such as "When a Raycast extension changes", never
 the person or the project:
