@@ -14,7 +14,7 @@ mod output;
 mod pattern_ends;
 mod pattern_evidence;
 mod pattern_graph;
-mod pattern_triggers;
+mod pattern_paths;
 mod patterns;
 mod plugin;
 mod projects;

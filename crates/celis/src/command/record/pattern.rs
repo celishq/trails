@@ -10,7 +10,7 @@ use std::collections::HashSet;
 use std::io::Write;
 
 impl Command {
-    /// Writes the pattern `args` states on `project`, in its scope, with its trigger, labels and
+    /// Writes the pattern `args` states on `project`, in its scope, with its paths, labels and
     /// examples, signed by the account now, and prints its id and the live patterns like it.
     pub(crate) fn pattern(
         &self,

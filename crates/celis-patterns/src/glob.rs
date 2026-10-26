@@ -1,9 +1,9 @@
-//! A path pattern of a pattern's trigger.
+//! A path glob of a pattern.
 
 use regex::Regex;
 
 /// A path pattern from the project's top folder: `*` within a segment, `**` across segments, `?` one
-/// character (CIP-05, "Triggers"). It compiles once, so it matches many paths cheaply.
+/// character (CIP-05, "Paths"). It compiles once, so it matches many paths cheaply.
 pub enum Glob {
     Literal(String),
     Pattern(Regex),
