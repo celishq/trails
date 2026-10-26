@@ -49,8 +49,8 @@ Read all that celis prints, never cut by `head` or `grep`, and do the next move 
    <the total line that done prints>
    ```
 
-4. **Learn.** When an ask closes, `done` prints the learn brief. Keep what the ask taught as it says,
-   before you answer.
+4. **Learn.** When an ask or a fix of done work closes, `done` prints the learn brief. Keep what it
+   taught as it says, before you answer.
 
 A pattern has four lines. Its "When" names the work, such as "When a Raycast extension changes", never
 the person or the project:

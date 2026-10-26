@@ -1,6 +1,6 @@
 //! How a done step went against its plan.
 
-use super::End;
+use super::{End, Learn};
 use celis_nostr::Note;
 use celis_store::{ProofFile, StepId};
 use celis_trails::{Done, Step};
@@ -8,7 +8,8 @@ use celis_trails::{Done, Step};
 /// How a done step went against its plan: its expect line and its own changed, the steps under it planned
 /// before the first started, added after, dropped with their reasons and changed, and the open steps
 /// beside it under `under`, each as an id and a title; the files of its proof, and when no step beside it
-/// is open, those of the done steps beside it; on an ask, its end.
+/// is open, those of the done steps beside it; on an ask, its end; on another step that fixes done work,
+/// what it taught.
 pub(crate) struct Review {
     pub step: StepId,
     pub under: Option<StepId>,
@@ -22,6 +23,7 @@ pub(crate) struct Review {
     pub files: Vec<ProofFile>,
     pub beside: Vec<(StepId, String, ProofFile)>,
     pub end: Option<End>,
+    pub learn: Option<Learn>,
 }
 
 impl Review {
@@ -94,6 +96,7 @@ impl Review {
             files: done.files.clone(),
             under: under.map(|u| u.step_id()),
             end: ask.then(|| End::of(records, step, done, now)),
+            learn: (!ask && step.fixes()).then(|| Learn::of(records, step, done)),
         }
     }
 }

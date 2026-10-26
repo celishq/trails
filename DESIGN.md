@@ -52,7 +52,8 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
    - Past trails serve the learn and tidy, not recall. Nothing follows a past step: a step's `uses`
      names only a pattern, and a reader ignores a `uses` that names a step, which older writers wrote.
 4. **What goes in matters more than recall.** The agent learns at each close, and only there: when an
-   ask closes, celis gives it the learn brief, with the ask's `changed` lines, its trail's notes and the
+   ask closes, or a step that fixes done work, because a fix is a correction, celis gives it the learn
+   brief, with the ask's `changed` lines, its trail's notes and the
    person's prompts since the ask began. The brief is the one place that says what to keep. The agent
    writes a pattern only for a choice that will come back. It replaces a pattern that misled it instead
    of adding a near copy, and writes nothing when the ask taught nothing.
