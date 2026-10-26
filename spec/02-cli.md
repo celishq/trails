@@ -20,7 +20,7 @@ celis patterns [<file>]... [--markdown] [--tidy]       the index of the patterns
 celis tree [<id>]... [--graph] [--full] [--all] [--demo]
                                                        a trail and its steps; again on each change
 celis grep <grep option>... <pattern>                 every trail, through the system grep
-celis stats [<id>] [--demo]                           what later work reused
+celis stats [<id>] [--demo]                           the use of the patterns, or a step's grade
 celis lesson <id>                                     what an ask or a step taught, for a lesson
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
 celis link [<folder>] [--off]                         keep this project's trails in a folder, or stop
@@ -259,6 +259,45 @@ celis patterns
 celis patterns shelf/prices.py shelf/
 celis patterns --markdown > patterns.md
 celis patterns --tidy
+```
+
+## Stats
+
+`stats` with no `<id>`, off a terminal or with `--json`, gives the use of the live patterns in scope in
+the working folder's project (CIP-05).
+
+```
+<id8> uses:<n> misled:<n> replaces:<n> used:<yyyy-mm-dd | -> examples:<n> tidy:<reason>[,<reason>]... | - <When>
+                                         each live pattern in scope
+total <n> patterns in the index · last 7 days: <n> written, <n> replaced, <n> gaps
+                                         last, with `1 pattern` for one
+```
+
+```
+pattern  json  {"id", "uses", "misled", "replaces", "used", "examples", "tidy": [], "when"}
+total    json  {"index", "written", "replaced", "gaps"}
+```
+
+A pattern's fields: `uses`, how many steps name it in `uses` (CIP-06, "Uses"); `misled`, how many steps
+it misled (CIP-06, "Revisions"); `replaces`, how many `replaces` its chain holds (CIP-05); `used`, the
+day of the newest step that uses it, `-` or `null` when none; `examples`, how many examples it has
+(CIP-05, "Examples"); `tidy`, its reasons as `patterns --tidy` gives them ("Patterns"), `-` when none.
+
+The total's fields: `index`, how many patterns are live in scope; `written`, the patterns in scope made
+in the last 7 days; `replaced`, those of them with a `replaces`; `gaps`, the steps of the project made in
+the last 7 days that fix done work (CIP-06, "Revisions") in a trail whose steps use no pattern.
+
+**Rules**
+
+- With no `<id>`, off a terminal or with `--json`, `stats` MUST print a line for each live pattern in
+  scope, oldest first, then the total. With no record in the store, it MUST print `Nothing was reused
+  yet.`, and nothing with `--json`.
+
+**Examples**
+
+```
+celis stats
+celis stats --json
 ```
 
 ## Lesson

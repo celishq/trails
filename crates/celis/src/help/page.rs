@@ -54,7 +54,7 @@ const PHRASES: &[(&str, &str)] = &[
     ("tree", "Show your trails and their steps"),
     ("grep", "Search every trail with grep"),
     ("patterns", "Show the index of your patterns"),
-    ("stats", "Show what later work reused, and how work went"),
+    ("stats", "Show how the patterns are used, and how work went"),
     ("lesson", "Show what an ask taught, to keep as patterns"),
     ("pattern", "Record a pattern that guides later work"),
     (

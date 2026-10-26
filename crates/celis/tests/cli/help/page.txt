@@ -21,7 +21,7 @@ Read
   └ --demo            Show sample trails in every state
 
   grep <pattern>      Search every trail with grep
-  stats [<id>]        Show what later work reused, and how work went
+  stats [<id>]        Show how the patterns are used, and how work went
   └ --demo            Show four weeks of sample trails
 
   lesson <id>         Show what an ask taught, to keep as patterns

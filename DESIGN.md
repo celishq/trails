@@ -95,7 +95,10 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
 13. **The outcomes are evidence, and celis lists what needs tidy.** A pattern misled a step that used
     it when a later step fixed that work. `celis patterns --tidy` lists each live pattern that misled
     twice or more, that has a near copy, that no step used in 60 days, or that was replaced three times
-    or more, with the reason. Tidy narrows a pattern that misled, and drops or widens one unused. The session start offers tidy when the list
+    or more, with the reason. Tidy narrows a pattern that misled, and drops or widens one unused.
+    `celis stats` shows the use of each live pattern: its uses, misled, replaces, last use, examples and
+    tidy reason. Its total gives the size of the index, the patterns written and replaced in the last 7
+    days, and the gaps: the fixes of done work in that time whose ask used no pattern. The session start offers tidy when the list
     is not empty, and not within 7 days of a tidy, so that a person who kept a pattern is not asked each
     session.
 
