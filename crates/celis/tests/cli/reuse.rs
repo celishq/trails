@@ -158,7 +158,7 @@ fn line<'a>(text: &'a str, id: &str) -> &'a str {
 }
 
 /// `stats` with no record says so, and prints nothing with `--json`; with a record and no pattern, it
-/// prints only the total; it refuses an unknown id with `no-step` (`spec/02-cli.md`, "Stats").
+/// prints no pattern line before the total; it refuses an unknown id with `no-step` (`spec/02-cli.md`, "Stats").
 #[test]
 fn stats_says_when_nothing_was_reused() {
     let repo = Repo::new();
@@ -169,8 +169,8 @@ fn stats_says_when_nothing_was_reused() {
     assert_eq!(out(&cli(&repo, &["stats", "--json"])), "");
     add(&repo, &["--", "the trail"]);
     assert_eq!(
-        out(&cli(&repo, &["stats"])).trim(),
-        "total 0 patterns in the index · last 7 days: 0 written, 0 replaced, 0 gaps"
+        out(&cli(&repo, &["stats"])).lines().next(),
+        Some("total 0 patterns in the index · last 7 days: 0 written, 0 replaced, 0 gaps")
     );
     refusal(&cli(&repo, &["stats", "--json", "ffffffff"]), 1, "no-step");
 }

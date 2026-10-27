@@ -288,7 +288,7 @@ total <n> patterns in the index · last 7 days: <n> written, <n> replaced, <n> g
 ```
 lifecycle <day | week | month> <yyyy-mm-dd> written:<n> replaced:<n> dropped:<n> promoted:<n> recalled:<n> used:<n> misled:<n>
                                          the last 7 days, 4 weeks and 6 months, oldest first
-value last 28 days: asks:<n> covered:<n> corrections:<n> failed:<n> missed:<n> first-pass:<n | ->%/<n | ->% recalled:<n> used:<n> held:<n> reach:<n> agents:<name>[,<name>]... | - promoted:<n>
+value last 28 days: asks:<n> covered:<n> corrections:<n> failed:<n> missed:<n> first-pass:<n%|->/<n%|-> recalled:<n> used:<n> held:<n> reach:<n> agents:<name>[,<name>]... | - promoted:<n>
 ```
 
 ```
