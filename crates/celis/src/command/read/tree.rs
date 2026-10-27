@@ -309,7 +309,15 @@ impl Tree<'_> {
                 all: shown.len(),
                 worked,
             },
-            notes: self.notes(note),
+            notes: {
+                let mut notes = self.notes(note);
+                let used = self.uses(work).into_iter();
+                notes.extend(
+                    used.filter(|u| !notes.iter().any(|n| n.id == u.id))
+                        .collect::<Vec<_>>(),
+                );
+                notes
+            },
         }
     }
 
@@ -453,6 +461,26 @@ fn after(rail: &Styled, more: Span<'static>) -> Styled {
     let mut line = rail.clone();
     line.push_span(more);
     line
+}
+
+/// The labels a line of a step's or a pattern's text may start with, in any case, each before a `:`.
+pub(crate) const LABELS: [&str; 7] = ["expect", "for", "not", "ask me", "forces", "do", "because"];
+
+/// `lines` each with its label from `LABELS`, or `""` with none; an `ask me` line whose value is
+/// `none` is left out.
+pub(crate) fn details<'a>(lines: impl Iterator<Item = &'a str>) -> Vec<(&'static str, &'a str)> {
+    let label = |line: &'a str| {
+        LABELS.iter().find_map(|label| {
+            let head = line.get(..label.len())?;
+            let text = line[label.len()..].strip_prefix(':')?;
+            head.eq_ignore_ascii_case(label)
+                .then(|| (*label, text.trim_start()))
+        })
+    };
+    lines
+        .map(|line| label(line).unwrap_or(("", line)))
+        .filter(|detail| *detail != ("ask me", "none"))
+        .collect()
 }
 
 /// The seconds a step's title prints bold after its newest record.

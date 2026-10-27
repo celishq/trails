@@ -275,7 +275,15 @@ impl Tree<'_> {
                 all: shown.len(),
                 worked,
             },
-            notes: self.notes(note),
+            notes: {
+                let mut notes = self.notes(note);
+                let used = self.uses(work).into_iter();
+                notes.extend(
+                    used.filter(|u| !notes.iter().any(|n| n.id == u.id))
+                        .collect::<Vec<_>>(),
+                );
+                notes
+            },
         }
     }
 

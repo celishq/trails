@@ -235,7 +235,8 @@ fn patterns_says_when_there_is_none() {
     assert_eq!(out(&cli(&repo, &["patterns"])).trim(), "no pattern yet");
 }
 
-/// `tree --full` names each pattern a step uses, and `stats` counts each pattern's uses and examples.
+/// `tree --full` prints each pattern a step uses as a `§` line under it, and `stats` counts each pattern's
+/// uses and examples.
 #[test]
 fn tree_and_stats_show_the_patterns() {
     let repo = Repo::new();
@@ -257,7 +258,7 @@ fn tree_and_stats_show_the_patterns() {
     assert!(o.status.success(), "{}", err(&o));
     let pattern = out(&o).lines().next().unwrap().to_string();
     let trail = add(&repo, &["--", "the logo"]);
-    add(
+    let step = add(
         &repo,
         &[
             "--under",
@@ -268,14 +269,20 @@ fn tree_and_stats_show_the_patterns() {
             "draw it flat",
         ],
     );
-    let tree = out(&cli(&repo, &["tree", &trail[..8], "--full"]));
-    assert!(
-        tree.contains(&format!(
-            "pattern  {} When a logo is drawn: keep it flat.",
+    for next in [false, true] {
+        let mut args = vec!["tree", &trail[..8], "--full"];
+        if next {
+            args.push("--next");
+        }
+        let tree = out(&cli(&repo, &args));
+        let shown = format!(
+            "  ○   {} draw it flat\n    §   {} When a logo is drawn: keep it flat.\n",
+            &step[..8],
             &pattern[..8]
-        )),
-        "{tree}"
-    );
+        );
+        assert!(tree.contains(&shown), "{tree}");
+        assert!(!tree.contains("pattern  "), "{tree}");
+    }
     let stats = out(&cli(&repo, &["stats"]));
     let line = stats
         .lines()

@@ -88,10 +88,13 @@ impl Tree<'_> {
             self.pick(item, lines, first);
             if open {
                 self.closing(note, &below, true, lines);
-                self.used(note, &below, lines);
             }
             if !folded {
-                self.level(level, vec![], &rail, note.id(), lines);
+                let used = match open {
+                    true => self.uses(note),
+                    false => vec![],
+                };
+                self.level(level, used, &rail, note.id(), lines);
             }
         }
     }

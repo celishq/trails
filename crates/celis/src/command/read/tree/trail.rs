@@ -89,7 +89,6 @@ impl Tree<'_> {
         if self.view.full {
             let hair = Styled::from(vec![Span::raw("  "), paint(self.lane(), "│ ")]);
             self.closing(work, &hair, false, lines);
-            self.used(work, &hair, lines);
         }
         self.level(level, summary.notes, &rail, note.id(), lines);
     }

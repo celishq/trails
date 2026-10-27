@@ -1,7 +1,7 @@
 //! The folded line of a level: its patterns line, open or closed.
 
 use crate::command::read::tree::row::Row;
-use crate::command::read::tree::{Item, Tree, PATTERNS};
+use crate::command::read::tree::{after, details, Item, Tree, PATTERNS};
 use crate::progress::Phase;
 use crate::progress::Tally;
 use crate::terminal::canvas::{paint, Styled, DIM, MAGENTA};
@@ -12,8 +12,9 @@ use ratatui::style::Style;
 use ratatui::text::Span;
 
 impl Tree<'_> {
-    /// Adds the rules line `§ <n> rules` of the trail `trail` after `rail`, the `last` of its level;
-    /// open, a line under it for each note of `patterns`: `§ <text>`, wrapped to fit.
+    /// Adds the patterns line `§ <n> patterns` of the row `trail` after `rail`, the `last` of its level;
+    /// open, a line under it for each of `patterns`: `§ <When>`, wrapped to fit, which opens to the
+    /// `details` of its other lines.
     pub(super) fn patterns_line(
         &self,
         patterns: Vec<&Note>,
@@ -30,7 +31,7 @@ impl Tree<'_> {
         lines.push(Row::Lined {
             lead,
             marks: Styled::from(mark.clone()),
-            title: plural(patterns.len(), "rule"),
+            title: plural(patterns.len(), "pattern"),
             tone: Style::new(),
             meta: Styled::default(),
             whole: None,
@@ -47,23 +48,36 @@ impl Tree<'_> {
         }
         let all = patterns.len();
         for (n, record) in patterns.into_iter().enumerate() {
-            let (lead, under) = self.branch(&rail, n + 1 == all, None, self.lane());
+            let more = details(record.content.lines().skip(1));
+            let toggle = (!more.is_empty()).then(|| self.open(&record.id));
+            let (lead, under) = self.branch(&rail, n + 1 == all, toggle, self.lane());
             let first = lines.len();
             lines.push(Row::Lined {
                 lead,
                 marks: Styled::from(mark.clone()),
-                title: record.content.clone(),
+                title: record
+                    .content
+                    .lines()
+                    .next()
+                    .unwrap_or_default()
+                    .to_string(),
                 tone: Style::new(),
                 meta: Styled::default(),
-                whole: Some(under),
+                whole: Some(under.clone()),
             });
             let item = Item {
                 id: record.id.clone(),
-                open: false,
+                open: toggle == Some(true),
                 parent: Some(id.clone()),
                 under: vec![],
             };
             self.pick(item, lines, first);
+            if toggle == Some(true) {
+                let below = after(&under, Span::raw("  "));
+                for (label, text) in more {
+                    self.labelled(lines, &below, label, text);
+                }
+            }
         }
     }
 }

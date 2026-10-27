@@ -3,6 +3,7 @@
 use super::{Level, Row, Styled, Tree};
 use crate::progress::{Flags, Phase};
 use crate::terminal::look::{signs, SLOT};
+use celis_nostr::Note;
 use celis_store::records::id::short;
 use celis_trails::{Step, Trail};
 
@@ -24,14 +25,8 @@ impl Tree<'_> {
         self.below(work, "  ", lines);
         let level = Level::of(Trail::new(note).parts());
         self.agent_steps(level.active, "  ", lines);
-        for pattern in &summary.notes {
-            let line = format!(
-                "  {:<SLOT$} {} {}",
-                "§",
-                short(&pattern.id),
-                pattern.content
-            );
-            lines.push(Row::Text(line.into()));
+        for pattern in summary.notes {
+            lines.push(pattern_line("  ", pattern));
         }
         self.agent_steps(level.ended, "  ", lines);
     }
@@ -61,6 +56,11 @@ impl Tree<'_> {
             lines.push(Row::Text(line.into()));
             let under = format!("{indent}  ");
             self.below(note, &under, lines);
+            if self.view.full {
+                for pattern in self.uses(note) {
+                    lines.push(pattern_line(&under, pattern));
+                }
+            }
             let level = Level::of(note.children());
             self.agent_steps(level.active, &under, lines);
             self.agent_steps(level.ended, &under, lines);
@@ -73,7 +73,6 @@ impl Tree<'_> {
         if self.view.full {
             let indent = Styled::from(indent.to_string());
             self.closing(note, &indent, true, lines);
-            self.used(note, &indent, lines);
             return;
         }
         let indent = format!("{indent}{}", " ".repeat(SLOT - 1));
@@ -96,4 +95,11 @@ impl Tree<'_> {
             .collect();
         format!("{marks:<SLOT$} {} {title}", short(note.id()))
     }
+}
+
+/// The line of `pattern` after `indent`: `§` in its slot, its id, and its first line.
+fn pattern_line(indent: &str, pattern: &Note) -> Row {
+    let when = pattern.content.lines().next().unwrap_or_default();
+    let line = format!("{indent}{:<SLOT$} {} {when}", "§", short(&pattern.id));
+    Row::Text(line.into())
 }

@@ -96,7 +96,8 @@ fn tree_prints_the_trail_its_notes_and_the_steps_under_it() {
     );
 }
 
-/// `tree <id> --full` prints the expect line of a step in the label column, with its proof and grade.
+/// `tree <id> --full` prints the expect, for, not and ask me lines of a step in the label column, with
+/// its proof and grade, and no ask me line whose value is none.
 #[test]
 fn tree_prints_the_expect_line_in_the_label_column() {
     let repo = Repo::new();
@@ -107,16 +108,29 @@ fn tree_prints_the_expect_line_in_the_label_column() {
         &repo,
         &by,
         Some(&trail),
-        "logo\nexpect: the logo shows",
+        "logo\nexpect: the logo shows\nfor: a brand\nnot: a favicon\nask me: none",
         at + 5,
     );
     support::mark_note(&repo, &by, "done", &logo.id, "proof", at + 65);
+    support::step_note(
+        &repo,
+        &by,
+        Some(&trail),
+        "badge\nask me: its colour",
+        at + 6,
+    );
     let lines = printed(&repo, &[short(&trail.id), "--full"]);
+    assert!(
+        lines.contains(&"      ask me   its colour".to_string()),
+        "{lines:?}"
+    );
     let at = lines.iter().position(|l| l.contains("logo")).unwrap();
     assert_eq!(
-        lines[at + 1..at + 4],
+        lines[at + 1..at + 6],
         [
             "      expect   the logo shows",
+            "      for      a brand",
+            "      not      a favicon",
             "      done     proof",
             "      took     1m 0s"
         ]
