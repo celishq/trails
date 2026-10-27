@@ -31,8 +31,8 @@ impl Command {
 
     /// Writes `prompt` on its session's open trail, signed now, else keeps it for the session's next step,
     /// unless it holds a secret;
-    /// then, unless it is a task, gives on `err` one line: how a new ask and a step of the open ask are
-    /// added, and when a pattern of the index is read.
+    /// then, unless it is a task, gives on `err` one line: how a step of the current ask and a new ask
+    /// are added, and when a pattern of the index is read.
     fn ask(&self, err: &mut dyn Write, project: &Project, prompt: Prompt) -> Result<(), Failure> {
         let offered = self.offered(&prompt.session)?;
         let kept = Secret::find(&prompt.text).is_none();
@@ -62,7 +62,8 @@ impl Command {
         if prompt.task {
             return Ok(());
         }
-        let id = trail.map(|t| celis_store::records::id::short(t.id()));
+        let current = steps.current(&project.anchor.project, &prompt.session);
+        let id = current.map(|t| celis_store::records::id::short(t.id()));
         let line = note(!trails.is_empty(), id.as_deref());
         crate::command::put(err, &line)?;
         self.offer(err, project, &offered)
@@ -129,12 +130,16 @@ fn mark(path: &Path) -> Result<(), Failure> {
     Ok(())
 }
 
-/// The line on a prompt: a new ask is a new step; a prompt that goes on with the open ask `open` adds
-/// steps under it; how done work is fixed; and, when the store holds a record, when a pattern is read.
-fn note(held: bool, open: Option<&str>) -> String {
-    let more = match open {
-        Some(id) => format!("; when it goes on with the open ask {id}, add its steps --under {id}"),
-        None => String::new(),
+/// The line on a prompt: a prompt that goes on with the current ask `current` adds steps under it, and a
+/// new ask is a new step; how done work is fixed; and, when the store holds a record, when a pattern is
+/// read.
+fn note(held: bool, current: Option<&str>) -> String {
+    let ask = match current {
+        Some(id) => format!(
+            "when this prompt goes on with the ask {id}, add its steps --under {id}; when it is a new ask, \
+             add it with celis step add --new"
+        ),
+        None => "when this prompt is a new ask, add it with celis step add".to_string(),
     };
     let load = match held {
         true => " When a choice of the work matches a When of the index, read that pattern with celis \
@@ -142,7 +147,7 @@ fn note(held: bool, open: Option<&str>) -> String {
         false => "",
     };
     format!(
-        "celis: when this prompt is a new ask, add it with celis step add{more}; when it changes done work, \
-         add it with step add --replaces <the id of that step, as celis tree shows it>.{load}"
+        "celis: {ask}; when it changes done work, add it with step add --replaces <the id of that step, as \
+         celis tree shows it>.{load}"
     )
 }

@@ -245,8 +245,9 @@ fn a_sessions_open_trail_is_the_trail_of_its_newest_step() {
     assert_eq!(marks(&repo, "prompt"), [(first, "and more".to_string())]);
 }
 
-/// `prompt` gives one line on stderr: search, add a new ask, go on with the session's open ask under its
-/// id, and replace done work by its id in `celis tree`; a working step changes nothing of it.
+/// `prompt` gives one line on stderr: go on with the session's current ask under its id, add a new ask
+/// with `--new`, and replace done work by its id in `celis tree`; a working step and the ask's done
+/// change nothing of it.
 #[test]
 fn the_prompt_hook_gives_one_line() {
     let repo = Repo::new();
@@ -270,14 +271,23 @@ fn the_prompt_hook_gives_one_line() {
     let o = hook("now make it blue");
     assert!(o.status.success(), "{}", err(&o));
     assert_eq!(err(&o), line);
+    support::finish(&repo, &step[0][..8]);
+    support::finish(&repo, &trail[..8]);
+    let o = hook("now commit it");
+    assert!(o.status.success(), "{}", err(&o));
+    assert_eq!(err(&o), line);
 }
 
-/// The line `prompt` gives: a new ask is a new step; a prompt that goes on with the open ask `open` adds
-/// steps under it; how done work is fixed; and, when the store holds a record, when a pattern is read.
-fn note(held: bool, open: Option<&str>) -> String {
-    let more = match open {
-        Some(id) => format!("; when it goes on with the open ask {id}, add its steps --under {id}"),
-        None => String::new(),
+/// The line `prompt` gives: a prompt that goes on with the current ask `current` adds steps under it,
+/// and a new ask is a new step; how done work is fixed; and, when the store holds a record, when a
+/// pattern is read.
+fn note(held: bool, current: Option<&str>) -> String {
+    let ask = match current {
+        Some(id) => format!(
+            "when this prompt goes on with the ask {id}, add its steps --under {id}; when it is a new ask, \
+             add it with celis step add --new"
+        ),
+        None => "when this prompt is a new ask, add it with celis step add".to_string(),
     };
     let load = match held {
         true => " When a choice of the work matches a When of the index, read that pattern with celis \
@@ -285,8 +295,8 @@ fn note(held: bool, open: Option<&str>) -> String {
         false => "",
     };
     format!(
-        "celis: when this prompt is a new ask, add it with celis step add{more}; when it changes done work, \
-         add it with step add --replaces <the id of that step, as celis tree shows it>.{load}"
+        "celis: {ask}; when it changes done work, add it with step add --replaces <the id of that step, as \
+         celis tree shows it>.{load}"
     )
 }
 
