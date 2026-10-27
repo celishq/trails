@@ -145,7 +145,7 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
     replace them. A pattern in a cell that is on holds in the project, whatever its scope and paths. A
     cell of another account is immutable: you change it only with your own patterns that replace its
     patterns. An export holds only patterns: a Markdown file to read, the signed records, and the blobs.
-    You can drop an imported cell from disk, but your own cells can only be off, because their records
+    You can remove an imported cell from disk, but your own cells can only be off, because their records
     may be on relays.
 
 ## What we do not do

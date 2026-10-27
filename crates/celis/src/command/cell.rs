@@ -18,7 +18,7 @@ impl Command {
             "off" => self.cell_turn(args, out, false),
             "export" => self.cell_export(args, out),
             "import" => self.cell_import(args, out),
-            "drop" => self.cell_drop(args, out),
+            "remove" => self.cell_remove(args, out),
             "" => Err(Failure::usage("expected: celis cell <command>")),
             verb => Err(Failure::usage(format!("no command \"cell {verb}\""))),
         }
@@ -33,11 +33,11 @@ impl Command {
 
     /// Removes the cell of another account that `args` names from the store, and prints how many records
     /// went.
-    fn cell_drop(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
-        let name = args.id("cell drop")?;
+    fn cell_remove(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
+        let name = args.id("cell remove")?;
         let gone = self.trails()?.leave(name)?;
         let line = format!(
-            "dropped {name} · {}",
+            "removed {name} · {}",
             crate::text::line::plural(gone, "record")
         );
         crate::command::put(out, &line)

@@ -1,14 +1,14 @@
-//! `celis cell drop`.
+//! `celis cell remove`.
 
 use crate::support;
 
 use support::cell::{decide, records, their_folder};
 use support::{cli, err, out, refusal, Repo};
 
-/// `cell drop` removes the records of an imported cell and the blobs only they name, keeps a blob that
+/// `cell remove` removes the records of an imported cell and the blobs only they name, keeps a blob that
 /// your pattern names too, and refuses a cell of yours and an unknown name (`spec/02-cli.md`, "Cells").
 #[test]
-fn cell_drop_removes_an_imported_cell_and_keeps_a_shared_blob() {
+fn cell_remove_removes_an_imported_cell_and_keeps_a_shared_blob() {
     use sha2::Digest;
     let repo = Repo::new();
     let (_, theirs) = their_folder(&repo, "east");
@@ -18,7 +18,7 @@ fn cell_drop_removes_an_imported_cell_and_keeps_a_shared_blob() {
     let sha = format!("{:x}", sha2::Sha256::digest(b"a bowl"));
     let blob = repo.store().join("blobs").join(&sha);
     let before = records(&repo);
-    let o = cli(&repo, &["cell", "drop", "east"]);
+    let o = cli(&repo, &["cell", "remove", "east"]);
     assert!(o.status.success(), "{}", err(&o));
     assert_eq!(records(&repo), before - 2);
     assert!(!blob.exists());
@@ -42,17 +42,17 @@ fn cell_drop_removes_an_imported_cell_and_keeps_a_shared_blob() {
         ],
     );
     assert!(o.status.success(), "{}", err(&o));
-    assert!(cli(&repo, &["cell", "drop", "east"]).status.success());
+    assert!(cli(&repo, &["cell", "remove", "east"]).status.success());
     assert!(blob.exists());
     let mine = out(&o).trim().to_string();
     assert!(cli(&repo, &["cell", "add", "west", &mine]).status.success());
     refusal(
-        &cli(&repo, &["cell", "drop", "west", "--json"]),
+        &cli(&repo, &["cell", "remove", "west", "--json"]),
         1,
         "cell-yours",
     );
     refusal(
-        &cli(&repo, &["cell", "drop", "north", "--json"]),
+        &cli(&repo, &["cell", "remove", "north", "--json"]),
         1,
         "no-cell",
     );
