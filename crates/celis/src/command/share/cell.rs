@@ -2,7 +2,7 @@
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use celis_patterns::{PatternStore, Scope};
+use celis_patterns::{CellStore, Scope};
 use std::io::Write;
 
 impl Command {

@@ -1,5 +1,12 @@
 //! CIP-09: a cell, a named set of patterns of one account.
 
+pub mod cell_store;
+pub mod cells;
+pub mod export;
+pub mod layer;
+pub mod mask;
+pub mod membership;
+
 use celis_nostr::Pubkey;
 
 /// A cell: its name, and the account that signs its memberships.

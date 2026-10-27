@@ -3,7 +3,7 @@
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::text::markdown;
-use celis_patterns::{Example, Export, PatternStore};
+use celis_patterns::{CellStore, Example, Export};
 use celis_store::Refusal;
 use std::io::Write;
 
