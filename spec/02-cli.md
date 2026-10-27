@@ -189,7 +189,7 @@ celis: before you answer, learn from <id8>. …           what the agent keeps, 
   note    <text>                                          each note of its trail (CIP-04, "Notes")
   asked   <text>                                          each prompt on its trail (CIP-04, "Sessions") since
                                                           the newest one before the ask, that one too
-  pattern <id8> <When>                                    each live pattern a step of its ask's tree uses
+  pattern <id8> <Name>                                    each live pattern a step of its ask's tree uses
                                                           (CIP-06, "Uses"), once each
 ```
 
@@ -224,8 +224,9 @@ Each agent's hooks give `hook` the JSON of a prompt or of a session start.
 agent reads it, and reads the whole of a pattern with `patterns <id8>`.
 
 ```
-<id8> <scope> <When>     each pattern; its When is the first line of its text, and of a text of one
-                         line, the part before its first `:`
+<id8> <scope> <Name>     each pattern; its Name is the text after `Name:` on the first line of its
+                         text, and with none, its When: the first line, and of a text of one line,
+                         the part before its first `:`; the When of a named text is its next line
   path   <glob>          each `path` of it (CIP-05, "Paths")
   match  <file>          each `<file>` that one of its paths matches (CIP-05, "Paths")
   within <id8>           each larger pattern it completes (CIP-05, "Graph")
@@ -234,7 +235,7 @@ no pattern yet           when there is none
 
 ```
 celis patterns --tidy
-<id8> <reason>[,<reason>]... <When>     each live pattern in scope that needs tidy
+<id8> <reason>[,<reason>]... <Name>     each live pattern in scope that needs tidy
 <n> patterns in the index               last, with `1 pattern` for one; the only line when none needs tidy
 ```
 
@@ -246,6 +247,8 @@ A pattern's reasons, in this order:
 - `unused`: it was made 60 or more days ago, and no step used it in the last 60 days (CIP-06, "Uses"),
   while a step of the project used a pattern.
 - `churn`: it ends a chain of 3 or more `replaces` (CIP-05).
+- `nameless`: its text has no Name.
+- `form`: its When starts with `When:`, or holds `Forces:`, `Do:` or `Because:`.
 
 **Rules**
 
@@ -279,7 +282,7 @@ celis patterns --tidy
 the working folder's project (CIP-05).
 
 ```
-<id8> uses:<n> misled:<n> replaces:<n> used:<yyyy-mm-dd | -> examples:<n> tidy:<reason>[,<reason>]... | - <When>
+<id8> uses:<n> misled:<n> replaces:<n> used:<yyyy-mm-dd | -> examples:<n> tidy:<reason>[,<reason>]... | - <Name>
                                          each live pattern in scope
 total <n> patterns in the index · last 7 days: <n> written, <n> replaced, <n> gaps
                                          last, with `1 pattern` for one
@@ -292,7 +295,7 @@ value last 28 days: asks:<n> covered:<n> corrections:<n> failed:<n> missed:<n> f
 ```
 
 ```
-pattern    json  {"id", "uses", "misled", "replaces", "used", "examples", "tidy": [], "when"}
+pattern    json  {"id", "uses", "misled", "replaces", "used", "examples", "tidy": [], "name", "when"}
 total      json  {"index", "written", "replaced", "gaps"}
 lifecycle  json  {"span", "from", "written", "replaced", "dropped", "promoted", "recalled", "used", "misled"}
 value      json  {"asks", "covered", "corrections", "failed", "missed", "with", "without", "recalled",
@@ -302,7 +305,8 @@ value      json  {"asks", "covered", "corrections", "failed", "missed", "with", 
 A pattern's fields: `uses`, how many steps name it in `uses` (CIP-06, "Uses"); `misled`, how many steps
 it misled (CIP-06, "Misled"); `replaces`, how many `replaces` its chain holds (CIP-05); `used`, the
 day of the newest step that uses it, `-` or `null` when none; `examples`, how many examples it has
-(CIP-05, "Examples"); `tidy`, its reasons as `patterns --tidy` gives them ("Patterns"), `-` when none.
+(CIP-05, "Examples"); `tidy`, its reasons as `patterns --tidy` gives them ("Patterns"), `-` when none;
+`name`, its Name ("Patterns"), `null` when none.
 
 The total's fields: `index`, how many patterns are live in scope; `written`, the patterns in scope made
 in the last 7 days; `replaced`, those of them with a `replaces`; `gaps`, the steps of the project made in

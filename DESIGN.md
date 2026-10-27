@@ -14,6 +14,11 @@ celis keeps the knowledge that agents need to do work well, and the evidence for
   and a way to resolve them. When its forces are present, the agent resolves them in its own way. When
   they are not present, the pattern does not apply. A pattern is never "broken". Pairs show taste: good
   and bad examples, made from the person's picks and corrections.
+- **A pattern is narrow, and holds in any field.** Its Name is the resolved form, as a noun phrase. Its
+  When is one context and the moment its forces appear, not a topic. Its Do is one resolution, and a
+  larger resolution is a larger pattern that it completes. The form is Alexander's, not an engineering
+  one, so that a pattern can carry a concept from one field into another, such as from architecture
+  into design.
 - **Trails are the evidence.** A trail is one ask, with its steps and their proofs. It gives observability,
   and it is the feedback loop that shows whether a pattern is still useful: its examples, its uses and
   tidy.
@@ -44,7 +49,8 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
    accepted and ignored, so an older plugin still works with a newer `celis`. A pattern has no cell: a
    reader ignores an old `cell` tag, and `pattern --cell` is accepted and ignored in the same way.
 3. **The agent loads a pattern at the choice it bears on.**
-   - `celis patterns` gives the index: each live pattern in scope as its id and its When. `celis grep
+   - `celis patterns` gives the index: each live pattern in scope as its id and its Name, or its When
+     when it has no Name. The Name is advice: celis writes a pattern without one. `celis grep
      <id>` gives the whole pattern. celis has no vector, no word match and no rank. The session start
      gives the index, and gives it again after each compaction, so the agent has it before the first
      ask.
@@ -101,8 +107,11 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
     no `by`, so an older plugin still works with a newer `celis`.
 13. **The outcomes are evidence, and celis lists what needs tidy.** A pattern misled a step that used
     it when a later step fixed that work. `celis patterns --tidy` lists each live pattern that misled
-    twice or more, that has a near copy, that no step used in 60 days, or that was replaced three times
-    or more, with the reason. Tidy narrows a pattern that misled, and drops or widens one unused.
+    twice or more, that has a near copy, that no step used in 60 days, that was replaced three times
+    or more, that has no Name, or whose When holds another of its lines, with the reason. Tidy narrows
+    a pattern that misled, and drops or widens one unused. It names each pattern, narrows a When that
+    names a topic, and splits a Do that holds more than one choice into smaller patterns `within` it:
+    celis lists the facts, and the tidy agent judges the breadth.
     `celis stats` shows the use of each live pattern: its uses, misled, replaces, last use, examples and
     tidy reason. Its total gives the size of the index, the patterns written and replaced in the last 7
     days, and the gaps: the fixes of done work in that time whose ask used no pattern. Its lifecycle

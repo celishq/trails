@@ -24,14 +24,15 @@ forces are present, work resolves them; where they are not, it does not apply.
     ["path", "<glob>"],
     ["L", "celis.pattern"], ["l", "pattern", "celis.pattern"]
   ],
-  "content": "When <the choice and its context>\nForces: <what pulls against what>\nDo: <the resolution>\nBecause: <why it resolves the forces>" }
+  "content": "Name: <the resolved form>\nWhen <the choice and its context>\nForces: <what pulls against what>\nDo: <the resolution>\nBecause: <why it resolves the forces>" }
 ```
 
 - `scope`: optional; where the pattern holds ("Scope"). With none, it holds in the project.
 - `replaces`: optional; the pattern this one takes the place of.
 - `path`: optional, repeatable; a file the pattern acts on, as a glob from the project's top folder
   ("Paths").
-- content: text for an agent. A reader MAY show it, and does not parse it.
+- content: text for an agent. Its first line MAY be `Name: <the resolved form>`. A reader MAY show it,
+  and reads only its Name and its When (CIP-02, "Patterns").
 
 A drop (CIP-03, "Dropping") MAY name a pattern, with why it no longer holds.
 
