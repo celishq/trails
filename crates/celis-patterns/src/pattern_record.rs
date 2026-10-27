@@ -48,18 +48,24 @@ impl PatternRecord {
         Note::write(signer, 1111u16, at, tags, self.content.clone())
     }
 
-    /// The first line of its text; of a text of one line, the part before its first `:`.
+    /// Its Name, or `None` when its text has none (CIP-02, "Patterns").
+    pub fn name(&self) -> Option<&str> {
+        name(&self.content)
+    }
+
+    /// Its When (CIP-02, "Patterns").
     pub fn when(&self) -> &str {
-        let first = self.content.lines().next().unwrap_or("");
-        match self.content.trim_end().contains('\n') {
-            true => first,
-            false => first.split_once(':').map_or(first, |(when, _)| when),
-        }
+        when(&self.content)
+    }
+
+    /// Its Name, else its When: the line that shows it in a list.
+    pub fn title(&self) -> &str {
+        self.name().unwrap_or(self.when())
     }
 
     /// When it applies and what to do, on one line: `<When>: <Do>`, or its first line when it has no `Do`.
     pub fn brief(&self) -> String {
-        let when = self.content.lines().next().unwrap_or("");
+        let when = self.when();
         let mut lines = self.content.lines();
         match lines.find_map(|l| l.strip_prefix("Do:").map(str::trim)) {
             Some(what) => format!("{when}: {what}"),
@@ -132,6 +138,26 @@ impl PatternRecord {
         paths
             .iter()
             .any(|path| globs.iter().any(|g| g.matches(path)))
+    }
+}
+
+/// The Name of a pattern's `content`: the text after `Name:` on its first line; `None` when it has none.
+pub fn name(content: &str) -> Option<&str> {
+    let first = content.lines().next()?;
+    first.strip_prefix("Name:").map(str::trim)
+}
+
+/// The When of a pattern's `content`: its first line, or its next one after a Name; of a text of one
+/// line, the part before its first `:`.
+pub fn when(content: &str) -> &str {
+    let mut lines = content.lines();
+    if name(content).is_some() {
+        lines.next();
+    }
+    let first = lines.next().unwrap_or("");
+    match content.trim_end().contains('\n') {
+        true => first,
+        false => first.split_once(':').map_or(first, |(when, _)| when),
     }
 }
 

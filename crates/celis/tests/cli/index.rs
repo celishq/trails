@@ -310,3 +310,49 @@ fn an_old_recalled_tag_is_ignored() {
     let lesson = out(&cli(&repo, &["extract", &ask.id[..8]]));
     assert!(!lesson.contains("  pattern "), "{lesson}");
 }
+
+/// A pattern whose first line is `Name: <name>` shows its Name in the index, in `stats`, in the `like`
+/// lines and as the heading of `patterns <id>`, and its When is its next line (`spec/02-cli.md`,
+/// "Patterns").
+#[test]
+fn a_named_pattern_shows_its_name() {
+    let repo = Repo::new();
+    let text = "Name: Light on two sides\nWhen a living room is lit\nForces: one window glares\nDo: give it windows on two sides\nBecause: light from two sides softens shadows";
+    let room = decide(&repo, &[], text);
+    let index = out(&cli(&repo, &["patterns"]));
+    assert_eq!(
+        index.trim_end(),
+        format!("{} project Light on two sides", &room[..8])
+    );
+    let whole = out(&cli(&repo, &["patterns", &room[..8]]));
+    assert!(whole.starts_with("## Light on two sides\n"), "{whole}");
+    assert!(whole.contains("When a living room is lit  \n"), "{whole}");
+    let line = out(&cli(&repo, &["stats"]));
+    assert!(
+        line.lines()
+            .next()
+            .unwrap()
+            .ends_with(" Light on two sides"),
+        "{line}"
+    );
+    let stats = out(&cli(&repo, &["stats", "--json"]));
+    let first: serde_json::Value = serde_json::from_str(stats.lines().next().unwrap()).unwrap();
+    assert_eq!(first["pattern"]["name"], "Light on two sides", "{stats}");
+    assert_eq!(
+        first["pattern"]["when"], "When a living room is lit",
+        "{stats}"
+    );
+    let like = cli(
+        &repo,
+        &[
+            "pattern",
+            "--",
+            "When a living room is lit at night: dim it.",
+        ],
+    );
+    assert!(
+        out(&like).contains(&format!("like    {} Light on two sides", &room[..8])),
+        "{}",
+        out(&like)
+    );
+}

@@ -110,7 +110,7 @@ impl Learn {
 }
 
 /// Each live pattern of `records` that a step of the tree of the ask of `step` uses, once, as its id and
-/// When.
+/// Name.
 fn in_play(records: &[Note], step: Step) -> Vec<(String, String)> {
     let trail = step.trail();
     let patterns = Patterns::new(records);
@@ -118,6 +118,6 @@ fn in_play(records: &[Note], step: Step) -> Vec<(String, String)> {
     let mut seen = HashSet::new();
     used.filter(|id| seen.insert(*id))
         .filter_map(|id| patterns.find(None, id).ok())
-        .map(|p| (p.id().to_string(), p.record.when().to_string()))
+        .map(|p| (p.id().to_string(), p.record.title().to_string()))
         .collect()
 }

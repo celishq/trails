@@ -94,13 +94,13 @@ impl<'a> Candidate<'a> {
         self.chain
     }
 
-    /// `<id8> <reason>[,<reason>]... <When>`.
+    /// `<id8> <reason>[,<reason>]... <Name>`.
     pub fn line(&self) -> String {
         format!(
             "{} {} {}",
             short(self.pattern.id()),
             self.reasons.join(","),
-            self.pattern.record.when()
+            self.pattern.record.title()
         )
     }
 }
