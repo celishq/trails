@@ -102,6 +102,11 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
     days, and the gaps: the fixes of done work in that time whose ask used no pattern. The session start offers tidy when the list
     is not empty, and not within 7 days of a tidy, so that a person who kept a pattern is not asked each
     session.
+14. **celis refuses a secret.** A record is signed and cannot be deleted, so a secret in it leaks for
+    good. A writer refuses a record, and a kept file, that holds a secret, such as an API key, a token, a
+    private key or a password, with the error `secret`, and the agent writes it again with the secret
+    named by where it lives, such as `API_KEY in .env`. The prompt hook keeps no prompt that holds a
+    secret. A guide in the card alone did not hold: agents gave `.env` as a proof file.
 
 ## What we do not do
 

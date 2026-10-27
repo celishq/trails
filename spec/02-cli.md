@@ -105,7 +105,7 @@ celis pattern --path "**/prices*.py" -- "When you change prices: keep them in ce
 - A command MUST NOT ask a question, but `auth login`.
 - A command MUST exit 0 when done, 2 on a usage error, and 1 on any other error.
 - An error MUST be named `usage`, `no-pattern`, `no-step`, `closed`, `open-steps`, `check-failed`,
-  else `error`. With `--json`, it MUST be one object on stderr,
+  `secret` (CIP-01, "The account"), else `error`. With `--json`, it MUST be one object on stderr,
   `{"error": "<name>", "message": "<text>"}`.
 
 ## Update
@@ -338,6 +338,8 @@ antigravity     {"injectSteps": [{"ephemeralMessage": "<text>"}]}
   session, after the person's first ask, and names `<n>`.
 - `hook` MUST print in the shape of `<agent>`, and nothing when it has no text, but Cursor's ask.
 - `hook` MUST exit 0 on any error but a usage error.
+- `hook ask` MUST keep no prompt that holds a secret (CIP-01, "The account"), and MUST say so to the
+  agent.
 
 **Examples**
 
