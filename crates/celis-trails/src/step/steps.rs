@@ -145,6 +145,7 @@ pub(crate) struct Entry<'a> {
     pub(crate) replaced: Vec<&'a Note>,
     pub(crate) start: Option<&'a Note>,
     pub(crate) close: Option<(&'a Note, Close)>,
+    pub(crate) dones: Vec<&'a Note>,
     pub(crate) drop: Option<&'a Note>,
     pub(crate) touched: u64,
     pub(crate) newest: u64,
@@ -181,6 +182,7 @@ impl<'a> Index<'a> {
                         replaced: Vec::new(),
                         start: None,
                         close: None,
+                        dones: Vec::new(),
                         drop: None,
                         touched: note.created_at,
                         newest: 0,
@@ -213,6 +215,7 @@ impl<'a> Index<'a> {
             entry.touched = entry.touched.max(note.created_at);
             entry.mark(note, mark);
         }
+        reopen(&mut entries);
         sum(&mut entries);
         let roots = all.iter().copied();
         let roots = roots.filter(|n| entries[n.id.as_str()].step.under.is_none());
@@ -223,6 +226,35 @@ impl<'a> Index<'a> {
             all,
             entries,
             patterns,
+        }
+    }
+}
+
+/// Reads each done trail of `entries` as open while a step under it is open or newer than its newest done,
+/// and as settled by its first done after that; a drop of a reopened trail settles it.
+fn reopen(entries: &mut HashMap<&str, Entry>) {
+    let mut settled = Vec::new();
+    for (id, entry) in entries.iter() {
+        let Some((first, Close::Done)) = entry.close else {
+            continue;
+        };
+        let children = entry.children.iter().map(|n| &entries[n.id.as_str()]);
+        let open = children.clone().any(|c| c.close.is_none());
+        let newest = children.map(|c| c.note.created_at).max().unwrap_or(0);
+        if entry.step.under.is_some() || (!open && newest <= first.created_at) {
+            continue;
+        }
+        let done = entry.dones.iter().find(|d| !open && d.created_at >= newest);
+        let close = match (done, entry.drop) {
+            (Some(&done), _) => Some((done, Close::Done)),
+            (None, Some(drop)) => Some((drop, Close::Dropped)),
+            (None, None) => None,
+        };
+        settled.push((*id, close));
+    }
+    for (id, close) in settled {
+        if let Some(entry) = entries.get_mut(id) {
+            entry.close = close;
         }
     }
 }
@@ -277,6 +309,7 @@ impl<'a> Entry<'a> {
                 }
             }
             Mark::Done(_) => {
+                self.dones.push(note);
                 self.close.get_or_insert((note, Close::Done));
             }
             Mark::Drop { .. } if self.close.is_none() => {

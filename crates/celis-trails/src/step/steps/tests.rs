@@ -175,3 +175,37 @@ fn a_step_under_a_trail_closes_the_store() {
     assert!(Steps::new(&closed, 13).closed_any());
     assert!(Steps::new(&records[..2], 11 + LIFE).closed_any());
 }
+
+/// A step under a done trail reopens it, while it is open or newer than the trail's newest done; a
+/// later done settles it again, and a step of the same second as the done does not reopen it
+/// (`spec/03-steps.md`, "Closing").
+#[test]
+fn a_step_under_a_done_trail_reopens_it() {
+    let under = |text: &str, trail: &Note, at: u64| {
+        StepRecord {
+            under: Some(StepId::new(&trail.id)),
+            ..StepRecord::read(&step(text, at)).unwrap()
+        }
+        .record(&account(), at)
+        .unwrap()
+    };
+    let trail = step("trail", 10);
+    let first = done(&trail.id, "first", 20);
+    let same = under("same second", &trail, 20);
+    let same_done = done(&same.id, "proof", 20);
+    let settled = vec![trail.clone(), first.clone(), same, same_done.clone()];
+    let state = |records: &[Note]| Steps::new(records, 0).get(&trail.id).unwrap().state();
+    assert_eq!(state(&settled), State::Done);
+    let follow = under("follow-up", &trail, 30);
+    let opened = [settled.clone(), vec![follow.clone()]].concat();
+    assert_eq!(state(&opened), State::Open);
+    let follow_done = done(&follow.id, "proof", 40);
+    let closed = [opened.clone(), vec![follow_done]].concat();
+    assert_eq!(state(&closed), State::Open);
+    let again = done(&trail.id, "again", 50);
+    let records = [closed, vec![again.clone()]].concat();
+    let steps = Steps::new(&records, 0);
+    let settled = steps.get(&trail.id).unwrap();
+    assert_eq!(settled.state(), State::Done);
+    assert_eq!(settled.done_record().map(|n| &n.id), Some(&again.id));
+}
