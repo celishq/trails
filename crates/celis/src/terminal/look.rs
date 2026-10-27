@@ -37,6 +37,9 @@ pub(crate) fn lane(state: Phase) -> Style {
     }
 }
 
+/// The cells a mark and its signs take before a title or an id.
+pub(crate) const SLOT: usize = 3;
+
 /// The signs of `flags` with their looks: `↻` when revised, then `~` when changed.
 pub(crate) fn signs(flags: Flags) -> Vec<(&'static str, Style)> {
     let all = [(flags.revised, "↻", GREEN), (flags.changed, "~", YELLOW)];

@@ -1,6 +1,7 @@
 //! `celis tree` on a terminal: the tree, drawn again each time the store or a linked folder changes.
 
 use crate::command::read::tree::classic::{Frame, Item, Layout, View, EMPTY, MORE};
+use crate::command::read::tree::marks::marks;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::progress::Model;
@@ -24,6 +25,7 @@ impl Command {
         let empty = vec![Styled::from(EMPTY)];
         let waiting = Page {
             lines: empty.clone(),
+            foot: marks(crate::terminal::classic::look),
             keys: legend(None),
             ..Page::default()
         };
@@ -98,6 +100,7 @@ impl Live for Watch<'_> {
         let page = Page {
             lines,
             picked: frame.picked,
+            foot: marks(crate::terminal::classic::look),
             keys: legend(copy.as_deref()),
             copy,
             markdown,

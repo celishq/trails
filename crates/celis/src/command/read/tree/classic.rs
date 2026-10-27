@@ -1,13 +1,14 @@
 //! `celis tree` as v0.0.11 printed and watched it: a trail with its state, its notes and the steps under it.
 
+use super::meta::Meta;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::progress::{Flags, Grade, Model, Phase, Tally};
 pub(crate) use crate::terminal::canvas::visible;
-use crate::terminal::canvas::{line as line_text, paint, width, Styled};
+use crate::terminal::canvas::{line as line_text, paint, Styled};
 use crate::terminal::canvas::{BOLD, DIM};
-use crate::terminal::classic::{look, signs, SPINNER};
-use crate::terminal::look::SPUN;
+use crate::terminal::classic::{look, SPINNER};
+use crate::terminal::look::{signs, SLOT, SPUN};
 use crate::text::clock::stride;
 use crate::text::clock::{day, midnight};
 use celis_nostr::Note;
@@ -173,12 +174,10 @@ pub(crate) struct Tree<'a> {
     pub next: Cell<Option<u64>>,
 }
 
-/// What the tree says of a trail: the steps it prints under it, the done ones, the time they worked,
-/// and its patterns.
+/// What the tree says of a trail: the steps it prints under it with the time they worked, and its
+/// patterns.
 struct Summary<'a> {
-    all: usize,
-    done: usize,
-    worked: Option<u64>,
+    meta: Meta,
     notes: Vec<&'a Note>,
 }
 
@@ -271,10 +270,20 @@ impl Tree<'_> {
             false => self.worked(&shown),
         };
         Summary {
-            all: shown.len(),
-            done: Tally::of(&shown).done,
-            worked,
-            notes: self.notes(note),
+            meta: Meta {
+                done: Tally::of(&shown).done,
+                all: shown.len(),
+                worked,
+            },
+            notes: {
+                let mut notes = self.notes(note);
+                let used = self.uses(work).into_iter();
+                notes.extend(
+                    used.filter(|u| !notes.iter().any(|n| n.id == u.id))
+                        .collect::<Vec<_>>(),
+                );
+                notes
+            },
         }
     }
 
@@ -306,12 +315,10 @@ impl Tree<'_> {
         any.then_some(total)
     }
 
-    /// Prints `lines`, each row's marks padded to the widest of them, so every title starts at one
-    /// column, and wrapped at the width. In a watch, each line starts with the cursor column, a bar on
+    /// Prints `lines`, each row's marks padded to `SLOT`, so every title starts at one column, and
+    /// wrapped at the width. In a watch, each line starts with the cursor column, a bar on
     /// each line of the selected element.
     fn show(&self, lines: Vec<Row>, out: &mut Vec<Styled>) -> Result<(), Failure> {
-        let slot = lines.iter().filter_map(Row::marks).map(width).max();
-        let slot = slot.unwrap_or(0);
         let mut picked = false;
         for line in lines {
             let line = match line {
@@ -324,7 +331,7 @@ impl Tree<'_> {
                 }
                 line => line,
             };
-            for mut text in line.lines(slot, self.width, picked) {
+            for mut text in line.lines(SLOT, self.width, picked) {
                 match (self.view.watch, picked) {
                     (false, _) => {}
                     (true, false) => text.spans.insert(0, Span::raw("  ")),
@@ -334,6 +341,17 @@ impl Tree<'_> {
             }
         }
         Ok(())
+    }
+
+    /// What the tree says of the step `note`: the steps right under it, done of all, and the time its
+    /// tree worked.
+    fn meta(&self, note: Step) -> Meta {
+        let kids = note.children();
+        Meta {
+            done: Tally::of(&kids).done,
+            all: kids.len(),
+            worked: self.worked(&note.tree()),
+        }
     }
 
     /// Adds the line `text`, and counts it.

@@ -7,7 +7,6 @@ use crate::progress::Phase;
 use crate::terminal::canvas::{paint, Styled, BOLD, DIM};
 use crate::terminal::classic::look;
 use crate::text::clock::{stride, took};
-use crate::text::line::plural;
 use celis_nostr::Note;
 use celis_trails::{Step, Trail};
 use ratatui::text::Span;
@@ -76,7 +75,7 @@ impl Tree<'_> {
             rest: hair.clone(),
         });
         self.pick(self.item(note, true, &summary.notes), lines, first);
-        if let Some(worked) = summary.worked {
+        if let Some(worked) = summary.meta.worked {
             self.labelled(lines, &hair, "took", &took(worked));
         }
         if self.view.spin && note.active() {
@@ -87,13 +86,12 @@ impl Tree<'_> {
         if !self.grouped || note.active() {
             lines.push(Row::Note {
                 rail: hair.clone(),
-                label: "",
+                label: "project",
                 text: step.anchor.name.clone(),
                 tone: PROJECT,
             });
         }
         self.closing(work, &hair, false, lines);
-        self.used(work, &hair, lines);
         let level = Level::of(Trail::new(note).parts());
         self.level(level, summary.notes, &Styled::from("  "), note.id(), lines);
     }
@@ -105,11 +103,6 @@ impl Tree<'_> {
         let state = Phase::of(&note);
         let work = self.work(note);
         let summary = self.summary(note, work);
-        let steps = match (summary.all, summary.done) {
-            (0, _) => None,
-            (all, done) if all == done => Some(plural(all, "step")),
-            (all, done) => Some(format!("{done} of {all} steps")),
-        };
         let first = lines.len();
         let rest = Styled::from("    ");
         lines.push(Row::Titled {
@@ -119,7 +112,7 @@ impl Tree<'_> {
             tone: self.tone(look(state).title, note.newest()),
             rest: rest.clone(),
         });
-        self.details(&rest, [steps, summary.worked.map(took)], lines);
+        self.details(&rest, summary.meta, lines);
         self.pick(self.item(note, false, &summary.notes), lines, first);
     }
 }

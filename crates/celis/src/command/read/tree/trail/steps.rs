@@ -65,7 +65,7 @@ impl Tree<'_> {
                 marks: self.marked(note),
                 title: step.title().to_string(),
                 tone: self.shone(note, self.tone(tone, note.newest())),
-                meta: self.meta(note),
+                meta: Styled::from(paint(DIM, &self.meta(note).to_string())),
                 whole: Some(match open && !note.children().is_empty() {
                     true => after(&rail, paint(self.lane(), "│")),
                     false => rail.clone(),
@@ -81,10 +81,9 @@ impl Tree<'_> {
             if open && self.view.full {
                 let below = after(&rail, Span::raw("  "));
                 self.closing(note, &below, true, lines);
-                self.used(note, &below, lines);
             }
             if open {
-                self.level(level, vec![], &rail, note.id(), lines);
+                self.level(level, self.uses(note), &rail, note.id(), lines);
             }
         }
     }

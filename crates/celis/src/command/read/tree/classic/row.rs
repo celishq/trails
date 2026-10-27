@@ -26,15 +26,6 @@ pub(super) enum Row {
 }
 
 impl Row {
-    /// Its marks when it is a row, also when it is selected.
-    pub fn marks(&self) -> Option<&Styled> {
-        match self {
-            Row::Titled { marks, .. } => Some(marks),
-            Row::Mark(_, line) => line.marks(),
-            _ => None,
-        }
-    }
-
     /// Its printed lines, its marks padded to `slot` and wrapped at `width`: a row's title bold when
     /// `picked` unless dim; a note's text after its label padded to 8 characters.
     pub fn lines(self, slot: usize, width: Option<usize>, picked: bool) -> Vec<Styled> {

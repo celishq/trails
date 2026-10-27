@@ -69,7 +69,7 @@ impl Tree<'_> {
         if !self.grouped || (state.active() && !self.view.watch) {
             meta.push(vec![paint(DIM, &step.anchor.name)]);
         }
-        meta.extend(came(state, &summary));
+        meta.extend(came(&summary));
         lines.push(Row::Lined {
             lead: Styled::from(vec![
                 paint(DIM, if under { "▾" } else { " " }),
@@ -89,7 +89,6 @@ impl Tree<'_> {
         if self.view.full {
             let hair = Styled::from(vec![Span::raw("  "), paint(self.lane(), "│ ")]);
             self.closing(work, &hair, false, lines);
-            self.used(work, &hair, lines);
         }
         self.level(level, summary.notes, &rail, note.id(), lines);
     }
@@ -102,7 +101,7 @@ impl Tree<'_> {
         let work = self.work(note);
         let summary = self.summary(note, work);
         let under = !(Trail::new(note).parts().is_empty() && summary.notes.is_empty());
-        let meta: Vec<_> = came(state, &summary).into_iter().collect();
+        let meta: Vec<_> = came(&summary).into_iter().collect();
         let first = lines.len();
         lines.push(Row::Lined {
             lead: Styled::from(vec![
@@ -127,14 +126,10 @@ fn trail_tone(state: Phase) -> ratatui::style::Style {
     }
 }
 
-/// What a trail's steps came to: done/all while `active`, else their count by state; none with no
-/// steps.
-fn came(state: Phase, summary: &Summary) -> Option<Vec<Span<'static>>> {
-    match (state.active(), summary.all) {
-        (_, 0) => None,
-        (true, all) => Some(vec![paint(DIM, &format!("{}/{all}", summary.done))]),
-        (false, _) => Some(fold::counts(summary.tally)),
-    }
+/// What a trail's steps came to, dim; none with no steps and no time.
+fn came(summary: &Summary) -> Option<Vec<Span<'static>>> {
+    let text = summary.meta.to_string();
+    (!text.is_empty()).then(|| vec![paint(DIM, &text)])
 }
 
 /// The `parts` of a row's meta, a dim ` · ` between each two.

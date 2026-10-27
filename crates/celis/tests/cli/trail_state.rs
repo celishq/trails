@@ -87,7 +87,7 @@ fn an_ended_trail_stays_open_and_shows_its_open_steps_stale() {
         tree.lines()
             .nth(2)
             .unwrap_or("")
-            .starts_with(&format!("  ◌ {} open part", &open.id[..8])),
+            .starts_with(&format!("  ◌   {} open part", &open.id[..8])),
         "{tree}"
     );
     let read = out(&cli(&repo, &["grep", "left\\|open part"]));

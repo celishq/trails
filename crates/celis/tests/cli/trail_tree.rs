@@ -18,7 +18,7 @@ fn printed(repo: &Repo, args: &[&str]) -> Vec<String> {
 }
 
 /// `tree <id>` prints the trail as a block: its mark, id and title, then two spaces in its progress and
-/// worked time, its open steps, its notes, then its closed steps, each group newest first and each step
+/// time, its open steps, its notes, then its closed steps, each group newest first and each step
 /// followed by its own two spaces further in, in the same order; `--full` adds the proof and grade of a
 /// done one.
 #[test]
@@ -59,35 +59,35 @@ fn tree_prints_the_trail_its_notes_and_the_steps_under_it() {
             .replace("{f}", short(&footer.id))
     };
     let lines = [
-        "○ {t} build the CRM",
-        "  3/7 steps · 3m 0s worked",
-        "  ○ {f} footer",
-        "  ○ {p} customers page · 30s",
-        "    ○ {m} stamp",
-        "    ○ {b} badge",
-        "    ✓ {s} seal · 30s",
-        "  § {r} colours are tokens",
-        "  ✓ {l} logo · 1m 0s",
-        "  ✓ {c} colours · 1m 30s",
+        "○   {t} build the CRM",
+        "  3/7 steps · 3m 0s",
+        "  ○   {f} footer",
+        "  ○   {p} customers page · 1/3 steps · 30s",
+        "    ○   {m} stamp",
+        "    ○   {b} badge",
+        "    ✓   {s} seal · 30s",
+        "  §   {r} colours are tokens",
+        "  ✓   {l} logo · 1m 0s",
+        "  ✓   {c} colours · 1m 30s",
     ];
     assert_eq!(printed(&repo, &[short(&trail.id)]), lines.map(ids), "short");
     let full = [
-        "○ {t} build the CRM",
-        "  3/7 steps · 3m 0s worked",
-        "  ○ {f} footer",
-        "  ○ {p} customers page · 30s",
-        "    ○ {m} stamp",
-        "    ○ {b} badge",
-        "    ✓ {s} seal · 30s",
+        "○   {t} build the CRM",
+        "  3/7 steps · 3m 0s",
+        "  ○   {f} footer",
+        "  ○   {p} customers page · 1/3 steps · 30s",
+        "    ○   {m} stamp",
+        "    ○   {b} badge",
+        "    ✓   {s} seal · 30s",
+        "        done     proof",
+        "        took     30s",
+        "  §   {r} colours are tokens",
+        "  ✓   {l} logo · 1m 0s",
         "      done     proof",
-        "      took     30s",
-        "  § {r} colours are tokens",
-        "  ✓ {l} logo · 1m 0s",
-        "    done     proof",
-        "    took     1m 0s",
-        "  ✓ {c} colours · 1m 30s",
-        "    done     proof",
-        "    took     1m 30s",
+        "      took     1m 0s",
+        "  ✓   {c} colours · 1m 30s",
+        "      done     proof",
+        "      took     1m 30s",
     ];
     assert_eq!(
         printed(&repo, &[short(&trail.id), "--full"]),
@@ -96,7 +96,8 @@ fn tree_prints_the_trail_its_notes_and_the_steps_under_it() {
     );
 }
 
-/// `tree <id> --full` prints the expect line of a step in the label column, with its proof and grade.
+/// `tree <id> --full` prints the expect, for, not and ask me lines of a step in the label column, with
+/// its proof and grade, and no ask me line whose value is none.
 #[test]
 fn tree_prints_the_expect_line_in_the_label_column() {
     let repo = Repo::new();
@@ -107,18 +108,31 @@ fn tree_prints_the_expect_line_in_the_label_column() {
         &repo,
         &by,
         Some(&trail),
-        "logo\nexpect: the logo shows",
+        "logo\nexpect: the logo shows\nfor: a brand\nnot: a favicon\nask me: none",
         at + 5,
     );
     support::mark_note(&repo, &by, "done", &logo.id, "proof", at + 65);
+    support::step_note(
+        &repo,
+        &by,
+        Some(&trail),
+        "badge\nask me: its colour",
+        at + 6,
+    );
     let lines = printed(&repo, &[short(&trail.id), "--full"]);
+    assert!(
+        lines.contains(&"      ask me   its colour".to_string()),
+        "{lines:?}"
+    );
     let at = lines.iter().position(|l| l.contains("logo")).unwrap();
     assert_eq!(
-        lines[at + 1..at + 4],
+        lines[at + 1..at + 6],
         [
-            "    expect   the logo shows",
-            "    done     proof",
-            "    took     1m 0s"
+            "      expect   the logo shows",
+            "      for      a brand",
+            "      not      a favicon",
+            "      done     proof",
+            "      took     1m 0s"
         ]
     );
 }
@@ -147,9 +161,9 @@ fn tree_prints_a_stale_step_with_the_closed_ones() {
     assert_eq!(
         lines[2..],
         [
-            format!("  § {} a rule", short(&pattern.id)),
-            format!("  ◌ {} left part", short(&left.id)),
-            format!("  ✓ {} done part · 30s", short(&done.id)),
+            format!("  §   {} a rule", short(&pattern.id)),
+            format!("  ◌   {} left part", short(&left.id)),
+            format!("  ✓   {} done part · 30s", short(&done.id)),
         ],
         "{lines:?}"
     );
@@ -170,10 +184,10 @@ fn tree_of_an_ask_prints_its_notes() {
     assert_eq!(
         printed(&repo, &[short(&ask)]),
         [
-            format!("○ {} customers page", short(&ask)),
+            format!("○   {} customers page", short(&ask)),
             "  0/1 step".to_string(),
-            format!("  ○ {} badge", short(&badge)),
-            format!("  § {pattern} colours are tokens"),
+            format!("  ○   {} badge", short(&badge)),
+            format!("  §   {pattern} colours are tokens"),
         ]
     );
 }
@@ -190,10 +204,10 @@ fn tree_prints_a_done_trails_proof_and_grade() {
     assert_eq!(
         printed(&repo, &[short(&trail.id), "--full"]),
         [
-            format!("✓ {} a small ask", short(&trail.id)),
-            "  45s worked".to_string(),
-            "  done     proof".to_string(),
-            "  took     45s".to_string(),
+            format!("✓   {} a small ask", short(&trail.id)),
+            "  45s".to_string(),
+            "    done     proof".to_string(),
+            "    took     45s".to_string(),
         ]
     );
 }
@@ -256,19 +270,19 @@ fn tree_with_no_id_prints_today_by_project() {
     assert!(lines[2].ends_with(" a shop trail · shop"), "{text}");
     assert_eq!(
         lines[3],
-        format!("○ {} an active trail · repo", short(&active))
+        format!("○   {} an active trail · repo", short(&active))
     );
     assert_eq!(lines[4..6], ["", "repo"], "{text}");
     let at = |what: &str| lines.iter().position(|l| l.ends_with(what)).unwrap();
     assert!(at("an ended trail") < at("a dropped trail"), "{text}");
-    let done = format!("  ✓ {} its part · ", short(&part));
+    let done = format!("  ✓   {} its part · ", short(&part));
     assert!(lines[at("an ended trail") + 2].starts_with(&done), "{text}");
-    assert_eq!(lines[at("a dropped trail") + 1], "  dropped not needed");
+    assert_eq!(lines[at("a dropped trail") + 1], "    dropped not needed");
     refusal(&cli(&repo, &["tree", "deadbeef", "--json"]), 1, "no-step");
 }
 
 /// `tree --all` prints every trail in the store, of every project, by day, newest first, one line each
-/// with its progress and worked time.
+/// with its progress and time.
 #[test]
 fn tree_all_prints_every_trail_of_every_project_by_day() {
     let repo = Repo::new();
@@ -296,16 +310,16 @@ fn tree_all_prints_every_trail_of_every_project_by_day() {
     let text = lines.join("\n");
     assert!(lines[0].ends_with(" · 0 active · 1 done"), "{text}");
     assert_eq!(lines[1..3], ["", "repo"], "{text}");
-    let line = format!("✓ {} a new trail · 1/1 step · ", short(&trail));
+    let line = format!("✓   {} a new trail · 1/1 step · ", short(&trail));
     assert!(
-        lines[3].starts_with(&line) && lines[3].ends_with(" worked"),
+        lines[3].starts_with(&line) && lines[3].ends_with('s'),
         "{text}"
     );
     assert!(lines[5].ends_with(" · 0 active · 1 done"), "{text}");
     assert_eq!(lines[6..8], ["", "repo"], "{text}");
     assert_eq!(
         lines[8],
-        format!("✓ {} an old trail · 0s worked", short(&old.id))
+        format!("✓   {} an old trail · 0s", short(&old.id))
     );
     assert_eq!(lines.len(), 9, "{text}");
     assert!(!text.contains("its part"), "{text}");
@@ -343,7 +357,7 @@ fn the_agent_view_prints_whole_lines_with_no_colour() {
     assert!(text.contains(title) && text.contains(pattern), "{text}");
     assert!(
         text.contains(&format!(
-            "  ○ {} a part whose words run long · shelf/prices.py:40\n",
+            "  ○   {} a part whose words run long · shelf/prices.py:40\n",
             short(&part)
         )),
         "{text}"
@@ -373,9 +387,9 @@ fn tree_prints_what_changed_and_marks_a_revised_step() {
     std::thread::sleep(std::time::Duration::from_millis(1100));
     add(&repo, &["--under", short(&trail), "--", "next"]);
     let lines = printed(&repo, &[short(&trail)]);
-    let done = format!("  ✓~ {} the part · ", short(&part));
+    let done = format!("  ✓~  {} the part · ", short(&part));
     assert!(lines[3].starts_with(&done), "{lines:?}");
-    assert_eq!(lines[4], "    ~ one file, not two");
+    assert_eq!(lines[4], "      ~ one file, not two");
     let other = add(&repo, &["--", "another trail"]);
     let o = cli(
         &repo,
@@ -392,7 +406,7 @@ fn tree_prints_what_changed_and_marks_a_revised_step() {
     );
     assert!(o.status.success(), "{}", err(&o));
     let lines = printed(&repo, &[short(&trail)]);
-    assert!(lines[0].starts_with("○↻ "), "{lines:?}");
+    assert!(lines[0].starts_with("○↻  "), "{lines:?}");
     assert!(
         lines[3].starts_with(&format!("  ✓↻~ {}", short(&part))),
         "{lines:?}"
@@ -403,6 +417,54 @@ fn tree_prints_what_changed_and_marks_a_revised_step() {
         .find(|o| o["step"]["id"] == part.as_str())
         .unwrap();
     assert_eq!(step["step"]["state"], "done", "{json:?}");
+}
+
+/// `tree <id>` and `tree --next <id>` start each id of a level in one column, whatever signs stand
+/// after a mark.
+#[test]
+fn the_agent_view_starts_each_id_in_one_column() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    let part = add(&repo, &["--under", short(&trail), "--", "the part"]);
+    let o = cli(
+        &repo,
+        &[
+            "step",
+            "done",
+            short(&part),
+            "--changed",
+            "less",
+            "--",
+            "ok",
+        ],
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let other = add(&repo, &["--", "another trail"]);
+    let o = cli(
+        &repo,
+        &[
+            "step",
+            "add",
+            "--under",
+            short(&other),
+            "--replaces",
+            short(&part),
+            "--",
+            "a better part",
+        ],
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let plain = add(&repo, &["--under", short(&trail), "--", "plain"]);
+    for args in [vec![short(&trail)], vec!["--next", short(&trail)]] {
+        let lines = printed(&repo, &args);
+        let column = |id: &str| {
+            let line = lines.iter().find(|l| l.contains(short(id))).unwrap();
+            line[..line.find(short(id)).unwrap()].chars().count()
+        };
+        assert_eq!(column(&trail), 4, "{args:?} {lines:#?}");
+        assert_eq!(column(&part), 6, "{args:?} {lines:#?}");
+        assert_eq!(column(&plain), 6, "{args:?} {lines:#?}");
+    }
 }
 
 /// `tree <id>` prints a trail with no record from today, and `tree` with no id only today's.
@@ -457,7 +519,7 @@ fn the_tree_folds_a_trails_twin_first_ask() {
     let part = add(&repo, &["--under", short(ask), "--", "the part"]);
     let lines = printed(&repo, &[short(trail)]);
     assert!(!lines.join("\n").contains(short(ask)), "{lines:?}");
-    assert_eq!(lines[2], format!("  ○ {} the part", short(&part)));
+    assert_eq!(lines[2], format!("  ○   {} the part", short(&part)));
     let json = out(&cli(&repo, &["tree", short(trail), "--json"]));
     assert!(json.contains(ask.as_str()), "{json}");
 }

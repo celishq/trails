@@ -17,13 +17,14 @@ use std::path::PathBuf;
 use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender};
 use std::time::{Duration, Instant};
 
-/// One drawn page: its lines, the line to keep in view, its key line, the id `c` copies, the Markdown
-/// `m` copies, whether its lines hold a spinner that turns, whether the trail scene opens above it, and
-/// how long until it is drawn again with no wake.
+/// One drawn page: its lines, the line to keep in view, the lines above its key line, its key line, the
+/// id `c` copies, the Markdown `m` copies, whether its lines hold a spinner that turns, whether the trail
+/// scene opens above it, and how long until it is drawn again with no wake.
 #[derive(Default)]
 pub(crate) struct Page {
     pub lines: Vec<Styled>,
     pub picked: Option<usize>,
+    pub foot: Vec<Styled>,
     pub keys: String,
     pub copy: Option<String>,
     pub markdown: Option<String>,
@@ -78,7 +79,7 @@ impl Command {
                 ..Screen::default()
             };
             if !self.held()? {
-                screen.draw(out, &[], &empty.lines, None, &empty.keys)?;
+                screen.draw(out, &[], &empty.lines, None, (&empty.foot, &empty.keys))?;
                 while !self.held()? {
                     let wake = wakes.1.recv_timeout(Duration::from_millis(250));
                     if let Ok(Wake::Quit | Wake::Key(Key::Quit)) = wake {
@@ -190,11 +191,12 @@ fn show(
         let fading = opening < FADE;
         arriving = scenery && (fading || (0.0..length(room.unwrap_or(0))).contains(&since));
         match (scenery, since) {
-            (true, ..0.0) => screen.draw(out, &head, &[], None, "")?,
+            (true, ..0.0) => screen.draw(out, &head, &[], None, (&[], ""))?,
             (true, at) if at >= 0.0 && arriving => {
-                screen.draw(out, &head, &unfold(&lines, at), page.picked, &page.keys)?;
+                let foot = (&page.foot[..], &page.keys[..]);
+                screen.draw(out, &head, &unfold(&lines, at), page.picked, foot)?;
             }
-            _ => screen.draw(out, &head, &lines, page.picked, &page.keys)?,
+            _ => screen.draw(out, &head, &lines, page.picked, (&page.foot, &page.keys))?,
         }
         let left = due.map(|due| due.saturating_duration_since(Instant::now()));
         let turn = if arriving { FRAME } else { TURN };
