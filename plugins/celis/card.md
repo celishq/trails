@@ -40,13 +40,17 @@ Read all that celis prints, never cut by `head` or `grep`, and do the next move 
    fix prints the same brief. Give the brief to the `celis:extraction` agent, and name what it wrote in
    your answer.
 
-A pattern has four lines. Its "When" names the work, such as "When a Raycast extension changes", never
-the person or the project:
+A pattern has five lines, in Christopher Alexander's form. Its Name is the form that resolves it, as a
+noun phrase, such as "Light on two sides of every room". Its When is one context and the moment its
+forces appear, such as "When a list gets more rows than fit on one screen", never a topic, the person
+or the project. Its Do is one choice: a larger choice is a larger pattern, which it names with
+`--within`. Say it in words that hold in other fields, so that it can guide work there too:
 
 ```
-When <the choice and its context>
-Forces: <what pulls against what>
-Do: <what to choose>
+Name: <the resolved form>
+When <the context and the moment its forces appear>
+Forces: <what pulls against what in it>
+Do: <the one choice>
 Because: <why that resolves the forces>
 ```
 

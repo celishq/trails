@@ -13,9 +13,9 @@ their marks become one pattern. Add it as one ask, as the card says.
    and say in one line each how it differs.
 3. Show the person the 4 variants, and ask them to mark each `good`, `bad` or `neither`, with one line
    of why. Wait for their marks.
-4. Write one pattern in the person's words, in the four lines the card shows, with `pattern --path <the
-   files it acts on> --good <each good file> --bad <each bad file> -- "When <the kind of thing> is
-   made` and its `Forces`, `Do` and `Because` lines: the `Do` is what the good ones share, the `Forces`
+4. Write one pattern in the person's words, in the five lines the card shows, with `pattern --path <the
+   files it acts on> --good <each good file> --bad <each bad file> -- "Name: <the form the good ones
+   share>` and its `When <the kind of thing> is made`, `Forces`, `Do` and `Because` lines: the `Do` is what the good ones share, the `Forces`
    what the bad ones chose instead, the `Because` the person's why. When it adds to a pattern you
    read, replace that pattern with `--replaces <its id>`.
 5. Close the ask. In the end, give the pattern's id and its text, and offer one more round for a point

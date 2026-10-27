@@ -82,8 +82,11 @@ impl Learn {
             "celis: before you answer, learn from {ask}. Write a pattern with celis pattern for each \
              choice that will come back in other work; a wish or a correction that says always, never \
              or from now on is one too. The lines below are its evidence: a pattern never records what \
-             this ask did, such as its function, its file or its fix. Its When names the work, never the person or \
-             the project: --scope says where it holds. Its Because says why the choice is good for the \
+             this ask did, such as its function, its file or its fix. Write it in the five lines the card shows. Its \
+             Name is the resolved form, as a noun phrase. Its When is one context and the moment its forces \
+             appear, never a topic, the person or the project: --scope says where it holds. Its Forces pull \
+             against each other; a preference is not a force. Its Do is one choice: write each other \
+             choice as a pattern of its own, --within the larger one. Its Because says why the choice is good for the \
              work; \"the person asked\" is not a why. Take it from the person's words or the work; when \
              neither gives it, write your best guess, and name it on the Learned line for the person to \
              confirm. A reaction to a result, such as \"this one\" or \"too busy\", is a pattern of the \
