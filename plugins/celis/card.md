@@ -16,6 +16,7 @@ celis step add [--under <id>] [--new] [--replaces <id>] [--uses <id>]... [--misl
 celis step start <id>
 celis step done <id> [--changed "<what differs>"] [--as-planned] [--by person] [--misled <id>]... [--file <path>]... -- "<proof>"
 celis step note <id> -- "<note>"
+celis step edit <id> -- "<title>"
 celis pattern [--scope me] [--replaces <id>] [--path <glob>]... [--within <id>]... [--good <example>]... [--bad <example>]... -- "<pattern>"
 ```
 
@@ -29,9 +30,11 @@ Read all that celis prints, never cut by `head` or `grep`, and do the next move 
    `not: …` and `ask me: …`, send them to the person, and start in the same turn. Each part a person
    can check alone is a step of its own, closed with a proof a person can check. A change to done work,
    wherever you are, is a new step `celis step add --replaces <the id of that step>`, whose proof says
-   what changed. Act, and tell after: ask only when you cannot write `expect` without a guess, or at a
-   one-way door, such as a new dependency, a schema, money or a deploy. Take every other choice
-   yourself, and name it in your answer.
+   what changed. The ask's title names the job of its whole trail: when the steps you add or change
+   widen or shift that job, retitle the ask with `celis step edit <the ask's id> -- "<title>"`. Act, and
+   tell after: ask only when you cannot write `expect` without a guess, or at a one-way door, such as
+   a new dependency, a schema, money or a deploy. Take every other choice yourself, and name it in
+   your answer.
 2. **Close.** When the work of the ask is done, learn from it first, then close it with its proof. When
    only the person can check it, ask them, and close it `--by person` with their answer.
 
