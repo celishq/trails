@@ -26,6 +26,8 @@ celis extract <id>                                    what an ask or a step taug
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
 celis link [<folder>] [--off]                         keep this project's trails in a folder, or stop
 celis cell add <name> <id>...                         put your patterns in a cell of yours
+celis cell on <name> [--scope me]                     use a cell's patterns in this project, or in every project
+celis cell off <name> [--scope me]                    stop using a cell's patterns here, or in every project
 celis step add [--under <id>] [--new] [--replaces <id>] [--uses <id>]... [--misled <id>]... [--at <place>]... [--check <command>] [--session <id>] [--project <id>] -- <text>
                                                        leave a step
 celis step start <id>                                 take up a step, and see the patterns and notes its plan links
@@ -109,7 +111,7 @@ celis pattern --path "**/prices*.py" -- "When you change prices: keep them in ce
 - A command MUST take each deprecated command and flag of the README, and, without `--json`, MUST print one
   line on stderr that names it as deprecated.
 - An error MUST be named `usage`, `no-pattern`, `no-step`, `closed`, `open-steps`, `check-failed`,
-  `secret` (CIP-01, "The account"), `cell-taken` ("Cells"), else `error`. With `--json`, it MUST be one object on stderr,
+  `secret` (CIP-01, "The account"), `no-cell`, `cell-taken` ("Cells"), else `error`. With `--json`, it MUST be one object on stderr,
   `{"error": "<name>", "message": "<text>"}`.
 
 ## Update
@@ -416,11 +418,16 @@ echo '{"session_id": "95e9be99", "cwd": "/repo", "prompt": "Use the shared Badge
 - `cell add` MUST write one membership (CIP-09, "Membership") that names each `<id>` whole. It MUST
   refuse a name that is not a cell name, or no `<id>`, as a usage error, an id that names no live pattern
   of the account with `no-pattern`, and a name that a cell of another account holds with `cell-taken`.
+- `cell on` and `cell off` MUST write one mask (CIP-09, "Masks") of the working folder's project, or with
+  `--scope me` of every project. They MUST refuse a name that no cell holds with `no-cell`, a name that
+  two cells hold with `cell-taken`, and another `--scope` as a usage error.
 
 **Examples**
 
 ```
 celis cell add eating-east 9b0e11aa 4c2d17e0
+celis cell on eating-east
+celis cell off eating-east --scope me
 ```
 
 ## Grep

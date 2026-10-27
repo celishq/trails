@@ -78,6 +78,15 @@ impl Failure {
         )
     }
 
+    /// No cell holds the name.
+    pub fn no_cell(name: &str) -> Self {
+        Self::new(
+            "no-cell",
+            1,
+            format!("no cell is named {name}; see the cells with `celis cells`"),
+        )
+    }
+
     /// A cell of another account holds the name.
     pub fn cell_taken(name: &str) -> Self {
         Self::new(
@@ -112,6 +121,7 @@ impl From<Refusal> for Failure {
             Refusal::CheckFailed(output) => Self::check_failed(&output),
             Refusal::Secret(what) => Self::secret(&what),
             Refusal::CellTaken(name) => Self::cell_taken(&name),
+            Refusal::NoCell(name) => Self::no_cell(&name),
             Refusal::Error(error) => Self::from(error),
         }
     }

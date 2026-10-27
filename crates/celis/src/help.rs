@@ -129,7 +129,11 @@ pub const GROUPS: &[Group] = &[
     (
         "cell",
         "Group your patterns into cells, and share them.",
-        &[("add", "Put your patterns into a cell of yours")],
+        &[
+            ("add", "Put your patterns into a cell of yours"),
+            ("on", "Use a cell's patterns in this project"),
+            ("off", "Stop using a cell's patterns in this project"),
+        ],
     ),
     (
         "auth",
@@ -376,6 +380,26 @@ pub const VERBS: &[Verb] = &[
             ("<id>", "A pattern of yours, or its first 4 or more characters"),
         ],
         examples: &["celis cell add eating-east 9b0e11aa 4c2d17e0"],
+    },
+    Verb {
+        command: "cell on",
+        usage: &["celis cell on <name> [--scope me]"],
+        summary: "Use a cell's patterns in this project: they join the index, whatever their own scope and paths. With --scope me, use them in every project where no cell on or cell off of that project says otherwise.",
+        args: &[
+            ("<name>", "The cell"),
+            ("--scope", "me: in every project"),
+        ],
+        examples: &["celis cell on eating-east", "celis cell on eating-east --scope me"],
+    },
+    Verb {
+        command: "cell off",
+        usage: &["celis cell off <name> [--scope me]"],
+        summary: "Stop using a cell's patterns in this project: they leave the index, and so do the patterns that replace them. With --scope me, stop using them in every project where no cell on or cell off of that project says otherwise.",
+        args: &[
+            ("<name>", "The cell"),
+            ("--scope", "me: in every project"),
+        ],
+        examples: &["celis cell off eating-east", "celis cell off eating-east --scope me"],
     },
     Verb {
         command: "hook start",

@@ -2,6 +2,7 @@
 
 use anyhow::Result;
 use celis_nostr::{Account, Note};
+use celis_store::Anchor;
 
 /// A cell: its name, and the hex pubkey of the account that signs its memberships.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -27,6 +28,29 @@ impl Cell {
         Note::write(signer, 1985u16, at, tags, "")
     }
 
+    /// The mask that turns the cell on or off in the project of `anchor`, or in every project with none,
+    /// signed by `signer` at `at`.
+    pub fn mask(
+        &self,
+        signer: &Account,
+        at: u64,
+        on: bool,
+        anchor: Option<&Anchor>,
+    ) -> Result<Note> {
+        let state = if on { "on" } else { "off" };
+        let mut tags = vec![
+            vec!["L".to_string(), MASK.to_string()],
+            vec!["l".to_string(), state.to_string(), MASK.to_string()],
+            vec!["cell".to_string(), self.name.clone()],
+            vec!["p".to_string(), self.author.clone()],
+        ];
+        match anchor {
+            Some(anchor) => tags.extend(anchor.tags()),
+            None => tags.push(vec!["scope".to_string(), "me".to_string()]),
+        }
+        Note::write(signer, 1985u16, at, tags, "")
+    }
+
     /// The cell `note` is a membership of, and the ids it names; `None` when it is no membership.
     pub fn read(note: &Note) -> Option<(Cell, Vec<&str>)> {
         let label = note
@@ -47,3 +71,6 @@ impl Cell {
 
 /// The label namespace of a membership.
 const NAMESPACE: &str = "celis.cell";
+
+/// The label namespace of a mask.
+pub(crate) const MASK: &str = "celis.mask";

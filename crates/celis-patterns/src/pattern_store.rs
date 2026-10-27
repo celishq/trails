@@ -2,7 +2,7 @@
 
 use crate::{Cell, Cells, PatternRecord, Patterns};
 use celis_nostr::Note;
-use celis_store::{PatternId, Refusal, Store};
+use celis_store::{Anchor, PatternId, Refusal, Store};
 
 /// The patterns of a store, and the account's writes of them, each signed at the store's time.
 pub trait PatternStore {
@@ -15,6 +15,10 @@ pub trait PatternStore {
     /// Writes a membership that puts the live patterns of the account that `ids` name in its cell
     /// `name`; refuses a name that a cell of another account holds.
     fn join(&self, name: &str, ids: &[String]) -> Result<Note, Refusal>;
+
+    /// Writes a mask that turns the cell `name` on or off in the project of `anchor`, or in every project
+    /// with none; refuses a name that no cell or two cells hold.
+    fn turn(&self, name: &str, on: bool, anchor: Option<&Anchor>) -> Result<Note, Refusal>;
 }
 
 impl PatternStore for Store {
@@ -69,5 +73,15 @@ impl PatternStore for Store {
             .collect();
         let found = found?;
         self.sign(|account, now| Cell::membership(account, now, name, &found))
+    }
+
+    fn turn(&self, name: &str, on: bool, anchor: Option<&Anchor>) -> Result<Note, Refusal> {
+        let cells = Cells::new(self.records());
+        let cell = match cells.named(name)[..] {
+            [] => return Err(Refusal::NoCell(name.to_string())),
+            [cell] => cell.clone(),
+            _ => return Err(Refusal::CellTaken(name.to_string())),
+        };
+        self.sign(|account, now| cell.mask(account, now, on, anchor))
     }
 }

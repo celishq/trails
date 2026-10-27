@@ -12,6 +12,8 @@ pub enum Refusal {
     CheckFailed(String),
     /// What holds a secret, and its kind, such as `the file .env holds an API key`.
     Secret(String),
+    /// The cell name that no cell holds.
+    NoCell(String),
     /// The cell name that a cell of another account holds.
     CellTaken(String),
     Error(anyhow::Error),

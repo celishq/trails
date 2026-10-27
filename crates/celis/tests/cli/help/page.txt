@@ -59,6 +59,11 @@ Record work · your agents run these
 
 Share
   cell add            Put your patterns into a cell of yours
+  cell on <name>      Use a cell's patterns in this project
+  └ --scope           me: in every project
+
+  cell off <name>     Stop using a cell's patterns in this project
+  └ --scope           me: in every project
 
 Set up
   link [<folder>]     Keep this project's trails in a folder to commit or share

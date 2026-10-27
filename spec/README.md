@@ -55,7 +55,7 @@ Every change of `spec/` MUST keep these rules:
 | `figma:<key>` · `web:<host>` | the project id of a record outside git | 01 |
 | `$CELIS_HOME` · `$CELIS_HOME/trails/` · `$CELIS_HOME/phrase` · `$CELIS_HOME/links` | the home, the store, the phrase, the links | 01, 02 |
 | `celis` and its commands and flags | the command line | 02 |
-| `usage` · `no-pattern` · `no-step` · `closed` · `open-steps` · `check-failed` · `secret` · `cell-taken` · `error` | errors | 02 |
+| `usage` · `no-pattern` · `no-step` · `closed` · `open-steps` · `check-failed` · `secret` · `no-cell` · `cell-taken` · `error` | errors | 02 |
 | 1111 with `step` in `celis.step` | kind: a step (NIP-22) | 03 |
 | `under` · `replaces` · `at` · `check` | step tags | 03 |
 | 1985 with `start` · `done` · `drop` · `edit` · `note` in `celis.step` | kinds: a start, a done, a drop, an edit, a note (NIP-32) | 03 |
