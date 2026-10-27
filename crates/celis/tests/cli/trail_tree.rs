@@ -286,6 +286,7 @@ fn tree_with_no_id_prints_today_by_project() {
     let ended = add(&repo, &["--", "an ended trail"]);
     let part = add(&repo, &["--under", short(&ended), "--", "its part"]);
     finish(&repo, short(&part));
+    finish(&repo, short(&ended));
     let active = add(&repo, &["--", "an active trail"]);
     std::thread::sleep(std::time::Duration::from_millis(1100));
     let shop = repo.other("shop");
@@ -513,6 +514,7 @@ fn tree_with_no_id_shows_only_today_and_tree_with_an_id_prints_any_trail() {
     let ended = add(&repo, &["--", "an ended trail"]);
     let part = add(&repo, &["--under", short(&ended), "--", "its part"]);
     finish(&repo, short(&part));
+    finish(&repo, short(&ended));
     let text = out(&cli(&repo, &["tree"]));
     assert!(!text.contains("an old trail"), "{text}");
     assert!(text.contains("its part"), "{text}");

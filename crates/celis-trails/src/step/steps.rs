@@ -142,6 +142,9 @@ impl<'a> Steps<'a> {
 /// The seconds a trail stays active after the newest record of its tree.
 pub const LIFE: u64 = 30 * 60;
 
+/// The seconds a trail stays active after the newest record of its tree while a step of it works.
+pub const BUSY_LIFE: u64 = 3 * 60 * 60;
+
 /// The step records, oldest first, and what the marks say of each step.
 pub(crate) struct Index<'a> {
     all: Vec<&'a Note>,
@@ -151,8 +154,8 @@ pub(crate) struct Index<'a> {
 }
 
 /// One step: its record, its text with its edits, its links, the steps that replace it, how its marks
-/// left it, the drop that counts on it, its newest prompt and its recalls; of its tree, the newest record, whether a step works, whether a step under it is open, and when the
-/// last of its steps closed.
+/// left it, the drop that counts on it and its recalls; of its tree, the newest record and whether a step
+/// works.
 pub(crate) struct Entry<'a> {
     pub(crate) note: &'a Note,
     pub(crate) step: StepRecord,
@@ -165,9 +168,6 @@ pub(crate) struct Entry<'a> {
     pub(crate) touched: u64,
     pub(crate) newest: u64,
     pub(crate) busy: bool,
-    pub(crate) loose: bool,
-    pub(crate) asked: u64,
-    pub(crate) shut: u64,
     pub(crate) recalls: Vec<(String, u64)>,
 }
 
@@ -202,9 +202,6 @@ impl<'a> Index<'a> {
                         touched: note.created_at,
                         newest: 0,
                         busy: false,
-                        loose: false,
-                        asked: 0,
-                        shut: 0,
                         recalls: Vec::new(),
                     },
                 );
@@ -295,17 +292,13 @@ fn sum<'a>(entries: &mut HashMap<&'a str, Entry<'a>>) {
         let entry = &entries[id];
         let mut newest = entry.touched;
         let mut busy = entry.start.is_some() && entry.close.is_none();
-        let mut loose = false;
-        let mut shut = entry.close.map_or(0, |(note, _)| note.created_at);
         for child in &entry.children {
             let child = &entries[child.id.as_str()];
             newest = newest.max(child.newest);
             busy |= child.busy;
-            loose |= child.loose || child.close.is_none();
-            shut = shut.max(child.shut);
         }
         if let Some(entry) = entries.get_mut(id) {
-            (entry.newest, entry.busy, entry.loose, entry.shut) = (newest, busy, loose, shut);
+            (entry.newest, entry.busy) = (newest, busy);
         }
     }
 }
@@ -317,7 +310,7 @@ impl<'a> Entry<'a> {
             Mark::Start => {
                 self.start.get_or_insert(note);
             }
-            Mark::Prompt { .. } => self.asked = self.asked.max(note.created_at),
+            Mark::Prompt { .. } => {}
             Mark::Recall { pattern } => {
                 if self.recalls.iter().all(|(p, _)| *p != pattern) {
                     self.recalls.push((pattern, note.created_at));

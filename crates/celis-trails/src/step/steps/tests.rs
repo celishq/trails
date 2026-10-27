@@ -132,10 +132,32 @@ fn a_started_step_stays_open() {
     let started = steps.get(&part.id).unwrap();
     assert_eq!(started.state(), State::Open);
     assert!(started.works() && steps.get(&trail.id).unwrap().works());
-    assert!(!Steps::new(&records, 12 + LIFE)
+    assert!(Steps::new(&records, 12 + LIFE)
         .get(&part.id)
         .unwrap()
         .works());
+    assert!(!Steps::new(&records, 12 + BUSY_LIFE)
+        .get(&part.id)
+        .unwrap()
+        .works());
+}
+
+/// A trail whose steps are all closed stays active until its newest record is `LIFE` old, as between
+/// two steps of one ask.
+#[test]
+fn a_trail_with_its_steps_closed_stays_active_until_it_idles() {
+    let trail = step("trail", 10);
+    let part = StepRecord {
+        under: Some(StepId::new(&trail.id)),
+        ..StepRecord::read(&step("part", 11)).unwrap()
+    }
+    .record(&account(), 11)
+    .unwrap();
+    let proof = done(&part.id, "proof", 12);
+    let records = vec![trail.clone(), part, proof];
+    let active = |now: u64| Steps::new(&records, now).get(&trail.id).unwrap().active();
+    assert!(active(13));
+    assert!(!active(12 + LIFE));
 }
 
 /// A done trail that a drop names is dropped, and keeps its proof (`spec/03-steps.md`, "Dropping").

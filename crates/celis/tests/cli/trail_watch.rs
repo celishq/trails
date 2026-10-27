@@ -826,6 +826,7 @@ fn watch_wraps_long_titles_whole() {
     let done = add(&repo, &["--", &format!("done trail {words}")]);
     let part = add(&repo, &["--under", &done[..8], "--", "its part"]);
     finish(&repo, &part[..8]);
+    finish(&repo, &done[..8]);
     let trail = add(&repo, &["--", "the trail"]);
     add(
         &repo,

@@ -43,7 +43,7 @@ impl Demo {
             let mut at = match day {
                 27 => self
                     .now
-                    .saturating_sub(all + 1_200)
+                    .saturating_sub(all + 2_400)
                     .max(midnight(self.now) + 60),
                 d => first + d as u64 * DAY + 9 * 3_600,
             };

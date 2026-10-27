@@ -9,7 +9,7 @@ pub mod state;
 pub mod step_record;
 pub mod steps;
 
-use crate::step::steps::{Close, Entry, LIFE};
+use crate::step::steps::{Close, Entry, BUSY_LIFE, LIFE};
 use crate::{Done, Mark, State, StepRecord, Steps, Trail};
 use celis_nostr::Note;
 use celis_store::StepId;
@@ -251,15 +251,17 @@ impl<'a> Step<'a> {
         self.entry.newest
     }
 
-    /// Whether, as a trail, it is open and ended: steps sit under it, none is open and no prompt came
-    /// after the last of them closed, or 30 minutes passed after the newest record of its tree.
+    /// Whether, as a trail, it is open and ended: 30 minutes passed after the newest record of its tree,
+    /// or 3 hours while a step of it works.
     pub fn ended(self) -> bool {
         if self.closed().is_some() {
             return false;
         }
-        let asked = self.entry.asked > self.entry.shut;
-        let idle = !self.entry.children.is_empty() && !self.entry.loose && !asked;
-        idle || self.steps.now().saturating_sub(self.newest()) >= LIFE
+        let life = match self.entry.busy {
+            true => BUSY_LIFE,
+            false => LIFE,
+        };
+        self.steps.now().saturating_sub(self.newest()) >= life
     }
 }
 
