@@ -55,13 +55,13 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
    - Past trails serve the learn and tidy. Nothing follows a past step: a step's `uses` names only a
      pattern, and a reader ignores a `uses` that names a step, which older writers wrote.
 4. **What goes in matters most.** The agent decides when there is a lesson: a correction, a pick, a
-   reaction to a result, a wish such as "from now on", or a fix of done work. It then runs `celis lesson
+   reaction to a result, a wish such as "from now on", or a fix of done work. It then runs `celis extract
    <id>`, which prints the learn brief of an ask or a step, open or closed: the ask's `changed` lines,
    its trail's notes, the person's prompts since the ask began, and the patterns in play, each one a
    step of the ask used, so that a lesson can replace one that misled. `done` of an ask, or of a step
-   that fixes done work, because a fix is a correction, prints the same brief. The `celis:lesson` agent
-   writes the patterns from it, in its own context. The brief is the one place that says what to keep.
-   A pattern is written only for a choice that will come back in other work, and never records what
+   that fixes done work, because a fix is a correction, prints the same brief, and `--json` gives its
+   parts to an integration. The `celis:extraction` agent writes the patterns from it, in its own
+   context. The brief is the one place that says what to keep. A pattern is written only for a choice that will come back in other work, and never records what
    the ask did. A lesson replaces a pattern that misled the work instead of adding a near copy, and
    writes nothing when the ask taught nothing.
 5. **The agent writes each record with a celis call.** A hook may give the agent context, such as the
@@ -107,6 +107,12 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
     private key or a password, with the error `secret`, and the agent writes it again with the secret
     named by where it lives, such as `API_KEY in .env`. The prompt hook keeps no prompt that holds a
     secret. A guide in the card alone did not hold: agents gave `.env` as a proof file.
+
+15. **An old name is deprecated, and still works.** celis accepts each name that an older plugin gives,
+    such as `lesson`, `--binds`, `--cell`, `--new`, `--recalled` and `--by judge`, does what its row in
+    the spec says, and prints one line on stderr that names it as deprecated. So an older plugin works
+    with a newer `celis`, and its agent learns the new name. A reader reads each old record as before,
+    because a record cannot be deleted.
 
 ## What we do not do
 

@@ -21,7 +21,7 @@ celis tree [<id>]... [--graph] [--full] [--all] [--demo]
                                                        a trail and its steps; again on each change
 celis grep <grep option>... <pattern>                 every trail, through the system grep
 celis stats [<id>] [--demo]                           the use of the patterns, or a step's grade
-celis lesson <id>                                     what an ask or a step taught, for a lesson
+celis extract <id>                                    what an ask or a step taught, to extract as patterns
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
 celis link [<folder>] [--off]                         keep this project's trails in a folder, or stop
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>]... [--check <command>] [--session <id>] [--project <id>] -- <text>
@@ -104,6 +104,8 @@ celis pattern --path "**/prices*.py" -- "When you change prices: keep them in ce
 - Only `pattern`, `step` and `hook ask` MAY write a record. A command that refuses MUST write nothing.
 - A command MUST NOT ask a question, but `auth login`.
 - A command MUST exit 0 when done, 2 on a usage error, and 1 on any other error.
+- A command MUST take each deprecated command and flag of the README, and, without `--json`, MUST print one
+  line on stderr that names it as deprecated.
 - An error MUST be named `usage`, `no-pattern`, `no-step`, `closed`, `open-steps`, `check-failed`,
   `secret` (CIP-01, "The account"), else `error`. With `--json`, it MUST be one object on stderr,
   `{"error": "<name>", "message": "<text>"}`.
@@ -300,17 +302,28 @@ celis stats
 celis stats --json
 ```
 
-## Lesson
+## Extract
+
+```json
+{"ask": "<id>", "changed": [{"step": "<id>", "text": "<changed>"}], "notes": ["<note>"],
+ "asked": ["<prompt>"], "patterns": [{"id": "<id>", "when": "<When>"}]}
+```
+
+- `changed`: each `changed` of the ask's steps and of the ask.
+- `notes`: each note of its trail.
+- `asked`: each prompt on its trail since the ask began.
+- `patterns`: each live pattern that a step of the ask's tree uses.
 
 **Rules**
 
-- `lesson` MUST print the learn brief ("Step") of the ask or step `<id>`, open or closed, and write no
-  record.
+- `extract` MUST print the learn brief ("Step") of the ask or step `<id>`, open or closed, and write no
+  record. With `--json`, it MUST print the brief as the object above.
 
 **Examples**
 
 ```
-celis lesson 3fa2c1d0
+celis extract 3fa2c1d0
+celis extract 3fa2c1d0 --json
 ```
 
 ## Hooks
