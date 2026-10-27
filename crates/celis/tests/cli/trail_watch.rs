@@ -901,7 +901,7 @@ fn watch_prints_a_trail_lines_details_under_its_title() {
     );
     assert_eq!(
         under("second"),
-        ("  ▸ ✓   second".into(), "12/12 steps · 2m 0s".into()),
+        ("  ▸ ✓   second".into(), "12/12 steps · 10s".into()),
         "{rows:?}"
     );
     assert!(!rows.join("\n").contains("rule"), "{rows:?}");
@@ -1511,13 +1511,13 @@ fn next_watch_prints_a_trail_lines_details_under_its_title() {
     );
     let second = row("second");
     assert!(
-        second.starts_with("    ▸ ✓   second ") && second.ends_with(" 12/12 steps · 2m 0s"),
+        second.starts_with("    ▸ ✓   second ") && second.ends_with(" 12/12 steps · 10s"),
         "{rows:?}"
     );
     assert!(!rows.join("\n").contains("rule"), "{rows:?}");
     assert!(!rows.join("\n").contains("closed"), "{rows:?}");
     let colour = watch.coloured(Duration::ZERO);
-    assert!(colour.contains("\x1b[2m12/12 steps · 2m 0s"), "{colour:?}");
+    assert!(colour.contains("\x1b[2m12/12 steps · 10s"), "{colour:?}");
 }
 
 /// With `--next`, A block prints its steps in the order they came, closed ones among them, then its rules line; a step

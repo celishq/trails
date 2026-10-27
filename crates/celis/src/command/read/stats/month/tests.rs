@@ -1,4 +1,4 @@
-use super::super::tests::shop;
+use super::super::tests::{shop, Desk};
 use super::*;
 
 /// A done step that a later step revises is reworked, else one that uses a pattern is reused, else
@@ -68,4 +68,15 @@ fn an_ask_counts_as_a_step_when_no_step_is_under_it() {
     assert_eq!((month.now().reused, month.now().new), (2, 2));
     assert_eq!(month.now().applied, 2);
     assert_eq!(month.top[0], (pattern, month.top[0].1.clone(), 2));
+}
+
+/// A step dropped after its trail had no record for the life of a trail counts no time, neither active
+/// nor dropped.
+#[test]
+fn a_drop_after_the_trail_went_quiet_counts_no_time() {
+    let mut desk = Desk::new();
+    let trail = desk.add(4 * 3_600, "shop", None, "the trail", &[], None);
+    let left = desk.add(4 * 3_600, "shop", Some(&trail), "left", &[], None);
+    desk.drop(60, 2 * 3_600, &left);
+    assert_eq!(desk.month().projects, vec![]);
 }

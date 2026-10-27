@@ -60,20 +60,20 @@ fn tree_prints_the_trail_its_notes_and_the_steps_under_it() {
     };
     let lines = [
         "○   {t} build the CRM",
-        "  3/7 steps · 3m 0s",
+        "  3/7 steps · 1m 27s",
         "  ○   {f} footer",
         "  ○   {p} customers page · 1/3 steps · 30s",
         "    ○   {m} stamp",
         "    ○   {b} badge",
         "    ✓   {s} seal · 30s",
         "  ¶   {r} colours are tokens",
-        "  ✓   {l} logo · 1m 0s",
-        "  ✓   {c} colours · 1m 30s",
+        "  ✓   {l} logo · 32s",
+        "  ✓   {c} colours · 25s",
     ];
     assert_eq!(printed(&repo, &[short(&trail.id)]), lines.map(ids), "short");
     let full = [
         "○   {t} build the CRM",
-        "  3/7 steps · 3m 0s",
+        "  3/7 steps · 1m 27s",
         "  ○   {f} footer",
         "  ○   {p} customers page · 1/3 steps · 30s",
         "    ○   {m} stamp",
@@ -82,12 +82,12 @@ fn tree_prints_the_trail_its_notes_and_the_steps_under_it() {
         "        done     proof",
         "        took     30s",
         "  ¶   {r} colours are tokens",
-        "  ✓   {l} logo · 1m 0s",
+        "  ✓   {l} logo · 32s",
         "      done     proof",
-        "      took     1m 0s",
-        "  ✓   {c} colours · 1m 30s",
+        "      took     32s",
+        "  ✓   {c} colours · 25s",
         "      done     proof",
-        "      took     1m 30s",
+        "      took     25s",
     ];
     assert_eq!(
         printed(&repo, &[short(&trail.id), "--full"]),
@@ -633,11 +633,11 @@ fn tree_graph_prints_the_trail_as_a_chain_of_cards() {
     let graph = [
         "  All trails  ›  📁 repo  ›  ○ build the CRM",
         "  ────────────────────────────────────────────────────────────────────────────────────────────────────────",
-        "  ✓ 2 done · ○ 4 open                                               ━━━━━━━━━━━━━━━━━━━━━━━━  2/6 · 1m 59s",
+        "  ✓ 2 done · ○ 4 open                                               ━━━━━━━━━━━━━━━━━━━━━━━━  2/6 · 1m 26s",
         "",
         "  ╭─ ✓ <id> ─────────╮  ╭╌ ▸ ○ <id> ╌╌╌╌╌╌╌╌╮  ╭╌ ○ <id> ╌╌╌╌╌╌╌╌╌╮",
         "  │ colours              │  ╎ customers page        ╎  ╎ footer               ╎",
-        "  │               1m 30s │┄▶╎ ━━━━━━━━━━━━ 1/3      ╎┄▶╎ open                 ╎",
+        "  │                  57s │┄▶╎ ━━━━━━━━━━━━ 1/3      ╎┄▶╎ open                 ╎",
         "  ╰──────────────────────╯  ╰╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╯  ╰╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╯",
         "",
         "  ╭─ § Rules 1 ──────────────────────────────────────────────────────────────────────────────────────────╮",

@@ -6,6 +6,7 @@ use super::project::Project;
 use super::value::Value;
 use crate::progress::{Grade, Model};
 use crate::text::clock::midnight;
+use celis_trails::step::steps::LIFE;
 use celis_trails::{State, Step};
 use std::collections::{BTreeMap, HashMap};
 
@@ -200,12 +201,26 @@ impl Month {
     }
 }
 
-/// The seconds `step` took: from its start, or its record, to its done; from its start to its drop.
+/// The seconds `step` took: as its grade reads it when done; from its start to its drop, none when its
+/// trail had no record for the life of a trail before the drop.
 pub(super) fn spent(step: Step) -> u64 {
     match (step.state(), step.start(), step.dropped()) {
         (State::Done, _, _) => Grade::of(step).map_or(0, |g| g.took),
         (State::Dropped, Some(start), Some(drop)) => {
-            drop.created_at.saturating_sub(start.created_at)
+            let last = step
+                .trail()
+                .tree()
+                .into_iter()
+                .flat_map(|s| [Some(s.note()), s.start(), s.closed()])
+                .flatten()
+                .map(|n| n.created_at)
+                .filter(|at| *at < drop.created_at)
+                .max()
+                .unwrap_or(start.created_at);
+            match drop.created_at - last >= LIFE {
+                true => 0,
+                false => drop.created_at.saturating_sub(start.created_at),
+            }
         }
         _ => 0,
     }
