@@ -305,9 +305,9 @@ fn next_stats_scrolls_through_a_tall_section() {
     watch.press("\r");
     watch.until("▾ Learning");
     watch.until("enter close");
-    watch.without("weekly pattern usage");
+    watch.without("this week");
     watch.press("\x1b[B");
-    watch.until("weekly pattern usage");
+    watch.until("this week");
     watch.until("enter close");
     watch.press("\x1b[B\x1b[B\x1b[B");
     watch.until("enter open");

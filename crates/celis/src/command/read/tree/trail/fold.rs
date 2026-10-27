@@ -1,19 +1,18 @@
-//! The folded lines of a level: its notes line and its closed line, each open or closed.
+//! The folded line of a level: its patterns line, open or closed.
 
-use crate::command::read::tree::level::ids;
 use crate::command::read::tree::row::Row;
-use crate::command::read::tree::{Item, Tree, CLOSED, PATTERNS};
-use crate::progress::{Phase, Tally};
+use crate::command::read::tree::{Item, Tree, PATTERNS};
+use crate::progress::Phase;
+use crate::progress::Tally;
 use crate::terminal::canvas::{paint, Styled, DIM, MAGENTA};
 use crate::terminal::look::look;
 use crate::text::line::plural;
 use celis_nostr::Note;
-use celis_trails::Step;
 use ratatui::style::Style;
 use ratatui::text::Span;
 
 impl Tree<'_> {
-    /// Adds the notes line `§ <n> notes` of the trail `trail` after `rail`, the `last` of its level;
+    /// Adds the rules line `§ <n> rules` of the trail `trail` after `rail`, the `last` of its level;
     /// open, a line under it for each note of `patterns`: `§ <text>`, wrapped to fit.
     pub(super) fn patterns_line(
         &self,
@@ -31,7 +30,7 @@ impl Tree<'_> {
         lines.push(Row::Lined {
             lead,
             marks: Styled::from(mark.clone()),
-            title: plural(patterns.len(), "note"),
+            title: plural(patterns.len(), "rule"),
             tone: Style::new(),
             meta: Styled::default(),
             whole: None,
@@ -65,40 +64,6 @@ impl Tree<'_> {
                 under: vec![],
             };
             self.pick(item, lines, first);
-        }
-    }
-
-    /// Adds the closed line `✓ <n> closed` of the ended `steps` of the line `above` after `rail`, the
-    /// `last` of its level; open, the steps under it.
-    pub(super) fn closed_line(
-        &self,
-        steps: Vec<Step>,
-        rail: &Styled,
-        above: &str,
-        last: bool,
-        lines: &mut Vec<Row>,
-    ) {
-        let id = format!("{CLOSED}{above}");
-        let open = self.open(&id);
-        let (lead, rail) = self.branch(rail, last, Some(open), self.lane());
-        let first = lines.len();
-        lines.push(Row::Lined {
-            lead,
-            marks: Styled::from(paint(look(Phase::Done).text, look(Phase::Done).mark)),
-            title: format!("{} closed", steps.len()),
-            tone: Style::new(),
-            meta: Styled::default(),
-            whole: None,
-        });
-        let item = Item {
-            id: id.clone(),
-            open,
-            parent: Some(above.to_string()),
-            under: ids(&steps),
-        };
-        self.pick(item, lines, first);
-        if open {
-            self.steps(steps, &rail, &id, false, lines);
         }
     }
 }

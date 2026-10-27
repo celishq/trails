@@ -7,6 +7,7 @@ use crate::failure::Failure;
 use crate::progress::{Grade, Model, Phase};
 use crate::terminal::bar::bar;
 use crate::terminal::canvas::{cut, lines, paint, Styled, BOLD, CYAN, DIM, FRAME, GREEN};
+use crate::terminal::grid::Grid;
 use crate::terminal::live::{Live, Page};
 use crate::terminal::look::lane;
 use crate::terminal::screen::Screen;
@@ -15,11 +16,11 @@ use crate::terminal::wake::Key;
 use crate::text::clock::took;
 use card::{inside, put, Card};
 use celis_nostr::Note;
-use celis_trails::{State, Step, Trail, TrailStore};
+use celis_trails::{Step, Trail, TrailStore};
 use folders::folders;
-use layout::{breadth, columns, Layout, GAP};
+use layout::{Layout, GAP};
 use moment::{tally, Moment, LIGHT};
-use overview::{Overview, TALL};
+use overview::Overview;
 use patterns::{Learned, Patterns};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
@@ -101,7 +102,7 @@ impl Live for Graph {
             .get_or_insert_with(|| View::new(&trails, self.named.as_deref()));
         let lines = frame(model, &trails, view, &mut self.seen, (width, rows), now);
         let lively = self.seen.lively(now) || view.offset.fract() != 0.0;
-        let working = trails.iter().any(|t| t.works());
+        let working = trails.iter().any(|t| Phase::of(t) == Phase::Started);
         let again = match (lively, working) {
             (true, _) => Duration::from_millis(16),
             (false, true) => Duration::from_millis(33),
@@ -196,7 +197,7 @@ fn frame(
             if !view.places.is_empty() {
                 for (id, y) in &drawn.places {
                     if !view.places.contains_key(id) && f64::from(*y) < view.offset {
-                        view.offset += f64::from(TALL);
+                        view.offset += f64::from(drawn.heights.get(id).copied().unwrap_or(0));
                         view.above = Some(now);
                     }
                 }
@@ -299,9 +300,17 @@ fn head(
         }
         let working: usize = trails
             .iter()
-            .map(|t| t.tree().iter().filter(|s| s.works()).count())
+            .map(|t| {
+                t.tree()
+                    .iter()
+                    .filter(|s| Phase::of(s) == Phase::Started)
+                    .count()
+            })
             .sum();
-        let finished = trails.iter().filter(|t| t.state() == State::Done).count();
+        let finished = trails
+            .iter()
+            .filter(|t| Phase::of(t) == Phase::Done)
+            .count();
         let mut projects: Vec<&str> = trails
             .iter()
             .map(|t| t.record().anchor.project.as_str())
@@ -360,7 +369,7 @@ fn head(
     }
     let steps: Vec<Step> = trail.tree().into_iter().skip(1).collect();
     put(&mut buf, 2, 2, &tally(&steps, m.spin(), true));
-    let done = steps.iter().filter(|s| s.state() == State::Done).count();
+    let done = steps.iter().filter(|s| Phase::of(s) == Phase::Done).count();
     let tail = format!("  {done}/{} · {}", steps.len(), worked(trail, m.at));
     let right = width.saturating_sub(2 + tail.chars().count() as u16);
     let (d, w) = m.shares(&steps);
@@ -376,7 +385,7 @@ fn head(
 /// card lists, and the newest card.
 fn chain(trail: Step, width: u16, view: &mut View, m: &Moment) -> (Buffer, Option<(u16, u16)>) {
     let tops = Trail::new(trail).parts();
-    let layout = Layout::of(&tops, columns(width), &view.opened, m);
+    let layout = Layout::of(&tops, Grid::of(width), &view.opened, m);
     let mut buf = Buffer::empty(Rect::new(0, 0, width, layout.height.max(1)));
     view.cards = layout
         .places
@@ -407,7 +416,7 @@ fn chain(trail: Step, width: u16, view: &mut View, m: &Moment) -> (Buffer, Optio
         let opened = view.opened.contains(id);
         let card = Card {
             step: place.step,
-            area: Rect::new(place.x, place.y, breadth(place.span), place.height),
+            area: Rect::new(place.x, place.y, place.w, place.height),
             opened,
             selected,
             row: if selected { view.row.as_deref() } else { None },
@@ -415,7 +424,7 @@ fn chain(trail: Step, width: u16, view: &mut View, m: &Moment) -> (Buffer, Optio
         };
         let rows = card.draw(&mut buf, m);
         if selected && opened {
-            let inner = usize::from(breadth(place.span).saturating_sub(4));
+            let inner = usize::from(place.w.saturating_sub(4));
             view.listed = inside(place.step, m, inner)
                 .into_iter()
                 .filter(|r| r.first)
@@ -463,7 +472,7 @@ fn edge(buf: &mut Buffer, layout: &Layout, i: usize, alpha: f64) {
         _ => ("┄", "┆"),
     };
     let w = buf.area.width;
-    let right = before.x + breadth(before.span);
+    let right = before.x + before.w;
     let turn = w.saturating_sub(4);
     let back = before.y + before.row;
     buf.set_string(
@@ -517,7 +526,7 @@ pub(crate) fn worked(trail: Step, at: u64) -> String {
     for leaf in trail.tree().into_iter().filter(|s| s.children().is_empty()) {
         match (Grade::of(leaf), leaf.start()) {
             (Some(grade), _) => total += grade.took,
-            (None, Some(start)) if leaf.works() => {
+            (None, Some(start)) if Phase::of(&leaf) == Phase::Started => {
                 total += at.saturating_sub(start.created_at);
             }
             _ => {}

@@ -6,6 +6,7 @@ use crate::progress::{Flags, Grade, Model, Phase, Tally};
 pub(crate) use crate::terminal::canvas::{cut, visible};
 use crate::terminal::canvas::{line as line_text, paint, width, Styled};
 use crate::terminal::canvas::{BOLD, DIM, EDGE, GREEN, YELLOW};
+use crate::terminal::grid::GUTTER;
 use crate::terminal::look::{look, DRAWN, SPINNER, SPUN};
 use crate::text::clock::stride;
 use crate::text::clock::{day, midnight};
@@ -13,7 +14,7 @@ use celis_nostr::Note;
 use celis_patterns::Patterns;
 use celis_store::records::id::short;
 use celis_trails::step::steps::LIFE;
-use celis_trails::{Notes, State, Step, Steps, Trail};
+use celis_trails::{Notes, Step, Steps, Trail};
 pub(crate) use layout::Layout;
 use level::Level;
 use ratatui::style::Style;
@@ -69,7 +70,7 @@ impl Command {
     }
 
     /// The tree of `model` that `args` names, `width` wide, as `view` shows it, from the day groups
-    /// `layout` kept.
+    /// `layout` kept; in a watch its rows end a gutter before the width, at the grid's right edge.
     pub(crate) fn frame(
         &self,
         model: &Model,
@@ -96,7 +97,8 @@ impl Command {
             notes: model.notes,
             layout,
             grouped: id.is_none(),
-            width: width.map(|w| w.saturating_sub(2 * usize::from(view.watch))),
+            width: width
+                .map(|w| w.saturating_sub(2 * usize::from(GUTTER) * usize::from(view.watch))),
             view,
             spun: Cell::default(),
             order: RefCell::default(),
@@ -122,7 +124,7 @@ pub(crate) fn today<'a>(steps: &'a Steps<'a>) -> Vec<Step<'a>> {
 /// Whether the trail `note` is a live session at `now`: active, or not dropped with a record in the
 /// last `LIFE` seconds, as when its agent just answered and waits for the person.
 pub(crate) fn live(note: Step, now: u64) -> bool {
-    let recent = now.saturating_sub(note.newest()) < LIFE && note.state() != State::Dropped;
+    let recent = now.saturating_sub(note.newest()) < LIFE && Phase::of(&note) != Phase::Dropped;
     note.active() || recent
 }
 
@@ -171,11 +173,9 @@ pub(crate) struct Item {
 }
 
 impl Item {
-    /// The first 8 characters of its id; none for a patterns, closed, closed trails or day line.
+    /// The first 8 characters of its id; none for a patterns or day line.
     pub fn copy(&self) -> Option<String> {
-        let group = [PATTERNS, CLOSED, TRAILS, DAY]
-            .iter()
-            .any(|p| self.id.starts_with(p));
+        let group = [PATTERNS, DAY].iter().any(|p| self.id.starts_with(p));
         (!group).then(|| short(&self.id))
     }
 }
@@ -315,13 +315,17 @@ impl Tree<'_> {
         }
     }
 
-    /// The notes of the tree of `note`.
+    /// The notes of the trail of `note`: its own, or its trail's when it is an ask.
     fn notes(&self, note: Step) -> Vec<&Note> {
-        self.notes.of(note)
+        let owner = match note.is_trail() {
+            true => note.trail(),
+            false => note,
+        };
+        self.notes.of(owner)
     }
 
     /// The time the steps of `tree` with no step under them worked: what a done one took, and the time
-    /// since a started one started; `None` when none worked. A started one lowers `next`.
+    /// since a working one started; `None` when none worked. A working one lowers `next`.
     fn worked(&self, tree: &[Step]) -> Option<u64> {
         let now = self.steps.now();
         let leaves = tree.iter().filter(|s| s.children().is_empty());
@@ -329,7 +333,7 @@ impl Tree<'_> {
         for leaf in leaves {
             match (Grade::of(*leaf), leaf.start()) {
                 (Some(grade), _) => total += grade.took,
-                (None, Some(start)) if leaf.works() => {
+                (None, Some(start)) if Phase::of(leaf) == Phase::Started => {
                     total += now.saturating_sub(start.created_at);
                     running = true;
                 }
@@ -430,7 +434,7 @@ impl Tree<'_> {
         EDGE
     }
 
-    /// The mark of a step in `state` in its colour; in a watch, a started one's is the spinner.
+    /// The mark of a step in `state` in its colour; in a watch, a working one's is the spinner.
     fn mark(&self, state: Phase) -> Span<'static> {
         let look = look(state);
         if state == Phase::Started && self.view.spin {
@@ -474,10 +478,6 @@ pub(crate) const MORE: &str = "+more";
 /// The cells the marks before a title take in a watch: its mark; a sign takes a space after it.
 const SLOT: usize = 1;
 
-/// What starts the id of a trail's closed line in a watch's order.
-const CLOSED: &str = "✓";
-/// What starts the id of a project's line of closed trails in a watch's order.
-const TRAILS: &str = "≡";
 /// What starts the id of an earlier day's line in a watch's order.
 const DAY: &str = "🗓";
 /// The colour of a project's name.

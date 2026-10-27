@@ -3,16 +3,21 @@
 use super::daily::{outcomes, OUTCOMES};
 use super::kind::Kind;
 use super::learning::most;
+use super::measures::{Cell, Measures};
 use super::moment::{minutes, plural, Moment};
 use super::month::HALF;
+use super::outcomes::Outcomes;
 use super::panel::pair;
 use super::project::Project;
-use super::sheet::{place, Group, Sheet, SPARK};
+use super::sheet::{Group, Sheet, SPARK};
 use super::{allocation, daily, learning, output, quality};
 use crate::terminal::canvas::{
     paint, BOLD, CYAN, DIM, EDGE, FRAME, GREEN, LIGHT, MAGENTA, RED, YELLOW,
 };
 use ratatui::style::Style;
+
+/// The columns a closed section's small picture takes at most.
+const PICTURE: u16 = 24;
 
 /// A section of the board, in the order it shows them.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -60,7 +65,7 @@ impl Section {
         let line = "─".repeat(usize::from(m.width.saturating_sub(3 + x)));
         s.put(x + 1, y, &line, light(FRAME));
         let y = y + 2;
-        let full = (2, m.width - 4);
+        let full = m.grid().span(0, 12);
         match self {
             Section::Learning => {
                 let y = pair(s, m, y, &learning::panels());
@@ -78,16 +83,27 @@ impl Section {
         }
     }
 
-    /// It closed: one card with `▸` and its name in its border, light when picked, its key measures
-    /// wrapped to the width and a small picture at their right, or under them when the card is narrow;
-    /// the row after it.
+    /// It closed: one card across the grid with `▸` and its name in its border, light when picked, its key
+    /// measures as a table and a small picture at their right from the text column of track
+    /// nine, or six when nine leaves it too little room, or under them when six does too; the row after
+    /// it.
     fn closed(self, s: &mut Sheet, m: &Moment, y: u16, n: usize) -> u16 {
         let picked = m.focus == n;
-        let w = m.width - 4;
-        let beside = w >= 80;
-        let room = if beside { w - 4 - 28 } else { w - 4 };
-        let groups = self.summary(m);
-        let (_, rows) = place(&groups, room);
+        let grid = m.grid();
+        let (x, w) = grid.span(0, 12);
+        let end = x + w - 1;
+        let column = [9, 6]
+            .into_iter()
+            .map(|k| grid.edge(k) + 2)
+            .find(|at| end.saturating_sub(*at) >= PICTURE);
+        let beside = column.is_some();
+        let room = match column {
+            Some(at) => at - (x + 2) - 2,
+            None => w - 4,
+        };
+        let cells = self.summary(m);
+        let right = x + 2 + room;
+        let rows = Measures::of(grid, (x + 2, right), &cells, 0).rows;
         let height = 2 + rows + u16::from(!beside);
         s.clip = None;
         s.alpha = m.fade(0.3 + 0.08 * n as f64);
@@ -99,86 +115,78 @@ impl Section {
             paint(mark, " ▸ "),
             paint(BOLD, &format!("{} ", self.name().to_uppercase())),
         ];
-        s.boxed((2, y, w, height), border, &title);
-        s.clip = Some((3, 2 + w - 1));
-        s.flow(4, y + 1, room, &groups);
-        match beside {
-            true => self.mini(s, m, 2 + w - 2 - 26, y + 1),
-            false => self.mini(s, m, 4, y + 1 + rows),
+        s.boxed((x, y, w, height), border, &title);
+        s.clip = Some((x + 1, end));
+        s.measures(grid, (x + 2, y + 1, right), &cells, 0);
+        match column {
+            Some(at) => self.mini(s, m, at, y + 1),
+            None => self.mini(s, m, x + 2, y + 1 + rows),
         }
         s.clip = None;
         y + height + 1
     }
 
-    /// Its key measures that the tiles do not show, each value in the colour of its details, with its
-    /// change beside it.
-    fn summary(self, m: &Moment) -> Vec<Group> {
+    /// Its key measures that the tiles do not show as cells of a table in one unit, steps or time, each
+    /// value in the colour of its details, with its change in that unit after it.
+    fn summary(self, m: &Moment) -> Vec<Cell> {
         let (now, month) = (m.now(), m.month);
-        let dot = || paint(DIM, "  ·  ");
-        let arrow = |kind: Kind, now: i64, prior: Option<i64>, up: bool| {
-            kind.change(Some(now), prior, up).remove(0)
+        let steps = |now: usize, count: fn(Outcomes) -> usize, up: bool| -> Group {
+            let now = now as i64;
+            let prior = m.before(|o| count(o) as i64).filter(|prior| *prior != now);
+            let change = prior.map(|prior| Kind::Count.change(Some(now), Some(prior), up));
+            change.into_iter().flatten().flatten().collect()
+        };
+        let lead = |look: Style, value: String, name: &str| -> Group {
+            vec![
+                paint(look.patch(BOLD), &value),
+                paint(DIM, &format!(" {name}")),
+            ]
         };
         match self {
             Section::Learning => vec![
-                vec![
-                    paint(MAGENTA.patch(BOLD), &format!("{}%", now.pattern_usage())),
-                    paint(DIM, " pattern usage"),
-                ],
-                arrow(
-                    Kind::Share,
-                    now.pattern_usage(),
-                    m.before(|o| o.pattern_usage()),
-                    true,
+                (
+                    lead(MAGENTA, now.applied.to_string(), "applied a pattern"),
+                    steps(now.applied, |o| o.applied, true),
                 ),
-                vec![
-                    dot(),
-                    paint(CYAN.patch(BOLD), &now.reused.to_string()),
-                    paint(DIM, &format!(" reused {}", plural(now.reused, "step"))),
-                ],
+                (
+                    lead(
+                        CYAN,
+                        now.reused.to_string(),
+                        &format!("reused {}", plural(now.reused, "step")),
+                    ),
+                    steps(now.reused, |o| o.reused, true),
+                ),
             ],
             Section::Quality => vec![
-                vec![
-                    paint(YELLOW.patch(BOLD), &format!("{}%", now.rework_rate())),
-                    paint(DIM, " reworked"),
-                ],
-                arrow(
-                    Kind::Share,
-                    now.rework_rate(),
-                    m.before(|o| o.rework_rate()),
-                    false,
+                (
+                    lead(YELLOW, now.reworked.to_string(), "reworked"),
+                    steps(now.reworked, |o| o.reworked, false),
                 ),
-                vec![
-                    dot(),
-                    paint(RED.patch(BOLD), &now.dropped.to_string()),
-                    paint(DIM, " dropped "),
-                    paint(DIM.patch(BOLD), &now.stale.to_string()),
-                    paint(DIM, " stale"),
-                ],
+                (
+                    lead(RED, now.dropped.to_string(), "dropped"),
+                    steps(now.dropped, |o| o.dropped, false),
+                ),
+                (
+                    lead(DIM, now.expired.to_string(), "stale"),
+                    steps(now.expired, |o| o.expired, false),
+                ),
             ],
-            Section::Output => vec![vec![
-                paint(BOLD, &month.spans[0].to_string()),
-                paint(
-                    DIM,
-                    &format!(" of {} successful steps under 5m", now.successful()),
+            Section::Output => vec![(
+                lead(
+                    Style::new(),
+                    month.spans[0].to_string(),
+                    &format!("of {} successful steps under 5m", now.successful()),
                 ),
-            ]],
+                vec![],
+            )],
             Section::Resources => {
                 let lost: u64 = month.projects.iter().map(|p| p.rework + p.dropped).sum();
                 vec![
-                    vec![paint(BOLD, &minutes(month.time())), paint(DIM, " active")],
-                    vec![
-                        dot(),
-                        paint(YELLOW.patch(BOLD), &minutes(lost)),
-                        paint(DIM, " lost to rework and drops"),
-                    ],
-                    vec![
-                        dot(),
-                        paint(BOLD, &month.projects.len().to_string()),
-                        paint(
-                            DIM,
-                            &format!(" {}", plural(month.projects.len(), "project")),
-                        ),
-                    ],
+                    (
+                        lead(Style::new(), minutes(month.time()), "active"),
+                        allocation::spent(m),
+                    ),
+                    (lead(YELLOW, minutes(lost), "reworked or dropped"), vec![]),
                 ]
             }
         }
@@ -204,7 +212,7 @@ impl Section {
                     (now.first_pass() as f64, GREEN),
                     (now.reworked as f64, YELLOW),
                     (now.dropped as f64, RED),
-                    (now.stale as f64, DIM),
+                    (now.expired as f64, DIM),
                 ];
                 s.stack(x, y, &parts, 16);
             }

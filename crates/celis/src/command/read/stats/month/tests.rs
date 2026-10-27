@@ -11,7 +11,7 @@ fn each_closed_step_counts_once_by_how_it_ended() {
         new: 1,
         reworked: 1,
         dropped: 1,
-        stale: 0,
+        expired: 0,
         applied: 1,
     };
     assert_eq!(month.now(), now);

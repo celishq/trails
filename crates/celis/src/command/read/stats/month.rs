@@ -98,7 +98,7 @@ impl Month {
                     }
                 }
                 State::Dropped => outcome.dropped += 1,
-                State::Open => outcome.stale += usize::from(step.stale()),
+                State::Open => outcome.expired += usize::from(step.stale()),
             }
             if !step.children().is_empty() {
                 continue;

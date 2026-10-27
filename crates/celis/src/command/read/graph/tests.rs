@@ -223,6 +223,6 @@ fn printed_shows_all_with_the_notes() {
     bench.note(&shop, "When you price: round down, because the shelf does.");
     let text = Model::of(&bench.trails, |model| printed(model, None)).unwrap();
     assert!(text.contains("📁 shop"), "{text}");
-    assert!(text.contains("§ Notes 1"), "{text}");
+    assert!(text.contains("§ Rules 1"), "{text}");
     assert!(!text.contains('\x1b'), "{text}");
 }

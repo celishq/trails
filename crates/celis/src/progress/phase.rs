@@ -33,4 +33,14 @@ impl Phase {
             Phase::Stale => "stale",
         }
     }
+
+    /// Whether the work is still to do: open or started.
+    pub fn active(self) -> bool {
+        matches!(self, Phase::Open | Phase::Started)
+    }
+
+    /// Whether the work is over: done, dropped or stale.
+    pub fn ended(self) -> bool {
+        !self.active()
+    }
 }

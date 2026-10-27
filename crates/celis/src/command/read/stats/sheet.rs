@@ -1,7 +1,9 @@
 //! The sheet stats draws its board on: cards, wrapped runs of text, bars and big digits.
 
+use super::measures::{trimmed, Cell, Measures};
 use crate::terminal::canvas::{lines, paint, visible, Styled, BOLD, DIM, EDGE};
 use crate::terminal::glyph::DIGITS;
+use crate::terminal::grid::Grid;
 use crate::terminal::unfold::faded_style;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
@@ -11,6 +13,10 @@ use unicode_width::UnicodeWidthChar;
 
 /// A run of texts kept together on one row.
 pub(super) type Group = Vec<Span<'static>>;
+
+/// The columns every legend item takes at least, the widest one, `■ first pass`, so the items of every
+/// legend stand in the same columns.
+pub(super) const LEGEND: u16 = 12;
 
 /// The blocks that fill an eighth more of a cell, left to right.
 const EIGHTHS: [&str; 8] = [" ", "▏", "▎", "▍", "▌", "▋", "▊", "▉"];
@@ -102,6 +108,46 @@ impl Sheet {
             self.put(x + dx, y + row, &span.content, span.style);
         }
         rows
+    }
+
+    /// The legend of `kinds` from `x` on row `y` as a table of `measures`: each a square in its look
+    /// and its name dim, every item `LEGEND` columns at least, so every legend's items stand in the same
+    /// columns; the rows it takes.
+    pub fn legend(
+        &mut self,
+        grid: Grid,
+        (x, y, right): (u16, u16, u16),
+        kinds: &[(&str, Style)],
+    ) -> u16 {
+        let cells: Vec<Cell> = kinds
+            .iter()
+            .map(|(name, look)| {
+                (
+                    vec![paint(*look, "■"), paint(DIM, &format!(" {name}"))],
+                    vec![],
+                )
+            })
+            .collect();
+        self.measures(grid, (x, y, right), &cells, LEGEND)
+    }
+
+    /// Writes `cells` from `x` on row `y` as `Measures` lays them out before `right`, each at least `least`
+    /// columns: each lead, and its change a gap after the widest lead of its column; the rows it takes.
+    pub fn measures(
+        &mut self,
+        grid: Grid,
+        (x, y, right): (u16, u16, u16),
+        cells: &[Cell],
+        least: u16,
+    ) -> u16 {
+        let table = Measures::of(grid, (x, right), cells, least);
+        for (((lead, change), (at, row)), from) in
+            cells.iter().zip(&table.places).zip(&table.changes)
+        {
+            self.spans(*at, y + row, lead);
+            self.spans(*from, y + row, &trimmed(change));
+        }
+        table.rows
     }
 
     /// A solid bar in `look` to `share` of `cells`, its end cut to an eighth of a cell.

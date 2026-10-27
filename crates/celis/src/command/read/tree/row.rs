@@ -116,9 +116,13 @@ impl Row {
 /// The fewest free cells a title keeps before a row drops its meta.
 const ROOM: usize = 16;
 
+/// The fewest free cells a title wraps in; with fewer it is cut.
+const NARROW: usize = 8;
+
 /// One line: `lead`, `marks` padded to `slot` and two spaces, at least one, none with no marks, the title in its look,
 /// bold when `picked` unless dim, cut with … to fit `width`, then `meta` at the right edge; with less than `ROOM` cells for
-/// the title, no meta. With a `whole` lead, the title wrapped instead, its next lines after that lead.
+/// the title, no meta. With a `whole` lead and at least `NARROW` cells, the title wrapped instead, its next lines
+/// after that lead.
 fn lined(
     (lead, whole): (Styled, Option<Styled>),
     marks: Styled,
@@ -152,7 +156,7 @@ fn lined(
         _ => (Styled::default(), width.saturating_sub(used)),
     };
     let parts = match whole {
-        Some(_) if visible(title) > room => wrap(title, room),
+        Some(_) if visible(title) > room && room >= NARROW => wrap(title, room),
         _ => vec![cut(title, room)],
     };
     let first = parts.first().cloned().unwrap_or_default();

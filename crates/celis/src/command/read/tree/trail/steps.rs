@@ -13,8 +13,8 @@ use ratatui::style::Style;
 use ratatui::text::Span;
 
 impl Tree<'_> {
-    /// Adds `level` under the line `above` after `rail`: its steps in the order they came, its closed
-    /// ones folded into one closed line first when more than `FOLD`; then the patterns line of `patterns`.
+    /// Adds `level` under the line `above` after `rail`: its steps in the order they came, closed ones
+    /// too; then the patterns line of `patterns`.
     pub(super) fn level(
         &self,
         level: Level,
@@ -24,25 +24,15 @@ impl Tree<'_> {
         lines: &mut Vec<Row>,
     ) {
         let more = !patterns.is_empty();
-        let closed = level.order.iter().filter(|s| !s.active()).count();
-        match closed > FOLD {
-            true => {
-                let (ended, active): (Vec<Step>, Vec<Step>) =
-                    level.order.into_iter().partition(|s| !s.active());
-                let last = active.is_empty() && !more;
-                self.closed_line(ended, rail, above, last, lines);
-                self.steps(active, rail, above, more, lines);
-            }
-            false => self.steps(level.order, rail, above, more, lines),
-        }
+        self.steps(level.order, rail, above, more, lines);
         if more {
             self.patterns_line(patterns, rail, true, above, lines);
         }
     }
 
     /// Adds the steps `notes` under the line `above` after `rail`, the last of their level unless `more`:
-    /// each its mark and title, done/all of the steps under it at the right, and when opened its title
-    /// wrapped, with the tree line down from its mark over its steps one level down; with full, the lines
+    /// each its mark and title wrapped, done/all of the steps under it at the right, and when opened the
+    /// tree line down from its mark over its steps one level down; with full, the lines
     /// `--full` prints under it.
     pub(in crate::command::read::tree) fn steps(
         &self,
@@ -57,7 +47,7 @@ impl Tree<'_> {
         for (n, note) in notes.into_iter().enumerate() {
             let step = note.record();
             let state = Phase::of(&note);
-            if note.active() {
+            if state.active() {
                 self.until(note.trail().newest() + LIFE);
             }
             let open = self.open(note.id());
@@ -76,16 +66,16 @@ impl Tree<'_> {
                 title: step.title().to_string(),
                 tone: self.shone(note, self.tone(tone, note.newest())),
                 meta: self.meta(note),
-                whole: open.then(|| match note.children().is_empty() {
-                    true => rail.clone(),
-                    false => after(&rail, paint(self.lane(), "│")),
+                whole: Some(match open && !note.children().is_empty() {
+                    true => after(&rail, paint(self.lane(), "│")),
+                    false => rail.clone(),
                 }),
             });
             let item = Item {
                 id: note.id().to_string(),
                 open,
                 parent: Some(above.to_string()),
-                under: level.ids(note.id()),
+                under: level.ids(),
             };
             self.pick(item, lines, first);
             if open && self.view.full {
@@ -127,7 +117,7 @@ impl Tree<'_> {
     /// The look `tone` of the title of `note`, marked to shimmer in a watch while it works with no step
     /// under it.
     fn shone(&self, note: Step, tone: Style) -> Style {
-        match self.view.spin && note.works() && note.children().is_empty() {
+        match self.view.spin && Phase::of(&note) == Phase::Started && note.children().is_empty() {
             true => {
                 self.spun.set(true);
                 tone.add_modifier(SHIMMER)
@@ -138,7 +128,7 @@ impl Tree<'_> {
 
     /// Whether `note` or a step under it works.
     pub(in crate::command::read::tree) fn busy(&self, note: Step) -> bool {
-        note.tree().iter().any(|s| s.works())
+        note.tree().iter().any(|s| Phase::of(s) == Phase::Started)
     }
 
     /// Whether the step or pattern `id` shows what `--full` shows: with `--full`, unless the watch closed
@@ -147,6 +137,3 @@ impl Tree<'_> {
         self.view.full != self.view.flipped.contains(id)
     }
 }
-
-/// The most closed steps a level lists one by one; more fold into its closed line.
-const FOLD: usize = 5;

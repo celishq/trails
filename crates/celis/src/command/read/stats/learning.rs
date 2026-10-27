@@ -1,12 +1,12 @@
-//! The Learning section of the stats board: the reuse of patterns and the patterns applied.
+//! The Learning section of the stats board: the reuse of past work and the patterns applied.
 
 use super::kind::Kind;
 use super::moment::{plural, Moment};
 use super::panel::Panel;
-use super::sheet::{Group, Sheet};
+use super::sheet::Sheet;
+use crate::command::read::tree::wrap;
 use crate::terminal::canvas::{cut, paint, BOLD, CYAN, DIM, MAGENTA};
 use crate::terminal::unfold::ease;
-use celis_store::records::id::short;
 use ratatui::style::Style;
 
 /// The panels of Learning: reuse, then patterns.
@@ -37,39 +37,36 @@ pub(super) fn top(m: &Moment) -> Option<Panel> {
     })
 }
 
-/// The patterns with the most hits, most first: each its place, its id, its words cut to the width, a bar
-/// when the card is wide, and its hits, the words on a row of their own when the card is narrow; the
-/// rows it takes.
+/// The patterns with the most hits, most first: each its words whole, wrapped before its bar, a bar
+/// from the text column of track nine when the card is wide, and its hits at the right of its first row,
+/// a blank row between two when one wraps; the rows it takes.
 fn patterns_hit(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
     let top = &m.month.top;
-    let (wide, narrow) = (w >= 70, w < 60);
-    let per = if narrow { 2 } else { 1 };
+    let wide = w >= 70;
     let most = top.iter().map(|r| r.2).max().unwrap_or(1).max(1);
     let count = x + w - 6;
-    let bar = if wide { 16 } else { 0 };
-    let (from, to) = match narrow {
-        true => (x + 5, x + w - 2),
-        false => (x + 15, count - 2 - if wide { bar + 2 } else { 0 }),
-    };
-    for (n, (id, words, hits)) in top.iter().enumerate() {
-        let row = y + 2 + n as u16 * per;
-        s.put(x + 2, row, &(n + 1).to_string(), DIM);
-        s.put(x + 5, row, &short(id), DIM);
-        let room = usize::from(to.saturating_sub(from));
-        let shown = cut(words, room);
-        let shown = match shown.strip_suffix('…') {
-            Some(kept) => format!("{}…", kept.trim_end()),
-            None => shown,
-        };
-        s.put(from, row + per - 1, &shown, Style::new());
+    let start = m.grid().edge(9) + 2;
+    let to = if wide { start - 2 } else { count - 2 };
+    let room = usize::from(to.saturating_sub(x + 2));
+    let texts: Vec<Vec<String>> = top.iter().map(|(_, words, _)| wrap(words, room)).collect();
+    let gap = u16::from(texts.iter().any(|t| t.len() > 1));
+    let mut row = y + 2;
+    for (n, ((_, _, hits), lines)) in top.iter().zip(texts).enumerate() {
+        if n > 0 {
+            row += gap;
+        }
+        for (k, line) in lines.iter().enumerate() {
+            s.put(x + 2, row + k as u16, line, Style::new());
+        }
         if wide {
             let grow = ease((m.t - 0.7 - 0.08 * n as f64) / 0.5);
             let share = *hits as f64 / most as f64 * grow;
-            s.bar(to + 2, row, share, bar, MAGENTA);
+            s.bar(start, row, share, count.saturating_sub(start + 2), MAGENTA);
         }
         s.put(count, row, &format!("{hits:>3}"), BOLD);
+        row += lines.len().max(1) as u16;
     }
-    2 + per * top.len() as u16 + 2
+    row - y + 2
 }
 
 /// The full length of a week's reuse bar: the highest weekly reuse rate of the four weeks, rounded up
@@ -80,7 +77,7 @@ pub(super) fn most(m: &Moment) -> i64 {
     (most.max(1) + 9) / 10 * 10
 }
 
-/// Reuse, in cyan: the reused steps with their change, and the reuse
+/// Reuse, in cyan: the reused steps with their change, the earlier trails they came from, and the reuse
 /// rate of each of the last four weeks as a bar; the rows it takes. The rate of the 14 days stands on
 /// its tile.
 fn reuse(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
@@ -92,15 +89,11 @@ fn reuse(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
     ];
     let before = m.before(|o| o.reused as i64);
     let reused = (Some(now.reused as i64), before);
-    row += s.flow(
-        x + 2,
-        row,
-        w - 4,
-        &m.measure(lead, reused, Kind::Count, true),
-    );
-    row += 1;
+    let cell = m.measure(lead, reused, Kind::Count, true);
+    row += s.measures(m.grid(), (x + 2, row, x + w - 3), &[cell], 0) + 1;
     s.put(x + 2, row, "weekly reuse rate · last 4 weeks", DIM);
-    let label = if w >= 40 { 15 } else { 10 };
+    let bar = m.bars(x, w);
+    let value = x + w - 7;
     let most = most(m) as f64;
     for (n, week) in m.month.weeks().iter().enumerate() {
         let k = ease((m.t - 0.6 - n as f64 * 0.12) / 0.5);
@@ -114,64 +107,45 @@ fn reuse(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
         };
         let r = row + 1 + n as u16;
         let look = if lit { BOLD } else { DIM };
-        s.put(x + 4, r, &name, look);
+        s.put(x + 2, r, &name, look);
         let share = week.reuse_rate() as f64 / most * k;
-        s.bar(
-            x + 5 + label,
-            r,
-            share,
-            w.saturating_sub(label + 14).max(3),
-            CYAN,
-        );
-        s.put(x + w - 7, r, &format!("{:>3}%", week.reuse_rate()), look);
+        s.bar(bar, r, share, value.saturating_sub(bar + 2).max(3), CYAN);
+        s.put(value, r, &format!("{:>3}%", week.reuse_rate()), look);
     }
     row + 5 - y + 2
 }
 
-/// Patterns, in violet: the pattern usage with its change and the steps it counts, the patterns kept with how
-/// many were applied and how many are new, the pattern hits in each project, and the usage of each of the
-/// last four weeks as a run of numbers; the rows it takes.
+/// Patterns, in violet: the steps that applied a pattern of the successful ones with their change in
+/// steps, the patterns kept with how many were applied and how many are new as one plain line, a blank
+/// row, then the pattern hits in each project as bars; the rows it takes.
 fn patterns(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
     let (now, month) = (m.now(), m.month);
-    let violet = MAGENTA.patch(BOLD);
     let mut row = y + 2;
-    let usage = now.pattern_usage();
+    let applied = now.applied as i64;
     let lead = vec![
-        paint(violet, &format!("{usage}%")),
-        paint(DIM, " pattern usage"),
+        paint(MAGENTA.patch(BOLD), &applied.to_string()),
+        paint(
+            DIM,
+            &format!(" of {} steps applied a pattern", now.successful()),
+        ),
     ];
-    let before = m.before(|o| o.pattern_usage());
-    row += s.flow(
-        x + 2,
-        row,
-        w - 4,
-        &m.measure(lead, (Some(usage), before), Kind::Share, true),
-    );
-    let applied = format!(
-        "{} of {} successful steps applied a pattern",
-        now.applied,
-        now.successful()
-    );
-    s.put(x + 2, row, &applied, DIM);
-    row += 1;
-    let counts: Vec<Group> = vec![
-        vec![
-            paint(violet, &format!("§ {}", month.patterns)),
-            paint(DIM, &format!(" {} kept", plural(month.patterns, "pattern"))),
-        ],
-        vec![
-            paint(DIM, "  ·  "),
-            paint(BOLD, &month.kept.to_string()),
-            paint(DIM, " applied"),
-        ],
-        vec![
-            paint(DIM, "  ·  "),
-            paint(violet, &format!("+{}", month.learned)),
-            paint(DIM, " new"),
-        ],
+    let before = m.before(|o| o.applied as i64);
+    let cell = m.measure(lead, (Some(applied), before), Kind::Count, true);
+    row += s.measures(m.grid(), (x + 2, row, x + w - 3), &[cell], 0);
+    let kept = [
+        paint(Style::new(), &month.patterns.to_string()),
+        paint(
+            DIM,
+            &format!(" {} kept: ", plural(month.patterns, "pattern")),
+        ),
+        paint(Style::new(), &month.kept.to_string()),
+        paint(DIM, " applied, "),
+        paint(Style::new(), &month.learned.to_string()),
+        paint(DIM, " new"),
     ];
-    row += s.flow(x + 2, row, w - 4, &counts) + 1;
-    s.put(x + 2, row, "pattern hits by project", DIM);
+    s.spans(x + 2, row, &kept);
+    row += 2;
+    s.put(x + 2, row, "hits by project", DIM);
     let most = month
         .applied
         .iter()
@@ -179,27 +153,16 @@ fn patterns(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
         .max()
         .unwrap_or(0)
         .max(1);
+    let bar = m.bars(x, w);
+    let value = x + w - 6;
     for (k, (name, v)) in month.applied.iter().enumerate() {
         let r = row + 1 + k as u16;
-        s.put(x + 4, r, &format!("📁 {}", cut(name, 7)), Style::new());
+        s.put(x + 2, r, &format!("📁 {}", cut(name, 7)), Style::new());
         let grow = ease(m.t - 0.7 - k as f64 * 0.1);
         let share = *v as f64 / most as f64 * grow;
-        s.bar(x + 14, r, share, w.saturating_sub(24).max(3), MAGENTA);
-        s.put(x + w - 6, r, &format!("{v:>3}"), Style::new());
+        s.bar(bar, r, share, value.saturating_sub(bar + 2).max(3), MAGENTA);
+        s.put(value, r, &format!("{v:>3}"), Style::new());
     }
     row += 1 + month.applied.len() as u16;
-    s.put(x + 2, row, "weekly pattern usage · last 4 weeks", DIM);
-    row += 1;
-    let mut end = x + 4;
-    let alpha = s.alpha;
-    for (n, week) in month.weeks().iter().enumerate() {
-        s.alpha = alpha * ease((m.t - 0.7 - n as f64 * 0.15) / 0.4);
-        if n > 0 {
-            end = s.put(end, row, " → ", MAGENTA);
-        }
-        let look = if n == 3 { BOLD } else { DIM };
-        end = s.put(end, row, &format!("{}%", week.pattern_usage()), look);
-    }
-    s.alpha = alpha;
-    row - y + 3
+    row - y + 2
 }

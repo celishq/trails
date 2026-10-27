@@ -42,7 +42,7 @@ impl Tree<'_> {
     pub(super) fn item(&self, note: Step, open: bool, patterns: &[&Note]) -> Item {
         let folded = (!patterns.is_empty()).then(|| format!("{PATTERNS}{}", note.id()));
         let patterns = patterns.iter().map(|pattern| pattern.id.clone());
-        let steps = Level::of(Trail::new(note).parts()).ids(note.id());
+        let steps = Level::of(Trail::new(note).parts()).ids();
         Item {
             id: note.id().to_string(),
             open,
@@ -58,6 +58,7 @@ impl Tree<'_> {
     /// many.
     pub(super) fn block(&self, note: Step, lines: &mut Vec<Row>) {
         let step = note.record();
+        let state = Phase::of(&note);
         let work = self.work(note);
         let summary = self.summary(note, work);
         let level = Level::of(Trail::new(note).parts());
@@ -65,10 +66,10 @@ impl Tree<'_> {
             !(level.active.is_empty() && level.ended.is_empty() && summary.notes.is_empty());
         let first = lines.len();
         let mut meta = vec![];
-        if !self.grouped || (note.active() && !self.view.watch) {
+        if !self.grouped || (state.active() && !self.view.watch) {
             meta.push(vec![paint(DIM, &step.anchor.name)]);
         }
-        meta.extend(came(note, &summary));
+        meta.extend(came(state, &summary));
         lines.push(Row::Lined {
             lead: Styled::from(vec![
                 paint(DIM, if under { "▾" } else { " " }),
@@ -76,7 +77,7 @@ impl Tree<'_> {
             ]),
             marks: self.marked(note),
             title: step.title().to_string(),
-            tone: self.tone(trail_tone(note), note.newest()),
+            tone: self.tone(trail_tone(state), note.newest()),
             meta: joined(meta),
             whole: Some(match under {
                 true => Styled::from(vec![Span::raw("  "), paint(self.lane(), "│")]),
@@ -93,14 +94,15 @@ impl Tree<'_> {
         self.level(level, summary.notes, &rail, note.id(), lines);
     }
 
-    /// Adds `note` as one row: `▸` when something opens under it, its mark and title, and at the right
-    /// done/all while active, else its steps counted by state.
+    /// Adds `note` as one row: `▸` when something opens under it, its mark and title wrapped, and at the
+    /// right done/all while active, else its steps counted by state.
     pub(super) fn line(&self, note: Step, lines: &mut Vec<Row>) {
         let step = note.record();
+        let state = Phase::of(&note);
         let work = self.work(note);
         let summary = self.summary(note, work);
         let under = !(Trail::new(note).parts().is_empty() && summary.notes.is_empty());
-        let meta: Vec<_> = came(note, &summary).into_iter().collect();
+        let meta: Vec<_> = came(state, &summary).into_iter().collect();
         let first = lines.len();
         lines.push(Row::Lined {
             lead: Styled::from(vec![
@@ -109,26 +111,26 @@ impl Tree<'_> {
             ]),
             marks: self.marked(note),
             title: step.title().to_string(),
-            tone: self.tone(trail_tone(note), note.newest()),
+            tone: self.tone(trail_tone(state), note.newest()),
             meta: joined(meta),
-            whole: None,
+            whole: Some(Styled::from("  ")),
         });
         self.pick(self.item(note, false, &summary.notes), lines, first);
     }
 }
 
-/// The look of the title of the trail `note`: bold while active, else as its mark's titles look.
-fn trail_tone(note: Step) -> ratatui::style::Style {
-    match note.active() {
+/// The look of a trail's title in `state`: bold while active, else as its state's titles look.
+fn trail_tone(state: Phase) -> ratatui::style::Style {
+    match state.active() {
         true => BOLD,
-        false => look(Phase::of(&note)).title,
+        false => look(state).title,
     }
 }
 
-/// What the steps of the trail `note` came to: done/all while it is active, else their count by state;
-/// none with no steps.
-fn came(note: Step, summary: &Summary) -> Option<Vec<Span<'static>>> {
-    match (note.active(), summary.all) {
+/// What a trail's steps came to: done/all while `active`, else their count by state; none with no
+/// steps.
+fn came(state: Phase, summary: &Summary) -> Option<Vec<Span<'static>>> {
+    match (state.active(), summary.all) {
         (_, 0) => None,
         (true, all) => Some(vec![paint(DIM, &format!("{}/{all}", summary.done))]),
         (false, _) => Some(fold::counts(summary.tally)),

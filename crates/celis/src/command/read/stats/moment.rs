@@ -1,11 +1,11 @@
 //! One frame of the stats board: the month it reads, the time it draws at, and where the person is.
 
 use super::kind::Kind;
+use super::measures::Cell;
 use super::month::Month;
 use super::outcomes::Outcomes;
-use super::sheet::Group;
 use super::total::Total;
-use crate::terminal::canvas::{paint, DIM};
+use crate::terminal::grid::Grid;
 use crate::terminal::unfold::ease;
 use crate::text::clock::day;
 use ratatui::text::Span;
@@ -44,18 +44,28 @@ impl Moment<'_> {
         (prior.resolved() > 0).then(|| value(prior))
     }
 
-    /// The groups of a measure: each text of `lead` alone, a gap, then its change as `kind` reads it.
+    /// The cell of a measure: `lead`, then its change as `kind` reads it.
     pub fn measure(
         &self,
         lead: Vec<Span<'static>>,
         (now, prior): (Option<i64>, Option<i64>),
         kind: Kind,
         up: bool,
-    ) -> Vec<Group> {
-        let mut groups: Vec<Group> = lead.into_iter().map(|s| vec![s]).collect();
-        groups.push(vec![paint(DIM, "  ")]);
-        groups.extend(kind.change(now, prior, up));
-        groups
+    ) -> Cell {
+        let change = kind.change(now, prior, up).into_iter().flatten().collect();
+        (lead, change)
+    }
+
+    /// The grid the board lays out on.
+    pub fn grid(&self) -> Grid {
+        Grid::of(self.width)
+    }
+
+    /// The column where the bars of a card at `x`, `w` wide start, the same in every card: the text
+    /// column two tracks in, or the first track column past a label as wide as the widest one.
+    pub fn bars(&self, x: u16, w: u16) -> u16 {
+        let label = if w >= 44 { LABEL } else { LABEL / 2 };
+        self.grid().inside(x, 2, x + 2 + label + 2)
     }
 
     /// The day `n` of the month, as `Oct 9`.
@@ -63,6 +73,9 @@ impl Moment<'_> {
         day(self.month.start(n))
     }
 }
+
+/// The columns the widest label before a bar takes: `Oct 13 – Oct 19`.
+const LABEL: u16 = 15;
 
 /// `seconds` as whole minutes, `25m`, or hours and minutes, `4h 32m`.
 pub(super) fn minutes(seconds: u64) -> String {

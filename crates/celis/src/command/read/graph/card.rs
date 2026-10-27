@@ -3,14 +3,15 @@
 
 use super::moment::{tally, Moment, LIGHT, SEL};
 use crate::command::read::tree::wrap;
-use crate::progress::{Grade, Phase};
+use crate::progress::Grade;
+use crate::progress::Phase;
 use crate::terminal::bar::bar;
-use crate::terminal::canvas::{cut, paint, BOLD, DIM};
+use crate::terminal::canvas::{paint, BOLD, DIM};
 use crate::terminal::look::lane;
 use crate::terminal::unfold::faded_style;
 use crate::text::clock::took;
 use celis_store::records::id::short;
-use celis_trails::{State, Step};
+use celis_trails::Step;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::Style;
@@ -45,9 +46,10 @@ pub(super) struct Row<'a> {
 }
 
 impl<'a> Card<'a> {
-    /// The rows a card of `step` takes, `width` wide: a closed card's two, an open card's title and
-    /// state or the bar of its steps done, a working card's title, state, rows and bar; a card the person opened, its whole title and
-    /// the rows of the steps under it it unfolded.
+    /// The rows a card of `step` takes, `width` wide: a closed card's whole title and its counts, an open
+    /// card's whole title and state or the bar of its steps done, a working card's whole title, state,
+    /// rows and bar; a card the person opened, its whole title and the rows of the steps under it it
+    /// unfolded.
     pub fn height(step: Step<'a>, opened: bool, width: u16, m: &Moment) -> u16 {
         let inner = usize::from(width.saturating_sub(4));
         let shown = !step.children().is_empty();
@@ -58,13 +60,14 @@ impl<'a> Card<'a> {
             }
             return rows as u16;
         }
+        let title = titled(step, inner);
         match Phase::of(&step) {
-            Phase::Done | Phase::Dropped | Phase::Stale => 4,
             Phase::Started if shown => {
                 let (rows, more) = listed(step);
-                (5 + 2 + rows.len() + usize::from(more > 0)) as u16
+                let lines: u16 = rows.iter().map(|k| titled(*k, inner - 2)).sum();
+                title + lines + 5 + u16::from(more > 0)
             }
-            _ => 5,
+            _ => title + 3,
         }
     }
 
@@ -94,28 +97,23 @@ impl<'a> Card<'a> {
         } else if matches!(state, Phase::Done | Phase::Dropped | Phase::Stale) {
             closed(buf, step, area, m);
         } else {
-            let titles = wrap(step.title(), inner);
             let look = match state {
                 Phase::Started => BOLD,
                 _ => m.tone(state),
             };
-            for (n, line) in titles.iter().take(2).enumerate() {
-                let line = match (n, titles.len() > 2) {
-                    (1, true) => cut(&format!("{line} …"), inner),
-                    _ => line.clone(),
-                };
+            let titles = wrap(step.title(), inner);
+            for (n, line) in titles.iter().enumerate() {
                 buf.set_string(x, area.y + 1 + n as u16, line, look);
             }
+            let y = area.y + 1 + titled(step, inner);
             match state {
                 Phase::Started => {
-                    let meta = format!("open · {}", spent(step, m.at));
-                    buf.set_string(x, area.y + 3, meta, DIM);
+                    let meta = format!("working · {}", spent(step, m.at));
+                    buf.set_string(x, y, meta, DIM);
                 }
-                _ if !step.children().is_empty() => {
-                    progress(buf, x, area.y + 3, step, m, 12, false)
-                }
+                _ if !step.children().is_empty() => progress(buf, x, y, step, m, 12, false),
                 _ => {
-                    buf.set_string(x, area.y + 3, "open", DIM);
+                    buf.set_string(x, y, "open", DIM);
                 }
             }
             if state == Phase::Started && !step.children().is_empty() {
@@ -140,30 +138,30 @@ impl<'a> Card<'a> {
     ) {
         let area = self.area;
         let x = area.x + 2;
+        let top = area.y + 2 + titled(self.step, inner);
         let line = format!("├{}┤", "╌".repeat(usize::from(area.width) - 2));
         buf.set_string(
             area.x,
-            area.y + 4,
+            top,
             line,
             faded_style(m.border(self.step, false), 0.6),
         );
         let (listed, more) = listed(self.step);
-        let mut y = area.y + 5;
+        let mut y = top + 1;
         for kid in &listed {
             let (mark, look) = m.mark(*kid);
             buf.set_string(x, y, mark, look);
-            buf.set_string(
-                x + 2,
-                y,
-                cut(kid.title(), inner - 2),
-                m.tone(Phase::of(kid)),
-            );
+            let lines = wrap(kid.title(), inner - 2);
+            for (n, line) in lines.iter().enumerate() {
+                buf.set_string(x + 2, y + n as u16, line, m.tone(Phase::of(kid)));
+            }
+            let tall = titled(*kid, inner - 2);
             let alpha = m.arrived(m.seen.added(kid.id(), m.now), 0.4);
             if alpha < 1.0 {
-                fade(buf, Rect::new(x, y, area.width - 4, 1), alpha);
+                fade(buf, Rect::new(x, y, area.width - 4, tall), alpha);
             }
             rows.insert(kid.id().to_string(), y);
-            y += 1;
+            y += tall;
         }
         if more > 0 {
             let hidden: Vec<Step> = self
@@ -305,7 +303,7 @@ fn walk<'a>(
             _ => format!(" · {}", state.text()),
         };
         if !under.is_empty() {
-            let done = under.iter().filter(|s| s.state() == State::Done).count();
+            let done = under.iter().filter(|s| Phase::of(s) == Phase::Done).count();
             meta = format!("{done}/{} · {meta}", under.len());
         }
         let room = width.saturating_sub(used + meta.width() + 2).max(8);
@@ -339,20 +337,23 @@ fn walk<'a>(
     }
 }
 
-/// Draws a closed card's title, and under it its steps by state and its time or why it ended.
+/// The rows the title of `step` takes wrapped inside a card `inner` columns wide, one at least.
+pub(super) fn titled(step: Step, inner: usize) -> u16 {
+    wrap(step.title(), inner).len().max(1) as u16
+}
+
+/// Draws a closed card's whole title, and under it its steps by state and its time or why it ended.
 pub(super) fn closed(buf: &mut Buffer, step: Step, area: Rect, m: &Moment) {
     let inner = usize::from(area.width.saturating_sub(4));
     let x = area.x + 2;
-    buf.set_string(
-        x,
-        area.y + 1,
-        cut(step.title(), inner),
-        m.tone(Phase::of(&step)),
-    );
+    for (n, line) in wrap(step.title(), inner).into_iter().enumerate() {
+        buf.set_string(x, area.y + 1 + n as u16, line, m.tone(Phase::of(&step)));
+    }
+    let y = area.y + 1 + titled(step, inner);
     let under: Vec<Step> = step.tree().into_iter().skip(1).collect();
     let end = match under.is_empty() {
         true => x,
-        false => put(buf, x, area.y + 2, &tally(&under, m.spin(), false)),
+        false => put(buf, x, y, &tally(&under, m.spin(), false)),
     };
     let state = Phase::of(&step);
     let mut right = match state {
@@ -367,7 +368,7 @@ pub(super) fn closed(buf: &mut Buffer, step: Step, area: Rect, m: &Moment) {
         };
     }
     let at = x + inner as u16 - right.width() as u16;
-    buf.set_string(at, area.y + 2, right, DIM);
+    buf.set_string(at, y, right, DIM);
 }
 
 /// Draws at `x`, `y` a bar `cells` wide of the share of the steps under `step` done, eased as it
@@ -376,7 +377,7 @@ fn progress(buf: &mut Buffer, x: u16, y: u16, step: Step, m: &Moment, cells: usi
     let under: Vec<Step> = step.tree().into_iter().skip(1).collect();
     let (done, working) = m.shares(&under);
     let end = put(buf, x, y, &bar(done, working, cells).spans);
-    let finished = under.iter().filter(|s| s.state() == State::Done).count();
+    let finished = under.iter().filter(|s| Phase::of(s) == Phase::Done).count();
     let end = put(
         buf,
         end + 1,
@@ -392,7 +393,9 @@ fn progress(buf: &mut Buffer, x: u16, y: u16, step: Step, m: &Moment, cells: usi
 pub(super) fn spent(step: Step, at: u64) -> String {
     match (Grade::of(step), step.start()) {
         (Some(grade), _) => took(grade.took),
-        (None, Some(start)) if step.works() => took(at.saturating_sub(start.created_at)),
+        (None, Some(start)) if Phase::of(&step) == Phase::Started => {
+            took(at.saturating_sub(start.created_at))
+        }
         _ => Phase::of(&step).text().to_string(),
     }
 }

@@ -1,14 +1,14 @@
 //! How the steps of a span of days ended, and the shares stats reads from them.
 
-/// How the steps that closed in a span ended, each step once: done using a pattern, done new, done
-/// and revised later, dropped, or stale; and how many of the done ones applied a pattern.
+/// How the steps that closed in a span ended, each step once: done following past work, done new, done
+/// and revised later, dropped, or expired; and how many of the done ones applied a pattern.
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
 pub(super) struct Outcomes {
     pub reused: usize,
     pub new: usize,
     pub reworked: usize,
     pub dropped: usize,
-    pub stale: usize,
+    pub expired: usize,
     pub applied: usize,
 }
 
@@ -20,7 +20,7 @@ impl Outcomes {
             new: a.new + s.new,
             reworked: a.reworked + s.reworked,
             dropped: a.dropped + s.dropped,
-            stale: a.stale + s.stale,
+            expired: a.expired + s.expired,
             applied: a.applied + s.applied,
         })
     }
@@ -30,9 +30,9 @@ impl Outcomes {
         self.reused + self.new + self.reworked
     }
 
-    /// The steps that ended: successful, dropped and stale.
+    /// The steps that ended: successful, dropped and expired.
     pub fn resolved(self) -> usize {
-        self.successful() + self.dropped + self.stale
+        self.successful() + self.dropped + self.expired
     }
 
     /// The steps done that no later step revised.
@@ -48,16 +48,6 @@ impl Outcomes {
     /// The first-pass steps among the resolved ones, in whole per cent.
     pub fn first_pass_rate(self) -> i64 {
         percent(self.first_pass(), self.resolved())
-    }
-
-    /// The reworked steps among the resolved ones, in whole per cent.
-    pub fn rework_rate(self) -> i64 {
-        percent(self.reworked, self.resolved())
-    }
-
-    /// The steps that applied a pattern among the successful ones, in whole per cent.
-    pub fn pattern_usage(self) -> i64 {
-        percent(self.applied, self.successful())
     }
 }
 
