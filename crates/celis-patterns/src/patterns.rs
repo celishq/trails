@@ -64,8 +64,7 @@ impl<'a> Patterns<'a> {
     /// The cells that hold `pattern`: those of its account that name it, or a pattern of that account
     /// it replaces.
     pub fn holding(&self, pattern: &Pattern) -> Vec<&Cell> {
-        let author = pattern.note.pubkey.hex();
-        let mut cells = self.cells.naming(pattern.id(), &author);
+        let mut cells = self.cells.naming(pattern.id(), &pattern.note.pubkey);
         let replaced = self.replaced(pattern);
         if let Some(replaced) = replaced.filter(|r| r.note.pubkey == pattern.note.pubkey) {
             cells.extend(self.holding(replaced));

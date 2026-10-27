@@ -2,7 +2,6 @@
 
 use crate::command::Command;
 use crate::failure::Failure;
-use celis_nostr::Pubkey;
 use celis_patterns::PatternStore;
 use std::io::Write;
 
@@ -20,7 +19,7 @@ impl Command {
         for cell in patterns.cells().all() {
             let live = patterns.every().iter().filter(|p| p.is_live());
             let held = live.filter(|p| patterns.holding(p).contains(&cell)).count();
-            let npub = Pubkey::parse(&cell.author).map_err(Failure::from)?.npub();
+            let npub = cell.author.npub();
             let state = match patterns.view(&project).is_on(cell) {
                 true => "on",
                 false => "off",

@@ -1,7 +1,7 @@
 //! The cells of a store.
 
 use crate::{Cell, Mask, Membership};
-use celis_nostr::Note;
+use celis_nostr::{Note, Pubkey};
 use std::collections::{BTreeMap, BTreeSet};
 
 /// The cells of a store, each with the ids its memberships name, and the masks that turn them on or off,
@@ -38,9 +38,9 @@ impl Cells {
     }
 
     /// The cells of `author` whose memberships name `id`.
-    pub fn naming(&self, id: &str, author: &str) -> Vec<&Cell> {
+    pub fn naming(&self, id: &str, author: &Pubkey) -> Vec<&Cell> {
         let members = self.members.iter();
-        let found = members.filter(|(c, ids)| c.author == author && ids.contains(id));
+        let found = members.filter(|(c, ids)| c.author == *author && ids.contains(id));
         found.map(|(c, _)| c).collect()
     }
 

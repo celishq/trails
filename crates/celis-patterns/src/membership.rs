@@ -33,7 +33,7 @@ impl Membership {
         }
         let cell = Cell {
             name: label[1].clone(),
-            author: note.pubkey.hex(),
+            author: note.pubkey,
         };
         let ids = note.tags.iter().filter(|t| t.len() >= 2 && t[0] == "e");
         let patterns = ids.map(|t| t[1].clone()).collect();

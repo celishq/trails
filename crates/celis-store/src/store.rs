@@ -1,7 +1,7 @@
 //! The records of a home at one moment, and the signed append of new ones.
 
 use crate::{Anchor, Home, ProofFile, Refusal, Secret};
-use celis_nostr::{Account, Note};
+use celis_nostr::{Account, Note, Pubkey};
 use std::path::{Path, PathBuf};
 
 /// The records of a home at the time `now`, and the account's writes on them, each signed now. A
@@ -49,8 +49,8 @@ impl Store {
         taken
     }
 
-    /// The hex pubkey of the account; none when no phrase is kept.
-    pub fn author(&self) -> Result<Option<String>, Refusal> {
+    /// The account's public key; none when no phrase is kept.
+    pub fn author(&self) -> Result<Option<Pubkey>, Refusal> {
         Ok(self.home.author()?)
     }
 

@@ -29,7 +29,7 @@ fn a_project_mask_wins_over_a_me_mask() {
     let account = Account::new(&[1u8; 32]).unwrap();
     let cell = Cell {
         name: "west".to_string(),
-        author: account.pubkey().hex(),
+        author: account.pubkey(),
     };
     let records = vec![
         mask(&cell, &account, 1, true, Some(anchor("p"))),
@@ -52,7 +52,7 @@ fn a_project_mask_wins_over_a_me_mask() {
 fn a_cell_with_no_mask_is_off() {
     let cell = Cell {
         name: "west".to_string(),
-        author: "ab".to_string(),
+        author: Account::new(&[2u8; 32]).unwrap().pubkey(),
     };
     assert!(!Cells::new(&[]).is_on(&cell, "p"));
 }
@@ -63,7 +63,7 @@ fn newest_gives_the_newest_mask_of_the_project() {
     let account = Account::new(&[1u8; 32]).unwrap();
     let cell = Cell {
         name: "west".to_string(),
-        author: account.pubkey().hex(),
+        author: account.pubkey(),
     };
     let records = vec![
         mask(&cell, &account, 5, true, Some(anchor("p"))),

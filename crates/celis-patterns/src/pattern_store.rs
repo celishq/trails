@@ -60,9 +60,9 @@ impl PatternStore for Store {
         if ids.is_empty() {
             return Err(Refusal::Usage("cell add needs a pattern id".to_string()));
         }
-        let author = self.author()?.unwrap_or_default();
+        let author = self.author()?;
         let cells = Cells::new(self.records());
-        if cells.named(name).iter().any(|c| c.author != author) {
+        if cells.named(name).iter().any(|c| Some(c.author) != author) {
             return Err(Refusal::CellTaken(name.to_string()));
         }
         let patterns = self.patterns();
@@ -70,7 +70,7 @@ impl PatternStore for Store {
             .iter()
             .map(|id| {
                 let pattern = patterns.find(id)?;
-                match pattern.note.pubkey.hex() == author {
+                match Some(pattern.note.pubkey) == author {
                     true => Ok(pattern.id()),
                     false => Err(Refusal::NoPattern(id.clone())),
                 }
@@ -101,12 +101,12 @@ impl PatternStore for Store {
     }
 
     fn leave(&mut self, name: &str) -> Result<usize, Refusal> {
-        let author = self.author()?.unwrap_or_default();
+        let author = self.author()?;
         let patterns = self.patterns();
         let named = patterns.cells().named(name);
         let cell = match named.first() {
             None => return Err(Refusal::NoCell(name.to_string())),
-            Some(_) if named.iter().any(|c| c.author == author) => {
+            Some(_) if named.iter().any(|c| Some(c.author) == author) => {
                 return Err(Refusal::CellYours(name.to_string()))
             }
             Some(cell) => (*cell).clone(),

@@ -6,7 +6,7 @@ use crate::records::verified::Verified;
 use crate::{Link, Phrase, ProofFile, Refusal};
 use anyhow::Result;
 use blobs::Blobs;
-use celis_nostr::{Account, Note};
+use celis_nostr::{Account, Note, Pubkey};
 use std::cell::{OnceCell, RefCell};
 use std::collections::{HashMap, HashSet};
 use std::io::ErrorKind;
@@ -68,10 +68,10 @@ impl Home {
         Ok(self.account.get_or_init(|| account))
     }
 
-    /// The hex pubkey of the kept account; none when no phrase is kept.
-    pub fn author(&self) -> Result<Option<String>> {
+    /// The public key of the kept account; none when no phrase is kept.
+    pub fn author(&self) -> Result<Option<Pubkey>> {
         let kept = self.phrase.kept()?;
-        Ok(kept.map(|identity| identity.account().pubkey().hex()))
+        Ok(kept.map(|identity| identity.account().pubkey()))
     }
 
     /// Writes `record` once to `shared/`, and to each linked folder that holds it.

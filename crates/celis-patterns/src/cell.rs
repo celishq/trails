@@ -1,10 +1,12 @@
 //! CIP-09: a cell, a named set of patterns of one account.
 
-/// A cell: its name, and the hex pubkey of the account that signs its memberships.
+use celis_nostr::Pubkey;
+
+/// A cell: its name, and the account that signs its memberships.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Cell {
     pub name: String,
-    pub author: String,
+    pub author: Pubkey,
 }
 
 impl Cell {

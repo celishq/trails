@@ -2,7 +2,7 @@
 
 use crate::{Cell, Scope};
 use anyhow::Result;
-use celis_nostr::{Account, Note};
+use celis_nostr::{Account, Note, Pubkey};
 use celis_store::Anchor;
 
 /// A mask: the cell it turns on or off, its project, none for every project, and when it was written.
@@ -22,7 +22,7 @@ impl Mask {
             vec!["L".to_string(), NAMESPACE.to_string()],
             vec!["l".to_string(), state.to_string(), NAMESPACE.to_string()],
             vec!["cell".to_string(), self.cell.name.clone()],
-            vec!["p".to_string(), self.cell.author.clone()],
+            vec!["p".to_string(), self.cell.author.hex()],
         ];
         match &self.anchor {
             Some(anchor) => tags.extend(anchor.tags()),
@@ -44,7 +44,7 @@ impl Mask {
         };
         let cell = Cell {
             name: note.tag("cell")?.to_string(),
-            author: note.tag("p")?.to_string(),
+            author: Pubkey::parse(note.tag("p")?).ok()?,
         };
         let anchor = match note.tag("scope").and_then(Scope::parse) {
             Some(Scope::Me) => None,

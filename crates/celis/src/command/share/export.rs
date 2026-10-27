@@ -18,9 +18,10 @@ impl Command {
             return Err(Failure::no_cell(name));
         }
         let trails = self.trails()?;
+        let author = trails.author()?.ok_or_else(|| Failure::no_cell(name))?;
         let cell = Cell {
             name: name.to_string(),
-            author: trails.author()?.unwrap_or_default(),
+            author,
         };
         let patterns = trails.patterns();
         let every = patterns.every().iter().rev().filter(|p| p.is_live());
