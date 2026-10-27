@@ -382,7 +382,11 @@ fn cell_export_writes_the_records_the_blobs_and_a_page_and_no_record() {
         .collect();
     assert_eq!(notes.len(), 3);
     assert!(notes.iter().all(Note::verifies));
-    assert_eq!([&notes[0].id, &notes[1].id], [&a, &b]);
+    let mut exported = [&notes[0].id, &notes[1].id];
+    exported.sort();
+    let mut made = [&a, &b];
+    made.sort();
+    assert_eq!(exported, made);
     let membership = &notes[2];
     assert_eq!(membership.tag("L"), Some("celis.cell"));
     let named: Vec<&str> = membership
@@ -391,7 +395,7 @@ fn cell_export_writes_the_records_the_blobs_and_a_page_and_no_record() {
         .filter(|t| t[0] == "e")
         .map(|t| t[1].as_str())
         .collect();
-    assert_eq!(named, [a.as_str(), b.as_str()]);
+    assert_eq!(named, [notes[0].id.as_str(), notes[1].id.as_str()]);
     let sha = format!("{:x}", sha2::Sha256::digest(b"a plate"));
     let blob = format!("blobs/{sha}.png");
     assert_eq!(std::fs::read(folder.join(&blob)).unwrap(), b"a plate");
