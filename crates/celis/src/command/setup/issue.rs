@@ -1,6 +1,6 @@
 //! `celis issue`: what went wrong, with the facts of this machine, as Markdown for the celis team.
 
-use crate::command::read::report::markdown;
+use crate::command::trail::report::markdown;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use celis_store::records::id::short;

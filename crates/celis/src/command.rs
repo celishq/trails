@@ -1,10 +1,14 @@
 //! One run of `celis`.
 
 mod args;
-mod read;
-mod record;
+mod cell;
+mod grep;
+mod hook;
+mod pattern;
 mod setup;
-mod share;
+mod stats;
+mod step;
+mod trail;
 
 use crate::failure::Failure;
 use crate::help::{self, VERBS};
