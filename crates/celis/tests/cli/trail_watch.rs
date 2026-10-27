@@ -4,7 +4,7 @@ use crate::support;
 
 use std::time::Duration;
 use support::watch::Watch;
-use support::{add, cli, err, finish, refusal, Repo};
+use support::{add, cli, err, finish, out, refusal, Repo};
 
 /// The spinner's frames.
 const SPIN: &str = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏";
@@ -469,11 +469,12 @@ fn watch_opens_a_step_and_copies_its_id() {
 #[test]
 fn watch_opens_the_patterns_line() {
     let repo = Repo::new();
-    let trail = add(&repo, &["--", "the trail"]);
-    add(&repo, &["--under", &trail[..8], "--", "the part"]);
     let pattern = "When you price a senior: use cents, because floats lost a cent on the receipt.";
-    let o = cli(&repo, &["step", "note", &trail[..8], "--", pattern]);
+    let o = cli(&repo, &["pattern", "--", pattern]);
     assert!(o.status.success(), "{}", err(&o));
+    let used = out(&o)[..8].to_string();
+    let trail = add(&repo, &["--uses", &used, "--", "the trail"]);
+    add(&repo, &["--under", &trail[..8], "--", "the part"]);
     let mut watch = Watch::start(&repo, &["tree", &trail[..8]]);
     watch.size(24, 60);
     watch.until("└▸ §   1 pattern");
@@ -490,17 +491,50 @@ fn watch_opens_the_patterns_line() {
     watch.until("the receipt");
 }
 
+/// In both watches, a step with a note opens to its notes folded to one `¶` line, which `→` opens to a
+/// line a note.
+#[test]
+fn watch_opens_a_steps_notes_line() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    let part = add(&repo, &["--under", &trail[..8], "--", "the part"]);
+    let o = cli(&repo, &["step", "note", &part[..8], "--", "round corners"]);
+    assert!(o.status.success(), "{}", err(&o));
+    for next in [false, true] {
+        let mut args = vec!["tree", &trail[..8]];
+        if next {
+            args.push("--next");
+        }
+        let mut watch = Watch::start(&repo, &args);
+        watch.size(24, 80);
+        watch.until("the part");
+        assert!(!watch.rows().join("\n").contains("¶"), "{:?}", watch.rows());
+        watch.press("\x1b[B\x1b[B\x1b[C");
+        watch.until("¶   1 note");
+        assert!(
+            !watch.rows().join("\n").contains("round corners"),
+            "{:?}",
+            watch.rows()
+        );
+        watch.press("\x1b[B\x1b[C");
+        watch.until("¶   round corners");
+        watch.press("q");
+        assert_eq!(watch.child.wait().unwrap().code(), Some(0));
+    }
+}
+
 /// In both watches, `→` on a pattern's line opens it to its forces, do and because, each labelled and
 /// dim under it, and `←` closes it.
 #[test]
 fn watch_opens_a_pattern_to_its_forces() {
     let repo = Repo::new();
-    let trail = add(&repo, &["--", "the trail"]);
-    add(&repo, &["--under", &trail[..8], "--", "the part"]);
     let pattern =
         "When a price is stored\nForces: floats are quick\nDo: store cents\nBecause: floats lost a cent";
-    let o = cli(&repo, &["step", "note", &trail[..8], "--", pattern]);
+    let o = cli(&repo, &["pattern", "--", pattern]);
     assert!(o.status.success(), "{}", err(&o));
+    let used = out(&o)[..8].to_string();
+    let trail = add(&repo, &["--uses", &used, "--", "the trail"]);
+    add(&repo, &["--under", &trail[..8], "--", "the part"]);
     for next in [false, true] {
         let mut args = vec!["tree", &trail[..8]];
         if next {
@@ -573,7 +607,10 @@ fn watch_opens_and_closes_with_arrows_and_star() {
 #[test]
 fn watch_draws_a_block_with_tree_lines_and_colour_anchors() {
     let repo = Repo::new();
-    let trail = add(&repo, &["--", "the trail"]);
+    let o = cli(&repo, &["pattern", "--", "a rule"]);
+    assert!(o.status.success(), "{}", err(&o));
+    let used = out(&o)[..8].to_string();
+    let trail = add(&repo, &["--uses", &used, "--", "the trail"]);
     let done = add(
         &repo,
         &[
@@ -586,8 +623,6 @@ fn watch_draws_a_block_with_tree_lines_and_colour_anchors() {
         ],
     );
     let deeper = add(&repo, &["--under", &done[..8], "--", "deeper part"]);
-    let o = cli(&repo, &["step", "note", &trail[..8], "--", "a rule"]);
-    assert!(o.status.success(), "{}", err(&o));
     let o = cli(&repo, &["step", "start", &deeper[..8]]);
     assert!(o.status.success(), "{}", err(&o));
     std::thread::sleep(Duration::from_millis(1100));
@@ -683,7 +718,7 @@ fn watch_prints_open_steps_then_notes_then_closed_steps() {
         "    │  │   ",
         "    │  ├─ ○   new child",
         "    │  └▸ ✓   1 closed step",
-        "    ├▸ §   1 pattern",
+        "    ├▸ ¶   1 note",
         "    └▸ ✓   1 closed step",
     ];
     assert_eq!(tree.len(), starts.len(), "{rows:?}");
@@ -1331,7 +1366,10 @@ fn next_watch_leaves_the_last_column_empty() {
 #[test]
 fn next_watch_draws_a_block_with_tree_lines_and_colour_anchors() {
     let repo = Repo::new();
-    let trail = add(&repo, &["--", "the trail"]);
+    let o = cli(&repo, &["pattern", "--", "a rule"]);
+    assert!(o.status.success(), "{}", err(&o));
+    let used = out(&o)[..8].to_string();
+    let trail = add(&repo, &["--uses", &used, "--", "the trail"]);
     let done = add(
         &repo,
         &[
@@ -1344,8 +1382,6 @@ fn next_watch_draws_a_block_with_tree_lines_and_colour_anchors() {
         ],
     );
     let deeper = add(&repo, &["--under", &done[..8], "--", "deeper part"]);
-    let o = cli(&repo, &["step", "note", &trail[..8], "--", "a rule"]);
-    assert!(o.status.success(), "{}", err(&o));
     let o = cli(&repo, &["step", "start", &deeper[..8]]);
     assert!(o.status.success(), "{}", err(&o));
     std::thread::sleep(Duration::from_millis(1100));
@@ -1518,7 +1554,7 @@ fn next_watch_prints_open_steps_then_notes_then_closed_steps() {
         "    ├── ✓   finished",
         "    ├ ▸ ○   parent",
         "    ├── ○   newest",
-        "    └ ▸ §   1 pattern",
+        "    └ ▸ ¶   1 note",
     ];
     assert_eq!(rows.len(), starts.len(), "{rows:?}");
     for (row, start) in rows.iter().zip(starts) {
@@ -1725,11 +1761,12 @@ fn next_watch_opens_a_step_and_copies_its_id() {
 #[test]
 fn next_watch_opens_the_patterns_line() {
     let repo = Repo::new();
-    let trail = add(&repo, &["--", "the trail"]);
-    add(&repo, &["--under", &trail[..8], "--", "the part"]);
     let pattern = "When you price a senior: use cents, because floats lost a cent on the receipt.";
-    let o = cli(&repo, &["step", "note", &trail[..8], "--", pattern]);
+    let o = cli(&repo, &["pattern", "--", pattern]);
     assert!(o.status.success(), "{}", err(&o));
+    let used = out(&o)[..8].to_string();
+    let trail = add(&repo, &["--uses", &used, "--", "the trail"]);
+    add(&repo, &["--under", &trail[..8], "--", "the part"]);
     let mut watch = Watch::start(&repo, &["tree", "--next", &trail[..8]]);
     watch.size(24, 80);
     watch.until("└ ▸ §   1 pattern");

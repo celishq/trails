@@ -83,7 +83,7 @@ struct Demo {
 
 impl Demo {
     /// Writes the made-up trails: the history of four weeks; a done one of a past day; today, an active
-    /// one with a step in each state, patterns and a change, a revised one, and in a second project an
+    /// one with a step in each state, patterns, notes and a change, a revised one, and in a second project an
     /// active, a stale and a dropped one.
     fn write(&self) -> Result<(), Failure> {
         let (shop, crm) = (anchor("shop"), anchor("crm"));
@@ -188,19 +188,23 @@ impl Demo {
             &[],
         )?;
 
-        let tier = self.add(
+        let senior = self.write_pattern(1510, &shop, Scope::Project, "When you price a senior: pay 80% of the price, rounded down to the cent, because the receipt must match the shelf.")?;
+        let currency = self.write_pattern(
+            1505,
+            &shop,
+            Scope::Project,
+            "When you show a price: use the shop's currency, because the receipt showed dollars.",
+        )?;
+        let tier = self.write_step(
             1500,
             &shop,
             None,
             "Add a senior tier to the price list\nexpect: a senior pays 80% on the shelf, the receipt and the frame",
             &[],
+            None,
+            &[senior, currency],
         )?;
-        self.note(1490, &tier, "When you price a senior: pay 80% of the price, rounded down to the cent, because the receipt must match the shelf.")?;
-        self.note(
-            1480,
-            &tier,
-            "When you show a price: use the shop's currency, because the receipt showed dollars.",
-        )?;
+        self.note(1490, &tier, "Keep the old prices until the release.")?;
         let pays = self.add(
             1470,
             &shop,
@@ -254,6 +258,7 @@ impl Demo {
             "Show the tier in the frame\nexpect: the frame shows the senior price",
             &["web/frame.tsx"],
         )?;
+        self.note(955, &frame, "The frame reads the tier from the price list.")?;
         let label = self.add(
             950,
             &shop,
@@ -448,9 +453,9 @@ impl Demo {
         Ok(())
     }
 
-    /// Writes the note `text` on the trail `trail`, `ago` seconds before now.
-    fn note(&self, ago: u64, trail: &str, text: &str) -> Result<(), Failure> {
-        self.trails(ago)?.note(trail, text.to_string())?;
+    /// Writes the note `text` on the step `step`, `ago` seconds before now.
+    fn note(&self, ago: u64, step: &str, text: &str) -> Result<(), Failure> {
+        self.trails(ago)?.note(step, text.to_string())?;
         Ok(())
     }
 

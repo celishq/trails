@@ -2,12 +2,11 @@
 
 use super::level::Level;
 use super::row::Row;
-use super::{Item, Tree, PATTERNS, PROJECT};
+use super::{Item, Summary, Tree, NOTES, PATTERNS, PROJECT};
 use crate::progress::Phase;
 use crate::terminal::canvas::{paint, Styled, BOLD, DIM};
 use crate::terminal::classic::look;
 use crate::text::clock::{stride, took};
-use celis_nostr::Note;
 use celis_trails::{Step, Trail};
 use ratatui::text::Span;
 
@@ -44,17 +43,22 @@ impl Tree<'_> {
         self.order.borrow_mut().push(item);
     }
 
-    /// The trail `note` as a line a watch selects, `open` when it prints as a block: with every pattern of
-    /// `patterns` and every step it prints under it.
-    pub(super) fn item(&self, note: Step, open: bool, patterns: &[&Note]) -> Item {
-        let folded = (!patterns.is_empty()).then(|| format!("{PATTERNS}{}", note.id()));
-        let patterns = patterns.iter().map(|pattern| pattern.id.clone());
-        let steps = Level::of(Trail::new(note).parts()).ids(note.id());
+    /// The trail `note` as a line a watch selects, `open` when it prints as a block: with the patterns
+    /// and notes of `summary`, their folded lines, and every step it prints under it.
+    pub(super) fn item(&self, note: Step, open: bool, summary: &Summary) -> Item {
+        let mut under = vec![];
+        for (fold, records) in [(PATTERNS, &summary.patterns), (NOTES, &summary.notes)] {
+            if !records.is_empty() {
+                under.push(format!("{fold}{}", note.id()));
+            }
+            under.extend(records.iter().map(|record| record.id.clone()));
+        }
+        under.extend(Level::of(Trail::new(note).parts()).ids(note.id()));
         Item {
             id: note.id().to_string(),
             open,
             parent: None,
-            under: folded.into_iter().chain(patterns).chain(steps).collect(),
+            under,
         }
     }
 
@@ -74,7 +78,7 @@ impl Tree<'_> {
             tone: self.tone(BOLD, note.newest()),
             rest: hair.clone(),
         });
-        self.pick(self.item(note, true, &summary.notes), lines, first);
+        self.pick(self.item(note, true, &summary), lines, first);
         if let Some(worked) = summary.meta.worked {
             self.labelled(lines, &hair, "took", &took(worked));
         }
@@ -93,7 +97,14 @@ impl Tree<'_> {
         }
         self.closing(work, &hair, false, lines);
         let level = Level::of(Trail::new(note).parts());
-        self.level(level, summary.notes, &Styled::from("  "), note.id(), lines);
+        self.level(
+            level,
+            summary.patterns,
+            summary.notes,
+            &Styled::from("  "),
+            note.id(),
+            lines,
+        );
     }
 
     /// Adds `note` as one row: `▸`, its mark and wrapped title, then its details: its steps and worked
@@ -113,7 +124,7 @@ impl Tree<'_> {
             rest: rest.clone(),
         });
         self.details(&rest, summary.meta, lines);
-        self.pick(self.item(note, false, &summary.notes), lines, first);
+        self.pick(self.item(note, false, &summary), lines, first);
     }
 }
 

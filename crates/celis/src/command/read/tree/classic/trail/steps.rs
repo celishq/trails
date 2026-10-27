@@ -2,11 +2,11 @@
 
 use crate::command::read::tree::classic::level::Level;
 use crate::command::read::tree::classic::row::Row;
-use crate::command::read::tree::classic::{after, Item, Tree};
+use crate::command::read::tree::classic::{after, Item, Tree, NOTES, PATTERNS};
 use crate::command::read::tree::meta::Meta;
 use crate::progress::Phase;
 use crate::terminal::canvas::{paint, Styled, DIM};
-use crate::terminal::classic::look;
+use crate::terminal::classic::{look, MAGENTA};
 use celis_nostr::Note;
 use celis_trails::step::steps::LIFE;
 use celis_trails::{State, Step};
@@ -14,19 +14,32 @@ use ratatui::text::Span;
 
 impl Tree<'_> {
     /// Adds `level` under the line `above` after `rail`: its active steps, the patterns line of `patterns`,
-    /// then its closed line.
+    /// the notes line of `notes`, then its closed line.
     pub(super) fn level(
         &self,
         level: Level,
         patterns: Vec<&Note>,
+        notes: Vec<&Note>,
         rail: &Styled,
         above: &str,
         lines: &mut Vec<Row>,
     ) {
-        let more = !patterns.is_empty() || !level.ended.is_empty();
+        let more = !patterns.is_empty() || !notes.is_empty() || !level.ended.is_empty();
         self.steps(level.active, rail, above, more, lines);
         if !patterns.is_empty() {
-            self.patterns_line(patterns, rail, level.ended.is_empty(), above, lines);
+            let last = notes.is_empty() && level.ended.is_empty();
+            self.records_line(
+                patterns,
+                (paint(MAGENTA, PATTERNS), "pattern"),
+                rail,
+                last,
+                above,
+                lines,
+            );
+        }
+        if !notes.is_empty() {
+            let last = level.ended.is_empty();
+            self.records_line(notes, (paint(DIM, NOTES), "note"), rail, last, above, lines);
         }
         if !level.ended.is_empty() {
             self.closed_line(level.ended, rail, above, lines);
@@ -90,11 +103,11 @@ impl Tree<'_> {
                 self.closing(note, &below, true, lines);
             }
             if !folded {
-                let used = match open {
-                    true => self.uses(note),
-                    false => vec![],
+                let (used, notes) = match open {
+                    true => (self.uses(note), self.notes.on(note.id()).to_vec()),
+                    false => (vec![], vec![]),
                 };
-                self.level(level, used, &rail, note.id(), lines);
+                self.level(level, used, notes, &rail, note.id(), lines);
             }
         }
     }
@@ -130,11 +143,12 @@ impl Tree<'_> {
         )
     }
 
-    /// Whether opening `note` shows something: lines under it, or steps under a closed one.
+    /// Whether opening `note` shows something: lines under it, its notes, or steps under a closed one.
     fn opens(&self, note: Step) -> bool {
         let lines = note.record().detail().next().is_some()
             || note.done_record().is_some()
-            || note.dropped().is_some();
+            || note.dropped().is_some()
+            || !self.notes.on(note.id()).is_empty();
         lines || (note.state() != State::Open && !note.children().is_empty())
     }
 

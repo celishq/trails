@@ -66,7 +66,7 @@ fn tree_prints_the_trail_its_notes_and_the_steps_under_it() {
         "    ○   {m} stamp",
         "    ○   {b} badge",
         "    ✓   {s} seal · 30s",
-        "  §   {r} colours are tokens",
+        "  ¶   {r} colours are tokens",
         "  ✓   {l} logo · 1m 0s",
         "  ✓   {c} colours · 1m 30s",
     ];
@@ -81,7 +81,7 @@ fn tree_prints_the_trail_its_notes_and_the_steps_under_it() {
         "    ✓   {s} seal · 30s",
         "        done     proof",
         "        took     30s",
-        "  §   {r} colours are tokens",
+        "  ¶   {r} colours are tokens",
         "  ✓   {l} logo · 1m 0s",
         "      done     proof",
         "      took     1m 0s",
@@ -161,7 +161,7 @@ fn tree_prints_a_stale_step_with_the_closed_ones() {
     assert_eq!(
         lines[2..],
         [
-            format!("  §   {} a rule", short(&pattern.id)),
+            format!("  ¶   {} a rule", short(&pattern.id)),
             format!("  ◌   {} left part", short(&left.id)),
             format!("  ✓   {} done part · 30s", short(&done.id)),
         ],
@@ -187,9 +187,40 @@ fn tree_of_an_ask_prints_its_notes() {
             format!("○   {} customers page", short(&ask)),
             "  0/1 step".to_string(),
             format!("  ○   {} badge", short(&badge)),
-            format!("  §   {pattern} colours are tokens"),
+            format!("  ¶   {pattern} colours are tokens"),
         ]
     );
+}
+
+/// `tree <id> --full` and `tree --next <id> --full` print a note on a step as `¶` under that step, after
+/// the patterns it uses, and not under the trail; with no `--full`, under no step.
+#[test]
+fn tree_prints_a_steps_notes_under_it() {
+    let repo = Repo::new();
+    let ask = add(&repo, &["--", "customers page"]);
+    let badge = add(&repo, &["--under", short(&ask), "--", "badge"]);
+    let o = cli(
+        &repo,
+        &["step", "note", short(&badge), "--", "round corners"],
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let note = out(&o).trim()[..8].to_string();
+    for next in [&[][..], &["--next"]] {
+        let args = [next, &[short(&ask), "--full"]].concat();
+        assert_eq!(
+            printed(&repo, &args)[2..],
+            [
+                format!("  ○   {} badge", short(&badge)),
+                format!("    ¶   {note} round corners"),
+            ],
+            "{args:?}"
+        );
+        let args = [next, &[short(&ask)]].concat();
+        assert!(
+            !printed(&repo, &args).iter().any(|l| l.contains(&note)),
+            "{args:?}"
+        );
+    }
 }
 
 /// `tree --full` prints a done trail's proof and grade under its title, and no progress with no step
@@ -544,7 +575,7 @@ fn tree_demo_prints_every_state_and_writes_nothing() {
             "{mark}: {text}"
         );
     }
-    for part in ["\nshop\n", "\ncrm\n", "  § ", " ~ ", " dropped "] {
+    for part in ["\nshop\n", "\ncrm\n", "  § ", "  ¶ ", " ~ ", " dropped "] {
         assert!(text.contains(part), "{part:?}: {text}");
     }
     let all = out(&repo.run(&repo.path(), &["tree", "--demo", "--all"], &env, ""));
@@ -648,7 +679,7 @@ fn next_tree_demo_prints_every_state_and_writes_nothing() {
             "{mark}: {text}"
         );
     }
-    for part in ["\nshop\n", "\ncrm\n", "  § ", " ~ ", " dropped "] {
+    for part in ["\nshop\n", "\ncrm\n", "  § ", "  ¶ ", " ~ ", " dropped "] {
         assert!(text.contains(part), "{part:?}: {text}");
     }
     let all = out(&repo.run(

@@ -174,9 +174,11 @@ pub(crate) struct Item {
 }
 
 impl Item {
-    /// The first 8 characters of its id; none for a patterns or day line.
+    /// The first 8 characters of its id; none for a patterns, notes or day line.
     pub fn copy(&self) -> Option<String> {
-        let group = [PATTERNS, DAY].iter().any(|p| self.id.starts_with(p));
+        let group = [PATTERNS, NOTES, DAY]
+            .iter()
+            .any(|p| self.id.starts_with(p));
         (!group).then(|| short(&self.id))
     }
 }
@@ -203,9 +205,11 @@ pub(crate) struct Tree<'a> {
     pub next: Cell<Option<u64>>,
 }
 
-/// What the tree says of a trail: the steps it prints under it with the time they worked, and its notes.
+/// What the tree says of a trail: the steps it prints under it with the time they worked, the patterns
+/// its work uses, and its own notes.
 struct Summary<'a> {
     meta: Meta,
+    patterns: Vec<&'a Note>,
     notes: Vec<&'a Note>,
 }
 
@@ -303,31 +307,30 @@ impl Tree<'_> {
             true => self.worked(&[work]),
             false => self.worked(&shown),
         };
+        let notes = self.notes(note, work);
         Summary {
             meta: Meta {
                 done: Tally::of(&shown).done,
                 all: shown.len(),
                 worked,
             },
-            notes: {
-                let mut notes = self.notes(note);
-                let used = self.uses(work).into_iter();
-                notes.extend(
-                    used.filter(|u| !notes.iter().any(|n| n.id == u.id))
-                        .collect::<Vec<_>>(),
-                );
-                notes
-            },
+            patterns: self
+                .uses(work)
+                .into_iter()
+                .filter(|u| !notes.iter().any(|n| n.id == u.id))
+                .collect(),
+            notes,
         }
     }
 
-    /// The notes of the trail of `note`: its own, or its trail's when it is an ask.
-    fn notes(&self, note: Step) -> Vec<&Note> {
-        let owner = match note.is_trail() {
-            true => note.trail(),
-            false => note,
-        };
-        self.notes.of(owner)
+    /// The notes on the trail `note` and on `work`, the step that holds its work, oldest first.
+    fn notes(&self, note: Step, work: Step) -> Vec<&Note> {
+        let mut notes = self.notes.on(note.id()).to_vec();
+        if work.id() != note.id() {
+            notes.extend(self.notes.on(work.id()));
+            notes.sort_by(|a, b| (a.created_at, &a.id).cmp(&(b.created_at, &b.id)));
+        }
+        notes
     }
 
     /// The time the steps of `tree` with no step under them worked: what a done one took, and the time
@@ -485,8 +488,10 @@ pub(crate) fn details<'a>(lines: impl Iterator<Item = &'a str>) -> Vec<(&'static
 
 /// The seconds a step's title prints bold after its newest record.
 const FRESH: u64 = 2;
-/// What starts the id of a trail's patterns line in a watch's order.
+/// What starts the id of a row's patterns line in a watch's order, and marks a pattern.
 const PATTERNS: &str = "§";
+/// What starts the id of a row's notes line in a watch's order, and marks a note.
+const NOTES: &str = "¶";
 
 /// The id of the `Show more` line in a watch's order.
 pub(crate) const MORE: &str = "+more";
