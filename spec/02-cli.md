@@ -29,6 +29,7 @@ celis cells                                           each cell, its account, it
 celis cell add <name> <id>...                         put your patterns in a cell of yours
 celis cell on <name> [--scope me]                     use a cell's patterns in this project, or in every project
 celis cell off <name> [--scope me]                    stop using a cell's patterns here, or in every project
+celis cell export <name> [--to <folder>]              write a cell of yours as a folder
 celis step add [--under <id>] [--new] [--replaces <id>] [--uses <id>]... [--misled <id>]... [--at <place>]... [--check <command>] [--session <id>] [--project <id>] -- <text>
                                                        leave a step
 celis step start <id>                                 take up a step, and see the patterns and notes its plan links
@@ -430,6 +431,9 @@ patterns.
 - `cell on` and `cell off` MUST write one mask (CIP-09, "Masks") of the working folder's project, or with
   `--scope me` of every project. They MUST refuse a name that no cell holds with `no-cell`, a name that
   two cells hold with `cell-taken`, and another `--scope` as a usage error.
+- `cell export` MUST write the folder of CIP-09, "Export", for the cell of the account, to `--to`, else to
+  `./<name>/`, and write no record. It MUST refuse a name that no cell of the account with a live pattern
+  holds, with `no-cell`.
 - `patterns --cell <name>` MUST print the live patterns of the cells named `<name>`, on or off, as
   `patterns` prints the index, and refuse a name that no cell holds with `no-cell`.
 
@@ -441,6 +445,7 @@ celis patterns --cell eating-east
 celis cell add eating-east 9b0e11aa 4c2d17e0
 celis cell on eating-east
 celis cell off eating-east --scope me
+celis cell export eating-east --to ~/cells/eating-east
 ```
 
 ## Grep

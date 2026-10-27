@@ -67,6 +67,9 @@ Share
   cell off <name>     Stop using a cell's patterns in this project
   └ --scope           me: in every project
 
+  cell export         Write a cell of yours as a folder to share
+  └ --to <folder>     The folder to write (default: ./<name>)
+
 Set up
   link [<folder>]     Keep this project's trails in a folder to commit or share
   └ --off             Stop keeping the trails in the folder

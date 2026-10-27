@@ -95,6 +95,16 @@ impl Store {
         &self,
         record: impl FnOnce(&Account, u64) -> anyhow::Result<Note>,
     ) -> Result<Note, Refusal> {
+        let note = self.seal(record)?;
+        self.home.write(&note)?;
+        Ok(note)
+    }
+
+    /// The record `record` gives for the account and now, not written; refuses one that holds a secret.
+    pub fn seal(
+        &self,
+        record: impl FnOnce(&Account, u64) -> anyhow::Result<Note>,
+    ) -> Result<Note, Refusal> {
         let note = record(self.home.account()?, self.now)?;
         let values = note.tags.iter().flat_map(|tag| tag.iter().skip(1));
         if let Some(secret) = std::iter::once(&note.content)
@@ -103,7 +113,6 @@ impl Store {
         {
             return Err(Refusal::Secret(format!("the record holds {}", secret.kind)));
         }
-        self.home.write(&note)?;
         Ok(note)
     }
 }

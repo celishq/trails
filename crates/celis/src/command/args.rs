@@ -37,6 +37,7 @@ pub(crate) struct Args {
     pub within: Vec<String>,
     pub bad: Vec<String>,
     pub cell: Option<String>,
+    pub to: Option<String>,
     /// Each deprecated name it gave, in order (`spec/README.md`, "Names").
     pub old: Vec<&'static str>,
 }
@@ -101,6 +102,7 @@ impl Args {
                 "--good" => parsed.good.push(value(arg, rest.next())?),
                 "--within" => parsed.within.push(value(arg, rest.next())?),
                 "--cell" => parsed.cell = Some(value(arg, rest.next())?),
+                "--to" => parsed.to = Some(value(arg, rest.next())?),
                 "--bad" => parsed.bad.push(value(arg, rest.next())?),
                 flag if flag.starts_with("--") => {
                     bad.get_or_insert(Failure::usage(format!("{flag} is not a flag")));

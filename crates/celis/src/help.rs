@@ -133,6 +133,7 @@ pub const GROUPS: &[Group] = &[
             ("add", "Put your patterns into a cell of yours"),
             ("on", "Use a cell's patterns in this project"),
             ("off", "Stop using a cell's patterns in this project"),
+            ("export", "Write a cell of yours as a folder to share"),
         ],
     ),
     (
@@ -409,6 +410,16 @@ pub const VERBS: &[Verb] = &[
             ("--scope", "me: in every project"),
         ],
         examples: &["celis cell off eating-east", "celis cell off eating-east --scope me"],
+    },
+    Verb {
+        command: "cell export",
+        usage: &["celis cell export <name> [--to <folder>]"],
+        summary: "Write a cell of yours as a folder to share: cell.md to read, with each pattern, its example files and the credits; cell.jsonl, the signed patterns; and blobs/, the example files. Trails, steps and notes stay out. Changes no record.",
+        args: &[
+            ("<name>", "A cell of yours"),
+            ("--to <folder>", "The folder to write (default: ./<name>)"),
+        ],
+        examples: &["celis cell export eating-east", "celis cell export eating-east --to ~/cells/east"],
     },
     Verb {
         command: "hook start",
