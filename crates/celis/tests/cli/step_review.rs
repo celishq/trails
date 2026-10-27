@@ -39,6 +39,22 @@ fn done_as_planned_reviews_the_step_and_names_the_next_move() {
     );
 }
 
+/// `done` as planned of the last open step under an ask names the close of that ask as the next move.
+#[test]
+fn done_of_the_last_open_step_names_the_close_of_its_ask() {
+    let repo = Repo::new();
+    let ask = add(&repo, &["--", "the ask"]);
+    let piece = add(&repo, &["--under", &ask[..8], "--", "piece"]);
+    let (a, p) = (&ask[..8], &piece[..8]);
+    assert_eq!(
+        done(&repo, &piece, &["--as-planned"]),
+        [
+            format!("celis: {p} is done; compare the result with its plan:"),
+            format!("celis: no step under {a} is open; when its work is done, close it with celis step done {a}, else add one step under it."),
+        ]
+    );
+}
+
 /// `done --changed` prints what changed, and asks to reshape the plan before the next step.
 #[test]
 fn done_changed_asks_to_reshape_the_plan() {

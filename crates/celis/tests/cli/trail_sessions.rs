@@ -278,6 +278,28 @@ fn the_prompt_hook_gives_one_line() {
     assert_eq!(err(&o), line);
 }
 
+/// `prompt` names the close of the session's open ask when no step under it is open.
+#[test]
+fn the_prompt_hook_names_the_close_of_an_ask_with_no_open_step() {
+    let repo = Repo::new();
+    let trail = add(&repo, Some("s1"), "the trail");
+    let step = run_add(
+        &repo,
+        Some("s1"),
+        &[],
+        &["--under", &trail[..8], "--", "a part"],
+    );
+    support::finish(&repo, &step[0][..8]);
+    let json = serde_json::json!({"session_id": "s1", "prompt": "thanks"}).to_string();
+    let o = support::prompt(&repo, &repo.path(), &[], &json);
+    assert!(o.status.success(), "{}", err(&o));
+    let id = &trail[..8];
+    let close = format!(
+        "celis: no step under the ask {id} is open; when its work is done, close it with celis step done {id}.\n"
+    );
+    assert_eq!(err(&o), close + &note(true, Some(id)) + "\n");
+}
+
 /// The line `prompt` gives: a prompt that goes on with the current ask `current` adds steps under it,
 /// and a new ask is a new step; how done work is fixed; and, when the store holds a record, when a
 /// pattern is read.
