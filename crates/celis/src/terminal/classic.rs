@@ -1,9 +1,9 @@
 //! How a step looks in the views of v0.0.11: the terminal's own colours, the mark and looks of each
-//! state, the signs of its flags, and the spinner's colour.
+//! state, and the spinner's colour.
 
 use super::canvas::{BOLD, DIM};
 use super::look::Look;
-use crate::progress::{Flags, Phase};
+use crate::progress::Phase;
 use ratatui::style::{Color, Style};
 
 pub(crate) const GREEN: Style = Style::new().fg(Color::Green);
@@ -24,13 +24,4 @@ pub(crate) fn look(state: Phase) -> Look {
         Phase::Stale => ("◌", RED, DIM),
     };
     Look { mark, text, title }
-}
-
-/// The signs of `flags` with their looks: `↻` when revised, then `~` when changed.
-pub(crate) fn signs(flags: Flags) -> Vec<(&'static str, Style)> {
-    let all = [(flags.revised, "↻", GREEN), (flags.changed, "~", YELLOW)];
-    all.into_iter()
-        .filter(|(on, ..)| *on)
-        .map(|(_, sign, style)| (sign, style))
-        .collect()
 }

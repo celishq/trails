@@ -3,11 +3,10 @@
 use crate::command::read::tree::classic::level::Level;
 use crate::command::read::tree::classic::row::Row;
 use crate::command::read::tree::classic::{after, Item, Tree};
+use crate::command::read::tree::meta::Meta;
 use crate::progress::Phase;
 use crate::terminal::canvas::{paint, Styled, DIM};
 use crate::terminal::classic::look;
-use crate::text::clock::took;
-use crate::text::line::plural;
 use celis_nostr::Note;
 use celis_trails::step::steps::LIFE;
 use celis_trails::{State, Step};
@@ -71,11 +70,15 @@ impl Tree<'_> {
                 tone: self.tone(look(state).title, note.newest()),
                 rest: below.clone(),
             });
-            let time = match note.state() != State::Open {
-                true => None,
-                false => self.worked(&note.tree()).map(took),
+            let meta = Meta {
+                done: if folded { size } else { 0 },
+                all: if folded { size } else { 0 },
+                worked: match note.state() != State::Open {
+                    true => None,
+                    false => self.worked(&note.tree()),
+                },
             };
-            self.details(&below, [folded.then(|| plural(size, "step")), time], lines);
+            self.details(&below, meta, lines);
             let item = Item {
                 id: note.id().to_string(),
                 open,
@@ -93,19 +96,14 @@ impl Tree<'_> {
         }
     }
 
-    /// Adds `details` after `rail` as one dim line, `·` between two; none when all are empty.
-    pub(super) fn details(
-        &self,
-        rail: &Styled,
-        details: [Option<String>; 2],
-        lines: &mut Vec<Row>,
-    ) {
-        let shown: Vec<String> = details.into_iter().flatten().collect();
-        if !shown.is_empty() {
+    /// Adds `meta` after `rail` as one dim line; none when it is empty.
+    pub(super) fn details(&self, rail: &Styled, meta: Meta, lines: &mut Vec<Row>) {
+        let text = meta.to_string();
+        if !text.is_empty() {
             lines.push(Row::Note {
                 rail: rail.clone(),
                 label: "",
-                text: shown.join(" · "),
+                text,
                 tone: DIM,
             });
         }

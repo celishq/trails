@@ -65,7 +65,7 @@ impl Tree<'_> {
                 marks: self.marked(note),
                 title: step.title().to_string(),
                 tone: self.shone(note, self.tone(tone, note.newest())),
-                meta: self.meta(note),
+                meta: Styled::from(paint(DIM, &self.meta(note).to_string())),
                 whole: Some(match open && !note.children().is_empty() {
                     true => after(&rail, paint(self.lane(), "│")),
                     false => rail.clone(),

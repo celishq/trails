@@ -1,11 +1,7 @@
-//! The page of `celis help`: what celis is and how it works, each command with its flags, and the
-//! marks it prints.
+//! The page of `celis help`: what celis is, and each command with its flags.
 
 use super::{Verb, GROUPS};
-use crate::progress::Phase;
-use crate::terminal::canvas::{Styled, BOLD, DIM, GREEN, MAGENTA, YELLOW};
-use crate::terminal::look::look;
-use ratatui::style::Style;
+use crate::terminal::canvas::{Styled, BOLD, DIM};
 use ratatui::text::Span;
 use std::path::Path;
 
@@ -68,34 +64,8 @@ const PHRASES: &[(&str, &str)] = &[
     ("issue", "Write a problem report for the celis team"),
 ];
 
-/// What celis keeps: each one's mark, the look of its mark, its word, and what it is.
-const WORDS: &[(&str, Style, &str, &str)] = &[
-    (
-        "§",
-        MAGENTA,
-        "pattern",
-        "a guide: what to choose in a context, and why",
-    ),
-    ("◆", MAGENTA, "trail", "each task you give"),
-    (
-        "○",
-        Style::new(),
-        "step",
-        "each piece of work your agents do in it",
-    ),
-];
-
 /// The flags only the plugin's hooks pass, left off the page.
 const HIDDEN: &[&str] = &["--session"];
-
-/// The marks celis prints for a step, a revision, a change and a pattern.
-const MARKS: &[(Phase, &str)] = &[
-    (Phase::Open, "open"),
-    (Phase::Started, "started"),
-    (Phase::Done, "done"),
-    (Phase::Dropped, "dropped"),
-    (Phase::Stale, "stale"),
-];
 
 /// The width of the column of command names with their arguments.
 const NAMES: usize = 20;
@@ -103,23 +73,13 @@ const NAMES: usize = 20;
 /// The width of the column of flags with their values.
 const FLAGS: usize = 18;
 
-/// The page: what celis is, then each command with what it does and its flags, then the marks and
-/// the store folder `home`, when known.
+/// The page: what celis is, then each command with what it does and its flags, then the store folder
+/// `home`, when known.
 pub fn page(home: Option<&Path>) -> Vec<Styled> {
     let mut lines = vec![
         Styled::raw("celis remembers what your agents learn, and how they do your tasks."),
         Styled::default(),
     ];
-    for (mark, look, word, said) in WORDS {
-        lines.push(Styled::from(vec![
-            Span::raw("  "),
-            Span::styled(*mark, *look),
-            Span::raw(" "),
-            Span::styled(format!("{word:8}"), BOLD),
-            Span::raw(*said),
-        ]));
-    }
-    lines.push(Styled::default());
     lines.push(Styled::raw(
         "Your agents record them through the celis plugin.",
     ));
@@ -146,9 +106,6 @@ pub fn page(home: Option<&Path>) -> Vec<Styled> {
             }
         }
     }
-    lines.push(Styled::default());
-    lines.push(Styled::styled("Marks", BOLD));
-    lines.push(marks());
     lines.push(Styled::default());
     match home {
         Some(home) => {
@@ -268,21 +225,4 @@ fn flags(verb: &Verb) -> Vec<(&'static str, Option<&'static str>, &'static str)>
         flags.push((flag, value, said));
     }
     flags
-}
-
-/// The line of marks: each state's mark in its look, then the signs of a revision and a change.
-fn marks() -> Styled {
-    let mut spans = vec![Span::raw("  ")];
-    for (state, name) in MARKS {
-        spans.push(Span::styled(look(*state).mark, look(*state).text));
-        spans.push(Span::raw(format!(" {name}  ")));
-    }
-    for (sign, name, style) in [("↻", "revised", GREEN), ("~", "changed", YELLOW)] {
-        spans.push(Span::styled(sign, style));
-        spans.push(Span::raw(format!(" {name}  ")));
-    }
-    if let Some(last) = spans.last_mut() {
-        last.content = last.content.trim_end().to_string().into();
-    }
-    Styled::from(spans)
 }

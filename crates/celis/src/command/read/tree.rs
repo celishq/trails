@@ -4,10 +4,10 @@ use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::progress::{Flags, Grade, Model, Phase, Tally};
 pub(crate) use crate::terminal::canvas::{cut, visible};
-use crate::terminal::canvas::{line as line_text, paint, width, Styled};
-use crate::terminal::canvas::{BOLD, DIM, EDGE, GREEN, YELLOW};
+use crate::terminal::canvas::{line as line_text, paint, Styled};
+use crate::terminal::canvas::{BOLD, DIM, EDGE};
 use crate::terminal::grid::GUTTER;
-use crate::terminal::look::{look, DRAWN, SPINNER, SPUN};
+use crate::terminal::look::{look, signs, DRAWN, SLOT, SPINNER, SPUN};
 use crate::text::clock::stride;
 use crate::text::clock::{day, midnight};
 use celis_nostr::Note;
@@ -17,6 +17,7 @@ use celis_trails::step::steps::LIFE;
 use celis_trails::{Notes, Step, Steps, Trail};
 pub(crate) use layout::Layout;
 use level::Level;
+use meta::Meta;
 use ratatui::style::Style;
 use ratatui::text::Span;
 pub(crate) use row::wrap;
@@ -202,13 +203,9 @@ pub(crate) struct Tree<'a> {
     pub next: Cell<Option<u64>>,
 }
 
-/// What the tree says of a trail: the steps it prints under it, the done ones, their count by state, the
-/// time they worked, and its notes.
+/// What the tree says of a trail: the steps it prints under it with the time they worked, and its notes.
 struct Summary<'a> {
-    all: usize,
-    done: usize,
-    tally: Tally,
-    worked: Option<u64>,
+    meta: Meta,
     notes: Vec<&'a Note>,
 }
 
@@ -307,10 +304,11 @@ impl Tree<'_> {
             false => self.worked(&shown),
         };
         Summary {
-            all: shown.len(),
-            done: Tally::of(&shown).done,
-            tally: Tally::of(&shown),
-            worked,
+            meta: Meta {
+                done: Tally::of(&shown).done,
+                all: shown.len(),
+                worked,
+            },
             notes: self.notes(note),
         }
     }
@@ -347,15 +345,10 @@ impl Tree<'_> {
         any.then_some(total)
     }
 
-    /// Prints `lines`, each row's marks padded to the widest of them, or to `SLOT` in a watch where a
-    /// sign takes a space after its mark, so every title starts at one column, and wrapped at the width.
+    /// Prints `lines`, each row's marks padded to `SLOT`, so every title starts at one column, and
+    /// wrapped at the width.
     /// In a watch, each line starts with the cursor column, a bar on each line of the selected element.
     fn show(&self, lines: Vec<Row>, out: &mut Vec<Styled>) -> Result<(), Failure> {
-        let slot = lines.iter().filter_map(Row::marks).map(width).max();
-        let slot = match self.view.watch {
-            true => SLOT,
-            false => slot.unwrap_or(0),
-        };
         let mut picked = false;
         for line in lines {
             let line = match line {
@@ -368,7 +361,7 @@ impl Tree<'_> {
                 }
                 line => line,
             };
-            for mut text in line.lines(slot, self.width, picked) {
+            for mut text in line.lines(SLOT, self.width, picked) {
                 match (self.view.watch, picked) {
                     (false, _) => {}
                     (true, false) => text.spans.insert(0, Span::raw("  ")),
@@ -387,16 +380,11 @@ impl Tree<'_> {
         Ok(())
     }
 
-    /// The mark of `note` with one sign after it: `↻` while it works again after a revision, `˜` when it
-    /// was done otherwise than planned; in a watch, the spinner on a live session's trail and on a step
+    /// The mark of `note` with the signs of its flags after it; in a watch, the spinner on a live session's trail and on a step
     /// while one under it works, and a check drawn stroke by stroke for 2 seconds after a step was done.
     fn marked(&self, note: Step) -> Styled {
-        let flags = Flags::of(note);
-        let sign = match Phase::of(&note) {
-            Phase::Started if flags.revised => Some(paint(GREEN, "↻")),
-            Phase::Done if flags.changed => Some(paint(YELLOW, "˜")),
-            _ => None,
-        };
+        let signs = signs(Flags::of(note)).into_iter();
+        let signs = signs.map(|(sign, style)| paint(style, sign));
         let fresh = note
             .closed_at()
             .is_some_and(|at| at + FRESH > self.steps.now());
@@ -410,18 +398,18 @@ impl Tree<'_> {
             }
             (state, _) => self.mark(state),
         };
-        std::iter::once(mark).chain(sign).collect()
+        std::iter::once(mark).chain(signs).collect()
     }
 
-    /// What the tree says of `note` at the right of its row: done/all of the steps under it, when it has
-    /// some.
-    fn meta(&self, note: Step) -> Styled {
+    /// What the tree says of the step `note`: the steps right under it, done of all, and the time its
+    /// tree worked.
+    fn meta(&self, note: Step) -> Meta {
         let kids = note.children();
-        if kids.is_empty() {
-            return Styled::default();
+        Meta {
+            done: Tally::of(&kids).done,
+            all: kids.len(),
+            worked: self.worked(&note.tree()),
         }
-        let done = Tally::of(&kids).done;
-        Styled::from(paint(DIM, &format!("{done}/{}", kids.len())))
     }
 
     /// Whether `note` is a trail the watch spins as a live session.
@@ -475,9 +463,6 @@ const PATTERNS: &str = "§";
 /// The id of the `Show more` line in a watch's order.
 pub(crate) const MORE: &str = "+more";
 
-/// The cells the marks before a title take in a watch: its mark; a sign takes a space after it.
-const SLOT: usize = 1;
-
 /// What starts the id of an earlier day's line in a watch's order.
 const DAY: &str = "🗓";
 /// The colour of a project's name.
@@ -489,6 +474,8 @@ mod day;
 mod json;
 mod layout;
 mod level;
+mod marks;
+mod meta;
 mod row;
 
 #[cfg(test)]

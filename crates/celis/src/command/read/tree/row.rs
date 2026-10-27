@@ -28,15 +28,6 @@ pub(super) enum Row {
 }
 
 impl Row {
-    /// Its marks when it is a row, also when it is selected.
-    pub fn marks(&self) -> Option<&Styled> {
-        match self {
-            Row::Lined { marks, .. } => Some(marks),
-            Row::Mark(_, line) => line.marks(),
-            _ => None,
-        }
-    }
-
     /// It moved right by `inset`: each lead, rail and text starts with it, a blank line kept blank.
     pub fn indent(&mut self, inset: &str) {
         let before = |line: &mut Styled| line.spans.insert(0, inset.to_string().into());
@@ -59,7 +50,7 @@ impl Row {
     pub fn lines(self, slot: usize, width: Option<usize>, picked: bool) -> Vec<Styled> {
         let under = |rail: Styled, pad: usize| {
             let mut rail = rail;
-            rail.push_span(" ".repeat(slot + pad));
+            rail.push_span(" ".repeat(slot.saturating_sub(1) + pad));
             rail
         };
         let (first, next, text, tone) = match self {
@@ -119,7 +110,7 @@ const ROOM: usize = 16;
 /// The fewest free cells a title wraps in; with fewer it is cut.
 const NARROW: usize = 8;
 
-/// One line: `lead`, `marks` padded to `slot` and two spaces, at least one, none with no marks, the title in its look,
+/// One line: `lead`, `marks` padded to `slot` and a space, at least one, none with no marks, the title in its look,
 /// bold when `picked` unless dim, cut with … to fit `width`, then `meta` at the right edge; with less than `ROOM` cells for
 /// the title, no meta. With a `whole` lead and at least `NARROW` cells, the title wrapped instead, its next lines
 /// after that lead.
@@ -138,7 +129,7 @@ fn lined(
     let mut line = lead;
     let gap = match chars(&marks) {
         0 => 0,
-        wide => (slot + 2).saturating_sub(wide).max(1),
+        wide => (slot + 1).saturating_sub(wide).max(1),
     };
     line.spans.extend(marks.spans);
     line.push_span(" ".repeat(gap));

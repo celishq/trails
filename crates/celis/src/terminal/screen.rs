@@ -88,15 +88,15 @@ impl Screen {
     /// Draws `head` then `lines` over the screen from the top left, the whole screen cleared first after
     /// a resize, each row only when it changed: each line cut short of the last column and cleared to its
     /// end, the rows under `head` and above the last scrolled to show its `picked` line when the
-    /// selection moved, the key line `keys`, its keys bold, or what the last key did on the last row, dim,
-    /// and the rest cleared.
+    /// selection moved, the lines of `foot` above its key line, the key line, its keys bold, or what the
+    /// last key did on the last row, dim, and the rest cleared.
     pub fn draw(
         &mut self,
         out: &mut dyn Write,
         head: &[Styled],
         lines: &[Styled],
         picked: Option<usize>,
-        keys: &str,
+        (foot, keys): (&[Styled], &str),
     ) -> Result<(), Failure> {
         let size = crate::command::size();
         let width = size.map(|s| usize::from(s.ws_col)).filter(|&w| w > 1);
@@ -104,7 +104,7 @@ impl Screen {
         let rows = size.map(|s| usize::from(s.ws_row)).filter(|&r| r > 0);
         let mut screen = head.to_vec();
         match rows
-            .map(|r| r.saturating_sub(1 + head.len()))
+            .map(|r| r.saturating_sub(1 + head.len() + foot.len()))
             .filter(|&body| body >= 3 && lines.len() > body)
         {
             Some(body) => screen.extend(self.window(lines, body, picked)),
@@ -113,8 +113,10 @@ impl Screen {
                 screen.extend_from_slice(lines);
             }
         }
-        let last = rows.map(|r| r - 1).filter(|&k| k >= screen.len());
+        let last = rows.map(|r| r.saturating_sub(1 + foot.len()));
+        let last = last.filter(|&k| k >= screen.len());
         screen.resize(last.unwrap_or(screen.len()), Styled::default());
+        screen.extend_from_slice(foot);
         screen.push(match &self.said {
             Some(said) => Styled::from(Span::styled(said.to_string(), DIM)),
             None => legend(keys),
