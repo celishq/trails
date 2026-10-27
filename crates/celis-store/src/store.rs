@@ -84,6 +84,17 @@ impl Store {
         Ok(ProofFile::new(place, sha256, bytes.len() as u64))
     }
 
+    /// Keeps `bytes` as the blob `sha256` when they hash to it; whether they do.
+    pub fn hold(&self, sha256: &str, bytes: &[u8]) -> Result<bool, Refusal> {
+        Ok(self.home.hold(sha256, bytes)?)
+    }
+
+    /// Writes `record`, signed by any account, as it is.
+    pub fn put(&self, record: &Note) -> Result<(), Refusal> {
+        self.home.write(record)?;
+        Ok(())
+    }
+
     /// The blob `sha256` of the home, when its bytes hash to its name.
     pub fn blob(&self, sha256: &str) -> Option<PathBuf> {
         self.home.blob(sha256)

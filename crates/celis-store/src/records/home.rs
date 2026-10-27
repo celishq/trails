@@ -102,6 +102,15 @@ impl Home {
         Ok(sha)
     }
 
+    /// Keeps `bytes` as the blob `sha256` when they hash to it, as `keep` does; whether they do.
+    pub fn hold(&self, sha256: &str, bytes: &[u8]) -> Result<bool> {
+        if !self.blobs.hold(sha256, bytes)? {
+            return Ok(false);
+        }
+        self.keep(bytes)?;
+        Ok(true)
+    }
+
     /// The blob `sha256` of `blobs/`, when its bytes hash to its name.
     pub fn blob(&self, sha256: &str) -> Option<PathBuf> {
         self.blobs.get(sha256)

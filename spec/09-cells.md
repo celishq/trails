@@ -90,8 +90,8 @@ memberships name, and each pattern of the same account that replaces one of the 
 **Readers**
 
 - A reader MUST read only `cell.jsonl` and `blobs/`.
-- A reader MUST refuse the whole folder when a line does not parse or does not verify, when a record is
-  not a pattern or a membership, when there is not one membership, or when a pattern is not named by it
-  or is signed by another account.
+- A reader MUST refuse the whole folder, with `invalid` (CIP-02), when a line does not parse or does
+  not verify, when a record is not a pattern or a membership, when there is not one membership, or when
+  a pattern is not named by it or is signed by another account.
 - A reader MUST take a blob only when its bytes hash to its name (CIP-08, "Blobs"), and else take it as
   missing.

@@ -334,9 +334,7 @@ fn cell_off_right_after_cell_on_turns_the_cell_off() {
 
 /// The number of record files in the store.
 fn records(repo: &Repo) -> usize {
-    std::fs::read_dir(repo.store().join("shared"))
-        .unwrap()
-        .count()
+    std::fs::read_dir(repo.store().join("shared")).map_or(0, Iterator::count)
 }
 
 /// `cell export` writes the cell's live patterns and one new membership that names them to
@@ -431,4 +429,113 @@ fn cell_export_refuses_a_cell_not_yours() {
         refusal(&o, 1, "no-cell");
     }
     assert!(!repo.path().join("west").exists());
+}
+
+/// A folder that `theirs` exported: one pattern on another project, with a file example, and the
+/// membership of `name` that names it.
+fn their_folder(repo: &Repo, name: &str) -> (std::path::PathBuf, Note) {
+    let folder = repo.path().join("from-them");
+    std::fs::create_dir_all(folder.join("blobs")).unwrap();
+    let sha = {
+        use sha2::Digest;
+        format!("{:x}", sha2::Sha256::digest(b"a bowl"))
+    };
+    let pubkey = theirs().pubkey().hex();
+    let mut tags = support::pattern_tags(("q", "kitchen"));
+    tags.push(vec![
+        "good".into(),
+        format!("blossom:{sha}.png?as={pubkey}&sz=6"),
+        "bowl.png".into(),
+    ]);
+    let text = "Name: Rice first\nWhen a meal of rice is set\nDo: serve the rice first";
+    let pattern = Note::write(&theirs(), 1111u16, now() - 10, tags, text).unwrap();
+    let tags = vec![
+        vec!["L".to_string(), "celis.cell".to_string()],
+        vec!["l".to_string(), name.to_string(), "celis.cell".to_string()],
+        vec!["e".to_string(), pattern.id.clone()],
+    ];
+    let membership = Note::write(&theirs(), 1985u16, now() - 5, tags, "").unwrap();
+    let lines = [&pattern, &membership].map(|n| serde_json::to_string(n).unwrap());
+    std::fs::write(folder.join("cell.jsonl"), lines.join("\n") + "\n").unwrap();
+    std::fs::write(folder.join(format!("blobs/{sha}.png")), "a bowl").unwrap();
+    std::fs::write(folder.join("cell.md"), "# east\n").unwrap();
+    (folder, pattern)
+}
+
+/// `cell import` shows the cell and keeps nothing; with `--yes` it keeps the records and the blob, and
+/// the cell stays off (`spec/02-cli.md`, "Cells").
+#[test]
+fn cell_import_shows_the_cell_and_keeps_it_off_with_yes() {
+    let repo = Repo::new();
+    let (_, pattern) = their_folder(&repo, "east");
+    let before = records(&repo);
+    let o = cli(&repo, &["cell", "import", "from-them"]);
+    assert!(o.status.success(), "{}", err(&o));
+    assert!(
+        out(&o).contains(&format!("{} Rice first", &pattern.id[..8])),
+        "{}",
+        out(&o)
+    );
+    assert_eq!(records(&repo), before);
+    let o = cli(&repo, &["cell", "import", "from-them", "--yes"]);
+    assert!(o.status.success(), "{}", err(&o));
+    assert_eq!(records(&repo), before + 2);
+    assert!(out(&cli(&repo, &["cells"]))
+        .trim()
+        .ends_with("1 pattern off"));
+    assert!(!out(&cli(&repo, &["patterns"])).contains(&pattern.id[..8]));
+    let sha = {
+        use sha2::Digest;
+        format!("{:x}", sha2::Sha256::digest(b"a bowl"))
+    };
+    assert!(repo.store().join("blobs").join(&sha).exists());
+    assert!(cli(&repo, &["cell", "on", "east"]).status.success());
+    assert!(out(&cli(&repo, &["patterns"])).contains(&pattern.id[..8]));
+}
+
+/// `cell import` refuses a folder whose record was edited, or whose pattern the membership does not
+/// name, with `invalid`, and keeps nothing (`spec/09-cells.md`, "Export").
+#[test]
+fn cell_import_refuses_an_edited_record_and_a_pattern_out_of_the_cell() {
+    let repo = Repo::new();
+    let (folder, pattern) = their_folder(&repo, "east");
+    let lines = std::fs::read_to_string(folder.join("cell.jsonl")).unwrap();
+    let edited = lines.replace("serve the rice first", "serve the soup first");
+    std::fs::write(folder.join("cell.jsonl"), &edited).unwrap();
+    let before = records(&repo);
+    let o = cli(&repo, &["cell", "import", "from-them", "--yes", "--json"]);
+    refusal(&o, 1, "invalid");
+    let stray = stored_pattern(
+        &repo,
+        ("q", "kitchen"),
+        &theirs(),
+        (None, None),
+        "When soup is served\nDo: serve it hot",
+        now(),
+    );
+    let mut lines: Vec<String> = lines.lines().map(str::to_string).collect();
+    lines.insert(1, serde_json::to_string(&stray).unwrap());
+    std::fs::write(folder.join("cell.jsonl"), lines.join("\n")).unwrap();
+    let o = cli(&repo, &["cell", "import", "from-them", "--yes", "--json"]);
+    refusal(&o, 1, "invalid");
+    assert_eq!(records(&repo), before + 1);
+    assert!(!out(&cli(&repo, &["cells"])).contains(&pattern.id[..8]));
+}
+
+/// An edit to `cell.md` changes nothing, and a cell whose name a cell of another account holds is
+/// refused with `cell-taken` (`spec/09-cells.md`, "Export").
+#[test]
+fn cell_import_ignores_cell_md_and_refuses_a_taken_name() {
+    let repo = Repo::new();
+    let (folder, _) = their_folder(&repo, "east");
+    std::fs::write(folder.join("cell.md"), "# something else\n").unwrap();
+    assert!(cli(&repo, &["cell", "import", "from-them", "--yes"])
+        .status
+        .success());
+    let repo = Repo::new();
+    let a = decide(&repo, "When a menu is laid out\nDo: put soups first");
+    assert!(cli(&repo, &["cell", "add", "east", &a]).status.success());
+    their_folder(&repo, "east");
+    let o = cli(&repo, &["cell", "import", "from-them", "--yes", "--json"]);
+    refusal(&o, 1, "cell-taken");
 }

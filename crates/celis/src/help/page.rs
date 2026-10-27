@@ -40,6 +40,7 @@ const SECTIONS: &[(&str, &str, &[&str])] = &[
             "cell on <name>",
             "cell off <name>",
             "cell export",
+            "cell import",
         ],
     ),
     (

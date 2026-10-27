@@ -134,6 +134,7 @@ pub const GROUPS: &[Group] = &[
             ("on", "Use a cell's patterns in this project"),
             ("off", "Stop using a cell's patterns in this project"),
             ("export", "Write a cell of yours as a folder to share"),
+            ("import", "Read a cell from a folder or a URL, and keep it"),
         ],
     ),
     (
@@ -420,6 +421,19 @@ pub const VERBS: &[Verb] = &[
             ("--to <folder>", "The folder to write (default: ./<name>)"),
         ],
         examples: &["celis cell export eating-east", "celis cell export eating-east --to ~/cells/east"],
+    },
+    Verb {
+        command: "cell import",
+        usage: &["celis cell import <source> [--yes]"],
+        summary: "Read a cell that another person exported, check that each of its records is signed and unchanged, and show its patterns. With --yes, keep it. A kept cell is off until you turn it on with celis cell on, and you change it only with your own patterns that replace its patterns.",
+        args: &[
+            ("<source>", "The cell's folder, or the URL of the folder or of its cell.jsonl"),
+            ("--yes", "Keep the cell after you read its patterns"),
+        ],
+        examples: &[
+            "celis cell import ~/Downloads/eating-east",
+            "celis cell import https://example.com/cells/eating-east/ --yes",
+        ],
     },
     Verb {
         command: "hook start",

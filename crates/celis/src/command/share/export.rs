@@ -74,7 +74,7 @@ fn files<'a>(pattern: &'a Pattern) -> impl Iterator<Item = &'a ProofFile> {
 
 /// The path of the blob of `file` in the folder: `blobs/<sha256>.<ext>`, with the extension of its
 /// Blossom URI.
-fn blob_path(file: &ProofFile) -> String {
+pub(crate) fn blob_path(file: &ProofFile) -> String {
     let url = file.url("");
     let named = url.trim_start_matches("blossom:");
     format!("blobs/{}", named.split('?').next().unwrap_or(named))

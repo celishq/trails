@@ -12,6 +12,7 @@ impl Command {
             "on" => self.cell_turn(args, out, true),
             "off" => self.cell_turn(args, out, false),
             "export" => self.cell_export(args, out),
+            "import" => self.cell_import(args, out),
             "" => Err(Failure::usage("expected: celis cell <command>")),
             verb => Err(Failure::usage(format!("no command \"cell {verb}\""))),
         }

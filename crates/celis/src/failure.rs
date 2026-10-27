@@ -122,6 +122,9 @@ impl From<Refusal> for Failure {
             Refusal::Secret(what) => Self::secret(&what),
             Refusal::CellTaken(name) => Self::cell_taken(&name),
             Refusal::NoCell(name) => Self::no_cell(&name),
+            Refusal::Invalid(why) => {
+                Self::new("invalid", 1, format!("the cell is not kept: {why}"))
+            }
             Refusal::Error(error) => Self::from(error),
         }
     }

@@ -70,6 +70,9 @@ Share
   cell export         Write a cell of yours as a folder to share
   └ --to <folder>     The folder to write (default: ./<name>)
 
+  cell import         Read a cell from a folder or a URL, and keep it
+  └ --yes             Keep the cell after you read its patterns
+
 Set up
   link [<folder>]     Keep this project's trails in a folder to commit or share
   └ --off             Stop keeping the trails in the folder

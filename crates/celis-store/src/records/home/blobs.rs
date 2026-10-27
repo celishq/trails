@@ -24,6 +24,11 @@ impl Blobs {
         Ok(sha)
     }
 
+    /// Keeps `bytes` as the blob `sha256` when they hash to it; whether they do.
+    pub fn hold(&self, sha256: &str, bytes: &[u8]) -> Result<bool> {
+        Ok(self::sha256(bytes) == sha256 && self.keep(bytes).is_ok())
+    }
+
     /// The path of the blob `sha256`, when its bytes hash to its name.
     pub fn get(&self, sha256: &str) -> Option<PathBuf> {
         let path = self.folder.join(sha256);
