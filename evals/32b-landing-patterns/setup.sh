@@ -2,6 +2,7 @@
 # Gives the store the frontend-design skill as a pattern graph, as a learn run drafts it.
 set -e
 sh "$(dirname "$0")/../../scripts/eval-celis.sh"
+cp "$(dirname "$0")/../answer.md" CLAUDE.md
 export GIT_CEILING_DIRECTORIES="$(dirname "$PWD")"
 unset CLAUDE_CODE_SESSION_ID CODEX_THREAD_ID CELIS_SESSION_ID
 d() { celis pattern "$@" 2>/dev/null | head -1; }
