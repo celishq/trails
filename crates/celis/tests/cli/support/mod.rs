@@ -218,11 +218,16 @@ pub fn rating(repo: &Repo, by: &Account, cairn: &Note, helped: bool, at: u64) {
 
 /// Every cairn record in the store with the label `label`.
 pub fn labelled(repo: &Repo, label: &str) -> Vec<Note> {
+    kept(repo, 1111, label)
+}
+
+/// Every record of the kind `kind` in the store with the label `label`.
+pub fn kept(repo: &Repo, kind: u16, label: &str) -> Vec<Note> {
     std::fs::read_dir(shared(repo))
         .unwrap()
         .filter_map(|e| std::fs::read_to_string(e.unwrap().path()).ok())
         .filter_map(|t| serde_json::from_str::<Note>(&t).ok())
-        .filter(|n| n.kind == 1111 && n.tag("l") == Some(label))
+        .filter(|n| n.kind == kind && n.tag("l") == Some(label))
         .collect()
 }
 

@@ -158,7 +158,7 @@ impl Command {
 
     /// The agent session this run belongs to, from the first set variable of `$CLAUDE_CODE_SESSION_ID`,
     /// `$CODEX_THREAD_ID` and `$CELIS_SESSION_ID`.
-    fn session(&self) -> Option<String> {
+    pub(crate) fn session(&self) -> Option<String> {
         [
             "CLAUDE_CODE_SESSION_ID",
             "CODEX_THREAD_ID",
@@ -168,6 +168,21 @@ impl Command {
         .filter_map(|name| self.env.get(*name))
         .find(|s| !s.is_empty())
         .cloned()
+    }
+
+    /// The agent this run belongs to: `claude` with `$CLAUDE_CODE_SESSION_ID`, `codex` with
+    /// `$CODEX_THREAD_ID`, else `$CELIS_AGENT`.
+    fn agent(&self) -> Option<String> {
+        let set = |name: &str| self.env.get(name).is_some_and(|v| !v.is_empty());
+        match (set("CLAUDE_CODE_SESSION_ID"), set("CODEX_THREAD_ID")) {
+            (true, _) => Some("claude".into()),
+            (_, true) => Some("codex".into()),
+            _ => self
+                .env
+                .get("CELIS_AGENT")
+                .filter(|a| !a.is_empty())
+                .cloned(),
+        }
     }
 
     /// Whether the store exists.

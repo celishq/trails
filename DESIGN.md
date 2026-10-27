@@ -52,6 +52,12 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
      and names it with `--uses` on the step of that choice. There is no step at an ask that reads the
      patterns, and no agent for it. The uses are the evidence. `step add --recalled` is accepted and
      ignored, and a reader ignores the `recalled` tag that older writers wrote on an ask.
+   - `patterns <id>` writes a recall on the session's newest open step, and nothing when the session
+     has no open step. A recall, then a use, then a step that no fix revises, is the funnel that shows
+     whether the index finds the right pattern.
+   - The agent marks a pattern that misled the work: `--misled` on the step that fixes done work, or on
+     the `done` of a step where the pattern did not fit. A revision of a step that used a pattern still
+     counts as misled, because the agent does not always mark it.
    - Past trails serve the learn and tidy. Nothing follows a past step: a step's `uses` names only a
      pattern, and a reader ignores a `uses` that names a step, which older writers wrote.
 4. **What goes in matters most.** The agent decides when there is a lesson: a correction, a pick, a
@@ -99,7 +105,14 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
     or more, with the reason. Tidy narrows a pattern that misled, and drops or widens one unused.
     `celis stats` shows the use of each live pattern: its uses, misled, replaces, last use, examples and
     tidy reason. Its total gives the size of the index, the patterns written and replaced in the last 7
-    days, and the gaps: the fixes of done work in that time whose ask used no pattern. The session start offers tidy when the list
+    days, and the gaps: the fixes of done work in that time whose ask used no pattern. Its lifecycle
+    gives, by day, week and month, the patterns written, replaced, dropped, promoted, recalled, used and
+    misled. Its value gives, for the last 28 days, what shows that celis pays: the asks that used a
+    pattern, the corrections and the repeat ones among them, first-pass success with and without a
+    pattern, the recall funnel, the reach of the patterns to other projects and agents, and the
+    promotions. A repeat correction failed when the fixed work used a pattern, and missed when it used
+    none but its lesson replaced a pattern that was live before the work. A step names its agent when the
+    variable that gives its session names one. The session start offers tidy when the list
     is not empty, and not within 7 days of a tidy, so that a person who kept a pattern is not asked each
     session.
 14. **celis refuses a secret.** A record is signed and cannot be deleted, so a secret in it leaks for

@@ -47,7 +47,9 @@ impl Desk {
             under: under.map(str::to_string),
             replaces: replaces.map(str::to_string),
             uses: uses.iter().map(|u| u.to_string()).collect(),
+            misled: Vec::new(),
             session: None,
+            agent: None,
         };
         let id = self.trails.add(draft).unwrap().records[0].id.clone();
         self.trails.at(noon() - ago);
@@ -94,6 +96,34 @@ impl Desk {
         let id = self.trails.decide(pattern, None).unwrap().id;
         self.trails.at(noon() - ago);
         id
+    }
+
+    /// Writes, `ago` seconds before noon, a pattern of `project` that replaces `old`; its id.
+    pub fn revise(&mut self, ago: u64, project: &str, old: &str) -> String {
+        self.trails.at(noon() - ago);
+        let pattern = PatternRecord {
+            anchor: Anchor {
+                project: project.to_string(),
+                name: project.to_string(),
+            },
+            scope: Scope::Project,
+            replaces: Some(celis_store::PatternId::new(old)),
+            content: "When you price: round up, because the till does.".into(),
+            paths: vec![],
+            old_rule: false,
+            within: vec![],
+            examples: Default::default(),
+        };
+        let id = self.trails.decide(pattern, None).unwrap().id;
+        self.trails.at(noon() - ago);
+        id
+    }
+
+    /// Writes, `ago` seconds before noon, a recall of `pattern` on the step `id`.
+    pub fn recall(&mut self, ago: u64, id: &str, pattern: &str) {
+        self.trails.at(noon() - ago);
+        self.trails.recall(id, pattern).unwrap();
+        self.trails.at(noon() - ago);
     }
 
     /// The month of the store at noon.

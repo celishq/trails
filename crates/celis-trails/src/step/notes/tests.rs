@@ -17,9 +17,11 @@ fn step(under: Option<&Note>, at: u64) -> Note {
         under: under.map(|u| StepId::new(&u.id)),
         replaces: None,
         uses: Vec::new(),
+        misled: Vec::new(),
         places: Vec::new(),
         check: None,
         session: None,
+        agent: None,
         content: "a step".into(),
     }
     .record(&account(), at)

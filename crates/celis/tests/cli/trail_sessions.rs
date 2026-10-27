@@ -366,3 +366,31 @@ fn a_first_prompt_that_names_its_step_prints_nothing() {
     assert_eq!(out(&o), "");
     assert_eq!(err(&o), "");
 }
+
+/// A step names its agent: `claude` from `CLAUDE_CODE_SESSION_ID`, `codex` from `CODEX_THREAD_ID`,
+/// else `CELIS_AGENT`, and none with none of them (`spec/04-trails.md`, "Sessions").
+#[test]
+fn a_step_names_the_agent_its_session_variable_gives() {
+    let repo = Repo::new();
+    let cases = [
+        ("CLAUDE_CODE_SESSION_ID", Some("claude")),
+        ("CODEX_THREAD_ID", Some("codex")),
+        ("CELIS_AGENT", Some("gemini")),
+        ("", None),
+    ];
+    for (n, (name, agent)) in cases.into_iter().enumerate() {
+        let env: Vec<(&str, &str)> = [(name, "gemini")]
+            .into_iter()
+            .filter(|(name, _)| !name.is_empty())
+            .collect();
+        let env = env.as_slice();
+        let text = format!("step {n}");
+        let o = repo.run(&repo.path(), &["step", "add", "--", &text], env, "");
+        assert!(o.status.success(), "{}", err(&o));
+        let step = support::labelled(&repo, "step")
+            .into_iter()
+            .find(|s| s.content == text)
+            .unwrap();
+        assert_eq!(step.tag("agent"), agent, "{env:?}");
+    }
+}

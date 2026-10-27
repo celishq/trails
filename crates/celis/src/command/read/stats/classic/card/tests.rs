@@ -23,7 +23,9 @@ fn worked(later: u64) -> (TempDir, Store) {
         under,
         replaces: None,
         uses: vec![],
+        misled: Vec::new(),
         session: None,
+        agent: None,
     };
     let trail = trails.add(draft("the trail", None)).unwrap().records[0]
         .id
@@ -137,7 +139,9 @@ fn reused(later: u64) -> (TempDir, Store) {
         under,
         replaces: None,
         uses,
+        misled: Vec::new(),
         session: None,
+        agent: None,
     };
     let trail = trails
         .add(draft("the next trail", None, vec![]))
@@ -195,7 +199,9 @@ fn the_projects_card_aligns_its_times() {
         under,
         replaces: None,
         uses: vec![],
+        misled: Vec::new(),
         session: None,
+        agent: None,
     };
     let long = AT + 19 * 3_600 + 14 * 60;
     trails.at(AT);
@@ -228,4 +234,31 @@ fn the_projects_card_aligns_its_times() {
     let ends: Vec<usize> = face.lines().map(|l| l.chars().count()).collect();
     assert!(face.contains("19h 14m"), "{face}");
     assert_eq!(ends[0], ends[1], "{face}");
+}
+
+/// The value card says when no ask was done in 28 days, else how many asks used a pattern and the
+/// recall funnel, and opens to a row for each span of the lifecycle.
+#[test]
+fn the_value_card_counts_the_asks_and_opens_to_the_lifecycle() {
+    let (home, mut trails) = worked(3_600);
+    assert_eq!(face(&trails, "06 VALUE"), "no ask done in 28 days");
+    let ask = trails.steps().roots()[0].id().to_string();
+    trails.at(AT + 60);
+    trails
+        .done(
+            &ask,
+            celis_trails::Done::new("all works".into(), None),
+            home.path(),
+        )
+        .unwrap();
+    trails.at(AT + 3_600);
+    let value = face(&trails, "06 VALUE");
+    assert!(value.starts_with("0 of 1 asks used a pattern"), "{value}");
+    assert!(value.contains("0 recalled → 0 used → 0 held"), "{value}");
+    let cards = drawn(&trails);
+    let card = cards
+        .iter()
+        .find(|c| c.title.starts_with("06 VALUE"))
+        .unwrap();
+    assert_eq!(card.table.rows.len(), 17);
 }

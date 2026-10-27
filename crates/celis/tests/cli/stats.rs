@@ -89,8 +89,16 @@ fn stats_prints_the_use_of_each_pattern_and_the_gaps() {
     let day = json[1]["pattern"]["used"].as_str().unwrap().to_string();
     assert_eq!(day.len(), 10, "{json:?}");
     let lines: Vec<&str> = text.lines().collect();
+    assert_eq!(lines.len(), 4 + 17 + 1, "{text}");
+    assert!(
+        lines[4..21].iter().all(|l| l.starts_with("lifecycle ")),
+        "{text}"
+    );
+    assert!(lines[21].starts_with("value last 28 days: asks:"), "{text}");
+    assert_eq!(json[20]["lifecycle"]["span"], "month", "{json:?}");
+    assert_eq!(json[21]["value"]["covered"], 3, "{json:?}");
     assert_eq!(
-        lines,
+        lines[..4],
         [
             format!(
                 "{} uses:0 misled:0 replaces:0 used:- examples:0 tidy:unused When releases ship",

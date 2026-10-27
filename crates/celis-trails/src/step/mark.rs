@@ -9,7 +9,7 @@ use std::collections::HashMap;
 
 /// What an agent does to a step: takes it up, closes it done, or drops it with the reason its work is no
 /// longer wanted. It gives a step a new title or text, places or check, or a note for the work of its
-/// trail. On a trail, the hook records the person's prompt.
+/// trail, or recalls a pattern for its work. On a trail, the hook records the person's prompt.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Mark {
     Start,
@@ -28,6 +28,9 @@ pub enum Mark {
     Note {
         text: String,
     },
+    Recall {
+        pattern: String,
+    },
 }
 
 impl Mark {
@@ -40,6 +43,7 @@ impl Mark {
             Mark::Edit { text, .. } => ("edit", text.as_str()),
             Mark::Prompt { text } => ("prompt", text.as_str()),
             Mark::Note { text } => ("note", text.as_str()),
+            Mark::Recall { .. } => ("recall", ""),
         };
         let pubkey = signer.pubkey().hex();
         let mut content = content.to_string();
@@ -59,10 +63,18 @@ impl Mark {
                 .iter()
                 .map(|b| vec!["by".to_string(), b.text().to_string()]);
             tags.extend(by);
+            tags.extend(
+                done.misled
+                    .iter()
+                    .map(|m| vec!["misled".to_string(), m.clone()]),
+            );
             for file in &done.files {
                 content.push_str(&format!("\n{}", file.url(&pubkey)));
                 tags.push(file.tag(&pubkey));
             }
+        }
+        if let Mark::Recall { pattern } = self {
+            tags.push(vec!["pattern".to_string(), pattern.clone()]);
         }
         if let Mark::Edit { places, check, .. } = self {
             tags.extend(places.iter().map(|p| vec!["at".to_string(), p.clone()]));
@@ -109,6 +121,12 @@ impl Mark {
                     changed: note.tag("changed").map(str::to_string),
                     by: note.tag("by").and_then(By::parse),
                     files,
+                    misled: note
+                        .tags
+                        .iter()
+                        .filter(|t| t.len() >= 2 && t[0] == "misled")
+                        .map(|t| t[1].clone())
+                        .collect(),
                 })
             }
             "drop" => Mark::Drop {
@@ -129,6 +147,9 @@ impl Mark {
             },
             "note" => Mark::Note {
                 text: note.content.clone(),
+            },
+            "recall" => Mark::Recall {
+                pattern: note.tag("pattern")?.to_string(),
             },
             _ => return None,
         };

@@ -26,6 +26,7 @@ A session is one run of an agent; a subagent shares it. Many sessions can work o
 
 ```
 ["session", "<session id>"]     a step's tag
+["agent", "<agent name>"]       a step's tag
 ```
 
 ```json
@@ -35,11 +36,14 @@ A session is one run of an agent; a subagent shares it. Many sessions can work o
 
 - `session`: `--session`, else the first set variable of `CLAUDE_CODE_SESSION_ID`, `CODEX_THREAD_ID` and
   `CELIS_SESSION_ID`.
+- `agent`: `claude` when `CLAUDE_CODE_SESSION_ID` gives the session, `codex` when `CODEX_THREAD_ID`
+  gives it, else `CELIS_AGENT` when it is set.
 - `prompt`: what the person wrote while the trail was open.
 
 **Writers**
 
-- A writer MUST write a `session` tag on each step that has a session.
+- A writer MUST write a `session` tag on each step that has a session, and an `agent` tag on each step
+  that has an agent.
 - A session's open trail is the trail of its newest step, while it is not done or dropped.
 - A step with no `under` MUST be a new trail. A session does not join steps to its open trail.
 - The prompt hook MUST write a prompt on its session's open trail only. With no open trail, the

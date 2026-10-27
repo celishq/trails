@@ -360,9 +360,11 @@ fn the_view_and_the_steps_pattern_search_match_the_fixture() {
                 under: under.map(StepId::new),
                 replaces: None,
                 uses,
+                misled: Vec::new(),
                 places: places.iter().map(|p| p.to_string()).collect(),
                 check: None,
                 session: None,
+                agent: None,
                 content: text.to_string(),
             };
             let mut tags = record.record(&by, at).unwrap().tags;
@@ -476,6 +478,7 @@ fn the_view_and_the_steps_pattern_search_match_the_fixture() {
         under: None,
         replaces: Some(StepId::new(&prices.id)),
         uses: Vec::new(),
+        misled: Vec::new(),
         content: "Print the prices in whole cents".to_string(),
         ..StepRecord::read(&prices).unwrap()
     };

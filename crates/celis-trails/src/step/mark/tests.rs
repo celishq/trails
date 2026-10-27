@@ -12,6 +12,7 @@ fn a_done_carries_its_proof() {
         changed: Some("changed".into()),
         by: Some(By::Judge),
         files: vec![],
+        misled: vec![],
     });
     let note = done.record(&account, "p", 10).unwrap();
     assert_eq!(Mark::read(&note), Some(("p".to_string(), done)));
@@ -28,6 +29,7 @@ fn a_done_names_the_files_of_its_proof() {
         changed: None,
         by: None,
         files: vec![file],
+        misled: vec![],
     });
     let note = done.record(&account, "p", 10).unwrap();
     let url = format!("blossom:ba7816bf.svg?as={}&sz=3", account.pubkey().hex());
@@ -62,6 +64,7 @@ fn an_empty_done_or_drop_is_no_mark() {
         changed: None,
         by: None,
         files: vec![],
+        misled: vec![],
     });
     let drop = Mark::Drop { reason: "".into() };
     for mark in [done, drop] {
@@ -102,4 +105,18 @@ fn a_note_carries_its_text() {
     let empty = Mark::Note { text: " ".into() };
     let record = empty.record(&account, "s", 10).unwrap();
     assert_eq!(Mark::read(&record), None);
+}
+
+/// A recall names the pattern it reads, and reads back the same (`spec/06-reuse.md`, "Recalls").
+#[test]
+fn a_recall_names_its_pattern() {
+    let account = Account::new(&[1u8; 32]).unwrap();
+    let recall = Mark::Recall {
+        pattern: "ab12".into(),
+    };
+    let note = recall.record(&account, "p", 10).unwrap();
+    assert!(note
+        .tags
+        .contains(&vec!["pattern".to_string(), "ab12".to_string()]));
+    assert_eq!(Mark::read(&note), Some(("p".to_string(), recall)));
 }

@@ -25,10 +25,10 @@ celis stats [<id>] [--demo]                           the use of the patterns, o
 celis extract <id>                                    what an ask or a step taught, to extract as patterns
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
 celis link [<folder>] [--off]                         keep this project's trails in a folder, or stop
-celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>]... [--check <command>] [--session <id>] [--project <id>] -- <text>
+celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--misled <id>]... [--at <place>]... [--check <command>] [--session <id>] [--project <id>] -- <text>
                                                        leave a step
 celis step start <id>                                 take up a step, and see the patterns and notes its plan links
-celis step done <id> [--changed <text>] [--as-planned] [--by person] [--file <path>]... -- <proof>
+celis step done <id> [--changed <text>] [--as-planned] [--by person] [--misled <id>]... [--file <path>]... -- <proof>
                                                        close a step with its proof
 celis step drop <id> -- <reason>                      end a step, a done trail or a pattern no longer wanted
 celis step edit <id> [--at <place>]... [--check <command>] [-- <text>]
@@ -139,15 +139,18 @@ $CELIS_BASE   where the releases are; default: https://github.com/celishq/trails
 `step` writes the records of CIP-03, CIP-04 and CIP-06.
 
 ```
-step  json  {"id", "created_at", "project", "links": [{"to", "kind": "under | replaces | uses"}], "places": [],
+step  json  {"id", "created_at", "project", "links": [{"to", "kind": "under | replaces | uses | misled"}], "places": [],
             "check", "content"}
 note  json  {"id", "created_at", "step", "content"}
 ```
 
 **Rules**
 
-- `add` MUST write the whole id of `--under`, `--replaces` and each `--uses`, each `--at` (CIP-01,
-  "Places") and the `--check` as tags.
+- `add` MUST write the whole id of `--under`, `--replaces`, each `--uses` and each `--misled`, each
+  `--at` (CIP-01, "Places") and the `--check` as tags.
+- `add` and `done` MUST write each `--misled` as CIP-06, "Misled", states, and refuse an id that no
+  pattern of the store has, with `no-pattern`. `add` MUST refuse `--misled` without a `--replaces` of a
+  done step as a usage error.
 - `add` MUST write no step when an open step of the same project and `under` has the same text, and
   print that step's id. With `--uses`, or a `--replaces` of a done step, it MUST refuse it as a usage
   error.
@@ -237,7 +240,7 @@ celis patterns --tidy
 
 A pattern's reasons, in this order:
 
-- `misled`: it misled 2 or more steps (CIP-06, "Revisions").
+- `misled`: it misled 2 or more steps (CIP-06, "Misled").
 - `near:<id8>`: the When of another live pattern in scope shares 2 or more words with its When, as the
   `like` lines of `pattern` count them; the id is of the one that shares the most.
 - `unused`: it was made 60 or more days ago, and no step used it in the last 60 days (CIP-06, "Uses"),
@@ -253,7 +256,9 @@ A pattern's reasons, in this order:
   Markdown page.
 - With an `<id>` of a live pattern in scope, a word of 4 to 64 hex characters that names no file,
   `patterns` MUST print that pattern whole, with its examples, as `--markdown` does, and refuse an `<id>`
-  that names no live pattern in scope with `no-pattern`.
+  that names no live pattern in scope with `no-pattern`. It MUST write a recall of the pattern on the
+  session's newest open step (CIP-06, "Recalls"), and nothing when the session has none or the step
+  has a recall of it.
 - With `--tidy`, `patterns` MUST print a line for each live pattern in scope that has a reason, oldest
   first, then the line of the index size. It MUST refuse `--tidy` with a `<file>` or `--markdown` as a
   usage error.
@@ -281,12 +286,21 @@ total <n> patterns in the index · last 7 days: <n> written, <n> replaced, <n> g
 ```
 
 ```
-pattern  json  {"id", "uses", "misled", "replaces", "used", "examples", "tidy": [], "when"}
-total    json  {"index", "written", "replaced", "gaps"}
+lifecycle <day | week | month> <yyyy-mm-dd> written:<n> replaced:<n> dropped:<n> promoted:<n> recalled:<n> used:<n> misled:<n>
+                                         the last 7 days, 4 weeks and 6 months, oldest first
+value last 28 days: asks:<n> covered:<n> corrections:<n> failed:<n> missed:<n> first-pass:<n%|->/<n%|-> recalled:<n> used:<n> held:<n> reach:<n> agents:<name>[,<name>]... | - promoted:<n>
+```
+
+```
+pattern    json  {"id", "uses", "misled", "replaces", "used", "examples", "tidy": [], "when"}
+total      json  {"index", "written", "replaced", "gaps"}
+lifecycle  json  {"span", "from", "written", "replaced", "dropped", "promoted", "recalled", "used", "misled"}
+value      json  {"asks", "covered", "corrections", "failed", "missed", "with", "without", "recalled",
+                  "used", "held", "reach", "agents": [], "promoted"}
 ```
 
 A pattern's fields: `uses`, how many steps name it in `uses` (CIP-06, "Uses"); `misled`, how many steps
-it misled (CIP-06, "Revisions"); `replaces`, how many `replaces` its chain holds (CIP-05); `used`, the
+it misled (CIP-06, "Misled"); `replaces`, how many `replaces` its chain holds (CIP-05); `used`, the
 day of the newest step that uses it, `-` or `null` when none; `examples`, how many examples it has
 (CIP-05, "Examples"); `tidy`, its reasons as `patterns --tidy` gives them ("Patterns"), `-` when none.
 
@@ -294,10 +308,29 @@ The total's fields: `index`, how many patterns are live in scope; `written`, the
 in the last 7 days; `replaced`, those of them with a `replaces`; `gaps`, the steps of the project made in
 the last 7 days that fix done work (CIP-06, "Revisions") in a trail whose steps use no pattern.
 
+The lifecycle's fields, for the live and the ended patterns in scope, in a span: `span` is `day`,
+`week` or `month`, and `from` its first day: a day, 7 days that end on today or on a multiple of 7 days
+before, or a month of the calendar. `written`, the patterns made in it with no `replaces`; `replaced`,
+those made in it with a `replaces`; `dropped`, those a drop named in it; `promoted`, those of them whose
+drop reason starts with `promoted to`; `recalled`, the recalls of them written in it (CIP-06,
+"Recalls"); `used`, the uses of them by steps made in it (CIP-06, "Uses"); `misled`, the steps they
+misled (CIP-06, "Misled"), on the day of the `done` or the step that tells it.
+
+The value's fields, for the asks of the project done in the last 28 days and the patterns in scope:
+`asks`, those asks; `covered`, those of them whose tree uses a pattern; `corrections`, the steps of
+their trees that revise done work; `failed`, those corrections whose revised step's trail uses a
+pattern; `missed`, the others whose own trail has a pattern made since its ask began that replaces a
+pattern made before the revised step; `with` and `without`, the percent of done steps of their trees
+that no step revised, among those that use a pattern and those that use none, `null` and `-` with no
+such step; `recalled`, `used` and `held`, the recalls in their trees, the uses, and the uses by steps
+that no step revised and no `misled` names; `reach`, the uses of a `me` pattern by a step of another
+project, in the store; `agents`, each `agent` of a step that uses a pattern, `-` with none; `promoted`,
+the patterns promoted in that time.
+
 **Rules**
 
 - With no `<id>`, off a terminal or with `--json`, `stats` MUST print a line for each live pattern in
-  scope, oldest first, then the total. With no record in the store, it MUST print `Nothing was reused
+  scope, oldest first, then the total, the lifecycle lines and the value line. With no record in the store, it MUST print `Nothing was reused
   yet.`, and nothing with `--json`.
 
 **Examples**
@@ -392,7 +425,7 @@ end     project [<project name>]
 `<id8>` is the first 8 characters of an id. A text holds each newline as a space. After its state and
 scope, a pattern's fields give ` old-rule` when it has the `binds` label that older writers wrote (CIP-05,
 "Reading"), ` uses:<n>` with how many steps name it in `uses` (CIP-06, "Uses"), when not 0, ` misled:<n>` with how
-many steps it misled (CIP-06, "Revisions"), when not 0, and ` used:<day>` with the day of the newest step
+many steps it misled (CIP-06, "Misled"), when not 0, and ` used:<day>` with the day of the newest step
 whose `uses` names it.
 
 **Rules**

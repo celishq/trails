@@ -16,9 +16,11 @@ fn step(under: Option<&Note>, at: u64, content: &str) -> Note {
         under: under.map(|n| celis_store::StepId::new(&n.id)),
         replaces: None,
         uses: Vec::new(),
+        misled: Vec::new(),
         places: Vec::new(),
         check: None,
         session: None,
+        agent: None,
         content: content.into(),
     }
     .record(&account(), at)

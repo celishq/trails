@@ -323,3 +323,15 @@ fn the_board_keeps_to_one_grid() {
         }
     }
 }
+
+/// The opened Learning section ends with the Value card: the asks that used a pattern, the recall
+/// funnel and a row for each of the last 4 weeks of the lifecycle.
+#[test]
+fn learning_opened_shows_the_value_and_the_lifecycle() {
+    let month = shop().month();
+    let text = board(&month, 120, [true, false, false, false]).join("\n");
+    assert!(text.contains("VALUE · 28 days"), "{text}");
+    assert!(text.contains("0 of 0 asks used a pattern"), "{text}");
+    assert!(text.contains("recalled → "), "{text}");
+    assert!(text.contains("week of     written"), "{text}");
+}

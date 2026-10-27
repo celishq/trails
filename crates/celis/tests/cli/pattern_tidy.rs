@@ -167,3 +167,69 @@ fn tidy_takes_no_file_and_no_markdown() {
     );
     assert_eq!(tidy(&repo), "0 patterns in the index");
 }
+
+/// A pattern misled a step once when the step's `done` names it in `misled`, and when the step that
+/// fixes it names it in `misled`; a step counts once (`spec/06-reuse.md`, "Misled").
+#[test]
+fn a_misled_mark_counts_once_for_each_step() {
+    let repo = Repo::new();
+    let id = decide(&repo, &["--", "When a price prints: use cents."]);
+    let ask = add(&repo, &["--", "Print the price"]);
+    let o = cli(
+        &repo,
+        &[
+            "step",
+            "done",
+            &ask[..8],
+            "--as-planned",
+            "--misled",
+            &id[..8],
+            "--",
+            "it prints",
+        ],
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let fix = [
+        "--replaces",
+        &ask[..8],
+        "--misled",
+        &id[..8],
+        "--",
+        "Print it right",
+    ];
+    add(&repo, &fix);
+    let stats = out(&cli(&repo, &["stats"]));
+    assert!(stats.contains(" misled:1 "), "{stats}");
+    let other = add(&repo, &["--", "Print the tax"]);
+    finish(&repo, &other[..8]);
+    let fix = [
+        "--replaces",
+        &other[..8],
+        "--misled",
+        &id[..8],
+        "--",
+        "Print the tax right",
+    ];
+    add(&repo, &fix);
+    let stats = out(&cli(&repo, &["stats"]));
+    assert!(stats.contains(" misled:2 "), "{stats}");
+}
+
+/// `step add --misled` refuses an id that names no pattern with `no-pattern`, and a step that fixes no
+/// done step as a usage error (`spec/02-cli.md`, "Step").
+#[test]
+fn misled_needs_a_pattern_and_a_fix() {
+    let repo = Repo::new();
+    let id = decide(&repo, &["--", "When a price prints: use cents."]);
+    let ask = add(&repo, &["--", "Print the price"]);
+    let o = cli(
+        &repo,
+        &["step", "add", "--json", "--misled", &id[..8], "--", "Print"],
+    );
+    refusal(&o, 2, "usage");
+    finish(&repo, &ask[..8]);
+    let fix = ["--replaces", &ask[..8], "--misled", "abcd1234", "--", "Fix"];
+    let mut args = vec!["step", "add", "--json"];
+    args.extend(fix);
+    refusal(&cli(&repo, &args), 1, "no-pattern");
+}

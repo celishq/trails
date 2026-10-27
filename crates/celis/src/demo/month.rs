@@ -117,7 +117,9 @@ impl Demo {
             under: None,
             replaces: None,
             uses: vec![],
+            misled: Vec::new(),
             session: None,
+            agent: None,
         };
         Ok(self.trails(ago)?.add(draft)?.records[0].id.clone())
     }

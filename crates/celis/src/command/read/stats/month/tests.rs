@@ -51,3 +51,21 @@ fn time_rework_and_patterns_come_from_the_steps() {
     assert_eq!((month.patterns, month.learned, month.kept), (1, 1, 1));
     assert_eq!(month.applied, vec![("shop".to_string(), 1)]);
 }
+
+/// An ask with no steps under it counts as a step, and its uses as applied; the uses of an ask with
+/// steps under it count as hits of its pattern.
+#[test]
+fn an_ask_counts_as_a_step_when_no_step_is_under_it() {
+    let mut desk = shop();
+    let pattern = desk.pattern(500, "shop");
+    let alone = desk.add(500, "shop", None, "alone", &[&pattern], None);
+    desk.done(400, 60, &alone);
+    let parent = desk.add(500, "shop", None, "parent", &[&pattern], None);
+    let part = desk.add(500, "shop", Some(&parent), "part", &[], None);
+    desk.done(300, 60, &part);
+    desk.done(200, 0, &parent);
+    let month = desk.month();
+    assert_eq!((month.now().reused, month.now().new), (2, 2));
+    assert_eq!(month.now().applied, 2);
+    assert_eq!(month.top[0], (pattern, month.top[0].1.clone(), 2));
+}
