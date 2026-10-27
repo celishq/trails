@@ -1,7 +1,7 @@
 //! CIP-09, "The view": the patterns as one project sees them.
 
 use crate::patterns::find;
-use crate::{Cell, Pattern, Patterns, Scope};
+use crate::{Cell, Layer, Pattern, Patterns, Scope};
 use celis_store::Refusal;
 
 /// The patterns of a store as the project `project` sees them: without the patterns of its cells that
@@ -53,12 +53,23 @@ impl<'p, 'a> View<'p, 'a> {
             .collect()
     }
 
-    /// Whether `pattern` is in the view: no cell that is off alone holds it, or a pattern it replaces.
+    /// Whether `pattern` is in the view: one of its layers is on, and it replaces no pattern out of it.
     pub fn shows(&self, pattern: &Pattern) -> bool {
-        let cells = self.patterns.holding(pattern);
-        let off = !cells.is_empty() && cells.iter().all(|c| !self.is_on(c));
+        let on = self
+            .layers(pattern)
+            .into_iter()
+            .any(|l| self.is_layer_on(l));
         let replaced = self.patterns.replaced(pattern);
-        !off && replaced.is_none_or(|r| self.shows(r))
+        on && replaced.is_none_or(|r| self.shows(r))
+    }
+
+    /// The layers of `pattern`: the cells that hold it, else the base layer.
+    pub fn layers(&self, pattern: &Pattern) -> Vec<Layer<'p>> {
+        let cells = self.patterns.holding(pattern);
+        match cells.is_empty() {
+            true => vec![Layer::Base],
+            false => cells.into_iter().map(Layer::Cell).collect(),
+        }
     }
 
     /// The cells that are on and hold `pattern`.
@@ -70,6 +81,13 @@ impl<'p, 'a> View<'p, 'a> {
     /// Whether `cell` is on in the project.
     pub fn is_on(&self, cell: &Cell) -> bool {
         self.patterns.cells().is_on(cell, &self.project)
+    }
+
+    fn is_layer_on(&self, layer: Layer) -> bool {
+        match layer {
+            Layer::Base => true,
+            Layer::Cell(cell) => self.is_on(cell),
+        }
     }
 
     /// Whether `pattern` holds in the project: in the view, and in a cell that is on or in its scope.

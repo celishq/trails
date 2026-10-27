@@ -66,8 +66,9 @@ memberships name, and each pattern of the same account that replaces one of the 
 
 **Readers**
 
-- In a project, a pattern is out of the view when a cell holds it and each cell that holds it is off, or
-  when its `replaces` names a pattern that is out of the view. Else it is in the view.
+- The layers of a pattern are the cells that hold it, else the base layer, which is always on.
+- In a project, a pattern is in the view when one of its layers is on, and its `replaces` names no
+  pattern that is out of the view. Else it is out of the view.
 - A pattern that is out of the view is not in scope (CIP-05, "Scope").
 - A live pattern of a cell that is on is in scope in the project, whatever its `scope` and `path` tags.
 - A reader MUST ignore a `within` (CIP-05, "Graph") that names a pattern out of the view.
