@@ -539,3 +539,63 @@ fn cell_import_ignores_cell_md_and_refuses_a_taken_name() {
     let o = cli(&repo, &["cell", "import", "from-them", "--yes", "--json"]);
     refusal(&o, 1, "cell-taken");
 }
+
+/// Serves the files of `folder` over HTTP on a local port until the test ends; its base URL.
+fn serve(folder: std::path::PathBuf) -> String {
+    use std::io::{Read, Write};
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    std::thread::spawn(move || {
+        for stream in listener.incoming() {
+            let Ok(mut stream) = stream else { continue };
+            let mut request = [0u8; 4096];
+            let read = stream.read(&mut request).unwrap_or(0);
+            let request = String::from_utf8_lossy(&request[..read]);
+            let path = request
+                .split(' ')
+                .nth(1)
+                .unwrap_or("/")
+                .trim_start_matches('/');
+            let reply = match std::fs::read(folder.join(path)) {
+                Ok(body) => [
+                    format!("HTTP/1.0 200 OK\r\nContent-Length: {}\r\n\r\n", body.len())
+                        .into_bytes(),
+                    body,
+                ]
+                .concat(),
+                Err(_) => b"HTTP/1.0 404 Not Found\r\nContent-Length: 0\r\n\r\n".to_vec(),
+            };
+            let _ = stream.write_all(&reply);
+        }
+    });
+    format!("http://127.0.0.1:{port}")
+}
+
+/// `cell import <url>` fetches `cell.jsonl` and the blobs beside it, and takes a blob only when its
+/// bytes hash to its name (`spec/09-cells.md`, "Export").
+#[test]
+fn cell_import_from_a_url_takes_only_blobs_that_match_their_hash() {
+    let repo = Repo::new();
+    let (folder, pattern) = their_folder(&repo, "east");
+    let url = serve(folder.clone());
+    let o = cli(&repo, &["cell", "import", &format!("{url}/"), "--yes"]);
+    assert!(o.status.success(), "{}", err(&o));
+    assert!(out(&o).contains(&pattern.id[..8]), "{}", out(&o));
+    let sha = {
+        use sha2::Digest;
+        format!("{:x}", sha2::Sha256::digest(b"a bowl"))
+    };
+    assert!(repo.store().join("blobs").join(&sha).exists());
+    let repo = Repo::new();
+    let (folder, _) = their_folder(&repo, "east");
+    std::fs::write(folder.join(format!("blobs/{sha}.png")), "not a bowl").unwrap();
+    let url = serve(folder);
+    let o = cli(
+        &repo,
+        &["cell", "import", &format!("{url}/cell.jsonl"), "--yes"],
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    assert!(out(&cli(&repo, &["cells"])).contains("east"));
+    let blobs = std::fs::read_dir(repo.store().join("blobs")).map_or(0, Iterator::count);
+    assert_eq!(blobs, 0);
+}
