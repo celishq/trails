@@ -1,6 +1,6 @@
 //! The patterns of a store, and the account's writes of them.
 
-use crate::{Cell, Cells, Mask, Membership, PatternRecord, Patterns};
+use crate::{Cell, Cells, Export, Mask, Membership, PatternRecord, Patterns};
 use celis_nostr::Note;
 use celis_store::{Anchor, PatternId, ProofFile, Refusal, Store};
 use std::collections::HashSet;
@@ -24,6 +24,10 @@ pub trait PatternStore {
     /// Removes the records of the cell `name` of another account, and each blob that only they name;
     /// how many records. Refuses a cell of the account, and a name that no cell holds.
     fn leave(&mut self, name: &str) -> Result<usize, Refusal>;
+
+    /// The export of the account's cell `name`: its live patterns and a new membership, signed and not
+    /// written; refuses a name that no cell of the account with a live pattern holds.
+    fn export(&self, name: &str) -> Result<Export, Refusal>;
 }
 
 impl PatternStore for Store {
@@ -129,6 +133,27 @@ impl PatternStore for Store {
         let records: Vec<Note> = records.into_iter().cloned().collect();
         self.remove(&records, &blobs)?;
         Ok(records.len())
+    }
+
+    fn export(&self, name: &str) -> Result<Export, Refusal> {
+        let no_cell = || Refusal::NoCell(name.to_string());
+        let author = self.author()?.ok_or_else(no_cell)?;
+        let cell = Cell {
+            name: name.to_string(),
+            author,
+        };
+        let patterns = self.patterns();
+        let every = patterns.every().iter().rev().filter(|p| p.is_live());
+        let ours: Vec<(Note, PatternRecord)> = every
+            .filter(|p| patterns.holding(p).contains(&&cell))
+            .map(|p| (p.note.clone(), p.record.clone()))
+            .collect();
+        if ours.is_empty() {
+            return Err(no_cell());
+        }
+        let ids: Vec<&str> = ours.iter().map(|(n, _)| n.id.as_str()).collect();
+        let membership = self.seal(|account, now| Membership::write(account, now, name, &ids))?;
+        Ok(Export::new(ours, membership))
     }
 }
 

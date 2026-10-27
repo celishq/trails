@@ -1,6 +1,5 @@
 //! `celis cell import`: keep a cell from a folder or a URL.
 
-use crate::command::share::export::blob_path;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use celis_patterns::{Export, PatternStore};
@@ -14,8 +13,8 @@ impl Command {
     pub(crate) fn cell_import(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let source = args.id("cell import")?;
         let text = self
-            .fetch(source, "cell.jsonl")
-            .ok_or_else(|| Refusal::Invalid(format!("{source} has no cell.jsonl")))?;
+            .fetch(source, Export::RECORDS)
+            .ok_or_else(|| Refusal::Invalid(format!("{source} has no {}", Export::RECORDS)))?;
         let export = Export::read(&String::from_utf8_lossy(&text))?;
         let trails = self.trails()?;
         let cell = &export.cell;
@@ -37,7 +36,7 @@ impl Command {
             return crate::command::put(out, &lines.join("\n"));
         }
         for file in export.files() {
-            if let Some(bytes) = self.fetch(source, &blob_path(file)) {
+            if let Some(bytes) = self.fetch(source, &Export::blob(file)) {
                 trails.hold(&file.sha256, &bytes)?;
             }
         }
@@ -59,8 +58,8 @@ impl Command {
             return std::fs::read(self.folder.join(source).join(name)).ok();
         }
         let base = source
-            .trim_end_matches("cell.jsonl")
-            .trim_end_matches("cell.md");
+            .trim_end_matches(Export::RECORDS)
+            .trim_end_matches(Export::PAGE);
         let url = format!("{}/{name}", base.trim_end_matches('/'));
         let fetched = std::process::Command::new("curl")
             .args(["-fsSL", &url])
