@@ -65,6 +65,7 @@ impl Command {
         let under = review.under.as_deref().map(short);
         lines.extend(match (review.as_planned, under) {
             (false, Some(u)) => Some(format!("celis: it went otherwise than planned; replace or drop each open step it voids, then add one step under {u}.")),
+            (true, Some(u)) if review.open.is_empty() => Some(format!("celis: no step under {u} is open; when its work is done, close it with celis step done {u}, else add one step under it.")),
             (true, Some(u)) => Some(format!("celis: take an open step beside it, add one step under {u}, or close {u} when its work is done.")),
             (_, None) => None,
         });

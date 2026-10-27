@@ -3,7 +3,7 @@
 use crate::command::Command;
 use crate::failure::Failure;
 use celis_store::{Link, Project, Secret};
-use celis_trails::TrailStore;
+use celis_trails::{State, Step, TrailStore};
 use hook::Prompt;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -63,6 +63,10 @@ impl Command {
             return Ok(());
         }
         let current = steps.current(&project.anchor.project, &prompt.session);
+        if let Some(ask) = current.filter(|t| waits(*t)) {
+            let id = celis_store::records::id::short(ask.id());
+            crate::command::put(err, &format!("celis: no step under the ask {id} is open; when its work is done, close it with celis step done {id}."))?;
+        }
         let id = current.map(|t| celis_store::records::id::short(t.id()));
         let line = note(!trails.is_empty(), id.as_deref());
         crate::command::put(err, &line)?;
@@ -128,6 +132,12 @@ fn mark(path: &Path) -> Result<(), Failure> {
     }
     std::fs::write(path, "").map_err(anyhow::Error::from)?;
     Ok(())
+}
+
+/// Whether the ask `ask` is open, with steps under it and none of them open.
+fn waits(ask: Step) -> bool {
+    let steps = ask.children();
+    ask.state() == State::Open && !steps.is_empty() && steps.iter().all(|s| s.closed().is_some())
 }
 
 /// The line on a prompt: a prompt that goes on with the current ask `current` adds steps under it, and a
