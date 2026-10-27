@@ -78,6 +78,15 @@ impl Failure {
         )
     }
 
+    /// A cell of another account holds the name.
+    pub fn cell_taken(name: &str) -> Self {
+        Self::new(
+            "cell-taken",
+            1,
+            format!("a cell of another account is named {name}; choose another name"),
+        )
+    }
+
     /// A command that printed its own error: it ends with `code` and prints nothing more.
     pub fn quiet(code: i32) -> Self {
         Self::new("error", code, String::new())
@@ -102,6 +111,7 @@ impl From<Refusal> for Failure {
             Refusal::OpenSteps(id) => Self::open_steps(&id),
             Refusal::CheckFailed(output) => Self::check_failed(&output),
             Refusal::Secret(what) => Self::secret(&what),
+            Refusal::CellTaken(name) => Self::cell_taken(&name),
             Refusal::Error(error) => Self::from(error),
         }
     }

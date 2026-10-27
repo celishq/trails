@@ -4,6 +4,7 @@ mod args;
 mod read;
 mod record;
 mod setup;
+mod share;
 
 use crate::failure::Failure;
 use crate::help::{self, VERBS};
@@ -90,6 +91,7 @@ impl Command {
             "extract" | "lesson" => self.extract(args, out),
             "issue" => self.issue(args, out),
             "link" => self.link(args, out, &self.project()),
+            "cell" => self.cell(args, out),
             "hook" => self.hook(args, out),
             "auth" => self.auth(args, out, err),
             "update" => self.update(args),

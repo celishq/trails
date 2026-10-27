@@ -25,6 +25,7 @@ celis stats [<id>] [--demo]                           the use of the patterns, o
 celis extract <id>                                    what an ask or a step taught, to extract as patterns
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
 celis link [<folder>] [--off]                         keep this project's trails in a folder, or stop
+celis cell add <name> <id>...                         put your patterns in a cell of yours
 celis step add [--under <id>] [--new] [--replaces <id>] [--uses <id>]... [--misled <id>]... [--at <place>]... [--check <command>] [--session <id>] [--project <id>] -- <text>
                                                        leave a step
 celis step start <id>                                 take up a step, and see the patterns and notes its plan links
@@ -102,13 +103,13 @@ celis pattern --path "**/prices*.py" -- "When you change prices: keep them in ce
 - A command that writes records MUST print the id of each, its main record first.
 - With `--json`, a command but `grep` MUST print one JSON object a line, and nothing else, to stdout. A
   printed id is `{"id"}`.
-- Only `pattern`, `step` and `hook ask` MAY write a record. A command that refuses MUST write nothing.
+- Only `pattern`, `step`, `cell` and `hook ask` MAY write a record. A command that refuses MUST write nothing.
 - A command MUST NOT ask a question, but `auth login`.
 - A command MUST exit 0 when done, 2 on a usage error, and 1 on any other error.
 - A command MUST take each deprecated command and flag of the README, and, without `--json`, MUST print one
   line on stderr that names it as deprecated.
 - An error MUST be named `usage`, `no-pattern`, `no-step`, `closed`, `open-steps`, `check-failed`,
-  `secret` (CIP-01, "The account"), else `error`. With `--json`, it MUST be one object on stderr,
+  `secret` (CIP-01, "The account"), `cell-taken` ("Cells"), else `error`. With `--json`, it MUST be one object on stderr,
   `{"error": "<name>", "message": "<text>"}`.
 
 ## Update
@@ -404,6 +405,22 @@ antigravity     {"injectSteps": [{"ephemeralMessage": "<text>"}]}
 ```
 echo '{"session_id": "95e9be99", "cwd": "/repo"}' | celis hook start claude ~/.claude/plugins/celis
 echo '{"session_id": "95e9be99", "cwd": "/repo", "prompt": "Use the shared Badge."}' | celis hook ask codex
+```
+
+## Cells
+
+`cell` acts on the cells of CIP-09.
+
+**Rules**
+
+- `cell add` MUST write one membership (CIP-09, "Membership") that names each `<id>` whole. It MUST
+  refuse a name that is not a cell name, or no `<id>`, as a usage error, an id that names no live pattern
+  of the account with `no-pattern`, and a name that a cell of another account holds with `cell-taken`.
+
+**Examples**
+
+```
+celis cell add eating-east 9b0e11aa 4c2d17e0
 ```
 
 ## Grep

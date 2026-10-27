@@ -127,6 +127,11 @@ pub const GROUPS: &[Group] = &[
         ],
     ),
     (
+        "cell",
+        "Group your patterns into cells, and share them.",
+        &[("add", "Put your patterns into a cell of yours")],
+    ),
+    (
         "auth",
         "Manage your recovery phrase. celis keeps it in $CELIS_HOME/phrase.",
         &[
@@ -361,6 +366,16 @@ pub const VERBS: &[Verb] = &[
             ("--demo", "Show sample trails in every state"),
         ],
         examples: &["celis tree 3fa2c1d0 --full", "celis tree --all"],
+    },
+    Verb {
+        command: "cell add",
+        usage: &["celis cell add <name> <id>..."],
+        summary: "Put your patterns into a cell of yours, and make the cell when it is new. A new cell is off. A name that a cell of another account holds is refused.",
+        args: &[
+            ("<name>", "The cell: a-z, 0-9 and -, up to 64 characters"),
+            ("<id>", "A pattern of yours, or its first 4 or more characters"),
+        ],
+        examples: &["celis cell add eating-east 9b0e11aa 4c2d17e0"],
     },
     Verb {
         command: "hook start",

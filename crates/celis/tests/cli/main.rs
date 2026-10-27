@@ -3,6 +3,7 @@
 mod support;
 
 mod account;
+mod cells;
 mod closing;
 mod commands;
 mod deprecated;

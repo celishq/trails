@@ -31,6 +31,7 @@ const SECTIONS: &[(&str, &str, &[&str])] = &[
             "step note <id>",
         ],
     ),
+    ("Share", "", &["cell add"]),
     (
         "Set up",
         "",

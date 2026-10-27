@@ -49,6 +49,11 @@ impl Store {
         taken
     }
 
+    /// The hex pubkey of the account; none when no phrase is kept.
+    pub fn author(&self) -> Result<Option<String>, Refusal> {
+        Ok(self.home.author()?)
+    }
+
     /// Whether the home holds no record.
     pub fn is_empty(&self) -> bool {
         self.records.is_empty()

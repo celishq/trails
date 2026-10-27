@@ -1,6 +1,6 @@
 //! The patterns of a store, and the account's writes of them.
 
-use crate::{PatternRecord, Patterns};
+use crate::{Cell, Cells, PatternRecord, Patterns};
 use celis_nostr::Note;
 use celis_store::{PatternId, Refusal, Store};
 
@@ -11,6 +11,10 @@ pub trait PatternStore {
     /// Writes `pattern`, each `within` taken whole from a live pattern of any project; replacing the live
     /// pattern of its project that `replaces` names, and keeping its examples and `within`.
     fn decide(&self, pattern: PatternRecord, replaces: Option<&str>) -> Result<Note, Refusal>;
+
+    /// Writes a membership that puts the live patterns of the account that `ids` name in its cell
+    /// `name`; refuses a name that a cell of another account holds.
+    fn join(&self, name: &str, ids: &[String]) -> Result<Note, Refusal>;
 }
 
 impl PatternStore for Store {
@@ -36,5 +40,34 @@ impl PatternStore for Store {
             pattern.replaces = Some(PatternId::new(patterns.find(Some(&project), id)?.id()));
         }
         self.sign(|account, now| pattern.record(account, now))
+    }
+
+    fn join(&self, name: &str, ids: &[String]) -> Result<Note, Refusal> {
+        if !Cell::is_name(name) {
+            return Err(Refusal::Usage(format!(
+                "a cell name is 1 to 64 characters of a-z, 0-9 and -, not {name}"
+            )));
+        }
+        if ids.is_empty() {
+            return Err(Refusal::Usage("cell add needs a pattern id".to_string()));
+        }
+        let author = self.author()?.unwrap_or_default();
+        let cells = Cells::new(self.records());
+        if cells.named(name).iter().any(|c| c.author != author) {
+            return Err(Refusal::CellTaken(name.to_string()));
+        }
+        let patterns = self.patterns();
+        let found: Result<Vec<&str>, Refusal> = ids
+            .iter()
+            .map(|id| {
+                let pattern = patterns.find(None, id)?;
+                match pattern.note.pubkey.hex() == author {
+                    true => Ok(pattern.id()),
+                    false => Err(Refusal::NoPattern(id.clone())),
+                }
+            })
+            .collect();
+        let found = found?;
+        self.sign(|account, now| Cell::membership(account, now, name, &found))
     }
 }

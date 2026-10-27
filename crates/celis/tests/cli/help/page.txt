@@ -57,6 +57,9 @@ Record work · your agents run these
 
   step note <id>      Leave a note for the work of the step's trail
 
+Share
+  cell add            Put your patterns into a cell of yours
+
 Set up
   link [<folder>]     Keep this project's trails in a folder to commit or share
   └ --off             Stop keeping the trails in the folder

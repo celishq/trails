@@ -68,6 +68,12 @@ impl Home {
         Ok(self.account.get_or_init(|| account))
     }
 
+    /// The hex pubkey of the kept account; none when no phrase is kept.
+    pub fn author(&self) -> Result<Option<String>> {
+        let kept = self.phrase.kept()?;
+        Ok(kept.map(|identity| identity.account().pubkey().hex()))
+    }
+
     /// Writes `record` once to `shared/`, and to each linked folder that holds it.
     pub fn write(&self, record: &Note) -> Result<PathBuf> {
         let (path, new) = put(&self.root.join("shared"), record)?;
