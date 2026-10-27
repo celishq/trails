@@ -575,7 +575,7 @@ fn tree_demo_prints_every_state_and_writes_nothing() {
             "{mark}: {text}"
         );
     }
-    for part in ["\nshop\n", "\ncrm\n", "  ¶ ", " ~ ", " dropped "] {
+    for part in ["\nshop\n", "\ncrm\n", "  § ", "  ¶ ", " ~ ", " dropped "] {
         assert!(text.contains(part), "{part:?}: {text}");
     }
     let all = out(&repo.run(&repo.path(), &["tree", "--demo", "--all"], &env, ""));
@@ -679,7 +679,7 @@ fn next_tree_demo_prints_every_state_and_writes_nothing() {
             "{mark}: {text}"
         );
     }
-    for part in ["\nshop\n", "\ncrm\n", "  ¶ ", " ~ ", " dropped "] {
+    for part in ["\nshop\n", "\ncrm\n", "  § ", "  ¶ ", " ~ ", " dropped "] {
         assert!(text.contains(part), "{part:?}: {text}");
     }
     let all = out(&repo.run(
