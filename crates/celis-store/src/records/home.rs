@@ -144,11 +144,7 @@ impl Home {
         for link in &self.links {
             for record in kept.iter().filter(|r| link.holds(r, &all)) {
                 went += usize::from(put(&link.folder, record)?.1);
-                let files = record
-                    .tags
-                    .iter()
-                    .filter_map(|t| ProofFile::read(t).or_else(|| ProofFile::blossom(t.get(1..)?)));
-                for file in files {
+                for file in ProofFile::all(record) {
                     link_blobs(link).copy(&self.blobs, &file.sha256)?;
                 }
             }

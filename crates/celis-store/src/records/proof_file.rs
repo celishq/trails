@@ -63,6 +63,14 @@ impl ProofFile {
         ]
     }
 
+    /// Each file that a tag of `note` names: an `imeta`, or a Blossom URI with its place.
+    pub fn all(note: &celis_nostr::Note) -> Vec<ProofFile> {
+        let tags = note.tags.iter();
+        let files =
+            tags.filter_map(|t| ProofFile::read(t).or_else(|| ProofFile::blossom(t.get(1..)?)));
+        files.collect()
+    }
+
     /// The file an `imeta` `tag` names; none when it is another tag or has no `x`.
     pub fn read(tag: &[String]) -> Option<ProofFile> {
         if tag.first()? != "imeta" {

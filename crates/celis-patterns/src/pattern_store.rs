@@ -123,8 +123,8 @@ impl PatternStore for Store {
             .records()
             .iter()
             .partition(|n| gone.contains(n.id.as_str()));
-        let named: HashSet<String> = kept.iter().flat_map(|n| blobs(n)).collect();
-        let blobs: HashSet<String> = records.iter().flat_map(|n| blobs(n)).collect();
+        let named: HashSet<String> = kept.iter().flat_map(|n| shas(n)).collect();
+        let blobs: HashSet<String> = records.iter().flat_map(|n| shas(n)).collect();
         let blobs: Vec<String> = blobs.difference(&named).cloned().collect();
         let records: Vec<Note> = records.into_iter().cloned().collect();
         self.remove(&records, &blobs)?;
@@ -132,11 +132,7 @@ impl PatternStore for Store {
     }
 }
 
-/// The sha256 of each file that a tag of `note` names (`spec/08-files.md`).
-fn blobs(note: &Note) -> Vec<String> {
-    let files = note
-        .tags
-        .iter()
-        .filter_map(|t| ProofFile::read(t).or_else(|| ProofFile::blossom(t.get(1..)?)));
-    files.map(|f| f.sha256).collect()
+/// The sha256 of each file that `note` names.
+fn shas(note: &Note) -> impl Iterator<Item = String> {
+    ProofFile::all(note).into_iter().map(|f| f.sha256)
 }
