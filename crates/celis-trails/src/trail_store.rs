@@ -172,7 +172,7 @@ impl TrailStore for Store {
             reason: reason.to_string(),
         };
         let records = match Target::of(id, pattern, steps.find(id).ok())? {
-            Target::Pattern(pattern) if patterns.find(None, &pattern.id).is_ok() => {
+            Target::Pattern(pattern) if patterns.find(&pattern.id).is_ok() => {
                 vec![self.sign(|account, now| mark.record(account, &pattern.id, now))?]
             }
             Target::Pattern(pattern) => return Err(Refusal::Closed(pattern.id.clone())),
@@ -243,7 +243,7 @@ impl TrailStore for Store {
 /// error.
 fn used(store: &Store, steps: &Steps, project: &str, id: &str) -> Result<String, Refusal> {
     let patterns = store.patterns();
-    let found = patterns.find(Some(project), id).ok().map(|p| p.note);
+    let found = patterns.view(project).find(id).ok().map(|p| p.note);
     match Target::of(id, found, steps.find(id).ok())? {
         Target::Pattern(pattern) => Ok(pattern.id.clone()),
         Target::Step(_) => Err(Refusal::Usage(
@@ -286,7 +286,7 @@ fn kept<'a>(patterns: &Patterns<'a>, step: Step) -> Vec<Pattern<'a>> {
     let mut found = Vec::new();
     let chain = std::iter::successors(Some(step), |s| s.under());
     for id in chain.flat_map(Step::uses) {
-        found.extend(patterns.find(None, id));
+        found.extend(patterns.find(id));
     }
     let mut seen = HashSet::new();
     found.retain(|p| seen.insert(p.note.id.clone()));

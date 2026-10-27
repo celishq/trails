@@ -35,7 +35,7 @@ impl<'a> Candidate<'a> {
     /// Each live pattern in scope in `project` of `trails`, oldest first.
     pub fn every(trails: &'a Store, project: &str) -> Vec<Candidate<'a>> {
         let (steps, patterns) = (trails.steps(), trails.patterns());
-        let live = patterns.live(project);
+        let live = patterns.view(project).live();
         let since = steps.now().saturating_sub(DAYS * 86_400);
         let using = steps
             .all()

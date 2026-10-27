@@ -33,7 +33,7 @@ impl<'a> Reuse<'a> {
         let ruled = steps.iter().filter_map(|s| self.ruled.get(s.id()));
         ruled
             .flatten()
-            .filter(|id| patterns.find(None, id).is_ok())
+            .filter(|id| patterns.find(id).is_ok())
             .count()
     }
 
@@ -43,7 +43,7 @@ impl<'a> Reuse<'a> {
         let mut used: Vec<(Pattern<'a>, usize)> = self
             .uses
             .iter()
-            .filter_map(|(id, count)| Some((patterns.find(None, id).ok()?, *count)))
+            .filter_map(|(id, count)| Some((patterns.find(id).ok()?, *count)))
             .collect();
         used.sort_by_key(|(p, count)| {
             (

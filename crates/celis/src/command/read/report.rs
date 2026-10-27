@@ -78,7 +78,7 @@ pub(crate) fn part(
     notes: &Notes,
     id: &str,
 ) -> Result<String, Failure> {
-    if let Ok(pattern) = patterns.find(None, id) {
+    if let Ok(pattern) = patterns.find(id) {
         return Ok(format!("- {}\n", pattern.record.content));
     }
     if let Some(note) = notes.get(id) {

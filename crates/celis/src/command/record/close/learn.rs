@@ -120,7 +120,7 @@ fn in_play(records: &[Note], step: Step) -> Vec<(String, String)> {
     let used = trail.tree().into_iter().flat_map(|s| s.uses());
     let mut seen = HashSet::new();
     used.filter(|id| seen.insert(*id))
-        .filter_map(|id| patterns.find(None, id).ok())
+        .filter_map(|id| patterns.find(id).ok())
         .map(|p| (p.id().to_string(), p.record.title().to_string()))
         .collect()
 }

@@ -53,10 +53,9 @@ impl Command {
         };
         let patterns = trails.patterns();
         let replaced = args.replaces.as_deref();
-        let replaced =
-            replaced.and_then(|id| patterns.find(Some(&project.anchor.project), id).ok());
+        let replaced = replaced.and_then(|id| patterns.view(&project.anchor.project).find(id).ok());
         let like = like(
-            &patterns.live(&project.anchor.project),
+            &patterns.view(&project.anchor.project).live(),
             &pattern.content,
             replaced,
         );

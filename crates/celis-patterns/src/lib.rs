@@ -15,6 +15,7 @@ pub mod pattern_record;
 pub mod pattern_store;
 pub mod patterns;
 pub mod scope;
+pub mod view;
 
 pub use cell::Cell;
 pub use cells::Cells;
@@ -28,3 +29,4 @@ pub use pattern_record::PatternRecord;
 pub use pattern_store::PatternStore;
 pub use patterns::Patterns;
 pub use scope::Scope;
+pub use view::View;

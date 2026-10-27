@@ -85,7 +85,7 @@ fn uses(trails: &Store, project: &str, json: bool, out: &mut dyn Write) -> Resul
     }
     let since = steps.now().saturating_sub(WEEK);
     let patterns = trails.patterns();
-    let scoped = patterns.scoped(project).into_iter();
+    let scoped = patterns.view(project).scoped().into_iter();
     let written: Vec<_> = scoped.filter(|p| p.note.created_at >= since).collect();
     let replaced = written
         .iter()

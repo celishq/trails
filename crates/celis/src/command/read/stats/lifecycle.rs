@@ -127,7 +127,7 @@ pub(crate) fn promoted(pattern: &Pattern) -> bool {
 /// Each event of the patterns in scope in `project`, or of every pattern, with its second.
 fn events(model: &Model, project: Option<&str>) -> Vec<(u64, Event)> {
     let patterns = match project {
-        Some(project) => model.patterns.scoped(project),
+        Some(project) => model.patterns.view(project).scoped(),
         None => model.patterns.every().to_vec(),
     };
     let ids: HashSet<&str> = patterns.iter().map(|p| p.id()).collect();

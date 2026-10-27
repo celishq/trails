@@ -46,7 +46,7 @@ impl Value {
             .collect();
         let trees: Vec<Step> = asks.iter().flat_map(|a| a.tree()).collect();
         let patterns = match project {
-            Some(project) => model.patterns.scoped(project),
+            Some(project) => model.patterns.view(project).scoped(),
             None => model.patterns.every().to_vec(),
         };
         let mut value = Value {

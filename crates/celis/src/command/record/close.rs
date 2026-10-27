@@ -92,7 +92,10 @@ impl Command {
             .iter()
             .flat_map(|f| crate::command::record::files::paths(&project, &self.folder, f))
             .collect();
-        trails.patterns().matching(&project.anchor.project, &paths)
+        trails
+            .patterns()
+            .view(&project.anchor.project)
+            .matching(&paths)
     }
 
     /// The lines of the patterns that the `changed` files match, after a line that asks to check the

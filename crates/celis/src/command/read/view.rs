@@ -30,14 +30,10 @@ impl View {
     pub fn of(trails: &Store, project: &str) -> View {
         let (steps, patterns, notes) = (trails.steps(), trails.patterns(), trails.notes());
         let mut blocks: Vec<(u64, &str, Vec<Row>)> = Vec::new();
-        for entry in patterns
-            .every()
-            .iter()
-            .filter(|p| patterns.in_view(p, project))
-        {
+        let view = patterns.view(project);
+        for entry in patterns.every().iter().filter(|p| view.shows(p)) {
             let note = entry.note;
-            let cells = patterns.holding(entry).into_iter();
-            let on = cells.filter(|c| patterns.cells().is_on(c, project));
+            let on = view.cells_on(entry).into_iter();
             let on: Vec<&str> = on.map(|c| c.name.as_str()).collect();
             let rows = pattern(entry, &on, &steps, trails);
             blocks.push((note.created_at, &note.id, rows));

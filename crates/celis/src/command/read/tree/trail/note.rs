@@ -37,7 +37,7 @@ impl Tree<'_> {
     /// The patterns `note` uses.
     pub(in crate::command::read::tree) fn uses(&self, note: Step) -> Vec<&Note> {
         let found = note.uses().into_iter();
-        let found = found.filter_map(|id| self.patterns.find(None, id).ok());
+        let found = found.filter_map(|id| self.patterns.find(id).ok());
         found.map(|pattern| pattern.note).collect()
     }
 

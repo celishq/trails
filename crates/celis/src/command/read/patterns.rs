@@ -44,7 +44,7 @@ impl Command {
         }
         let trails = self.trails()?;
         let project = self.project().anchor.project;
-        let patterns = trails.patterns().live(&project);
+        let patterns = trails.patterns().view(&project).live();
         if patterns.is_empty() {
             return crate::command::put(out, NONE);
         }
@@ -65,7 +65,7 @@ impl Command {
         }
         let trails = self.trails()?;
         let project = self.project().anchor.project;
-        let pattern = trails.patterns().find(Some(&project), id)?;
+        let pattern = trails.patterns().view(&project).find(id)?;
         let steps = trails.steps();
         let open = self.session().and_then(|s| steps.open(&project, &s));
         if let Some(step) = open {
@@ -91,7 +91,8 @@ impl Command {
         }
         let project = self.project().anchor.project;
         let every = patterns.every().iter().rev();
-        let held = every.clone().filter(|p| patterns.in_view(p, &project));
+        let view = patterns.view(&project);
+        let held = every.clone().filter(|p| view.shows(p));
         let held: HashSet<&str> = held.map(|p| p.id()).collect();
         let ours = every.filter(|p| p.is_live());
         let ours = ours.filter(|p| patterns.holding(p).iter().any(|c| c.name == name));
@@ -110,7 +111,7 @@ impl Command {
         }
         let trails = self.trails()?;
         let project = self.project().anchor.project;
-        let size = trails.patterns().live(&project).len();
+        let size = trails.patterns().view(&project).live().len();
         let found = Candidate::all(&trails, &project);
         Ok((found.iter().map(Candidate::line).collect(), size))
     }
@@ -123,13 +124,13 @@ impl Command {
         }
         let trails = self.trails()?;
         let here = self.project();
-        let patterns = trails.patterns().live(&here.anchor.project);
+        let patterns = trails.patterns().view(&here.anchor.project).live();
         if patterns.is_empty() {
             return Ok(None);
         }
         let every = trails.patterns();
-        let project = &here.anchor.project;
-        let held = every.every().iter().filter(|p| every.in_view(p, project));
+        let view = every.view(&here.anchor.project);
+        let held = every.every().iter().filter(|p| view.shows(p));
         let held: HashSet<&str> = held.map(|p| p.id()).collect();
         let files: Vec<(&str, Vec<String>)> = files
             .iter()
@@ -185,7 +186,7 @@ fn markdown(pattern: &Pattern, trails: &Store, project: &str) -> Vec<String> {
         lines.push(String::new());
     }
     let steps = trails.steps();
-    for smaller in trails.patterns().smaller(project, &note.id) {
+    for smaller in trails.patterns().view(project).smaller(&note.id) {
         let first = smaller.record.content.lines().next().unwrap_or("");
         let title = smaller.record.name().unwrap_or(first);
         lines.push(format!("- next: `{}` {title}", short(smaller.id())));

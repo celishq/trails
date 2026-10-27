@@ -21,7 +21,7 @@ impl Command {
             let live = patterns.every().iter().filter(|p| p.is_live());
             let held = live.filter(|p| patterns.holding(p).contains(&cell)).count();
             let npub = Pubkey::parse(&cell.author).map_err(Failure::from)?.npub();
-            let state = match patterns.cells().is_on(cell, &project) {
+            let state = match patterns.view(&project).is_on(cell) {
                 true => "on",
                 false => "off",
             };
