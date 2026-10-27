@@ -13,8 +13,8 @@ use std::collections::HashSet;
 use std::io::Write;
 
 impl Command {
-    /// Prints the index of the live patterns in scope; with `--markdown`, each whole as one page, newest
-    /// first; with `--tidy`, those that need tidy and the index size. Writes no record.
+    /// Prints the index of the live patterns in scope; with an id, that pattern whole; with `--markdown`,
+    /// each whole as one page, newest first; with `--tidy`, those that need tidy and the index size.
     pub(crate) fn patterns(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         if args.tidy {
             if args.markdown || args.words.len() > 1 {
@@ -23,6 +23,11 @@ impl Command {
             let (mut lines, size) = self.candidates()?;
             lines.push(format!("{} in the index", plural(size, "pattern")));
             return crate::command::put(out, &lines.join("\n"));
+        }
+        if let [id] = &args.words[1..] {
+            if is_id(id) && !self.folder.join(id).exists() {
+                return self.pattern_whole(id, out);
+            }
         }
         if !args.markdown {
             let index = self.index(&args.words[1..])?;
@@ -44,6 +49,21 @@ impl Command {
                 .flat_map(|pattern| markdown(pattern, &trails, &project)),
         );
         crate::command::put(out, &page.join("\n"))
+    }
+
+    /// Prints the live pattern in scope whose id is or starts with `id` whole, as `--markdown` does.
+    fn pattern_whole(&self, id: &str, out: &mut dyn Write) -> Result<(), Failure> {
+        if !self.held()? {
+            return Err(Failure::no_pattern(id));
+        }
+        let trails = self.trails()?;
+        let project = self.project().anchor.project;
+        let pattern = trails.patterns().find(Some(&project), id)?;
+        let mut lines = markdown(&pattern, &trails, &project);
+        while lines.last().is_some_and(String::is_empty) {
+            lines.pop();
+        }
+        crate::command::put(out, &lines[1..].join("\n"))
     }
 
     /// The line of each live pattern in scope that needs tidy, oldest first, and how many are live in
@@ -152,6 +172,11 @@ fn markdown(pattern: &Pattern, trails: &Store, project: &str) -> Vec<String> {
         }
     }
     lines
+}
+
+/// Whether `word` reads as a record id: 4 to 64 hex characters.
+fn is_id(word: &str) -> bool {
+    (4..=64).contains(&word.len()) && word.chars().all(|c| c.is_ascii_hexdigit())
 }
 
 /// What `patterns` prints when the store holds none.

@@ -369,6 +369,40 @@ fn patterns_print_as_markdown() {
     );
 }
 
+/// `patterns <id>` prints that pattern whole, as `--markdown` does, and refuses an id that names no live
+/// pattern with `no-pattern`; a word that names a file stays a file (`spec/02-cli.md`, "Patterns").
+#[test]
+fn patterns_with_an_id_print_that_pattern_whole() {
+    let repo = Repo::new();
+    let decide = |text: &str| {
+        let o = cli(&repo, &["pattern", "--", text]);
+        assert!(o.status.success(), "{}", err(&o));
+        out(&o).lines().next().unwrap().to_string()
+    };
+    let id = decide("When a logo is drawn\nDo: keep it flat.");
+    decide("When a price rounds: round down.");
+    let said = out(&cli(&repo, &["patterns", &id[..8]]));
+    assert_eq!(
+        said.lines().collect::<Vec<_>>(),
+        [
+            "## When a logo is drawn".to_string(),
+            String::new(),
+            format!("`{}` · project", &id[..8]),
+            String::new(),
+            "Do: keep it flat.  ".to_string(),
+        ],
+        "{said}"
+    );
+    support::refusal(
+        &cli(&repo, &["patterns", "deadbeef", "--json"]),
+        1,
+        "no-pattern",
+    );
+    repo.write("cafe", "");
+    let index = out(&cli(&repo, &["patterns", "cafe"]));
+    assert!(index.contains("When a price rounds"), "{index}");
+}
+
 /// The forms of `spec/fixtures/pattern-labels.json`.
 fn forms() -> Vec<serde_json::Value> {
     let fixture: serde_json::Value = serde_json::from_str(include_str!(

@@ -16,7 +16,8 @@ read. What a command shows a person is not part of it.
 ```
 celis pattern [--scope <scope>] [--replaces <id>] [--path <glob>]... [--within <id>]... [--good <example>]... [--bad <example>]... [--project <id>] -- <text>
                                                        a pattern, in its scope
-celis patterns [<file>]... [--markdown] [--tidy]       the index of the patterns in scope, or what needs tidy
+celis patterns [<id>] [<file>]... [--markdown] [--tidy]
+                                                       the index of the patterns in scope, one whole, or what needs tidy
 celis tree [<id>]... [--graph] [--full] [--all] [--demo]
                                                        a trail and its steps; again on each change
 celis grep <grep option>... <pattern>                 every trail, through the system grep
@@ -175,7 +176,7 @@ note  json  {"id", "created_at", "step", "content"}
   error.
 - `start` MUST print the notes of the step's trail (CIP-04, "Notes").
 
-The output of `done` of an ask begins with the learn brief, before the end the agent answers with. The
+The output of `done` of an ask begins with the learn brief, before its total line. The
 output of `done` of another step that fixes done work (CIP-06, "Revisions") ends with it, before the next
 move:
 
@@ -217,7 +218,7 @@ Each agent's hooks give `hook` the JSON of a prompt or of a session start.
 ## Patterns
 
 `patterns` gives the index of the live patterns in scope in the working folder's project (CIP-05). An
-agent reads it, and reads the whole of a pattern with `grep <id8>`.
+agent reads it, and reads the whole of a pattern with `patterns <id8>`.
 
 ```
 <id8> <scope> <When>     each pattern; its When is the first line of its text, and of a text of one
@@ -250,6 +251,9 @@ A pattern's reasons, in this order:
   A `<file>` is a path from the working folder, and a folder stands for each file in it.
 - With `--markdown`, `patterns` MUST print each live pattern in scope whole, with its examples, as one
   Markdown page.
+- With an `<id>` of a live pattern in scope, a word of 4 to 64 hex characters that names no file,
+  `patterns` MUST print that pattern whole, with its examples, as `--markdown` does, and refuse an `<id>`
+  that names no live pattern in scope with `no-pattern`.
 - With `--tidy`, `patterns` MUST print a line for each live pattern in scope that has a reason, oldest
   first, then the line of the index size. It MUST refuse `--tidy` with a `<file>` or `--markdown` as a
   usage error.
@@ -259,6 +263,7 @@ A pattern's reasons, in this order:
 ```
 celis patterns
 celis patterns shelf/prices.py shelf/
+celis patterns 9b0e11aa
 celis patterns --markdown > patterns.md
 celis patterns --tidy
 ```

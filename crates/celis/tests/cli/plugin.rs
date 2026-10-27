@@ -308,7 +308,7 @@ fn claudes_prompt_hook_says_when_to_read_a_pattern_at_each_prompt() {
     for prompt in ["make it blue", "now add a test"] {
         let ask = claude.payload("s1", &repo.path(), prompt);
         let said = claude.run(&repo, claude.ask, &ask);
-        assert!(said.contains("celis grep <id>"), "{prompt}: {said}");
+        assert!(said.contains("celis patterns <id>"), "{prompt}: {said}");
     }
     let o = repo.run(
         &repo.path(),
@@ -319,7 +319,7 @@ fn claudes_prompt_hook_says_when_to_read_a_pattern_at_each_prompt() {
     assert!(o.status.success(), "{}", err(&o));
     let ask = claude.payload("s1", &repo.path(), "and the border too");
     let said = claude.run(&repo, claude.ask, &ask);
-    assert!(said.contains("celis grep <id>"), "{said}");
+    assert!(said.contains("celis patterns <id>"), "{said}");
 }
 
 /// The prompt hooks of Claude Code, Codex and Gemini CLI give one line, with no past agent and no

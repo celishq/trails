@@ -1,6 +1,7 @@
 //! `celis stats`: the use of the patterns, or a step's grade.
 
 use super::candidate::Candidate;
+use crate::command::record::close::End;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::progress::Grade;
@@ -46,7 +47,7 @@ impl Command {
         let trails = self.trails()?;
         let steps = trails.steps();
         match id {
-            Some(id) => step(Trail::new(steps.find(id)?).work(), args.json, out),
+            Some(id) => step(&trails, Trail::new(steps.find(id)?).work(), args.json, out),
             None => uses(&trails, &self.project().anchor.project, args.json, out),
         }
     }
@@ -106,12 +107,20 @@ fn uses(trails: &Store, project: &str, json: bool, out: &mut dyn Write) -> Resul
     crate::command::show(out, json, "total", value, &line)
 }
 
-/// Prints `step` with its grade.
-fn step(step: Step, json: bool, out: &mut dyn Write) -> Result<(), Failure> {
+/// Prints `step` with its grade, then with no `json`, of a done ask, its total from `trails`.
+fn step(trails: &Store, step: Step, json: bool, out: &mut dyn Write) -> Result<(), Failure> {
     let value = json!({"id": step.id(), "project": step.record().anchor.name,
         "content": step.title(), "grade": Grade::of(step), "depth": 0});
     let line = format!("{}{}", head(step), took(step));
-    crate::command::show(out, json, "step", value, &line)
+    crate::command::show(out, json, "step", value, &line)?;
+    if json || !step.is_trail() {
+        return Ok(());
+    }
+    let (Some(done), Some(record)) = (step.done(), step.done_record()) else {
+        return Ok(());
+    };
+    let end = End::of(trails.records(), step, &done, record.created_at);
+    crate::command::put(out, &end.total())
 }
 
 /// `<id, first 8> [<project name>] <title>` of `step`.

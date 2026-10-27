@@ -270,7 +270,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "stats",
         usage: &["celis stats [<id>] [--demo]"],
-        summary: "Show each live pattern: its uses, the steps it misled, its replaces, its last use, its examples and why it needs tidy. Then show the total: the size of the index, and the patterns written, the patterns replaced and the fixes that used no pattern in the last 7 days. With an id, show that step and its grade. On a terminal, show the totals of all time, then the last 14 days against the 14 before: reuse rate, first-pass success, resolved steps and median step time, then Learning, Quality, Output and speed, and Resources, each opened with enter, updating as work lands. Changes nothing.",
+        summary: "Show each live pattern: its uses, the steps it misled, its replaces, its last use, its examples and why it needs tidy. Then show the total: the size of the index, and the patterns written, the patterns replaced and the fixes that used no pattern in the last 7 days. With an id, show that step and its grade, and for a done ask its total: its steps, its proofs by kind, the patterns it used, the patterns written since it began, and its minutes. On a terminal, show the totals of all time, then the last 14 days against the 14 before: reuse rate, first-pass success, resolved steps and median step time, then Learning, Quality, Output and speed, and Resources, each opened with enter, updating as work lands. Changes nothing.",
         args: &[
             ("<id>", "A step id, or its first 4 or more characters"),
             ("--demo", "Show four weeks of sample trails"),
@@ -333,9 +333,10 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "patterns",
-        usage: &["celis patterns [<file>]... [--markdown] [--tidy]"],
-        summary: "Show the index of the patterns of this project and of you, the oldest first: each one's id, scope and When, with its paths, each named file they match, and the larger patterns it completes. celis grep <id> shows the whole of one. With --markdown, print each whole as one page, with its examples, each file a link to its blob, for a review or a skill file. With --tidy, list the patterns that need tidy, with the reason, then the size of the index. Changes nothing.",
+        usage: &["celis patterns [<id>] [<file>]... [--markdown] [--tidy]"],
+        summary: "Show the index of the patterns of this project and of you, the oldest first: each one's id, scope and When, with its paths, each named file they match, and the larger patterns it completes. With an id, print that pattern whole, with its examples. With --markdown, print each whole as one page, with its examples, each file a link to its blob, for a review or a skill file. With --tidy, list the patterns that need tidy, with the reason, then the size of the index. Changes nothing.",
         args: &[
+            ("<id>", "A pattern id, or its first 4 or more characters"),
             ("<file>", "A file or folder; marks each pattern whose paths match it"),
             ("--markdown", "Print one Markdown page, each file a link to its blob"),
             ("--tidy", "List the patterns that need tidy, and why"),
@@ -343,6 +344,7 @@ pub const VERBS: &[Verb] = &[
         examples: &[
             "celis patterns",
             "celis patterns shelf/prices.py shelf/",
+            "celis patterns 9b0e11aa",
             "celis patterns --markdown > patterns.md",
             "celis patterns --tidy",
         ],
