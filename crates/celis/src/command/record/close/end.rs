@@ -7,12 +7,11 @@ use celis_patterns::Patterns;
 use celis_store::StepId;
 use celis_trails::{Done, Step};
 
-/// The total of an ask when it closes: its done steps, those with only the agent's word as proof, the
-/// patterns written in its project since it began, and what it taught.
+/// The total of an ask when it closes: its done steps, the patterns written in its project since it
+/// began, and what it taught.
 pub(crate) struct End {
     pub ask: StepId,
     pub steps: usize,
-    pub unproven: usize,
     pub extracted: usize,
     pub learn: Learn,
 }
@@ -34,10 +33,6 @@ impl End {
         End {
             ask: step.step_id(),
             steps: closed.len(),
-            unproven: closed
-                .iter()
-                .filter(|(s, d)| d.by.is_none() && s.record().check.is_none())
-                .count(),
             extracted: patterns
                 .every()
                 .iter()
@@ -58,13 +53,10 @@ impl End {
         lines
     }
 
-    /// Its total line: the steps and those not proven, then the patterns used and extracted, each part
-    /// left out when it is zero.
+    /// Its total line: the steps, then the patterns used and extracted, each pattern part left out
+    /// when it is zero.
     pub fn total(&self) -> String {
-        let mut steps = plural(self.steps, "step");
-        if self.unproven > 0 {
-            steps.push_str(&format!(", {} not proven", self.unproven));
-        }
+        let steps = plural(self.steps, "step");
         let used = self.learn.patterns.len();
         let patterns: Vec<String> = [
             (used > 0).then(|| format!("{} used", plural(used, "pattern"))),
