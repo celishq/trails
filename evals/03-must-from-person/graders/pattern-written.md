@@ -3,4 +3,4 @@ type: regex
 target: trace
 flags: is
 ---
-"command":"(?:[^"\\]|\\.)*celis pattern(?:[^"\\]|\\.)*type hint
+"command":"(?:[^"\\]|\\.)*celis pattern(?:[^"\\]|\\.)*type[- ]hint
