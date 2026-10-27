@@ -13,6 +13,7 @@ impl Command {
             "off" => self.cell_turn(args, out, false),
             "export" => self.cell_export(args, out),
             "import" => self.cell_import(args, out),
+            "drop" => self.cell_drop(args, out),
             "" => Err(Failure::usage("expected: celis cell <command>")),
             verb => Err(Failure::usage(format!("no command \"cell {verb}\""))),
         }
@@ -23,6 +24,18 @@ impl Command {
         let name = args.id("cell add")?;
         let note = self.trails()?.join(name, &args.words[3..])?;
         self.id(out, args, &note)
+    }
+
+    /// Removes the cell of another account that `args` names from the store, and prints how many records
+    /// went.
+    fn cell_drop(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
+        let name = args.id("cell drop")?;
+        let gone = self.trails()?.leave(name)?;
+        let line = format!(
+            "dropped {name} · {}",
+            crate::text::line::plural(gone, "record")
+        );
+        crate::command::put(out, &line)
     }
 
     /// Turns the cell `args` names on or off in the working folder's project, or in every project with

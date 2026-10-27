@@ -73,6 +73,8 @@ Share
   cell import         Read a cell from a folder or a URL, and keep it
   └ --yes             Keep the cell after you read its patterns
 
+  cell drop <name>    Remove a cell of another account from disk
+
 Set up
   link [<folder>]     Keep this project's trails in a folder to commit or share
   └ --off             Stop keeping the trails in the folder

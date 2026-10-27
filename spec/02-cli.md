@@ -31,6 +31,7 @@ celis cell on <name> [--scope me]                     use a cell's patterns in t
 celis cell off <name> [--scope me]                    stop using a cell's patterns here, or in every project
 celis cell export <name> [--to <folder>]              write a cell of yours as a folder
 celis cell import <source> [--yes]                    show a cell from a folder or a URL, and keep it with --yes
+celis cell drop <name>                                remove a cell of another account from disk
 celis step add [--under <id>] [--new] [--replaces <id>] [--uses <id>]... [--misled <id>]... [--at <place>]... [--check <command>] [--session <id>] [--project <id>] -- <text>
                                                        leave a step
 celis step start <id>                                 take up a step, and see the patterns and notes its plan links
@@ -114,7 +115,7 @@ celis pattern --path "**/prices*.py" -- "When you change prices: keep them in ce
 - A command MUST take each deprecated command and flag of the README, and, without `--json`, MUST print one
   line on stderr that names it as deprecated.
 - An error MUST be named `usage`, `no-pattern`, `no-step`, `closed`, `open-steps`, `check-failed`,
-  `secret` (CIP-01, "The account"), `no-cell`, `cell-taken`, `invalid` ("Cells"), else `error`. With `--json`, it MUST be one object on stderr,
+  `secret` (CIP-01, "The account"), `no-cell`, `cell-taken`, `cell-yours`, `invalid` ("Cells"), else `error`. With `--json`, it MUST be one object on stderr,
   `{"error": "<name>", "message": "<text>"}`.
 
 ## Update
@@ -439,6 +440,9 @@ patterns.
   "Export", gives it, and print the cell and its patterns. Only with `--yes` MUST it keep the records,
   and each blob whose bytes hash to its name. It MUST refuse a folder that CIP-09 refuses, with `invalid`,
   and a cell whose name a cell of another account holds, with `cell-taken`, and write no mask.
+- `cell drop` MUST remove from the store each record of the cell of another account named `<name>`: its
+  patterns and its memberships, and each blob that only those records name. It MUST refuse a name that a
+  cell of the account holds with `cell-yours`, and a name that no cell holds with `no-cell`.
 - `patterns --cell <name>` MUST print the live patterns of the cells named `<name>`, on or off, as
   `patterns` prints the index, and refuse a name that no cell holds with `no-cell`.
 
@@ -452,6 +456,7 @@ celis cell on eating-east
 celis cell off eating-east --scope me
 celis cell export eating-east --to ~/cells/eating-east
 celis cell import https://example.com/cells/eating-east/ --yes
+celis cell drop eating-east
 ```
 
 ## Grep

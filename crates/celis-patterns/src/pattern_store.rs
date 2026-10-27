@@ -2,7 +2,8 @@
 
 use crate::{Cell, Cells, PatternRecord, Patterns};
 use celis_nostr::Note;
-use celis_store::{Anchor, PatternId, Refusal, Store};
+use celis_store::{Anchor, PatternId, ProofFile, Refusal, Store};
+use std::collections::HashSet;
 
 /// The patterns of a store, and the account's writes of them, each signed at the store's time.
 pub trait PatternStore {
@@ -19,6 +20,10 @@ pub trait PatternStore {
     /// Writes a mask that turns the cell `name` on or off in the project of `anchor`, or in every project
     /// with none; refuses a name that no cell or two cells hold.
     fn turn(&self, name: &str, on: bool, anchor: Option<&Anchor>) -> Result<Note, Refusal>;
+
+    /// Removes the records of the cell `name` of another account, and each blob that only they name;
+    /// how many records. Refuses a cell of the account, and a name that no cell holds.
+    fn leave(&mut self, name: &str) -> Result<usize, Refusal>;
 }
 
 impl PatternStore for Store {
@@ -86,4 +91,44 @@ impl PatternStore for Store {
         let after = cells.masked_at(&cell, project).map(|at| at + 1);
         self.sign(|account, now| cell.mask(account, now.max(after.unwrap_or(0)), on, anchor))
     }
+
+    fn leave(&mut self, name: &str) -> Result<usize, Refusal> {
+        let author = self.author()?.unwrap_or_default();
+        let patterns = self.patterns();
+        let named = patterns.cells().named(name);
+        let cell = match named.first() {
+            None => return Err(Refusal::NoCell(name.to_string())),
+            Some(_) if named.iter().any(|c| c.author == author) => {
+                return Err(Refusal::CellYours(name.to_string()))
+            }
+            Some(cell) => (*cell).clone(),
+        };
+        let held = patterns.every().iter();
+        let held = held.filter(|p| patterns.holding(p).contains(&&cell));
+        let mut gone: HashSet<&str> = held.map(|p| p.id()).collect();
+        let memberships = self
+            .records()
+            .iter()
+            .filter(|n| Cell::read(n).is_some_and(|(c, _)| c == cell));
+        gone.extend(memberships.map(|n| n.id.as_str()));
+        let (records, kept): (Vec<&Note>, Vec<&Note>) = self
+            .records()
+            .iter()
+            .partition(|n| gone.contains(n.id.as_str()));
+        let named: HashSet<String> = kept.iter().flat_map(|n| blobs(n)).collect();
+        let blobs: HashSet<String> = records.iter().flat_map(|n| blobs(n)).collect();
+        let blobs: Vec<String> = blobs.difference(&named).cloned().collect();
+        let records: Vec<Note> = records.into_iter().cloned().collect();
+        self.remove(&records, &blobs)?;
+        Ok(records.len())
+    }
+}
+
+/// The sha256 of each file that a tag of `note` names (`spec/08-files.md`).
+fn blobs(note: &Note) -> Vec<String> {
+    let files = note
+        .tags
+        .iter()
+        .filter_map(|t| ProofFile::read(t).or_else(|| ProofFile::blossom(t.get(1..)?)));
+    files.map(|f| f.sha256).collect()
 }

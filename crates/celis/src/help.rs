@@ -135,6 +135,7 @@ pub const GROUPS: &[Group] = &[
             ("off", "Stop using a cell's patterns in this project"),
             ("export", "Write a cell of yours as a folder to share"),
             ("import", "Read a cell from a folder or a URL, and keep it"),
+            ("drop", "Remove a cell of another account from disk"),
         ],
     ),
     (
@@ -434,6 +435,13 @@ pub const VERBS: &[Verb] = &[
             "celis cell import ~/Downloads/eating-east",
             "celis cell import https://example.com/cells/eating-east/ --yes",
         ],
+    },
+    Verb {
+        command: "cell drop",
+        usage: &["celis cell drop <name>"],
+        summary: "Remove a cell that you imported from disk: its patterns, its memberships, and each example file that no other record names. Your own patterns stay, also those that replace its patterns. A cell of yours only turns off, because its records may be on relays.",
+        args: &[("<name>", "A cell of another account")],
+        examples: &["celis cell drop eating-east"],
     },
     Verb {
         command: "hook start",

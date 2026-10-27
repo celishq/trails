@@ -102,6 +102,23 @@ impl Home {
         Ok(sha)
     }
 
+    /// Removes the files of `records` from `shared/`, and the blobs `blobs` names from `blobs/`.
+    pub fn remove(&self, records: &[Note], blobs: &[String]) -> Result<()> {
+        for record in records {
+            let path = self.root.join("shared").join(name(record));
+            match std::fs::remove_file(&path) {
+                Err(e) if e.kind() != ErrorKind::NotFound => return Err(e.into()),
+                _ => {}
+            }
+        }
+        for sha in blobs {
+            let _ = std::fs::remove_file(self.root.join("blobs").join(sha));
+        }
+        *self.read.borrow_mut() = None;
+        self.seen.borrow_mut().clear();
+        Ok(())
+    }
+
     /// Keeps `bytes` as the blob `sha256` when they hash to it, as `keep` does; whether they do.
     pub fn hold(&self, sha256: &str, bytes: &[u8]) -> Result<bool> {
         if !self.blobs.hold(sha256, bytes)? {

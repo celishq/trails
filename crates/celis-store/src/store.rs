@@ -89,6 +89,13 @@ impl Store {
         Ok(self.home.hold(sha256, bytes)?)
     }
 
+    /// Removes the files of `records`, and the blobs `blobs` names.
+    pub fn remove(&mut self, records: &[Note], blobs: &[String]) -> Result<(), Refusal> {
+        self.home.remove(records, blobs)?;
+        self.records = self.home.records();
+        Ok(())
+    }
+
     /// Writes `record`, signed by any account, as it is.
     pub fn put(&self, record: &Note) -> Result<(), Refusal> {
         self.home.write(record)?;

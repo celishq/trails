@@ -16,6 +16,8 @@ pub enum Refusal {
     Invalid(String),
     /// The cell name that no cell holds.
     NoCell(String),
+    /// The cell of the account, which only turns off.
+    CellYours(String),
     /// The cell name that a cell of another account holds.
     CellTaken(String),
     Error(anyhow::Error),
