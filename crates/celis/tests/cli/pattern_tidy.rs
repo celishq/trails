@@ -264,11 +264,16 @@ fn a_nameless_or_malformed_pattern_needs_tidy() {
             "Name: Tags\nWhen a tag ships. Forces: speed. Do: sign it.\nBecause: trust",
         ],
     );
+    let line = decide(
+        &repo,
+        &["--", "When a tag is signed. Forces: speed. Do: sign it."],
+    );
     let want = [
         format!("{} nameless When a price prints", &plain[..8]),
         format!("{} form Cents", &label[..8]),
         format!("{} form Tags", &packed[..8]),
-        "4 patterns in the index".to_string(),
+        format!("{} nameless,form When a tag is signed. Forces", &line[..8]),
+        "5 patterns in the index".to_string(),
     ];
     let listed = tidy(&repo);
     let mut lines: Vec<&str> = listed.lines().collect();
