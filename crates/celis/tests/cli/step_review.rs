@@ -126,7 +126,7 @@ fn done_on_an_ask_prints_its_total() {
             format!("  changed {} it took the cache", &claim[..8]),
             format!("  pattern {} When a price rounds", &old.id[..8]),
             format!("celis: the ask {a} is done. When you have kept what it taught, celis stats {a} gives its total."),
-            "celis · 4 steps, 1 not proven · 1 pattern used".to_string(),
+            "celis · 4 steps · 1 pattern used".to_string(),
         ]
     );
 }
@@ -260,7 +260,7 @@ fn done_by_takes_person_and_ignores_judge() {
     assert_eq!(o.status.code(), Some(2), "{}", err(&o));
     let judged = add(&repo, &["--", "the judged ask"]);
     let lines = done(&repo, &judged, &["--as-planned", "--by", "judge"]);
-    assert_eq!(lines.last().unwrap(), "celis · 1 step, 1 not proven");
+    assert_eq!(lines.last().unwrap(), "celis · 1 step");
     done(&repo, &trail, &["--as-planned", "--by", "person"]);
 }
 
