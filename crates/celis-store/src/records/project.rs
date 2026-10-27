@@ -16,6 +16,12 @@ impl Project {
     /// The project that holds `folder`: the top of its git repo or worktree, named by the repo's first
     /// commit and its main checkout. Outside git, or with no commit, the folder's path names it.
     pub fn at(folder: &Path) -> Project {
+        Project::open(folder).unwrap_or_else(|_| Project::outside(folder))
+    }
+
+    /// The project that holds `folder`, as [`Project::at`] gives it; under a `.git` where git fails, what
+    /// git said, with no project (CIP-01, "Projects").
+    pub fn open(folder: &Path) -> Result<Project, String> {
         let inside = folder.ancestors().any(|f| f.join(".git").exists());
         let args = [
             "rev-parse",
@@ -23,14 +29,20 @@ impl Project {
             "--show-toplevel",
             "--git-common-dir",
         ];
-        let paths = inside.then(|| Project::git(folder, &args)).flatten();
+        let paths = match inside {
+            true => Some(
+                Project::git(folder, &args)
+                    .map_err(|said| format!("git failed in {}: {said}", folder.display()))?,
+            ),
+            false => None,
+        };
         let (top, common) = match paths.as_deref().and_then(|p| p.split_once('\n')) {
             Some((top, common)) => (Some(PathBuf::from(top)), Some(PathBuf::from(common))),
             None => (None, None),
         };
         let mut roots: Vec<String> = top
             .as_ref()
-            .and_then(|_| Project::git(folder, &["rev-list", "--max-parents=0", "HEAD"]))
+            .and_then(|_| Project::git(folder, &["rev-list", "--max-parents=0", "HEAD"]).ok())
             .map(|out| out.lines().map(str::to_string).collect())
             .unwrap_or_default();
         roots.sort();
@@ -46,9 +58,24 @@ impl Project {
             .file_name()
             .map(|n| n.to_string_lossy().into_owned())
             .unwrap_or_else(|| main.display().to_string());
-        Project {
+        Ok(Project {
             folder,
             anchor: Anchor { project: id, name },
+        })
+    }
+
+    /// The project of `folder` outside git: its path names it.
+    fn outside(folder: &Path) -> Project {
+        let name = folder
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_else(|| folder.display().to_string());
+        Project {
+            folder: folder.to_path_buf(),
+            anchor: Anchor {
+                project: folder.display().to_string(),
+                name,
+            },
         }
     }
 
@@ -101,14 +128,23 @@ impl Project {
         }
     }
 
-    /// What `git args` prints in `folder`, trimmed; none when git does not run or refuses.
-    pub(crate) fn git(folder: &Path, args: &[&str]) -> Option<String> {
+    /// What `git args` prints in `folder`, trimmed, else the last line git said when it does not run or
+    /// refuses.
+    pub(crate) fn git(folder: &Path, args: &[&str]) -> Result<String, String> {
         let out = Command::new("git")
             .args(args)
             .current_dir(folder)
             .output()
-            .ok()
-            .filter(|o| o.status.success())?;
-        Some(String::from_utf8_lossy(&out.stdout).trim().to_string())
+            .map_err(|e| e.to_string())?;
+        if !out.status.success() {
+            let said = String::from_utf8_lossy(&out.stderr);
+            return Err(said
+                .lines()
+                .last()
+                .unwrap_or("it exited with an error")
+                .trim()
+                .to_string());
+        }
+        Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
     }
 }

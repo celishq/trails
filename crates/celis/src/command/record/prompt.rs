@@ -22,7 +22,7 @@ impl Command {
         json: &serde_json::Value,
         err: &mut dyn Write,
     ) -> Result<(), Failure> {
-        let project = self.project();
+        let project = self.project()?;
         match Prompt::of(json) {
             Some(prompt) => self.ask(err, &project, prompt),
             None => Ok(()),

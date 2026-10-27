@@ -89,7 +89,7 @@ impl Command {
             "stats" => self.stats(args, out),
             "extract" | "lesson" => self.extract(args, out),
             "issue" => self.issue(args, out),
-            "link" => self.link(args, out, &self.project()),
+            "link" => self.link(args, out, &self.project()?),
             "hook" => self.hook(args, out),
             "auth" => self.auth(args, out, err),
             "update" => self.update(args),
@@ -126,14 +126,14 @@ impl Command {
         let _ = file.and_then(|mut f| f.write_all(line.as_bytes()));
     }
 
-    /// The project of the working folder.
-    fn project(&self) -> Project {
-        Project::at(&self.folder)
+    /// The project of the working folder; an error when git fails in it (CIP-01, "Projects").
+    fn project(&self) -> Result<Project, Failure> {
+        Project::open(&self.folder).map_err(|said| Failure::from(anyhow::anyhow!(said)))
     }
 
     /// The project `--project` names, a project of the store with the name of its newest record, else the project of the working folder; any other id is a usage error.
     fn project_of(&self, args: &Args) -> Result<Project, Failure> {
-        let project = self.project();
+        let project = self.project()?;
         let Some(id) = &args.project else {
             return Ok(project);
         };

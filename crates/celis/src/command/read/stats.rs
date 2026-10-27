@@ -47,7 +47,7 @@ impl Command {
         let steps = trails.steps();
         match id {
             Some(id) => step(Trail::new(steps.find(id)?).work(), args.json, out),
-            None => uses(&trails, &self.project().anchor.project, args.json, out),
+            None => uses(&trails, &self.project()?.anchor.project, args.json, out),
         }
     }
 }
