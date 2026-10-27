@@ -14,7 +14,7 @@ use celis_nostr::Note;
 use celis_patterns::Patterns;
 use celis_store::records::id::short;
 use celis_trails::step::steps::LIFE;
-use celis_trails::{Notes, Step, Steps, Trail};
+use celis_trails::{By, Done, Notes, Step, Steps, Trail, TrailStore};
 pub(crate) use layout::Layout;
 use level::Level;
 use meta::Meta;
@@ -127,6 +127,22 @@ pub(crate) fn today<'a>(steps: &'a Steps<'a>) -> Vec<Step<'a>> {
 pub(crate) fn live(note: Step, now: u64) -> bool {
     let recent = now.saturating_sub(note.newest()) < LIFE && Phase::of(&note) != Phase::Dropped;
     note.active() || recent
+}
+
+/// Closes the open step `id` done by the person, or drops it when `drop`.
+pub(crate) fn close(command: &Command, id: &str, drop: bool) -> Result<(), Failure> {
+    let trails = command.trails()?;
+    match drop {
+        true => trails.drop(id, "dropped in the tree")?,
+        false => {
+            let done = Done {
+                by: Some(By::Person),
+                ..Done::new("closed in the tree".into(), None)
+            };
+            trails.done(id, done, &command.folder)?
+        }
+    };
+    Ok(())
 }
 
 /// How a tree shows: in a watch, with a cursor column; full; all with no id; and in a watch, with the

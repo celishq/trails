@@ -245,7 +245,7 @@ fn watch_names_its_keys_and_quits_on_q() {
     let trail = add(&repo, &["--", "the trail"]);
     let mut watch = Watch::start(&repo, &["tree", &trail[..8]]);
     watch.until(
-        "↑↓ select · ←→ close open · * open all under · PgUp PgDn scroll · f full · a all · q quit",
+        "↑↓ select · ←→ close open · * open all under · d done · x drop · PgUp PgDn scroll · f full · a all · q quit",
     );
     watch.press("q");
     assert_eq!(watch.child.wait().unwrap().code(), Some(0));
@@ -2142,4 +2142,48 @@ fn next_watch_carries_the_line_down_a_wrapped_title() {
         assert!(row.starts_with("    │  "), "{rows:?}");
     }
     assert!(rows[step].starts_with("    └── "), "{rows:?}");
+}
+
+/// In the watch, `d` closes the selected step done, and `x` drops it, with `--next` too.
+#[test]
+fn watch_closes_the_selected_step_with_d_and_drops_it_with_x() {
+    for next in [false, true] {
+        let repo = Repo::new();
+        let trail = add(&repo, &["--", "the trail"]);
+        add(&repo, &["--under", &trail[..8], "--", "first"]);
+        add(&repo, &["--under", &trail[..8], "--", "second"]);
+        let mut args = vec!["tree", &trail[..8]];
+        if next {
+            args.push("--next");
+        }
+        let mut watch = Watch::start(&repo, &args);
+        watch.until("second");
+        pick(&mut watch, "○   second");
+        watch.press("d");
+        watch.without("○   second");
+        pick(&mut watch, "○   first");
+        watch.press("x");
+        watch.without("○   first");
+        let o = cli(&repo, &["tree", &trail[..8], "--full"]);
+        let text = out(&o);
+        assert!(text.contains("done     closed in the tree"), "{text}");
+        assert!(text.contains("dropped  dropped in the tree"), "{text}");
+    }
+}
+
+/// Moves the selection of `watch` from its top down to the row that holds `text`.
+fn pick(watch: &mut Watch, text: &str) {
+    watch.press("\x1b[A\x1b[A\x1b[A");
+    for _ in 0..4 {
+        watch.press("\x1b[B");
+        watch.trees(Duration::from_millis(300));
+        if watch
+            .rows()
+            .iter()
+            .any(|r| r.starts_with('▌') && r.contains(text))
+        {
+            return;
+        }
+    }
+    panic!("no selected {text:?} in {:?}", watch.rows());
 }

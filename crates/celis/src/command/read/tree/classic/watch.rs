@@ -1,6 +1,7 @@
 //! `celis tree` on a terminal: the tree, drawn again each time the store or a linked folder changes.
 
 use crate::command::read::tree::classic::{Frame, Item, Layout, View, EMPTY, MORE};
+use crate::command::read::tree::close;
 use crate::command::read::tree::marks::marks;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
@@ -112,8 +113,15 @@ impl Live for Watch<'_> {
         Ok(page)
     }
 
-    /// Moves the selection, or opens or closes lines.
-    fn press(&mut self, key: Key, _: &Model, screen: &mut Screen) -> Result<(), Failure> {
+    /// Moves the selection, or opens or closes lines. `d` closes the selected open step done by the
+    /// person, and `x` drops it; a refused close changes nothing.
+    fn press(&mut self, key: Key, model: &Model, screen: &mut Screen) -> Result<(), Failure> {
+        if let (Key::Char(c @ ('d' | 'x')), Some(id)) = (&key, &self.view.selected) {
+            if model.steps.get(id).is_some_and(|s| s.closed().is_none()) {
+                close(self.command, id, *c == 'x').ok();
+            }
+            return Ok(());
+        }
         let order = self.frame.as_ref().map_or(&[][..], |f| &f.order);
         let before = self.view.selected.clone();
         press(key, &mut self.view, order, self.named);
@@ -127,7 +135,7 @@ fn legend(copy: Option<&str>) -> String {
     let copy = copy.map_or(String::new(), |id| {
         format!(" · c copy {id} · m copy markdown")
     });
-    format!("↑↓ select · ←→ close open · * open all under{copy} · PgUp PgDn scroll · f full · a all · q quit")
+    format!("↑↓ select · ←→ close open · * open all under{copy} · d done · x drop · PgUp PgDn scroll · f full · a all · q quit")
 }
 
 /// Changes `view` as `key` asks: moves the selection along `order`, opens or closes the selected trail,
