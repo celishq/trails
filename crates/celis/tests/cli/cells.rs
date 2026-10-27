@@ -603,3 +603,43 @@ fn cell_import_from_a_url_takes_only_blobs_that_match_their_hash() {
     let blobs = std::fs::read_dir(repo.store().join("blobs")).map_or(0, Iterator::count);
     assert_eq!(blobs, 0);
 }
+
+/// Your pattern that replaces an imported pattern shows while the cell is on, and leaves with the cell
+/// when it is off (`spec/09-cells.md`, "The view").
+#[test]
+fn your_replacement_of_an_imported_pattern_shows_only_while_its_cell_is_on() {
+    let repo = Repo::new();
+    let (_, theirs) = their_folder(&repo, "east");
+    assert!(cli(&repo, &["cell", "import", "from-them", "--yes"])
+        .status
+        .success());
+    let o = cli(
+        &repo,
+        &["pattern", "--replaces", &theirs.id[..8], "--", "x"],
+    );
+    assert_eq!(o.status.code(), Some(1), "{}", err(&o));
+    assert!(cli(&repo, &["cell", "on", "east"]).status.success());
+    let o = cli(
+        &repo,
+        &[
+            "pattern",
+            "--replaces",
+            &theirs.id[..8],
+            "--",
+            "Name: Rice last\nWhen a meal of rice is set\nDo: serve the rice last",
+        ],
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let mine = out(&o).trim().to_string();
+    let shown = out(&cli(&repo, &["patterns"]));
+    assert!(
+        shown.contains(&mine[..8]) && !shown.contains(&theirs.id[..8]),
+        "{shown}"
+    );
+    assert!(cli(&repo, &["cell", "off", "east"]).status.success());
+    let shown = out(&cli(&repo, &["patterns"]));
+    assert!(
+        !shown.contains(&mine[..8]) && !shown.contains(&theirs.id[..8]),
+        "{shown}"
+    );
+}
