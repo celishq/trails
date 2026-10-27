@@ -86,6 +86,7 @@ impl Command {
             "pattern" => self.pattern(args, out, err, &self.project_of(args)?),
             "tree" => self.tree(args, out),
             "patterns" => self.patterns(args, out),
+            "cells" => self.cells(out),
             "grep" => self.grep(&self.args[1..], out),
             "stats" => self.stats(args, out),
             "extract" | "lesson" => self.extract(args, out),

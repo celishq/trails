@@ -24,6 +24,12 @@ impl Command {
             lines.push(format!("{} in the index", plural(size, "pattern")));
             return crate::command::put(out, &lines.join("\n"));
         }
+        if let Some(name) = &args.cell {
+            if args.markdown || args.words.len() > 1 {
+                return Err(Failure::usage("patterns takes --cell alone"));
+            }
+            return crate::command::put(out, &self.cell_index(name)?);
+        }
         if let [id] = &args.words[1..] {
             if is_id(id) && !self.folder.join(id).exists() {
                 return self.pattern_whole(id, out);
@@ -70,6 +76,30 @@ impl Command {
             lines.pop();
         }
         crate::command::put(out, &lines[1..].join("\n"))
+    }
+
+    /// The index of the live patterns of the cells named `name`, on or off, oldest first, as `index`
+    /// gives them; refuses a name that no cell holds.
+    fn cell_index(&self, name: &str) -> Result<String, Failure> {
+        if !self.held()? {
+            return Err(Failure::no_cell(name));
+        }
+        let trails = self.trails()?;
+        let patterns = trails.patterns();
+        if patterns.cells().named(name).is_empty() {
+            return Err(Failure::no_cell(name));
+        }
+        let project = self.project().anchor.project;
+        let every = patterns.every().iter().rev();
+        let held = every.clone().filter(|p| patterns.in_view(p, &project));
+        let held: HashSet<&str> = held.map(|p| p.id()).collect();
+        let ours = every.filter(|p| p.is_live());
+        let ours = ours.filter(|p| patterns.holding(p).iter().any(|c| c.name == name));
+        let lines: Vec<String> = ours.map(|p| entry(p, &held, &[])).collect();
+        Ok(match lines.is_empty() {
+            true => NONE.to_string(),
+            false => lines.join("\n"),
+        })
     }
 
     /// The line of each live pattern in scope that needs tidy, oldest first, and how many are live in

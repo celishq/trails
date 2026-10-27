@@ -289,3 +289,31 @@ fn grep_names_the_cell_that_is_on_and_leaves_out_one_that_is_off() {
         "{shown}"
     );
 }
+
+/// `cells` gives each cell with its account, its live patterns and whether it is on here, and
+/// `patterns --cell` gives the patterns of one cell, on or off (`spec/02-cli.md`, "Cells").
+#[test]
+fn cells_lists_each_cell_and_patterns_cell_shows_its_patterns() {
+    let repo = Repo::new();
+    assert_eq!(out(&cli(&repo, &["cells"])).trim(), "no cell yet");
+    let a = decide(&repo, "When a menu is laid out\nDo: put soups first");
+    let b = decide(&repo, "When a dish is served\nDo: serve it hot");
+    assert!(cli(&repo, &["cell", "add", "west", &a, &b])
+        .status
+        .success());
+    let npub = account().pubkey().npub();
+    let line = format!("west {} 2 patterns off", &npub[5..13]);
+    assert_eq!(out(&cli(&repo, &["cells"])).trim(), line);
+    let shown = out(&cli(&repo, &["patterns", "--cell", "west"]));
+    assert!(
+        shown.contains(&a[..8]) && shown.contains(&b[..8]),
+        "{shown}"
+    );
+    assert!(!out(&cli(&repo, &["patterns"])).contains(&a[..8]));
+    assert!(cli(&repo, &["cell", "on", "west"]).status.success());
+    assert!(out(&cli(&repo, &["cells"]))
+        .trim()
+        .ends_with("2 patterns on"));
+    let o = cli(&repo, &["patterns", "--cell", "east", "--json"]);
+    refusal(&o, 1, "no-cell");
+}

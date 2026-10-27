@@ -1,6 +1,7 @@
 //! The commands that read the trails: tree, grep, patterns, stats and extract, and the views they share.
 
 pub(crate) mod candidate;
+pub(crate) mod cells;
 pub(crate) mod extract;
 pub(crate) mod graph;
 pub(crate) mod grep;

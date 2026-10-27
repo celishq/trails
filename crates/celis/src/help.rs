@@ -342,13 +342,14 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "patterns",
-        usage: &["celis patterns [<id>] [<file>]... [--markdown] [--tidy]"],
+        usage: &["celis patterns [<id>] [<file>]... [--markdown] [--tidy] [--cell <name>]"],
         summary: "Show the index of the patterns of this project and of you, the oldest first: each one's id, scope and When, with its paths, each named file they match, and the larger patterns it completes. With an id, print that pattern whole, with its examples, and mark it recalled on the session's open step. With --markdown, print each whole as one page, with its examples, each file a link to its blob, for a review or a skill file. With --tidy, list the patterns that need tidy, with the reason, then the size of the index.",
         args: &[
             ("<id>", "A pattern id, or its first 4 or more characters"),
             ("<file>", "A file or folder; marks each pattern whose paths match it"),
             ("--markdown", "Print one Markdown page, each file a link to its blob"),
             ("--tidy", "List the patterns that need tidy, and why"),
+            ("--cell <name>", "Show only the patterns of one cell, on or off"),
         ],
         examples: &[
             "celis patterns",
@@ -356,7 +357,15 @@ pub const VERBS: &[Verb] = &[
             "celis patterns 9b0e11aa",
             "celis patterns --markdown > patterns.md",
             "celis patterns --tidy",
+            "celis patterns --cell eating-east",
         ],
+    },
+    Verb {
+        command: "cells",
+        usage: &["celis cells"],
+        summary: "Show each cell: its name, the start of its account's npub, how many patterns it holds, and whether it is on in this project. Changes nothing.",
+        args: &[],
+        examples: &["celis cells"],
     },
     Verb {
         command: "tree",

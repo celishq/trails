@@ -16,7 +16,7 @@ read. What a command shows a person is not part of it.
 ```
 celis pattern [--scope <scope>] [--replaces <id>] [--path <glob>]... [--within <id>]... [--good <example>]... [--bad <example>]... [--project <id>] -- <text>
                                                        a pattern, in its scope
-celis patterns [<id>] [<file>]... [--markdown] [--tidy]
+celis patterns [<id>] [<file>]... [--markdown] [--tidy] [--cell <name>]
                                                        the index of the patterns in scope, one whole, or what needs tidy
 celis tree [<id>]... [--graph] [--full] [--all] [--demo]
                                                        a trail and its steps; again on each change
@@ -25,6 +25,7 @@ celis stats [<id>] [--demo]                           the use of the patterns, o
 celis extract <id>                                    what an ask or a step taught, to extract as patterns
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
 celis link [<folder>] [--off]                         keep this project's trails in a folder, or stop
+celis cells                                           each cell, its account, its patterns, and on or off here
 celis cell add <name> <id>...                         put your patterns in a cell of yours
 celis cell on <name> [--scope me]                     use a cell's patterns in this project, or in every project
 celis cell off <name> [--scope me]                    stop using a cell's patterns here, or in every project
@@ -411,7 +412,15 @@ echo '{"session_id": "95e9be99", "cwd": "/repo", "prompt": "Use the shared Badge
 
 ## Cells
 
-`cell` acts on the cells of CIP-09.
+`cells` and `cell` act on the cells of CIP-09.
+
+```
+<name> <npub8> <n> patterns <on | off>     each cell, by name, then by account; `1 pattern` for one
+no cell yet                                when there is none
+```
+
+`<npub8>` is the 8 characters of the account's npub after `npub1`, and `<n>` counts the cell's live
+patterns.
 
 **Rules**
 
@@ -421,10 +430,14 @@ echo '{"session_id": "95e9be99", "cwd": "/repo", "prompt": "Use the shared Badge
 - `cell on` and `cell off` MUST write one mask (CIP-09, "Masks") of the working folder's project, or with
   `--scope me` of every project. They MUST refuse a name that no cell holds with `no-cell`, a name that
   two cells hold with `cell-taken`, and another `--scope` as a usage error.
+- `patterns --cell <name>` MUST print the live patterns of the cells named `<name>`, on or off, as
+  `patterns` prints the index, and refuse a name that no cell holds with `no-cell`.
 
 **Examples**
 
 ```
+celis cells
+celis patterns --cell eating-east
 celis cell add eating-east 9b0e11aa 4c2d17e0
 celis cell on eating-east
 celis cell off eating-east --scope me

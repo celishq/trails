@@ -36,6 +36,7 @@ pub(crate) struct Args {
     pub good: Vec<String>,
     pub within: Vec<String>,
     pub bad: Vec<String>,
+    pub cell: Option<String>,
     /// Each deprecated name it gave, in order (`spec/README.md`, "Names").
     pub old: Vec<&'static str>,
 }
@@ -99,16 +100,16 @@ impl Args {
                 "--file" => parsed.files.push(value(arg, rest.next())?),
                 "--good" => parsed.good.push(value(arg, rest.next())?),
                 "--within" => parsed.within.push(value(arg, rest.next())?),
-                "--cell" => {
-                    value(arg, rest.next())?;
-                    parsed.old.push("--cell");
-                }
+                "--cell" => parsed.cell = Some(value(arg, rest.next())?),
                 "--bad" => parsed.bad.push(value(arg, rest.next())?),
                 flag if flag.starts_with("--") => {
                     bad.get_or_insert(Failure::usage(format!("{flag} is not a flag")));
                 }
                 word => parsed.words.push(word.to_string()),
             }
+        }
+        if parsed.cell.is_some() && parsed.words.first().is_some_and(|w| w == "pattern") {
+            parsed.old.push("--cell");
         }
         if parsed.words.first().is_some_and(|w| w == "lesson") {
             parsed.old.insert(0, "lesson");
