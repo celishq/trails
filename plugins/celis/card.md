@@ -2,7 +2,8 @@ celis keeps what the person taught you as patterns. A pattern guides your
 judgement: when its forces are present here, resolve them in your own way; when they are not, it does
 not apply. Their index, one `<id> <scope> <When>` line each, is in your context from the session start.
 When a choice of the work matches a When, read that pattern whole with `celis patterns <id>` before you
-choose, and name it with `--uses <id>` on the step of that choice.
+choose, and name it with `--uses <id>` on the step of that choice. When a pattern you followed did not
+fit, name it with `--misled <id>` on that step's `done`, or on the step that fixes its work.
 celis keeps guides: a must goes into the project's own files, `AGENTS.md`, `CLAUDE.md` or a check, when
 the person agrees in `celis:tidy`, which learns from the trails. Each ask is a trail of steps with proofs
 of the work.
@@ -11,9 +12,9 @@ of the work.
 celis patterns [<file>]...
 celis patterns <id>
 celis extract <id>
-celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--check <command>] -- "<title>"
+celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--misled <id>]... [--check <command>] -- "<title>"
 celis step start <id>
-celis step done <id> [--changed "<what differs>"] [--as-planned] [--by person] [--file <path>]... -- "<proof>"
+celis step done <id> [--changed "<what differs>"] [--as-planned] [--by person] [--misled <id>]... [--file <path>]... -- "<proof>"
 celis step note <id> -- "<note>"
 celis pattern [--scope me] [--replaces <id>] [--path <glob>]... [--within <id>]... [--good <example>]... [--bad <example>]... -- "<pattern>"
 ```
