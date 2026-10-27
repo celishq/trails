@@ -21,21 +21,51 @@ fn add(repo: &Repo, session: Option<&str>, text: &str) -> String {
     ids(repo, session, text).remove(0)
 }
 
-/// A step with no `--under` is a new trail, in a session or in none, also while the session has an open
-/// trail (`spec/04-trails.md`, "Sessions").
+/// While a session has a current trail, open or done less than 30 minutes ago, a step with no `--under`,
+/// `--replaces` or `--new` is refused as a usage error that names it; `--new` adds a new trail, and so
+/// does a step with no session (`spec/02-cli.md`, "Step"; `spec/04-trails.md`, "Sessions").
 #[test]
-fn a_step_with_no_under_is_a_new_trail() {
+fn a_step_beside_the_sessions_current_trail_needs_under_or_new() {
     let repo = Repo::new();
-    let first = ids(&repo, Some("s1"), "make the badges orange");
-    assert_eq!(first.len(), 1, "{first:?}");
-    std::thread::sleep(std::time::Duration::from_millis(1100));
-    let next = add(&repo, Some("s1"), "now the buttons too");
+    let first = add(&repo, Some("s1"), "make the badges orange");
+    let refused = || {
+        let env = [("CLAUDE_CODE_SESSION_ID", "s1")];
+        let o = repo.run(
+            &repo.path(),
+            &["step", "add", "--", "the buttons"],
+            &env,
+            "",
+        );
+        assert_eq!(o.status.code(), Some(2), "{}", err(&o));
+        assert!(err(&o).contains(&first[..8]), "{}", err(&o));
+    };
+    refused();
+    support::finish(&repo, &first[..8]);
+    refused();
+    let next = run_add(&repo, Some("s1"), &[], &["--new", "--", "the buttons"]).remove(0);
     let none = add(&repo, None, "no session");
-    for id in [&first[0], &next, &none] {
+    for id in [&first, &next, &none] {
         let tree = objects(&repo, &["tree", &id[..8]]);
         assert_eq!(tree.len(), 1, "{tree:?}");
         assert_eq!(tree[0]["trail"]["id"], id.as_str(), "{tree:?}");
     }
+}
+
+/// A session whose trail was done 30 minutes ago or more has no current trail, so a step with no
+/// `--under` is a new trail (`spec/04-trails.md`, "Sessions").
+#[test]
+fn a_trail_done_30_minutes_ago_is_not_current() {
+    use support::{account, mark_note, now, put, step_tags};
+    let repo = Repo::new();
+    let old = now() - 31 * 60;
+    let mut tags = step_tags((&repo.project_id(), "repo"));
+    tags.push(vec!["session".into(), "s1".into()]);
+    let trail = Note::write(&account(), 1111u16, old, tags, "the old trail").unwrap();
+    put(&repo, &trail);
+    mark_note(&repo, &account(), "done", &trail.id, "proof", old);
+    let next = add(&repo, Some("s1"), "a new ask");
+    let tree = objects(&repo, &["tree", &next[..8]]);
+    assert_eq!(tree[0]["trail"]["id"], next.as_str(), "{tree:?}");
 }
 
 /// A trail carries its session, and `--under` joins another session's trail (`spec/04-trails.md`,
@@ -122,7 +152,7 @@ fn a_prompt_with_no_open_trail_goes_on_the_trail_of_the_sessions_next_step() {
     hook(&repo, json);
     add(&repo, Some("s2"), "another session");
     let written = ids(&repo, Some("s1"), "the trail");
-    add(&repo, Some("s1"), "a step");
+    support::added(&repo, "s1", &["--new", "--", "another ask"]);
     assert_eq!(
         marks(&repo, "prompt"),
         [(
@@ -163,10 +193,9 @@ fn a_trail_asked_twice_is_reached() {
     assert_eq!(head[0]["trail"]["state"], "done", "{head:?}");
 }
 
-/// `step add` accepts `--new` and ignores it: the step is a new trail either way (`spec/02-cli.md`,
-/// "Step").
+/// `step add --new` adds a new trail with no notice (`spec/02-cli.md`, "Step").
 #[test]
-fn add_accepts_new_and_ignores_it() {
+fn add_new_adds_a_trail_with_no_notice() {
     let repo = Repo::new();
     let env = [("CLAUDE_CODE_SESSION_ID", "s1")];
     let o = repo.run(
@@ -176,6 +205,7 @@ fn add_accepts_new_and_ignores_it() {
         "",
     );
     assert!(o.status.success(), "{}", err(&o));
+    assert!(!err(&o).contains("deprecated"), "{}", err(&o));
     let second = out(&o);
     assert_eq!(second.lines().count(), 1, "{second}");
     let head = objects(&repo, &["tree", &second[..8]]);
@@ -385,7 +415,12 @@ fn a_step_names_the_agent_its_session_variable_gives() {
             .collect();
         let env = env.as_slice();
         let text = format!("step {n}");
-        let o = repo.run(&repo.path(), &["step", "add", "--", &text], env, "");
+        let o = repo.run(
+            &repo.path(),
+            &["step", "add", "--new", "--", &text],
+            env,
+            "",
+        );
         assert!(o.status.success(), "{}", err(&o));
         let step = support::labelled(&repo, "step")
             .into_iter()

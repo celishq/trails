@@ -30,7 +30,6 @@ fn a_deprecated_flag_is_taken_with_a_notice() {
         &[
             "step",
             "add",
-            "--new",
             "--recalled",
             &pattern[..8],
             "--",
@@ -38,9 +37,11 @@ fn a_deprecated_flag_is_taken_with_a_notice() {
         ],
     );
     assert!(o.status.success(), "{}", err(&o));
-    let notices =
-        "celis: --new is deprecated and ignored\ncelis: --recalled is deprecated and ignored\n";
-    assert!(err(&o).starts_with(notices), "{}", err(&o));
+    assert!(
+        err(&o).starts_with("celis: --recalled is deprecated and ignored\n"),
+        "{}",
+        err(&o)
+    );
     let step = add(&repo, &["--", "Run the tests"]);
     let o = cli(
         &repo,

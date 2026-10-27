@@ -1,6 +1,6 @@
 //! The steps of a store, as they stand at one moment.
 
-use crate::{Mark, Step, StepRecord};
+use crate::{Mark, State, Step, StepRecord};
 use celis_nostr::Note;
 use celis_patterns::PatternRecord;
 use celis_store::Refusal;
@@ -110,6 +110,21 @@ impl<'a> Steps<'a> {
                 && s.closed().is_none()
                 && s.children().iter().all(|c| c.closed().is_some())
         })
+    }
+
+    /// The current trail of the session `session` in the project `project`: its open trail, else the
+    /// trail of its newest step while its done is less than `LIFE` old.
+    pub fn current(&'a self, project: &str, session: &str) -> Option<Step<'a>> {
+        let newest = self.all().into_iter().rev().find(|s| {
+            let record = s.record();
+            record.anchor.project == project && record.session.as_deref() == Some(session)
+        })?;
+        let trail = newest.trail();
+        match (trail.state(), trail.done_record()) {
+            (State::Open, _) => Some(trail),
+            (State::Done, Some(done)) if self.now() < done.created_at + LIFE => Some(trail),
+            _ => None,
+        }
     }
 
     /// The open trail of the session `session` in the project `project`: the trail of its newest step,

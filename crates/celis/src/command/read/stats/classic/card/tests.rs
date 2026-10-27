@@ -25,6 +25,7 @@ fn worked(later: u64) -> (TempDir, Store) {
         uses: vec![],
         misled: Vec::new(),
         session: None,
+        new: false,
         agent: None,
     };
     let trail = trails.add(draft("the trail", None)).unwrap().records[0]
@@ -141,6 +142,7 @@ fn reused(later: u64) -> (TempDir, Store) {
         uses,
         misled: Vec::new(),
         session: None,
+        new: false,
         agent: None,
     };
     let trail = trails
@@ -201,6 +203,7 @@ fn the_projects_card_aligns_its_times() {
         uses: vec![],
         misled: Vec::new(),
         session: None,
+        new: false,
         agent: None,
     };
     let long = AT + 19 * 3_600 + 14 * 60;

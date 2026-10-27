@@ -56,6 +56,7 @@ impl Command {
             uses: args.uses.clone(),
             misled: args.misled.clone(),
             session: args.session.clone().or_else(|| self.session()),
+            new: args.new,
             agent: self.agent(),
         };
         let session = draft.session.clone();
