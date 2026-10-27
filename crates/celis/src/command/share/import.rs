@@ -21,7 +21,7 @@ impl Command {
         let cells = trails.patterns();
         let named = cells.cells().named(&cell.name);
         if named.iter().any(|c| c.author != cell.author) {
-            return Err(Failure::cell_taken(&cell.name));
+            return Err(Refusal::CellTaken(cell.name.clone()).into());
         }
         let npub = export.membership.pubkey.npub();
         let count = crate::text::line::plural(export.patterns.len(), "pattern");

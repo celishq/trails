@@ -9,6 +9,7 @@ use crate::text::clock::date;
 use crate::text::line::plural;
 use celis_patterns::PatternStore;
 use celis_store::records::id::short;
+use celis_store::Refusal;
 use celis_store::Store;
 use celis_trails::{Step, Trail, TrailStore};
 use lifecycle::Lifecycle;
@@ -41,7 +42,7 @@ impl Command {
         }
         if !self.held()? {
             return match id {
-                Some(id) => Err(Failure::no_step(id)),
+                Some(id) => Err(Refusal::NoStep(id.to_string()).into()),
                 None if args.json => Ok(()),
                 None => crate::command::put(out, NOTHING),
             };

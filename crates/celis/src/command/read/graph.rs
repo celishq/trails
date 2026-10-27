@@ -16,6 +16,7 @@ use crate::terminal::wake::Key;
 use crate::text::clock::took;
 use card::{inside, put, Card};
 use celis_nostr::Note;
+use celis_store::Refusal;
 use celis_trails::{Step, Trail, TrailStore};
 use folders::folders;
 use layout::{Layout, GAP};
@@ -46,7 +47,7 @@ impl Command {
     pub(crate) fn graph(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let id = args.words.get(1).cloned();
         if let (false, Some(id)) = (self.held()?, &id) {
-            return Err(Failure::no_step(id));
+            return Err(Refusal::NoStep(id.to_string()).into());
         }
         if std::io::stdout().is_terminal() && !args.json {
             return self.live(out, empty(), |trails| {

@@ -16,6 +16,7 @@ use crate::terminal::live::{Live, Page};
 use crate::terminal::screen::Screen;
 use crate::terminal::wake::Key;
 use celis_nostr::Note;
+use celis_store::Refusal;
 use celis_trails::{Trail, TrailStore};
 use std::io::Write;
 use std::time::{Duration, Instant};
@@ -27,7 +28,7 @@ impl Command {
     /// nothing printed, and ends.
     pub(crate) fn board(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let route = match args.words.get(1) {
-            Some(id) if !self.held()? => return Err(Failure::no_step(id)),
+            Some(id) if !self.held()? => return Err(Refusal::NoStep(id.to_string()).into()),
             Some(id) => Some(
                 Trail::new(self.trails()?.steps().find(id)?)
                     .work()

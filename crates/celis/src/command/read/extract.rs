@@ -3,6 +3,7 @@
 use crate::command::record::close::Learn;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
+use celis_store::Refusal;
 use celis_trails::TrailStore;
 use std::io::Write;
 
@@ -12,7 +13,7 @@ impl Command {
     pub(crate) fn extract(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let id = args.id("extract")?;
         if !self.held()? {
-            return Err(Failure::no_step(id));
+            return Err(Refusal::NoStep(id.to_string()).into());
         }
         let trails = self.trails()?;
         let steps = trails.steps();

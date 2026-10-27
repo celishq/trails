@@ -4,6 +4,7 @@ use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::text::markdown;
 use celis_patterns::{Example, Export, PatternStore};
+use celis_store::Refusal;
 use std::io::Write;
 
 impl Command {
@@ -12,7 +13,7 @@ impl Command {
     pub(crate) fn cell_export(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let name = args.id("cell export")?;
         if !self.held()? {
-            return Err(Failure::no_cell(name));
+            return Err(Refusal::NoCell(name.to_string()).into());
         }
         let trails = self.trails()?;
         let export = trails.export(name)?;

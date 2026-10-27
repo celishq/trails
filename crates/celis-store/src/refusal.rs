@@ -23,6 +23,26 @@ pub enum Refusal {
     Error(anyhow::Error),
 }
 
+impl Refusal {
+    /// Its error name (`spec/02-cli.md`, "Output and errors").
+    pub fn name(&self) -> &'static str {
+        match self {
+            Refusal::Usage(_) => "usage",
+            Refusal::NoStep(_) => "no-step",
+            Refusal::NoPattern(_) => "no-pattern",
+            Refusal::Closed(_) => "closed",
+            Refusal::OpenSteps(_) => "open-steps",
+            Refusal::CheckFailed(_) => "check-failed",
+            Refusal::Secret(_) => "secret",
+            Refusal::Invalid(_) => "invalid",
+            Refusal::NoCell(_) => "no-cell",
+            Refusal::CellYours(_) => "cell-yours",
+            Refusal::CellTaken(_) => "cell-taken",
+            Refusal::Error(_) => "error",
+        }
+    }
+}
+
 impl From<anyhow::Error> for Refusal {
     fn from(error: anyhow::Error) -> Self {
         Refusal::Error(error)

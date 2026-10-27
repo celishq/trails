@@ -4,6 +4,7 @@ use crate::command::read::report::markdown;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use celis_store::records::id::short;
+use celis_store::Refusal;
 use celis_store::{Home, Phrase};
 use celis_trails::{Steps, TrailStore};
 use serde_json::json;
@@ -34,7 +35,7 @@ impl Command {
         let ids = &args.words[1..];
         if !ids.is_empty() {
             if !self.held()? {
-                return Err(Failure::no_step(&ids[0]));
+                return Err(Refusal::NoStep(ids[0].to_string()).into());
             }
             let trails = self.trails()?;
             let text = markdown(&trails.steps(), &trails.notes(), ids)?;

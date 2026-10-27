@@ -14,6 +14,7 @@ use crate::text::clock::{day, midnight};
 use celis_nostr::Note;
 use celis_patterns::Patterns;
 use celis_store::records::id::short;
+use celis_store::Refusal;
 use celis_trails::step::steps::LIFE;
 use celis_trails::{Notes, Step, Steps, Trail};
 pub(crate) use layout::Layout;
@@ -42,7 +43,7 @@ impl Command {
                 })?
                 .text
             }
-            (false, Some(id)) => return Err(Failure::no_step(id)),
+            (false, Some(id)) => return Err(Refusal::NoStep(id.to_string()).into()),
             (false, None) => Vec::new(),
         };
         if tree.is_empty() && id.is_none() && !args.all && !args.json {

@@ -11,6 +11,7 @@ use crate::terminal::live::{Live, Page};
 use crate::terminal::screen::{until, Screen};
 use crate::terminal::wake::Key;
 use celis_nostr::Note;
+use celis_store::Refusal;
 use celis_trails::TrailStore;
 use std::io::Write;
 
@@ -21,7 +22,7 @@ impl Command {
     /// interrupt or `q`, leaves the alternate screen with nothing printed, and ends.
     pub(crate) fn classic_watch(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         if let (false, Some(id)) = (self.held()?, args.words.get(1)) {
-            return Err(Failure::no_step(id));
+            return Err(Refusal::NoStep(id.to_string()).into());
         }
         let empty = vec![Styled::from(EMPTY)];
         let waiting = Page {

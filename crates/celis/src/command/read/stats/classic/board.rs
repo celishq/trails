@@ -14,6 +14,7 @@ use crate::text::clock::weekday;
 use cards::{empty, status};
 use celis_nostr::Note;
 use celis_store::records::id::short;
+use celis_store::Refusal;
 use celis_trails::{Trail, TrailStore};
 use std::io::Write;
 use std::time::{Duration, Instant};
@@ -25,7 +26,7 @@ impl Command {
     /// screen with nothing printed, and ends.
     pub(crate) fn cards(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let view = match args.words.get(1) {
-            Some(id) if !self.held()? => return Err(Failure::no_step(id)),
+            Some(id) if !self.held()? => return Err(Refusal::NoStep(id.to_string()).into()),
             Some(id) => View::Route(
                 Trail::new(self.trails()?.steps().find(id)?)
                     .work()

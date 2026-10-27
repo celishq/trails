@@ -8,6 +8,7 @@ use crate::text::line::plural;
 use crate::text::markdown;
 use celis_patterns::{Example, Pattern, PatternStore};
 use celis_store::records::id::short;
+use celis_store::Refusal;
 use celis_store::Store;
 use celis_trails::TrailStore;
 use std::collections::HashSet;
@@ -62,7 +63,7 @@ impl Command {
     /// and recalls it on the session's newest open step.
     fn pattern_whole(&self, id: &str, out: &mut dyn Write) -> Result<(), Failure> {
         if !self.held()? {
-            return Err(Failure::no_pattern(id));
+            return Err(Refusal::NoPattern(id.to_string()).into());
         }
         let trails = self.trails()?;
         let project = self.project().anchor.project;
@@ -83,12 +84,12 @@ impl Command {
     /// gives them; refuses a name that no cell holds.
     fn cell_index(&self, name: &str) -> Result<String, Failure> {
         if !self.held()? {
-            return Err(Failure::no_cell(name));
+            return Err(Refusal::NoCell(name.to_string()).into());
         }
         let trails = self.trails()?;
         let patterns = trails.patterns();
         if patterns.cells().named(name).is_empty() {
-            return Err(Failure::no_cell(name));
+            return Err(Refusal::NoCell(name.to_string()).into());
         }
         let project = self.project().anchor.project;
         let every = patterns.every().iter().rev();
