@@ -5,7 +5,7 @@ pub mod notice;
 mod target;
 pub mod written;
 
-use crate::{Check, Done, Draft, Mark, Notes, Notice, Step, StepRecord, Steps, Written};
+use crate::{Check, Done, Draft, Mark, Notes, Notice, State, Step, StepRecord, Steps, Written};
 use celis_nostr::Note;
 use celis_patterns::{Pattern, PatternStore, Patterns};
 use celis_store::records::id::short;
@@ -292,7 +292,7 @@ fn replaced<'a>(steps: &'a Steps<'a>, id: &str) -> Result<Step<'a>, Refusal> {
 }
 
 /// Where `draft` goes: under its `--under`, else under the replaced open step `moved`'s `under`; none
-/// starts a trail. The step it goes under must be open.
+/// starts a trail.
 fn parent<'a>(
     steps: &'a Steps<'a>,
     draft: &Draft,
@@ -302,7 +302,16 @@ fn parent<'a>(
         .under
         .clone()
         .or(moved.and_then(|m| m.record().under.as_ref().map(|u| u.to_string())));
-    named.map(|id| steps.find_open(&id)).transpose()
+    named.map(|id| under(steps, &id)).transpose()
+}
+
+/// The step `id` that a new step can go under: an open step, or a done trail.
+fn under<'a>(steps: &'a Steps<'a>, id: &str) -> Result<Step<'a>, Refusal> {
+    let step = steps.find(id)?;
+    match step.state() {
+        State::Done if step.is_trail() => Ok(step),
+        _ => steps.find_open(id),
+    }
 }
 
 /// The open step of the project of `draft`, under `under`, with the same words.
