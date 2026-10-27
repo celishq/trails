@@ -77,6 +77,18 @@ impl Note {
         self.slot(name, 1)
     }
 
+    /// The values of its NIP-32 `l` tags in `namespace`, in order.
+    pub fn labels<'a>(&'a self, namespace: &'a str) -> impl Iterator<Item = &'a str> + 'a {
+        let tags = self.tags.iter();
+        let found = tags.filter(move |t| t.len() >= 3 && t[0] == "l" && t[2] == namespace);
+        found.map(|t| t[1].as_str())
+    }
+
+    /// The value of its first NIP-32 `l` tag in `namespace`.
+    pub fn label<'a>(&'a self, namespace: &'a str) -> Option<&'a str> {
+        self.labels(namespace).next()
+    }
+
     /// What a relay files this note under (NIP-01): an addressable kind (30000–39999) replaces on
     /// `pubkey:kind:d`, and everything else is kept as written under its own id.
     pub fn address(&self) -> String {

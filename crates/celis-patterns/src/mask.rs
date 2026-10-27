@@ -33,11 +33,7 @@ impl Mask {
 
     /// The mask `note` is; `None` when it is none.
     pub fn read(note: &Note) -> Option<Mask> {
-        let label = note
-            .tags
-            .iter()
-            .find(|t| t.len() >= 3 && t[0] == "l" && t[2] == NAMESPACE)?;
-        let on = match label[1].as_str() {
+        let on = match note.label(NAMESPACE)? {
             "on" => true,
             "off" => false,
             _ => return None,

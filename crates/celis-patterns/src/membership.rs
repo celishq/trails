@@ -24,15 +24,12 @@ impl Membership {
 
     /// The membership `note` is; `None` when it is none.
     pub fn read(note: &Note) -> Option<Membership> {
-        let label = note
-            .tags
-            .iter()
-            .find(|t| t.len() >= 3 && t[0] == "l" && t[2] == NAMESPACE)?;
-        if note.kind != 1985 || !Cell::is_name(&label[1]) {
+        let name = note.label(NAMESPACE)?;
+        if note.kind != 1985 || !Cell::is_name(name) {
             return None;
         }
         let cell = Cell {
-            name: label[1].clone(),
+            name: name.to_string(),
             author: note.pubkey,
         };
         let ids = note.tags.iter().filter(|t| t.len() >= 2 && t[0] == "e");

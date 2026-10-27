@@ -97,9 +97,8 @@ pub(crate) fn find<'p, 'a: 'p>(
 fn drops(records: &[Note]) -> HashMap<&str, &Note> {
     let mut drops: HashMap<&str, &Note> = HashMap::new();
     let drop = |n: &Note| {
-        let label = |t: &Vec<String>| t.len() >= 3 && t[0] == "l" && t[2] == "celis.step";
-        let label = n.tags.iter().find(|t| label(t));
-        n.kind == 1985 && label.is_some_and(|t| t[1] == "drop") && !n.content.trim().is_empty()
+        let label = n.label("celis.step");
+        n.kind == 1985 && label == Some("drop") && !n.content.trim().is_empty()
     };
     for note in records.iter().filter(|n| drop(n)) {
         let Some(id) = note.tag("e") else { continue };

@@ -103,11 +103,7 @@ impl Mark {
         if note.kind != 1985 {
             return None;
         }
-        let label = note
-            .tags
-            .iter()
-            .find(|t| t.len() >= 3 && t[0] == "l" && t[2] == NAMESPACE)?;
-        let mark = match label[1].as_str() {
+        let mark = match note.label(NAMESPACE)? {
             "start" => Mark::Start,
             "done" | "drop" | "note" if note.content.trim().is_empty() => return None,
             "done" => {

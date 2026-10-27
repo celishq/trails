@@ -46,11 +46,7 @@ impl StepRecord {
         if note.kind != 1111 {
             return None;
         }
-        let labelled = note
-            .tags
-            .iter()
-            .any(|t| t.len() >= 3 && t[0] == "l" && t[1] == "step" && t[2] == NAMESPACE);
-        if !labelled {
+        if !note.labels(NAMESPACE).any(|l| l == "step") {
             return None;
         }
         let owned = |name: &str| note.tag(name).map(str::to_string);
