@@ -96,7 +96,7 @@ them.
 | `judge` as the `by` of a `done` | a proof by a reader that did not do the work; a reader reads it as CIP-03, "Closing", states |
 | `celis lesson <id>` | a command, now `celis extract <id>`; `celis` runs it as `extract` |
 | `pattern --binds` · `pattern --cell <topic>` | flags of a rule and a topic; `celis` ignores them |
-| `step add --new` · `step add --recalled <id>` | flags of a new trail and a pattern read for an ask; `celis` ignores them |
+| `step add --recalled <id>` | a flag of a pattern read for an ask; `celis` ignores it |
 | `step done --by judge` | a flag of a proof by the judge; `celis` writes no `by` |
 
 ## Words
