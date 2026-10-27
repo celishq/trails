@@ -101,6 +101,17 @@ impl<'a> Steps<'a> {
         roots.filter_map(|n| self.get(&n.id)).collect()
     }
 
+    /// The newest open step of the session `session` in the project `project` with no open step under it.
+    pub fn open(&'a self, project: &str, session: &str) -> Option<Step<'a>> {
+        self.all().into_iter().rev().find(|s| {
+            let record = s.record();
+            record.anchor.project == project
+                && record.session.as_deref() == Some(session)
+                && s.closed().is_none()
+                && s.children().iter().all(|c| c.closed().is_some())
+        })
+    }
+
     /// The open trail of the session `session` in the project `project`: the trail of its newest step,
     /// when it is not done or dropped.
     pub fn session(&'a self, project: &str, session: &str) -> Option<Step<'a>> {
@@ -125,7 +136,7 @@ pub(crate) struct Index<'a> {
 }
 
 /// One step: its record, its text with its edits, its links, the steps that replace it, how its marks
-/// left it, the drop that counts on it, and its newest prompt; of its tree, the newest record, whether a step works, whether a step under it is open, and when the
+/// left it, the drop that counts on it, its newest prompt and its recalls; of its tree, the newest record, whether a step works, whether a step under it is open, and when the
 /// last of its steps closed.
 pub(crate) struct Entry<'a> {
     pub(crate) note: &'a Note,
@@ -141,6 +152,7 @@ pub(crate) struct Entry<'a> {
     pub(crate) loose: bool,
     pub(crate) asked: u64,
     pub(crate) shut: u64,
+    pub(crate) recalls: Vec<(String, u64)>,
 }
 
 /// How a step was closed.
@@ -176,6 +188,7 @@ impl<'a> Index<'a> {
                         loose: false,
                         asked: 0,
                         shut: 0,
+                        recalls: Vec::new(),
                     },
                 );
             }
@@ -258,6 +271,11 @@ impl<'a> Entry<'a> {
                 self.start.get_or_insert(note);
             }
             Mark::Prompt { .. } => self.asked = self.asked.max(note.created_at),
+            Mark::Recall { pattern } => {
+                if self.recalls.iter().all(|(p, _)| *p != pattern) {
+                    self.recalls.push((pattern, note.created_at));
+                }
+            }
             Mark::Done(_) => {
                 self.close.get_or_insert((note, Close::Done));
             }

@@ -103,3 +103,17 @@ fn a_note_carries_its_text() {
     let record = empty.record(&account, "s", 10).unwrap();
     assert_eq!(Mark::read(&record), None);
 }
+
+/// A recall names the pattern it reads, and reads back the same (`spec/06-reuse.md`, "Recalls").
+#[test]
+fn a_recall_names_its_pattern() {
+    let account = Account::new(&[1u8; 32]).unwrap();
+    let recall = Mark::Recall {
+        pattern: "ab12".into(),
+    };
+    let note = recall.record(&account, "p", 10).unwrap();
+    assert!(note
+        .tags
+        .contains(&vec!["pattern".to_string(), "ab12".to_string()]));
+    assert_eq!(Mark::read(&note), Some(("p".to_string(), recall)));
+}

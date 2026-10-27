@@ -48,6 +48,9 @@ pub trait TrailStore {
     /// Writes `text` as a note on the step `id`.
     fn note(&self, id: &str, text: String) -> Result<Written<'_>, Refusal>;
 
+    /// Writes a recall of the pattern `pattern` on the step `id`, when the step has none of it.
+    fn recall(&self, id: &str, pattern: &str) -> Result<Option<Note>, Refusal>;
+
     /// Writes a hook's prompt `text` as a prompt mark on `trail`; gives back the record.
     fn prompt(&self, trail: Step, text: String) -> Result<Note, Refusal>;
 }
@@ -192,6 +195,19 @@ impl TrailStore for Store {
             records: vec![note],
             ..Written::default()
         })
+    }
+
+    fn recall(&self, id: &str, pattern: &str) -> Result<Option<Note>, Refusal> {
+        let steps = self.steps();
+        let step = steps.find(id)?;
+        if step.recalls().iter().any(|(p, _)| *p == pattern) {
+            return Ok(None);
+        }
+        let mark = Mark::Recall {
+            pattern: pattern.to_string(),
+        };
+        let note = self.sign(|account, now| mark.record(account, step.id(), now))?;
+        Ok(Some(note))
     }
 
     fn prompt(&self, trail: Step, text: String) -> Result<Note, Refusal> {

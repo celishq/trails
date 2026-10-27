@@ -79,6 +79,13 @@ impl<'a> Step<'a> {
         children.filter_map(|n| self.steps.get(&n.id)).collect()
     }
 
+    /// Each pattern the store holds that a recall on it names, once, with when it was first recalled.
+    pub fn recalls(self) -> Vec<(&'a str, u64)> {
+        let recalls = self.entry.recalls.iter();
+        let held = recalls.filter(|(id, _)| self.steps.holds_pattern(id));
+        held.map(|(id, at)| (id.as_str(), *at)).collect()
+    }
+
     /// The step and every step under it, at any depth.
     pub fn tree(self) -> Vec<Step<'a>> {
         let mut tree = vec![self];

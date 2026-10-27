@@ -374,3 +374,26 @@ fn a_dropped_trail_shows_its_own_drop() {
     assert_eq!(head["proof"], Value::Null, "{head}");
     assert!(!more.is_empty());
 }
+
+/// `patterns <id>` writes one recall of the whole pattern id on the session's newest open step, and
+/// none while the session has no open step (`spec/06-reuse.md`, "Recalls").
+#[test]
+fn patterns_of_an_id_recalls_it_on_the_sessions_open_step() {
+    let repo = Repo::new();
+    let pattern = decide(&repo, "When a price is shown: keep cents.");
+    let read = || {
+        let env = [("CLAUDE_CODE_SESSION_ID", "s1")];
+        let o = repo.run(&repo.path(), &["patterns", &pattern[..8]], &env, "");
+        assert!(o.status.success(), "{}", err(&o));
+    };
+    read();
+    assert!(support::kept(&repo, 1985, "recall").is_empty());
+    let ask = added(&repo, "s1", &["--", "the senior price"])[0].clone();
+    let part = added(&repo, "s1", &["--under", &ask[..8], "--", "a part"])[0].clone();
+    read();
+    read();
+    let recalls = support::kept(&repo, 1985, "recall");
+    assert_eq!(recalls.len(), 1);
+    assert_eq!(recalls[0].tag("e"), Some(part.as_str()));
+    assert_eq!(recalls[0].tag("pattern"), Some(pattern.as_str()));
+}

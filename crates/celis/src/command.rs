@@ -158,7 +158,7 @@ impl Command {
 
     /// The agent session this run belongs to, from the first set variable of `$CLAUDE_CODE_SESSION_ID`,
     /// `$CODEX_THREAD_ID` and `$CELIS_SESSION_ID`.
-    fn session(&self) -> Option<String> {
+    pub(crate) fn session(&self) -> Option<String> {
         [
             "CLAUDE_CODE_SESSION_ID",
             "CODEX_THREAD_ID",

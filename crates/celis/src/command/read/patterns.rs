@@ -51,7 +51,8 @@ impl Command {
         crate::command::put(out, &page.join("\n"))
     }
 
-    /// Prints the live pattern in scope whose id is or starts with `id` whole, as `--markdown` does.
+    /// Prints the live pattern in scope whose id is or starts with `id` whole, as `--markdown` does,
+    /// and recalls it on the session's newest open step.
     fn pattern_whole(&self, id: &str, out: &mut dyn Write) -> Result<(), Failure> {
         if !self.held()? {
             return Err(Failure::no_pattern(id));
@@ -59,6 +60,11 @@ impl Command {
         let trails = self.trails()?;
         let project = self.project().anchor.project;
         let pattern = trails.patterns().find(Some(&project), id)?;
+        let steps = trails.steps();
+        let open = self.session().and_then(|s| steps.open(&project, &s));
+        if let Some(step) = open {
+            trails.recall(step.id(), pattern.id())?;
+        }
         let mut lines = markdown(&pattern, &trails, &project);
         while lines.last().is_some_and(String::is_empty) {
             lines.pop();
