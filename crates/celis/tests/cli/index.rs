@@ -356,3 +356,19 @@ fn a_named_pattern_shows_its_name() {
         out(&like)
     );
 }
+
+/// A text whose first line is not a When, and whose next line is, takes that first line as its Name
+/// (`spec/02-cli.md`, "Patterns").
+#[test]
+fn a_bare_first_line_before_a_when_is_the_name() {
+    let repo = Repo::new();
+    let text = "Light on two sides\nWhen a living room is lit\nForces: one window glares\nDo: add a second window\nBecause: two sides soften shadows";
+    let room = decide(&repo, &[], text);
+    let index = out(&cli(&repo, &["patterns"]));
+    assert_eq!(
+        index.trim_end(),
+        format!("{} project Light on two sides", &room[..8])
+    );
+    let tidy = out(&cli(&repo, &["patterns", "--tidy"]));
+    assert!(!tidy.contains("nameless"), "{tidy}");
+}

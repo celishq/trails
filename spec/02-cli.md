@@ -225,7 +225,8 @@ agent reads it, and reads the whole of a pattern with `patterns <id8>`.
 
 ```
 <id8> <scope> <Name>     each pattern; its Name is the text after `Name:` on the first line of its
-                         text, and with none, its When: the first line, and of a text of one line,
+                         text, or a first line that does not start with `When` before one that does,
+                         and with none, its When: the first line, and of a text of one line,
                          the part before its first `:`; the When of a named text is its next line
   path   <glob>          each `path` of it (CIP-05, "Paths")
   match  <file>          each `<file>` that one of its paths matches (CIP-05, "Paths")

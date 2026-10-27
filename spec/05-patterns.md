@@ -31,7 +31,8 @@ forces are present, work resolves them; where they are not, it does not apply.
 - `replaces`: optional; the pattern this one takes the place of.
 - `path`: optional, repeatable; a file the pattern acts on, as a glob from the project's top folder
   ("Paths").
-- content: text for an agent. Its first line MAY be `Name: <the resolved form>`. A reader MAY show it,
+- content: text for an agent. Its first line MAY be `Name: <the resolved form>`, or the name alone before
+  a `When` line. A reader MAY show it,
   and reads only its Name and its When (CIP-02, "Patterns").
 
 A drop (CIP-03, "Dropping") MAY name a pattern, with why it no longer holds.

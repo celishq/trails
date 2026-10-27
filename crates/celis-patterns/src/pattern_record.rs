@@ -141,10 +141,16 @@ impl PatternRecord {
     }
 }
 
-/// The Name of a pattern's `content`: the text after `Name:` on its first line; `None` when it has none.
+/// The Name of a pattern's `content`: the text after `Name:` on its first line, or a first line that is
+/// not a When before a line that is; `None` when it has none.
 pub fn name(content: &str) -> Option<&str> {
-    let first = content.lines().next()?;
-    first.strip_prefix("Name:").map(str::trim)
+    let mut lines = content.lines();
+    let first = lines.next()?;
+    if let Some(name) = first.strip_prefix("Name:") {
+        return Some(name.trim());
+    }
+    let when = |line: &str| line.starts_with("When");
+    (!when(first) && lines.next().is_some_and(when)).then(|| first.trim())
 }
 
 /// The When of a pattern's `content`: its first line, or its next one after a Name; of a text of one
