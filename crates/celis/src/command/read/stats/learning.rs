@@ -7,6 +7,7 @@ use super::sheet::Sheet;
 use crate::command::read::tree::wrap;
 use crate::terminal::canvas::{cut, paint, BOLD, CYAN, DIM, MAGENTA};
 use crate::terminal::unfold::ease;
+use crate::text::clock::date;
 use ratatui::style::Style;
 
 /// The panels of Learning: reuse, then patterns.
@@ -25,6 +26,76 @@ pub(super) fn panels() -> [Panel; 2] {
             draw: patterns,
         },
     ]
+}
+
+/// The panel of the value of the last 28 days and the lifecycle of the last 4 weeks.
+pub(super) fn value() -> Panel {
+    Panel {
+        name: "Value",
+        says: "28 days".into(),
+        start: 0.6,
+        draw: worth,
+    }
+}
+
+/// The value: the asks that used a pattern, the corrections and the repeat ones, first-pass success
+/// with and without a pattern, the recall funnel, reach and promotions, a blank row, then a row for
+/// each of the last 4 weeks of the lifecycle under its heads; the rows it takes.
+fn worth(s: &mut Sheet, m: &Moment, x: u16, y: u16, _: u16) -> u16 {
+    let v = &m.month.value;
+    let percent = |p: Option<u64>| p.map_or("-".to_string(), |p| format!("{p}%"));
+    let mut lines = vec![
+        (
+            format!("{} of {} asks used a pattern", v.covered, v.asks),
+            Style::new(),
+        ),
+        (
+            format!(
+                "{} corrections · {} failed · {} missed",
+                v.corrections, v.failed, v.missed
+            ),
+            Style::new(),
+        ),
+        (
+            format!(
+                "first pass {} with a pattern · {} without",
+                percent(v.with),
+                percent(v.without)
+            ),
+            Style::new(),
+        ),
+        (
+            format!(
+                "{} recalled → {} used → {} held · reach {} · {} promoted",
+                v.recalled, v.used, v.held, v.reach, v.promoted
+            ),
+            Style::new(),
+        ),
+        (String::new(), Style::new()),
+        (
+            "week of     written replaced dropped promoted recalled used misled".to_string(),
+            DIM,
+        ),
+    ];
+    let weeks = m.month.lifecycle.iter().filter(|l| l.span == "week");
+    lines.extend(weeks.map(|l| {
+        let row = format!(
+            "{}  {:>7} {:>8} {:>7} {:>8} {:>8} {:>4} {:>6}",
+            date(l.from),
+            l.written,
+            l.replaced,
+            l.dropped,
+            l.promoted,
+            l.recalled,
+            l.used,
+            l.misled
+        );
+        (row, Style::new())
+    }));
+    for (n, (line, look)) in lines.iter().enumerate() {
+        s.put(x + 2, y + 2 + n as u16, line, *look);
+    }
+    lines.len() as u16 + 4
 }
 
 /// The panel of the top patterns of the last 14 days, when a pattern has a hit.

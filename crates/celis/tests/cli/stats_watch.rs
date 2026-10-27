@@ -284,7 +284,7 @@ fn next_stats_with_no_store_draws_the_empty_board_until_a_step_closes() {
 fn next_stats_opens_a_section_and_all() {
     let (repo, _) = worked();
     let mut watch = Watch::start(&repo, &["stats", "--next"]);
-    watch.size(60, 110);
+    watch.size(80, 110);
     watch.until("▸ LEARNING");
     watch.press("\r");
     watch.until("▾ Learning");
@@ -309,7 +309,7 @@ fn next_stats_scrolls_through_a_tall_section() {
     watch.press("\x1b[B");
     watch.until("this week");
     watch.until("enter close");
-    watch.press("\x1b[B\x1b[B\x1b[B");
+    watch.press(&"\x1b[B".repeat(8));
     watch.until("enter open");
 }
 

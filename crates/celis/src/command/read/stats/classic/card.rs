@@ -11,6 +11,7 @@ use outcome::outcome;
 use patterns::patterns;
 use projects::projects;
 use time::time;
+use value::value;
 use work::work;
 
 /// A card of stats: its title, the rows of its face, and the table it opens to.
@@ -20,8 +21,8 @@ pub(crate) struct Card {
     pub table: Table,
 }
 
-/// The count of cards: effect, patterns used, work, time, outcome and projects.
-pub(crate) const CARDS: usize = 6;
+/// The count of cards: effect, patterns used, work, time, outcome, projects and value.
+pub(crate) const CARDS: usize = 7;
 
 /// The cards of `model` at its time: the effect `full` characters wide inside, the others `inside`;
 /// their numbers plain text when `plain`.
@@ -35,6 +36,7 @@ pub(crate) fn cards(model: &Model, full: usize, inside: usize, plain: bool) -> [
         time(&window.last, inside, ink),
         outcome(&window.last, inside, ink),
         projects(&window.last, inside, ink),
+        value(model, ink),
     ]
 }
 
@@ -53,4 +55,5 @@ mod projects;
 #[cfg(test)]
 mod tests;
 mod time;
+mod value;
 mod work;

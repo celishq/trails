@@ -69,10 +69,11 @@ impl Section {
         match self {
             Section::Learning => {
                 let y = pair(s, m, y, &learning::panels());
-                match learning::top(m) {
+                let y = match learning::top(m) {
                     Some(top) => y + top.place(s, m, (full.0, y, full.1), 0) + 1,
                     None => y,
-                }
+                };
+                y + learning::value().place(s, m, (full.0, y, full.1), 0) + 1
             }
             Section::Quality => y + quality::panel().place(s, m, (full.0, y, full.1), 0) + 1,
             Section::Output => {

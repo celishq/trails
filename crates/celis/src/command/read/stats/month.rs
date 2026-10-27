@@ -1,7 +1,9 @@
 //! The steps of the last 28 days, as every number of stats reads them.
 
+use super::lifecycle::Lifecycle;
 use super::outcomes::Outcomes;
 use super::project::Project;
+use super::value::Value;
 use crate::progress::{Grade, Model};
 use crate::text::clock::midnight;
 use celis_trails::{State, Step};
@@ -29,7 +31,7 @@ pub(super) const SPANS: [(&str, u64); 5] = [
 /// oldest day, the median time of a successful step in the last and the prior 14 days, how many fell in
 /// each span, each project's time and the time of the prior 14 days, the live patterns, those learned and those applied in the last 14 days with the steps that
 /// applied one in each project, the five live patterns with the most hits in them, each its id, its words
-/// and its hits, and the trails active now.
+/// and its hits, the trails active now, and the value and the lifecycle of every pattern.
 #[derive(Debug, Default)]
 pub(super) struct Month {
     pub days: Vec<Outcomes>,
@@ -45,6 +47,8 @@ pub(super) struct Month {
     pub applied: Vec<(String, usize)>,
     pub top: Vec<(String, String, usize)>,
     pub active: usize,
+    pub value: Value,
+    pub lifecycle: Vec<Lifecycle>,
 }
 
 impl Month {
@@ -165,6 +169,8 @@ impl Month {
         month.applied = applied;
         let roots = steps.roots().into_iter();
         month.active = roots.filter(|s| s.active()).count();
+        month.value = Value::of(model, None);
+        month.lifecycle = Lifecycle::of(model, None);
         month
     }
 
