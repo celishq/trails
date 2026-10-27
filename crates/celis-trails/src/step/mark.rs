@@ -63,6 +63,11 @@ impl Mark {
                 .iter()
                 .map(|b| vec!["by".to_string(), b.text().to_string()]);
             tags.extend(by);
+            tags.extend(
+                done.misled
+                    .iter()
+                    .map(|m| vec!["misled".to_string(), m.clone()]),
+            );
             for file in &done.files {
                 content.push_str(&format!("\n{}", file.url(&pubkey)));
                 tags.push(file.tag(&pubkey));
@@ -116,6 +121,12 @@ impl Mark {
                     changed: note.tag("changed").map(str::to_string),
                     by: note.tag("by").and_then(By::parse),
                     files,
+                    misled: note
+                        .tags
+                        .iter()
+                        .filter(|t| t.len() >= 2 && t[0] == "misled")
+                        .map(|t| t[1].clone())
+                        .collect(),
                 })
             }
             "drop" => Mark::Drop {

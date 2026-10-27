@@ -12,5 +12,6 @@ pub struct Draft {
     pub under: Option<String>,
     pub replaces: Option<String>,
     pub uses: Vec<String>,
+    pub misled: Vec<String>,
     pub session: Option<String>,
 }

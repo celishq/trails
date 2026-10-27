@@ -77,6 +77,12 @@ impl TrailStore for Store {
         let mut uses = uses.collect::<Result<Vec<String>, _>>()?;
         let mut seen = std::collections::HashSet::new();
         uses.retain(|id| seen.insert(id.clone()));
+        let misled = held(self, &draft.misled)?;
+        if !misled.is_empty() && replaced.is_none_or(|r| r.done_record().is_none()) {
+            return Err(Refusal::Usage(
+                "step add --misled needs a --replaces of a done step".into(),
+            ));
+        }
         let mut written = Written::default();
         if let Some(same) = same_open(&steps, &draft, under) {
             if !uses.is_empty() || replaced.is_some_and(|r| r.done_record().is_some()) {
@@ -93,6 +99,7 @@ impl TrailStore for Store {
             under: under.map(|u| u.step_id()),
             replaces: replaced.map(|s| s.step_id()),
             uses,
+            misled,
             places: draft.places,
             check: draft.check,
             session: draft.session,
@@ -135,6 +142,10 @@ impl TrailStore for Store {
         if let Some(check) = &step.check {
             Check::new(check, folder, self.limit()).run()?;
         }
+        let done = Done {
+            misled: held(self, &done.misled)?,
+            ..done
+        };
         let mut written = Written::default();
         written.records.push(
             self.sign(|account, now| Mark::Done(done.clone()).record(account, note.id(), now))?,
@@ -227,6 +238,22 @@ fn used(store: &Store, steps: &Steps, project: &str, id: &str) -> Result<String,
             "step add --uses takes the id of a pattern".into(),
         )),
     }
+}
+
+/// The whole id of each pattern of `store` that `ids` names, once; refuses an id that names none with
+/// `no-pattern`.
+fn held(store: &Store, ids: &[String]) -> Result<Vec<String>, Refusal> {
+    let patterns = store.patterns();
+    let mut found = Vec::new();
+    for id in ids {
+        let notes = patterns.every().iter().map(|p| p.note);
+        let note = celis_store::records::id::find(notes, id);
+        let note = note.ok_or_else(|| Refusal::NoPattern(id.clone()))?;
+        if !found.contains(&note.id) {
+            found.push(note.id.clone());
+        }
+    }
+    Ok(found)
 }
 
 /// Drops each open step of the tree of `step` with `reason`, in `store`.

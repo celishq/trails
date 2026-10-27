@@ -43,11 +43,11 @@ impl<'a> Steps<'a> {
         all.filter(|s| s.uses().contains(&id)).collect()
     }
 
-    /// The steps whose `uses` names `id` that a later step revised (CIP-06, "Revisions").
+    /// The steps that the pattern `id` misled (CIP-06, "Misled").
     pub fn misled(&'a self, id: &str) -> Vec<Step<'a>> {
         let all = self.all().into_iter();
-        let named = all.filter(|s| s.uses().contains(&id));
-        named.filter(|s| !s.revised().is_empty()).collect()
+        all.filter(|s| s.misled().iter().any(|(p, _)| *p == id))
+            .collect()
     }
 
     /// Whether a pattern record has the id `id`.

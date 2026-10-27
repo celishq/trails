@@ -45,6 +45,7 @@ impl Bench {
             under: under.map(str::to_string),
             replaces: None,
             uses: vec![],
+            misled: Vec::new(),
             session: None,
         };
         let id = self.trails.add(draft).unwrap().records[0].id.clone();

@@ -173,6 +173,27 @@ impl<'a> Step<'a> {
         later.filter_map(|n| self.steps.get(&n.id)).collect()
     }
 
+    /// Each pattern the store holds that misled it, once, with the second that told it: a pattern it
+    /// uses when a step revised it, and a `misled` of its done or of a step that revised it (CIP-06).
+    pub fn misled(self) -> Vec<(&'a str, u64)> {
+        let revised = self.revised();
+        let mut told: Vec<(&'a str, u64)> = Vec::new();
+        if let Some(first) = revised.first() {
+            let at = first.note().created_at;
+            told.extend(self.uses().into_iter().map(|p| (p, at)));
+        }
+        if let Some(done) = self.done_record() {
+            told.extend(tagged(done, "misled").map(|p| (p, done.created_at)));
+        }
+        for fix in revised {
+            let at = fix.note().created_at;
+            told.extend(tagged(fix.note(), "misled").map(|p| (p, at)));
+        }
+        let mut seen = HashSet::new();
+        told.retain(|(p, _)| self.steps.holds_pattern(p) && seen.insert(*p));
+        told
+    }
+
     /// Whether it fixes done work: the step it replaces is done.
     pub fn fixes(self) -> bool {
         let replaced = self.entry.step.replaces.as_deref();
@@ -246,4 +267,13 @@ impl std::fmt::Debug for Step<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_tuple("Step").field(&self.id()).finish()
     }
+}
+
+/// Each value of the tags named `name` of `note`.
+fn tagged<'a>(note: &'a Note, name: &'a str) -> impl Iterator<Item = &'a str> {
+    let tags = note
+        .tags
+        .iter()
+        .filter(move |t| t.len() >= 2 && t[0] == name);
+    tags.map(|t| t[1].as_str())
 }

@@ -16,6 +16,7 @@ fn step(text: &str, at: u64) -> Note {
         under: None,
         replaces: None,
         uses: Vec::new(),
+        misled: Vec::new(),
         places: Vec::new(),
         check: None,
         session: None,

@@ -412,6 +412,7 @@ impl Demo {
             under: under.map(str::to_string),
             replaces: replaces.map(str::to_string),
             uses: uses.to_vec(),
+            misled: Vec::new(),
             session: None,
         };
         let trails = self.trails(ago)?;

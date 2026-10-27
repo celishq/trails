@@ -54,6 +54,7 @@ impl Command {
             under: args.under.clone(),
             replaces: args.replaces.clone(),
             uses: args.uses.clone(),
+            misled: args.misled.clone(),
             session: args.session.clone().or_else(|| self.session()),
         };
         let session = draft.session.clone();
@@ -119,6 +120,7 @@ impl Command {
             changed,
             by,
             files,
+            misled: args.misled.clone(),
         };
         let changed = self.changed(&args.files);
         let written = trails.done(id, done.clone(), &project.folder)?;
