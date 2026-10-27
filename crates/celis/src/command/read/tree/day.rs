@@ -6,6 +6,7 @@ use super::row::Row;
 use super::trail::counts;
 use super::{live, Frame, Item, Tree, DAY, PROJECT};
 use crate::failure::Failure;
+use crate::progress::Phase;
 use crate::progress::Tally;
 use crate::terminal::canvas::{paint, Styled, BOLD, DIM};
 use crate::text::clock::{day, weekday};
@@ -137,7 +138,7 @@ impl Tree<'_> {
     /// Adds `trails` as `day` does off a box: its active trails, then the rest by project.
     fn active_first(&self, trails: Vec<Step>, lines: &mut Vec<Row>) {
         let (active, rest): (Vec<Step>, Vec<Step>) =
-            trails.into_iter().partition(|s| s.state().active());
+            trails.into_iter().partition(|s| Phase::of(s).active());
         let mut after = false;
         if !active.is_empty() {
             lines.push(self.gap());
@@ -257,7 +258,7 @@ impl Tree<'_> {
     fn lively(&self, note: Step) -> bool {
         match self.view.watch {
             true => live(note, self.steps.now()),
-            false => note.state().active(),
+            false => Phase::of(&note).active(),
         }
     }
 

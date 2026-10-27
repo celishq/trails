@@ -37,26 +37,25 @@ fn copied(repo: &Repo) -> String {
     std::fs::read_to_string(repo.home().join("copied")).unwrap()
 }
 
-/// On a terminal, `stats` draws its cards: the effect, reuse, patterns, work, time, outcome and projects,
+/// On a terminal, `stats` draws its cards: the effect, patterns, work, time, outcome and projects,
 /// a number from fewer than 10 records says so, and the keys it reads end the screen.
 #[test]
 fn stats_on_a_terminal_draws_its_cards() {
     let (repo, _) = worked();
     let mut watch = Watch::start(&repo, &["stats"]);
     watch.size(40, 100);
-    watch.until("06 PROJECTS");
+    watch.until("05 PROJECTS");
     let shown = watch.rows().join("\n");
     for text in [
         "CELIS STATS",
         "00 EFFECT",
         "AS PLANNED",
-        "01 REUSE",
-        "02 PATTERNS USED",
-        "03 WORK · 14 DAYS",
-        "04 TIME A STEP TOOK",
-        "05 OUTCOME",
+        "01 PATTERNS USED",
+        "02 WORK · 14 DAYS",
+        "03 TIME A STEP TOOK",
+        "04 OUTCOME",
         "✓ done",
-        "06 PROJECTS · TIME",
+        "05 PROJECTS · TIME",
         "repo",
     ] {
         assert!(shown.contains(text), "{text:?} in\n{shown}");
@@ -114,9 +113,9 @@ fn stats_opens_a_card_and_copies_it() {
     clipboard(&repo);
     let mut watch = Watch::start(&repo, &["stats"]);
     watch.size(40, 100);
-    watch.until("06 PROJECTS");
-    watch.press("\x1b[B\x1b[B\x1b[B\r");
-    watch.until("CELIS STATS › 05 OUTCOME");
+    watch.until("05 PROJECTS");
+    watch.press("\x1b[B\x1b[B\x1b[C\r");
+    watch.until("CELIS STATS › 04 OUTCOME");
     watch.until(&format!("c copy {}", &part[..8]));
     assert!(watch.rows().join("\n").contains("the part"));
     watch.press("c");
@@ -125,12 +124,12 @@ fn stats_opens_a_card_and_copies_it() {
     watch.press("m");
     watch.until("copied markdown");
     assert!(
-        copied(&repo).starts_with("### 05 OUTCOME\n\n| State | Step |"),
+        copied(&repo).starts_with("### 04 OUTCOME\n\n| State | Step |"),
         "{}",
         copied(&repo)
     );
     watch.press("\x1b[D");
-    watch.until("06 PROJECTS");
+    watch.until("05 PROJECTS");
 }
 
 /// An opened card taller than the screen scrolls with its selected row, and going back up to the first
@@ -141,67 +140,36 @@ fn stats_scrolls_an_opened_card_back_to_its_title() {
     let mut watch = Watch::start(&repo, &["stats"]);
     watch.size(10, 100);
     watch.until("00 EFFECT");
-    watch.press("\x1b[B\x1b[B\r");
-    watch.until("CELIS STATS › 03 WORK");
+    watch.press("\x1b[B\x1b[C\r");
+    watch.until("CELIS STATS › 02 WORK");
     watch.press(&"\x1b[B".repeat(13));
     watch.until("↑ ");
-    watch.without("CELIS STATS › 03 WORK");
+    watch.without("CELIS STATS › 02 WORK");
     watch.press(&"\x1b[A".repeat(13));
-    watch.until("CELIS STATS › 03 WORK");
+    watch.until("CELIS STATS › 02 WORK");
 }
 
-/// On a terminal, `stats <id>` draws the step with the steps it follows and the steps that follow it,
-/// and `enter` goes to the selected one.
+/// On a terminal, `stats <id>` draws the step as its card.
 #[test]
 fn stats_with_an_id_draws_its_route() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the trail"]);
-    let source = add(&repo, &["--under", &trail[..8], "--", "the source"]);
+    let part = add(&repo, &["--under", &trail[..8], "--", "the part"]);
     ok(
         &repo,
         &[
             "step",
             "done",
-            &source[..8],
+            &part[..8],
             "--as-planned",
             "--",
             "done once",
         ],
     );
-    let next = add(&repo, &["--new", "--", "the next trail"]);
-    let follower = add(
-        &repo,
-        &[
-            "--under",
-            &next[..8],
-            "--uses",
-            &source[..8],
-            "--",
-            "the follower",
-        ],
-    );
-    ok(
-        &repo,
-        &[
-            "step",
-            "done",
-            &follower[..8],
-            "--as-planned",
-            "--",
-            "done again",
-        ],
-    );
-    let mut watch = Watch::start(&repo, &["stats", &follower[..8]]);
+    let mut watch = Watch::start(&repo, &["stats", &part[..8]]);
     watch.size(40, 100);
-    watch.until(&format!("CELIS STATS › {}", &follower[..8]));
-    let shown = watch.rows().join("\n");
-    for text in ["FOLLOWS", "the source", "the follower"] {
-        assert!(shown.contains(text), "{text:?} in\n{shown}");
-    }
-    watch.until(&format!("c copy {}", &source[..8]));
-    watch.press("\r");
-    watch.until(&format!("CELIS STATS › {}", &source[..8]));
-    watch.until("FOLLOWED BY");
+    watch.until(&format!("CELIS STATS › {}", &part[..8]));
+    watch.until("the part");
 }
 
 /// Below 60 columns, `stats` prints one card a row and its numbers as plain text.
@@ -215,32 +183,27 @@ fn stats_at_a_narrow_width_prints_plain_numbers() {
     assert!(!rows.join("\n").contains("▀▀▀"), "{rows:#?}");
     assert!(
         rows.iter()
-            .all(|r| !r.contains("01 REUSE") || !r.contains("02 RULES")),
+            .all(|r| !r.contains("01 PATTERNS") || !r.contains("02 WORK")),
         "{rows:#?}"
     );
 }
 
 /// `stats --demo` fills every card from made-up trails: each number of the effect shows its change, and
-/// steps were followed and patterns used.
+/// patterns were used.
 #[test]
 fn stats_demo_fills_every_card() {
     let repo = Repo::new();
     let mut watch = Watch::start(&repo, &["stats", "--demo"]);
     watch.size(40, 100);
-    watch.until("06 PROJECTS");
+    watch.until("05 PROJECTS");
     let shown = watch.rows().join("\n");
-    for empty in [
-        "few records",
-        "no step followed another yet",
-        "no pattern used yet",
-        "—",
-    ] {
+    for empty in ["few records", "no pattern used yet", "—"] {
         assert!(!shown.contains(empty), "{empty:?} in\n{shown}");
     }
 }
 
-/// Off a terminal, `stats --demo` prints the made-up trails' follows, uses and total from a folder it
-/// removes, writes nothing to the store, and refuses an id.
+/// Off a terminal, `stats --demo` prints the total from a folder it removes, writes nothing to the
+/// store, and refuses an id.
 #[test]
 fn stats_demo_prints_and_writes_nothing() {
     let repo = Repo::new();
@@ -249,9 +212,7 @@ fn stats_demo_prints_and_writes_nothing() {
     let o = repo.run(&repo.path(), &["stats", "--demo"], &env, "");
     assert!(o.status.success(), "{}", err(&o));
     let text = out(&o);
-    for part in [" · followed ", "pattern ", "total "] {
-        assert!(text.contains(part), "{part:?}: {text}");
-    }
+    assert!(text.starts_with("total "), "{text}");
     assert_eq!(std::fs::read_dir(temp.path()).unwrap().count(), 0);
     assert!(!repo.store().join("shared").exists());
     let o = repo.run(
@@ -327,7 +288,7 @@ fn next_stats_opens_a_section_and_all() {
     watch.until("▸ LEARNING");
     watch.press("\r");
     watch.until("▾ Learning");
-    watch.until("REUSE · past steps reapplied");
+    watch.until("REUSE · steps done with a pattern");
     watch.until("enter close");
     watch.press("a");
     watch.until("▾ Output and speed");
@@ -352,58 +313,27 @@ fn next_stats_scrolls_through_a_tall_section() {
     watch.until("enter open");
 }
 
-/// With `--next`, On a terminal, `stats <id>` draws the step with the steps it follows and the steps that follow it,
-/// and `enter` goes to the selected one.
+/// With `--next`, on a terminal, `stats <id>` draws the step as its card.
 #[test]
 fn next_stats_with_an_id_draws_its_route() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the trail"]);
-    let source = add(&repo, &["--under", &trail[..8], "--", "the source"]);
+    let part = add(&repo, &["--under", &trail[..8], "--", "the part"]);
     ok(
         &repo,
         &[
             "step",
             "done",
-            &source[..8],
+            &part[..8],
             "--as-planned",
             "--",
             "done once",
         ],
     );
-    let next = add(&repo, &["--new", "--", "the next trail"]);
-    let follower = add(
-        &repo,
-        &[
-            "--under",
-            &next[..8],
-            "--uses",
-            &source[..8],
-            "--",
-            "the follower",
-        ],
-    );
-    ok(
-        &repo,
-        &[
-            "step",
-            "done",
-            &follower[..8],
-            "--as-planned",
-            "--",
-            "done again",
-        ],
-    );
-    let mut watch = Watch::start(&repo, &["stats", "--next", &follower[..8]]);
+    let mut watch = Watch::start(&repo, &["stats", "--next", &part[..8]]);
     watch.size(40, 100);
-    watch.until(&format!("CELIS STATS › {}", &follower[..8]));
-    let shown = watch.rows().join("\n");
-    for text in ["FOLLOWS", "the source", "the follower"] {
-        assert!(shown.contains(text), "{text:?} in\n{shown}");
-    }
-    watch.until(&format!("c copy {}", &source[..8]));
-    watch.press("\r");
-    watch.until(&format!("CELIS STATS › {}", &source[..8]));
-    watch.until("FOLLOWED BY");
+    watch.until(&format!("CELIS STATS › {}", &part[..8]));
+    watch.until("the part");
 }
 
 /// With `--next`, On a narrow screen `stats` still draws every section, the tiles one a row.
@@ -428,7 +358,7 @@ fn next_stats_demo_fills_the_board() {
     watch.size(40, 110);
     watch.until("20 of 42 successful");
     let shown = watch.screen_rows().join("\n");
-    for text in ["40 of 44 resolved", "5% → 57% by week", "● 2 active"] {
+    for text in ["40 of 44 resolved", "10% → 57% by week", "● 2 active"] {
         assert!(shown.contains(text), "{text:?} in\n{shown}");
     }
     assert!(!shown.contains("no prior steps"), "{shown}");

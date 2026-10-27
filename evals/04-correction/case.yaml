@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: 04-correction
+context:
+  scaffold_script: ./setup.sh

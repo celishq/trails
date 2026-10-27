@@ -3,7 +3,7 @@ celis step <command>
 Add steps to a trail, then start, finish, drop, edit, or note them.
 
 Commands
-  add      Add a step to a trail, or start a new trail
+  add      Add a new ask, or a step under one
   start    Start a step and show the patterns and notes it keeps
   done     Finish a step with proof that it works
   drop     Drop a step and the open steps under it

@@ -30,8 +30,6 @@ pub(crate) fn pattern(pattern: &Pattern, trails: &Store) -> String {
     );
     let mut lines = vec![head];
     lines.extend(text.map(|l| format!("  {l}")));
-    let cells = pattern.cells.iter();
-    lines.extend(cells.map(|c| format!("  cell    {}", c.name())));
     for (side, example) in pattern.examples.sides() {
         let id = match example {
             Example::Step(id) => id,

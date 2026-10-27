@@ -2,8 +2,7 @@
 //! spinner of a working one.
 
 use super::canvas::{Styled, BOLD, CYAN, DIM, GREEN, RED, YELLOW};
-use crate::progress::Flags;
-use celis_trails::State;
+use crate::progress::{Flags, Phase};
 use ratatui::style::{Modifier, Style};
 use ratatui::text::Span;
 use std::time::Duration;
@@ -16,25 +15,25 @@ pub(crate) struct Look {
 }
 
 /// How a step or a trail in `state` prints.
-pub(crate) fn look(state: State) -> Look {
+pub(crate) fn look(state: Phase) -> Look {
     let (mark, text, title) = match state {
-        State::Open => ("○", Style::new(), Style::new()),
-        State::Working => (SPIN[SPIN.len() - 1], CYAN, BOLD),
-        State::Done => ("✓", GREEN, Style::new()),
-        State::Dropped => ("✗", RED, DIM),
-        State::Expired => ("◌", DIM, DIM),
+        Phase::Open => ("○", Style::new(), Style::new()),
+        Phase::Started => (SPIN[SPIN.len() - 1], CYAN, BOLD),
+        Phase::Done => ("✓", GREEN, Style::new()),
+        Phase::Dropped => ("✗", RED, DIM),
+        Phase::Stale => ("◌", DIM, DIM),
     };
     Look { mark, text, title }
 }
 
 /// The look of a lane that hangs from a step or trail in `state`: its state's colour, the spinner's
-/// while working, dim while open or expired.
-pub(crate) fn lane(state: State) -> Style {
+/// while started, dim while open or stale.
+pub(crate) fn lane(state: Phase) -> Style {
     match state {
-        State::Working => SPINNER,
-        State::Done => GREEN,
-        State::Dropped => RED,
-        State::Open | State::Expired => DIM,
+        Phase::Started => SPINNER,
+        Phase::Done => GREEN,
+        Phase::Dropped => RED,
+        Phase::Open | Phase::Stale => DIM,
     }
 }
 

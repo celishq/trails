@@ -89,7 +89,7 @@ fn drop_refuses_an_empty_reason_and_unknown_and_closed_steps() {
 }
 
 /// `add --replaces` writes a step in the old step's place that names it, and drops the old step and the
-/// open steps under it as replaced; a trail is not replaced (`spec/03-steps.md`, "Dropping").
+/// open steps under it as replaced; a step that replaces a trail is a trail (`spec/03-steps.md`, "Dropping").
 #[test]
 fn a_step_that_replaces_another_drops_it() {
     let repo = Repo::new();
@@ -142,14 +142,14 @@ fn a_step_that_replaces_another_drops_it() {
         assert_eq!(step(id)["state"], "dropped");
         assert_eq!(step(id)["reason"], replaced.as_str());
     }
-    let o = cli(
-        &repo,
-        &["step", "add", "--replaces", &trail[..8], "--", "x"],
-    );
-    assert_eq!(o.status.code(), Some(2), "{}", err(&o));
+    let top = add(&repo, &["--replaces", &trail[..8], "--", "x"]);
+    let top = top.lines().next().unwrap();
+    let tree = objects(&repo, &["tree", &top[..8]]);
+    let links = tree[0]["trail"]["links"].as_array().unwrap();
+    assert!(!links.iter().any(|l| l["kind"] == "under"), "{links:?}");
 }
 
-/// `drop` takes a done trail, keeps it done, and refuses it once it is dropped
+/// `drop` takes a done trail, makes it dropped, and refuses it once it is dropped
 /// (`spec/02-cli.md`, "Step"; `spec/03-steps.md`, "Dropping").
 #[test]
 fn drop_takes_a_done_trail_once() {
@@ -168,7 +168,7 @@ fn drop_takes_a_done_trail_once() {
     assert!(o.status.success(), "{}", err(&o));
     assert_eq!(out(&o).lines().count(), 1, "{}", out(&o));
     let state = &objects(&repo, &["tree", &trail[..8]])[0]["trail"]["state"];
-    assert_eq!(state, "done");
+    assert_eq!(state, "dropped");
     refusal(
         &cli(&repo, &["step", "drop", &trail[..8], "--json", "--", "x"]),
         1,

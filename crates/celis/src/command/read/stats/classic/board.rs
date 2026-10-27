@@ -127,7 +127,7 @@ impl Board<'_> {
         let steps = model.steps;
         if let View::Route(id) = &self.view {
             if let Some(step) = steps.get(id) {
-                return self.route(model, step, width);
+                return self.route(step, width);
             }
         }
         let (closed, status) = self

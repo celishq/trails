@@ -1,7 +1,7 @@
 //! The Learning section of the stats board: the reuse of past work and the patterns applied.
 
 use super::kind::Kind;
-use super::moment::{counted, plural, Moment};
+use super::moment::{plural, Moment};
 use super::panel::Panel;
 use super::sheet::Sheet;
 use crate::command::read::tree::wrap;
@@ -14,7 +14,7 @@ pub(super) fn panels() -> [Panel; 2] {
     [
         Panel {
             name: "Reuse",
-            says: "past steps reapplied".into(),
+            says: "steps done with a pattern".into(),
             start: 0.3,
             draw: reuse,
         },
@@ -90,14 +90,7 @@ fn reuse(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
     let before = m.before(|o| o.reused as i64);
     let reused = (Some(now.reused as i64), before);
     let cell = m.measure(lead, reused, Kind::Count, true);
-    row += s.measures(m.grid(), (x + 2, row, x + w - 3), &[cell], 0);
-    s.put(
-        x + 2,
-        row,
-        &format!("from {}", counted(m.month.sources, "earlier trail")),
-        DIM,
-    );
-    row += 2;
+    row += s.measures(m.grid(), (x + 2, row, x + w - 3), &[cell], 0) + 1;
     s.put(x + 2, row, "weekly reuse rate · last 4 weeks", DIM);
     let bar = m.bars(x, w);
     let value = x + w - 7;

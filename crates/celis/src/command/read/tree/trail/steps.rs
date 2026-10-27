@@ -3,11 +3,12 @@
 use crate::command::read::tree::level::Level;
 use crate::command::read::tree::row::Row;
 use crate::command::read::tree::{after, Item, Tree};
+use crate::progress::Phase;
 use crate::terminal::canvas::{paint, Styled, DIM};
 use crate::terminal::look::{look, SHIMMER};
 use celis_nostr::Note;
 use celis_trails::step::steps::LIFE;
-use celis_trails::{State, Step};
+use celis_trails::Step;
 use ratatui::style::Style;
 use ratatui::text::Span;
 
@@ -45,7 +46,7 @@ impl Tree<'_> {
         let colour = self.lane();
         for (n, note) in notes.into_iter().enumerate() {
             let step = note.record();
-            let state = note.state();
+            let state = Phase::of(&note);
             if state.active() {
                 self.until(note.trail().newest() + LIFE);
             }
@@ -56,7 +57,7 @@ impl Tree<'_> {
             let (lead, rail) = self.branch(rail, last, toggle, colour);
             let first = lines.len();
             let tone = match self.busy(note) {
-                true => look(State::Working).title,
+                true => look(Phase::Started).title,
                 false => look(state).title,
             };
             lines.push(Row::Lined {
@@ -80,7 +81,7 @@ impl Tree<'_> {
             if open && self.view.full {
                 let below = after(&rail, Span::raw("  "));
                 self.closing(note, &below, true, lines);
-                self.followed(note, &below, lines);
+                self.used(note, &below, lines);
             }
             if open {
                 self.level(level, vec![], &rail, note.id(), lines);
@@ -116,7 +117,7 @@ impl Tree<'_> {
     /// The look `tone` of the title of `note`, marked to shimmer in a watch while it works with no step
     /// under it.
     fn shone(&self, note: Step, tone: Style) -> Style {
-        match self.view.spin && note.state() == State::Working && note.children().is_empty() {
+        match self.view.spin && Phase::of(&note) == Phase::Started && note.children().is_empty() {
             true => {
                 self.spun.set(true);
                 tone.add_modifier(SHIMMER)
@@ -127,7 +128,7 @@ impl Tree<'_> {
 
     /// Whether `note` or a step under it works.
     pub(in crate::command::read::tree) fn busy(&self, note: Step) -> bool {
-        note.tree().iter().any(|s| s.state() == State::Working)
+        note.tree().iter().any(|s| Phase::of(s) == Phase::Started)
     }
 
     /// Whether the step or pattern `id` shows what `--full` shows: with `--full`, unless the watch closed

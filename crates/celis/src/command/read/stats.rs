@@ -1,22 +1,27 @@
-//! `celis stats`: what later work reused.
+//! `celis stats`: the use of the patterns, or a step's grade.
 
+use super::candidate::Candidate;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use crate::progress::{Flags, Grade, Reuse};
+use crate::progress::Grade;
+use crate::text::clock::date;
 use crate::text::line::plural;
 use celis_patterns::PatternStore;
 use celis_store::records::id::short;
+use celis_store::Store;
 use celis_trails::{Step, Trail, TrailStore};
 use serde_json::json;
 use std::io::{IsTerminal, Write};
 
-/// What `stats` prints when nothing was reused.
+/// What `stats` prints when the store holds no record.
 const NOTHING: &str = "Nothing was reused yet.";
 
+/// The seconds of the last days that the total counts.
+const WEEK: u64 = 7 * 86_400;
+
 impl Command {
-    /// Prints the step `args` names with the steps it follows and the steps that follow it, or with no id
-    /// each followed step, each used pattern, each pattern with examples and the total; on a terminal
-    /// with no `--json`, draws them as cards, or as the board with `--next`. Writes no record.
+    /// Prints the step `args` names with its grade, or with no id each live pattern with its use, and the
+    /// total; on a terminal with no `--json`, draws them as cards, or as the board with `--next`.
     pub(crate) fn stats(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let id = args.words.get(1);
         if args.demo && id.is_some() {
@@ -40,94 +45,73 @@ impl Command {
         }
         let trails = self.trails()?;
         let steps = trails.steps();
-        let reuse = Reuse::new(&steps);
         match id {
-            Some(id) => chain(&reuse, Trail::new(steps.find(id)?).work(), args.json, out),
-            None => {
-                let patterns = trails.patterns();
-                let used = reuse.used(&patterns);
-                let live = patterns.live(&self.project().anchor.project);
-                let patterns: Vec<_> = live
-                    .iter()
-                    .filter(|p| !p.record.examples.is_empty())
-                    .collect();
-                if reuse.followed().is_empty() && used.is_empty() && patterns.is_empty() {
-                    return match args.json {
-                        true => Ok(()),
-                        false => crate::command::put(out, NOTHING),
-                    };
-                }
-                for &step in reuse.followed() {
-                    let count = reuse.followers(step);
-                    let revised = Flags::of(step).revised;
-                    let value = json!({"id": step.id(), "project": step.record().anchor.name,
-                        "content": step.title(), "followed": count, "revised": revised});
-                    let mut line = format!("{} · followed {count}", head(step));
-                    if revised {
-                        line.push_str(" · revised");
-                    }
-                    crate::command::show(out, args.json, "followed", value, &line)?;
-                }
-                let mut uses = 0;
-                for (pattern, count) in &used {
-                    let (note, pattern) = (pattern.note, &pattern.record);
-                    uses += count;
-                    let value = json!({"id": note.id, "content": pattern.content, "used": count});
-                    let line = format!(
-                        "pattern {} {} · used {count}",
-                        short(&note.id),
-                        pattern.brief()
-                    );
-                    crate::command::show(out, args.json, "used", value, &line)?;
-                }
-                let recalls = self.recalls();
-                for pattern in patterns {
-                    let (note, pattern) = (pattern.note, &pattern.record);
-                    let examples = pattern.examples.sides().count();
-                    let recalled = recalls.count(&note.id);
-                    let value = json!({"id": note.id, "content": pattern.content,
-                        "examples": examples, "recalled": recalled});
-                    let line = format!(
-                        "pattern {} {} · {} · recalled {recalled}",
-                        short(&note.id),
-                        pattern.brief(),
-                        plural(examples, "example")
-                    );
-                    crate::command::show(out, args.json, "pattern", value, &line)?;
-                }
-                let follows = reuse.total();
-                let value = json!({"follows": follows, "uses": uses});
-                let line = format!(
-                    "total {} · {}",
-                    plural(follows, "follow"),
-                    plural(uses, "use")
-                );
-                crate::command::show(out, args.json, "total", value, &line)
-            }
+            Some(id) => step(Trail::new(steps.find(id)?).work(), args.json, out),
+            None => uses(&trails, &self.project().anchor.project, args.json, out),
         }
     }
 }
 
-/// Prints `step` with its grade, then each step it follows, then each step that follows it, each at any
-/// depth, two spaces further in a level.
-fn chain(reuse: &Reuse, step: Step, json: bool, out: &mut dyn Write) -> Result<(), Failure> {
+/// Prints each live pattern in scope in `project` with its use, oldest first, then the total (CIP-02,
+/// "Stats").
+fn uses(trails: &Store, project: &str, json: bool, out: &mut dyn Write) -> Result<(), Failure> {
+    let steps = trails.steps();
+    let live = Candidate::every(trails, project);
+    for candidate in &live {
+        let (pattern, chain) = (candidate.pattern(), candidate.chain());
+        let id = pattern.id();
+        let (uses, misled) = (steps.uses(id), steps.misled(id).len());
+        let used = uses.first().map(|s| date(s.note().created_at));
+        let examples = pattern.record.examples.sides().count();
+        let tidy = candidate.reasons();
+        let when = pattern.record.when();
+        let value = json!({"id": id, "uses": uses.len(), "misled": misled, "replaces": chain,
+            "used": used, "examples": examples, "tidy": tidy, "when": when});
+        let line = format!(
+            "{} uses:{} misled:{misled} replaces:{chain} used:{} examples:{examples} tidy:{} {when}",
+            short(id),
+            uses.len(),
+            used.as_deref().unwrap_or("-"),
+            match tidy.is_empty() {
+                true => "-".to_string(),
+                false => tidy.join(","),
+            }
+        );
+        crate::command::show(out, json, "pattern", value, &line)?;
+    }
+    let since = steps.now().saturating_sub(WEEK);
+    let patterns = trails.patterns();
+    let scoped = patterns.scoped(project).into_iter();
+    let written: Vec<_> = scoped.filter(|p| p.note.created_at >= since).collect();
+    let replaced = written
+        .iter()
+        .filter(|p| p.record.replaces.is_some())
+        .count();
+    let unled = |s: &Step| s.trail().tree().iter().all(|t| t.uses().is_empty());
+    let gaps = steps.all().into_iter().filter(|s| {
+        s.record().anchor.project == project
+            && s.note().created_at >= since
+            && s.fixes()
+            && unled(s)
+    });
+    let gaps = gaps.count();
+    let value = json!({"index": live.len(), "written": written.len(), "replaced": replaced,
+        "gaps": gaps});
+    let line = format!(
+        "total {} in the index · last 7 days: {} written, {replaced} replaced, {}",
+        plural(live.len(), "pattern"),
+        written.len(),
+        plural(gaps, "gap")
+    );
+    crate::command::show(out, json, "total", value, &line)
+}
+
+/// Prints `step` with its grade.
+fn step(step: Step, json: bool, out: &mut dyn Write) -> Result<(), Failure> {
     let value = json!({"id": step.id(), "project": step.record().anchor.name,
         "content": step.title(), "grade": Grade::of(step), "depth": 0});
     let line = format!("{}{}", head(step), took(step));
-    crate::command::show(out, json, "step", value, &line)?;
-    let sources = reuse.up(step).into_iter().map(|l| ("follows", l.source, l));
-    let followers = reuse
-        .down(step)
-        .into_iter()
-        .map(|l| ("followed", l.step, l));
-    for (kind, at, link) in sources.chain(followers) {
-        let value = json!({"id": at.id(), "project": at.record().anchor.name, "content": at.title(),
-            "grade": Grade::of(at), "depth": link.depth});
-        let indent = "  ".repeat(link.depth);
-        let line = format!("{indent}{kind} {}{}", head(at), took(at));
-        crate::command::show(out, json, kind, value, &line)?;
-    }
-    Ok(())
+    crate::command::show(out, json, "step", value, &line)
 }
 
 /// `<id, first 8> [<project name>] <title>` of `step`.
@@ -158,7 +142,6 @@ mod project;
 mod quality;
 mod section;
 mod sheet;
-mod table;
 mod total;
 
 #[cfg(test)]

@@ -1,4 +1,4 @@
-//! CIP-05, "Graph", and CIP-02, "Search".
+//! CIP-05, "Graph", and CIP-02, "Patterns".
 
 use crate::support;
 
@@ -89,7 +89,8 @@ fn a_larger_pattern_may_be_of_another_project() {
     assert_eq!(within(&repo, &hero), [page]);
 }
 
-/// A reader ignores a `within` that names no record it holds (`spec/05-patterns.md`, "Graph").
+/// A reader ignores a `within` that names no record it holds: the index names no larger pattern
+/// (`spec/05-patterns.md`, "Graph").
 #[test]
 fn a_within_of_no_record_is_ignored() {
     let repo = Repo::new();
@@ -104,15 +105,17 @@ fn a_within_of_no_record_is_ignored() {
         "When the hero is drawn: show the subject.",
         now() - DAY,
     );
-    let said = out(&cli(&repo, &["search", "--", "draw the hero"]));
-    assert!(said.contains(&hero.id[..8]), "{said}");
-    assert!(!said.contains("next"), "{said}");
+    let said = out(&cli(&repo, &["patterns"]));
+    assert_eq!(
+        said.trim(),
+        format!("{} project When the hero is drawn", &hero.id[..8])
+    );
 }
 
-/// Under each pattern, `search` prints its smaller patterns in scope, newest first, at most 5
-/// (`spec/02-cli.md`, "Search").
+/// The index names each larger pattern under the smaller one, oldest first (`spec/02-cli.md`,
+/// "Patterns").
 #[test]
-fn search_prints_at_most_5_smaller_patterns_under_a_pattern() {
+fn the_index_names_each_larger_pattern() {
     let repo = Repo::new();
     let page = decide(
         &repo,
@@ -120,44 +123,27 @@ fn search_prints_at_most_5_smaller_patterns_under_a_pattern() {
         &[],
         "When a page is drawn: keep one bold thing.",
     );
-    let id = repo.project_id();
-    let smaller: Vec<String> = (0..6)
-        .map(|n| {
-            let tags = vec![vec!["within".to_string(), page.clone()]];
-            let note = tagged_pattern(
-                &repo,
-                (&id, "repo"),
-                &account(),
-                (None, None),
-                tags,
-                &format!("When part {n} is drawn: keep it quiet."),
-                now() - DAY + n,
-            );
-            note.id
-        })
-        .collect();
-    let said = out(&cli(
+    let site = decide(
         &repo,
-        &["search", "--kind", "pattern", "--", "draw a page"],
-    ));
-    let next: Vec<&str> = said
-        .lines()
-        .filter(|l| l.trim_start().starts_with("next"))
-        .collect();
-    let want: Vec<String> = smaller
-        .iter()
-        .rev()
-        .take(5)
-        .enumerate()
-        .map(|(n, id)| {
-            format!(
-                "  next    {} When part {} is drawn: keep it quiet.",
-                &id[..8],
-                5 - n
-            )
-        })
-        .collect();
-    assert_eq!(next, want, "{said}");
+        &repo.path(),
+        &[],
+        "When a site is drawn: keep one face.",
+    );
+    let hero = decide(
+        &repo,
+        &repo.path(),
+        &["--within", &page[..8], "--within", &site[..8]],
+        "When the hero is drawn: show the subject.",
+    );
+    let said = out(&cli(&repo, &["patterns"]));
+    let at = said.find(&hero[..8]).unwrap_or_else(|| panic!("{said}"));
+    let want = format!(
+        "{} project When the hero is drawn\n  within {}\n  within {}",
+        &hero[..8],
+        &page[..8],
+        &site[..8]
+    );
+    assert!(said[at..].starts_with(&want), "{said}");
 }
 
 /// `patterns --markdown` names each smaller pattern under the larger one (`spec/02-cli.md`, "Patterns").

@@ -42,14 +42,16 @@ fn a_trails_state_comes_from_its_tree_and_ignores_steers() {
     assert!(!tree.contains("steered"), "{tree}");
 }
 
-/// A trail with steps under it and none open is reached at once; a new step under it makes it active
-/// again, and a done trail refuses one.
+/// A trail with no open step under it stays open until its own `done`, and a done trail refuses a new
+/// step under it (`spec/04-trails.md`, "State").
 #[test]
-fn a_trail_with_no_open_step_under_it_is_reached_at_once() {
+fn a_trail_takes_the_state_of_its_ask() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the trail"]);
     let part = add(&repo, &["--under", &trail[..8], "--", "part"]);
     finish(&repo, &part[..8]);
+    assert_eq!(state(&repo, &trail), "open");
+    finish(&repo, &trail[..8]);
     assert_eq!(state(&repo, &trail), "done");
     let read = out(&cli(&repo, &["grep", " trail "]));
     assert!(
@@ -57,8 +59,6 @@ fn a_trail_with_no_open_step_under_it_is_reached_at_once() {
             .any(|l| l == format!("  trail {} done", &trail[..8])),
         "{read}"
     );
-    add(&repo, &["--under", &trail[..8], "--", "more"]);
-    assert_eq!(state(&repo, &trail), "open");
     let locked = add(&repo, &["--", "locked"]);
     finish(&repo, &locked[..8]);
     let o = cli(
@@ -68,11 +68,10 @@ fn a_trail_with_no_open_step_under_it_is_reached_at_once() {
     assert!(!o.status.success(), "{}", out(&o));
 }
 
-/// A trail ends 30 minutes after the newest record of its tree: reached when nothing under it is open,
-/// expired when a step is, and active again when a new record lands; an ended trail's steps are
-/// not open.
+/// A trail that ended 30 minutes after the newest record of its tree stays open with no `done` of its
+/// own, and shows its open steps stale (`spec/04-trails.md`, "State"; `spec/02-cli.md`, "Grep").
 #[test]
-fn a_trail_ends_thirty_minutes_after_its_newest_record() {
+fn an_ended_trail_stays_open_and_shows_its_open_steps_stale() {
     use support::{account, mark_note, now, step_note};
     let repo = Repo::new();
     let old = now() - 31 * 60;
@@ -81,8 +80,8 @@ fn a_trail_ends_thirty_minutes_after_its_newest_record() {
     mark_note(&repo, &account(), "done", &part.id, "proof", old);
     let left = step_note(&repo, &account(), None, "left", old);
     let open = step_note(&repo, &account(), Some(&left), "open part", old);
-    assert_eq!(state(&repo, &finished.id), "done");
-    assert_eq!(state(&repo, &left.id), "expired");
+    assert_eq!(state(&repo, &finished.id), "open");
+    assert_eq!(state(&repo, &left.id), "open");
     let tree = out(&cli(&repo, &["tree", &left.id[..8]]));
     assert!(
         tree.lines()
@@ -94,32 +93,14 @@ fn a_trail_ends_thirty_minutes_after_its_newest_record() {
     let read = out(&cli(&repo, &["grep", "left\\|open part"]));
     assert!(
         read.lines()
-            .any(|l| l == format!("  trail {} expired", &left.id[..8])),
+            .any(|l| l == format!("  trail {} open", &left.id[..8])),
         "{read}"
     );
     assert!(
-        read.contains(&format!(" step {} expired open part", &open.id[..8])),
+        read.contains(&format!(" step {} open open part", &open.id[..8])),
         "{read}"
     );
     let o = cli(&repo, &["step", "start", &open.id[..8]]);
     assert!(o.status.success(), "{}", err(&o));
-    assert_eq!(state(&repo, &left.id), "working");
-}
-
-/// A trail whose session wrote no end ends 30 minutes after the newest record of its tree.
-#[test]
-fn a_sessions_trail_with_no_end_ends_thirty_minutes_after_its_newest_record() {
-    use support::{account, now, put, step_tags};
-    let repo = Repo::new();
-    let trail = |text: &str, at: u64| {
-        let mut tags = step_tags((&repo.project_id(), "repo"));
-        tags.push(vec!["session".to_string(), "s1".to_string()]);
-        let note = celis_nostr::Note::write(&account(), 1111u16, at, tags, text).unwrap();
-        put(&repo, &note);
-        note
-    };
-    let recent = trail("ten minutes ago", now() - 10 * 60);
-    let quiet = trail("an hour ago", now() - 60 * 60);
-    assert_eq!(state(&repo, &recent.id), "open");
-    assert_eq!(state(&repo, &quiet.id), "done");
+    assert_eq!(state(&repo, &left.id), "open");
 }

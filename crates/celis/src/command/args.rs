@@ -11,12 +11,11 @@ pub(crate) struct Args {
     pub full: bool,
     pub all: bool,
     pub demo: bool,
-    pub new: bool,
     pub planned: bool,
-    pub binds: bool,
     pub next: bool,
     pub off: bool,
     pub markdown: bool,
+    pub tidy: bool,
     pub words: Vec<String>,
     pub text: Option<String>,
     pub places: Vec<String>,
@@ -29,16 +28,14 @@ pub(crate) struct Args {
     pub by: Option<String>,
     pub session: Option<String>,
     pub project: Option<String>,
-    pub limit: Option<String>,
-    pub kind: Option<String>,
-    pub model: Option<String>,
     pub page: Option<String>,
     pub paths: Vec<String>,
     pub files: Vec<String>,
     pub good: Vec<String>,
     pub within: Vec<String>,
-    pub cells: Vec<String>,
     pub bad: Vec<String>,
+    /// Each deprecated name it gave, in order (`spec/README.md`, "Names").
+    pub old: Vec<&'static str>,
 }
 
 impl Args {
@@ -51,8 +48,8 @@ impl Args {
                 .any(|a| a == "--json")
     }
 
-    /// The words of `args`, only the verb when they are raw; an unknown flag, or a flag without its
-    /// value, is a usage error.
+    /// The words of `args`, only the verb when they are raw; an unknown flag, a flag without its value,
+    /// and the `search` that older plugins give are usage errors.
     pub fn parse(args: &[String]) -> Result<Args, Failure> {
         let mut parsed = Args::default();
         if crate::help::raw(args) {
@@ -73,37 +70,53 @@ impl Args {
                 "--full" => parsed.full = true,
                 "--all" => parsed.all = true,
                 "--demo" => parsed.demo = true,
-                "--new" => parsed.new = true,
+                "--new" => parsed.old.push("--new"),
                 "--as-planned" => parsed.planned = true,
-                "--binds" => parsed.binds = true,
+                "--binds" => parsed.old.push("--binds"),
                 "--next" => parsed.next = true,
                 "--off" => parsed.off = true,
                 "--markdown" => parsed.markdown = true,
+                "--tidy" => parsed.tidy = true,
                 "--at" => parsed.places.push(value(arg, rest.next())?),
                 "--under" => parsed.under = Some(value(arg, rest.next())?),
                 "--scope" => parsed.scope = Some(value(arg, rest.next())?),
                 "--replaces" => parsed.replaces = Some(value(arg, rest.next())?),
                 "--uses" => parsed.uses.push(value(arg, rest.next())?),
+                "--recalled" => {
+                    value(arg, rest.next())?;
+                    parsed.old.push("--recalled");
+                }
                 "--check" => parsed.check = Some(value(arg, rest.next())?),
                 "--changed" => parsed.changed = Some(value(arg, rest.next())?),
                 "--by" => parsed.by = Some(value(arg, rest.next())?),
                 "--session" => parsed.session = Some(value(arg, rest.next())?),
                 "--project" => parsed.project = Some(value(arg, rest.next())?),
-                "--limit" => parsed.limit = Some(value(arg, rest.next())?),
-                "--kind" => parsed.kind = Some(value(arg, rest.next())?),
-                "--model" => parsed.model = Some(value(arg, rest.next())?),
                 "--page" => parsed.page = Some(value(arg, rest.next())?),
                 "--path" => parsed.paths.push(value(arg, rest.next())?),
                 "--file" => parsed.files.push(value(arg, rest.next())?),
                 "--good" => parsed.good.push(value(arg, rest.next())?),
                 "--within" => parsed.within.push(value(arg, rest.next())?),
-                "--cell" => parsed.cells.push(value(arg, rest.next())?),
+                "--cell" => {
+                    value(arg, rest.next())?;
+                    parsed.old.push("--cell");
+                }
                 "--bad" => parsed.bad.push(value(arg, rest.next())?),
                 flag if flag.starts_with("--") => {
                     bad.get_or_insert(Failure::usage(format!("{flag} is not a flag")));
                 }
                 word => parsed.words.push(word.to_string()),
             }
+        }
+        if parsed.words.first().is_some_and(|w| w == "lesson") {
+            parsed.old.insert(0, "lesson");
+        }
+        if parsed.by.as_deref() == Some("judge") {
+            parsed.old.push("--by judge");
+        }
+        if parsed.words.first().is_some_and(|w| w == "search") {
+            return Err(Failure::usage(
+                "search is gone; read the index of patterns with celis patterns",
+            ));
         }
         match bad {
             Some(failure) if !parsed.help => Err(failure),
@@ -117,18 +130,6 @@ impl Args {
             .get(command.split(' ').count())
             .map(String::as_str)
             .ok_or_else(|| Failure::usage(format!("{command} needs an id")))
-    }
-
-    /// The positive number `value` of `flag`; none when the flag is absent, and a usage error when it
-    /// is not a positive number.
-    pub fn number(flag: &str, value: &Option<String>) -> Result<Option<usize>, Failure> {
-        match value.as_deref().map(|v| (v, v.parse::<usize>())) {
-            None => Ok(None),
-            Some((_, Ok(n))) if n > 0 => Ok(Some(n)),
-            Some((v, _)) => Err(Failure::usage(format!(
-                "{flag} takes a positive number, not {v}"
-            ))),
-        }
     }
 
     /// The text after `--`; a usage error with `missing` when it is absent or blank.

@@ -4,14 +4,9 @@ The cases that the card leaves out. Do not run `--help`.
 
 ## Paths
 
-A pattern of one file or folder takes it as `--path`, such as `shelf/**`. To find a pattern that search
-missed, run `celis grep -i -E " pattern [0-9a-f]{8} live .*(<word>|<word>)"`. When you move a file,
+A pattern of one file or folder takes it as `--path`, such as `shelf/**`. To find a pattern by its words,
+run `celis grep -i -E " pattern [0-9a-f]{8} live .*(<word>|<word>)"`. When you move a file,
 replace each pattern of its old place with one of the new `--path`.
-
-## Past work
-
-A past step that fits is yours with `--uses <its id>`, in your ask's words; keep its `changed` line in
-mind.
 
 ## Patterns
 
@@ -25,14 +20,11 @@ Keep a pattern from:
 
 To add an example, replace the pattern: the new one keeps the old examples.
 
-Write a pattern only for a choice that will come back; when `pattern` prints a `like` line, replace
-that pattern instead of keeping a near copy.
-
 ## Work
 
 - When the intent changes, run `celis step edit <the ask's id> -- "<its title and new lines>"`.
 - When a step grows past one action, or you try the same thing twice, split it.
-- To go on with another session's trail, add your first step `--under <its id>`.
+- To go on with an open ask of another session, add your steps `--under <its id>`.
 - To hand a step to an agent, put in its task: `celis step <id>: run celis step start <id> first and
   celis step done <id> last.`
 

@@ -110,12 +110,11 @@ impl Tree<'_> {
         trails: Vec<Step>,
         out: &mut Vec<Styled>,
     ) -> Result<(), Failure> {
-        let active = trails.iter().filter(|s| s.state().active()).count();
+        let active = trails.iter().filter(|s| s.active()).count();
         let counts = format!(" · {active} active · {} done", trails.len() - active);
         let head = Styled::from(vec![paint(BOLD, &weekday(at)), paint(DIM, &counts)]);
         let mut lines = vec![Row::Mark(false, Box::new(Row::Text(head)))];
-        let (active, rest): (Vec<Step>, Vec<Step>) =
-            trails.into_iter().partition(|s| s.state().active());
+        let (active, rest): (Vec<Step>, Vec<Step>) = trails.into_iter().partition(|s| s.active());
         let mut last = None;
         if !active.is_empty() {
             lines.push(self.gap());

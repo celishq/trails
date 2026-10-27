@@ -10,6 +10,8 @@ pub enum Refusal {
     Closed(String),
     OpenSteps(String),
     CheckFailed(String),
+    /// What holds a secret, and its kind, such as `the file .env holds an API key`.
+    Secret(String),
     Error(anyhow::Error),
 }
 

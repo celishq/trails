@@ -348,50 +348,34 @@ fn the_view_and_the_steps_pattern_search_match_the_fixture() {
     let repo = Repo::new();
     let (by, id) = (account(), repo.project_id());
     let t = 1_768_478_400;
-    let step = |under: Option<&str>, places: &[&str], text: &str, at: u64| {
-        let record = StepRecord {
-            anchor: Anchor {
-                project: id.clone(),
-                name: "repo".to_string(),
-            },
-            under: under.map(StepId::new),
-            replaces: None,
-            uses: Vec::new(),
-            places: places.iter().map(|p| p.to_string()).collect(),
-            check: None,
-            session: None,
-            content: text.to_string(),
+    let step =
+        |under: Option<&str>, places: &[&str], links: (&[&str], &[&str]), text: &str, at: u64| {
+            let (uses, recalled) = links;
+            let uses = uses.iter().map(|r| r.to_string()).collect();
+            let record = StepRecord {
+                anchor: Anchor {
+                    project: id.clone(),
+                    name: "repo".to_string(),
+                },
+                under: under.map(StepId::new),
+                replaces: None,
+                uses,
+                places: places.iter().map(|p| p.to_string()).collect(),
+                check: None,
+                session: None,
+                content: text.to_string(),
+            };
+            let mut tags = record.record(&by, at).unwrap().tags;
+            let old = recalled
+                .iter()
+                .map(|r| vec!["recalled".to_string(), r.to_string()]);
+            tags.extend(old);
+            let note = celis_nostr::Note::write(&by, 1111u16, at, tags, text).unwrap();
+            put(&repo, &note);
+            note
         };
-        let note = record.record(&by, at).unwrap();
-        put(&repo, &note);
-        note
-    };
     let mark = |mark: Mark, step: &str, at: u64| put(&repo, &mark.record(&by, step, at).unwrap());
-    let trail = step(None, &[], "Build the Vendors page", t);
-    let table = step(Some(&trail.id), &["src/vendors.rs"], "Add the table", t + 1);
-    let done = Mark::Done(celis_trails::Done::new(
-        "the table shows".into(),
-        Some("a list, not a table".into()),
-    ));
-    mark(done, &table.id, t + 2);
-    let chart = step(Some(&trail.id), &[], "Add the chart", t + 3);
-    mark(
-        Mark::Drop {
-            reason: "no data for it".into(),
-        },
-        &chart.id,
-        t + 4,
-    );
     let project = (id.as_str(), "repo");
-    let scope = format!("trail:{}", trail.id);
-    stored_pattern(
-        &repo,
-        project,
-        &by,
-        (Some(&scope), None),
-        "When a vendor has no logo: show its initials.",
-        t + 5,
-    );
     let old = stored_pattern(
         &repo,
         project,
@@ -407,6 +391,36 @@ fn the_view_and_the_steps_pattern_search_match_the_fixture() {
         (None, Some(&old.id)),
         "When a price prints: use cents.",
         t + 7,
+    );
+    let trail = step(None, &[], (&[], &[&new.id]), "Build the Vendors page", t);
+    let table = step(
+        Some(&trail.id),
+        &["src/vendors.rs"],
+        (&[], &[]),
+        "Add the table",
+        t + 1,
+    );
+    let done = Mark::Done(celis_trails::Done::new(
+        "the table shows".into(),
+        Some("a list, not a table".into()),
+    ));
+    mark(done, &table.id, t + 2);
+    let chart = step(Some(&trail.id), &[], (&[], &[]), "Add the chart", t + 3);
+    mark(
+        Mark::Drop {
+            reason: "no data for it".into(),
+        },
+        &chart.id,
+        t + 4,
+    );
+    let scope = format!("trail:{}", trail.id);
+    stored_pattern(
+        &repo,
+        project,
+        &by,
+        (Some(&scope), None),
+        "When a vendor has no logo: show its initials.",
+        t + 5,
     );
     let tag = |tag: &[&str]| vec![tag.iter().map(|t| t.to_string()).collect()];
     let me = tagged_pattern(
@@ -432,7 +446,10 @@ fn the_view_and_the_steps_pattern_search_match_the_fixture() {
         project,
         &by,
         (Some("me"), None),
-        tag(&["path", ".github/workflows/*.yml"]),
+        vec![
+            vec!["path".into(), ".github/workflows/*.yml".into()],
+            vec!["good".into(), "https://example.com/ci".into()],
+        ],
         "When you push: run the tests first.",
         t + 10,
     );
@@ -440,6 +457,35 @@ fn the_view_and_the_steps_pattern_search_match_the_fixture() {
         text: "Keep the table sortable.".into(),
     };
     mark(note, &table.id, t + 11);
+    let asked = Mark::Prompt {
+        text: "Show the prices in cents.".into(),
+    };
+    mark(asked, &trail.id, t + 12);
+    let prices = step(
+        Some(&trail.id),
+        &[],
+        (&[&new.id], &[]),
+        "Print the prices",
+        t + 13,
+    );
+    let done = Mark::Done(celis_trails::Done::new("the prices print".into(), None));
+    mark(done, &prices.id, t + 14);
+    let done = Mark::Done(celis_trails::Done::new("the page shows".into(), None));
+    mark(done, &trail.id, t + 15);
+    let fix = StepRecord {
+        under: None,
+        replaces: Some(StepId::new(&prices.id)),
+        uses: Vec::new(),
+        content: "Print the prices in whole cents".to_string(),
+        ..StepRecord::read(&prices).unwrap()
+    };
+    let fix = fix.record(&by, t + 16).unwrap();
+    put(&repo, &fix);
+    let done = Mark::Done(celis_trails::Done::new(
+        "the prices print in cents".into(),
+        None,
+    ));
+    mark(done, &fix.id, t + 17);
     let names = [
         ("trail", &trail),
         ("table", &table),
@@ -449,6 +495,8 @@ fn the_view_and_the_steps_pattern_search_match_the_fixture() {
         ("me", &me),
         ("situation", &situation),
         ("push", &push),
+        ("prices", &prices),
+        ("fix", &fix),
     ];
     let fill = |line: &serde_json::Value| {
         let mut line = line.as_str().unwrap().to_string();

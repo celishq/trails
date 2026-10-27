@@ -1,6 +1,6 @@
 //! The patterns of a store.
 
-use crate::{Fit, Pattern, PatternEnd, PatternRecord, Scope};
+use crate::{Pattern, PatternEnd, PatternRecord, Scope};
 use celis_nostr::Note;
 use celis_store::Refusal;
 use std::collections::HashMap;
@@ -44,8 +44,14 @@ impl<'a> Patterns<'a> {
 
     /// The live patterns in scope in the project `project`.
     pub fn live(&self, project: &str) -> Vec<Pattern<'a>> {
-        let live = self.every.iter().filter(|p| p.is_live());
-        live.filter(|p| self.holds(p, project)).cloned().collect()
+        let scoped = self.scoped(project).into_iter();
+        scoped.filter(|p| p.is_live()).collect()
+    }
+
+    /// The patterns in scope in the project `project`, live or ended.
+    pub fn scoped(&self, project: &str) -> Vec<Pattern<'a>> {
+        let every = self.every.iter();
+        every.filter(|p| self.holds(p, project)).cloned().collect()
     }
 
     /// The live pattern in scope in `project`, or of any project with `None`, whose id is `id`, or the only
@@ -63,26 +69,15 @@ impl<'a> Patterns<'a> {
         Ok(found.cloned().expect("the note is of a live pattern"))
     }
 
-    /// The live patterns in scope in `project` that match one of `paths`, that `cell` takes or that `also`
-    /// takes, in the order `search` prints them: those of a named file, of a glob, of `cell`, and the rest;
-    /// within each, those with a `replaces` tag first, newest first (CIP-02, "Search").
-    pub fn fitting(
-        &self,
-        project: &str,
-        paths: &[String],
-        cell: impl Fn(&Pattern<'a>) -> bool,
-        also: impl Fn(&Pattern<'a>) -> bool,
-    ) -> Vec<Pattern<'a>> {
-        let mut found: Vec<(Option<Fit>, bool, Pattern<'a>)> = self
+    /// The live patterns in scope in `project` that match one of `paths`, by id.
+    pub fn matching(&self, project: &str, paths: &[String]) -> Vec<Pattern<'a>> {
+        let mut found: Vec<Pattern<'a>> = self
             .live(project)
             .into_iter()
-            .map(|p| (p.record.fit(paths), cell(&p), p))
-            .filter(|(fit, cell, p)| fit.is_some() || *cell || also(p))
+            .filter(|p| p.record.matches(paths))
             .collect();
-        found.sort_by_key(|(fit, cell, p)| {
-            (fit.is_none(), *fit, !cell, p.record.replaces.is_none())
-        });
-        found.into_iter().map(|(_, _, p)| p).collect()
+        found.sort_by_key(|p| p.id());
+        found
     }
 
     /// The live patterns in scope in `project` whose `within` names `id`, newest first.

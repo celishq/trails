@@ -1,7 +1,7 @@
 {
   "name": "celis",
   "version": "0.0.12",
-  "description": "Stop babysitting your coding agent. Celis keeps your rules and patterns and gives your agent the discipline to follow them, in every project and every agent.",
+  "description": "Stop babysitting your coding agent. Celis keeps the patterns you teach and gives your agent the judgement to use them, in every project and every agent.",
   "author": { "name": "Celis" },
   "skills": "./skills/",
   "hooks": "./hooks/hooks-codex.json"

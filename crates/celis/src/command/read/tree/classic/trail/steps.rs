@@ -3,6 +3,7 @@
 use crate::command::read::tree::classic::level::Level;
 use crate::command::read::tree::classic::row::Row;
 use crate::command::read::tree::classic::{after, Item, Tree};
+use crate::progress::Phase;
 use crate::terminal::canvas::{paint, Styled, DIM};
 use crate::terminal::classic::look;
 use crate::text::clock::took;
@@ -48,8 +49,8 @@ impl Tree<'_> {
         let all = notes.len();
         for (n, note) in notes.into_iter().enumerate() {
             let step = note.record();
-            let state = note.state();
-            if state.active() {
+            let state = Phase::of(&note);
+            if note.active() {
                 self.until(note.trail().newest() + LIFE);
             }
             let open = self.open(note.id());
@@ -57,7 +58,7 @@ impl Tree<'_> {
             let (lead, rail) = self.branch(rail, last, self.opens(note).then_some(open));
             let size = note.tree().len() - 1;
             let level = Level::of(note.children());
-            let folded = state == State::Done && size > 0 && !open;
+            let folded = note.state() == State::Done && size > 0 && !open;
             let below = match note.children().is_empty() || folded {
                 true => after(&rail, Span::raw("  ")),
                 false => after(&rail, paint(DIM, "│ ")),
@@ -70,7 +71,7 @@ impl Tree<'_> {
                 tone: self.tone(look(state).title, note.newest()),
                 rest: below.clone(),
             });
-            let time = match state.closed() {
+            let time = match note.state() != State::Open {
                 true => None,
                 false => self.worked(&note.tree()).map(took),
             };
@@ -84,7 +85,7 @@ impl Tree<'_> {
             self.pick(item, lines, first);
             if open {
                 self.closing(note, &below, true, lines);
-                self.followed(note, &below, lines);
+                self.used(note, &below, lines);
             }
             if !folded {
                 self.level(level, vec![], &rail, note.id(), lines);
@@ -132,10 +133,8 @@ impl Tree<'_> {
     fn opens(&self, note: Step) -> bool {
         let lines = note.record().detail().next().is_some()
             || note.done_record().is_some()
-            || note.dropped().is_some()
-            || !self.reuse.sources(note).is_empty()
-            || self.reuse.followers(note) > 0;
-        lines || (note.state().closed() && !note.children().is_empty())
+            || note.dropped().is_some();
+        lines || (note.state() != State::Open && !note.children().is_empty())
     }
 
     /// Whether the step or pattern `id` shows what `--full` shows: with `--full`, unless the watch closed

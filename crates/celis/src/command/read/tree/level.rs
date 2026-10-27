@@ -1,5 +1,6 @@
 //! One level of a tree.
 
+use crate::progress::Phase;
 use celis_trails::Step;
 
 /// The steps of one level of a tree: the active ones, then the ended ones, each newest first, and every
@@ -14,7 +15,7 @@ impl<'a> Level<'a> {
     /// The level of `notes`, given oldest first.
     pub fn of(notes: Vec<Step<'a>>) -> Level<'a> {
         let order = notes.clone();
-        let (ended, active) = notes.into_iter().rev().partition(|s| s.state().ended());
+        let (ended, active) = notes.into_iter().rev().partition(|s| Phase::of(s).ended());
         Level {
             active,
             ended,

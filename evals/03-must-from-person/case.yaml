@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: 03-must-from-person
+context:
+  scaffold_script: ./setup.sh

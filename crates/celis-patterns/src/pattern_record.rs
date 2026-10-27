@@ -1,13 +1,13 @@
 //! What a pattern says.
 
-use crate::{Cell, Examples, Fit, Glob, Scope};
+use crate::{Examples, Glob, Scope};
 use anyhow::Result;
 use celis_nostr::{Account, Note};
 use celis_store::{Anchor, PatternId, Place};
 
 /// What one pattern says: written on a project, it holds in its scope; with the globs of the files it
-/// acts on, the larger patterns it completes, its cells, its examples, and its `binds` label, which makes
-/// it a rule.
+/// acts on, the larger patterns it completes, its examples, and whether an older writer gave it the
+/// `binds` label.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PatternRecord {
     pub anchor: Anchor,
@@ -15,9 +15,8 @@ pub struct PatternRecord {
     pub replaces: Option<PatternId>,
     pub content: String,
     pub paths: Vec<String>,
-    pub binds: bool,
+    pub old_rule: bool,
     pub within: Vec<PatternId>,
-    pub cells: Vec<Cell>,
     pub examples: Examples,
 }
 
@@ -40,16 +39,22 @@ impl PatternRecord {
         tags.extend(paths.map(|p| vec!["path".to_string(), p.clone()]));
         let within = self.within.iter();
         tags.extend(within.map(|id| vec!["within".to_string(), id.to_string()]));
-        let cells = self.cells.iter();
-        tags.extend(cells.map(|c| vec!["cell".to_string(), c.name().to_string()]));
         tags.push(vec!["L".to_string(), NAMESPACE.to_string()]);
-        let labels = [("pattern", true), ("binds", self.binds)].into_iter();
-        tags.extend(
-            labels
-                .filter(|(_, on)| *on)
-                .map(|(label, _)| vec!["l".to_string(), label.to_string(), NAMESPACE.to_string()]),
-        );
+        tags.push(vec![
+            "l".to_string(),
+            "pattern".to_string(),
+            NAMESPACE.to_string(),
+        ]);
         Note::write(signer, 1111u16, at, tags, self.content.clone())
+    }
+
+    /// The first line of its text; of a text of one line, the part before its first `:`.
+    pub fn when(&self) -> &str {
+        let first = self.content.lines().next().unwrap_or("");
+        match self.content.trim_end().contains('\n') {
+            true => first,
+            false => first.split_once(':').map_or(first, |(when, _)| when),
+        }
     }
 
     /// When it applies and what to do, on one line: `<When>: <Do>`, or its first line when it has no `Do`.
@@ -65,11 +70,10 @@ impl PatternRecord {
     /// The pattern `note` holds; `None` when it is not a pattern, or names a scope no reader knows, such
     /// as `trail:<id>`.
     pub fn read(note: &Note) -> Option<PatternRecord> {
-        let namespace = [(NAMESPACE, "pattern"), (OLD_NAMESPACE, "decision")]
+        let pattern = [(NAMESPACE, "pattern"), (OLD_NAMESPACE, "decision")]
             .into_iter()
-            .find(|(namespace, label)| labelled(note, label, namespace))?
-            .0;
-        if note.kind != 1111 || note.tag("K")? != "project" {
+            .any(|(namespace, label)| labelled(note, label, namespace));
+        if !pattern || note.kind != 1111 || note.tag("K")? != "project" {
             return None;
         }
         let mut paths: Vec<String> = note
@@ -82,9 +86,8 @@ impl PatternRecord {
             Some(text) => match text.strip_prefix("at:").filter(|p| !p.is_empty()) {
                 Some(place) => {
                     let path = Place::new(place).path().trim_end_matches('/');
-                    match path {
-                        "." | "" => paths.push("**".to_string()),
-                        path => paths.extend([path.to_string(), format!("{path}/**")]),
+                    if !matches!(path, "." | "") {
+                        paths.extend([path.to_string(), format!("{path}/**")]);
                     }
                     Scope::Project
                 }
@@ -99,19 +102,15 @@ impl PatternRecord {
             replaces: owned("replaces").map(PatternId::new),
             content: note.content.clone(),
             paths,
-            binds: labelled(note, "binds", namespace),
+            old_rule: [NAMESPACE, OLD_NAMESPACE]
+                .iter()
+                .any(|namespace| labelled(note, "binds", namespace)),
             within: note
                 .tags
                 .iter()
                 .filter(|t| t.len() >= 2 && t[0] == "within")
                 .map(|t| PatternId::new(&t[1]))
                 .collect(),
-            cells: Cell::all(
-                note.tags
-                    .iter()
-                    .filter(|t| t.len() >= 2 && t[0] == "cell")
-                    .map(|t| t[1].as_str()),
-            ),
             examples: Examples::read(note),
         })
     }
@@ -127,18 +126,12 @@ impl PatternRecord {
         (pattern && note.kind == 1111 && !trail.is_empty()).then_some(trail)
     }
 
-    /// How narrowly the pattern fits the narrowest of `paths`; `None` when it matches none of them
-    /// (CIP-05, "Triggers").
-    pub fn fit(&self, paths: &[String]) -> Option<Fit> {
+    /// Whether the pattern matches one of `paths` (CIP-05, "Paths").
+    pub fn matches(&self, paths: &[String]) -> bool {
         let globs: Vec<Glob> = self.paths.iter().map(|p| Glob::new(p)).collect();
-        let fits = paths.iter().flat_map(|path| {
-            let globs = globs.iter().filter(|g| g.matches(path));
-            globs.map(|g| match g.is_literal() {
-                true => Fit::Named,
-                false => Fit::Glob,
-            })
-        });
-        fits.min()
+        paths
+            .iter()
+            .any(|path| globs.iter().any(|g| g.matches(path)))
     }
 }
 

@@ -263,6 +263,7 @@ fn watch_selects_a_trail_and_opens_it_with_enter() {
     let ended = add(&repo, &["--", "an ended trail"]);
     let part = add(&repo, &["--under", &ended[..8], "--", "its part"]);
     finish(&repo, &part[..8]);
+    finish(&repo, &ended[..8]);
     add(&repo, &["--", "an active trail"]);
     let mut watch = Watch::start(&repo, &["tree"]);
     watch.until("an ended trail");
@@ -625,9 +626,9 @@ fn watch_prints_open_steps_then_notes_then_closed_steps() {
     }
 }
 
-/// The closed line holds a trail's expired steps too, and marks them `◌` after `✓` and `✗`.
+/// The closed line holds a trail's stale steps too, and marks them `◌` after `✓` and `✗`.
 #[test]
-fn watch_holds_expired_steps_in_the_closed_line() {
+fn watch_holds_stale_steps_in_the_closed_line() {
     let repo = Repo::new();
     let by = support::account();
     let at = support::now() - 2 * 3600;
@@ -759,11 +760,13 @@ fn watch_prints_a_trail_lines_details_under_its_title() {
     let one = support::step_note(&repo, &by, None, "first", at);
     let part = support::step_note(&repo, &by, Some(&one), "part", at);
     support::mark_note(&repo, &by, "done", &part.id, "proof", at + 5);
+    support::mark_note(&repo, &by, "done", &one.id, "proof", at + 5);
     let many = support::step_note(&repo, &by, None, "second", at + 10);
     for n in 0..12 {
         let part = support::step_note(&repo, &by, Some(&many), &format!("part {n}"), at + 10);
         support::mark_note(&repo, &by, "done", &part.id, "proof", at + 20);
     }
+    support::mark_note(&repo, &by, "done", &many.id, "proof", at + 20);
     let project = repo.project_id();
     for n in 0..10 {
         let scope = format!("trail:{}", one.id);
@@ -878,11 +881,19 @@ fn watch_starts_each_title_at_one_column() {
 #[test]
 fn watch_keeps_a_selection_when_its_line_leaves() {
     let repo = Repo::new();
-    support::step_note(
+    let old = support::step_note(
         &repo,
         &support::account(),
         None,
         "an old trail",
+        support::now() - 2 * support::DAY,
+    );
+    support::mark_note(
+        &repo,
+        &support::account(),
+        "done",
+        &old.id,
+        "proof",
         support::now() - 2 * support::DAY,
     );
     add(&repo, &["--", "the trail"]);
@@ -1353,11 +1364,13 @@ fn next_watch_prints_a_trail_lines_details_under_its_title() {
     let one = support::step_note(&repo, &by, None, "first", at);
     let part = support::step_note(&repo, &by, Some(&one), "part", at);
     support::mark_note(&repo, &by, "done", &part.id, "proof", at + 5);
+    support::mark_note(&repo, &by, "done", &one.id, "proof", at + 5);
     let many = support::step_note(&repo, &by, None, "second", at + 10);
     for n in 0..12 {
         let part = support::step_note(&repo, &by, Some(&many), &format!("part {n}"), at + 10);
         support::mark_note(&repo, &by, "done", &part.id, "proof", at + 20);
     }
+    support::mark_note(&repo, &by, "done", &many.id, "proof", at + 20);
     let project = repo.project_id();
     for n in 0..10 {
         let scope = format!("trail:{}", one.id);
@@ -1774,6 +1787,7 @@ fn next_watch_selects_a_trail_and_opens_it_with_enter() {
     let ended = support::step_note(&repo, &by, None, "an ended trail", at);
     let part = support::step_note(&repo, &by, Some(&ended), "its part", at + 1);
     support::mark_note(&repo, &by, "done", &part.id, "proof", at + 2);
+    support::mark_note(&repo, &by, "done", &ended.id, "proof", at + 2);
     add(&repo, &["--", "an active trail"]);
     let mut watch = Watch::start(&repo, &["tree", "--next"]);
     watch.until("an ended trail");

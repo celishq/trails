@@ -282,12 +282,11 @@ fn done_refuses_a_pitfall() {
 }
 
 /// `add` says when the step under an ask it goes under already holds an open step that has not
-/// started, and still writes it; under an ask or a trail it says nothing.
+/// started, and still writes it; under an ask it says nothing.
 #[test]
 fn add_says_when_a_step_ahead_has_not_started() {
     let repo = Repo::new();
-    let trail = add(&repo, &["--", "the trail"]);
-    let ask = add(&repo, &["--under", &trail[..8], "--", "the ask"]);
+    let ask = add(&repo, &["--", "the ask"]);
     let shape = add(&repo, &["--under", &ask[..8], "--", "a shape"]);
     let o = run(&repo, &["add", "--under", &ask[..8], "--", "another shape"]);
     assert_eq!(err(&o), "");

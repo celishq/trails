@@ -1,54 +1,33 @@
 ---
 name: tidy
-description: Tidies the celis trails. Drops stale trails and patterns, merges patterns that say the same thing, settles rules that conflict and moves rules into the place's own checks. Use when the person runs /celis:tidy, when celis asks to offer it, or when the person asks to tidy, clean up or prune their trails or patterns.
+description: Tidies the celis trails and patterns. Drops stale trails and patterns, merges and settles patterns, promotes strong patterns into the project's own files, narrows a pattern that misled, drops or widens one unused, and draws new patterns from past trails. Use when the person runs /celis:tidy, when celis asks to offer it, or when the person asks to tidy, clean up or prune their trails or patterns.
 ---
 
-You tidy the trails in four parts, in this order: stale, merge, conflicts, moves. A rule is a pattern
-whose grep fields say ` binds`.
+The person wants a small index of patterns that guide, and no musts in celis: a must goes into the
+project's own files. Ask what to tidy: this project, this project and the `me` patterns, or all
+projects. Do the tidy as one ask titled `Tidy the celis trails`, so that celis knows when the last tidy
+was. Start from `celis patterns --tidy`: each pattern that needs tidy, and why. `celis patterns` gives
+the index, and `celis grep` gives each pattern with its uses, misled, last use and replaces; an older
+pattern that its grep line marks ` old-rule` was written as a rule.
 
-1. Ask the person what to clean: this project, this project and the `me` patterns, or all projects.
-2. Add one ask titled `Tidy the celis trails`, so that celis knows when the last tidy was, and one step
-   under it for each part. Take the parts one at a time.
-3. Read the store once: `celis grep -E " (trail|pattern) [0-9a-f]{8} "` gives each trail and pattern
-   line. A pattern's fields say ` trigger`, ` binds`, `cell:<cell>` and `recalled:<day>`.
-4. For each change, show the person the records it touches, with their ids, and ask: yes, no, or yes to
-   all in this part. Write nothing before a yes.
-5. To write into another project, add `--project <its id>` to `pattern` and `step add`; the id is the
-   `project` that `celis tree <a trail of it> --json` gives.
+A good tidy:
 
-## Stale
+- drops stale trails and patterns: a trail left open and untouched for weeks, a pattern that names a
+  place, code or command the project no longer has, or that later work contradicts, and a one-off note;
+- narrows the When of a pattern that misled the work, or replaces it, so that it says what the fixes
+  showed;
+- drops a pattern that is `unused`, or widens its When when the work it names still comes back;
+- merges patterns that say the same thing into one that keeps all their examples, and settles patterns
+  that say to do different things in the same case, with the drop reason `merged into <id8>` or
+  `conflicts with <id8>`;
+- promotes each ` old-rule` pattern, then each pattern that steps used often, that never misled and
+  that was never replaced: a check such as a test, a lint or CI when a tool can hold it, else a line in
+  the project's `AGENTS.md` or `CLAUDE.md` for a project pattern, or in the person's global `CLAUDE.md`
+  for a `me` pattern. Then it drops the pattern with the reason `promoted to <file>`;
+- asks the person what a pattern replaced again and again must say;
+- offers new patterns for the choices and corrections that came back in two past trails or more and that
+  no learn kept.
 
-Drop with `celis step drop <id> -- "<why>"`:
-
-- a trail that expired, or that is open and untouched for weeks;
-- a pattern that names a place, code or a command the project no longer has;
-- a pattern of revised work (`revised-by`) that the new work contradicts;
-- a one-off note about one event;
-- a pattern older than 60 days with no `recalled:<day>` in the last 60 days.
-
-## Merge
-
-Find live patterns of one project and scope that say the same thing, or whose good examples make one
-point. Keep the one that says it best, or write one in the four lines with `pattern --replaces <the
-newest>`; drop each other with `-- "merged into <id8>"`. A merged pattern gives `--good` and `--bad`
-again for the examples of each pattern it does not replace, and `--binds` when one of them binds. When
-two or more projects hold the same `project` pattern, offer one `me` pattern in its place. Merge cells
-that name the same topic: write each pattern of the other cell again with `--cell <the kept cell>` and
-no `--replaces`, because a replacement keeps each cell, and drop the old one as merged.
-
-## Conflicts
-
-Find live patterns that hold together for the same case and say to do different things. When both
-guide, a pattern may name why it wins in its `Forces`; when a rule is one of them, or both bind, ask the
-person which holds, or for a new one, and drop the loser with `-- "conflicts with <id8>"`.
-
-## Moves
-
-Find live rules that the place can hold itself: a check of a tool, such as the linter, the tests, CI or
-a Figma project's styles, or else a line in the project's agent file, `AGENTS.md` when it has none.
-After a yes, make the change and run the check. Then drop the rule with `-- "<the check> holds it"`.
-
-## End
-
-Close each part's step with how many trails and patterns it dropped, merged, moved and wrote, and close
-the ask. Tell the person what each part changed.
+Show the person each change with the ids it touches, and write nothing, in celis or in a file, before
+they agree; they can agree to all of one kind at once. Close the ask with `<n> patterns in the index`,
+and tell the person what changed and the size of the index now and at the last tidy.

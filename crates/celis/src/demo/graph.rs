@@ -339,7 +339,6 @@ fn draft(anchor: &Anchor, text: &str, under: Option<String>) -> Draft {
         replaces: None,
         uses: vec![],
         session: None,
-        new: false,
     }
 }
 

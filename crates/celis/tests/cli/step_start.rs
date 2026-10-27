@@ -14,17 +14,17 @@ fn state(repo: &Repo, trail: &str, id: &str) -> String {
         .unwrap()
 }
 
-/// A step is open, then working once a `start` names it, then done; a `start` does not close it, and
-/// `tree` marks a working step `◐` (`spec/03-steps.md`, "Starting").
+/// A step is open until it is done; a `start` does not close it and keeps it open, and `tree` marks a
+/// started step `◐` (`spec/03-steps.md`, "Starting").
 #[test]
-fn a_started_step_is_working_until_it_closes() {
+fn a_started_step_stays_open_until_it_closes() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the trail"]);
     let step = add(&repo, &["--under", &trail[..8], "--", "the step"]);
     assert_eq!(state(&repo, &trail, &step), "open");
     let o = cli(&repo, &["step", "start", &step[..8]]);
     assert!(o.status.success(), "{}", err(&o));
-    assert_eq!(state(&repo, &trail, &step), "working");
+    assert_eq!(state(&repo, &trail, &step), "open");
     let tree = out(&cli(&repo, &["tree", &trail[..8]]));
     assert!(
         tree.lines()
@@ -35,7 +35,7 @@ fn a_started_step_is_working_until_it_closes() {
     assert_eq!(state(&repo, &trail, &step), "done");
 }
 
-/// `start` refuses an unknown step with `no-step` and a closed step with `closed`; on a working step it
+/// `start` refuses an unknown step with `no-step` and a closed step with `closed`; on a started step it
 /// writes nothing and prints the id of the first `start`; it prints the id it wrote, and `{"id"}` with
 /// `--json` (`spec/02-cli.md`, "Step").
 #[test]
@@ -70,7 +70,7 @@ fn start_refuses_unknown_and_closed_steps_and_starts_a_step_once() {
     assert_eq!(files(), before);
 }
 
-/// `start` prints no pattern at the step's places; `celis search` gives them.
+/// `start` prints no pattern at the step's places; `celis step done` gives them.
 #[test]
 fn start_prints_no_pattern_at_the_steps_places() {
     let repo = Repo::new();
@@ -118,8 +118,8 @@ fn start_does_not_run_the_steps_check() {
     assert!(!repo.path().join("ran").exists());
 }
 
-/// `start` prints the notes of the step's trail, each pattern its ask uses, and the notes of the trail of
-/// each step its ask uses; not a pattern none of them names (`spec/02-cli.md`, "Step").
+/// `start` prints the notes of the step's trail and each pattern its ask uses; not the notes of another
+/// trail, nor a pattern none of them names (`spec/02-cli.md`, "Step").
 #[test]
 fn start_prints_the_trails_notes_and_the_patterns_its_ask_uses() {
     let repo = Repo::new();
@@ -145,8 +145,6 @@ fn start_prints_the_trails_notes_and_the_patterns_its_ask_uses() {
             &trail[..8],
             "--uses",
             &used[..8],
-            "--uses",
-            &past[..8],
             "--",
             "the ask",
         ],
@@ -155,8 +153,10 @@ fn start_prints_the_trails_notes_and_the_patterns_its_ask_uses() {
     let o = cli(&repo, &["step", "start", &step[..8]]);
     assert!(o.status.success(), "{}", err(&o));
     let text = out(&o);
-    for said in ["this trail rule", "use the shared Badge", "past keeps tabs"] {
+    for said in ["this trail rule", "use the shared Badge"] {
         assert!(text.contains(said), "{text}");
     }
-    assert!(!text.contains("never deploy on friday"), "{text}");
+    for unsaid in ["past keeps tabs", "never deploy on friday"] {
+        assert!(!text.contains(unsaid), "{text}");
+    }
 }

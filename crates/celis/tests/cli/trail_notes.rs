@@ -107,8 +107,8 @@ fn start_prints_the_notes_of_the_trail() {
         .all(|n| n["id"].is_string() && n["step"].is_string()));
 }
 
-/// A reader reads an old `trail:<id>` pattern as a note on that trail, and not as a pattern: `search` and
-/// `patterns` do not give it (`spec/05-patterns.md`, "Reading").
+/// A reader reads an old `trail:<id>` pattern as a note on that trail, and not as a pattern: `patterns`
+/// does not give it (`spec/05-patterns.md`, "Reading").
 #[test]
 fn an_old_trail_pattern_is_no_pattern() {
     let repo = Repo::new();
@@ -125,8 +125,6 @@ fn an_old_trail_pattern_is_no_pattern() {
         "When a vendor prints: use initials",
         t,
     );
-    let found = out(&cli(&repo, &["search", "--", "a vendor prints"]));
-    assert!(!found.contains("initials"), "{found}");
     let listed = out(&cli(&repo, &["patterns"]));
-    assert!(!listed.contains("initials"), "{listed}");
+    assert!(!listed.contains("vendor"), "{listed}");
 }

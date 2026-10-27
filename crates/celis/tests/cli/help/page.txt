@@ -1,6 +1,6 @@
 celis remembers what your agents learn, and how they do your tasks.
 
-  § pattern what to choose in a context, and why; a rule binds
+  § pattern a guide: what to choose in a context, and why
   ◆ trail   each task you give
   ○ step    each piece of work your agents do in it
 
@@ -10,12 +10,9 @@ Usage
   celis <command> [<args>] [flags]
 
 Read
-  search <ask>        Show the rules, patterns and past asks that fit an ask
-  ├ --kind <kind>     Only rule (a pattern that binds), pattern, trail, or step
-  └ --limit <n>       Show <n> patterns and past asks; 20 for trail or step
-
-  patterns            Show your patterns with their good and bad examples
-  └ --markdown        Print one Markdown page, each file a link to its blob
+  patterns            Show the index of your patterns
+  ├ --markdown        Print one Markdown page, each file a link to its blob
+  └ --tidy            List the patterns that need tidy, and why
 
   tree [<id>]         Show your trails and their steps
   ├ --graph           Show today's trails as live graphs of cards
@@ -24,35 +21,34 @@ Read
   └ --demo            Show sample trails in every state
 
   grep <pattern>      Search every trail with grep
-  stats [<id>]        Show what later work reused, and how work went
+  stats [<id>]        Show how the patterns are used, and how work went
   └ --demo            Show four weeks of sample trails
 
+  extract <id>        Show what an ask taught, to extract as patterns
+
 Record work · your agents run these
-  pattern             Record a pattern that later work must keep
+  pattern             Record a pattern that guides later work
   ├ --scope <scope>   Where it applies: me, or project
   ├ --replaces <id>   The pattern this one replaces
   ├ --path <glob>     A file it acts on; * and ? within a folder, ** across
-  ├ --binds           It is a rule: a result must keep it
   ├ --within <id>     The larger pattern it completes
-  ├ --cell <topic>    A topic it is in, such as cli-help
   ├ --good <example>  A step, a file, or a URL that shows it, such as a pick
   ├ --bad <example>   A step, a file, or a URL that breaks it
   └ --project <id>    The id of a project in the store
 
-  step add            Add a step to a trail, or start a new trail
+  step add            Add a new ask, or a step under one
   ├ --under <id>      The open step this step is part of
   ├ --replaces <id>   A step this one takes over, or a finished step it fixes
-  ├ --uses <id>       A pattern or a past step it follows
+  ├ --uses <id>       A pattern it follows
   ├ --at <place>      Where the work happens: a file:line, a URL, or any text
   ├ --check <command> A command that proves the work
-  ├ --new             Start a new trail, not a step of the session's trail
   └ --project <id>    The id of a project in the store
 
   step start <id>     Start a step and show the patterns and notes it keeps
   step done <id>      Finish a step with proof that it works
   ├ --changed <text>  How the result differs from its expect line
   ├ --as-planned      The result matches its expect line; else use --changed
-  ├ --by <who>        judge, a reader that did not do the work, or person
+  ├ --by              person: the person confirms the result
   └ --file <path>     A file of the proof, kept as it is now
 
   step drop <id>      Drop a step and the open steps under it
@@ -69,14 +65,11 @@ Set up
   auth login          Save a recovery phrase and use its account
   auth status         Show your account and where its phrase is kept
   auth phrase         Show your recovery phrase
-  setup               Choose and download the model that search uses
-  └ --model <model>   embeddinggemma, e5-small, or none
-
   update [<version>]  Update celis to the latest version, or to one you choose
   issue [<id>]...     Write a problem report for the celis team
 
 Marks
-  ○ open  ⠏ working  ✓ done  ✗ dropped  ◌ expired  ↻ revised  ~ changed
+  ○ open  ⠏ started  ✓ done  ✗ dropped  ◌ stale  ↻ revised  ~ changed
 
 celis keeps your recovery phrase and records in $CELIS_HOME:
   <home>

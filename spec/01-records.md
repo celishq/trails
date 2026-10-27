@@ -73,6 +73,9 @@ phrase.
 - A writer MUST mint the phrase only when it writes a record and none exists. Two writers that mint at
   once MUST end with one phrase.
 - A record MUST NOT carry the phrase or the account's secret.
+- A writer MUST refuse a record whose content or tag values hold a secret, such as an API key, a token,
+  a private key or a password, and a blob whose bytes hold one, with `secret` (CIP-02), and write
+  nothing.
 
 **Readers**
 

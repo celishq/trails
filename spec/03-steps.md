@@ -28,7 +28,7 @@ and closes it with a proof, or drops it.
   "content": "<the title>\n<the detail>" }
 ```
 
-- `under`: optional; the step this one is a part of. A step with none is a trail (CIP-04).
+- `under`: optional; the step this one is a part of. A step with none is an ask, and its trail (CIP-04).
 - `replaces`: optional; an open step whose plan it takes over, or a done step it revises (CIP-06).
 - `at`: zero or more; a place of the work (CIP-01, "Places").
 - `check`: optional; the command that proves the work. A step with steps under it MAY have one too, for
@@ -55,13 +55,12 @@ and closes it with a proof, or drops it.
 **Readers**
 
 ```
-open      no `start`, `done` or `drop` names the step
-working   a `start` names it, and no `done` or `drop`
-done      a `done` names it
-dropped   a `drop` names it
+open      no `done` or `drop` settles the step
+done      a `done` settles it
+dropped   a `drop` settles it, or names it as a done trail
 ```
 
-- A `start` MUST NOT close its step.
+- A `start` MUST NOT close its step. The step stays open.
 
 ## Closing
 
@@ -69,23 +68,24 @@ dropped   a `drop` names it
 { "kind": 1985, "content": "<the proof>",
   "tags": [["L", "celis.step"], ["l", "done", "celis.step"], ["e", "<step id>"],
            ["changed", "<how the work differs from the plan>"],
-           ["by", "judge"]] }
+           ["by", "person"]] }
 ```
 
 - content: the proof, the check that failed before and passes now.
 - `changed`: optional; with none, the work went as planned.
-- `by`: optional; who gave the proof: `judge`, a reader that did not do the work, or `person`. With none,
-  the proof is the agent's own. A step with steps under it is done when its check passes and a `judge`
-  or the `person` confirms its `expect`.
+- `by`: optional; who gave the proof: `person`. With none, the proof is the agent's own, or its check's.
 
 **Writers**
 
 - A writer MUST NOT write a `done` for a step with an open step under it, or whose check fails.
+- A writer MUST write `by` only as `person`.
 
 **Readers**
 
 - The first `done` or `drop` that names a step MUST settle it.
 - A reader MUST ignore a `done` with no content.
+- A reader MUST read a `by` of `judge`, which older writers wrote, as a proof by a reader that did not do
+  the work.
 
 ## Dropping
 
@@ -99,13 +99,13 @@ dropped   a `drop` names it
 - A writer that drops a step MUST also drop each open step under it, at any depth.
 - A step that `replaces` an open step MUST go under that step's `under` when it names none. Its writer
   MUST then drop the old step and its open steps with `replaced by <new id, first 8>`.
-- A step MUST NOT replace a trail or a dropped step.
+- A step MUST NOT replace a dropped step.
 - A writer MAY drop a done trail, and MUST NOT drop another done step.
 
 **Readers**
 
 - A reader MUST ignore a drop with no content.
-- A drop of a done trail MUST keep it done. The trail is then **dropped after done**.
+- A drop of a done trail MUST make it dropped, and its `done` MUST keep its proof.
 
 ## Editing
 

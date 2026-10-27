@@ -2,7 +2,7 @@
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use crate::progress::{Flags, Grade, Model, Reuse, Tally};
+use crate::progress::{Flags, Grade, Model, Phase, Tally};
 pub(crate) use crate::terminal::canvas::visible;
 use crate::terminal::canvas::{line as line_text, paint, width, Styled};
 use crate::terminal::canvas::{BOLD, DIM};
@@ -14,7 +14,7 @@ use celis_nostr::Note;
 use celis_patterns::Patterns;
 use celis_store::records::id::short;
 use celis_trails::step::steps::LIFE;
-use celis_trails::{Notes, State, Step, Steps, Trail};
+use celis_trails::{Notes, Step, Steps, Trail};
 pub(crate) use layout::Layout;
 use level::Level;
 use ratatui::style::Style;
@@ -74,7 +74,6 @@ impl Command {
             steps,
             patterns: model.patterns,
             notes: model.notes,
-            reuse: model.reuse,
             layout,
             grouped: id.is_none(),
             width: width.map(|w| w.saturating_sub(2 * usize::from(view.watch))),
@@ -96,7 +95,7 @@ pub(crate) fn today<'a>(steps: &'a Steps<'a>) -> Vec<Step<'a>> {
     let midnight = midnight(steps.now());
     let roots = steps.roots().into_iter().rev();
     roots
-        .filter(|s| s.state().active() || s.newest() >= midnight)
+        .filter(|s| s.active() || s.newest() >= midnight)
         .collect()
 }
 
@@ -163,7 +162,6 @@ pub(crate) struct Tree<'a> {
     pub steps: &'a Steps<'a>,
     pub patterns: &'a Patterns<'a>,
     pub notes: &'a Notes<'a>,
-    pub reuse: &'a Reuse<'a>,
     pub layout: Option<&'a Layout>,
     pub grouped: bool,
     pub width: Option<usize>,
@@ -263,7 +261,7 @@ impl Tree<'_> {
     /// What the tree says of the trail `note`, whose work `work` holds: the steps it prints under it, the
     /// done ones, the time they worked, and its notes. An active one lowers `next` to its end.
     fn summary(&self, note: Step, work: Step) -> Summary<'_> {
-        if note.state().active() {
+        if note.active() {
             self.until(note.newest() + LIFE);
         }
         let parts = Trail::new(note).parts().into_iter();
@@ -280,17 +278,13 @@ impl Tree<'_> {
         }
     }
 
-    /// The notes of the trail of `note`: its own, or its trail's when it is an ask.
+    /// The notes of the tree of `note`.
     fn notes(&self, note: Step) -> Vec<&Note> {
-        let owner = match note.is_ask() {
-            true => note.trail(),
-            false => note,
-        };
-        self.notes.of(owner)
+        self.notes.of(note)
     }
 
     /// The time the steps of `tree` with no step under them worked: what a done one took, and the time
-    /// since a working one started; `None` when none worked. A working one lowers `next`.
+    /// since a started one started; `None` when none worked. A started one lowers `next`.
     fn worked(&self, tree: &[Step]) -> Option<u64> {
         let now = self.steps.now();
         let leaves = tree.iter().filter(|s| s.children().is_empty());
@@ -298,7 +292,7 @@ impl Tree<'_> {
         for leaf in leaves {
             match (Grade::of(*leaf), leaf.start()) {
                 (Some(grade), _) => total += grade.took,
-                (None, Some(start)) if leaf.state() == State::Working => {
+                (None, Some(start)) if leaf.works() => {
                     total += now.saturating_sub(start.created_at);
                     running = true;
                 }
@@ -353,15 +347,15 @@ impl Tree<'_> {
     fn marked(&self, note: Step) -> Styled {
         let signs = signs(Flags::of(note)).into_iter();
         let flags = signs.map(|(sign, style)| paint(style, sign));
-        std::iter::once(self.mark(note.state()))
+        std::iter::once(self.mark(Phase::of(&note)))
             .chain(flags)
             .collect()
     }
 
-    /// The mark of a step in `state` in its colour; in a watch, a working one's is the spinner.
-    fn mark(&self, state: State) -> Span<'static> {
+    /// The mark of a step in `state` in its colour; in a watch, a started one's is the spinner.
+    fn mark(&self, state: Phase) -> Span<'static> {
         let look = look(state);
-        if state == State::Working && self.view.spin {
+        if state == Phase::Started && self.view.spin {
             self.spun.set(true);
             return paint(SPINNER, SPUN);
         }

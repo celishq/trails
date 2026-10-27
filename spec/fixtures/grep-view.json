@@ -8,18 +8,23 @@
     "",
     "Each <name> stands for the first 8 characters of a record's id, which a test knows only once it",
     "has written the record. All records are made on 2026-01-15 at noon UTC, in the order of `lines`",
-    "read from the bottom of each block: the trail, then the table step, its done, the chart step, its",
-    "drop, an older pattern of the trail's scope, the floats pattern, the cents pattern that replaces it, the me pattern with the cell `Commit Messages`, a pattern with the",
-    "older situation label, the me pattern with a trigger, and a note on the table step. The older trail pattern prints as a note on the trail."
+    "read from the bottom of each block: the trail, an ask with a `recalled` tag that older writers wrote and the view leaves out, then the table step, its done, the chart step, its",
+    "drop, an older pattern of the trail's scope, the floats pattern, the cents pattern that replaces it, the me pattern with a tag that older writers wrote and the view leaves out, a pattern with the",
+    "older situation label, the me pattern with a path and a good URL, a note on the table step, a prompt on the trail, the prices step that uses the cents pattern, with its done, the done of the trail, and a done ask that fixes the prices step, so the cents pattern misled it. The older trail pattern prints as a note on the trail."
   ],
   "lines": [
-    "2026-01-15 - [repo] pattern <push> live {me} trigger When you push: run the tests first.",
+    "2026-01-15 - [repo] pattern <push> live {me} When you push: run the tests first.",
+    "2026-01-15 - [repo] good <push> https://example.com/ci",
     "2026-01-15 - [repo] pattern <situation> live {project} When the person asks a question: answer it first.",
-    "2026-01-15 - [repo] pattern <me> live {me} cell:commit-messages When you write a commit message: use plain words.",
-    "2026-01-15 - [repo] pattern <new> live {project} When a price prints: use cents.",
+    "2026-01-15 - [repo] pattern <me> live {me} When you write a commit message: use plain words.",
+    "2026-01-15 - [repo] pattern <new> live {project} uses:1 misled:1 used:2026-01-15 When a price prints: use cents.",
     "2026-01-15 - [repo] pattern <old> replaced-by <new> {project} When a price prints: use floats.",
+    "2026-01-15 <fix> [repo] trail <fix> done Print the prices in whole cents",
     "2026-01-15 <trail> [repo] trail <trail> done Build the Vendors page",
     "2026-01-15 <trail> [repo] note <trail> When a vendor has no logo: show its initials.",
+    "2026-01-15 <trail> [repo] prompt <trail> Show the prices in cents.",
+    "2026-01-15 <trail> [repo] step <prices> done revised-by <fix> Print the prices",
+    "2026-01-15 <trail> [repo] proof <prices> the prices print",
     "2026-01-15 <trail> [repo] step <chart> dropped Add the chart",
     "2026-01-15 <trail> [repo] dropped <chart> no data for it",
     "2026-01-15 <trail> [repo] step <table> done at:src/vendors.rs Add the table",
@@ -31,6 +36,9 @@
     "<trail> [repo] Build the Vendors page · 2026-01-15",
     "  trail <trail> done",
     "  note <trail> When a vendor has no logo: show its initials.",
+    "  prompt <trail> Show the prices in cents.",
+    "  step <prices> done revised-by <fix> Print the prices",
+    "  proof <prices> the prices print",
     "  step <chart> dropped Add the chart",
     "  dropped <chart> no data for it",
     "  step <table> done at:src/vendors.rs Add the table",
@@ -38,16 +46,19 @@
     "  changed <table> a list, not a table",
     "  note <table> Keep the table sortable.",
     "- patterns of no trail",
-    "  [repo] pattern <push> live {me} trigger When you push: run the tests first.",
+    "  [repo] pattern <push> live {me} When you push: run the tests first.",
+    "  [repo] good <push> https://example.com/ci",
     "  [repo] pattern <situation> live {project} When the person asks a question: answer it first.",
-    "  [repo] pattern <me> live {me} cell:commit-messages When you write a commit message: use plain words.",
-    "  [repo] pattern <new> live {project} When a price prints: use cents.",
-    "  [repo] pattern <old> replaced-by <new> {project} When a price prints: use floats."
+    "  [repo] pattern <me> live {me} When you write a commit message: use plain words.",
+    "  [repo] pattern <new> live {project} uses:1 misled:1 used:2026-01-15 When a price prints: use cents.",
+    "  [repo] pattern <old> replaced-by <new> {project} When a price prints: use floats.",
+    "<fix> [repo] Print the prices in whole cents · 2026-01-15",
+    "  trail <fix> done"
   ],
   "kept": [
     "- patterns of no trail",
-    "  [repo] pattern <push> live {me} trigger When you push: run the tests first.",
+    "  [repo] pattern <push> live {me} When you push: run the tests first.",
     "  [repo] pattern <situation> live {project} When the person asks a question: answer it first.",
-    "  [repo] pattern <new> live {project} When a price prints: use cents."
+    "  [repo] pattern <new> live {project} uses:1 misled:1 used:2026-01-15 When a price prints: use cents."
   ]
 }

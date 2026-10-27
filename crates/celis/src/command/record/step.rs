@@ -55,10 +55,13 @@ impl Command {
             replaces: args.replaces.clone(),
             uses: args.uses.clone(),
             session: args.session.clone().or_else(|| self.session()),
-            new: args.new,
         };
+        let session = draft.session.clone();
         let trails = self.trails()?;
         let written = trails.add(draft)?;
+        if let (Some(session), Some(step)) = (session, written.records.first()) {
+            self.place_kept(&session, &step.id)?;
+        }
         self.print(written, args, out, err)
     }
 
@@ -98,9 +101,13 @@ impl Command {
             };
         let by = match args.by.as_deref() {
             None => None,
-            Some(text) => Some(By::parse(text).ok_or_else(|| {
-                Failure::usage(format!("step done --by takes judge or person, not {text}"))
-            })?),
+            Some("person") => Some(By::Person),
+            Some("judge") => None,
+            Some(text) => {
+                return Err(Failure::usage(format!(
+                    "step done --by takes person, not {text}"
+                )))
+            }
         };
         let mut files = Vec::new();
         for file in &args.files {
@@ -114,17 +121,6 @@ impl Command {
             files,
         };
         let changed = self.changed(&args.files);
-        let steps = trails.steps();
-        let step = steps.find_open(id)?;
-        if done.by.is_none() && step.is_judged() {
-            let lines = self.unjudged(step, &trails, &changed);
-            if !lines.is_empty() {
-                lines
-                    .iter()
-                    .try_for_each(|line| crate::command::put(err, line))?;
-                return Err(Failure::unjudged(step.id()));
-            }
-        }
         let written = trails.done(id, done.clone(), &project.folder)?;
         self.print(written, args, out, err)?;
         let steps = trails.steps();
@@ -211,19 +207,10 @@ impl Command {
 
     fn notice(&self, notice: &Notice, err: &mut dyn Write) -> Result<(), Failure> {
         let line = match notice {
-            Notice::Started { ask, trail } => format!(
-                "celis: {} is the ask, under its new trail {}.",
-                short(ask),
-                short(trail)
-            ),
             Notice::Ask(ask) => format!(
                 "celis: when {0} holds more than one job, a part a person can check alone such as an item of its list, \
                  add only its first job with step add --under {0}, and each next job after you close one.",
                 short(ask)
-            ),
-            Notice::Joined(trail) => format!(
-                "celis: the step joined the trail {}; edit its title when it no longer covers the work.",
-                short(trail)
             ),
             Notice::NotStarted(step) => format!(
                 "celis: {} has not started; keep one step ahead: take it first, or drop it.",

@@ -77,8 +77,8 @@ fn done_refuses_a_step_with_an_open_step_under_it() {
     finish(&repo, &trail[..8]);
 }
 
-/// `add` of an ask, a session's first or one right under a trail, says on stderr to add its first job
-/// under it; `add` of a step under an ask says nothing of it.
+/// `add` of an ask, a step with no `--under`, says on stderr to add its first job under it; `add` of a
+/// step under an ask says nothing of it.
 #[test]
 fn add_of_an_ask_says_to_add_its_first_job_under_it() {
     let repo = Repo::new();
@@ -89,11 +89,7 @@ fn add_of_an_ask_says_to_add_its_first_job_under_it() {
     let env = [("CLAUDE_CODE_SESSION_ID", "s1")];
     let o = repo.run(&repo.path(), &["step", "add", "--", "first ask"], &env, "");
     assert!(hint(&o), "{}", err(&o));
-    let trail = add(&repo, &["--", "the trail"]);
-    let o = cli(
-        &repo,
-        &["step", "add", "--under", &trail[..8], "--", "an ask"],
-    );
+    let o = cli(&repo, &["step", "add", "--", "an ask"]);
     assert!(hint(&o), "{}", err(&o));
     let ask = out(&o)[..8].to_string();
     let o = cli(&repo, &["step", "add", "--under", &ask, "--", "a job"]);

@@ -34,7 +34,7 @@ fn resolution(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
         (Outcomes::first_pass, "first pass", GREEN, Some(true)),
         (|o| o.reworked, "reworked", YELLOW, Some(false)),
         (|o| o.dropped, "dropped", RED, Some(false)),
-        (|o| o.expired, "expired", DIM, Some(false)),
+        (|o| o.expired, "stale", DIM, Some(false)),
     ];
     let prior = m.before(|o| o.resolved() as i64);
     let changed = |kind: Kind, now: i64, value: &dyn Fn(Outcomes) -> i64, up: bool| -> Group {

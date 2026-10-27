@@ -1,9 +1,9 @@
-//! A path pattern of a pattern's trigger.
+//! A path glob of a pattern.
 
 use regex::Regex;
 
 /// A path pattern from the project's top folder: `*` within a segment, `**` across segments, `?` one
-/// character (CIP-05, "Triggers"). It compiles once, so it matches many paths cheaply.
+/// character (CIP-05, "Paths"). It compiles once, so it matches many paths cheaply.
 pub enum Glob {
     Literal(String),
     Pattern(Regex),
@@ -16,11 +16,6 @@ impl Glob {
             return Glob::Literal(pattern.to_string());
         }
         Glob::Pattern(Regex::new(&regex(pattern)).expect("an escaped glob compiles"))
-    }
-
-    /// Whether it names one file: it holds no `*` and no `?`.
-    pub fn is_literal(&self) -> bool {
-        matches!(self, Glob::Literal(_))
     }
 
     /// Whether `path` matches the whole pattern.

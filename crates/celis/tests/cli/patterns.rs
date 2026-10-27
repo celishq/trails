@@ -57,27 +57,18 @@ fn pattern_names_the_good_and_the_bad_step() {
         .unwrap();
     assert_eq!(pattern.tag("good"), Some(b.as_str()));
     assert_eq!(pattern.tag("bad"), Some(a.as_str()));
-    let patterns = cli(
-        &repo,
-        &["search", "logo.svg", "--kind", "pattern", "--", "x"],
-    );
-    let said = out(&patterns);
-    let blob = |text: &str| {
-        use sha2::{Digest, Sha256};
-        repo.home()
-            .join("trails/blobs")
-            .join(format!("{:x}", Sha256::digest(text.as_bytes())))
-            .display()
-            .to_string()
-    };
-    let lines: Vec<&str> = said.lines().skip(2).collect();
+    let id = out(&o).lines().next().unwrap().to_string();
+    let said = out(&cli(&repo, &["grep", &id[..8]]));
+    let lines: Vec<&str> = said.lines().skip(2).take(2).collect();
     assert_eq!(
         lines,
         [
-            format!("  good    {} a sharp logo · sharp", &b[..8]),
-            format!("          {}", blob("<svg id=\"b\"/>\n")),
-            format!("  bad     {} a round logo · round", &a[..8]),
-            format!("          {}", blob("<svg id=\"a\"/>\n")),
+            format!(
+                "  [repo] good {} {} a sharp logo · sharp",
+                &id[..8],
+                &b[..8]
+            ),
+            format!("  [repo] bad {} {} a round logo · round", &id[..8], &a[..8]),
         ],
         "{said}"
     );
@@ -144,7 +135,7 @@ fn pattern_refuses_an_unknown_step() {
 }
 
 /// `pattern` takes `--good` and `--bad` again and again, as a file it keeps as a blob or a URL, and
-/// `search` prints each (`spec/05-patterns.md`, "Examples").
+/// `grep` prints each (`spec/05-patterns.md`, "Examples").
 #[test]
 fn a_pattern_keeps_files_and_urls_as_examples() {
     let repo = Repo::new();
@@ -178,15 +169,17 @@ fn a_pattern_keeps_files_and_urls_as_examples() {
     assert!(values[0][1].starts_with("blossom:"), "{values:?}");
     assert_eq!(values[0][2], "a.svg");
     assert_eq!(values[2][1], url);
-    let o = cli(&repo, &["search", "--", "draw a logo"]);
-    let said = out(&o);
+    let said = out(&cli(&repo, &["grep", &pattern.id[..8]]));
     let blob = |text: &str| {
         use sha2::{Digest, Sha256};
         format!("{:x}", Sha256::digest(text.as_bytes()))
     };
     assert!(said.contains(&blob("<svg id=\"a\"/>\n")), "{said}");
     assert!(said.contains(&blob("<svg id=\"b\"/>\n")), "{said}");
-    assert!(said.contains(&format!("  bad     {url}")), "{said}");
+    assert!(
+        said.contains(&format!(" bad {} {url}", &pattern.id[..8])),
+        "{said}"
+    );
     assert!(!said.contains("missing"), "{said}");
 }
 
@@ -235,48 +228,6 @@ fn a_replacing_pattern_keeps_the_old_examples() {
     assert_eq!(good, [second, first]);
 }
 
-/// `patterns` lists each live pattern in scope with its examples, the rules first, newest first within
-/// each (`spec/02-cli.md`, "Patterns").
-#[test]
-fn patterns_lists_each_pattern_with_its_examples() {
-    let repo = Repo::new();
-    let url = "https://example.com/flat.png";
-    let decide = |args: &[&str]| {
-        let o = cli(&repo, args);
-        assert!(o.status.success(), "{}", err(&o));
-        out(&o).lines().next().unwrap().to_string()
-    };
-    let rule = decide(&["pattern", "--binds", "--", "When you test: set A=1."]);
-    let old = decide(&[
-        "pattern",
-        "--good",
-        url,
-        "--",
-        "When a logo is drawn: keep it flat.",
-    ]);
-    std::thread::sleep(std::time::Duration::from_millis(1100));
-    let new = decide(&[
-        "pattern",
-        "--bad",
-        url,
-        "--",
-        "When an icon is drawn: keep it bold.",
-    ]);
-    let said = out(&cli(&repo, &["patterns"]));
-    let lines: Vec<&str> = said.lines().collect();
-    assert_eq!(
-        lines,
-        [
-            format!("{} project When you test: set A=1.", &rule[..8]),
-            format!("{} project When an icon is drawn: keep it bold.", &new[..8]),
-            format!("  bad     {url}"),
-            format!("{} project When a logo is drawn: keep it flat.", &old[..8]),
-            format!("  good    {url}"),
-        ],
-        "{said}"
-    );
-}
-
 /// `patterns` says when the store holds none.
 #[test]
 fn patterns_says_when_there_is_none() {
@@ -284,8 +235,7 @@ fn patterns_says_when_there_is_none() {
     assert_eq!(out(&cli(&repo, &["patterns"])).trim(), "no pattern yet");
 }
 
-/// `tree --full` names each pattern a step uses, and `stats` counts each pattern's examples and how often
-/// `search` brought it.
+/// `tree --full` names each pattern a step uses, and `stats` counts each pattern's uses and examples.
 #[test]
 fn tree_and_stats_show_the_patterns() {
     let repo = Repo::new();
@@ -306,11 +256,6 @@ fn tree_and_stats_show_the_patterns() {
     );
     assert!(o.status.success(), "{}", err(&o));
     let pattern = out(&o).lines().next().unwrap().to_string();
-    for _ in 0..2 {
-        assert!(cli(&repo, &["search", "logo.svg", "--", "draw a logo"])
-            .status
-            .success());
-    }
     let trail = add(&repo, &["--", "the logo"]);
     add(
         &repo,
@@ -332,13 +277,15 @@ fn tree_and_stats_show_the_patterns() {
         "{tree}"
     );
     let stats = out(&cli(&repo, &["stats"]));
+    let line = stats
+        .lines()
+        .find(|l| l.starts_with(&pattern[..8]))
+        .unwrap();
     assert!(
-        stats.contains(&format!(
-            "pattern {} When a logo is drawn: keep it flat. · 2 examples · recalled 2",
-            &pattern[..8]
-        )),
+        line.starts_with(&format!("{} uses:1 ", &pattern[..8])),
         "{stats}"
     );
+    assert!(line.contains(" examples:2 "), "{stats}");
 }
 
 /// A linked folder carries a pattern and the blob of each file example to a second store, and keeps a
@@ -368,7 +315,7 @@ fn a_link_carries_a_pattern_and_its_files() {
     let home = other.path().display().to_string();
     let env = [("CELIS_HOME", home.as_str())];
     assert!(repo.run(&repo.path(), &["link"], &env, "").status.success());
-    let said = out(&repo.run(&repo.path(), &["patterns"], &env, ""));
+    let said = out(&repo.run(&repo.path(), &["patterns", "--markdown"], &env, ""));
     assert!(said.contains("keep it flat"), "{said}");
     assert!(!said.contains("keep it bold"), "{said}");
     let blob = other.path().join("trails/blobs").join(&sha);
@@ -431,17 +378,18 @@ fn forms() -> Vec<serde_json::Value> {
     fixture["forms"].as_array().unwrap().clone()
 }
 
-/// A new pattern carries the labels in `celis.pattern` (`spec/05-patterns.md`, "Patterns").
+/// A new pattern carries the labels in `celis.pattern`, and no `binds` label with `--binds`
+/// (`spec/05-patterns.md`, "Patterns").
 #[test]
-fn a_new_rule_carries_the_labels_in_celis_pattern() {
+fn a_new_pattern_carries_the_labels_in_celis_pattern() {
     let repo = Repo::new();
     let o = cli(
         &repo,
         &["pattern", "--binds", "--", "When you test: set A=1."],
     );
     assert!(o.status.success(), "{}", err(&o));
-    let rule = support::labelled(&repo, "pattern").remove(0);
-    let labels: Vec<Vec<String>> = rule
+    let pattern = support::labelled(&repo, "pattern").remove(0);
+    let labels: Vec<Vec<String>> = pattern
         .tags
         .iter()
         .filter(|t| t[0] == "L" || t[0] == "l")
@@ -452,10 +400,10 @@ fn a_new_rule_carries_the_labels_in_celis_pattern() {
     assert_eq!(labels, want);
 }
 
-/// A record in each form of the fixture reads as a pattern, and as a rule with `binds`, in
-/// `celis.decision` too (`spec/05-patterns.md`, "Reading").
+/// A record in each form of the fixture reads as a plain pattern, and the `grep` view marks it
+/// `old-rule` when it has `binds` (`spec/05-patterns.md`, "Reading").
 #[test]
-fn each_form_of_the_labels_reads_as_a_pattern_and_a_rule() {
+fn each_form_of_the_labels_reads_as_a_plain_pattern() {
     let repo = Repo::new();
     let by = support::account();
     let mut want = Vec::new();
@@ -467,15 +415,15 @@ fn each_form_of_the_labels_reads_as_a_pattern_and_a_rule() {
         let note = celis_nostr::Note::write(&by, 1111u16, 1_700_000_000 + n as u64, tags, content)
             .unwrap();
         support::put(&repo, &note);
-        let head = match form["binds"] == true {
-            true => format!("`{}` · project · rule", &note.id[..8]),
-            false => format!("`{}` · project", &note.id[..8]),
-        };
-        want.push(head);
+        want.push((note.id[..8].to_string(), form["old_rule"] == true));
     }
     let said = out(&cli(&repo, &["patterns", "--markdown"]));
-    for head in &want {
+    let grep = out(&cli(&repo, &["grep", " pattern "]));
+    for (id, old_rule) in &want {
+        let head = format!("`{id}` · project");
         assert!(said.lines().any(|l| l == head), "{head}\n{said}");
+        let line = grep.lines().find(|l| l.contains(id.as_str())).unwrap();
+        assert_eq!(line.contains(" old-rule"), *old_rule, "{line}");
     }
 }
 

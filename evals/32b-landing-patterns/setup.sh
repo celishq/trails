@@ -1,6 +1,7 @@
 #!/bin/sh
 # Gives the store the frontend-design skill as a pattern graph, as a learn run drafts it.
 set -e
+sh "$(dirname "$0")/../../scripts/eval-celis.sh"
 export GIT_CEILING_DIRECTORIES="$(dirname "$PWD")"
 unset CLAUDE_CODE_SESSION_ID CODEX_THREAD_ID CELIS_SESSION_ID
 d() { celis pattern "$@" 2>/dev/null | head -1; }
@@ -44,11 +45,11 @@ d --path "*.html" --within "$copy" -- "When an error or an empty state is writte
 Forces: an apology sounds kind, but it hides what went wrong
 Do: say what went wrong and how to fix it, with no apology
 Because: failure is a moment for direction" >/dev/null
-floor=$(d --path "*.html" --path "*.css" --binds --within "$page" -- "When UI is built
+floor=$(d --path "*.html" --path "*.css" --within "$page" -- "When UI is built
 Forces: a floor costs time, but a page without it fails people
 Do: make it work on a phone, give it a visible keyboard focus, respect reduced motion, and meet contrast
 Because: it is the floor, not a choice")
-d --path "*.css" --binds --within "$floor" -- "When CSS classes are written
+d --path "*.css" --within "$floor" -- "When CSS classes are written
 Forces: type and element selectors are quick, but they cancel each other's spacing
 Do: check that no two selectors fight over the padding or margin between sections
 Because: this often breaks the spacing between sections" >/dev/null

@@ -88,27 +88,3 @@ fn edit_changes_the_check_and_places_and_a_title_keeps_the_detail() {
         "usage",
     );
 }
-
-/// `step add` says on stderr when a session's step joins its trail.
-#[test]
-fn add_says_when_a_step_joins_the_sessions_trail() {
-    let repo = Repo::new();
-    let env = [("CLAUDE_CODE_SESSION_ID", "s1")];
-    let o = repo.run(&repo.path(), &["step", "add", "--", "the trail"], &env, "");
-    assert!(!err(&o).contains("joined"), "{}", err(&o));
-    let trail = out(&o).lines().nth(1).unwrap_or("").to_string();
-    let o = repo.run(
-        &repo.path(),
-        &["step", "add", "--", "a later ask"],
-        &env,
-        "",
-    );
-    assert!(o.status.success(), "{}", err(&o));
-    assert_eq!(
-        err(&o).lines().next().unwrap_or(""),
-        format!(
-            "celis: the step joined the trail {}; edit its title when it no longer covers the work.",
-            &trail[..8]
-        )
-    );
-}

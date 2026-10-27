@@ -168,8 +168,8 @@ fn prompts(repo: &Repo, step: &str) -> Vec<String> {
 }
 
 /// Each agent's session start gives the card; an agent other than Claude Code also gets its session, to
-/// pass with `--session`, and the path of `judge.md`. Antigravity has no session start, and gets both
-/// before each call of the model.
+/// pass with `--session`, and the path of `extraction.md`; no agent gets a path of `recall.md`, which is
+/// gone. Antigravity has no session start, and gets both before each call of the model.
 #[test]
 fn each_agents_session_start_gives_the_card_and_its_session() {
     let repo = Repo::new();
@@ -183,21 +183,29 @@ fn each_agents_session_start_gives_the_card_and_its_session() {
         );
         let named = context.contains("celis session: s1. Pass --session s1");
         assert_eq!(named, agent.name != "claude", "{}: {context}", agent.name);
-        let judged = context.contains("agents/judge.md. With no subagents");
-        assert_eq!(judged, agent.name != "claude", "{}: {context}", agent.name);
+        let taught = context.contains("agents/extraction.md. With no subagents");
+        assert_eq!(taught, agent.name != "claude", "{}: {context}", agent.name);
+        assert!(!context.contains("recall.md"), "{}: {context}", agent.name);
     }
 }
 
-/// Claude Code's session start asks to offer `/celis:tidy` while the store holds a pattern and no tidy began
-/// in the last 7 days.
+/// Each agent's session start gives, after the card, the index of the patterns in scope in the person's
+/// project, under one heading line, and Claude Code's gives it again after a compaction; none while the
+/// store holds no pattern (`spec/02-cli.md`, "Hooks").
 #[test]
-fn claudes_session_start_asks_to_offer_a_tidy() {
+fn each_agents_session_start_gives_the_index_of_the_patterns() {
     let repo = Repo::new();
-    let claude = &AGENTS[0];
-    let start = claude.payload("s1", &repo.path(), "");
-    assert!(!claude
-        .run(&repo, claude.start, &start)
-        .contains("/celis:tidy"));
+    let start = |agent: &Agent| {
+        let stdout = agent.run(&repo, agent.start, &agent.payload("s1", &repo.path(), ""));
+        agent.context(&stdout)
+    };
+    for agent in AGENTS {
+        assert!(
+            !start(&agent).contains("The patterns in scope here:"),
+            "{}",
+            agent.name
+        );
+    }
     let o = repo.run(
         &repo.path(),
         &["pattern", "--", "When you test: set A=1."],
@@ -205,12 +213,46 @@ fn claudes_session_start_asks_to_offer_a_tidy() {
         "",
     );
     assert!(o.status.success(), "{}", err(&o));
+    let id = out(&o).lines().next().unwrap().to_string();
+    let index = format!(
+        "The patterns in scope here:\n{} project When you test",
+        &id[..8]
+    );
+    for agent in AGENTS {
+        let context = start(&agent);
+        assert!(context.contains(&index), "{}: {context}", agent.name);
+    }
+    let claude = &AGENTS[0];
+    let compact = serde_json::json!({"session_id": "s1", "cwd": repo.path(), "source": "compact"});
+    let said = claude.run(&repo, claude.start, &compact.to_string());
+    assert!(said.contains(&index), "{said}");
+}
+
+/// Claude Code's session start asks to offer `/celis:tidy` while `patterns --tidy` lists a pattern and no
+/// step whose title starts with "Tidy the celis trails" began in the last 7 days (`spec/02-cli.md`,
+/// "Hooks").
+#[test]
+fn claudes_session_start_asks_to_offer_a_tidy() {
+    let repo = Repo::new();
+    let claude = &AGENTS[0];
+    let start = claude.payload("s1", &repo.path(), "");
+    let pattern = |text: &str| {
+        let o = repo.run(&repo.path(), &["pattern", "--", text], &[], "");
+        assert!(o.status.success(), "{}", err(&o));
+    };
+    pattern("When code handles money amounts: keep cents.");
+    assert!(!claude
+        .run(&repo, claude.start, &start)
+        .contains("/celis:tidy"));
+    pattern("When you store money amounts: use cents.");
     let said = claude.run(&repo, claude.start, &start);
-    assert!(said.contains("no tidy has run yet"), "{said}");
-    assert!(said.contains("offer them /celis:tidy"), "{said}");
+    assert!(
+        said.contains("offer them /celis:tidy: 2 patterns need it."),
+        "{said}"
+    );
     let o = repo.run(
         &repo.path(),
-        &["step", "add", "--new", "--", "Tidy the celis trails"],
+        &["step", "add", "--", "Tidy the celis trails of this project"],
         &[],
         "",
     );
@@ -233,9 +275,8 @@ fn each_agents_prompt_hook_writes_a_prompt_on_its_sessions_trail() {
             "",
         );
         assert!(add.status.success(), "{}", err(&add));
-        let lines: Vec<String> = out(&add).lines().map(str::to_string).collect();
-        let (step, trail) = (&lines[0], &lines[1]);
-        let start = repo.run(&repo.path(), &["step", "start", &step[..8]], &[], "");
+        let trail = out(&add).trim().to_string();
+        let start = repo.run(&repo.path(), &["step", "start", &trail[..8]], &[], "");
         assert!(start.status.success(), "{}", err(&start));
         let stdout = agent.run(
             &repo,
@@ -243,7 +284,7 @@ fn each_agents_prompt_hook_writes_a_prompt_on_its_sessions_trail() {
             &agent.payload("s1", &repo.path(), "make it blue"),
         );
         assert_eq!(
-            prompts(&repo, trail),
+            prompts(&repo, &trail),
             ["make it blue"],
             "{}: {stdout}",
             agent.name
@@ -251,9 +292,10 @@ fn each_agents_prompt_hook_writes_a_prompt_on_its_sessions_trail() {
     }
 }
 
-/// Claude Code's prompt hook asks for `celis search` at each prompt, not only at the first of a session.
+/// Claude Code's prompt hook says when to read a pattern of the index at each prompt, not only at the
+/// first of a session.
 #[test]
-fn claudes_prompt_hook_asks_for_search_at_each_prompt() {
+fn claudes_prompt_hook_says_when_to_read_a_pattern_at_each_prompt() {
     let repo = Repo::new();
     let o = repo.run(
         &repo.path(),
@@ -266,7 +308,7 @@ fn claudes_prompt_hook_asks_for_search_at_each_prompt() {
     for prompt in ["make it blue", "now add a test"] {
         let ask = claude.payload("s1", &repo.path(), prompt);
         let said = claude.run(&repo, claude.ask, &ask);
-        assert!(said.contains("celis search"), "{prompt}: {said}");
+        assert!(said.contains("celis grep <id>"), "{prompt}: {said}");
     }
     let o = repo.run(
         &repo.path(),
@@ -277,7 +319,7 @@ fn claudes_prompt_hook_asks_for_search_at_each_prompt() {
     assert!(o.status.success(), "{}", err(&o));
     let ask = claude.payload("s1", &repo.path(), "and the border too");
     let said = claude.run(&repo, claude.ask, &ask);
-    assert!(said.contains("celis search"), "{said}");
+    assert!(said.contains("celis grep <id>"), "{said}");
 }
 
 /// The prompt hooks of Claude Code, Codex and Gemini CLI give one line, with no past agent and no

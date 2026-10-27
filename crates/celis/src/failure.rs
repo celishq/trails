@@ -57,25 +57,24 @@ impl Failure {
         )
     }
 
-    /// The ask changed files and names no one who checked it.
-    pub fn unjudged(id: &str) -> Self {
-        Self::new(
-            "unjudged",
-            1,
-            format!(
-                "the ask {} changed files; run the celis:judge agent with the brief above, then close it \
-                 --by judge, or --by person with the person's answer",
-                celis_store::records::id::short(id)
-            ),
-        )
-    }
-
     /// The step is done.
     pub fn closed(id: &str) -> Self {
         Self::new(
             "closed",
             1,
             format!("the step {id} is closed; add a new step with `celis step add`"),
+        )
+    }
+
+    /// A record or a kept file holds a secret.
+    pub fn secret(what: &str) -> Self {
+        Self::new(
+            "secret",
+            1,
+            format!(
+                "{what}, and a record is signed and cannot be deleted; name the secret by where it \
+                 lives, such as API_KEY in .env, and run the command again"
+            ),
         )
     }
 
@@ -102,6 +101,7 @@ impl From<Refusal> for Failure {
             Refusal::Closed(id) => Self::closed(&id),
             Refusal::OpenSteps(id) => Self::open_steps(&id),
             Refusal::CheckFailed(output) => Self::check_failed(&output),
+            Refusal::Secret(what) => Self::secret(&what),
             Refusal::Error(error) => Self::from(error),
         }
     }

@@ -1,4 +1,0 @@
-schema_version: "1.1"
-name: 24-correction-to-rule
-context:
-  scaffold_script: ./setup.sh

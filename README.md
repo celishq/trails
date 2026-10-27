@@ -2,7 +2,7 @@
 
 <h3 align="center">Stop babysitting your coding agent</h3>
 
-<p align="center">Celis keeps your rules and patterns and gives your agent the discipline to follow them, in every project
+<p align="center">Celis keeps the patterns you teach and gives your agent the judgement to use them, in every project
 and every agent.</p>
 
 <p align="center">
@@ -17,11 +17,11 @@ https://github.com/user-attachments/assets/8cb59450-fb36-4fa6-82ae-5bcd59b1384b
 
 ## Why
 
-- **Your agent follows through.** It gets the rule that matters right before it acts, not buried in a
+- **Your agent uses your judgement.** Before it acts, it picks the patterns that bear on the job, not a
   manual it read an hour ago. You stop catching the same mistake twice.
-- **Correct it once.** A correction in chat or a code review becomes a rule that Celis keeps, in every
-  project. On a new job, your agent also starts from similar work that went well.
-- **Every agent keeps the same rules.** What you tell Claude Code, Codex and Cursor follow too.
+- **Correct it once.** A correction in chat or a code review becomes a pattern that Celis keeps. When a
+  job closes, your agent writes down what it learned.
+- **Every agent shares the same patterns.** What you teach Claude Code, Codex and Cursor use too.
 - **You can check its work.** Every step comes with proof, like a passing test or a command's output, on
   a trail you can watch.
 
@@ -32,21 +32,21 @@ one rule that matters is lost among hundreds of others. Celis is a checklist. It
 few rules that apply right now: when a job starts, before it changes a file, and before it says it's
 done.
 
-Patterns are the core. A pattern says what to choose in a context, and why. A pattern that binds is a
-rule, which the result must keep. Good and bad examples show your taste, and cells group patterns by
-topic. They come from your corrections and code reviews, and `celis search` gives your agent the ones
-that fit the job.
+Patterns are the core. A pattern says what to choose in a context, and why. It guides your agent's
+judgement: when its forces are present, the agent resolves them in its own way. Good and bad examples
+show your taste. They come from your corrections and code reviews. Your agent has the index of the
+patterns from the session start, and reads a pattern whole at the choice it bears on.
 
 ```
-  knowledge    cell ◄── tag, many to many ── pattern ── binds ──► rule
-               (a topic)                     When · Forces · Do · Because
-                                             good / bad examples, path globs
-                                             scope: project | me
-                                             within ──► a larger pattern
-                                               ▲              │
-                         examples, uses, recalls              │ activates
-                                               │              ▼
-  evidence     trail ──► step ──► done: proof, changed, judge ──► note
+  knowledge    pattern
+               When · Forces · Do · Because
+               good / bad examples, path globs
+               scope: project | me
+               within ──► a larger pattern
+                  ▲                 │
+   examples, uses, misled           │ activates
+                  │                 ▼
+  evidence     trail ──► step ──► done: proof, changed, by ──► note
 ```
 
 Trails are the evidence. Your agent works one step at a time, tries the part it's least sure of
@@ -84,16 +84,12 @@ the old version of a rule that changed. With Celis, the agent broke fewer rules 
 followed old rules far less often. Real repos already have 80 to 280 rules in one agent file.
 
 **Why?** The rules fit in the context window, but the agent's attention doesn't stretch that far. The
-one rule that matters gets lost among hundreds of others. Celis gives the agent the right rules at
-the right time: when a job starts, before it changes a file, and before it says it's done.
+one rule that matters gets lost among hundreds of others. Celis gives the agent a short index of your
+patterns when a job starts. The agent opens the ones that bear on the job, and when it closes a step,
+Celis gives it the patterns of the files it changed to check the result against.
 
 We treat the agent as a capable collaborator that owns its work. Celis doesn't tell it how to do the
 job; it gives it what it needs to do the job well.
-
-**It works across agents, too.** In another test, Claude Code learned the review rules of real
-Supabase pull requests. Codex then broke 0.25 of them per job with Celis, against 2.38 without.
-
-The full setup, numbers and limits are in [evals/drift](evals/drift/README.md).
 
 ## Install
 
@@ -165,10 +161,6 @@ stay private.
 key, and Celis never sends it anywhere. To use another folder, set `CELIS_HOME` before you start the
 agent. Run `celis auth phrase` to see your recovery phrase, and `celis auth login` on another
 computer.
-
-**Can agents find past work by meaning?** Run `celis setup` and choose a model. It downloads the model
-from Hugging Face (0.5 to 1.2 GB) and indexes your trails on your machine. Then `celis search` finds patterns
-and past asks by meaning, in any language. With no model, agents search with `celis grep`.
 
 **What else can I run?** `celis help` lists every command, such as `celis grep` to search your trails.
 

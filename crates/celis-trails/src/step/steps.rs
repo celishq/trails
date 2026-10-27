@@ -37,6 +37,19 @@ impl<'a> Steps<'a> {
         all.filter_map(|n| self.get(&n.id)).collect()
     }
 
+    /// The steps whose `uses` names `id`, newest first.
+    pub fn uses(&'a self, id: &str) -> Vec<Step<'a>> {
+        let all = self.all().into_iter().rev();
+        all.filter(|s| s.uses().contains(&id)).collect()
+    }
+
+    /// The steps whose `uses` names `id` that a later step revised (CIP-06, "Revisions").
+    pub fn misled(&'a self, id: &str) -> Vec<Step<'a>> {
+        let all = self.all().into_iter();
+        let named = all.filter(|s| s.uses().contains(&id));
+        named.filter(|s| !s.revised().is_empty()).collect()
+    }
+
     /// Whether a pattern record has the id `id`.
     pub(crate) fn holds_pattern(&self, id: &str) -> bool {
         self.index.patterns.contains(id)
@@ -67,7 +80,7 @@ impl<'a> Steps<'a> {
         }
     }
 
-    /// Whether a step that is not a trail has ended: done, dropped or expired.
+    /// Whether a step that is not a trail has ended: done, dropped or stale.
     pub fn closed_any(&'a self) -> bool {
         let all = self.all().into_iter();
         all.filter(|s| !s.is_trail())

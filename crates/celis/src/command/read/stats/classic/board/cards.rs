@@ -98,10 +98,6 @@ pub(super) fn empty(right: &str, width: usize) -> Page {
 
 /// `● <n> active · <weekday>` of `steps`.
 pub(super) fn status(steps: &Steps) -> String {
-    let active = steps
-        .roots()
-        .into_iter()
-        .filter(|s| s.state().active())
-        .count();
+    let active = steps.roots().into_iter().filter(|s| s.active()).count();
     format!("● {active} active · {}", weekday(steps.now()))
 }

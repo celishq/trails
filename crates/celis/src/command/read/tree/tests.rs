@@ -29,12 +29,10 @@ fn step(under: Option<&Note>, at: u64, content: &str) -> Note {
 fn next(records: &[Note], now: u64) -> Option<u64> {
     let steps = Steps::new(records, now);
     let (patterns, notes) = (Patterns::new(records), Notes::new(records));
-    let reuse = Reuse::new(&steps);
     let tree = Tree {
         steps: &steps,
         patterns: &patterns,
         notes: &notes,
-        reuse: &reuse,
         layout: None,
         grouped: false,
         width: None,
@@ -55,7 +53,7 @@ fn next(records: &[Note], now: u64) -> Option<u64> {
     tree.next.get()
 }
 
-/// The tree changes next when the first time it shows changes: a working step's time in seconds the next
+/// The tree changes next when the first time it shows changes: a started step's time in seconds the next
 /// second, in hours the next minute, else when the trail ends; a closed tree, never.
 #[test]
 fn the_tree_changes_next_when_its_first_time_changes() {

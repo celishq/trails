@@ -84,7 +84,7 @@ struct Demo {
 impl Demo {
     /// Writes the made-up trails: the history of four weeks; a done one of a past day; today, an active
     /// one with a step in each state, patterns and a change, a revised one, and in a second project an
-    /// active, an expired and a dropped one.
+    /// active, a stale and a dropped one.
     fn write(&self) -> Result<(), Failure> {
         let (shop, crm) = (anchor("shop"), anchor("crm"));
         self.history(&shop, &crm)?;
@@ -273,7 +273,7 @@ impl Demo {
     }
 
     /// Writes a trail of three steps each day from 27 days to 3 days ago, in turn in each project: the
-    /// first uses a pattern, the others follow the steps of a week before and take less time. The later
+    /// first uses a pattern, the others take less time than the steps of a week before. The later
     /// two weeks change, revise and take longer less often, and use patterns more.
     fn history(&self, shop: &Anchor, crm: &Anchor) -> Result<(), Failure> {
         let start = 28 * DAY;
@@ -323,16 +323,8 @@ impl Demo {
             let ago = days.len().checked_sub(7).map(|w| days[w].clone());
             let mut ids = vec![(a, took)];
             for (k, title) in [(1, third), (2, "Try it on the staging shop")] {
-                let uses: Vec<String> = ago.iter().map(|w| w[k].0.clone()).collect();
-                let id = self.write_step(
-                    at - 180 - took,
-                    anchor,
-                    Some(&trail),
-                    title,
-                    &[],
-                    None,
-                    &uses,
-                )?;
+                let id =
+                    self.write_step(at - 180 - took, anchor, Some(&trail), title, &[], None, &[])?;
                 let less = match (&ago, recent) {
                     (Some(w), true) => (w[k].1 / 2).max(60),
                     (Some(w), false) => (w[k].1 * 4 / 5).max(60),
@@ -421,7 +413,6 @@ impl Demo {
             replaces: replaces.map(str::to_string),
             uses: uses.to_vec(),
             session: None,
-            new: false,
         };
         let trails = self.trails(ago)?;
         let written = trails.add(draft)?;
@@ -474,9 +465,8 @@ impl Demo {
             replaces: None,
             content: text.to_string(),
             paths: vec![],
-            binds: false,
+            old_rule: false,
             within: vec![],
-            cells: vec![],
             examples: Default::default(),
         };
         let trails = self.trails(ago)?;

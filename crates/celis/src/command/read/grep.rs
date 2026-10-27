@@ -14,7 +14,7 @@ impl Command {
     /// grouped by trail. Writes no record.
     pub(crate) fn grep(&self, words: &[String], out: &mut dyn Write) -> Result<(), Failure> {
         let view = match self.held()? {
-            true => View::recalled(&self.trails()?, &self.recalls()),
+            true => View::of(&self.trails()?),
             false => View::default(),
         };
         let Some(found) = run(words, view.text())? else {

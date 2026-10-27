@@ -112,7 +112,7 @@ pub const GROUPS: &[Group] = &[
         "step",
         "Add steps to a trail, then start, finish, drop, edit, or note them.",
         &[
-            ("add", "Add a step to a trail, or start a new trail"),
+            ("add", "Add a new ask, or a step under one"),
             (
                 "start",
                 "Start a step and show the patterns and notes it keeps",
@@ -268,30 +268,24 @@ pub const VERBS: &[Verb] = &[
         ],
     },
     Verb {
-        command: "search",
-        usage: &["celis search [<file>]... [--kind <kind>] [--limit <n>] -- <ask>"],
-        summary: "Show what fits an ask: the patterns of this project that its files, its words or its meaning match, the rules first, then the other patterns, each with its good and bad examples, then up to 2 done asks of any project like it, with their steps. With --kind trail or step, show the records of that kind most alike in meaning, by the model celis setup chose, with their score; with no model, says to use celis grep. Changes nothing.",
-        args: &[
-            ("<file>", "A file or folder the ask will touch"),
-            ("--kind", "Only rule (a pattern that binds), pattern, trail, or step"),
-            ("--limit", "Show <n> patterns and past asks; 20 for trail or step"),
-            ("<ask>", "The ask, in any words and any language"),
-        ],
-        examples: &[
-            "celis search -- \"cut the release\"",
-            "celis search shelf/prices.py -- \"round the prices\"",
-            "celis search --kind trail --limit 5 -- \"make retrieval faster\"",
-        ],
-    },
-    Verb {
         command: "stats",
         usage: &["celis stats [<id>] [--demo]"],
-        summary: "Show each step that later work reused and how often, then each pattern that steps followed, then the total. With an id, show what that step reused and what reused it. On a terminal, show the totals of all time, then the last 14 days against the 14 before: reuse rate, first-pass success, resolved steps and median step time, then Learning, Quality, Output and speed, and Resources, each opened with enter, updating as work lands. Changes nothing.",
+        summary: "Show each live pattern: its uses, the steps it misled, its replaces, its last use, its examples and why it needs tidy. Then show the total: the size of the index, and the patterns written, the patterns replaced and the fixes that used no pattern in the last 7 days. With an id, show that step and its grade. On a terminal, show the totals of all time, then the last 14 days against the 14 before: reuse rate, first-pass success, resolved steps and median step time, then Learning, Quality, Output and speed, and Resources, each opened with enter, updating as work lands. Changes nothing.",
         args: &[
             ("<id>", "A step id, or its first 4 or more characters"),
             ("--demo", "Show four weeks of sample trails"),
         ],
         examples: &["celis stats", "celis stats 9b0e11aa", "celis stats --demo"],
+    },
+    Verb {
+        command: "extract",
+        usage: &["celis extract <id>"],
+        summary: "Show what an ask or a step taught, open or done, to extract as patterns: what to keep, each change from its plan, each note of its trail, each prompt since the ask began, and each pattern its steps used. Give it to the celis:extraction agent. Changes nothing.",
+        args: &[
+            ("<id>", "A step id, or its first 4 or more characters"),
+            ("--json", "Print the brief as one JSON object"),
+        ],
+        examples: &["celis extract 3fa2c1d0", "celis extract 3fa2c1d0 --json"],
     },
     Verb {
         command: "issue",
@@ -309,7 +303,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "link",
         usage: &["celis link [<folder>] [--off]"],
-        summary: "Keep this project's trails in a folder, and keep the folder in sync with the store. Use .celis/trails/ in the repo to commit them, or any folder, like a synced drive. Rules with the me scope stay private. With --off, stop keeping them there; the folder and its records stay.",
+        summary: "Keep this project's trails in a folder, and keep the folder in sync with the store. Use .celis/trails/ in the repo to commit them, or any folder, like a synced drive. Patterns with the me scope stay private. With --off, stop keeping them there; the folder and its records stay.",
         args: &[
             ("<folder>", "The folder (default: .celis/trails at the repo root)"),
             ("--off", "Stop keeping the trails in the folder"),
@@ -318,15 +312,13 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "pattern",
-        usage: &["celis pattern [--scope <scope>] [--replaces <id>] [--path <glob>]... [--binds] [--within <id>]... [--cell <topic>]... [--good <example>]... [--bad <example>]... [--project <id>] -- <text>"],
-        summary: "Record a pattern that later work must keep: when it applies, its forces, what to do, and why. With no --scope, it holds for the whole project. Its paths name the files it acts on, so celis search gives it for them. It guides the work; with --binds, it is a rule, which binds it.",
+        usage: &["celis pattern [--scope <scope>] [--replaces <id>] [--path <glob>]... [--within <id>]... [--good <example>]... [--bad <example>]... [--project <id>] -- <text>"],
+        summary: "Record a pattern that guides later work: when it applies, its forces, what to do, and why. With no --scope, it holds for the whole project. Its paths name the files it acts on, so celis step done gives it for them. Where its forces are present, the work resolves them in its own way.",
         args: &[
             ("--scope <scope>", "Where it applies: me, or project"),
             ("--replaces <id>", "The pattern this one replaces"),
             ("--path <glob>", "A file it acts on; * and ? within a folder, ** across"),
-            ("--binds", "It is a rule: a result must keep it"),
             ("--within <id>", "The larger pattern it completes"),
-            ("--cell <topic>", "A topic it is in, such as cli-help"),
             ("--good <example>", "A step, a file, or a URL that shows it, such as a pick"),
             ("--bad <example>", "A step, a file, or a URL that breaks it"),
             ("--project <id>", "The id of a project in the store"),
@@ -341,10 +333,19 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "patterns",
-        usage: &["celis patterns [--markdown]"],
-        summary: "Show each pattern of this project and of you, the newest first, with its good and bad examples: the steps with their proofs, the files with their blobs, and the URLs. With --markdown, print them as one page, each file a link to its blob, for a review or a skill file. Changes nothing.",
-        args: &[("--markdown", "Print one Markdown page, each file a link to its blob")],
-        examples: &["celis patterns", "celis patterns --markdown > patterns.md"],
+        usage: &["celis patterns [<file>]... [--markdown] [--tidy]"],
+        summary: "Show the index of the patterns of this project and of you, the oldest first: each one's id, scope and When, with its paths, each named file they match, and the larger patterns it completes. celis grep <id> shows the whole of one. With --markdown, print each whole as one page, with its examples, each file a link to its blob, for a review or a skill file. With --tidy, list the patterns that need tidy, with the reason, then the size of the index. Changes nothing.",
+        args: &[
+            ("<file>", "A file or folder; marks each pattern whose paths match it"),
+            ("--markdown", "Print one Markdown page, each file a link to its blob"),
+            ("--tidy", "List the patterns that need tidy, and why"),
+        ],
+        examples: &[
+            "celis patterns",
+            "celis patterns shelf/prices.py shelf/",
+            "celis patterns --markdown > patterns.md",
+            "celis patterns --tidy",
+        ],
     },
     Verb {
         command: "tree",
@@ -372,7 +373,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "hook ask",
         usage: &["celis hook ask <agent>"],
-        summary: "Read a prompt hook's JSON from stdin, record the prompt on the open trail of its session, and print the note the agent reads. The plugin runs this on each prompt.",
+        summary: "Read a prompt hook's JSON from stdin, record the prompt on the open ask of its session, and print the note the agent reads. The plugin runs this on each prompt.",
         args: &[("<agent>", "claude, codex, cursor, gemini or antigravity")],
         examples: &["celis hook ask codex < hook.json"],
     },
@@ -398,17 +399,6 @@ pub const VERBS: &[Verb] = &[
         examples: &["celis auth phrase"],
     },
     Verb {
-        command: "setup",
-        usage: &["celis setup [--model <model>]"],
-        summary: "Choose the model that celis search uses, download it from Hugging Face, and index your records. On a terminal with no model, ask for one from the list; else print the list. none turns search off and removes the downloaded models.",
-        args: &[("--model", "embeddinggemma, e5-small, or none")],
-        examples: &[
-            "celis setup",
-            "celis setup --model embeddinggemma",
-            "celis setup --model none",
-        ],
-    },
-    Verb {
         command: "update",
         usage: &["celis update [<version>]"],
         summary: "Replace celis with a release build from GitHub, using the install.sh of the latest release. With no version, install the latest one, or do nothing if it's already installed.",
@@ -419,15 +409,14 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "step add",
-        usage: &["celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>]... [--check <command>] [--new] [--session <id>] [--project <id>] -- <text>"],
-        summary: "Add a step. With no --under, it goes under the session's trail, or starts a new trail.",
+        usage: &["celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>]... [--check <command>] [--session <id>] [--project <id>] -- <text>"],
+        summary: "Add a step. With no --under, it is a new ask, and starts its trail.",
         args: &[
             ("--under <id>", "The open step this step is part of"),
             ("--replaces <id>", "A step this one takes over, or a finished step it fixes"),
-            ("--uses <id>", "A pattern or a past step it follows"),
+            ("--uses <id>", "A pattern it follows"),
             ("--at <place>", "Where the work happens: a file:line, a URL, or any text"),
             ("--check <command>", "A command that proves the work"),
-            ("--new", "Start a new trail, not a step of the session's trail"),
             ("--session <id>", "The session, when the hook names it"),
             ("--project <id>", "The id of a project in the store"),
             ("<text>", "What the person wants done, then its expect: line"),
@@ -440,19 +429,19 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "step start",
         usage: &["celis step start <id>"],
-        summary: "Start a step and show what it keeps: the patterns its ask uses, and the notes of its trail and of each trail it follows. The step stays in progress until it's done.",
+        summary: "Start a step and show what it keeps: the patterns its ask uses, and the notes of its trail. The step stays in progress until it's done.",
         args: &[("<id>", "A step id, or its first 4 or more characters")],
         examples: &["celis step start 4c1d22e0"],
     },
     Verb {
         command: "step done",
-        usage: &["celis step done <id> [--changed <text>] [--as-planned] [--by <who>] [--file <path>]... -- <proof>"],
+        usage: &["celis step done <id> [--changed <text>] [--as-planned] [--by person] [--file <path>]... -- <proof>"],
         summary: "Finish a step with its proof and what changed. Finish the steps under it first.",
         args: &[
             ("<id>", "A step id, or its first 4 or more characters"),
             ("--changed", "How the result differs from its expect line"),
             ("--as-planned", "The result matches its expect line; else use --changed"),
-            ("--by", "judge, a reader that did not do the work, or person"),
+            ("--by", "person: the person confirms the result"),
             ("--file", "A file of the proof, kept as it is now"),
             ("<proof>", "The check that failed before and passes now"),
         ],

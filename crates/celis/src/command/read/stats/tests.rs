@@ -48,7 +48,6 @@ impl Desk {
             replaces: replaces.map(str::to_string),
             uses: uses.iter().map(|u| u.to_string()).collect(),
             session: None,
-            new: under.is_none(),
         };
         let id = self.trails.add(draft).unwrap().records[0].id.clone();
         self.trails.at(noon() - ago);
@@ -88,9 +87,8 @@ impl Desk {
             replaces: None,
             content: "When you price: round down, because the shelf does.".into(),
             paths: vec![],
-            binds: false,
+            old_rule: false,
             within: vec![],
-            cells: vec![],
             examples: Default::default(),
         };
         let id = self.trails.decide(pattern, None).unwrap().id;
@@ -106,7 +104,7 @@ impl Desk {
 }
 
 /// A store of `shop` whose steps 20 days ago and today end each way: a step done new 20 days ago, then
-/// today one done that follows it and applies a pattern, one done that a later step revises, the revision,
+/// today one done that applies a pattern, one done that a later step revises, the revision,
 /// and one dropped.
 pub(super) fn shop() -> Desk {
     let mut desk = Desk::new();
@@ -116,14 +114,7 @@ pub(super) fn shop() -> Desk {
     desk.done(20 * day - 600, 600, &source);
     let pattern = desk.pattern(3_000, "shop");
     let trail = desk.add(3_000, "shop", None, "the trail", &[], None);
-    let reused = desk.add(
-        3_000,
-        "shop",
-        Some(&trail),
-        "reused",
-        &[&source, &pattern],
-        None,
-    );
+    let reused = desk.add(3_000, "shop", Some(&trail), "reused", &[&pattern], None);
     let revised = desk.add(3_000, "shop", Some(&trail), "revised", &[], None);
     let dropped = desk.add(3_000, "shop", Some(&trail), "dropped", &[], None);
     desk.done(2_700, 300, &reused);

@@ -167,7 +167,7 @@ impl Section {
                     steps(now.dropped, |o| o.dropped, false),
                 ),
                 (
-                    lead(DIM, now.expired.to_string(), "expired"),
+                    lead(DIM, now.expired.to_string(), "stale"),
                     steps(now.expired, |o| o.expired, false),
                 ),
             ],

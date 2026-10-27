@@ -2,12 +2,12 @@
 
 use crate::command::read::tree::row::Row;
 use crate::command::read::tree::{Item, Tree, PATTERNS};
+use crate::progress::Phase;
 use crate::progress::Tally;
 use crate::terminal::canvas::{paint, Styled, DIM, MAGENTA};
 use crate::terminal::look::look;
 use crate::text::line::plural;
 use celis_nostr::Note;
-use celis_trails::State;
 use ratatui::style::Style;
 use ratatui::text::Span;
 
@@ -71,7 +71,7 @@ impl Tree<'_> {
 /// The closed steps of `tally` counted by state, each count after its mark (`✓ 7 · ✗ 1 · ◌ 2`).
 pub(in crate::command::read::tree) fn counts(tally: Tally) -> Vec<Span<'static>> {
     let mut counts: Vec<Span> = vec![];
-    for state in [State::Done, State::Dropped, State::Expired] {
+    for state in [Phase::Done, Phase::Dropped, Phase::Stale] {
         let n = tally.count(state);
         if n > 0 {
             if !counts.is_empty() {

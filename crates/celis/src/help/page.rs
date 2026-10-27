@@ -2,9 +2,9 @@
 //! marks it prints.
 
 use super::{Verb, GROUPS};
+use crate::progress::Phase;
 use crate::terminal::canvas::{Styled, BOLD, DIM, GREEN, MAGENTA, YELLOW};
 use crate::terminal::look::look;
-use celis_trails::State;
 use ratatui::style::Style;
 use ratatui::text::Span;
 use std::path::Path;
@@ -15,11 +15,11 @@ const SECTIONS: &[(&str, &str, &[&str])] = &[
         "Read",
         "",
         &[
-            "search <ask>",
             "patterns",
             "tree [<id>]",
             "grep <pattern>",
             "stats [<id>]",
+            "extract <id>",
         ],
     ),
     (
@@ -43,7 +43,6 @@ const SECTIONS: &[(&str, &str, &[&str])] = &[
             "auth login",
             "auth status",
             "auth phrase",
-            "setup",
             "update [<version>]",
             "issue [<id>]...",
         ],
@@ -54,17 +53,10 @@ const SECTIONS: &[(&str, &str, &[&str])] = &[
 const PHRASES: &[(&str, &str)] = &[
     ("tree", "Show your trails and their steps"),
     ("grep", "Search every trail with grep"),
-    (
-        "search",
-        "Show the rules, patterns and past asks that fit an ask",
-    ),
-    ("setup", "Choose and download the model that search uses"),
-    (
-        "patterns",
-        "Show your patterns with their good and bad examples",
-    ),
-    ("stats", "Show what later work reused, and how work went"),
-    ("pattern", "Record a pattern that later work must keep"),
+    ("patterns", "Show the index of your patterns"),
+    ("stats", "Show how the patterns are used, and how work went"),
+    ("extract", "Show what an ask taught, to extract as patterns"),
+    ("pattern", "Record a pattern that guides later work"),
     (
         "link",
         "Keep this project's trails in a folder to commit or share",
@@ -82,7 +74,7 @@ const WORDS: &[(&str, Style, &str, &str)] = &[
         "§",
         MAGENTA,
         "pattern",
-        "what to choose in a context, and why; a rule binds",
+        "a guide: what to choose in a context, and why",
     ),
     ("◆", MAGENTA, "trail", "each task you give"),
     (
@@ -97,12 +89,12 @@ const WORDS: &[(&str, Style, &str, &str)] = &[
 const HIDDEN: &[&str] = &["--session"];
 
 /// The marks celis prints for a step, a revision, a change and a pattern.
-const MARKS: &[(State, &str)] = &[
-    (State::Open, "open"),
-    (State::Working, "working"),
-    (State::Done, "done"),
-    (State::Dropped, "dropped"),
-    (State::Expired, "expired"),
+const MARKS: &[(Phase, &str)] = &[
+    (Phase::Open, "open"),
+    (Phase::Started, "started"),
+    (Phase::Done, "done"),
+    (Phase::Dropped, "dropped"),
+    (Phase::Stale, "stale"),
 ];
 
 /// The width of the column of command names with their arguments.

@@ -30,8 +30,9 @@ fn done_with(repo: &Repo, id: &str, rel: &str) -> String {
 fn done_with_a_file_keeps_it_as_a_blob() {
     let repo = Repo::new();
     repo.write("art/logo.svg", "<svg/>\n");
-    let trail = add(&repo, &["--", "the trail"]);
-    let said = done_with(&repo, &trail, "art/logo.svg");
+    let ask = add(&repo, &["--", "the ask"]);
+    let step = add(&repo, &["--under", &ask[..8], "--", "the logo"]);
+    let said = done_with(&repo, &step, "art/logo.svg");
     let sha = sha_of("<svg/>\n");
     let blob = repo.home().join("trails/blobs").join(&sha);
     assert_eq!(std::fs::read_to_string(&blob).unwrap(), "<svg/>\n");
@@ -93,8 +94,9 @@ fn a_link_carries_the_blobs_both_ways() {
     let repo = Repo::new();
     assert!(cli(&repo, &["link"]).status.success());
     repo.write("logo.svg", "<svg/>\n");
-    let trail = add(&repo, &["--", "the trail"]);
-    let said = done_with(&repo, &trail, "logo.svg");
+    let ask = add(&repo, &["--", "the ask"]);
+    let step = add(&repo, &["--under", &ask[..8], "--", "the logo"]);
+    let said = done_with(&repo, &step, "logo.svg");
     let sha = sha_of("<svg/>\n");
     let folder = repo.path().join(".celis/trails/blobs");
     assert!(folder.join(&sha).is_file());

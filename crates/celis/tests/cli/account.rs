@@ -84,7 +84,7 @@ fn every_command_signs_as_the_account() {
         .unwrap()
         .map(|e| std::fs::read_to_string(e.unwrap().path()).unwrap())
         .collect();
-    assert_eq!(files.len(), 5);
+    assert_eq!(files.len(), 4);
     for text in files {
         let note: celis_nostr::Note = serde_json::from_str(&text).unwrap();
         assert_eq!(note.pubkey, account().pubkey(), "{text}");

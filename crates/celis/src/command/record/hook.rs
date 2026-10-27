@@ -2,7 +2,6 @@
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use celis_patterns::PatternStore;
 use celis_trails::TrailStore;
 use serde_json::{json, Value};
 use std::io::{Read, Write};
@@ -14,7 +13,7 @@ mod tests;
 /// The agents whose hooks run `celis hook`.
 const AGENTS: [&str; 5] = ["claude", "codex", "cursor", "gemini", "antigravity"];
 
-/// The title of the ask that `/celis:tidy` adds.
+/// The start of the title of the ask that `/celis:tidy` adds.
 const TIDY: &str = "Tidy the celis trails";
 
 /// How many days after a tidy the session start asks to offer the next.
@@ -53,7 +52,8 @@ impl Command {
         }
     }
 
-    /// The card, where the plugin's files are and a version notice.
+    /// The card, where the plugin's files are, the index of the patterns in the project the JSON names,
+    /// and a version notice.
     fn start(&self, agent: &str, json: &Value, root: &Path) -> String {
         let card = std::fs::read_to_string(root.join("card.md")).unwrap_or_default();
         let mut text = format!(
@@ -71,13 +71,16 @@ impl Command {
         }
         text.push_str(&format!("steps.md: {}", root.join("steps.md").display()));
         if agent != "claude" {
-            let judge = root.join("agents/judge.md").display().to_string();
+            let extraction = root.join("agents/extraction.md").display().to_string();
             text.push_str(&format!(
-                "\njudge.md: {judge}. With no subagents, do what it says yourself, with the brief \
-                 that done prints."
+                "\nextraction.md: {extraction}. With no subagents, do what it says yourself, with the \
+                 brief that celis extract prints."
             ));
         }
-        if let Some(line) = self.tidy() {
+        if let Some(index) = self.here(json).index(&[]).ok().flatten() {
+            text.push_str(&format!("\n\nThe patterns in scope here:\n{index}"));
+        }
+        if let Some(line) = self.here(json).tidy() {
             text.push_str(&format!("\n\n{line}"));
         }
         let manifest = std::fs::read_to_string(root.join(".claude-plugin/plugin.json"));
@@ -92,50 +95,54 @@ impl Command {
         text
     }
 
-    /// The line that asks to offer `/celis:tidy` once in the session: when the store holds a live pattern,
-    /// and no ask titled `TIDY` began in the last `TIDY_DAYS` days.
+    /// The line that asks to offer `/celis:tidy` once in the session: when patterns in scope here need
+    /// tidy, and no step whose title starts with `TIDY` began in the last `TIDY_DAYS` days.
     fn tidy(&self) -> Option<String> {
-        if !self.held().ok()? {
+        let (found, _) = self.candidates().ok()?;
+        if found.is_empty() {
             return None;
         }
         let trails = self.trails().ok()?;
-        if !trails.patterns().every().iter().any(|e| e.is_live()) {
+        let steps = trails.steps();
+        let since = crate::command::now().saturating_sub(TIDY_DAYS * 86_400);
+        let all = steps.all().into_iter();
+        if all
+            .filter(|s| s.title().starts_with(TIDY))
+            .any(|s| s.note().created_at >= since)
+        {
             return None;
         }
-        let steps = trails.steps();
-        let last = steps
-            .all()
-            .into_iter()
-            .filter(|s| s.title() == TIDY)
-            .map(|s| s.note().created_at)
-            .max();
-        let days = last.map(|at| crate::command::now().saturating_sub(at) / 86_400);
-        let since = match days {
-            Some(days) if days < TIDY_DAYS => return None,
-            Some(days) => format!("the last tidy was {days} days ago"),
-            None => "no tidy has run yet".to_string(),
+        let need = match found.len() {
+            1 => "1 pattern needs it".to_string(),
+            n => format!("{n} patterns need it"),
         };
         Some(format!(
-            "celis: {since}; once in this session, after the person's first ask, offer them /celis:tidy."
+            "celis: once in this session, after the person's first ask, offer them /celis:tidy: {need}."
         ))
     }
 
     /// The note on the prompt, after it is acted on in the project the JSON names.
     fn note(&self, json: &Value) -> String {
-        let folder = json["cwd"]
-            .as_str()
-            .or(json["workspace_roots"][0].as_str())
-            .map_or(self.folder.clone(), PathBuf::from);
-        let here = Command {
-            args: vec![],
-            env: self.env.clone(),
-            folder,
-        };
         let mut note = Vec::new();
-        if here.act_on(json, &mut note).is_err() {
+        if self.here(json).act_on(json, &mut note).is_err() {
             return String::new();
         }
         String::from_utf8_lossy(&note).trim_end().to_string()
+    }
+
+    /// This run in the folder the JSON names in `cwd`, else in the first of `workspace_roots` or of
+    /// `workspacePaths`, else in its own.
+    fn here(&self, json: &Value) -> Command {
+        let folder = json["cwd"]
+            .as_str()
+            .or(json["workspace_roots"][0].as_str())
+            .or(json["workspacePaths"][0].as_str())
+            .map_or(self.folder.clone(), PathBuf::from);
+        Command {
+            args: vec![],
+            env: self.env.clone(),
+            folder,
+        }
     }
 }
 

@@ -1,10 +1,10 @@
-//! The notes under a row: its text, proof, change, time, reason, and the steps it follows.
+//! The notes under a row: its text, proof, change, time, reason, and the patterns it uses.
 
 use crate::command::read::tree::row::Row;
 use crate::command::read::tree::Tree;
 use crate::terminal::canvas::{Styled, DIM};
 use celis_store::records::id::short;
-use celis_trails::{Step, Used};
+use celis_trails::Step;
 
 impl Tree<'_> {
     /// Adds under `note` the lines of its text, its expect labelled, its proof, change and with `grade`
@@ -36,35 +36,18 @@ impl Tree<'_> {
         }
     }
 
-    /// Adds under `note` a `follows` line for each step it follows, a `pattern` line for each pattern it
-    /// uses, then a `followed` line when steps follow it, after `rail`.
-    pub(in crate::command::read::tree) fn followed(
+    /// Adds under `note` a `pattern` line for each pattern it uses, after `rail`.
+    pub(in crate::command::read::tree) fn used(
         &self,
         note: Step,
         rail: &Styled,
         out: &mut Vec<Row>,
     ) {
-        for source in self.reuse.sources(note) {
-            let line = format!("{} {}", short(source.id()), source.title());
-            self.labelled(out, rail, "follows", &line);
-        }
-        for used in note.uses() {
-            let pattern = match used {
-                Used::Pattern(id) => self
-                    .patterns
-                    .find(None, id)
-                    .ok()
-                    .filter(|p| !p.record.binds),
-                Used::Follow(_) => None,
-            };
-            if let Some(pattern) = pattern {
+        for id in note.uses() {
+            if let Ok(pattern) = self.patterns.find(None, id) {
                 let line = format!("{} {}", short(pattern.id()), pattern.record.content);
                 self.labelled(out, rail, "pattern", &line);
             }
-        }
-        let count = self.reuse.followers(note);
-        if count > 0 {
-            self.labelled(out, rail, "followed", &count.to_string());
         }
     }
 

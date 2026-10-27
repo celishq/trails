@@ -7,25 +7,24 @@ depends: [CIP-03, CIP-04, CIP-05]
 
 # CIP-06 — Reuse
 
-A step names the past work it builds on, and the earlier result it fixes.
+A step names the patterns it uses, and the earlier result it fixes. A fix of a step tells which patterns
+misled it.
 
 ## Uses
 
 ```
-["uses", "<id of a live pattern, or of a step of another trail>"]     a step's tag, zero or more
+["uses", "<id of a live pattern>"]     a step's tag, zero or more
 ```
 
 **Writers**
 
-- A writer MUST write the whole id, once. An id that names a trail MUST be written as its first ask when
-  that ask has the trail's text (CIP-04, "Sessions"), else as the trail.
-- A writer MUST NOT write a `uses` that names a step of the step's own trail.
-- A writer of a trail and its first ask together MUST put `uses` and `replaces` on the ask only.
+- A writer MUST write the whole id, once, and only the id of a pattern that is live in scope in the
+  step's project (CIP-05, "Scope") when it writes the step.
 
 **Readers**
 
-- A `uses` that names a pattern is a use of it. One that names a step is a follow of that step.
-- A reader MUST ignore a `uses` that names no record it holds.
+- A `uses` is a use of the pattern it names.
+- A reader MUST ignore a `uses` that names a step, and one that names no record it holds.
 
 ## Revisions
 
@@ -35,3 +34,4 @@ A step's `replaces` (CIP-03, "Steps") MAY name a done step of any trail.
 
 - The done step MUST stay done. It is revised by each step whose `replaces` names it, written at or after
   its `done`.
+- A step whose `uses` names a pattern misled the pattern once when the step is revised.

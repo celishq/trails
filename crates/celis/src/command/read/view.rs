@@ -1,24 +1,23 @@
-//! Every trail of every project, one line an item, that `grep` and `search` read.
+//! Every trail of every project, one line an item, that `grep` reads.
 
 pub(crate) mod header;
 pub(crate) mod kind;
 pub(crate) mod row;
 
-use crate::command::read::search::recalls::Recalls;
 use crate::text::clock::date;
 use celis_nostr::Note;
-use celis_patterns::{Pattern, PatternEnd, PatternStore};
+use celis_patterns::{Example, Pattern, PatternEnd, PatternStore};
 use celis_store::records::id::short;
 use celis_store::Store;
-use celis_trails::{Mark, Notes, Step, TrailStore};
+use celis_trails::{Mark, Notes, Step, Steps, TrailStore};
 use header::Header;
 use kind::Kind;
 use row::Row;
 use std::collections::HashMap;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
-/// Every trail of every project with its notes and steps, and each pattern, newest made first; with the
-/// header of each trail.
+/// Every trail of every project with its notes, prompts and steps, and each pattern, newest made first;
+/// with the header of each trail.
 #[derive(Default)]
 pub(crate) struct View {
     rows: Vec<Row>,
@@ -27,23 +26,32 @@ pub(crate) struct View {
 }
 
 impl View {
+    /// The view of `trails`.
     pub fn of(trails: &Store) -> View {
-        View::recalled(trails, &Recalls::default())
-    }
-
-    /// The view of `trails`, each pattern with the day `recalled` gives for its short id.
-    pub fn recalled(trails: &Store, recalled: &Recalls) -> View {
         let (steps, patterns, notes) = (trails.steps(), trails.patterns(), trails.notes());
         let mut blocks: Vec<(u64, &str, Vec<Row>)> = Vec::new();
         for entry in patterns.every() {
             let note = entry.note;
-            blocks.push((note.created_at, &note.id, pattern(entry, recalled)));
+            blocks.push((note.created_at, &note.id, pattern(entry, &steps, trails)));
+        }
+        let mut prompts: HashMap<String, Vec<(&Note, String)>> = HashMap::new();
+        for record in trails.records() {
+            if let Some((on, Mark::Prompt { text })) = Mark::read(record) {
+                prompts.entry(on).or_default().push((record, text));
+            }
         }
         let mut headers = HashMap::new();
         for root in steps.roots() {
             headers.insert(short(root.id()), Header::of(root));
             let mut rows = vec![step(root, root, Kind::Trail)];
             rows.extend(noted(root, root, &notes));
+            let mut asked: Vec<_> = prompts.get(root.id()).into_iter().flatten().collect();
+            asked.sort_by_key(|(note, _)| (note.created_at, &note.id));
+            rows.extend(
+                asked
+                    .into_iter()
+                    .map(|(note, text)| prompt(root, note, text)),
+            );
             level(root, root, &notes, &mut rows);
             blocks.push((root.note().created_at, root.id(), rows));
         }
@@ -59,11 +67,6 @@ impl View {
             lines,
             headers,
         }
-    }
-
-    #[cfg_attr(not(feature = "search"), allow(dead_code))]
-    pub fn into_rows(self) -> Vec<Row> {
-        self.rows
     }
 
     /// The lines, one a row.
@@ -136,10 +139,23 @@ fn noted(root: Step, step: Step, notes: &Notes) -> Vec<Row> {
     .collect()
 }
 
+/// The row of the prompt `note`, that says `text`, on the trail `root`.
+fn prompt(root: Step, note: &Note, text: &str) -> Row {
+    Row {
+        trail: Some(short(root.id())),
+        kind: Kind::Prompt,
+        day: date(note.created_at),
+        project: root.record().anchor.name.clone(),
+        id: short(root.id()),
+        fields: vec![],
+        text: flat(text),
+    }
+}
+
 /// The row of the step `step` of the trail `root`, as `kind`.
 fn step(root: Step, step: Step, kind: Kind) -> Row {
     let record = step.record();
-    let mut fields = vec![step.state_word().to_string()];
+    let mut fields = vec![step.state().text().to_string()];
     let by: Vec<String> = step.revised().iter().map(|s| short(s.id())).collect();
     if !by.is_empty() {
         fields.push(format!("revised-by {}", by.join(",")));
@@ -156,8 +172,9 @@ fn step(root: Step, step: Step, kind: Kind) -> Row {
     }
 }
 
-/// The rows of the pattern `entry`: its own, then its drop's reason when a drop names it.
-fn pattern(entry: &Pattern, recalled: &Recalls) -> Vec<Row> {
+/// The rows of the pattern `entry`: its own, with how many steps of `steps` used it, how many it misled,
+/// and the day of the newest use; then each of its examples, then its drop's reason when a drop names it.
+fn pattern(entry: &Pattern, steps: &Steps, trails: &Store) -> Vec<Row> {
     let (note, pattern) = (entry.note, &entry.record);
     let state = entry.end.map_or("live".to_string(), PatternEnd::text);
     let row = |kind: Kind, at: &Note, fields: Vec<String>, text: &str| Row {
@@ -170,19 +187,44 @@ fn pattern(entry: &Pattern, recalled: &Recalls) -> Vec<Row> {
         text: flat(text),
     };
     let mut fields = vec![state, format!("{{{}}}", pattern.scope.text())];
-    let marks = [
-        (!pattern.paths.is_empty(), "trigger"),
-        (pattern.binds, "binds"),
-    ];
-    fields.extend(
-        marks
-            .into_iter()
-            .filter(|(on, _)| *on)
-            .map(|(_, mark)| mark.to_string()),
-    );
-    fields.extend(pattern.cells.iter().map(|c| format!("cell:{}", c.name())));
-    fields.extend(recalled.day(&note.id).map(|day| format!("recalled:{day}")));
+    if pattern.old_rule {
+        fields.push("old-rule".to_string());
+    }
+    let uses = steps.uses(&note.id);
+    if !uses.is_empty() {
+        fields.push(format!("uses:{}", uses.len()));
+    }
+    let misled = steps.misled(&note.id).len();
+    if misled > 0 {
+        fields.push(format!("misled:{misled}"));
+    }
+    let newest = uses.first().map(|step| date(step.note().created_at));
+    fields.extend(newest.map(|day| format!("used:{day}")));
     let mut rows = vec![row(Kind::Pattern, note, fields, &pattern.content)];
+    for (side, example) in pattern.examples.sides() {
+        let kind = match side {
+            "good" => Kind::Good,
+            _ => Kind::Bad,
+        };
+        let text = match example {
+            Example::Step(id) => {
+                let Ok(step) = steps.find(id) else { continue };
+                let done = step.done();
+                let proof = done.as_ref().and_then(|d| d.proof.lines().next());
+                format!(
+                    "{} {} · {}",
+                    short(step.id()),
+                    step.title(),
+                    proof.unwrap_or("")
+                )
+            }
+            Example::File(file) => {
+                format!("{} · {}", file.place, crate::text::line::blob(file, trails))
+            }
+            Example::Url(url) => url.to_string(),
+        };
+        rows.push(row(kind, note, vec![], &text));
+    }
     if let Some(PatternEnd::Dropped(drop)) = entry.end {
         rows.push(row(Kind::Dropped, drop, vec![], &drop.content));
     }

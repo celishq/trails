@@ -1,16 +1,16 @@
 //! `celis pattern`: write a pattern.
 
-use crate::command::read::search::{when, words};
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use celis_patterns::{Cell, Example, Examples, Pattern, PatternRecord, PatternStore, Scope};
+use celis_patterns::{Example, Examples, Pattern, PatternRecord, PatternStore, Scope};
 use celis_store::records::id::short;
 use celis_store::{PatternId, Place, Project, Store};
 use celis_trails::{TrailStore, Written};
+use std::collections::HashSet;
 use std::io::Write;
 
 impl Command {
-    /// Writes the pattern `args` states on `project`, in its scope, with its trigger, labels, cells and
+    /// Writes the pattern `args` states on `project`, in its scope, with its paths, labels and
     /// examples, signed by the account now, and prints its id and the live patterns like it.
     pub(crate) fn pattern(
         &self,
@@ -31,11 +31,6 @@ impl Command {
             .iter()
             .map(|p| Place::resolve(p, &project.folder, &self.folder))
             .collect();
-        if let Some(cell) = args.cells.iter().find(|c| Cell::new(c).is_none()) {
-            return Err(Failure::usage(format!(
-                "a cell needs a letter or a digit, not {cell:?}"
-            )));
-        }
         let trails = self.trails()?;
         let side = |values: &[String]| -> Result<Vec<Example>, Failure> {
             let found = values.iter().map(|v| self.example(&trails, project, v));
@@ -51,9 +46,8 @@ impl Command {
             replaces: None,
             content,
             paths,
-            binds: args.binds,
+            old_rule: false,
             within: args.within.iter().map(PatternId::new).collect(),
-            cells: Cell::all(args.cells.iter().map(String::as_str)),
             examples,
         };
         let patterns = trails.patterns();
@@ -107,7 +101,11 @@ impl Command {
 
 /// At most `LIKE` of `live`, other than `replaced`, whose "When" shares `SHARED` or more words with the
 /// "When" of `content`, those that share the most first.
-fn like<'a>(live: &[Pattern<'a>], content: &str, replaced: Option<Pattern>) -> Vec<Pattern<'a>> {
+pub(crate) fn like<'a>(
+    live: &[Pattern<'a>],
+    content: &str,
+    replaced: Option<Pattern>,
+) -> Vec<Pattern<'a>> {
     let asked = words(when(content));
     let mut found: Vec<(usize, &Pattern<'a>)> = live
         .iter()
@@ -135,8 +133,8 @@ const LIKE: usize = 3;
 const SHARED: usize = 2;
 
 /// What `pattern` with no scope says of the pattern's scope.
-const SCOPES: &str = "celis: the rule holds in this project. When it holds for that kind of work in any \
-                      project, such as a rule about a framework, a platform or a review's convention, \
+const SCOPES: &str = "celis: the pattern holds in this project. When it holds for that kind of work in any \
+                      project, such as a pattern about a framework, a platform or a review's convention, \
                       replace it with --scope me; when it holds only for this trail, drop it and write \
                       it with celis step note <id>.";
 
@@ -144,3 +142,30 @@ const SCOPES: &str = "celis: the rule holds in this project. When it holds for t
 const TRAIL: &str =
     "a pattern holds in the project or for me; write what holds only for one trail with \
                      celis step note <id> -- <text>";
+
+/// Words too common to tell patterns apart.
+const COMMON: &[&str] = &[
+    "about", "after", "all", "also", "always", "and", "any", "are", "before", "but", "can", "did",
+    "does", "done", "each", "for", "from", "has", "have", "how", "into", "its", "just", "keep",
+    "make", "more", "most", "must", "never", "new", "not", "one", "only", "other", "our", "out",
+    "over", "per", "should", "some", "such", "than", "that", "the", "their", "them", "then",
+    "there", "they", "this", "use", "via", "was", "were", "what", "when", "where", "which", "who",
+    "why", "will", "with", "would", "you", "your",
+];
+
+/// The part of a pattern's first line before its first `:`: the case it acts on.
+fn when(content: &str) -> &str {
+    let first = content.lines().next().unwrap_or("");
+    first.split_once(':').map_or(first, |(when, _)| when)
+}
+
+/// The words of `text` that tell cases apart: 4 or more letters, not common, lower case, without a
+/// plural `s`.
+fn words(text: &str) -> HashSet<String> {
+    let lower = text.to_lowercase();
+    lower
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|w| w.chars().count() >= 4 && !COMMON.contains(w))
+        .map(|w| w.strip_suffix('s').unwrap_or(w).to_string())
+        .collect()
+}

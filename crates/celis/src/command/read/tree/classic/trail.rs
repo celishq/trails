@@ -3,6 +3,7 @@
 use super::level::Level;
 use super::row::Row;
 use super::{Item, Tree, PATTERNS, PROJECT};
+use crate::progress::Phase;
 use crate::terminal::canvas::{paint, Styled, BOLD, DIM};
 use crate::terminal::classic::look;
 use crate::text::clock::{stride, took};
@@ -63,7 +64,6 @@ impl Tree<'_> {
     /// grade; then its tree: its active steps, its patterns, then its closed steps.
     pub(super) fn block(&self, note: Step, lines: &mut Vec<Row>) {
         let step = note.record();
-        let state = note.state();
         let work = self.work(note);
         let summary = self.summary(note, work);
         let hair = Styled::from(vec![Span::raw("  "), paint(DIM, "│ ")]);
@@ -79,12 +79,12 @@ impl Tree<'_> {
         if let Some(worked) = summary.worked {
             self.labelled(lines, &hair, "took", &took(worked));
         }
-        if self.view.spin && state.active() {
+        if self.view.spin && note.active() {
             let seconds = self.steps.now().saturating_sub(note.newest());
             self.until(self.steps.now() + stride(seconds));
             self.labelled(lines, &hair, "active", &format!("{} ago", took(seconds)));
         }
-        if !self.grouped || state.active() {
+        if !self.grouped || note.active() {
             lines.push(Row::Note {
                 rail: hair.clone(),
                 label: "",
@@ -93,7 +93,7 @@ impl Tree<'_> {
             });
         }
         self.closing(work, &hair, false, lines);
-        self.followed(work, &hair, lines);
+        self.used(work, &hair, lines);
         let level = Level::of(Trail::new(note).parts());
         self.level(level, summary.notes, &Styled::from("  "), note.id(), lines);
     }
@@ -102,7 +102,7 @@ impl Tree<'_> {
     /// time.
     pub(super) fn line(&self, note: Step, lines: &mut Vec<Row>) {
         let step = note.record();
-        let state = note.state();
+        let state = Phase::of(&note);
         let work = self.work(note);
         let summary = self.summary(note, work);
         let steps = match (summary.all, summary.done) {

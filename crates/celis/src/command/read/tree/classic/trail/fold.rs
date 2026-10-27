@@ -3,13 +3,13 @@
 use crate::command::read::tree::classic::level::ids;
 use crate::command::read::tree::classic::row::Row;
 use crate::command::read::tree::classic::{after, Item, Tree, CLOSED, PATTERNS};
-use crate::progress::Tally;
+use crate::progress::{Phase, Tally};
 use crate::terminal::canvas::{paint, Styled};
 use crate::terminal::classic::look;
 use crate::terminal::classic::MAGENTA;
 use crate::text::line::plural;
 use celis_nostr::Note;
-use celis_trails::{State, Step};
+use celis_trails::Step;
 use ratatui::style::Style;
 use ratatui::text::Span;
 
@@ -68,7 +68,7 @@ impl Tree<'_> {
     }
 
     /// Adds the closed line `<marks> <n> closed steps` of the ended `steps` of the line `above`, the last
-    /// of its level after `rail`: `✓` when one is done, `✗` when one is dropped, `◌` when one is expired;
+    /// of its level after `rail`: `✓` when one is done, `✗` when one is dropped, `◌` when one is stale;
     /// open, the steps under it.
     pub(super) fn closed_line(
         &self,
@@ -81,7 +81,7 @@ impl Tree<'_> {
         let open = self.open(&id);
         let (lead, rail) = self.branch(rail, true, Some(open));
         let tally = Tally::of(&steps);
-        let marks: Styled = [State::Done, State::Dropped, State::Expired]
+        let marks: Styled = [Phase::Done, Phase::Dropped, Phase::Stale]
             .into_iter()
             .filter(|state| tally.count(*state) > 0)
             .map(|state| paint(look(state).text, look(state).mark))

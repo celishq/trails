@@ -1,7 +1,7 @@
 //! The agent view of `celis tree`: every trail, note and step with its id, plain and whole.
 
 use super::{Level, Row, Styled, Summary, Tree};
-use crate::progress::Flags;
+use crate::progress::{Flags, Phase};
 use crate::terminal::look::signs;
 use crate::text::clock::took;
 use celis_store::records::id::short;
@@ -13,7 +13,7 @@ impl Tree<'_> {
     pub(super) fn agent_block(&self, note: Step, lines: &mut Vec<Row>) {
         let work = self.work(note);
         let summary = self.summary(note, work);
-        let heading = match self.grouped && note.state().active() {
+        let heading = match self.grouped && note.active() {
             true => format!("{} · {}", self.heading(note), note.record().anchor.name),
             false => self.heading(note),
         };
@@ -68,7 +68,7 @@ impl Tree<'_> {
         if self.view.full {
             let indent = Styled::from(indent.to_string());
             self.closing(note, &indent, true, lines);
-            self.followed(note, &indent, lines);
+            self.used(note, &indent, lines);
             return;
         }
         if let Some(changed) = note.changed() {
@@ -87,7 +87,7 @@ impl Tree<'_> {
         let flags: String = signs(Flags::of(note)).into_iter().map(|(s, _)| s).collect();
         format!(
             "{}{flags} {} {title}",
-            self.mark(note.state()).content,
+            self.mark(Phase::of(&note)).content,
             short(note.id())
         )
     }

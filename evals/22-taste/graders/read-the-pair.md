@@ -2,4 +2,4 @@
 type: regex
 target: trace
 ---
-  good    [0-9a-f]{8} Keep the cart total in integer cents
+^(?:(?!"name":"(?:Write|Edit)"|>>? ?cart\.py)[\s\S])*?([0-9a-f]{8}) me When code handles money(?:(?!"name":"(?:Write|Edit)"|>>? ?cart\.py)[\s\S])*?"command":"(?:[^"\\]|\\.)*celis grep (?:[^"\\]|\\.)*\1

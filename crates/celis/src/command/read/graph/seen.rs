@@ -1,6 +1,7 @@
 //! What the graph view saw change since it opened, which its animations play from.
 
-use celis_trails::{State, Step};
+use crate::progress::Phase;
+use celis_trails::Step;
 use std::collections::HashMap;
 use std::time::Instant;
 
@@ -19,8 +20,8 @@ pub(super) struct Seen {
 /// One step as the view saw it: its state, the state before, and when it changed and was added.
 #[derive(Clone, Copy)]
 pub(super) struct Change {
-    pub state: State,
-    pub before: Option<State>,
+    pub state: Phase,
+    pub before: Option<Phase>,
     pub at: Option<Instant>,
     pub added: Option<Instant>,
 }
@@ -69,7 +70,7 @@ impl Seen {
         for trail in trails {
             let mut moved = false;
             for step in trail.tree() {
-                let state = step.state();
+                let state = Phase::of(&step);
                 match self.steps.get_mut(step.id()) {
                     Some(seen) if seen.state != state => {
                         *seen = Change {

@@ -501,19 +501,96 @@ pub fn read_ids(repo: &Repo, folder: &Path, args: &[&str]) -> Vec<String> {
         .collect()
 }
 
-/// The ids, first 8 characters, of the patterns `celis search --kind pattern` prints in `folder` for the
-/// places of each `--at` of `args`, in order.
+/// The ids, first 8 characters, of the patterns `celis step done` prints in `folder` for a step that
+/// changed the places of each `--at` of `args`, in order.
 pub fn place_ids(repo: &Repo, folder: &Path, args: &[&str]) -> Vec<String> {
-    let mut all = vec!["search"];
     let pairs = args.windows(2).filter(|w| w[0] == "--at");
-    all.extend(pairs.map(|w| w[1]));
-    all.extend(["--kind", "pattern", "--", "x"]);
-    let o = repo.run(folder, &all, &[], "");
+    let places: Vec<&str> = pairs.map(|w| w[1]).collect();
+    let lines = matched(repo, folder, &places).into_iter();
+    lines.map(|l| l[..8].to_string()).collect()
+}
+
+/// The head line of each pattern `celis step done` prints in `folder` for a step under an ask, beside an
+/// open step, that changed only `files`, each file or each file git gives under a folder, in order.
+pub fn matched(repo: &Repo, folder: &Path, files: &[&str]) -> Vec<String> {
+    let git = |args: &[&str]| {
+        let mut all = vec!["-c", "user.name=t", "-c", "user.email=t@t"];
+        all.extend(args);
+        let o = Command::new("git").args(all).current_dir(folder).output();
+        String::from_utf8_lossy(&o.unwrap().stdout).to_string()
+    };
+    git(&["add", "-A"]);
+    git(&["commit", "-q", "--allow-empty", "-m", "before"]);
+    for file in files {
+        let path = folder.join(file);
+        let under: Vec<PathBuf> = match path.is_dir() {
+            true => git(&["ls-files", "--", file])
+                .lines()
+                .map(|f| folder.join(f))
+                .collect(),
+            false => vec![path],
+        };
+        for path in under {
+            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+            let f = std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(path);
+            f.unwrap().write_all(b"\n").unwrap();
+        }
+    }
+    let step = |args: &[&str]| {
+        let o = repo.run(folder, args, &[], "");
+        assert!(o.status.success(), "{}", err(&o));
+        out(&o).lines().next().unwrap().to_string()
+    };
+    let n = UNIX_EPOCH.elapsed().unwrap().as_nanos().to_string();
+    let trail = step(&[
+        "step",
+        "add",
+        "--new",
+        "--",
+        &format!("Change the files {n}"),
+    ]);
+    let ask = step(&[
+        "step",
+        "add",
+        "--under",
+        &trail,
+        "--",
+        &format!("Change them {n}"),
+    ]);
+    let part = step(&[
+        "step",
+        "add",
+        "--under",
+        &ask,
+        "--",
+        &format!("Change one {n}"),
+    ]);
+    step(&[
+        "step",
+        "add",
+        "--under",
+        &ask,
+        "--",
+        &format!("Change two {n}"),
+    ]);
+    let o = repo.run(
+        folder,
+        &["step", "done", &part, "--as-planned", "--", "done"],
+        &[],
+        "",
+    );
     assert!(o.status.success(), "{}", err(&o));
-    let shown = out(&o);
-    let lines = shown.lines().filter(|l| !l.starts_with(' '));
-    let patterns = lines.filter(|l| *l != "patterns" && *l != "nothing fits this ask");
-    patterns.map(|l| l[..8].to_string()).collect()
+    let said = err(&o);
+    let head = "celis: check the change against each pattern";
+    let after = said.lines().skip_while(|l| !l.starts_with(head)).skip(1);
+    let lines = after.take_while(|l| !l.starts_with("celis:"));
+    lines
+        .filter(|l| !l.starts_with(' '))
+        .map(str::to_string)
+        .collect()
 }
 
 /// A `TZ` where it is now about noon, so the hours before now fall on the same day.
@@ -600,39 +677,6 @@ pub fn links(step: &serde_json::Value, kind: &str) -> Vec<String> {
         .filter(|l| l["kind"] == kind)
         .map(|l| l["to"].as_str().unwrap().to_string())
         .collect()
-}
-
-/// A BERT model with fixed weights, the same each run, set up in the home of `repo` as `e5-small`.
-/// Its vocabulary holds the words `keep prices in cents rust release`; any other word, such as a
-/// prefix, is one unknown token, so a query and a record of the same words get the same vector.
-pub fn tiny_model(repo: &Repo) {
-    use candle_core::{DType, Device};
-    use candle_nn::{VarBuilder, VarMap};
-    use candle_transformers::models::bert::{BertModel, Config};
-    let folder = repo.home().join("models/e5-small");
-    std::fs::create_dir_all(&folder).unwrap();
-    let config = r#"{"vocab_size": 8, "hidden_size": 8, "num_hidden_layers": 1,
-        "num_attention_heads": 2, "intermediate_size": 16, "hidden_act": "gelu",
-        "hidden_dropout_prob": 0.0, "max_position_embeddings": 300, "type_vocab_size": 2,
-        "initializer_range": 0.02, "layer_norm_eps": 1e-12, "pad_token_id": 0, "model_type": "bert"}"#;
-    let tokenizer = r#"{"version": "1.0", "pre_tokenizer": {"type": "Whitespace"},
-        "model": {"type": "WordLevel", "unk_token": "[UNK]", "vocab": {"[UNK]": 0, "keep": 1,
-        "prices": 2, "in": 3, "cents": 4, "rust": 5, "release": 6, "linux": 7}}}"#;
-    std::fs::write(folder.join("config.json"), config).unwrap();
-    std::fs::write(folder.join("tokenizer.json"), tokenizer).unwrap();
-    let map = VarMap::new();
-    let vb = VarBuilder::from_varmap(&map, DType::F32, &Device::Cpu);
-    BertModel::load(vb, &serde_json::from_str::<Config>(config).unwrap()).unwrap();
-    for (name, var) in map.data().lock().unwrap().iter() {
-        let seed = name.bytes().map(f32::from).sum::<f32>();
-        let n = var.elem_count();
-        let values = (0..n)
-            .map(|i| 0.05 * (seed + i as f32).sin())
-            .collect::<Vec<_>>();
-        let fixed = candle_core::Tensor::from_vec(values, var.shape(), &Device::Cpu).unwrap();
-        var.set(&fixed).unwrap();
-    }
-    map.save(folder.join("model.safetensors")).unwrap();
 }
 
 /// What the prompt hook gives for `json` in `folder`, through `celis hook ask claude`: the note the agent

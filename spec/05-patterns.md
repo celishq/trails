@@ -8,8 +8,8 @@ depends: [CIP-01]
 # CIP-05 — Patterns
 
 A pattern says what to choose in a context, and why. It holds in its scope until another replaces it. An
-agent writes it when it learns what later work must keep. A pattern guides; a pattern with the `binds`
-label is a rule, which binds.
+agent writes it when it learns a choice that later work will meet again. A pattern guides: where its
+forces are present, work resolves them; where they are not, it does not apply.
 
 ## Patterns
 
@@ -30,7 +30,7 @@ label is a rule, which binds.
 - `scope`: optional; where the pattern holds ("Scope"). With none, it holds in the project.
 - `replaces`: optional; the pattern this one takes the place of.
 - `path`: optional, repeatable; a file the pattern acts on, as a glob from the project's top folder
-  ("Triggers").
+  ("Paths").
 - content: text for an agent. A reader MAY show it, and does not parse it.
 
 A drop (CIP-03, "Dropping") MAY name a pattern, with why it no longer holds.
@@ -42,20 +42,6 @@ A drop (CIP-03, "Dropping") MAY name a pattern, with why it no longer holds.
 **Readers**
 
 - A pattern is live until another pattern names it in `replaces`, or a drop names it.
-
-## Rules
-
-```json
-{ "kind": 1111,
-  "tags": [ …, ["l", "binds", "celis.pattern"] ],
-  "content": "When a secret is named\nForces: …\nDo: name it by where it lives, never by its value\nBecause: a record is signed and cannot be deleted" }
-```
-
-- `binds`: optional label; the pattern is a rule, which a result must keep.
-
-**Readers**
-
-- A pattern with no `binds` guides: work MAY depart from it with a named reason.
 
 ## Scope
 
@@ -78,14 +64,18 @@ me        in every project
 
 **Readers**
 
-- A reader MUST read `decision` and `binds` in `celis.decision`, which older writers wrote, as `pattern`
-  and `binds` in `celis.pattern`.
+- A reader MUST read `decision` in `celis.decision`, which older writers wrote, as `pattern` in
+  `celis.pattern`.
+- A reader MUST read a pattern with the `binds` label in `celis.pattern` or `celis.decision`, which older
+  writers wrote, as a plain pattern.
+- A reader MUST ignore a `cell` tag, which older writers wrote.
 - A reader MUST read the scope `at:<place>`, which older writers wrote, as `project`, with two more
-  `path` globs: the place's path without its line, and that path with `/**` after it.
+  `path` globs: the place's path without its line, and that path with `/**` after it. A place of the
+  project's top folder, such as `.`, adds no `path`.
 - A reader MUST read a live pattern with the scope `trail:<id>`, which older writers wrote, as a note on
   the trail `<id>` (CIP-04, "Notes"), and not as a pattern.
 
-## Triggers
+## Paths
 
 ```
 <glob>    a path from the project's top folder: * within a segment, ** across segments, ? one character
@@ -115,27 +105,6 @@ me        in every project
 
 - A reader MUST ignore a `within` that names no record it holds.
 - The smaller patterns of a pattern are the live patterns whose `within` names it.
-
-## Cells
-
-```json
-{ "kind": 1111,
-  "tags": [ …, ["cell", "cli-help"] ],
-  "content": "When a flag gets its help text\nForces: …\nDo: …\nBecause: …" }
-```
-
-- `cell`: optional, repeatable; a topic the pattern is in, as lower-case words joined by `-`.
-
-**Writers**
-
-- A writer MUST write a cell in lower case, with each run of characters that are not a letter or a digit
-  as one `-`, and no `-` at its ends.
-- A pattern that replaces another MUST keep each `cell` of the one it replaces.
-
-**Readers**
-
-- A reader MUST read a cell in the same form, so that `CLI Help` and `cli-help` are one cell. It MUST
-  ignore a cell that is empty in that form.
 
 ## Examples
 

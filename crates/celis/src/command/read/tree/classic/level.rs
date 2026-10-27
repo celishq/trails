@@ -12,7 +12,7 @@ pub(super) struct Level<'a> {
 impl<'a> Level<'a> {
     /// The level of `notes`, given oldest first.
     pub fn of(notes: Vec<Step<'a>>) -> Level<'a> {
-        let (ended, active) = notes.into_iter().rev().partition(|s| s.state().ended());
+        let (ended, active) = notes.into_iter().rev().partition(|s| !s.active());
         Level { active, ended }
     }
 

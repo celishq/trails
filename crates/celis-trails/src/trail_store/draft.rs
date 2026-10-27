@@ -3,7 +3,7 @@
 use celis_store::Anchor;
 
 /// A step as an agent asks to write it: its words, its anchor, places and check, the ids it names as
-/// given, and where it may go.
+/// given.
 pub struct Draft {
     pub content: String,
     pub anchor: Anchor,
@@ -13,5 +13,4 @@ pub struct Draft {
     pub replaces: Option<String>,
     pub uses: Vec<String>,
     pub session: Option<String>,
-    pub new: bool,
 }

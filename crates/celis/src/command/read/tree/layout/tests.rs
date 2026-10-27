@@ -37,7 +37,6 @@ fn step(under: Option<&Note>, uses: &[&Note], at: u64) -> Note {
 fn print(records: &[Note], layout: &Layout) {
     let steps = Steps::new(records, NOW);
     let (patterns, notes) = (Patterns::new(records), Notes::new(records));
-    let reuse = Reuse::new(&steps);
     let view = View {
         all: true,
         ..View::default()
@@ -46,7 +45,6 @@ fn print(records: &[Note], layout: &Layout) {
         steps: &steps,
         patterns: &patterns,
         notes: &notes,
-        reuse: &reuse,
         layout: Some(layout),
         grouped: true,
         width: Some(80),
@@ -82,7 +80,7 @@ fn kept(records: &[Note], landed: &[Note]) -> Vec<String> {
 }
 
 /// A step or a mark in one trail forgets only the day group of that trail; a pattern, a step that uses
-/// another, a mark of a step another follows, or records of two trails forget every group.
+/// another, or records of two trails forget every group.
 #[test]
 fn a_record_forgets_only_the_group_of_its_trail() {
     let (old, new) = (NOW - 3 * 86_400, NOW - 60);
@@ -108,9 +106,8 @@ fn a_record_forgets_only_the_group_of_its_trail() {
         replaces: None,
         content: "a rule".into(),
         paths: vec![],
-        binds: false,
+        old_rule: false,
         within: vec![],
-        cells: vec![],
         examples: Default::default(),
     }
     .record(&account(), NOW)
@@ -119,9 +116,4 @@ fn a_record_forgets_only_the_group_of_its_trail() {
     assert!(kept(&records, &[step(Some(&second), &[&part], NOW)]).is_empty());
     let two = [step(Some(&second), &[], NOW), step(Some(&first), &[], NOW)];
     assert!(kept(&records, &two).is_empty());
-
-    let follower = step(Some(&second), &[&part], new);
-    let records = [first, part.clone(), second, follower];
-    let done = Mark::Start.record(&account(), &part.id, NOW).unwrap();
-    assert!(kept(&records, &[done]).is_empty());
 }

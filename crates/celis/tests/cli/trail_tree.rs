@@ -123,9 +123,9 @@ fn tree_prints_the_expect_line_in_the_label_column() {
     );
 }
 
-/// `tree <id>` prints an expired step with the closed steps, after the notes.
+/// `tree <id>` prints a stale step with the closed steps, after the notes.
 #[test]
-fn tree_prints_an_expired_step_with_the_closed_ones() {
+fn tree_prints_a_stale_step_with_the_closed_ones() {
     let repo = Repo::new();
     let by = support::account();
     let at = support::now() - 2 * 3600;
@@ -155,18 +155,17 @@ fn tree_prints_an_expired_step_with_the_closed_ones() {
     );
 }
 
-/// `tree <id>` of an ask prints its trail's notes on its block.
+/// `tree <id>` of an ask prints its notes on its block.
 #[test]
-fn tree_of_an_ask_prints_its_trails_notes() {
+fn tree_of_an_ask_prints_its_notes() {
     let repo = Repo::new();
-    let trail = add(&repo, &["--", "build the CRM"]);
+    let ask = add(&repo, &["--", "customers page"]);
     let o = cli(
         &repo,
-        &["step", "note", short(&trail), "--", "colours are tokens"],
+        &["step", "note", short(&ask), "--", "colours are tokens"],
     );
     assert!(o.status.success(), "{}", err(&o));
     let pattern = out(&o).trim()[..8].to_string();
-    let ask = add(&repo, &["--under", short(&trail), "--", "customers page"]);
     let badge = add(&repo, &["--under", short(&ask), "--", "badge"]);
     assert_eq!(
         printed(&repo, &[short(&ask)]),
@@ -281,9 +280,18 @@ fn tree_all_prints_every_trail_of_every_project_by_day() {
         "an old trail",
         support::now() - 2 * support::DAY,
     );
+    support::mark_note(
+        &repo,
+        &by,
+        "done",
+        &old.id,
+        "proof",
+        support::now() - 2 * support::DAY,
+    );
     let trail = add(&repo, &["--", "a new trail"]);
     let part = add(&repo, &["--under", short(&trail), "--", "its part"]);
     finish(&repo, short(&part));
+    finish(&repo, short(&trail));
     let lines = printed(&repo, &["--all"]);
     let text = lines.join("\n");
     assert!(lines[0].ends_with(" · 0 active · 1 done"), "{text}");
@@ -295,7 +303,10 @@ fn tree_all_prints_every_trail_of_every_project_by_day() {
     );
     assert!(lines[5].ends_with(" · 0 active · 1 done"), "{text}");
     assert_eq!(lines[6..8], ["", "repo"], "{text}");
-    assert_eq!(lines[8], format!("✓ {} an old trail", short(&old.id)));
+    assert_eq!(
+        lines[8],
+        format!("✓ {} an old trail · 0s worked", short(&old.id))
+    );
     assert_eq!(lines.len(), 9, "{text}");
     assert!(!text.contains("its part"), "{text}");
     let full = printed(&repo, &["--all", "--full"]).join("\n");
@@ -434,15 +445,15 @@ fn tree_with_no_id_prints_every_projects_trails_and_names_all_when_empty() {
     assert!(out(&o).contains(" a repo trail · repo\n"), "{}", out(&o));
 }
 
-/// The tree prints a trail's first ask as the trail when their texts match, and the ask's steps one
-/// level up; `--json` prints both.
+/// The tree prints an older trail's first ask as the trail when their texts match, and the ask's steps
+/// one level up; `--json` prints both (`spec/04-trails.md`, "Trails").
 #[test]
 fn the_tree_folds_a_trails_twin_first_ask() {
     let repo = Repo::new();
-    let env = [("CLAUDE_CODE_SESSION_ID", "s1")];
-    let o = repo.run(&repo.path(), &["step", "add", "--", "the trail"], &env, "");
-    let ids: Vec<String> = out(&o).lines().map(str::to_string).collect();
-    let (ask, trail) = (&ids[0], &ids[1]);
+    let (by, at) = (support::account(), support::now() - 60);
+    let head = support::step_note(&repo, &by, None, "the trail", at);
+    let ask = &support::step_note(&repo, &by, Some(&head), "the trail", at + 1).id;
+    let trail = &head.id;
     let part = add(&repo, &["--under", short(ask), "--", "the part"]);
     let lines = printed(&repo, &[short(trail)]);
     assert!(!lines.join("\n").contains(short(ask)), "{lines:?}");

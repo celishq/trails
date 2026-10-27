@@ -9,7 +9,7 @@ pub trait PatternStore {
     fn patterns(&self) -> Patterns<'_>;
 
     /// Writes `pattern`, each `within` taken whole from a live pattern of any project; replacing the live
-    /// pattern of its project that `replaces` names, and keeping its examples, `within` and cells.
+    /// pattern of its project that `replaces` names, and keeping its examples and `within`.
     fn decide(&self, pattern: PatternRecord, replaces: Option<&str>) -> Result<Note, Refusal>;
 }
 
@@ -33,9 +33,6 @@ impl PatternStore for Store {
             let kept = old.within.iter().filter(|w| !pattern.within.contains(w));
             let kept: Vec<PatternId> = kept.cloned().collect();
             pattern.within.extend(kept);
-            let kept = old.cells.iter().filter(|c| !pattern.cells.contains(c));
-            let kept: Vec<_> = kept.cloned().collect();
-            pattern.cells.extend(kept);
             pattern.replaces = Some(PatternId::new(patterns.find(Some(&project), id)?.id()));
         }
         self.sign(|account, now| pattern.record(account, now))

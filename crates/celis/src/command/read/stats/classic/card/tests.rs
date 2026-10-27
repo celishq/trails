@@ -24,7 +24,6 @@ fn worked(later: u64) -> (TempDir, Store) {
         replaces: None,
         uses: vec![],
         session: None,
-        new: false,
     };
     let trail = trails.add(draft("the trail", None)).unwrap().records[0]
         .id
@@ -72,7 +71,7 @@ fn a_card_with_no_data_before_shows_no_change() {
     assert_eq!(cards[0].face.len(), 5, "{effect}");
     assert!(!effect.contains("no data before"), "{effect}");
     assert!(!effect.contains("few records"), "{effect}");
-    let work = face(&trails, "03 WORK");
+    let work = face(&trails, "02 WORK");
     assert!(!work.contains("first 14 days"), "{work}");
     assert!(!work.contains("vs 14 days before"), "{work}");
     assert!(work.contains("· · ·"), "{work}");
@@ -83,13 +82,13 @@ fn a_card_with_no_data_before_shows_no_change() {
 #[test]
 fn a_card_with_nothing_in_14_days_says_so() {
     let (_home, trails) = worked(20 * DAY);
-    let work = face(&trails, "03 WORK");
+    let work = face(&trails, "02 WORK");
     assert!(work.contains("no step done in 14 days"), "{work}");
     assert!(!work.contains("today"), "{work}");
-    let time = face(&trails, "04 TIME");
+    let time = face(&trails, "03 TIME");
     assert!(time.contains("no step done in 14 days"), "{time}");
     assert!(!time.contains("< 5m"), "{time}");
-    let outcome = face(&trails, "05 OUTCOME");
+    let outcome = face(&trails, "04 OUTCOME");
     assert!(outcome.contains("no step closed in 14 days"), "{outcome}");
     assert!(!outcome.contains("dropped"), "{outcome}");
 }
@@ -110,11 +109,9 @@ fn the_effect_says_what_each_share_counts() {
     assert!(effect.contains("▀▀▀ %"), "{effect}");
 }
 
-/// `worked`, with a new trail added at `AT` and a step under it that follows the done step and uses a
-/// pattern.
+/// `worked`, with a new trail added at `AT` and a step under it that uses a pattern.
 fn reused(later: u64) -> (TempDir, Store) {
     let (home, mut trails) = worked(later);
-    let part = Model::of(&trails, |m| m.steps.all()[1].id().to_string());
     let anchor = Anchor {
         project: "repo".into(),
         name: "repo".into(),
@@ -125,9 +122,8 @@ fn reused(later: u64) -> (TempDir, Store) {
         replaces: None,
         content: "When a rule holds: keep it, because it works.".into(),
         paths: vec![],
-        binds: false,
+        old_rule: false,
         within: vec![],
-        cells: vec![],
         examples: Default::default(),
     };
     trails.at(AT);
@@ -138,7 +134,6 @@ fn reused(later: u64) -> (TempDir, Store) {
         anchor: anchor.clone(),
         places: vec![],
         check: None,
-        new: under.is_none(),
         under,
         replaces: None,
         uses,
@@ -152,40 +147,31 @@ fn reused(later: u64) -> (TempDir, Store) {
         .clone();
     trails.at(AT);
     trails
-        .add(draft("the next", Some(trail), vec![part, pattern]))
+        .add(draft("the next", Some(trail), vec![pattern]))
         .unwrap();
     trails.at(AT + later);
     (home, trails)
 }
 
-/// The reuse and patterns cards draw the follows and pattern uses of each of the last 14 days as columns, a
-/// dot on each day with none, then the steps and patterns used most.
+/// The patterns card draws the pattern uses of each of the last 14 days as columns, a dot on each day
+/// with none, then the patterns used most.
 #[test]
-fn the_reuse_cards_draw_each_day_as_a_column() {
+fn the_patterns_card_draws_each_day_as_a_column() {
     let (_home, trails) = reused(3_600);
-    for title in ["01 REUSE", "02 PATTERNS USED"] {
-        let face = face(&trails, title);
-        assert!(face.contains("· · ·"), "{face}");
-        assert!(face.contains("today"), "{face}");
-    }
-    let reuse = face(&trails, "01 REUSE");
-    assert!(reuse.contains("follows"), "{reuse}");
-    assert!(reuse.ends_with(" 1"), "{reuse}");
-    let patterns = face(&trails, "02 PATTERNS USED");
+    let patterns = face(&trails, "01 PATTERNS USED");
+    assert!(patterns.contains("· · ·"), "{patterns}");
+    assert!(patterns.contains("today"), "{patterns}");
     assert!(patterns.contains("pattern uses"), "{patterns}");
     assert!(patterns.contains("a rule holds"), "{patterns}");
     assert!(patterns.ends_with(" 1"), "{patterns}");
 }
 
-/// With no follow and no pattern use in the last 14 days, the reuse and patterns cards each say so in one line
-/// in place of their columns.
+/// With no pattern use in the last 14 days, the patterns card says so in one line in place of its
+/// columns.
 #[test]
-fn the_reuse_cards_with_nothing_in_14_days_say_so() {
+fn the_patterns_card_with_nothing_in_14_days_says_so() {
     let (_home, trails) = reused(20 * DAY);
-    let reuse = face(&trails, "01 REUSE");
-    assert!(reuse.contains("no follow in 14 days"), "{reuse}");
-    assert!(!reuse.contains("today"), "{reuse}");
-    let patterns = face(&trails, "02 PATTERNS USED");
+    let patterns = face(&trails, "01 PATTERNS USED");
     assert!(
         patterns.contains("no pattern used in 14 days"),
         "{patterns}"
@@ -206,7 +192,6 @@ fn the_projects_card_aligns_its_times() {
         anchor: anchor.clone(),
         places: vec![],
         check: None,
-        new: under.is_none(),
         under,
         replaces: None,
         uses: vec![],
@@ -239,7 +224,7 @@ fn the_projects_card_aligns_its_times() {
         )
         .unwrap();
     trails.at(long + 60);
-    let face = face(&trails, "06 PROJECTS");
+    let face = face(&trails, "05 PROJECTS");
     let ends: Vec<usize> = face.lines().map(|l| l.chars().count()).collect();
     assert!(face.contains("19h 14m"), "{face}");
     assert_eq!(ends[0], ends[1], "{face}");

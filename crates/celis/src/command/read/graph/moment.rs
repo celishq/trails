@@ -2,6 +2,7 @@
 //! moment.
 
 use super::seen::Seen;
+use crate::progress::Phase;
 use crate::terminal::canvas::{paint, CYAN, DIM, GREEN, RED, YELLOW};
 use crate::terminal::look::{frame, STROKES};
 use crate::terminal::unfold::{ease, mix, toward};
@@ -50,26 +51,26 @@ impl Moment<'_> {
     }
 
     /// The mark of `step` now: the spinner while it works; as it is done, the spinner fading out, then
-    /// a check drawn stroke by stroke, then `✓` with a short glow; `✗` dropped, `◌` expired, `○` open.
+    /// a check drawn stroke by stroke, then `✓` with a short glow; `✗` dropped, `◌` stale, `○` open.
     pub fn mark(&self, step: Step) -> (&'static str, Style) {
         let since = self.seen.changed(step.id(), self.now).unwrap_or(9.0);
-        match step.state() {
-            State::Working => (self.spin(), CYAN),
-            State::Done if since < 0.15 => {
+        match Phase::of(&step) {
+            Phase::Started => (self.spin(), CYAN),
+            Phase::Done if since < 0.15 => {
                 let fade = toward(rgb(CYAN), 1.0 - since / 0.15);
                 (self.spin(), Style::new().fg(fade))
             }
-            State::Done if since < 0.45 => {
+            Phase::Done if since < 0.45 => {
                 let stroke = ((since - 0.15) / 0.06) as usize;
                 (STROKES[stroke.min(4)], GREEN)
             }
-            State::Done => {
+            Phase::Done => {
                 let glow = 1.0 - (since - 0.45) / 0.9;
                 ("✓", Style::new().fg(mix(rgb(GREEN), MINT, glow)))
             }
-            State::Dropped => ("✗", RED),
-            State::Expired => ("◌", DIM),
-            State::Open => ("○", Style::new()),
+            Phase::Dropped => ("✗", RED),
+            Phase::Stale => ("◌", DIM),
+            Phase::Open => ("○", Style::new()),
         }
     }
 
@@ -83,10 +84,10 @@ impl Moment<'_> {
         Some(paint(Style::new().fg(mix(rgb(YELLOW), CREAM, glow)), "˜"))
     }
 
-    /// The look of the title of a step in `state`: dim open, dropped or expired.
-    pub fn tone(&self, state: State) -> Style {
+    /// The look of the title of a step in `state`: dim open, dropped or stale.
+    pub fn tone(&self, state: Phase) -> Style {
         match state {
-            State::Done | State::Working => Style::new(),
+            Phase::Done | Phase::Started => Style::new(),
             _ => DIM,
         }
     }
@@ -97,17 +98,17 @@ impl Moment<'_> {
         if selected {
             return Style::new().fg(LIGHT);
         }
-        let colour = match step.state() {
-            State::Working => {
+        let colour = match Phase::of(&step) {
+            Phase::Started => {
                 let pulse = 0.5 + 0.5 * (self.t() * 3.2).sin();
                 mix(toward(rgb(CYAN), 0.6), rgb(CYAN), pulse)
             }
-            State::Done => {
+            Phase::Done => {
                 let since = self.seen.changed(step.id(), self.now).unwrap_or(9.0);
                 mix(toward(rgb(GREEN), 0.7), MINT, 1.0 - (since - 0.45) / 0.9)
             }
-            State::Dropped => toward(rgb(RED), 0.5),
-            State::Open | State::Expired => return DIM,
+            Phase::Dropped => toward(rgb(RED), 0.5),
+            Phase::Open | Phase::Stale => return DIM,
         };
         Style::new().fg(colour)
     }
@@ -134,11 +135,11 @@ impl Moment<'_> {
         for step in steps {
             let seen = self.seen.step(step.id());
             let k = self.arrived(self.seen.changed(step.id(), self.now), 0.5);
-            let part = |state: Option<State>, s: State| f64::from(u8::from(state == Some(s)));
+            let part = |state: Option<Phase>, s: Phase| f64::from(u8::from(state == Some(s)));
             let before = seen.and_then(|c| c.before);
-            let now = Some(step.state());
-            done += part(now, State::Done) * k + part(before, State::Done) * (1.0 - k);
-            working += part(now, State::Working) * k + part(before, State::Working) * (1.0 - k);
+            let now = Some(Phase::of(step));
+            done += part(now, Phase::Done) * k + part(before, Phase::Done) * (1.0 - k);
+            working += part(now, Phase::Started) * k + part(before, Phase::Started) * (1.0 - k);
         }
         let all = steps.len() as f64;
         (done / all, working / all)
@@ -154,15 +155,15 @@ fn rgb(style: Style) -> Color {
 /// followed by the state's word when `words`.
 pub(super) fn tally(steps: &[Step], spin: &'static str, words: bool) -> Vec<Span<'static>> {
     let mut spans = vec![];
-    let looks: [(State, &str, Style); 5] = [
-        (State::Done, "✓", GREEN),
-        (State::Working, spin, CYAN),
-        (State::Open, "○", Style::new()),
-        (State::Dropped, "✗", RED),
-        (State::Expired, "◌", DIM),
+    let looks: [(Phase, &str, Style); 5] = [
+        (Phase::Done, "✓", GREEN),
+        (Phase::Started, spin, CYAN),
+        (Phase::Open, "○", Style::new()),
+        (Phase::Dropped, "✗", RED),
+        (Phase::Stale, "◌", DIM),
     ];
     for (state, glyph, look) in looks {
-        let count = steps.iter().filter(|s| s.state() == state).count();
+        let count = steps.iter().filter(|s| Phase::of(s) == state).count();
         if count == 0 {
             continue;
         }
