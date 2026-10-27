@@ -44,10 +44,14 @@ fn a_pattern_whose_uses_were_fixed_twice_needs_tidy_as_misled() {
     let repo = Repo::new();
     let id = decide(&repo, &["--", "When a price prints: use cents."]);
     misled(&repo, &id, 1);
-    assert_eq!(tidy(&repo), "1 pattern in the index");
+    let nameless = format!(
+        "{} nameless When a price prints\n1 pattern in the index",
+        &id[..8]
+    );
+    assert_eq!(tidy(&repo), nameless);
     misled(&repo, &id, 2);
     let want = format!(
-        "{} misled When a price prints\n1 pattern in the index",
+        "{} misled,nameless When a price prints\n1 pattern in the index",
         &id[..8]
     );
     assert_eq!(tidy(&repo), want);
@@ -94,9 +98,9 @@ fn near_copies_name_each_other() {
     );
     let b = decide(&repo, &["--", "When you store money amounts: use cents."]);
     decide(&repo, &["--", "When you indent Python: use spaces."]);
-    let near = |x: &str, y: &str| format!("{} near:{} ", &x[..8], &y[..8]);
+    let near = |x: &str, y: &str| format!("{} near:{},nameless ", &x[..8], &y[..8]);
     let listed = tidy(&repo);
-    let lines: Vec<&str> = listed.lines().collect();
+    let lines: Vec<&str> = listed.lines().filter(|l| !l.contains("Python")).collect();
     assert_eq!(lines.len(), 3, "{listed}");
     assert!(
         lines.iter().any(|l| l.starts_with(&near(&a, &b))),
@@ -124,11 +128,14 @@ fn an_old_pattern_no_step_uses_is_unused() {
         support::now() - 61 * DAY,
     );
     let fresh = decide(&repo, &["--", "When a logo is drawn: keep it flat."]);
-    assert_eq!(tidy(&repo), "2 patterns in the index");
+    let line = |reasons: &str| format!("{} {reasons} When a release is cut", &old.id[..8]);
+    let logo = format!("{} nameless When a logo is drawn", &fresh[..8]);
+    let none = format!("{}\n{logo}\n2 patterns in the index", line("nameless"));
+    assert_eq!(tidy(&repo), none);
     add(&repo, &["--uses", &fresh[..8], "--", "Draw the logo"]);
     let want = format!(
-        "{} unused When a release is cut\n2 patterns in the index",
-        &old.id[..8]
+        "{}\n{logo}\n2 patterns in the index",
+        line("unused,nameless")
     );
     assert_eq!(tidy(&repo), want);
 }
@@ -140,12 +147,16 @@ fn a_pattern_replaced_three_times_is_churn() {
     let repo = Repo::new();
     let mut id = decide(&repo, &["--", "When a logo is drawn: keep it flat."]);
     for n in 1..=3 {
-        assert_eq!(tidy(&repo), "1 pattern in the index");
+        let want = format!(
+            "{} nameless When a logo is drawn\n1 pattern in the index",
+            &id[..8]
+        );
+        assert_eq!(tidy(&repo), want);
         let text = format!("When a logo is drawn: keep it flat, take {n}.");
         id = decide(&repo, &["--replaces", &id[..8], "--", &text]);
     }
     let want = format!(
-        "{} churn When a logo is drawn\n1 pattern in the index",
+        "{} churn,nameless When a logo is drawn\n1 pattern in the index",
         &id[..8]
     );
     assert_eq!(tidy(&repo), want);
@@ -232,4 +243,37 @@ fn misled_needs_a_pattern_and_a_fix() {
     let mut args = vec!["step", "add", "--json"];
     args.extend(fix);
     refusal(&cli(&repo, &args), 1, "no-pattern");
+}
+
+/// A pattern with no Name is `nameless`, and one whose When starts with `When:` or holds another of its
+/// lines is `form`; a named pattern in the right form has neither (`spec/02-cli.md`, "Patterns").
+#[test]
+fn a_nameless_or_malformed_pattern_needs_tidy() {
+    let repo = Repo::new();
+    let named = "Name: Light on two sides\nWhen a living room is lit\nForces: one window glares\nDo: add a second window\nBecause: two sides soften shadows";
+    decide(&repo, &["--", named]);
+    let plain = decide(&repo, &["--", "When a price prints: use cents."]);
+    let label = decide(
+        &repo,
+        &["--", "Name: Cents\nWhen: an invoice totals\nDo: add cents"],
+    );
+    let packed = decide(
+        &repo,
+        &[
+            "--",
+            "Name: Tags\nWhen a tag ships. Forces: speed. Do: sign it.\nBecause: trust",
+        ],
+    );
+    let want = [
+        format!("{} nameless When a price prints", &plain[..8]),
+        format!("{} form Cents", &label[..8]),
+        format!("{} form Tags", &packed[..8]),
+        "4 patterns in the index".to_string(),
+    ];
+    let listed = tidy(&repo);
+    let mut lines: Vec<&str> = listed.lines().collect();
+    lines.sort();
+    let mut want: Vec<&str> = want.iter().map(String::as_str).collect();
+    want.sort();
+    assert_eq!(lines, want, "{listed}");
 }

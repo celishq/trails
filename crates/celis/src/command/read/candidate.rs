@@ -72,6 +72,13 @@ impl<'a> Candidate<'a> {
                 if chain >= CHURN {
                     reasons.push("churn".to_string());
                 }
+                let record = &pattern.record;
+                if record.name().is_none() {
+                    reasons.push("nameless".to_string());
+                }
+                if malformed(record.when()) {
+                    reasons.push("form".to_string());
+                }
                 Candidate {
                     pattern: pattern.clone(),
                     reasons,
@@ -103,4 +110,12 @@ impl<'a> Candidate<'a> {
             self.pattern.record.title()
         )
     }
+}
+
+/// Whether `when` starts with `When:`, or holds another line of a pattern (CIP-02, "Patterns").
+fn malformed(when: &str) -> bool {
+    when.starts_with("When:")
+        || ["Forces:", "Do:", "Because:"]
+            .iter()
+            .any(|l| when.contains(l))
 }

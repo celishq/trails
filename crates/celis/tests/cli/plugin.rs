@@ -240,11 +240,11 @@ fn claudes_session_start_asks_to_offer_a_tidy() {
         let o = repo.run(&repo.path(), &["pattern", "--", text], &[], "");
         assert!(o.status.success(), "{}", err(&o));
     };
-    pattern("When code handles money amounts: keep cents.");
+    pattern("Name: Cents\nWhen code handles money amounts\nDo: keep cents");
     assert!(!claude
         .run(&repo, claude.start, &start)
         .contains("/celis:tidy"));
-    pattern("When you store money amounts: use cents.");
+    pattern("Name: Cents\nWhen you store money amounts\nDo: use cents");
     let said = claude.run(&repo, claude.start, &start);
     assert!(
         said.contains("offer them /celis:tidy: 2 patterns need it."),
