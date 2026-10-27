@@ -1,6 +1,6 @@
 //! The patterns of a store, and the account's writes of them.
 
-use crate::{Cell, Cells, PatternRecord, Patterns};
+use crate::{Cell, Cells, Mask, Membership, PatternRecord, Patterns};
 use celis_nostr::Note;
 use celis_store::{Anchor, PatternId, ProofFile, Refusal, Store};
 use std::collections::HashSet;
@@ -77,7 +77,7 @@ impl PatternStore for Store {
             })
             .collect();
         let found = found?;
-        self.sign(|account, now| Cell::membership(account, now, name, &found))
+        self.sign(|account, now| Membership::write(account, now, name, &found))
     }
 
     fn turn(&self, name: &str, on: bool, anchor: Option<&Anchor>) -> Result<Note, Refusal> {
@@ -88,8 +88,16 @@ impl PatternStore for Store {
             _ => return Err(Refusal::CellTaken(name.to_string())),
         };
         let project = anchor.map(|a| a.project.as_str());
-        let after = cells.masked_at(&cell, project).map(|at| at + 1);
-        self.sign(|account, now| cell.mask(account, now.max(after.unwrap_or(0)), on, anchor))
+        let after = cells.newest(&cell, project).map_or(0, |m| m.at + 1);
+        self.sign(|account, now| {
+            let mask = Mask {
+                cell,
+                on,
+                anchor: anchor.cloned(),
+                at: now.max(after),
+            };
+            mask.record(account)
+        })
     }
 
     fn leave(&mut self, name: &str) -> Result<usize, Refusal> {
@@ -109,7 +117,7 @@ impl PatternStore for Store {
         let memberships = self
             .records()
             .iter()
-            .filter(|n| Cell::read(n).is_some_and(|(c, _)| c == cell));
+            .filter(|n| Membership::read(n).is_some_and(|m| m.cell == cell));
         gone.extend(memberships.map(|n| n.id.as_str()));
         let (records, kept): (Vec<&Note>, Vec<&Note>) = self
             .records()

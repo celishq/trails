@@ -3,7 +3,7 @@
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use celis_nostr::Note;
-use celis_patterns::{Cell, Example, Pattern, PatternStore};
+use celis_patterns::{Cell, Example, Membership, Pattern, PatternStore};
 use celis_store::ProofFile;
 use std::io::Write;
 use std::path::Path;
@@ -31,7 +31,7 @@ impl Command {
             return Err(Failure::no_cell(name));
         }
         let ids: Vec<&str> = ours.iter().map(|p| p.id()).collect();
-        let membership = trails.seal(|account, now| Cell::membership(account, now, name, &ids))?;
+        let membership = trails.seal(|account, now| Membership::write(account, now, name, &ids))?;
         let folder = self.folder.join(args.to.as_deref().unwrap_or(name));
         let notes = ours.iter().map(|p| p.note).chain([&membership]);
         let lines: Result<Vec<String>, _> = notes.map(serde_json::to_string).collect();

@@ -1,6 +1,6 @@
 //! The records of an exported cell.
 
-use crate::{Cell, Example, PatternRecord};
+use crate::{Cell, Example, Membership, PatternRecord};
 use celis_nostr::Note;
 use celis_store::{ProofFile, Refusal};
 
@@ -34,7 +34,7 @@ impl Export {
             }
             if let Some(record) = PatternRecord::read(&note) {
                 patterns.push((note, record));
-            } else if Cell::read(&note).is_some() {
+            } else if Membership::read(&note).is_some() {
                 memberships.push(note);
             } else {
                 return Err(invalid(format!(
@@ -49,9 +49,12 @@ impl Export {
                 memberships.len()
             )));
         };
-        let (cell, ids) = Cell::read(membership).expect("a membership");
+        let Membership {
+            cell,
+            patterns: ids,
+        } = Membership::read(membership).expect("a membership");
         for (note, _) in &patterns {
-            if note.pubkey != membership.pubkey || !ids.contains(&note.id.as_str()) {
+            if note.pubkey != membership.pubkey || !ids.contains(&note.id) {
                 return Err(invalid(format!(
                     "the cell does not hold the pattern {}",
                     note.id
