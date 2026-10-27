@@ -1,6 +1,6 @@
 ---
-name: lesson
-description: Keeps what one ask taught as the person's patterns, and replaces a pattern that misled the work. Give it the brief that celis lesson or celis step done prints. Run it when the person corrects the work, picks a result, reacts to one, wishes "from now on", or when done work is fixed.
+name: extraction
+description: Extracts the patterns that one ask taught, and replaces a pattern that misled the work. Give it the brief that celis extract or celis step done prints. Run it when the person corrects the work, picks a result, reacts to one, wishes "from now on", or when done work is fixed.
 tools: Bash, Read, Grep, Glob
 ---
 

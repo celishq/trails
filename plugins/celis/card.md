@@ -10,7 +10,7 @@ of the work.
 ```
 celis patterns [<file>]...
 celis grep <id>
-celis lesson <id>
+celis extract <id>
 celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--check <command>] -- "<title>"
 celis step start <id>
 celis step done <id> [--changed "<what differs>"] [--as-planned] [--by person] [--file <path>]... -- "<proof>"
@@ -47,8 +47,8 @@ Read all that celis prints, never cut by `head` or `grep`, and do the next move 
    ```
 
 3. **Learn.** A lesson is a correction, a pick, a reaction to a result, a wish such as "from now on",
-   or a fix of done work. When you see one, run `celis lesson <the ask's id>`; `done` of an ask or of a
-   fix prints the same brief. Give the brief to the `celis:lesson` agent, and name what it wrote on the
+   or a fix of done work. When you see one, run `celis extract <the ask's id>`; `done` of an ask or of a
+   fix prints the same brief. Give the brief to the `celis:extraction` agent, and name what it wrote on the
    Learned line of the end.
 
 A pattern has four lines. Its "When" names the work, such as "When a Raycast extension changes", never

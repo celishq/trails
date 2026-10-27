@@ -6,4 +6,4 @@ model: opus
 runs: 3
 plugins: [../../plugins/celis]
 ---
-The ask in `ask.id` is done. Keep what it taught: run `celis lesson` on that id and give the brief to the celis:lesson agent.
+The ask in `ask.id` is done. Keep what it taught: run `celis extract` on that id and give the brief to the celis:extraction agent.
