@@ -1,5 +1,6 @@
 #!/bin/sh
 set -e
+sh "$(dirname "$0")/../../scripts/eval-celis.sh"
 export GIT_CEILING_DIRECTORIES="$(dirname "$PWD")"
 printf '# tools\n' > README.md
 git init -q && git add -A && git -c user.name=e -c user.email=e@e commit -q -m base

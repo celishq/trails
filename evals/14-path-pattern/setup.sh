@@ -1,5 +1,6 @@
 #!/bin/sh
 set -e
+sh "$(dirname "$0")/../../scripts/eval-celis.sh"
 export GIT_CEILING_DIRECTORIES="$(dirname "$PWD")"
 mkdir -p shop
 printf 'import logging\n\nlog = logging.getLogger("shop")\n\n\ndef price(cents):\n    return cents\n' > shop/prices.py
