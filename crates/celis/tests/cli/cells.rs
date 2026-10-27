@@ -317,3 +317,17 @@ fn cells_lists_each_cell_and_patterns_cell_shows_its_patterns() {
     let o = cli(&repo, &["patterns", "--cell", "east", "--json"]);
     refusal(&o, 1, "no-cell");
 }
+
+/// `cell off` right after `cell on` turns the cell off, also within one second (`spec/09-cells.md`,
+/// "Masks").
+#[test]
+fn cell_off_right_after_cell_on_turns_the_cell_off() {
+    let repo = Repo::new();
+    let a = decide(&repo, "When a menu is laid out\nDo: put soups first");
+    assert!(cli(&repo, &["cell", "add", "west", &a]).status.success());
+    for _ in 0..5 {
+        assert!(cli(&repo, &["cell", "on", "west"]).status.success());
+        assert!(cli(&repo, &["cell", "off", "west"]).status.success());
+        assert!(out(&cli(&repo, &["cells"])).trim().ends_with(" off"));
+    }
+}

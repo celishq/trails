@@ -51,6 +51,11 @@ memberships name, and each pattern of the same account that replaces one of the 
 - The project anchor (CIP-01, "Records"), for a mask of one project; or `["scope", "me"]` and no anchor,
   for a mask of every project.
 
+**Writers**
+
+- A writer MUST write a mask with a `created_at` greater than that of each mask of the same cell and
+  the same project, or of every project, that the store holds.
+
 **Readers**
 
 - In a project, a cell is on or off as its newest mask of that project gives it, else as its newest `me`

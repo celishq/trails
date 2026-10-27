@@ -19,6 +19,7 @@ struct Mask {
     cell: Cell,
     on: bool,
     project: Option<String>,
+    at: u64,
 }
 
 impl Cells {
@@ -51,6 +52,16 @@ impl Cells {
         found.map(|(c, _)| c).collect()
     }
 
+    /// When the newest mask of `cell` in the project `project`, or of every project with none, was
+    /// written.
+    pub fn masked_at(&self, cell: &Cell, project: Option<&str>) -> Option<u64> {
+        let masks = self
+            .masks
+            .iter()
+            .filter(|m| m.cell == *cell && m.project.as_deref() == project);
+        masks.map(|m| m.at).max()
+    }
+
     /// Whether `cell` is on in the project `project` (`spec/09-cells.md`, "Masks").
     pub fn is_on(&self, cell: &Cell, project: &str) -> bool {
         let newest = |of: Option<&str>| {
@@ -81,7 +92,12 @@ fn mask(note: &Note) -> Option<Mask> {
         Some("me") => None,
         _ => Some(Anchor::read(note)?.project),
     };
-    Some(Mask { cell, on, project })
+    Some(Mask {
+        cell,
+        on,
+        project,
+        at: note.created_at,
+    })
 }
 
 #[cfg(test)]

@@ -82,6 +82,8 @@ impl PatternStore for Store {
             [cell] => cell.clone(),
             _ => return Err(Refusal::CellTaken(name.to_string())),
         };
-        self.sign(|account, now| cell.mask(account, now, on, anchor))
+        let project = anchor.map(|a| a.project.as_str());
+        let after = cells.masked_at(&cell, project).map(|at| at + 1);
+        self.sign(|account, now| cell.mask(account, now.max(after.unwrap_or(0)), on, anchor))
     }
 }
