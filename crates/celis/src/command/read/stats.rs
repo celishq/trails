@@ -116,10 +116,10 @@ fn step(trails: &Store, step: Step, json: bool, out: &mut dyn Write) -> Result<(
     if json || !step.is_trail() {
         return Ok(());
     }
-    let (Some(done), Some(record)) = (step.done(), step.done_record()) else {
+    let Some(done) = step.done() else {
         return Ok(());
     };
-    let end = End::of(trails.records(), step, &done, record.created_at);
+    let end = End::of(trails.records(), step, &done);
     crate::command::put(out, &end.total())
 }
 

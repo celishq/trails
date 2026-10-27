@@ -124,12 +124,7 @@ impl Command {
         let written = trails.done(id, done.clone(), &project.folder)?;
         self.print(written, args, out, err)?;
         let steps = trails.steps();
-        let review = Review::of(
-            trails.records(),
-            steps.find(id)?,
-            &done,
-            crate::command::now(),
-        );
+        let review = Review::of(trails.records(), steps.find(id)?, &done);
         let linked = !Link::all(&self.home()?, &project.folder).is_empty();
         self.review(&review, (&trails, &changed), linked, err)
     }

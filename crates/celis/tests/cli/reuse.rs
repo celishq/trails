@@ -257,10 +257,9 @@ fn stats_of_a_done_ask_prints_its_total() {
     let lines: Vec<&str> = text.lines().collect();
     assert_eq!(lines.len(), 2, "{text}");
     assert!(lines[0].starts_with(&ask[..8]), "{text}");
-    assert!(
-        lines[1].starts_with("celis · 2 steps · ")
-            && lines[1].contains(" · 1 pattern used · 1 extracted · "),
-        "{text}"
+    assert_eq!(
+        lines[1],
+        "celis · 2 steps, 2 not proven · 1 pattern used, 1 extracted"
     );
 }
 

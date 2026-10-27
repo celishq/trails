@@ -27,9 +27,9 @@ pub(crate) struct Review {
 }
 
 impl Review {
-    /// How `step`, just closed `done` at `now`, went against its plan; `records` are the store's before
+    /// How `step`, just closed `done`, went against its plan; `records` are the store's before
     /// the done.
-    pub fn of(records: &[Note], step: Step, done: &Done, now: u64) -> Review {
+    pub fn of(records: &[Note], step: Step, done: &Done) -> Review {
         let changed = done.changed.as_deref();
         let tree = step.tree();
         let parts = &tree[1..];
@@ -95,7 +95,7 @@ impl Review {
             },
             files: done.files.clone(),
             under: under.map(|u| u.step_id()),
-            end: ask.then(|| End::of(records, step, done, now)),
+            end: ask.then(|| End::of(records, step, done)),
             learn: (!ask && step.fixes()).then(|| Learn::of(records, step, done.changed.clone())),
         }
     }

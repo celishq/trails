@@ -57,8 +57,8 @@ fn done_changed_asks_to_reshape_the_plan() {
     );
 }
 
-/// `done` on an ask prints, after the learn brief, the total of its steps, proofs by kind, the patterns
-/// it used and wrote, and its minutes; an old `by judge` counts as judged (`spec/03-steps.md`, "Closing").
+/// `done` on an ask prints, after the learn brief, the total of its steps, those with no proof, and the
+/// patterns it used and wrote; an old `by judge` counts as a proof (`spec/03-steps.md`, "Closing").
 #[test]
 fn done_on_an_ask_prints_its_total() {
     let repo = Repo::new();
@@ -126,14 +126,14 @@ fn done_on_an_ask_prints_its_total() {
             format!("  changed {} it took the cache", &claim[..8]),
             format!("  pattern {} When a price rounds", &old.id[..8]),
             format!("celis: the ask {a} is done. When you have kept what it taught, celis stats {a} gives its total."),
-            "celis · 4 steps · 1 checked · 1 judged · 1 person · 1 not proven · 1 pattern used · 0 extracted · 10m".to_string(),
+            "celis · 4 steps, 1 not proven · 1 pattern used".to_string(),
         ]
     );
 }
 
-/// The end of an ask whose steps share one kind of proof totals them as all of that kind.
+/// The total of an ask whose steps are all proven, with no pattern, gives only its steps.
 #[test]
-fn an_end_whose_steps_share_one_proof_totals_them_as_all() {
+fn a_total_with_nothing_to_flag_gives_only_the_steps() {
     let repo = Repo::new();
     let ask = add(&repo, &["--check", "true", "--", "the ask"]);
     let part = add(
@@ -142,12 +142,7 @@ fn an_end_whose_steps_share_one_proof_totals_them_as_all() {
     );
     done(&repo, &part, &["--as-planned"]);
     let lines = done(&repo, &ask, &["--as-planned"]);
-    assert!(
-        lines.contains(
-            &"celis · 2 steps · all checked · 0 patterns used · 0 extracted · 0m".to_string()
-        ),
-        "{lines:?}"
-    );
+    assert!(lines.contains(&"celis · 2 steps".to_string()), "{lines:?}");
 }
 
 /// The head of the learn brief of the ask `a`.
@@ -265,10 +260,7 @@ fn done_by_takes_person_and_ignores_judge() {
     assert_eq!(o.status.code(), Some(2), "{}", err(&o));
     let judged = add(&repo, &["--", "the judged ask"]);
     let lines = done(&repo, &judged, &["--as-planned", "--by", "judge"]);
-    assert_eq!(
-        lines.last().unwrap(),
-        "celis · 1 step · 1 not proven · 0 patterns used · 0 extracted · 0m"
-    );
+    assert_eq!(lines.last().unwrap(), "celis · 1 step, 1 not proven");
     done(&repo, &trail, &["--as-planned", "--by", "person"]);
 }
 
