@@ -2,9 +2,9 @@
 
 use crate::command::read::tree::level::Level;
 use crate::command::read::tree::row::Row;
-use crate::command::read::tree::{after, Item, Tree};
+use crate::command::read::tree::{after, Item, Tree, NOTES, PATTERNS};
 use crate::progress::Phase;
-use crate::terminal::canvas::{paint, Styled, DIM};
+use crate::terminal::canvas::{paint, Styled, DIM, MAGENTA};
 use crate::terminal::look::{look, SHIMMER};
 use celis_nostr::Note;
 use celis_trails::step::steps::LIFE;
@@ -14,19 +14,31 @@ use ratatui::text::Span;
 
 impl Tree<'_> {
     /// Adds `level` under the line `above` after `rail`: its steps in the order they came, closed ones
-    /// too; then the patterns line of `patterns`.
+    /// too; then the patterns line of `patterns` and the notes line of `notes`.
     pub(super) fn level(
         &self,
         level: Level,
         patterns: Vec<&Note>,
+        notes: Vec<&Note>,
         rail: &Styled,
         above: &str,
         lines: &mut Vec<Row>,
     ) {
-        let more = !patterns.is_empty();
+        let more = !patterns.is_empty() || !notes.is_empty();
         self.steps(level.order, rail, above, more, lines);
-        if more {
-            self.patterns_line(patterns, rail, true, above, lines);
+        if !patterns.is_empty() {
+            let last = notes.is_empty();
+            self.records_line(
+                patterns,
+                (paint(MAGENTA, PATTERNS), "pattern"),
+                rail,
+                last,
+                above,
+                lines,
+            );
+        }
+        if !notes.is_empty() {
+            self.records_line(notes, (paint(DIM, NOTES), "note"), rail, true, above, lines);
         }
     }
 
@@ -53,7 +65,9 @@ impl Tree<'_> {
             let open = self.open(note.id());
             let last = n + 1 == all && !more;
             let level = Level::of(note.children());
-            let toggle = (!note.children().is_empty()).then_some(open);
+            let notes = self.notes.on(note.id()).to_vec();
+            let opens = !note.children().is_empty() || !notes.is_empty();
+            let toggle = opens.then_some(open);
             let (lead, rail) = self.branch(rail, last, toggle, colour);
             let first = lines.len();
             let tone = match self.busy(note) {
@@ -66,7 +80,7 @@ impl Tree<'_> {
                 title: step.title().to_string(),
                 tone: self.shone(note, self.tone(tone, note.newest())),
                 meta: Styled::from(paint(DIM, &self.meta(note).to_string())),
-                whole: Some(match open && !note.children().is_empty() {
+                whole: Some(match open && opens {
                     true => after(&rail, paint(self.lane(), "│")),
                     false => rail.clone(),
                 }),
@@ -83,7 +97,7 @@ impl Tree<'_> {
                 self.closing(note, &below, true, lines);
             }
             if open {
-                self.level(level, self.uses(note), &rail, note.id(), lines);
+                self.level(level, self.uses(note), notes, &rail, note.id(), lines);
             }
         }
     }

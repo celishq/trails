@@ -1,10 +1,10 @@
-//! The folded line of a level: its patterns line, open or closed.
+//! The folded lines of a level: its patterns line and its notes line, each open or closed.
 
 use crate::command::read::tree::row::Row;
-use crate::command::read::tree::{after, details, Item, Tree, PATTERNS};
+use crate::command::read::tree::{after, details, Item, Tree};
 use crate::progress::Phase;
 use crate::progress::Tally;
-use crate::terminal::canvas::{paint, Styled, DIM, MAGENTA};
+use crate::terminal::canvas::{paint, Styled, DIM};
 use crate::terminal::look::look;
 use crate::text::line::plural;
 use celis_nostr::Note;
@@ -12,26 +12,26 @@ use ratatui::style::Style;
 use ratatui::text::Span;
 
 impl Tree<'_> {
-    /// Adds the patterns line `§ <n> patterns` of the row `trail` after `rail`, the `last` of its level;
-    /// open, a line under it for each of `patterns`: `§ <When>`, wrapped to fit, which opens to the
-    /// `details` of its other lines.
-    pub(super) fn patterns_line(
+    /// Adds the folded line `<mark> <n> <noun>s` of `records` under the row `trail` after `rail`, the
+    /// `last` of its level; open, a line under it for each record: `<mark> <first line>`, wrapped, which
+    /// opens to the `details` of its other lines.
+    pub(super) fn records_line(
         &self,
-        patterns: Vec<&Note>,
+        records: Vec<&Note>,
+        (mark, noun): (Span<'static>, &str),
         rail: &Styled,
         last: bool,
         trail: &str,
         lines: &mut Vec<Row>,
     ) {
-        let id = format!("{PATTERNS}{trail}");
+        let id = format!("{}{trail}", mark.content);
         let open = self.open(&id);
         let (lead, rail) = self.branch(rail, last, Some(open), self.lane());
-        let mark = paint(MAGENTA, "§");
         let first = lines.len();
         lines.push(Row::Lined {
             lead,
             marks: Styled::from(mark.clone()),
-            title: plural(patterns.len(), "pattern"),
+            title: plural(records.len(), noun),
             tone: Style::new(),
             meta: Styled::default(),
             whole: None,
@@ -40,14 +40,14 @@ impl Tree<'_> {
             id: id.clone(),
             open,
             parent: Some(trail.to_string()),
-            under: patterns.iter().map(|p| p.id.clone()).collect(),
+            under: records.iter().map(|r| r.id.clone()).collect(),
         };
         self.pick(item, lines, first);
         if !open {
             return;
         }
-        let all = patterns.len();
-        for (n, record) in patterns.into_iter().enumerate() {
+        let all = records.len();
+        for (n, record) in records.into_iter().enumerate() {
             let more = details(record.content.lines().skip(1));
             let toggle = (!more.is_empty()).then(|| self.open(&record.id));
             let (lead, under) = self.branch(&rail, n + 1 == all, toggle, self.lane());

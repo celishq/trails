@@ -145,9 +145,11 @@ pub(crate) struct Item {
 }
 
 impl Item {
-    /// The first 8 characters of its id; none for a patterns or closed line.
+    /// The first 8 characters of its id; none for a patterns, notes or closed line.
     pub fn copy(&self) -> Option<String> {
-        let group = self.id.starts_with(PATTERNS) || self.id.starts_with(CLOSED);
+        let group = [PATTERNS, NOTES, CLOSED]
+            .iter()
+            .any(|p| self.id.starts_with(p));
         (!group).then(|| short(&self.id))
     }
 }
@@ -180,13 +182,6 @@ struct Summary<'a> {
     meta: Meta,
     patterns: Vec<&'a Note>,
     notes: Vec<&'a Note>,
-}
-
-impl<'a> Summary<'a> {
-    /// Its patterns, then its notes.
-    fn records(&self) -> Vec<&'a Note> {
-        self.patterns.iter().chain(&self.notes).copied().collect()
-    }
 }
 
 impl Tree<'_> {
@@ -416,8 +411,10 @@ fn after(rail: &Styled, more: Span<'static>) -> Styled {
 
 /// The seconds a step's title prints bold after its newest record.
 const FRESH: u64 = 2;
-/// What starts the id of a trail's patterns line in a watch's order.
+/// What starts the id of a row's patterns line in a watch's order, and marks a pattern.
 const PATTERNS: &str = "§";
+/// What starts the id of a row's notes line in a watch's order, and marks a note.
+const NOTES: &str = "¶";
 /// The id of the `Show more` line in a watch's order.
 pub(crate) const MORE: &str = "+more";
 /// What starts the id of a trail's closed line in a watch's order.
