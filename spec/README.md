@@ -45,6 +45,7 @@ Every change of `spec/` MUST keep these rules:
 | 05 | Patterns | the pattern, its scope and its examples | CIP-01 |
 | 06 | Reuse | the patterns a step uses, revisions | CIP-03, 04, 05 |
 | 08 | Files | the files of a done and of a pattern, and their blobs | CIP-01, 03, 05 |
+| 09 | Cells | the cell, its masks, the view, and its export | CIP-01, 05, 08 |
 
 ## Names
 
@@ -72,6 +73,9 @@ Every change of `spec/` MUST keep these rules:
 | `misled` | step tag and done tag | 06 |
 | `imeta` with `url` · `x` · `m` · `size` · `path` | done tag: a file of the proof (NIP-92, BUD-10) | 08 |
 | `$CELIS_HOME/trails/blobs/` · `<folder>/blobs/` | the blobs of the store and of a linked folder | 08 |
+| 1985 with `<cell name>` in `celis.cell` · `e` | kind: a membership of patterns in a cell (NIP-32) | 09 |
+| 1985 with `on` · `off` in `celis.mask` · `cell` · `p` · `scope` | kind: a mask of a cell, and its tags (NIP-32) | 09 |
+| `cell.jsonl` · `cell.md` · `blobs/<sha256>.<ext>` | the files of an exported cell | 09 |
 
 **Deprecated.** A reader ignores each of these, unless its row says how it reads it. Older versions wrote
 them.
@@ -88,7 +92,7 @@ them.
 | `promoted` in `celis.decision` | a pattern label, later `binds` |
 | `situation` in `celis.decision` | a pattern label: the pattern also held where no file shows it ahead |
 | `tool` | a rule tag: the other tool calls a rule acted on |
-| `cell` | a pattern tag: a topic the pattern was in; a reader ignores it, as CIP-05, "Reading", states |
+| `cell` on a pattern | a pattern tag: a topic the pattern was in; a reader ignores it, as CIP-05, "Reading", states |
 | `at:<place>` as the `scope` of a pattern | a scope, now `path` globs; a reader reads it as CIP-05, "Reading", states |
 | `trail:<id>` as the `scope` of a pattern | a scope, now a note on the trail; a reader reads it as CIP-05, "Reading", states |
 | `uses` that names a step | a step tag: a follow of a past step; a reader ignores it, as CIP-06, "Uses", states |
@@ -119,3 +123,5 @@ them.
 | `live` | a pattern no other pattern replaces and no drop names |
 | `revised` | done work that a later step replaces |
 | `blob` | the bytes of a file, named by their sha256 |
+| `cell` | a named set of patterns of one account, that a project turns on or off |
+| `view` | the patterns of a project that no cell that is off holds |

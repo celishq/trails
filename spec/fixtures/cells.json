@@ -1,0 +1,78 @@
+{
+  "about": [
+    "The cell records and the view, as CIP-09 gives them. celis writes the records and every reader builds",
+    "the view from them, so both must match this file: the CLI test writes a membership with `celis cell add`",
+    "and masks with `celis cell on` and `celis cell off`, and finds these labels on them. Each case then puts",
+    "its patterns, memberships and masks in a store, and `celis patterns` in project `p` shows the patterns",
+    "of `view`, and only those.",
+    "",
+    "A pattern id is a letter here, and `mine` and `theirs` are two accounts. `masks` are oldest first."
+  ],
+  "membership": [["L", "celis.cell"], ["l", "<name>", "celis.cell"], ["e", "<pattern id>"]],
+  "mask": {
+    "project": [["L", "celis.mask"], ["l", "on", "celis.mask"], ["cell", "<name>"], ["p", "<hex pubkey>"],
+                ["I", "project:<project id>"], ["K", "project"], ["i", "project:<project id>"], ["k", "project"],
+                ["project", "<project name>"]],
+    "me": [["L", "celis.mask"], ["l", "on", "celis.mask"], ["cell", "<name>"], ["p", "<hex pubkey>"],
+           ["scope", "me"]]
+  },
+  "cases": [
+    {
+      "name": "a new cell is off, and the base layer stays",
+      "patterns": [{"id": "a", "by": "mine"}, {"id": "b", "by": "mine"}],
+      "cells": [{"name": "west", "by": "mine", "patterns": ["b"]}],
+      "masks": [],
+      "view": ["a"]
+    },
+    {
+      "name": "a cell that is on joins the view",
+      "patterns": [{"id": "a", "by": "mine"}, {"id": "b", "by": "mine"}],
+      "cells": [{"name": "west", "by": "mine", "patterns": ["b"]}],
+      "masks": [{"cell": "west", "by": "mine", "l": "on", "scope": "project"}],
+      "view": ["a", "b"]
+    },
+    {
+      "name": "the newest project mask wins over a newer me mask",
+      "patterns": [{"id": "b", "by": "mine"}],
+      "cells": [{"name": "west", "by": "mine", "patterns": ["b"]}],
+      "masks": [{"cell": "west", "by": "mine", "l": "on", "scope": "project"},
+                {"cell": "west", "by": "mine", "l": "off", "scope": "me"}],
+      "view": ["b"]
+    },
+    {
+      "name": "a me mask holds where no project mask is",
+      "patterns": [{"id": "b", "by": "mine"}],
+      "cells": [{"name": "west", "by": "mine", "patterns": ["b"]}],
+      "masks": [{"cell": "west", "by": "mine", "l": "on", "scope": "me"}],
+      "view": ["b"]
+    },
+    {
+      "name": "a pattern of another project, in a cell that is on, holds here",
+      "patterns": [{"id": "b", "by": "theirs", "project": "q"}],
+      "cells": [{"name": "east", "by": "theirs", "patterns": ["b"]}],
+      "masks": [{"cell": "east", "by": "mine", "l": "on", "scope": "project"}],
+      "view": ["b"]
+    },
+    {
+      "name": "your replacement of a cell pattern leaves with the cell",
+      "patterns": [{"id": "b", "by": "theirs", "project": "q"}, {"id": "c", "by": "mine", "replaces": "b"}],
+      "cells": [{"name": "east", "by": "theirs", "patterns": ["b"]}],
+      "masks": [],
+      "view": []
+    },
+    {
+      "name": "your replacement of a cell pattern shows while the cell is on",
+      "patterns": [{"id": "b", "by": "theirs", "project": "q"}, {"id": "c", "by": "mine", "replaces": "b"}],
+      "cells": [{"name": "east", "by": "theirs", "patterns": ["b"]}],
+      "masks": [{"cell": "east", "by": "mine", "l": "on", "scope": "project"}],
+      "view": ["c"]
+    },
+    {
+      "name": "a membership of another account's pattern is ignored",
+      "patterns": [{"id": "a", "by": "mine"}],
+      "cells": [{"name": "east", "by": "theirs", "patterns": ["a"]}],
+      "masks": [],
+      "view": ["a"]
+    }
+  ]
+}
