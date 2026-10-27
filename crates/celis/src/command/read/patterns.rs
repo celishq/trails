@@ -98,7 +98,9 @@ impl Command {
             return Ok(None);
         }
         let every = trails.patterns();
-        let held: HashSet<&str> = every.every().iter().map(|p| p.id()).collect();
+        let project = &here.anchor.project;
+        let held = every.every().iter().filter(|p| every.in_view(p, project));
+        let held: HashSet<&str> = held.map(|p| p.id()).collect();
         let files: Vec<(&str, Vec<String>)> = files
             .iter()
             .map(|f| (f.as_str(), files::paths(&here, &self.folder, f)))

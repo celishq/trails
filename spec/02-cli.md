@@ -439,7 +439,7 @@ trails with it.
 view    <yyyy-mm-dd> <trail id8 | -> [<project name>] <kind> <id8> <fields> <text>
           trail | step   <open | done | dropped>[ revised-by <id>,…][ at:<place>]…
           pattern        <live | replaced-by <id> | dropped> {<me | project>}
-                           [ old-rule][ uses:<n>][ misled:<n>][ used:<yyyy-mm-dd>]
+                           [ old-rule][ uses:<n>][ misled:<n>][ used:<yyyy-mm-dd>][ cell:<name>]…
           proof | changed | dropped | note                       the step's or pattern's id, no fields
           prompt                                                 the trail's id, no fields (CIP-04, "Sessions")
           good | bad                                             the pattern's id, no fields, and an example:
@@ -456,14 +456,14 @@ end     project [<project name>]
 `<id8>` is the first 8 characters of an id. A text holds each newline as a space. After its state and
 scope, a pattern's fields give ` old-rule` when it has the `binds` label that older writers wrote (CIP-05,
 "Reading"), ` uses:<n>` with how many steps name it in `uses` (CIP-06, "Uses"), when not 0, ` misled:<n>` with how
-many steps it misled (CIP-06, "Misled"), when not 0, and ` used:<day>` with the day of the newest step
-whose `uses` names it.
+many steps it misled (CIP-06, "Misled"), when not 0, ` used:<day>` with the day of the newest step
+whose `uses` names it, and ` cell:<name>` for each cell that is on and holds it (CIP-09).
 
 **Rules**
 
 - `grep` MUST give each word after it to the system `grep` as it is, with the view on its stdin.
-- The view MUST hold every trail of every project, newest first, and each live or replaced pattern by
-  when it was made. A trail MUST print as its line, then the notes on it, then its prompts, oldest first,
+- The view MUST hold every trail of every project, newest first, and each live or replaced pattern in the
+  view of the working folder's project (CIP-09, "The view") by when it was made. A trail MUST print as its line, then the notes on it, then its prompts, oldest first,
   then its steps, each level newest first, each step with its proof, `changed`, drop and note lines,
   then its own steps. A pattern MUST print as its line, then a line for each example, then its drop
   line.

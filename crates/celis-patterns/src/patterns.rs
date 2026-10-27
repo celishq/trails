@@ -1,13 +1,14 @@
 //! The patterns of a store.
 
-use crate::{Pattern, PatternEnd, PatternRecord, Scope};
+use crate::{Cell, Cells, Pattern, PatternEnd, PatternRecord, Scope};
 use celis_nostr::Note;
 use celis_store::Refusal;
 use std::collections::HashMap;
 
-/// The patterns of a store, read once, newest first, then by id.
+/// The patterns of a store, read once, newest first, then by id, and the cells that hold them.
 pub struct Patterns<'a> {
     every: Vec<Pattern<'a>>,
+    cells: Cells,
 }
 
 impl<'a> Patterns<'a> {
@@ -34,7 +35,14 @@ impl<'a> Patterns<'a> {
             })
             .collect();
         every.sort_by(|a, b| (b.note.created_at, &a.note.id).cmp(&(a.note.created_at, &b.note.id)));
-        Patterns { every }
+        Patterns {
+            every,
+            cells: Cells::new(records),
+        }
+    }
+
+    pub fn cells(&self) -> &Cells {
+        &self.cells
     }
 
     /// Every pattern of every project, live or ended.
@@ -87,9 +95,46 @@ impl<'a> Patterns<'a> {
             .collect()
     }
 
-    /// Whether `pattern` holds in `project`.
+    /// Whether `pattern` is in the view of `project` (`spec/09-cells.md`, "The view").
+    pub fn in_view(&self, pattern: &Pattern, project: &str) -> bool {
+        let cells = self.holding(pattern);
+        let off = !cells.is_empty() && cells.iter().all(|c| !self.cells.is_on(c, project));
+        let replaced = pattern
+            .record
+            .replaces
+            .as_deref()
+            .and_then(|id| self.by_id(id));
+        !off && replaced.is_none_or(|r| self.in_view(r, project))
+    }
+
+    /// The cells that hold `pattern`: those of its account that name it, or a pattern of that account
+    /// it replaces.
+    pub fn holding(&self, pattern: &Pattern) -> Vec<&Cell> {
+        let author = pattern.note.pubkey.hex();
+        let mut cells = self.cells.naming(pattern.id(), &author);
+        let replaced = pattern
+            .record
+            .replaces
+            .as_deref()
+            .and_then(|id| self.by_id(id));
+        if let Some(replaced) = replaced.filter(|r| r.note.pubkey == pattern.note.pubkey) {
+            cells.extend(self.holding(replaced));
+        }
+        cells
+    }
+
+    fn by_id(&self, id: &str) -> Option<&Pattern<'a>> {
+        self.every.iter().find(|p| p.id() == id)
+    }
+
+    /// Whether `pattern` holds in `project`: in the view, and in a cell that is on there or in its scope.
     fn holds(&self, pattern: &Pattern, project: &str) -> bool {
-        pattern.record.scope == Scope::Me || pattern.record.anchor.project == project
+        let on = || {
+            let mut cells = self.holding(pattern).into_iter();
+            cells.any(|c| self.cells.is_on(c, project))
+        };
+        let scoped = pattern.record.scope == Scope::Me || pattern.record.anchor.project == project;
+        self.in_view(pattern, project) && (scoped || on())
     }
 }
 

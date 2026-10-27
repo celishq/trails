@@ -26,13 +26,21 @@ pub(crate) struct View {
 }
 
 impl View {
-    /// The view of `trails`.
-    pub fn of(trails: &Store) -> View {
+    /// The view of `trails`, with the patterns in the view of `project`.
+    pub fn of(trails: &Store, project: &str) -> View {
         let (steps, patterns, notes) = (trails.steps(), trails.patterns(), trails.notes());
         let mut blocks: Vec<(u64, &str, Vec<Row>)> = Vec::new();
-        for entry in patterns.every() {
+        for entry in patterns
+            .every()
+            .iter()
+            .filter(|p| patterns.in_view(p, project))
+        {
             let note = entry.note;
-            blocks.push((note.created_at, &note.id, pattern(entry, &steps, trails)));
+            let cells = patterns.holding(entry).into_iter();
+            let on = cells.filter(|c| patterns.cells().is_on(c, project));
+            let on: Vec<&str> = on.map(|c| c.name.as_str()).collect();
+            let rows = pattern(entry, &on, &steps, trails);
+            blocks.push((note.created_at, &note.id, rows));
         }
         let mut prompts: HashMap<String, Vec<(&Note, String)>> = HashMap::new();
         for record in trails.records() {
@@ -173,8 +181,8 @@ fn step(root: Step, step: Step, kind: Kind) -> Row {
 }
 
 /// The rows of the pattern `entry`: its own, with how many steps of `steps` used it, how many it misled,
-/// and the day of the newest use; then each of its examples, then its drop's reason when a drop names it.
-fn pattern(entry: &Pattern, steps: &Steps, trails: &Store) -> Vec<Row> {
+/// the day of the newest use, and the `cells` that are on and hold it; then each of its examples, then its drop's reason when a drop names it.
+fn pattern(entry: &Pattern, cells: &[&str], steps: &Steps, trails: &Store) -> Vec<Row> {
     let (note, pattern) = (entry.note, &entry.record);
     let state = entry.end.map_or("live".to_string(), PatternEnd::text);
     let row = |kind: Kind, at: &Note, fields: Vec<String>, text: &str| Row {
@@ -200,6 +208,7 @@ fn pattern(entry: &Pattern, steps: &Steps, trails: &Store) -> Vec<Row> {
     }
     let newest = uses.first().map(|step| date(step.note().created_at));
     fields.extend(newest.map(|day| format!("used:{day}")));
+    fields.extend(cells.iter().map(|name| format!("cell:{name}")));
     let mut rows = vec![row(Kind::Pattern, note, fields, &pattern.content)];
     for (side, example) in pattern.examples.sides() {
         let kind = match side {
