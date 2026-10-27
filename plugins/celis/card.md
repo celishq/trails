@@ -32,12 +32,13 @@ Read all that celis prints, never cut by `head` or `grep`, and do the next move 
    what changed. Act, and tell after: ask only when you cannot write `expect` without a guess, or at a
    one-way door, such as a new dependency, a schema, money or a deploy. Take every other choice
    yourself, and name it in your answer.
-2. **Close.** When the work of the ask is done, close it with its proof. When only the person can check
-   it, ask them, and close it `--by person` with their answer. Then learn from it.
+2. **Close.** When the work of the ask is done, learn from it first, then close it with its proof. When
+   only the person can check it, ask them, and close it `--by person` with their answer.
 
 3. **Learn.** A lesson is a correction, a pick, a reaction to a result, a wish such as "from now on",
-   or a fix of done work. When you see one, run `celis extract <the ask's id>`; `done` of an ask or of a
-   fix prints the same brief. Give the brief to the `celis:extraction` agent, and name what it wrote in
+   or a fix of done work. When you see one, also in the ask's first prompt, run `celis extract <the
+   ask's id>` before the ask's `done`; `done` of an ask or of a fix prints the same brief, for a lesson
+   you did not see. Give the brief to the `celis:extraction` agent, and name what it wrote in
    your answer.
 
 A pattern has five lines, in Christopher Alexander's form. Its Name is the form that resolves it, as a
