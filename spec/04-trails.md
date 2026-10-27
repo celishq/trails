@@ -45,7 +45,9 @@ A session is one run of an agent; a subagent shares it. Many sessions can work o
 - A writer MUST write a `session` tag on each step that has a session, and an `agent` tag on each step
   that has an agent.
 - A session's open trail is the trail of its newest step, while it is not done or dropped.
-- A step with no `under` MUST be a new trail. A session does not join steps to its open trail.
+- A session's current trail is its open trail, else the trail of its newest step while its newest
+  `done` is less than 30 minutes old.
+- A step with no `under` MUST be a new trail. A session does not join steps to a trail by itself.
 - The prompt hook MUST write a prompt on its session's open trail only. With no open trail, the
   session's next `step add` MUST write the prompt on the trail of its step. The hook MUST write nothing
   for a prompt that starts with `<task-notification>` or `<agent-message`.
@@ -59,4 +61,5 @@ A trail's notes are the notes on the steps of its tree (CIP-03, "Notes"), and ea
 
 **Readers**
 
-- A trail takes the state of its ask (CIP-03, "Starting"): its own `done` or `drop` settles it.
+- A trail takes the state of its ask (CIP-03, "Starting"): its own `done` or `drop` settles it, and a
+  step under a done trail reopens it (CIP-03, "Closing").

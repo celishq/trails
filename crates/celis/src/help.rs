@@ -411,10 +411,11 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "step add",
-        usage: &["celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--misled <id>]... [--at <place>]... [--check <command>] [--session <id>] [--project <id>] -- <text>"],
+        usage: &["celis step add [--under <id>] [--new] [--replaces <id>] [--uses <id>]... [--misled <id>]... [--at <place>]... [--check <command>] [--session <id>] [--project <id>] -- <text>"],
         summary: "Add a step. With no --under, it is a new ask, and starts its trail.",
         args: &[
-            ("--under <id>", "The open step this step is part of"),
+            ("--under <id>", "The open step or done ask this step is part of"),
+            ("--new", "A new ask, beside the session's trail"),
             ("--replaces <id>", "A step this one takes over, or a finished step it fixes"),
             ("--uses <id>", "A pattern it follows"),
             ("--misled <id>", "A pattern that misled the work it fixes"),

@@ -25,7 +25,7 @@ celis stats [<id>] [--demo]                           the use of the patterns, o
 celis extract <id>                                    what an ask or a step taught, to extract as patterns
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
 celis link [<folder>] [--off]                         keep this project's trails in a folder, or stop
-celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--misled <id>]... [--at <place>]... [--check <command>] [--session <id>] [--project <id>] -- <text>
+celis step add [--under <id>] [--new] [--replaces <id>] [--uses <id>]... [--misled <id>]... [--at <place>]... [--check <command>] [--session <id>] [--project <id>] -- <text>
                                                        leave a step
 celis step start <id>                                 take up a step, and see the patterns and notes its plan links
 celis step done <id> [--changed <text>] [--as-planned] [--by person] [--misled <id>]... [--file <path>]... -- <proof>
@@ -154,9 +154,11 @@ note  json  {"id", "created_at", "step", "content"}
 - `add` MUST write no step when an open step of the same project and `under` has the same text, and
   print that step's id. With `--uses`, or a `--replaces` of a done step, it MUST refuse it as a usage
   error.
-- `add` MUST accept `--new` and `--recalled <id>`, which older plugins give, and write nothing for them.
-- `add` MUST refuse empty text as a usage error; a closed `--under`, and a `--replaces` of a dropped step,
-  with `closed`; a `--uses` that no live pattern and no step has, with `no-step`; and a `--uses` that
+- `add` MUST accept `--recalled <id>`, which older plugins give, and write nothing for it.
+- `add` with no `--under`, `--replaces` or `--new` MUST refuse as a usage error when its session has a
+  current trail (CIP-04, "Sessions"), with a message that names that trail's id.
+- `add` MUST refuse empty text as a usage error; a dropped `--under`, a done `--under` that is not a
+  trail, and a `--replaces` of a dropped step, with `closed`; a `--uses` that no live pattern and no step has, with `no-step`; and a `--uses` that
   names a step, or that starts both a pattern's and a step's id, as a usage error.
 - `start` and `done` MUST refuse a closed step, with `closed`. `start` of a step that a `start` names
   MUST write nothing and print the id of its first `start`.
