@@ -46,8 +46,9 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
 2. **One record: the pattern.** Its label is `pattern` in `celis.pattern`. A writer writes this label, and
    a reader still reads `decision` in `celis.decision`. A reader reads an old `binds` record as a plain
    pattern. Only the `grep` view marks it `old-rule`, so that tidy can find it. `pattern --binds` is
-   accepted and ignored, so an older plugin still works with a newer `celis`. A pattern has no cell: a
-   reader ignores an old `cell` tag, and `pattern --cell` is accepted and ignored in the same way.
+   accepted and ignored, so an older plugin still works with a newer `celis`. A pattern record names
+   no cell: a reader ignores an old `cell` tag, and `pattern --cell` is accepted and ignored in the same
+   way. A cell names its patterns (decision 16).
 3. **The agent loads a pattern at the choice it bears on.**
    - `celis patterns` gives the index: each live pattern in scope as its id and its Name, or its When
      when it has no Name. The Name is advice: celis writes a pattern without one. `celis grep
@@ -136,12 +137,22 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
     the spec says, and prints one line on stderr that names it as deprecated. So an older plugin works
     with a newer `celis`, and its agent learns the new name. A reader reads each old record as before,
     because a record cannot be deleted.
+16. **A cell is a layer of patterns that you can turn on and off, and share.** The log stays one log. A
+    cell is a label event that names a cell and its patterns, and only the cell's author adds to it. The
+    patterns in no cell are the base layer, which is always on. A mask record turns a cell on or off in a
+    project, or for every project. A new or imported cell is off, and the person, never the agent, turns
+    it on. The view is the log minus the patterns of the cells that are off, and of the patterns that
+    replace them. A pattern in a cell that is on holds in the project, whatever its scope and paths. A
+    cell of another account is immutable: you change it only with your own patterns that replace its
+    patterns. An export holds only patterns: a Markdown file to read, the signed records, and the blobs.
+    You can drop an imported cell from disk, but your own cells can only be off, because their records
+    may be on relays.
 
 ## What we do not do
 
 - No rank or grade of work by time.
 - No model, no index and no vector search in celis. The agent's own model reads the patterns.
-- No sharing across a team or an org yet.
+- No sharing over relays yet. A cell is shared as a folder.
 
 ## Open questions
 
