@@ -12,3 +12,4 @@ celis-store = { path = "../celis-store" }
 celis-nostr = { path = "../celis-nostr" }
 anyhow = "1"
 regex = "1"
+serde_json = "1"

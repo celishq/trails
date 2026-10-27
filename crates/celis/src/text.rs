@@ -3,3 +3,4 @@
 pub mod clock;
 pub mod json;
 pub mod line;
+pub mod markdown;

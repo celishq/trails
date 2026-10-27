@@ -127,6 +127,18 @@ pub const GROUPS: &[Group] = &[
         ],
     ),
     (
+        "cell",
+        "Group your patterns into cells, and share them.",
+        &[
+            ("add", "Put your patterns into a cell of yours"),
+            ("on", "Use a cell's patterns in this project"),
+            ("off", "Stop using a cell's patterns in this project"),
+            ("export", "Write a cell of yours as a folder to share"),
+            ("import", "Read a cell from a folder or a URL, and keep it"),
+            ("remove", "Remove a cell of another account from disk"),
+        ],
+    ),
+    (
         "auth",
         "Manage your recovery phrase. celis keeps it in $CELIS_HOME/phrase.",
         &[
@@ -333,13 +345,14 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "patterns",
-        usage: &["celis patterns [<id>] [<file>]... [--markdown] [--tidy]"],
+        usage: &["celis patterns [<id>] [<file>]... [--markdown] [--tidy] [--cell <name>]"],
         summary: "Show the index of the patterns of this project and of you, the oldest first: each one's id, scope and When, with its paths, each named file they match, and the larger patterns it completes. With an id, print that pattern whole, with its examples, and mark it recalled on the session's open step. With --markdown, print each whole as one page, with its examples, each file a link to its blob, for a review or a skill file. With --tidy, list the patterns that need tidy, with the reason, then the size of the index.",
         args: &[
             ("<id>", "A pattern id, or its first 4 or more characters"),
             ("<file>", "A file or folder; marks each pattern whose paths match it"),
             ("--markdown", "Print one Markdown page, each file a link to its blob"),
             ("--tidy", "List the patterns that need tidy, and why"),
+            ("--cell <name>", "Show only the patterns of one cell, on or off"),
         ],
         examples: &[
             "celis patterns",
@@ -347,7 +360,15 @@ pub const VERBS: &[Verb] = &[
             "celis patterns 9b0e11aa",
             "celis patterns --markdown > patterns.md",
             "celis patterns --tidy",
+            "celis patterns --cell eating-east",
         ],
+    },
+    Verb {
+        command: "cells",
+        usage: &["celis cells"],
+        summary: "Show each cell: its name, the start of its account's npub, how many patterns it holds, and whether it is on in this project. Changes nothing.",
+        args: &[],
+        examples: &["celis cells"],
     },
     Verb {
         command: "tree",
@@ -361,6 +382,66 @@ pub const VERBS: &[Verb] = &[
             ("--demo", "Show sample trails in every state"),
         ],
         examples: &["celis tree 3fa2c1d0 --full", "celis tree --all"],
+    },
+    Verb {
+        command: "cell add",
+        usage: &["celis cell add <name> <id>..."],
+        summary: "Put your patterns into a cell of yours, and make the cell when it is new. A new cell is off. A name that a cell of another account holds is refused.",
+        args: &[
+            ("<name>", "The cell: a-z, 0-9 and -, up to 64 characters"),
+            ("<id>", "A pattern of yours, or its first 4 or more characters"),
+        ],
+        examples: &["celis cell add eating-east 9b0e11aa 4c2d17e0"],
+    },
+    Verb {
+        command: "cell on",
+        usage: &["celis cell on <name> [--scope me]"],
+        summary: "Use a cell's patterns in this project: they join the index, whatever their own scope and paths. With --scope me, use them in every project where no cell on or cell off of that project says otherwise.",
+        args: &[
+            ("<name>", "The cell"),
+            ("--scope", "me: in every project"),
+        ],
+        examples: &["celis cell on eating-east", "celis cell on eating-east --scope me"],
+    },
+    Verb {
+        command: "cell off",
+        usage: &["celis cell off <name> [--scope me]"],
+        summary: "Stop using a cell's patterns in this project: they leave the index, and so do the patterns that replace them. With --scope me, stop using them in every project where no cell on or cell off of that project says otherwise.",
+        args: &[
+            ("<name>", "The cell"),
+            ("--scope", "me: in every project"),
+        ],
+        examples: &["celis cell off eating-east", "celis cell off eating-east --scope me"],
+    },
+    Verb {
+        command: "cell export",
+        usage: &["celis cell export <name> [--to <folder>]"],
+        summary: "Write a cell of yours as a folder to share: cell.md to read, with each pattern, its example files and the credits; cell.jsonl, the signed patterns; and blobs/, the example files. Trails, steps and notes stay out. Changes no record.",
+        args: &[
+            ("<name>", "A cell of yours"),
+            ("--to <folder>", "The folder to write (default: ./<name>)"),
+        ],
+        examples: &["celis cell export eating-east", "celis cell export eating-east --to ~/cells/east"],
+    },
+    Verb {
+        command: "cell import",
+        usage: &["celis cell import <source> [--yes]"],
+        summary: "Read a cell that another person exported, check that each of its records is signed and unchanged, and show its patterns. With --yes, keep it. A kept cell is off until you turn it on with celis cell on, and you change it only with your own patterns that replace its patterns.",
+        args: &[
+            ("<source>", "The cell's folder, or the URL of the folder or of its cell.jsonl"),
+            ("--yes", "Keep the cell after you read its patterns"),
+        ],
+        examples: &[
+            "celis cell import ~/Downloads/eating-east",
+            "celis cell import https://example.com/cells/eating-east/ --yes",
+        ],
+    },
+    Verb {
+        command: "cell remove",
+        usage: &["celis cell remove <name>"],
+        summary: "Remove a cell that you imported from disk: its patterns, its memberships, and each example file that no other record names. Your own patterns stay, also those that replace its patterns. A cell of yours only turns off, because its records may be on relays.",
+        args: &[("<name>", "A cell of another account")],
+        examples: &["celis cell remove eating-east"],
     },
     Verb {
         command: "hook start",

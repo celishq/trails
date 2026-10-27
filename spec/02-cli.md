@@ -16,7 +16,7 @@ read. What a command shows a person is not part of it.
 ```
 celis pattern [--scope <scope>] [--replaces <id>] [--path <glob>]... [--within <id>]... [--good <example>]... [--bad <example>]... [--project <id>] -- <text>
                                                        a pattern, in its scope
-celis patterns [<id>] [<file>]... [--markdown] [--tidy]
+celis patterns [<id>] [<file>]... [--markdown] [--tidy] [--cell <name>]
                                                        the index of the patterns in scope, one whole, or what needs tidy
 celis tree [<id>]... [--graph] [--full] [--all] [--demo]
                                                        a trail and its steps; again on each change
@@ -25,6 +25,13 @@ celis stats [<id>] [--demo]                           the use of the patterns, o
 celis extract <id>                                    what an ask or a step taught, to extract as patterns
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
 celis link [<folder>] [--off]                         keep this project's trails in a folder, or stop
+celis cells                                           each cell, its account, its patterns, and on or off here
+celis cell add <name> <id>...                         put your patterns in a cell of yours
+celis cell on <name> [--scope me]                     use a cell's patterns in this project, or in every project
+celis cell off <name> [--scope me]                    stop using a cell's patterns here, or in every project
+celis cell export <name> [--to <folder>]              write a cell of yours as a folder
+celis cell import <source> [--yes]                    show a cell from a folder or a URL, and keep it with --yes
+celis cell remove <name>                              remove a cell of another account from disk
 celis step add [--under <id>] [--new] [--replaces <id>] [--uses <id>]... [--misled <id>]... [--at <place>]... [--check <command>] [--session <id>] [--project <id>] -- <text>
                                                        leave a step
 celis step start <id>                                 take up a step, and see the patterns and notes its plan links
@@ -102,13 +109,13 @@ celis pattern --path "**/prices*.py" -- "When you change prices: keep them in ce
 - A command that writes records MUST print the id of each, its main record first.
 - With `--json`, a command but `grep` MUST print one JSON object a line, and nothing else, to stdout. A
   printed id is `{"id"}`.
-- Only `pattern`, `step` and `hook ask` MAY write a record. A command that refuses MUST write nothing.
+- Only `pattern`, `step`, `cell` and `hook ask` MAY write a record. A command that refuses MUST write nothing.
 - A command MUST NOT ask a question, but `auth login`.
 - A command MUST exit 0 when done, 2 on a usage error, and 1 on any other error.
 - A command MUST take each deprecated command and flag of the README, and, without `--json`, MUST print one
   line on stderr that names it as deprecated.
 - An error MUST be named `usage`, `no-pattern`, `no-step`, `closed`, `open-steps`, `check-failed`,
-  `secret` (CIP-01, "The account"), else `error`. With `--json`, it MUST be one object on stderr,
+  `secret` (CIP-01, "The account"), `no-cell`, `cell-taken`, `cell-yours`, `invalid` ("Cells"), else `error`. With `--json`, it MUST be one object on stderr,
   `{"error": "<name>", "message": "<text>"}`.
 
 ## Update
@@ -406,6 +413,52 @@ echo '{"session_id": "95e9be99", "cwd": "/repo"}' | celis hook start claude ~/.c
 echo '{"session_id": "95e9be99", "cwd": "/repo", "prompt": "Use the shared Badge."}' | celis hook ask codex
 ```
 
+## Cells
+
+`cells` and `cell` act on the cells of CIP-09.
+
+```
+<name> <npub8> <n> patterns <on | off>     each cell, by name, then by account; `1 pattern` for one
+no cell yet                                when there is none
+```
+
+`<npub8>` is the 8 characters of the account's npub after `npub1`, and `<n>` counts the cell's live
+patterns.
+
+**Rules**
+
+- `cell add` MUST write one membership (CIP-09, "Membership") that names each `<id>` whole. It MUST
+  refuse a name that is not a cell name, or no `<id>`, as a usage error, an id that names no live pattern
+  of the account with `no-pattern`, and a name that a cell of another account holds with `cell-taken`.
+- `cell on` and `cell off` MUST write one mask (CIP-09, "Masks") of the working folder's project, or with
+  `--scope me` of every project. They MUST refuse a name that no cell holds with `no-cell`, a name that
+  two cells hold with `cell-taken`, and another `--scope` as a usage error.
+- `cell export` MUST write the folder of CIP-09, "Export", for the cell of the account, to `--to`, else to
+  `./<name>/`, and write no record. It MUST refuse a name that no cell of the account with a live pattern
+  holds, with `no-cell`.
+- `cell import` MUST read `<source>`, a folder or the URL of a folder or of its `cell.jsonl`, as CIP-09,
+  "Export", gives it, and print the cell and its patterns. Only with `--yes` MUST it keep the records,
+  and each blob whose bytes hash to its name. It MUST refuse a folder that CIP-09 refuses, with `invalid`,
+  and a cell whose name a cell of another account holds, with `cell-taken`, and write no mask.
+- `cell remove` MUST remove from the store each record of the cell of another account named `<name>`: its
+  patterns and its memberships, and each blob that only those records name. It MUST refuse a name that a
+  cell of the account holds with `cell-yours`, and a name that no cell holds with `no-cell`.
+- `patterns --cell <name>` MUST print the live patterns of the cells named `<name>`, on or off, as
+  `patterns` prints the index, and refuse a name that no cell holds with `no-cell`.
+
+**Examples**
+
+```
+celis cells
+celis patterns --cell eating-east
+celis cell add eating-east 9b0e11aa 4c2d17e0
+celis cell on eating-east
+celis cell off eating-east --scope me
+celis cell export eating-east --to ~/cells/eating-east
+celis cell import https://example.com/cells/eating-east/ --yes
+celis cell remove eating-east
+```
+
 ## Grep
 
 `grep` gives every trail of every project to the system `grep`, as lines. The `tidy` skill searches the
@@ -415,7 +468,7 @@ trails with it.
 view    <yyyy-mm-dd> <trail id8 | -> [<project name>] <kind> <id8> <fields> <text>
           trail | step   <open | done | dropped>[ revised-by <id>,…][ at:<place>]…
           pattern        <live | replaced-by <id> | dropped> {<me | project>}
-                           [ old-rule][ uses:<n>][ misled:<n>][ used:<yyyy-mm-dd>]
+                           [ old-rule][ uses:<n>][ misled:<n>][ used:<yyyy-mm-dd>][ cell:<name>]…
           proof | changed | dropped | note                       the step's or pattern's id, no fields
           prompt                                                 the trail's id, no fields (CIP-04, "Sessions")
           good | bad                                             the pattern's id, no fields, and an example:
@@ -432,14 +485,14 @@ end     project [<project name>]
 `<id8>` is the first 8 characters of an id. A text holds each newline as a space. After its state and
 scope, a pattern's fields give ` old-rule` when it has the `binds` label that older writers wrote (CIP-05,
 "Reading"), ` uses:<n>` with how many steps name it in `uses` (CIP-06, "Uses"), when not 0, ` misled:<n>` with how
-many steps it misled (CIP-06, "Misled"), when not 0, and ` used:<day>` with the day of the newest step
-whose `uses` names it.
+many steps it misled (CIP-06, "Misled"), when not 0, ` used:<day>` with the day of the newest step
+whose `uses` names it, and ` cell:<name>` for each cell that is on and holds it (CIP-09).
 
 **Rules**
 
 - `grep` MUST give each word after it to the system `grep` as it is, with the view on its stdin.
-- The view MUST hold every trail of every project, newest first, and each live or replaced pattern by
-  when it was made. A trail MUST print as its line, then the notes on it, then its prompts, oldest first,
+- The view MUST hold every trail of every project, newest first, and each live or replaced pattern in the
+  view of the working folder's project (CIP-09, "The view") by when it was made. A trail MUST print as its line, then the notes on it, then its prompts, oldest first,
   then its steps, each level newest first, each step with its proof, `changed`, drop and note lines,
   then its own steps. A pattern MUST print as its line, then a line for each example, then its drop
   line.

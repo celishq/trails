@@ -3,6 +3,12 @@
 mod support;
 
 mod account;
+mod cell_add;
+mod cell_export;
+mod cell_import;
+mod cell_masks;
+mod cell_remove;
+mod cell_view;
 mod closing;
 mod commands;
 mod deprecated;

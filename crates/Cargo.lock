@@ -196,6 +196,7 @@ dependencies = [
  "celis-nostr",
  "celis-store",
  "regex",
+ "serde_json",
 ]
 
 [[package]]

@@ -1,9 +1,14 @@
 //! One run of `celis`.
 
 mod args;
-mod read;
-mod record;
+mod cell;
+mod grep;
+mod hook;
+mod pattern;
 mod setup;
+mod stats;
+mod step;
+mod trail;
 
 use crate::failure::Failure;
 use crate::help::{self, VERBS};
@@ -85,11 +90,13 @@ impl Command {
             "pattern" => self.pattern(args, out, err, &self.project_of(args)?),
             "tree" => self.tree(args, out),
             "patterns" => self.patterns(args, out),
+            "cells" => self.cells(out),
             "grep" => self.grep(&self.args[1..], out),
             "stats" => self.stats(args, out),
             "extract" | "lesson" => self.extract(args, out),
             "issue" => self.issue(args, out),
             "link" => self.link(args, out, &self.project()),
+            "cell" => self.cell(args, out),
             "hook" => self.hook(args, out),
             "auth" => self.auth(args, out, err),
             "update" => self.update(args),

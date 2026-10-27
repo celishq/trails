@@ -8,8 +8,10 @@ Usage
 Read
   patterns            Show the index of your patterns
   ├ --markdown        Print one Markdown page, each file a link to its blob
-  └ --tidy            List the patterns that need tidy, and why
+  ├ --tidy            List the patterns that need tidy, and why
+  └ --cell <name>     Show only the patterns of one cell, on or off
 
+  cells               Show each cell: its author, its patterns, and on or off
   tree [<id>]         Show your trails and their steps
   ├ --graph           Show today's trails as live graphs of cards
   ├ --full            Show each step's proof, grade, and reason
@@ -56,6 +58,22 @@ Record work · your agents run these
   └ --check <command> A command that proves the work, in place of the old one
 
   step note <id>      Leave a note for the work of the step's trail
+
+Share
+  cell add            Put your patterns into a cell of yours
+  cell on <name>      Use a cell's patterns in this project
+  └ --scope           me: in every project
+
+  cell off <name>     Stop using a cell's patterns in this project
+  └ --scope           me: in every project
+
+  cell export         Write a cell of yours as a folder to share
+  └ --to <folder>     The folder to write (default: ./<name>)
+
+  cell import         Read a cell from a folder or a URL, and keep it
+  └ --yes             Keep the cell after you read its patterns
+
+  cell remove <name>  Remove a cell of another account from disk
 
 Set up
   link [<folder>]     Keep this project's trails in a folder to commit or share

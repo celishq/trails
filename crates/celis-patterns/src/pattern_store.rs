@@ -24,16 +24,16 @@ impl PatternStore for Store {
         let within: Result<Vec<PatternId>, Refusal> = pattern
             .within
             .iter()
-            .map(|id| Ok(PatternId::new(patterns.find(None, id)?.id())))
+            .map(|id| Ok(PatternId::new(patterns.find(id)?.id())))
             .collect();
         pattern.within = within?;
         if let Some(id) = replaces {
-            let old = patterns.find(Some(&project), id)?.record;
+            let old = patterns.view(&project).find(id)?.record;
             pattern.examples = pattern.examples.with(&old.examples);
             let kept = old.within.iter().filter(|w| !pattern.within.contains(w));
             let kept: Vec<PatternId> = kept.cloned().collect();
             pattern.within.extend(kept);
-            pattern.replaces = Some(PatternId::new(patterns.find(Some(&project), id)?.id()));
+            pattern.replaces = Some(PatternId::new(patterns.view(&project).find(id)?.id()));
         }
         self.sign(|account, now| pattern.record(account, now))
     }

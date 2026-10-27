@@ -61,5 +61,7 @@ Because: <why that resolves the forces>
 A subagent does not see your context. Put the whole text of each pattern that bears on its work in its
 task, say that its work must follow them, and ask it to reply with only its output and proof, not the
 steps it took.
+A cell is a set of patterns that the person turns on or off, and shares. Only the person runs
+`celis cell`; you never add, turn on, turn off, export, import or drop a cell.
 Name a secret by where it lives, such as `API_KEY in .env`, never by its value: a record is signed and
 cannot be deleted. Read `steps.md`.

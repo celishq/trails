@@ -1,7 +1,7 @@
 //! The records of a home at one moment, and the signed append of new ones.
 
 use crate::{Anchor, Home, ProofFile, Refusal, Secret};
-use celis_nostr::{Account, Note};
+use celis_nostr::{Account, Note, Pubkey};
 use std::path::{Path, PathBuf};
 
 /// The records of a home at the time `now`, and the account's writes on them, each signed now. A
@@ -49,6 +49,11 @@ impl Store {
         taken
     }
 
+    /// The account's public key; none when no phrase is kept.
+    pub fn author(&self) -> Result<Option<Pubkey>, Refusal> {
+        Ok(self.home.author()?)
+    }
+
     /// Whether the home holds no record.
     pub fn is_empty(&self) -> bool {
         self.records.is_empty()
@@ -79,6 +84,24 @@ impl Store {
         Ok(ProofFile::new(place, sha256, bytes.len() as u64))
     }
 
+    /// Keeps `bytes` as the blob `sha256` when they hash to it; whether they do.
+    pub fn hold(&self, sha256: &str, bytes: &[u8]) -> Result<bool, Refusal> {
+        Ok(self.home.hold(sha256, bytes)?)
+    }
+
+    /// Removes the files of `records`, and the blobs `blobs` names.
+    pub fn remove(&mut self, records: &[Note], blobs: &[String]) -> Result<(), Refusal> {
+        self.home.remove(records, blobs)?;
+        self.records = self.home.records();
+        Ok(())
+    }
+
+    /// Writes `record`, signed by any account, as it is.
+    pub fn put(&self, record: &Note) -> Result<(), Refusal> {
+        self.home.write(record)?;
+        Ok(())
+    }
+
     /// The blob `sha256` of the home, when its bytes hash to its name.
     pub fn blob(&self, sha256: &str) -> Option<PathBuf> {
         self.home.blob(sha256)
@@ -90,6 +113,16 @@ impl Store {
         &self,
         record: impl FnOnce(&Account, u64) -> anyhow::Result<Note>,
     ) -> Result<Note, Refusal> {
+        let note = self.seal(record)?;
+        self.home.write(&note)?;
+        Ok(note)
+    }
+
+    /// The record `record` gives for the account and now, not written; refuses one that holds a secret.
+    pub fn seal(
+        &self,
+        record: impl FnOnce(&Account, u64) -> anyhow::Result<Note>,
+    ) -> Result<Note, Refusal> {
         let note = record(self.home.account()?, self.now)?;
         let values = note.tags.iter().flat_map(|tag| tag.iter().skip(1));
         if let Some(secret) = std::iter::once(&note.content)
@@ -98,7 +131,6 @@ impl Store {
         {
             return Err(Refusal::Secret(format!("the record holds {}", secret.kind)));
         }
-        self.home.write(&note)?;
         Ok(note)
     }
 }

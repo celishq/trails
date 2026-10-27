@@ -169,9 +169,7 @@ pub fn when(content: &str) -> &str {
 
 /// Whether `note` holds the label `label` in `namespace`.
 fn labelled(note: &Note, label: &str, namespace: &str) -> bool {
-    note.tags
-        .iter()
-        .any(|t| t.len() >= 3 && t[0] == "l" && t[1] == label && t[2] == namespace)
+    note.labels(namespace).any(|l| l == label)
 }
 
 /// The label namespace of a pattern.

@@ -6,7 +6,7 @@ use crate::records::verified::Verified;
 use crate::{Link, Phrase, ProofFile, Refusal};
 use anyhow::Result;
 use blobs::Blobs;
-use celis_nostr::{Account, Note};
+use celis_nostr::{Account, Note, Pubkey};
 use std::cell::{OnceCell, RefCell};
 use std::collections::{HashMap, HashSet};
 use std::io::ErrorKind;
@@ -68,6 +68,12 @@ impl Home {
         Ok(self.account.get_or_init(|| account))
     }
 
+    /// The public key of the kept account; none when no phrase is kept.
+    pub fn author(&self) -> Result<Option<Pubkey>> {
+        let kept = self.phrase.kept()?;
+        Ok(kept.map(|identity| identity.account().pubkey()))
+    }
+
     /// Writes `record` once to `shared/`, and to each linked folder that holds it.
     pub fn write(&self, record: &Note) -> Result<PathBuf> {
         let (path, new) = put(&self.root.join("shared"), record)?;
@@ -96,6 +102,32 @@ impl Home {
         Ok(sha)
     }
 
+    /// Removes the files of `records` from `shared/`, and the blobs `blobs` names from `blobs/`.
+    pub fn remove(&self, records: &[Note], blobs: &[String]) -> Result<()> {
+        for record in records {
+            let path = self.root.join("shared").join(name(record));
+            match std::fs::remove_file(&path) {
+                Err(e) if e.kind() != ErrorKind::NotFound => return Err(e.into()),
+                _ => {}
+            }
+        }
+        for sha in blobs {
+            let _ = std::fs::remove_file(self.root.join("blobs").join(sha));
+        }
+        *self.read.borrow_mut() = None;
+        self.seen.borrow_mut().clear();
+        Ok(())
+    }
+
+    /// Keeps `bytes` as the blob `sha256` when they hash to it, as `keep` does; whether they do.
+    pub fn hold(&self, sha256: &str, bytes: &[u8]) -> Result<bool> {
+        if !self.blobs.hold(sha256, bytes)? {
+            return Ok(false);
+        }
+        self.keep(bytes)?;
+        Ok(true)
+    }
+
     /// The blob `sha256` of `blobs/`, when its bytes hash to its name.
     pub fn blob(&self, sha256: &str) -> Option<PathBuf> {
         self.blobs.get(sha256)
@@ -112,11 +144,7 @@ impl Home {
         for link in &self.links {
             for record in kept.iter().filter(|r| link.holds(r, &all)) {
                 went += usize::from(put(&link.folder, record)?.1);
-                let files = record
-                    .tags
-                    .iter()
-                    .filter_map(|t| ProofFile::read(t).or_else(|| ProofFile::blossom(t.get(1..)?)));
-                for file in files {
+                for file in ProofFile::all(record) {
                     link_blobs(link).copy(&self.blobs, &file.sha256)?;
                 }
             }

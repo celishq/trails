@@ -1,4 +1,5 @@
 use super::Failure;
+use celis_store::Refusal;
 
 #[test]
 fn any_other_error_exits_1_with_its_text() {
@@ -11,10 +12,10 @@ fn any_other_error_exits_1_with_its_text() {
 #[test]
 fn an_error_about_an_id_names_the_command_that_fixes_it() {
     for failure in [
-        Failure::no_step("3fa2"),
-        Failure::no_pattern("3fa2"),
-        Failure::closed("3fa2"),
-        Failure::open_steps("3fa2"),
+        Failure::from(Refusal::NoStep("3fa2".to_string())),
+        Failure::from(Refusal::NoPattern("3fa2".to_string())),
+        Failure::from(Refusal::Closed("3fa2".to_string())),
+        Failure::from(Refusal::OpenSteps("3fa2".to_string())),
     ] {
         assert!(failure.message.contains("`celis "), "{}", failure.message);
     }
