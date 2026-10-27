@@ -33,7 +33,8 @@ Record work · your agents run these
   └ --project <id>    The id of a project in the store
 
   step add            Add a new ask, or a step under one
-  ├ --under <id>      The open step this step is part of
+  ├ --under <id>      The open step or done ask this step is part of
+  ├ --new             A new ask, beside the session's trail
   ├ --replaces <id>   A step this one takes over, or a finished step it fixes
   ├ --uses <id>       A pattern it follows
   ├ --misled <id>     A pattern that misled the work it fixes

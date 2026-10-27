@@ -21,21 +21,51 @@ fn add(repo: &Repo, session: Option<&str>, text: &str) -> String {
     ids(repo, session, text).remove(0)
 }
 
-/// A step with no `--under` is a new trail, in a session or in none, also while the session has an open
-/// trail (`spec/04-trails.md`, "Sessions").
+/// While a session has a current trail, open or done less than 30 minutes ago, a step with no `--under`,
+/// `--replaces` or `--new` is refused as a usage error that names it; `--new` adds a new trail, and so
+/// does a step with no session (`spec/02-cli.md`, "Step"; `spec/04-trails.md`, "Sessions").
 #[test]
-fn a_step_with_no_under_is_a_new_trail() {
+fn a_step_beside_the_sessions_current_trail_needs_under_or_new() {
     let repo = Repo::new();
-    let first = ids(&repo, Some("s1"), "make the badges orange");
-    assert_eq!(first.len(), 1, "{first:?}");
-    std::thread::sleep(std::time::Duration::from_millis(1100));
-    let next = add(&repo, Some("s1"), "now the buttons too");
+    let first = add(&repo, Some("s1"), "make the badges orange");
+    let refused = || {
+        let env = [("CLAUDE_CODE_SESSION_ID", "s1")];
+        let o = repo.run(
+            &repo.path(),
+            &["step", "add", "--", "the buttons"],
+            &env,
+            "",
+        );
+        assert_eq!(o.status.code(), Some(2), "{}", err(&o));
+        assert!(err(&o).contains(&first[..8]), "{}", err(&o));
+    };
+    refused();
+    support::finish(&repo, &first[..8]);
+    refused();
+    let next = run_add(&repo, Some("s1"), &[], &["--new", "--", "the buttons"]).remove(0);
     let none = add(&repo, None, "no session");
-    for id in [&first[0], &next, &none] {
+    for id in [&first, &next, &none] {
         let tree = objects(&repo, &["tree", &id[..8]]);
         assert_eq!(tree.len(), 1, "{tree:?}");
         assert_eq!(tree[0]["trail"]["id"], id.as_str(), "{tree:?}");
     }
+}
+
+/// A session whose trail was done 30 minutes ago or more has no current trail, so a step with no
+/// `--under` is a new trail (`spec/04-trails.md`, "Sessions").
+#[test]
+fn a_trail_done_30_minutes_ago_is_not_current() {
+    use support::{account, mark_note, now, put, step_tags};
+    let repo = Repo::new();
+    let old = now() - 31 * 60;
+    let mut tags = step_tags((&repo.project_id(), "repo"));
+    tags.push(vec!["session".into(), "s1".into()]);
+    let trail = Note::write(&account(), 1111u16, old, tags, "the old trail").unwrap();
+    put(&repo, &trail);
+    mark_note(&repo, &account(), "done", &trail.id, "proof", old);
+    let next = add(&repo, Some("s1"), "a new ask");
+    let tree = objects(&repo, &["tree", &next[..8]]);
+    assert_eq!(tree[0]["trail"]["id"], next.as_str(), "{tree:?}");
 }
 
 /// A trail carries its session, and `--under` joins another session's trail (`spec/04-trails.md`,
@@ -122,7 +152,7 @@ fn a_prompt_with_no_open_trail_goes_on_the_trail_of_the_sessions_next_step() {
     hook(&repo, json);
     add(&repo, Some("s2"), "another session");
     let written = ids(&repo, Some("s1"), "the trail");
-    add(&repo, Some("s1"), "a step");
+    support::added(&repo, "s1", &["--new", "--", "another ask"]);
     assert_eq!(
         marks(&repo, "prompt"),
         [(
@@ -163,10 +193,9 @@ fn a_trail_asked_twice_is_reached() {
     assert_eq!(head[0]["trail"]["state"], "done", "{head:?}");
 }
 
-/// `step add` accepts `--new` and ignores it: the step is a new trail either way (`spec/02-cli.md`,
-/// "Step").
+/// `step add --new` adds a new trail with no notice (`spec/02-cli.md`, "Step").
 #[test]
-fn add_accepts_new_and_ignores_it() {
+fn add_new_adds_a_trail_with_no_notice() {
     let repo = Repo::new();
     let env = [("CLAUDE_CODE_SESSION_ID", "s1")];
     let o = repo.run(
@@ -176,6 +205,7 @@ fn add_accepts_new_and_ignores_it() {
         "",
     );
     assert!(o.status.success(), "{}", err(&o));
+    assert!(!err(&o).contains("deprecated"), "{}", err(&o));
     let second = out(&o);
     assert_eq!(second.lines().count(), 1, "{second}");
     let head = objects(&repo, &["tree", &second[..8]]);
@@ -215,8 +245,9 @@ fn a_sessions_open_trail_is_the_trail_of_its_newest_step() {
     assert_eq!(marks(&repo, "prompt"), [(first, "and more".to_string())]);
 }
 
-/// `prompt` gives one line on stderr: search, add a new ask, go on with the session's open ask under its
-/// id, and replace done work by its id in `celis tree`; a working step changes nothing of it.
+/// `prompt` gives one line on stderr: go on with the session's current ask under its id, add a new ask
+/// with `--new`, and replace done work by its id in `celis tree`; a working step and the ask's done
+/// change nothing of it.
 #[test]
 fn the_prompt_hook_gives_one_line() {
     let repo = Repo::new();
@@ -240,14 +271,23 @@ fn the_prompt_hook_gives_one_line() {
     let o = hook("now make it blue");
     assert!(o.status.success(), "{}", err(&o));
     assert_eq!(err(&o), line);
+    support::finish(&repo, &step[0][..8]);
+    support::finish(&repo, &trail[..8]);
+    let o = hook("now commit it");
+    assert!(o.status.success(), "{}", err(&o));
+    assert_eq!(err(&o), line);
 }
 
-/// The line `prompt` gives: a new ask is a new step; a prompt that goes on with the open ask `open` adds
-/// steps under it; how done work is fixed; and, when the store holds a record, when a pattern is read.
-fn note(held: bool, open: Option<&str>) -> String {
-    let more = match open {
-        Some(id) => format!("; when it goes on with the open ask {id}, add its steps --under {id}"),
-        None => String::new(),
+/// The line `prompt` gives: a prompt that goes on with the current ask `current` adds steps under it,
+/// and a new ask is a new step; how done work is fixed; and, when the store holds a record, when a
+/// pattern is read.
+fn note(held: bool, current: Option<&str>) -> String {
+    let ask = match current {
+        Some(id) => format!(
+            "when this prompt goes on with the ask {id}, add its steps --under {id}; when it is a new ask, \
+             add it with celis step add --new"
+        ),
+        None => "when this prompt is a new ask, add it with celis step add".to_string(),
     };
     let load = match held {
         true => " When a choice of the work matches a When of the index, read that pattern with celis \
@@ -255,8 +295,8 @@ fn note(held: bool, open: Option<&str>) -> String {
         false => "",
     };
     format!(
-        "celis: when this prompt is a new ask, add it with celis step add{more}; when it changes done work, \
-         add it with step add --replaces <the id of that step, as celis tree shows it>.{load}"
+        "celis: {ask}; when it changes done work, add it with step add --replaces <the id of that step, as \
+         celis tree shows it>.{load}"
     )
 }
 
@@ -385,7 +425,12 @@ fn a_step_names_the_agent_its_session_variable_gives() {
             .collect();
         let env = env.as_slice();
         let text = format!("step {n}");
-        let o = repo.run(&repo.path(), &["step", "add", "--", &text], env, "");
+        let o = repo.run(
+            &repo.path(),
+            &["step", "add", "--new", "--", &text],
+            env,
+            "",
+        );
         assert!(o.status.success(), "{}", err(&o));
         let step = support::labelled(&repo, "step")
             .into_iter()

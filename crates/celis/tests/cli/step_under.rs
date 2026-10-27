@@ -8,23 +8,47 @@ fn records(repo: &Repo) -> usize {
     std::fs::read_dir(repo.store().join("shared")).map_or(0, |d| d.count())
 }
 
-/// `add` refuses an `--under` no step has with `no-step`, and a closed one with `closed`
-/// (`spec/02-cli.md`, "Step").
+/// `add` refuses an `--under` no step has with `no-step`, and a dropped one or a done step that is not a
+/// trail with `closed` (`spec/02-cli.md`, "Step").
 #[test]
 fn add_refuses_an_unknown_or_closed_under() {
     let repo = Repo::new();
-    let closed = add(&repo, &["--", "closed"]);
-    finish(&repo, &closed[..8]);
+    let trail = add(&repo, &["--", "the trail"]);
+    let part = add(&repo, &["--under", &trail[..8], "--", "the part"]);
+    finish(&repo, &part[..8]);
+    let dropped = add(&repo, &["--", "dropped"]);
+    let o = cli(&repo, &["step", "drop", &dropped[..8], "--", "not wanted"]);
+    assert!(o.status.success(), "{}", err(&o));
     let o = cli(
         &repo,
         &["step", "add", "--under", "deadbeef", "--json", "--", "x"],
     );
     refusal(&o, 1, "no-step");
-    let o = cli(
-        &repo,
-        &["step", "add", "--under", &closed[..8], "--json", "--", "x"],
-    );
-    refusal(&o, 1, "closed");
+    for closed in [&part, &dropped] {
+        let o = cli(
+            &repo,
+            &["step", "add", "--under", &closed[..8], "--json", "--", "x"],
+        );
+        refusal(&o, 1, "closed");
+    }
+}
+
+/// `add --under` a done trail writes the step under it, and the trail reads open until its next done
+/// (`spec/03-steps.md`, "Closing").
+#[test]
+fn add_under_a_done_trail_reopens_it() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    finish(&repo, &trail[..8]);
+    std::thread::sleep(std::time::Duration::from_millis(1100));
+    let follow = add(&repo, &["--under", &trail[..8], "--", "the follow-up"]);
+    let tree = objects(&repo, &["tree", &trail[..8]]);
+    assert_eq!(tree[0]["trail"]["state"], "open", "{tree:?}");
+    assert_eq!(tree[1]["step"]["id"], follow.as_str(), "{tree:?}");
+    finish(&repo, &follow[..8]);
+    finish(&repo, &trail[..8]);
+    let tree = objects(&repo, &["tree", &trail[..8]]);
+    assert_eq!(tree[0]["trail"]["state"], "done", "{tree:?}");
 }
 
 /// `add` carries the whole id of `--under`, and the JSON of a step gives its `under` and `replaces` as

@@ -5,7 +5,7 @@ pub mod notice;
 mod target;
 pub mod written;
 
-use crate::{Check, Done, Draft, Mark, Notes, Notice, Step, StepRecord, Steps, Written};
+use crate::{Check, Done, Draft, Mark, Notes, Notice, State, Step, StepRecord, Steps, Written};
 use celis_nostr::Note;
 use celis_patterns::{Pattern, PatternStore, Patterns};
 use celis_store::records::id::short;
@@ -21,7 +21,8 @@ pub trait TrailStore {
     fn notes(&self) -> Notes<'_>;
 
     /// Writes the step `draft` states, where `parent` puts it. A replaced open step's open tree drops; a
-    /// replaced done step stays done. An open step with the same place and words is given back.
+    /// replaced done step stays done. An open step with the same place and words is given back. A new
+    /// ask beside its session's current trail is refused, unless it is `new`.
     fn add(&self, draft: Draft) -> Result<Written<'_>, Refusal>;
 
     /// Starts the open step `id`, or gives back the first start of a started step; then the patterns
@@ -93,6 +94,16 @@ impl TrailStore for Store {
             }
             written.records.push(same.note().clone());
             return Ok(written);
+        }
+        let session = draft.session.as_deref().filter(|_| !draft.new);
+        let alone = draft.under.is_none() && draft.replaces.is_none();
+        let current = session.and_then(|s| steps.current(&draft.anchor.project, s));
+        if let Some(trail) = current.filter(|_| alone) {
+            let id = short(trail.id());
+            return Err(Refusal::Usage(format!(
+                "this session works on the ask {id}; add a part or a follow-up of it with step add --under \
+                 {id}, or an unrelated ask with step add --new"
+            )));
         }
         let record = StepRecord {
             anchor: draft.anchor,
@@ -292,7 +303,7 @@ fn replaced<'a>(steps: &'a Steps<'a>, id: &str) -> Result<Step<'a>, Refusal> {
 }
 
 /// Where `draft` goes: under its `--under`, else under the replaced open step `moved`'s `under`; none
-/// starts a trail. The step it goes under must be open.
+/// starts a trail.
 fn parent<'a>(
     steps: &'a Steps<'a>,
     draft: &Draft,
@@ -302,7 +313,16 @@ fn parent<'a>(
         .under
         .clone()
         .or(moved.and_then(|m| m.record().under.as_ref().map(|u| u.to_string())));
-    named.map(|id| steps.find_open(&id)).transpose()
+    named.map(|id| under(steps, &id)).transpose()
+}
+
+/// The step `id` that a new step can go under: an open step, or a done trail.
+fn under<'a>(steps: &'a Steps<'a>, id: &str) -> Result<Step<'a>, Refusal> {
+    let step = steps.find(id)?;
+    match step.state() {
+        State::Done if step.is_trail() => Ok(step),
+        _ => steps.find_open(id),
+    }
 }
 
 /// The open step of the project of `draft`, under `under`, with the same words.

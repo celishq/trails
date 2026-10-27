@@ -42,8 +42,7 @@ fn a_trails_state_comes_from_its_tree_and_ignores_steers() {
     assert!(!tree.contains("steered"), "{tree}");
 }
 
-/// A trail with no open step under it stays open until its own `done`, and a done trail refuses a new
-/// step under it (`spec/04-trails.md`, "State").
+/// A trail with no open step under it stays open until its own `done` (`spec/04-trails.md`, "State").
 #[test]
 fn a_trail_takes_the_state_of_its_ask() {
     let repo = Repo::new();
@@ -59,13 +58,6 @@ fn a_trail_takes_the_state_of_its_ask() {
             .any(|l| l == format!("  trail {} done", &trail[..8])),
         "{read}"
     );
-    let locked = add(&repo, &["--", "locked"]);
-    finish(&repo, &locked[..8]);
-    let o = cli(
-        &repo,
-        &["step", "add", "--under", &locked[..8], "--", "late"],
-    );
-    assert!(!o.status.success(), "{}", out(&o));
 }
 
 /// A trail that ended 30 minutes after the newest record of its tree stays open with no `done` of its

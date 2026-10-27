@@ -12,7 +12,7 @@ of the work.
 celis patterns [<file>]...
 celis patterns <id>
 celis extract <id>
-celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--misled <id>]... [--check <command>] -- "<title>"
+celis step add [--under <id>] [--new] [--replaces <id>] [--uses <id>]... [--misled <id>]... [--check <command>] -- "<title>"
 celis step start <id>
 celis step done <id> [--changed "<what differs>"] [--as-planned] [--by person] [--misled <id>]... [--file <path>]... -- "<proof>"
 celis step note <id> -- "<note>"
