@@ -63,7 +63,7 @@ impl Tree<'_> {
         let summary = self.summary(note, work);
         let level = Level::of(Trail::new(note).parts());
         let under =
-            !(level.active.is_empty() && level.ended.is_empty() && summary.notes.is_empty());
+            !(level.active.is_empty() && level.ended.is_empty() && summary.records().is_empty());
         let first = lines.len();
         let mut meta = vec![];
         if !self.grouped || (state.active() && !self.view.watch) {
@@ -84,13 +84,13 @@ impl Tree<'_> {
                 false => Styled::from("  "),
             }),
         });
-        self.pick(self.item(note, true, &summary.notes), lines, first);
+        self.pick(self.item(note, true, &summary.records()), lines, first);
         let rail = Styled::from("  ");
         if self.view.full {
             let hair = Styled::from(vec![Span::raw("  "), paint(self.lane(), "│ ")]);
             self.closing(work, &hair, false, lines);
         }
-        self.level(level, summary.notes, &rail, note.id(), lines);
+        self.level(level, summary.records(), &rail, note.id(), lines);
     }
 
     /// Adds `note` as one row: `▸` when something opens under it, its mark and title wrapped, and at the
@@ -100,7 +100,7 @@ impl Tree<'_> {
         let state = Phase::of(&note);
         let work = self.work(note);
         let summary = self.summary(note, work);
-        let under = !(Trail::new(note).parts().is_empty() && summary.notes.is_empty());
+        let under = !(Trail::new(note).parts().is_empty() && summary.records().is_empty());
         let meta: Vec<_> = came(&summary).into_iter().collect();
         let first = lines.len();
         lines.push(Row::Lined {
@@ -114,7 +114,7 @@ impl Tree<'_> {
             meta: joined(meta),
             whole: Some(Styled::from("  ")),
         });
-        self.pick(self.item(note, false, &summary.notes), lines, first);
+        self.pick(self.item(note, false, &summary.records()), lines, first);
     }
 }
 

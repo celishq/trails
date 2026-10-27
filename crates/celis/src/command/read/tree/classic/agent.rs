@@ -9,7 +9,7 @@ use celis_trails::{Step, Trail};
 
 impl Tree<'_> {
     /// Adds `note` as a block: its mark, id and title, then two spaces in its steps and time,
-    /// its own lines, its active steps, its notes, then its other steps.
+    /// its own lines, its active steps, its patterns and its notes, then its other steps.
     pub(super) fn agent_block(&self, note: Step, lines: &mut Vec<Row>) {
         let work = self.work(note);
         let summary = self.summary(note, work);
@@ -25,8 +25,11 @@ impl Tree<'_> {
         self.below(work, "  ", lines);
         let level = Level::of(Trail::new(note).parts());
         self.agent_steps(level.active, "  ", lines);
-        for pattern in summary.notes {
-            lines.push(pattern_line("  ", pattern));
+        for pattern in summary.patterns {
+            lines.push(record_line("  ", "§", pattern));
+        }
+        for note in summary.notes {
+            lines.push(record_line("  ", "¶", note));
         }
         self.agent_steps(level.ended, "  ", lines);
     }
@@ -42,7 +45,8 @@ impl Tree<'_> {
     }
 
     /// Adds the steps `notes` after `indent`, each as its mark, id and title, its first place, its steps
-    /// and time, then its lines and its level two spaces further in.
+    /// and time, then its lines, with `--full` its patterns and its notes, and its level two spaces
+    /// further in.
     fn agent_steps(&self, notes: Vec<Step>, indent: &str, lines: &mut Vec<Row>) {
         for note in notes {
             let mut line = format!("{indent}{}", self.heading(note));
@@ -58,7 +62,10 @@ impl Tree<'_> {
             self.below(note, &under, lines);
             if self.view.full {
                 for pattern in self.uses(note) {
-                    lines.push(pattern_line(&under, pattern));
+                    lines.push(record_line(&under, "§", pattern));
+                }
+                for record in self.notes.on(note.id()) {
+                    lines.push(record_line(&under, "¶", record));
                 }
             }
             let level = Level::of(note.children());
@@ -97,9 +104,10 @@ impl Tree<'_> {
     }
 }
 
-/// The line of `pattern` after `indent`: `§` in its slot, its id, and its first line.
-fn pattern_line(indent: &str, pattern: &Note) -> Row {
-    let when = pattern.content.lines().next().unwrap_or_default();
-    let line = format!("{indent}{:<SLOT$} {} {when}", "§", short(&pattern.id));
+/// The line of the pattern or note `record` after `indent`: `mark` in its slot, its id, and its first
+/// line.
+fn record_line(indent: &str, mark: &str, record: &Note) -> Row {
+    let first = record.content.lines().next().unwrap_or_default();
+    let line = format!("{indent}{mark:<SLOT$} {} {first}", short(&record.id));
     Row::Text(line.into())
 }

@@ -174,11 +174,19 @@ pub(crate) struct Tree<'a> {
     pub next: Cell<Option<u64>>,
 }
 
-/// What the tree says of a trail: the steps it prints under it with the time they worked, and its
-/// patterns.
+/// What the tree says of a trail: the steps it prints under it with the time they worked, the patterns
+/// its work uses, and its own notes.
 struct Summary<'a> {
     meta: Meta,
+    patterns: Vec<&'a Note>,
     notes: Vec<&'a Note>,
+}
+
+impl<'a> Summary<'a> {
+    /// Its patterns, then its notes.
+    fn records(&self) -> Vec<&'a Note> {
+        self.patterns.iter().chain(&self.notes).copied().collect()
+    }
 }
 
 impl Tree<'_> {
@@ -269,27 +277,30 @@ impl Tree<'_> {
             true => self.worked(&[work]),
             false => self.worked(&shown),
         };
+        let notes = self.notes(note, work);
         Summary {
             meta: Meta {
                 done: Tally::of(&shown).done,
                 all: shown.len(),
                 worked,
             },
-            notes: {
-                let mut notes = self.notes(note);
-                let used = self.uses(work).into_iter();
-                notes.extend(
-                    used.filter(|u| !notes.iter().any(|n| n.id == u.id))
-                        .collect::<Vec<_>>(),
-                );
-                notes
-            },
+            patterns: self
+                .uses(work)
+                .into_iter()
+                .filter(|u| !notes.iter().any(|n| n.id == u.id))
+                .collect(),
+            notes,
         }
     }
 
-    /// The notes of the tree of `note`.
-    fn notes(&self, note: Step) -> Vec<&Note> {
-        self.notes.of(note)
+    /// The notes on the trail `note` and on `work`, the step that holds its work, oldest first.
+    fn notes(&self, note: Step, work: Step) -> Vec<&Note> {
+        let mut notes = self.notes.on(note.id()).to_vec();
+        if work.id() != note.id() {
+            notes.extend(self.notes.on(work.id()));
+            notes.sort_by(|a, b| (a.created_at, &a.id).cmp(&(b.created_at, &b.id)));
+        }
+        notes
     }
 
     /// The time the steps of `tree` with no step under them worked: what a done one took, and the time

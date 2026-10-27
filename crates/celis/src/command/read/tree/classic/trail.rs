@@ -74,7 +74,7 @@ impl Tree<'_> {
             tone: self.tone(BOLD, note.newest()),
             rest: hair.clone(),
         });
-        self.pick(self.item(note, true, &summary.notes), lines, first);
+        self.pick(self.item(note, true, &summary.records()), lines, first);
         if let Some(worked) = summary.meta.worked {
             self.labelled(lines, &hair, "took", &took(worked));
         }
@@ -93,7 +93,13 @@ impl Tree<'_> {
         }
         self.closing(work, &hair, false, lines);
         let level = Level::of(Trail::new(note).parts());
-        self.level(level, summary.notes, &Styled::from("  "), note.id(), lines);
+        self.level(
+            level,
+            summary.records(),
+            &Styled::from("  "),
+            note.id(),
+            lines,
+        );
     }
 
     /// Adds `note` as one row: `▸`, its mark and wrapped title, then its details: its steps and worked
@@ -113,7 +119,7 @@ impl Tree<'_> {
             rest: rest.clone(),
         });
         self.details(&rest, summary.meta, lines);
-        self.pick(self.item(note, false, &summary.notes), lines, first);
+        self.pick(self.item(note, false, &summary.records()), lines, first);
     }
 }
 
