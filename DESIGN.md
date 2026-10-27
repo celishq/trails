@@ -113,10 +113,6 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
     the spec says, and prints one line on stderr that names it as deprecated. So an older plugin works
     with a newer `celis`, and its agent learns the new name. A reader reads each old record as before,
     because a record cannot be deleted.
-16. **celis never guesses a project.** In a folder under a `.git`, the project is the repo's first
-    commit, and only git gives it. When git fails there, such as in a sandbox that blocks it, celis
-    refuses and names the failure, so that no record lands in a project of the folder path that the
-    hooks, which run outside the sandbox, never read.
 
 ## What we do not do
 

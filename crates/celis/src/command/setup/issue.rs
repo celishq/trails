@@ -59,7 +59,7 @@ impl Command {
             true => "none".to_string(),
             false => sessions.join(", "),
         };
-        let project = celis_store::Project::at(&self.folder);
+        let project = self.project();
         let shown = match self.env.get("HOME").map(|h| home.strip_prefix(h)) {
             Some(Ok(rest)) => format!("~/{}", rest.display()),
             _ => home.display().to_string(),

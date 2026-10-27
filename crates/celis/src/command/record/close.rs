@@ -88,9 +88,7 @@ impl Command {
 
     /// The live patterns in scope that the `files` match, as `Patterns::matching` orders them.
     fn matched<'a>(&self, trails: &'a Store, files: &[String]) -> Vec<Pattern<'a>> {
-        let Ok(project) = self.project() else {
-            return Vec::new();
-        };
+        let project = self.project();
         let paths: Vec<String> = files
             .iter()
             .flat_map(|f| crate::command::record::files::paths(&project, &self.folder, f))

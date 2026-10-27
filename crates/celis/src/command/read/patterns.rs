@@ -32,7 +32,7 @@ impl Command {
             return crate::command::put(out, NONE);
         }
         let trails = self.trails()?;
-        let project = self.project()?.anchor.project;
+        let project = self.project().anchor.project;
         let patterns = trails.patterns().live(&project);
         if patterns.is_empty() {
             return crate::command::put(out, NONE);
@@ -53,7 +53,7 @@ impl Command {
             return Ok((Vec::new(), 0));
         }
         let trails = self.trails()?;
-        let project = self.project()?.anchor.project;
+        let project = self.project().anchor.project;
         let size = trails.patterns().live(&project).len();
         let found = Candidate::all(&trails, &project);
         Ok((found.iter().map(Candidate::line).collect(), size))
@@ -66,7 +66,7 @@ impl Command {
             return Ok(None);
         }
         let trails = self.trails()?;
-        let here = self.project()?;
+        let here = self.project();
         let patterns = trails.patterns().live(&here.anchor.project);
         if patterns.is_empty() {
             return Ok(None);

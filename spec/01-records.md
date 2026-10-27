@@ -98,8 +98,6 @@ project name   the Figma file's name, else the host, else the main checkout's fo
 - Every clone and worktree of one repo MUST give the same project id, and so MUST two records at the same
   Figma file.
 - The name MUST NOT change the id. Two records of one project MAY carry two names.
-- When the folder lies under a `.git` and git fails there, a command MUST refuse with `error`, write
-  nothing, and name git's failure; it MUST NOT take the path as the id.
 
 ## Places
 

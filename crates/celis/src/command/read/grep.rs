@@ -24,7 +24,7 @@ impl Command {
             return Ok(());
         }
         match Found::of(&found, &view) {
-            Some(lines) => crate::command::put(out, &lines.text(&self.project()?.anchor.name)),
+            Some(lines) => crate::command::put(out, &lines.text(&self.project().anchor.name)),
             None => crate::command::put(out, &found),
         }
     }
