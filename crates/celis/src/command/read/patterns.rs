@@ -5,6 +5,7 @@ use crate::command::record::files;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use crate::text::line::plural;
+use crate::text::markdown;
 use celis_patterns::{Example, Pattern, PatternStore};
 use celis_store::records::id::short;
 use celis_store::Store;
@@ -170,49 +171,36 @@ fn entry(pattern: &Pattern, held: &HashSet<&str>, files: &[(&str, Vec<String>)])
 /// The section of `pattern`: its Name, else its first line, as a heading, its id and scope, the rest of its text, then a line for each smaller pattern in scope in `project` and each example, a file as a
 /// link to its blob.
 fn markdown(pattern: &Pattern, trails: &Store, project: &str) -> Vec<String> {
-    let (note, pattern) = (pattern.note, &pattern.record);
-    let mut text = pattern.content.lines();
-    let heading = text.next().unwrap_or("");
-    let mut lines = vec![
-        String::new(),
-        format!("## {}", pattern.name().unwrap_or(heading)),
-        String::new(),
-        format!("`{}` · {}", short(&note.id), pattern.scope.text()),
-        String::new(),
-    ];
-    let rest: Vec<String> = text.map(|l| format!("{l}  ")).collect();
-    if !rest.is_empty() {
-        lines.extend(rest);
-        lines.push(String::new());
-    }
-    let steps = trails.steps();
+    let (note, record) = (pattern.note, &pattern.record);
+    let meta = format!("`{}` · {}", short(&note.id), record.scope.text());
+    let mut tail = vec![];
     for smaller in trails.patterns().view(project).smaller(&note.id) {
         let first = smaller.record.content.lines().next().unwrap_or("");
         let title = smaller.record.name().unwrap_or(first);
-        lines.push(format!("- next: `{}` {title}", short(smaller.id())));
+        tail.push(format!("- next: `{}` {title}", short(smaller.id())));
     }
-    for (side, example) in pattern.examples.sides() {
-        match example {
-            Example::File(file) => {
-                let at = crate::text::line::blob(file, trails);
-                lines.push(format!("- {side}: [{}]({at})", file.place));
-            }
-            Example::Url(url) => lines.push(format!("- {side}: <{url}>")),
-            Example::Step(id) => {
-                let Ok(step) = steps.find(id) else { continue };
-                let done = step.done();
-                let proof = done.as_ref().and_then(|d| d.proof.lines().next());
-                let head = format!("`{}` {}", short(step.id()), step.title());
-                lines.push(format!("- {side}: {head} · {}", proof.unwrap_or("")));
-                let files = done.iter().flat_map(|d| d.files.iter());
-                lines.extend(files.map(|f| {
-                    let at = crate::text::line::blob(f, trails);
-                    format!("  - [{}]({at})", f.place)
-                }));
-            }
+    let steps = trails.steps();
+    for (side, example) in record.examples.sides() {
+        if let Example::Step(id) = example {
+            let Ok(step) = steps.find(id) else { continue };
+            let done = step.done();
+            let proof = done.as_ref().and_then(|d| d.proof.lines().next());
+            let head = format!("`{}` {}", short(step.id()), step.title());
+            tail.push(format!("- {side}: {head} · {}", proof.unwrap_or("")));
+            let files = done.iter().flat_map(|d| d.files.iter());
+            tail.extend(files.map(|f| {
+                let at = crate::text::line::blob(f, trails);
+                format!("  - [{}]({at})", f.place)
+            }));
+            continue;
         }
+        let link = match example {
+            Example::File(file) => crate::text::line::blob(file, trails),
+            _ => String::new(),
+        };
+        tail.extend(markdown::example(side, example, &link, false));
     }
-    lines
+    markdown::section(record, Some(meta), tail)
 }
 
 /// Whether `word` reads as a record id: 4 to 64 hex characters.

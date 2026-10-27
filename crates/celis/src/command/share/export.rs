@@ -2,6 +2,7 @@
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
+use crate::text::markdown;
 use celis_patterns::{Example, Export, PatternStore};
 use std::io::Write;
 
@@ -40,36 +41,14 @@ fn page(export: &Export) -> String {
         ),
     ];
     for (_, record) in &export.patterns {
-        let mut text = record.content.lines();
-        let heading = text.next().unwrap_or("");
-        lines.extend([
-            String::new(),
-            format!("## {}", record.name().unwrap_or(heading)),
-            String::new(),
-        ]);
-        lines.extend(text.map(|l| format!("{l}  ")));
-        let examples: Vec<String> = record
-            .examples
-            .sides()
-            .filter_map(|(side, example)| match example {
-                Example::File(file) if file.media.starts_with("image/") => Some(format!(
-                    "- {side}: ![{}]({})",
-                    file.place,
-                    Export::blob(file)
-                )),
-                Example::File(file) => Some(format!(
-                    "- {side}: [{}]({})",
-                    file.place,
-                    Export::blob(file)
-                )),
-                Example::Url(url) => Some(format!("- {side}: <{url}>")),
-                Example::Step(_) => None,
-            })
-            .collect();
-        if !examples.is_empty() {
-            lines.push(String::new());
-            lines.extend(examples);
-        }
+        let examples = record.examples.sides().filter_map(|(side, example)| {
+            let link = match example {
+                Example::File(file) => Export::blob(file),
+                _ => String::new(),
+            };
+            markdown::example(side, example, &link, true)
+        });
+        lines.extend(markdown::section(record, None, examples.collect()));
     }
     let membership = &export.membership;
     lines.extend([
