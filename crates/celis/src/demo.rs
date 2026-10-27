@@ -414,6 +414,7 @@ impl Demo {
             uses: uses.to_vec(),
             misled: Vec::new(),
             session: None,
+            agent: None,
         };
         let trails = self.trails(ago)?;
         let written = trails.add(draft)?;

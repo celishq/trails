@@ -103,6 +103,7 @@ impl TrailStore for Store {
             places: draft.places,
             check: draft.check,
             session: draft.session,
+            agent: draft.agent,
             content: draft.content,
         };
         written.notices.extend(ahead(under).map(Notice::NotStarted));

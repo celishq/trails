@@ -170,6 +170,21 @@ impl Command {
         .cloned()
     }
 
+    /// The agent this run belongs to: `claude` with `$CLAUDE_CODE_SESSION_ID`, `codex` with
+    /// `$CODEX_THREAD_ID`, else `$CELIS_AGENT`.
+    fn agent(&self) -> Option<String> {
+        let set = |name: &str| self.env.get(name).is_some_and(|v| !v.is_empty());
+        match (set("CLAUDE_CODE_SESSION_ID"), set("CODEX_THREAD_ID")) {
+            (true, _) => Some("claude".into()),
+            (_, true) => Some("codex".into()),
+            _ => self
+                .env
+                .get("CELIS_AGENT")
+                .filter(|a| !a.is_empty())
+                .cloned(),
+        }
+    }
+
     /// Whether the store exists.
     pub(crate) fn held(&self) -> Result<bool, Failure> {
         Ok(Home::exists(&self.home()?))

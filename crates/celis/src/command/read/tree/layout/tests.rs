@@ -28,6 +28,7 @@ fn step(under: Option<&Note>, uses: &[&Note], at: u64) -> Note {
         places: Vec::new(),
         check: None,
         session: None,
+        agent: None,
         content: format!("step at {at}"),
     }
     .record(&account(), at)

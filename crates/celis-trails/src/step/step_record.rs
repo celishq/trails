@@ -5,7 +5,7 @@ use celis_nostr::{Account, Note};
 use celis_store::{Anchor, StepId};
 
 /// One part of the work on its project: the step it is a part of, the step it replaces, the steps and
-/// patterns it uses, the patterns that misled the work it fixes, the places the work goes, the check that proves it, the session that wrote it, and
+/// patterns it uses, the patterns that misled the work it fixes, the places the work goes, the check that proves it, the session and the agent that wrote it, and
 /// the words. A step under no other is a trail.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StepRecord {
@@ -17,6 +17,7 @@ pub struct StepRecord {
     pub places: Vec<String>,
     pub check: Option<String>,
     pub session: Option<String>,
+    pub agent: Option<String>,
     pub content: String,
 }
 
@@ -32,6 +33,7 @@ impl StepRecord {
         tags.extend(self.places.iter().map(|p| tag("at", p)));
         tags.extend(self.check.iter().map(|c| tag("check", c)));
         tags.extend(self.session.iter().map(|s| tag("session", s)));
+        tags.extend(self.agent.iter().map(|a| tag("agent", a)));
         tags.extend([
             tag("L", NAMESPACE),
             vec!["l".to_string(), "step".to_string(), NAMESPACE.to_string()],
@@ -68,6 +70,7 @@ impl StepRecord {
             places: tagged("at"),
             check: owned("check"),
             session: owned("session"),
+            agent: owned("agent"),
             content: note.content.clone(),
         })
     }

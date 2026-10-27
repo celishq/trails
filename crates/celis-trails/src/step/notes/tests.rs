@@ -21,6 +21,7 @@ fn step(under: Option<&Note>, at: u64) -> Note {
         places: Vec::new(),
         check: None,
         session: None,
+        agent: None,
         content: "a step".into(),
     }
     .record(&account(), at)

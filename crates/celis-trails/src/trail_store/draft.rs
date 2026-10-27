@@ -14,4 +14,5 @@ pub struct Draft {
     pub uses: Vec<String>,
     pub misled: Vec<String>,
     pub session: Option<String>,
+    pub agent: Option<String>,
 }

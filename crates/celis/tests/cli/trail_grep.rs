@@ -364,6 +364,7 @@ fn the_view_and_the_steps_pattern_search_match_the_fixture() {
                 places: places.iter().map(|p| p.to_string()).collect(),
                 check: None,
                 session: None,
+                agent: None,
                 content: text.to_string(),
             };
             let mut tags = record.record(&by, at).unwrap().tags;

@@ -23,6 +23,7 @@ fn step(text: &str, at: u64, under: Option<&Note>, uses: &[&str], replaces: Opti
         places: Vec::new(),
         check: None,
         session: None,
+        agent: None,
         content: text.into(),
     }
     .record(&account(), at)

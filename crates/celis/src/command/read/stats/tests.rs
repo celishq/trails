@@ -49,6 +49,7 @@ impl Desk {
             uses: uses.iter().map(|u| u.to_string()).collect(),
             misled: Vec::new(),
             session: None,
+            agent: None,
         };
         let id = self.trails.add(draft).unwrap().records[0].id.clone();
         self.trails.at(noon() - ago);

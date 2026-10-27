@@ -20,6 +20,7 @@ fn step(text: &str, at: u64) -> Note {
         places: Vec::new(),
         check: None,
         session: None,
+        agent: None,
         content: text.into(),
     }
     .record(&account(), at)
