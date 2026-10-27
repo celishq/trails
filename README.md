@@ -1,9 +1,8 @@
 <h1 align="center">Celis</h1>
 
-<h3 align="center">Stop babysitting your coding agent</h3>
+<h3 align="center">Teach your AI once, not every day</h3>
 
-<p align="center">Celis keeps the patterns you teach and gives your agent the judgement to use them, in every project
-and every agent.</p>
+<p align="center">Celis turns your corrections into patterns that every agent keeps.</p>
 
 <p align="center">
   <a href="https://github.com/celishq/trails/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/celishq/trails"></a>
@@ -17,19 +16,19 @@ https://github.com/user-attachments/assets/8cb59450-fb36-4fa6-82ae-5bcd59b1384b
 
 ## Why
 
-- **Your agent uses your judgement.** Before it acts, it picks the patterns that bear on the job, not a
-  manual it read an hour ago. You stop catching the same mistake twice.
-- **Correct it once.** A correction in chat or a code review becomes a pattern that Celis keeps. When a
-  job closes, your agent writes down what it learned.
-- **Every agent shares the same patterns.** What you teach Claude Code, Codex and Cursor use too.
-- **You can check its work.** Every step comes with proof, like a passing test or a command's output, on
+- **You already teach your agent.** Each correction in chat or a code review becomes a pattern that
+  Celis keeps: what to do, and why. When a job closes, your agent writes down what it learned.
+- **It comes back when it matters.** Before your agent makes a choice, it reads the patterns that bear
+  on it, not a manual it read an hour ago. You stop catching the same mistake twice.
+- **Every agent learns it.** What you teach Claude Code, Codex and Cursor use too, in every project.
+- **You can check what it learned.** Every step comes with proof, like a passing test or a command's output, on
   a trail you can watch.
 
 ## How it works
 
 A CLAUDE.md is a manual. Your agent reads it once at the start, and by the time it edits a file, the
 one rule that matters is lost among hundreds of others. Celis is a checklist. It hands your agent the
-few rules that apply right now: when a job starts, before it changes a file, and before it says it's
+few patterns that apply right now: when a job starts, before it changes a file, and before it says it's
 done.
 
 Patterns are the core. A pattern says what to choose in a context, and why. It guides your agent's
@@ -58,9 +57,9 @@ Job: seniors pay 20% less
 ├─ ✓ Find where prices are set
 ├─ ⠏ Change how the price is worked out     ← not sure how yet, so it's split up
 │  ├─ ✗ Change the price in the cart           dropped: the cart doesn't know the age
-│  │                                           rule: set prices in prices.py, not the cart
+│  │                                           pattern: set prices in prices.py, not the cart
 │  ├─ ✓ Write a test: seniors pay 80%          proof: passes, once SHELF_OFFLINE=1 was set
-│  │                                           rule: tests need SHELF_OFFLINE=1
+│  │                                           pattern: tests need SHELF_OFFLINE=1
 │  └─ ○ Use the new price in prices.py      ← up next
 └─ ○ Show the senior price on the page      ← will split this later
 
@@ -68,7 +67,7 @@ Job: seniors pay 20% less
 ```
 
 A week later, you ask for a student discount, and the agent starts with the senior discount's trail and
-its two rules.
+its two patterns.
 
 ## Does it work?
 
@@ -149,11 +148,11 @@ Questions don't leave a trail; only jobs that change files do.
 
 ## Questions
 
-**How do I fix a bad rule?** Tell your agent. It writes a new rule that replaces the old one, and
+**How do I fix a bad pattern?** Tell your agent. It writes a new pattern that replaces the old one, and
 agents stop seeing the old one.
 
 **How do I share trails with my team?** Run `celis link` in the project. It keeps a copy of the
-project's trails in `.celis/trails/`, so you can commit them. Rules you keep for all your own work
+project's trails in `.celis/trails/`, so you can commit them. Patterns you keep for all your own work
 stay private.
 
 **Where is my data?** On your machine only: `~/Library/Application Support/Celis` on macOS, and

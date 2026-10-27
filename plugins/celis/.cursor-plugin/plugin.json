@@ -1,7 +1,7 @@
 {
   "name": "celis",
   "version": "0.0.12",
-  "description": "Stop babysitting your coding agent. Celis keeps the patterns you teach and gives your agent the judgement to use them, in every project and every agent.",
+  "description": "Celis: your team's know-how, in every AI agent.",
   "author": { "name": "Celis" },
   "homepage": "https://celis.ai",
   "repository": "https://github.com/celishq/trails",

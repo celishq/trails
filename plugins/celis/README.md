@@ -1,8 +1,8 @@
 # celis
 
-Stop babysitting your coding agent.
+Teach your AI once, not every day.
 
-Celis keeps the patterns you teach and gives your agent the judgement to use them, in every project and every agent.
+Celis turns your corrections into patterns that every agent keeps, in every project.
 Your trails and patterns stay on your machine.
 
 ## Before you install
