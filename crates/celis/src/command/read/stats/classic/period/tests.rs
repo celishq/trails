@@ -142,3 +142,29 @@ fn a_period_closes_done_dropped_and_stale_steps() {
     assert_eq!(titles(period.closed()), ["finished", "gone", "left"]);
     assert!(Period::new(&steps, 200, 300).closed().is_empty());
 }
+
+/// A period counts an ask with no steps under it as a done step, with its uses.
+#[test]
+fn a_period_counts_an_ask_with_no_steps_under_it() {
+    let pattern = PatternRecord {
+        anchor: Anchor {
+            project: "p".into(),
+            name: "repo".into(),
+        },
+        scope: Scope::Project,
+        replaces: None,
+        content: "keep cents".into(),
+        paths: vec![],
+        old_rule: false,
+        within: vec![],
+        examples: Default::default(),
+    }
+    .record(&account(), 5)
+    .unwrap();
+    let alone = step("alone", 21, None, &[&pattern.id], None);
+    let records = vec![pattern, alone.clone(), done(&alone.id, None, 30)];
+    let steps = Steps::new(&records, 50);
+    let period = Period::new(&steps, 20, 40);
+    assert_eq!(titles(period.done()), ["alone"]);
+    assert_eq!(period.ruled(), 1);
+}

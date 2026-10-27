@@ -61,7 +61,7 @@ impl Month {
         let mut projects: BTreeMap<String, Project> = BTreeMap::new();
         let mut used: HashMap<&str, usize> = HashMap::new();
         let mut applied: BTreeMap<String, usize> = BTreeMap::new();
-        for step in steps.all().into_iter().filter(|s| !s.is_trail()) {
+        for step in steps.all() {
             let Some(at) = step.closed_at().filter(|at| *at >= first) else {
                 continue;
             };
@@ -70,6 +70,14 @@ impl Month {
                 continue;
             }
             let last = at >= half;
+            if !step.is_work() {
+                if last && step.state() == State::Done {
+                    for pattern in step.uses() {
+                        *used.entry(pattern).or_default() += 1;
+                    }
+                }
+                continue;
+            }
             let name = &step.record().anchor.name;
             let outcome = &mut month.days[day];
             match step.state() {

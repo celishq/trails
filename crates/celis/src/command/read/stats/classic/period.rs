@@ -3,8 +3,8 @@
 use crate::progress::Flags;
 use celis_trails::{Step, Steps};
 
-/// The work of a store from `from` up to `to`: the steps done, added and closed in that time. A trail
-/// counts as none of them.
+/// The work of a store from `from` up to `to`: the steps done, added and closed in that time. An ask
+/// with steps under it counts as none of them.
 pub struct Period<'a> {
     steps: &'a Steps<'a>,
     from: u64,
@@ -67,9 +67,9 @@ impl<'a> Period<'a> {
             .collect()
     }
 
-    /// Every step of the store that is not a trail, oldest first.
+    /// Every step of the store that is work, oldest first.
     fn parts(&self) -> impl Iterator<Item = Step<'a>> {
-        self.steps.all().into_iter().filter(|s| !s.is_trail())
+        self.steps.all().into_iter().filter(|s| s.is_work())
     }
 
     /// Whether the second `at` is in it.

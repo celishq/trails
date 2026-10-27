@@ -16,3 +16,16 @@ fn the_total_counts_all_time() {
     assert_eq!((total.patterns, total.used), (1, 1));
     assert_eq!(total.time, 600 + 300 + 1_200 + 240 + 60);
 }
+
+/// An ask with no steps under it counts as an ended step, and its uses as hits.
+#[test]
+fn an_ask_with_no_steps_under_it_counts_as_a_step() {
+    let mut desk = shop();
+    let pattern = desk.pattern(500, "shop");
+    let alone = desk.add(500, "shop", None, "alone", &[&pattern], None);
+    desk.done(400, 60, &alone);
+    desk.trails.at(super::super::tests::noon());
+    let total = Model::of(&desk.trails, Total::of);
+    assert_eq!((total.trails, total.resolved), (4, 6));
+    assert_eq!((total.reused, total.hits), (2, 2));
+}

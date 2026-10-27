@@ -24,7 +24,7 @@ pub(super) struct Total {
 impl Total {
     pub fn of(model: &Model) -> Total {
         let all = model.steps.all();
-        let parts = || all.iter().filter(|s| !s.is_trail());
+        let parts = || all.iter().filter(|s| s.is_work());
         let done = || parts().filter(|s| s.state() == State::Done);
         let ruled = |s: &celis_trails::Step| !s.uses().is_empty();
         let named: HashSet<&str> = all.iter().flat_map(|s| s.uses()).collect();
@@ -41,7 +41,10 @@ impl Total {
             reused: done()
                 .filter(|s| s.revised().is_empty() && ruled(s))
                 .count(),
-            hits: done().filter(|s| ruled(s)).count(),
+            hits: all
+                .iter()
+                .filter(|s| s.state() == State::Done && ruled(s))
+                .count(),
             patterns: live.len(),
             used: live
                 .iter()

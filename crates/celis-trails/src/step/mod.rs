@@ -54,6 +54,11 @@ impl<'a> Step<'a> {
         self.entry.step.under.is_none()
     }
 
+    /// Whether it is a part of the work: a step under an ask, or an ask with no steps under it.
+    pub fn is_work(self) -> bool {
+        !self.is_trail() || self.entry.children.is_empty()
+    }
+
     /// The step it is a part of; `None` for a trail.
     pub fn under(self) -> Option<Step<'a>> {
         self.steps.get(self.entry.step.under.as_deref()?)
