@@ -12,6 +12,7 @@ use std::sync::OnceLock;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tempfile::TempDir;
 
+pub mod cell;
 pub mod watch;
 
 /// The phrase of every test home.
