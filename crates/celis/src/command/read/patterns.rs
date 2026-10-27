@@ -112,7 +112,7 @@ impl Command {
     }
 }
 
-/// The lines of `pattern` in the index: `<id8> <scope> <When>`, then each of its paths, each of the
+/// The lines of `pattern` in the index: `<id8> <scope> <Name>`, then each of its paths, each of the
 /// `files` whose paths it matches, and each larger pattern of the `held` ids.
 fn entry(pattern: &Pattern, held: &HashSet<&str>, files: &[(&str, Vec<String>)]) -> String {
     let record = &pattern.record;
@@ -120,7 +120,7 @@ fn entry(pattern: &Pattern, held: &HashSet<&str>, files: &[(&str, Vec<String>)])
         "{} {} {}",
         short(pattern.id()),
         record.scope.text(),
-        record.when()
+        record.title()
     );
     let paths = record.paths.iter().map(|p| format!("  path   {p}"));
     let matched = files.iter().filter(|(_, paths)| record.matches(paths));
@@ -134,14 +134,15 @@ fn entry(pattern: &Pattern, held: &HashSet<&str>, files: &[(&str, Vec<String>)])
     lines.collect::<Vec<_>>().join("\n")
 }
 
-/// The section of `pattern`: its first line as a heading, its id and scope, the rest of its text, then a line for each smaller pattern in scope in `project` and each example, a file as a
+/// The section of `pattern`: its Name, else its first line, as a heading, its id and scope, the rest of its text, then a line for each smaller pattern in scope in `project` and each example, a file as a
 /// link to its blob.
 fn markdown(pattern: &Pattern, trails: &Store, project: &str) -> Vec<String> {
     let (note, pattern) = (pattern.note, &pattern.record);
     let mut text = pattern.content.lines();
+    let heading = text.next().unwrap_or("");
     let mut lines = vec![
         String::new(),
-        format!("## {}", text.next().unwrap_or("")),
+        format!("## {}", pattern.name().unwrap_or(heading)),
         String::new(),
         format!("`{}` · {}", short(&note.id), pattern.scope.text()),
         String::new(),
@@ -154,7 +155,8 @@ fn markdown(pattern: &Pattern, trails: &Store, project: &str) -> Vec<String> {
     let steps = trails.steps();
     for smaller in trails.patterns().smaller(project, &note.id) {
         let first = smaller.record.content.lines().next().unwrap_or("");
-        lines.push(format!("- next: `{}` {first}", short(smaller.id())));
+        let title = smaller.record.name().unwrap_or(first);
+        lines.push(format!("- next: `{}` {title}", short(smaller.id())));
     }
     for (side, example) in pattern.examples.sides() {
         match example {

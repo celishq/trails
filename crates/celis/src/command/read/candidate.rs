@@ -72,6 +72,13 @@ impl<'a> Candidate<'a> {
                 if chain >= CHURN {
                     reasons.push("churn".to_string());
                 }
+                let record = &pattern.record;
+                if record.name().is_none() {
+                    reasons.push("nameless".to_string());
+                }
+                if malformed(&record.content) {
+                    reasons.push("form".to_string());
+                }
                 Candidate {
                     pattern: pattern.clone(),
                     reasons,
@@ -94,13 +101,24 @@ impl<'a> Candidate<'a> {
         self.chain
     }
 
-    /// `<id8> <reason>[,<reason>]... <When>`.
+    /// `<id8> <reason>[,<reason>]... <Name>`.
     pub fn line(&self) -> String {
         format!(
             "{} {} {}",
             short(self.pattern.id()),
             self.reasons.join(","),
-            self.pattern.record.when()
+            self.pattern.record.title()
         )
     }
+}
+
+/// Whether the When line of `content` starts with `When:`, or holds another line of a pattern (CIP-02,
+/// "Patterns").
+fn malformed(content: &str) -> bool {
+    let named = celis_patterns::pattern_record::name(content).is_some();
+    let line = content.lines().nth(usize::from(named)).unwrap_or("");
+    line.starts_with("When:")
+        || ["Forces:", "Do:", "Because:"]
+            .iter()
+            .any(|l| line.contains(l))
 }

@@ -13,7 +13,7 @@ person says yes.
    read its text and the files it shows as examples.
 2. Read the index that `celis patterns` gives, open with `celis patterns <id>` each pattern that may say
    the same as a draft, and leave out each draft that a live pattern already says.
-3. Draft each point as a pattern in the four lines the card shows, as its Learn move says: a must, such
+3. Draft each point as a pattern in the five lines the card shows, as its Learn move says: a must, such
    as "always" or "never", a taste, and a choice the source explains are each a pattern that guides,
    with each file, step or URL the source gives as a good or a bad example. A pattern needs
    no example: its forces and its reason carry it. A skill's process, such as "plan, then build", is a

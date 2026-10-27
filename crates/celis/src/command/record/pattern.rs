@@ -2,6 +2,7 @@
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
+use celis_patterns::pattern_record::when;
 use celis_patterns::{Example, Examples, Pattern, PatternRecord, PatternStore, Scope};
 use celis_store::records::id::short;
 use celis_store::{PatternId, Place, Project, Store};
@@ -67,7 +68,8 @@ impl Command {
         self.print(written, args, out, err)?;
         for pattern in &like {
             let first = pattern.record.content.lines().next().unwrap_or("");
-            crate::command::put(out, &format!("like    {} {first}", short(pattern.id())))?;
+            let title = pattern.record.name().unwrap_or(first);
+            crate::command::put(out, &format!("like    {} {title}", short(pattern.id())))?;
         }
         if let Some(pattern) = like.first() {
             let next = format!(
@@ -152,12 +154,6 @@ const COMMON: &[&str] = &[
     "there", "they", "this", "use", "via", "was", "were", "what", "when", "where", "which", "who",
     "why", "will", "with", "would", "you", "your",
 ];
-
-/// The part of a pattern's first line before its first `:`: the case it acts on.
-fn when(content: &str) -> &str {
-    let first = content.lines().next().unwrap_or("");
-    first.split_once(':').map_or(first, |(when, _)| when)
-}
 
 /// The words of `text` that tell cases apart: 4 or more letters, not common, lower case, without a
 /// plural `s`.

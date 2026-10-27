@@ -101,15 +101,15 @@ fn stats_prints_the_use_of_each_pattern_and_the_gaps() {
         lines[..4],
         [
             format!(
-                "{} uses:0 misled:0 replaces:0 used:- examples:0 tidy:unused When releases ship",
+                "{} uses:0 misled:0 replaces:0 used:- examples:0 tidy:unused,nameless When releases ship",
                 &old.id[..8]
             ),
             format!(
-                "{} uses:2 misled:0 replaces:1 used:{day} examples:0 tidy:- When prices round",
+                "{} uses:2 misled:0 replaces:1 used:{day} examples:0 tidy:nameless When prices round",
                 &kept[..8]
             ),
             format!(
-                "{} uses:2 misled:2 replaces:0 used:{day} examples:1 tidy:misled When logos render",
+                "{} uses:2 misled:2 replaces:0 used:{day} examples:1 tidy:misled,nameless When logos render",
                 &misled[..8]
             ),
             "total 3 patterns in the index · last 7 days: 3 written, 1 replaced, 3 gaps"
@@ -122,7 +122,10 @@ fn stats_prints_the_use_of_each_pattern_and_the_gaps() {
         serde_json::Value::Null,
         "{json:?}"
     );
-    assert_eq!(json[0]["pattern"]["tidy"], serde_json::json!(["unused"]));
+    assert_eq!(
+        json[0]["pattern"]["tidy"],
+        serde_json::json!(["unused", "nameless"])
+    );
     assert_eq!(json[2]["pattern"]["misled"], 2, "{json:?}");
     assert_eq!(
         json[3]["total"],

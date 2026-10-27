@@ -67,18 +67,19 @@ fn uses(trails: &Store, project: &str, json: bool, out: &mut dyn Write) -> Resul
         let used = uses.first().map(|s| date(s.note().created_at));
         let examples = pattern.record.examples.sides().count();
         let tidy = candidate.reasons();
-        let when = pattern.record.when();
+        let (name, when) = (pattern.record.name(), pattern.record.when());
         let value = json!({"id": id, "uses": uses.len(), "misled": misled, "replaces": chain,
-            "used": used, "examples": examples, "tidy": tidy, "when": when});
+            "used": used, "examples": examples, "tidy": tidy, "name": name, "when": when});
         let line = format!(
-            "{} uses:{} misled:{misled} replaces:{chain} used:{} examples:{examples} tidy:{} {when}",
+            "{} uses:{} misled:{misled} replaces:{chain} used:{} examples:{examples} tidy:{} {}",
             short(id),
             uses.len(),
             used.as_deref().unwrap_or("-"),
             match tidy.is_empty() {
                 true => "-".to_string(),
                 false => tidy.join(","),
-            }
+            },
+            pattern.record.title()
         );
         crate::command::show(out, json, "pattern", value, &line)?;
     }

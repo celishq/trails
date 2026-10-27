@@ -322,7 +322,7 @@ pub const VERBS: &[Verb] = &[
             ("--good <example>", "A step, a file, or a URL that shows it, such as a pick"),
             ("--bad <example>", "A step, a file, or a URL that breaks it"),
             ("--project <id>", "The id of a project in the store"),
-            ("<text>", "Its lines: When, Forces, Do and Because"),
+            ("<text>", "Its lines: Name, When, Forces, Do and Because"),
         ],
         examples: &[
             "celis pattern --path shelf/prices.py \\",
