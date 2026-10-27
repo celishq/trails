@@ -1,4 +1,0 @@
-schema_version: "1.1"
-name: 18b-intent-unclear
-context:
-  scaffold_script: ./setup.sh
