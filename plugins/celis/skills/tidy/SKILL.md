@@ -8,7 +8,8 @@ project's own files. Ask what to tidy: this project, this project and the `me` p
 projects. Do the tidy as one ask titled `Tidy the celis trails`, so that celis knows when the last tidy
 was. Start from `celis patterns --tidy`: each pattern that needs tidy, and why. `celis patterns` gives
 the index, and `celis grep` gives each pattern with its uses, misled, last use and replaces; an older
-pattern that its grep line marks ` old-rule` was written as a rule.
+pattern that its grep line marks ` old-rule` was written as a rule. A pattern whose grep line names
+` cell:<name>` is in that cell, and `celis cells` lists the cells.
 
 A good tidy:
 
@@ -31,6 +32,9 @@ A good tidy:
   the project's `AGENTS.md` or `CLAUDE.md` for a project pattern, or in the person's global `CLAUDE.md`
   for a `me` pattern. Then it drops the pattern with the reason `promoted to <file>`;
 - asks the person what a pattern replaced again and again must say;
+- keeps each cell's patterns apart: it merges, settles or narrows patterns only within one cell or only
+  outside cells, never changes a pattern of a cell of another account, and promotes a cell's pattern
+  only when the person names it;
 - offers new patterns for the choices and corrections that came back in two past trails or more and that
   no learn kept.
 
