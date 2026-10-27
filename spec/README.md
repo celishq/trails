@@ -59,7 +59,7 @@ Every change of `spec/` MUST keep these rules:
 | `under` · `replaces` · `at` · `check` | step tags | 03 |
 | 1985 with `start` · `done` · `drop` · `edit` · `note` in `celis.step` | kinds: a start, a done, a drop, an edit, a note (NIP-32) | 03 |
 | `changed` · `by` | done tags | 03 |
-| `session` | step tag | 04 |
+| `session` · `agent` | step tags | 04 |
 | 1985 with `prompt` in `celis.step` | kind: a person's prompt, on the trail (NIP-32) | 04 |
 | 1111 with `pattern` in `celis.pattern` | kind: a pattern (NIP-22) | 05 |
 | `scope` · `replaces` | pattern tags | 05 |
@@ -68,6 +68,8 @@ Every change of `spec/` MUST keep these rules:
 | `within` | pattern tag: the larger pattern it completes | 05 |
 | `me` · `project` | the scopes of a pattern | 05 |
 | `uses` | step tag | 06 |
+| 1985 with `recall` in `celis.step` · `pattern` | kind: a recall of a pattern for a step, and its tag (NIP-32) | 06 |
+| `misled` | step tag and done tag | 06 |
 | `imeta` with `url` · `x` · `m` · `size` · `path` | done tag: a file of the proof (NIP-92, BUD-10) | 08 |
 | `$CELIS_HOME/trails/blobs/` · `<folder>/blobs/` | the blobs of the store and of a linked folder | 08 |
 
@@ -110,6 +112,7 @@ them.
 | `trail` | one ask, and the steps under it |
 | `ask` | a step with no `under`: one thing you asked for |
 | `session` | one run of an agent |
+| `recall` | a read of a whole pattern for the work of a step |
 | `prompt` | what you wrote to the agent while a trail was open |
 | `pattern` | what to choose in a context, and why, that holds in its scope until another replaces it |
 | `note` | what holds for the work of one trail, on a step of it |

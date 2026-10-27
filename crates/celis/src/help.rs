@@ -270,7 +270,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "stats",
         usage: &["celis stats [<id>] [--demo]"],
-        summary: "Show each live pattern: its uses, the steps it misled, its replaces, its last use, its examples and why it needs tidy. Then show the total: the size of the index, and the patterns written, the patterns replaced and the fixes that used no pattern in the last 7 days. With an id, show that step and its grade, and for a done ask its total: its steps, those not proven, the patterns it used, and the patterns written since it began. On a terminal, show the totals of all time, then the last 14 days against the 14 before: reuse rate, first-pass success, resolved steps and median step time, then Learning, Quality, Output and speed, and Resources, each opened with enter, updating as work lands. Changes nothing.",
+        summary: "Show each live pattern: its uses, the steps it misled, its replaces, its last use, its examples and why it needs tidy. Then show the total: the size of the index, and the patterns written, the patterns replaced and the fixes that used no pattern in the last 7 days. Then show the lifecycle of the patterns by day, week and month, and the value of the last 28 days: asks that used a pattern, corrections and repeat ones, first-pass success with and without a pattern, recalls, uses, reach and promotions. With an id, show that step and its grade, and for a done ask its total: its steps, those not proven, the patterns it used, and the patterns written since it began. On a terminal, show the totals of all time, then the last 14 days against the 14 before: reuse rate, first-pass success, resolved steps and median step time, then Learning, Quality, Output and speed, and Resources, each opened with enter, updating as work lands. Changes nothing.",
         args: &[
             ("<id>", "A step id, or its first 4 or more characters"),
             ("--demo", "Show four weeks of sample trails"),
@@ -334,7 +334,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "patterns",
         usage: &["celis patterns [<id>] [<file>]... [--markdown] [--tidy]"],
-        summary: "Show the index of the patterns of this project and of you, the oldest first: each one's id, scope and When, with its paths, each named file they match, and the larger patterns it completes. With an id, print that pattern whole, with its examples. With --markdown, print each whole as one page, with its examples, each file a link to its blob, for a review or a skill file. With --tidy, list the patterns that need tidy, with the reason, then the size of the index. Changes nothing.",
+        summary: "Show the index of the patterns of this project and of you, the oldest first: each one's id, scope and When, with its paths, each named file they match, and the larger patterns it completes. With an id, print that pattern whole, with its examples, and mark it recalled on the session's open step. With --markdown, print each whole as one page, with its examples, each file a link to its blob, for a review or a skill file. With --tidy, list the patterns that need tidy, with the reason, then the size of the index.",
         args: &[
             ("<id>", "A pattern id, or its first 4 or more characters"),
             ("<file>", "A file or folder; marks each pattern whose paths match it"),
@@ -411,12 +411,13 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "step add",
-        usage: &["celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>]... [--check <command>] [--session <id>] [--project <id>] -- <text>"],
+        usage: &["celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--misled <id>]... [--at <place>]... [--check <command>] [--session <id>] [--project <id>] -- <text>"],
         summary: "Add a step. With no --under, it is a new ask, and starts its trail.",
         args: &[
             ("--under <id>", "The open step this step is part of"),
             ("--replaces <id>", "A step this one takes over, or a finished step it fixes"),
             ("--uses <id>", "A pattern it follows"),
+            ("--misled <id>", "A pattern that misled the work it fixes"),
             ("--at <place>", "Where the work happens: a file:line, a URL, or any text"),
             ("--check <command>", "A command that proves the work"),
             ("--session <id>", "The session, when the hook names it"),
@@ -437,13 +438,14 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "step done",
-        usage: &["celis step done <id> [--changed <text>] [--as-planned] [--by person] [--file <path>]... -- <proof>"],
+        usage: &["celis step done <id> [--changed <text>] [--as-planned] [--by person] [--misled <id>]... [--file <path>]... -- <proof>"],
         summary: "Finish a step with its proof and what changed. Finish the steps under it first.",
         args: &[
             ("<id>", "A step id, or its first 4 or more characters"),
             ("--changed", "How the result differs from its expect line"),
             ("--as-planned", "The result matches its expect line; else use --changed"),
             ("--by", "person: the person confirms the result"),
+            ("--misled", "A pattern it followed that did not fit"),
             ("--file", "A file of the proof, kept as it is now"),
             ("<proof>", "The check that failed before and passes now"),
         ],
