@@ -256,7 +256,7 @@ fn next_stats_on_a_terminal_draws_its_board() {
 fn next_stats_with_no_store_draws_the_empty_board_until_a_step_closes() {
     let repo = Repo::new();
     let mut watch = Watch::start(&repo, &["stats", "--next"]);
-    watch.size(40, 100);
+    watch.size(60, 100);
     watch.until("NO STATS YET");
     let shown = watch.rows().join("\n");
     for text in ["CELIS STATS", "first step", "celis stats --demo"] {
