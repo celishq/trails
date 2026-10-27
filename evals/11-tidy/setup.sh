@@ -13,6 +13,7 @@ printf 'Our carefully curated selection of exquisite teas offers a truly unforge
 printf 'Warm bread. Baked at six. Sold by noon.\n' > bread.md
 celis pattern --path "*.md" --good coffee.md --bad tea.md -- "When a shop blurb is written: keep it to three short plain sentences, because the person liked the coffee blurb." >/dev/null
 celis pattern --path "*.md" --good bread.md -- "When page copy is written: use short, plain sentences with no praise words, because the person picked the bread blurb." >/dev/null
+celis pattern -- "When the shop page is built: show the products in a grid of cards, keep the cart at the top right, and print each price in bold, because shoppers scan the page." >/dev/null
 mkdir -p tests
 printf 'from cart import total\n\n\ndef test_total():\n    assert total([150, 250]) == 400\n' > tests/test_cart.py
 printf '[project]\nname = "shop"\n\n[tool.ruff]\ntarget-version = "py311"\n' > pyproject.toml
