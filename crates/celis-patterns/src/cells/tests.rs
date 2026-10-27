@@ -57,7 +57,7 @@ fn a_cell_with_no_mask_is_off() {
     assert!(!Cells::new(&[]).is_on(&cell, "p"));
 }
 
-/// `newest` gives the newest mask of a cell in one project, or of every project, was written.
+/// `newest` gives the newest mask of a cell in one project, or of every project.
 #[test]
 fn newest_gives_the_newest_mask_of_the_project() {
     let account = Account::new(&[1u8; 32]).unwrap();

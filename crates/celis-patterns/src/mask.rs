@@ -1,6 +1,6 @@
 //! CIP-09, "Masks": a label that turns a cell on or off.
 
-use crate::Cell;
+use crate::{Cell, Scope};
 use anyhow::Result;
 use celis_nostr::{Account, Note};
 use celis_store::Anchor;
@@ -26,7 +26,7 @@ impl Mask {
         ];
         match &self.anchor {
             Some(anchor) => tags.extend(anchor.tags()),
-            None => tags.push(vec!["scope".to_string(), "me".to_string()]),
+            None => tags.push(vec!["scope".to_string(), Scope::Me.text()]),
         }
         Note::write(signer, 1985u16, self.at, tags, "")
     }
@@ -46,8 +46,8 @@ impl Mask {
             name: note.tag("cell")?.to_string(),
             author: note.tag("p")?.to_string(),
         };
-        let anchor = match note.tag("scope") {
-            Some("me") => None,
+        let anchor = match note.tag("scope").and_then(Scope::parse) {
+            Some(Scope::Me) => None,
             _ => Some(Anchor::read(note)?),
         };
         Some(Mask {
@@ -56,6 +56,14 @@ impl Mask {
             anchor,
             at: note.created_at,
         })
+    }
+
+    /// Where it holds: in its project, or in every project.
+    pub fn scope(&self) -> Scope {
+        match self.anchor {
+            Some(_) => Scope::Project,
+            None => Scope::Me,
+        }
     }
 
     /// The project id it holds in; none for every project.

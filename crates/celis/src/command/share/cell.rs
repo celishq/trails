@@ -2,7 +2,7 @@
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use celis_patterns::PatternStore;
+use celis_patterns::{PatternStore, Scope};
 use std::io::Write;
 
 impl Command {
@@ -44,10 +44,10 @@ impl Command {
         let command = if on { "cell on" } else { "cell off" };
         let name = args.id(command)?;
         let project = self.project();
-        let anchor = match args.scope.as_deref() {
+        let anchor = match args.scope.as_deref().map(|s| (s, Scope::parse(s))) {
             None => Some(&project.anchor),
-            Some("me") => None,
-            Some(scope) => {
+            Some((_, Some(Scope::Me))) => None,
+            Some((scope, _)) => {
                 return Err(Failure::usage(format!(
                     "{command} takes --scope me, not {scope}"
                 )))
