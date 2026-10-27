@@ -71,10 +71,10 @@ impl Command {
         }
         text.push_str(&format!("steps.md: {}", root.join("steps.md").display()));
         if agent != "claude" {
-            let lesson = root.join("agents/lesson.md").display().to_string();
+            let extraction = root.join("agents/extraction.md").display().to_string();
             text.push_str(&format!(
-                "\nlesson.md: {lesson}. With no subagents, do what it says yourself, with the brief \
-                 that celis lesson prints."
+                "\nextraction.md: {extraction}. With no subagents, do what it says yourself, with the \
+                 brief that celis extract prints."
             ));
         }
         if let Some(index) = self.here(json).index(&[]).ok().flatten() {

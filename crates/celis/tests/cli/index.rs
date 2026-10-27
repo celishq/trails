@@ -307,6 +307,6 @@ fn an_old_recalled_tag_is_ignored() {
     let grep = out(&cli(&repo, &["grep", &id[..8]]));
     assert!(!grep.contains("uses:"), "{grep}");
     assert!(!grep.contains("used:"), "{grep}");
-    let lesson = out(&cli(&repo, &["lesson", &ask.id[..8]]));
+    let lesson = out(&cli(&repo, &["extract", &ask.id[..8]]));
     assert!(!lesson.contains("  pattern "), "{lesson}");
 }

@@ -24,7 +24,7 @@ Read
   stats [<id>]        Show how the patterns are used, and how work went
   └ --demo            Show four weeks of sample trails
 
-  lesson <id>         Show what an ask taught, to keep as patterns
+  extract <id>        Show what an ask taught, to extract as patterns
 
 Record work · your agents run these
   pattern             Record a pattern that guides later work

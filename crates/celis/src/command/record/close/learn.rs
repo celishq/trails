@@ -5,6 +5,7 @@ use celis_patterns::Patterns;
 use celis_store::records::id::short;
 use celis_store::StepId;
 use celis_trails::{Mark, Notes, Step};
+use serde_json::json;
 use std::collections::HashSet;
 
 /// What an ask taught: each `changed` of its steps and of the ask, each note of its trail, each prompt
@@ -57,6 +58,21 @@ impl Learn {
             asked: asked.collect(),
             patterns: in_play(records, step),
         }
+    }
+
+    /// The parts of the brief as one object (`spec/02-cli.md`, "Extract").
+    pub fn json(&self) -> serde_json::Value {
+        let changed: Vec<_> = self
+            .changed
+            .iter()
+            .map(|(id, text)| json!({"step": id.to_string(), "text": text}))
+            .collect();
+        let patterns: Vec<_> = self
+            .patterns
+            .iter()
+            .map(|(id, when)| json!({"id": id, "when": when}))
+            .collect();
+        json!({"ask": self.ask.to_string(), "changed": changed, "notes": self.notes, "asked": self.asked, "patterns": patterns})
     }
 
     /// The learn brief: what the agent writes, then each line the ask taught.

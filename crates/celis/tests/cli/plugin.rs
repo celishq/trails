@@ -168,7 +168,7 @@ fn prompts(repo: &Repo, step: &str) -> Vec<String> {
 }
 
 /// Each agent's session start gives the card; an agent other than Claude Code also gets its session, to
-/// pass with `--session`, and the path of `lesson.md`; no agent gets a path of `recall.md`, which is
+/// pass with `--session`, and the path of `extraction.md`; no agent gets a path of `recall.md`, which is
 /// gone. Antigravity has no session start, and gets both before each call of the model.
 #[test]
 fn each_agents_session_start_gives_the_card_and_its_session() {
@@ -183,7 +183,7 @@ fn each_agents_session_start_gives_the_card_and_its_session() {
         );
         let named = context.contains("celis session: s1. Pass --session s1");
         assert_eq!(named, agent.name != "claude", "{}: {context}", agent.name);
-        let taught = context.contains("agents/lesson.md. With no subagents");
+        let taught = context.contains("agents/extraction.md. With no subagents");
         assert_eq!(taught, agent.name != "claude", "{}: {context}", agent.name);
         assert!(!context.contains("recall.md"), "{}: {context}", agent.name);
     }

@@ -16,6 +16,14 @@ use std::collections::HashMap;
 use std::io::{IsTerminal, Write};
 use std::path::{Path, PathBuf};
 
+/// The notice on the deprecated name `name`.
+fn deprecated(name: &str) -> String {
+    match name {
+        "lesson" => "lesson is deprecated; run celis extract".to_string(),
+        name => format!("{name} is deprecated and ignored"),
+    }
+}
+
 /// The folder under `$HOME` that `$CELIS_HOME` defaults to.
 #[cfg(target_os = "macos")]
 pub const HOME: &str = "Library/Application Support/Celis";
@@ -41,6 +49,11 @@ impl Command {
         let json = Args::asks_json(&self.args);
         let args = Args::parse(&self.args);
         let words = args.as_ref().map_or(vec![], |a| a.words.clone());
+        if let (Ok(args), false) = (&args, json) {
+            for name in &args.old {
+                let _ = writeln!(err, "celis: {}", deprecated(name));
+            }
+        }
         let mut failure = match args.and_then(|a| self.go(&a, out, err)) {
             Ok(()) => return 0,
             Err(failure) => failure,
@@ -74,7 +87,7 @@ impl Command {
             "patterns" => self.patterns(args, out),
             "grep" => self.grep(&self.args[1..], out),
             "stats" => self.stats(args, out),
-            "lesson" => self.lesson(args, out),
+            "extract" | "lesson" => self.extract(args, out),
             "issue" => self.issue(args, out),
             "link" => self.link(args, out, &self.project()),
             "hook" => self.hook(args, out),
