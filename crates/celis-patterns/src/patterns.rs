@@ -8,6 +8,7 @@ use std::collections::HashMap;
 /// The patterns of a store, read once, newest first, then by id, and the cells that hold them.
 pub struct Patterns<'a> {
     every: Vec<Pattern<'a>>,
+    by_id: HashMap<&'a str, usize>,
     cells: Cells,
 }
 
@@ -35,8 +36,10 @@ impl<'a> Patterns<'a> {
             })
             .collect();
         every.sort_by(|a, b| (b.note.created_at, &a.note.id).cmp(&(a.note.created_at, &b.note.id)));
+        let by_id = every.iter().enumerate().map(|(i, p)| (p.id(), i)).collect();
         Patterns {
             every,
+            by_id,
             cells: Cells::new(records),
         }
     }
@@ -75,7 +78,7 @@ impl<'a> Patterns<'a> {
     /// The pattern that `pattern` replaces, when the store holds it.
     pub(crate) fn replaced(&self, pattern: &Pattern) -> Option<&Pattern<'a>> {
         let id = pattern.record.replaces.as_deref()?;
-        self.every.iter().find(|p| p.id() == id)
+        self.by_id.get(id).map(|&i| &self.every[i])
     }
 }
 
