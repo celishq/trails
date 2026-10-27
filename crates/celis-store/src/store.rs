@@ -1,6 +1,6 @@
 //! The records of a home at one moment, and the signed append of new ones.
 
-use crate::{Anchor, Home, ProofFile, Refusal};
+use crate::{Anchor, Home, ProofFile, Refusal, Secret};
 use celis_nostr::{Account, Note};
 use std::path::{Path, PathBuf};
 
@@ -64,10 +64,17 @@ impl Store {
         anchors.find(|a| a.project == project)
     }
 
-    /// Keeps the file at `path` as a blob, as a file of a proof at `place`.
+    /// Keeps the file at `path` as a blob, as a file of a proof at `place`; refuses one that holds a
+    /// secret.
     pub fn keep(&self, place: String, path: &Path) -> Result<ProofFile, Refusal> {
         let bytes = std::fs::read(path)
             .map_err(|_| Refusal::Usage(format!("no file {}", path.display())))?;
+        if let Some(secret) = Secret::find(&String::from_utf8_lossy(&bytes)) {
+            return Err(Refusal::Secret(format!(
+                "the file {place} holds {}",
+                secret.kind
+            )));
+        }
         let sha256 = self.home.keep(&bytes)?;
         Ok(ProofFile::new(place, sha256, bytes.len() as u64))
     }
@@ -77,12 +84,20 @@ impl Store {
         self.home.blob(sha256)
     }
 
-    /// Writes the record `record` gives for the account and now, and returns it.
+    /// Writes the record `record` gives for the account and now, and returns it; refuses one that holds
+    /// a secret.
     pub fn sign(
         &self,
         record: impl FnOnce(&Account, u64) -> anyhow::Result<Note>,
     ) -> Result<Note, Refusal> {
         let note = record(self.home.account()?, self.now)?;
+        let values = note.tags.iter().flat_map(|tag| tag.iter().skip(1));
+        if let Some(secret) = std::iter::once(&note.content)
+            .chain(values)
+            .find_map(|t| Secret::find(t))
+        {
+            return Err(Refusal::Secret(format!("the record holds {}", secret.kind)));
+        }
         self.home.write(&note)?;
         Ok(note)
     }

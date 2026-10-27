@@ -2,13 +2,17 @@
 
 use crate::command::Command;
 use crate::failure::Failure;
-use celis_store::{Link, Project};
+use celis_store::{Link, Project, Secret};
 use celis_trails::TrailStore;
 use hook::Prompt;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
 mod hook;
+
+/// The line on a prompt that holds a secret.
+const SECRET: &str = "celis: the prompt holds a secret, so celis keeps no record of it; never write the \
+                      secret in a celis command, and name it by where it lives, such as API_KEY in .env.";
 
 impl Command {
     /// Acts on the hook `json` holds: a prompt goes on its session's open trail, with notes on `err`
@@ -25,13 +29,20 @@ impl Command {
         }
     }
 
-    /// Writes `prompt` on its session's open trail, signed now, else keeps it for the session's next step;
+    /// Writes `prompt` on its session's open trail, signed now, else keeps it for the session's next step,
+    /// unless it holds a secret;
     /// then, unless it is a task, gives on `err` one line: how a new ask and a step of the open ask are
     /// added, and when a pattern of the index is read.
     fn ask(&self, err: &mut dyn Write, project: &Project, prompt: Prompt) -> Result<(), Failure> {
         let offered = self.offered(&prompt.session)?;
+        let kept = Secret::find(&prompt.text).is_none();
+        if !kept && !prompt.task {
+            crate::command::put(err, SECRET)?;
+        }
         if !self.held()? {
-            self.keep(&prompt)?;
+            if kept {
+                self.keep(&prompt)?;
+            }
             if !prompt.task {
                 crate::command::put(err, &note(false, None))?;
                 self.offer(err, project, &offered)?;
@@ -42,10 +53,11 @@ impl Command {
         let steps = trails.steps();
         let trail = steps.session(&project.anchor.project, &prompt.session);
         match trail {
-            Some(trail) => {
+            Some(trail) if kept => {
                 trails.prompt(trail, prompt.text.clone())?;
             }
-            None => self.keep(&prompt)?,
+            None if kept => self.keep(&prompt)?,
+            _ => {}
         }
         if prompt.task {
             return Ok(());

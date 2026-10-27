@@ -24,6 +24,7 @@ mod projects;
 mod reading;
 mod reuse;
 mod scope;
+mod secret;
 mod spec_citations;
 mod stats;
 mod stats_watch;

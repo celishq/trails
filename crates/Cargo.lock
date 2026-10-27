@@ -204,6 +204,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "celis-nostr",
+ "regex",
  "serde",
  "serde_json",
  "sha2",
