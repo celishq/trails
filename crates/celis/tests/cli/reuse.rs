@@ -6,7 +6,7 @@ use celis_nostr::Note;
 use serde_json::Value;
 use support::{
     account, add, added, cli, err, finish, links, now, objects, out, put, refusal, step, step_note,
-    step_tags, Repo,
+    step_tags, stored_pattern, Repo,
 };
 
 /// The id `pattern -- <text>` prints.
@@ -222,6 +222,45 @@ fn stats_of_a_step_prints_the_step() {
     let text = out(&cli(&repo, &["stats", &id[..8]]));
     assert_eq!(text.lines().count(), 1, "{text}");
     assert!(line(&text, &id).starts_with(&id[..8]), "{text}");
+}
+
+/// `stats <id>` of a done ask prints the step, then its total with the patterns it used and the patterns
+/// written since it began.
+#[test]
+fn stats_of_a_done_ask_prints_its_total() {
+    let repo = Repo::new();
+    let project = repo.project_id();
+    let old = stored_pattern(
+        &repo,
+        (&project, "repo"),
+        &account(),
+        (None, None),
+        "When a price rounds: round down to the cent.",
+        now() - 60,
+    );
+    let ask = add(&repo, &["--", "the student price"]);
+    let part = add(
+        &repo,
+        &[
+            "--under",
+            &ask[..8],
+            "--uses",
+            &old.id[..8],
+            "--",
+            "a student pays 70%",
+        ],
+    );
+    finish(&repo, &part[..8]);
+    finish(&repo, &ask[..8]);
+    decide(&repo, "When a price shows: show two decimals.");
+    let text = out(&cli(&repo, &["stats", &ask[..8]]));
+    let lines: Vec<&str> = text.lines().collect();
+    assert_eq!(lines.len(), 2, "{text}");
+    assert!(lines[0].starts_with(&ask[..8]), "{text}");
+    assert_eq!(
+        lines[1],
+        "celis · 2 steps, 2 not proven · 1 pattern used, 1 extracted"
+    );
 }
 
 /// A reader ignores a `uses` that names a step, which older writers wrote: `stats` counts only the

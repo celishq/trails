@@ -2,7 +2,6 @@
 
 mod end;
 mod learn;
-mod proof;
 mod review;
 
 use crate::command::Command;
@@ -12,7 +11,6 @@ use celis_store::records::id::short;
 use celis_store::{ProofFile, Store};
 pub(crate) use end::End;
 pub(crate) use learn::Learn;
-pub(crate) use proof::Proof;
 pub(crate) use review::Review;
 use std::io::Write;
 

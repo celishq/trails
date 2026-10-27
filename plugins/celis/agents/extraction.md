@@ -12,7 +12,7 @@ pattern, When, Forces, Do and Because, that an agent who never saw this ask can 
 pattern in play that misled the work, or a near copy, and does not sit beside it. An ask that taught
 nothing gives no pattern.
 
-Read what you need: `celis patterns` gives the index, `celis grep <id>` a whole pattern with its
+Read what you need: `celis patterns` gives the index, `celis patterns <id>` a whole pattern with its
 examples, and `celis tree <id>` the ask and its steps. Write each pattern with `celis pattern`.
 
 Answer in this shape, and add nothing else:

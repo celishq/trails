@@ -250,8 +250,8 @@ fn note(held: bool, open: Option<&str>) -> String {
         None => String::new(),
     };
     let load = match held {
-        true => " When a choice of the work matches a When of the index, read that pattern with celis grep \
-                 <id> before you choose, and name it with --uses <id> on the step of that choice.",
+        true => " When a choice of the work matches a When of the index, read that pattern with celis \
+                 patterns <id> before you choose, and name it with --uses <id> on the step of that choice.",
         false => "",
     };
     format!(
