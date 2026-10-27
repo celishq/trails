@@ -1,6 +1,6 @@
 ---
 name: tidy
-description: Tidies the celis trails and patterns. Drops stale trails and patterns, merges and settles patterns, promotes strong patterns into the project's own files, narrows a pattern that misled, drops or widens one unused, and draws new patterns from past trails. Use when the person runs /celis:tidy, when celis asks to offer it, or when the person asks to tidy, clean up or prune their trails or patterns.
+description: Tidies the celis trails and patterns. Drops stale trails and patterns, names and narrows broad patterns and splits them into smaller ones, merges and settles patterns, promotes strong patterns into the project's own files, narrows a pattern that misled, drops or widens one unused, and draws new patterns from past trails. Use when the person runs /celis:tidy, when celis asks to offer it, or when the person asks to tidy, clean up or prune their trails or patterns.
 ---
 
 The person wants a small index of patterns that guide, and no musts in celis: a must goes into the
@@ -14,6 +14,12 @@ A good tidy:
 
 - drops stale trails and patterns: a trail left open and untouched for weeks, a pattern that names a
   place, code or command the project no longer has, or that later work contradicts, and a one-off note;
+- gives each pattern the five lines the card shows, in Christopher Alexander's form: a Name for each
+  `nameless` one, and the When, Forces, Do and Because on their own lines for each `form` one;
+- narrows a pattern that is broad: a When that names a topic, such as "When the README is written",
+  becomes one context and the moment its forces appear, and Forces that hold only a preference become
+  what pulls against what. A Do of several choices becomes a larger pattern with the general choice,
+  and a smaller pattern `--within` it for each other choice;
 - narrows the When of a pattern that misled the work, or replaces it, so that it says what the fixes
   showed;
 - drops a pattern that is `unused`, or widens its When when the work it names still comes back;
