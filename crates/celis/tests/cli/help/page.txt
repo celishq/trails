@@ -30,8 +30,8 @@ Record work · your agents run these
   ├ --replaces <id>   The pattern this one replaces
   ├ --path <glob>     A file it acts on; * and ? within a folder, ** across
   ├ --within <id>     The larger pattern it completes
-  ├ --good <example>  A step, a file, or a URL that shows it, such as a pick
-  ├ --bad <example>   A step, a file, or a URL that breaks it
+  ├ --good <example>  A step, file, - (stdin), data: URI or URL that shows it
+  ├ --bad <example>   A step, file, - (stdin), data: URI or URL that breaks it
   └ --project <id>    The id of a project in the store
 
   step add            Add a new ask, or a step under one
@@ -50,7 +50,7 @@ Record work · your agents run these
   ├ --as-planned      The result matches its expect line; else use --changed
   ├ --by              person: the person confirms the result
   ├ --misled <id>     A pattern it followed that did not fit
-  └ --file <path>     A file of the proof, kept as it is now
+  └ --file <path>     A file of the proof, - (stdin) or a base64 data: URI
 
   step drop <id>      Drop a step and the open steps under it
   step edit <id>      Change a step's title, where it works, or its check

@@ -67,8 +67,11 @@ pattern  json  {"id", "created_at", "project", "scope", "replaces", "content",
   `--replaces` as its tags, and no `scope` tag for `project`; each `--path`, from the project's top
   folder, as a `path` tag, each `--within` as a `within` tag (CIP-05, "Graph"),
   refusing an id that no live pattern of the store has with `no-pattern`, and each `--good` and `--bad`
-  as an example (CIP-05, "Examples"): a value with `://` as a URL, a file of the working folder as its
-  blob, else the whole id of a step, refusing a step the store lacks with `no-step`.
+  as an example (CIP-05, "Examples"): a value with `://` as a URL, a file of the working folder, `-` or
+  a `data:` URI as its blob, else the whole id of a step, refusing a step the store lacks with `no-step`.
+- A file value of `pattern --good`, `--bad` and `done --file` is a file of the working folder, `-` for the
+  bytes of stdin, or a `data:` URI with `;base64` for its decoded bytes. Stdin with no bytes, a `data:`
+  URI with no `;base64`, and base64 that does not decode are usage errors.
 - `pattern` MUST accept `--binds` and `--cell <topic>`, which older plugins give, and write nothing for
   them.
 - `--project` on `pattern` and `step add` MUST write the records of the project it names in place of the
@@ -180,7 +183,7 @@ note  json  {"id", "created_at", "step", "content"}
   fails or runs past `CELIS_CHECK_SECONDS`, 600 when not set.
 - `done --changed` MUST write its text as `changed`, and `done --by` its value as `by`; `--by judge`, which
   older plugins give, MUST write no `by`, and any other `--by` is a usage error. Each `done --file` MUST be kept as a blob and named by an
-  `imeta` tag (CIP-08), and a file that is not there is a usage error.
+  `imeta` tag (CIP-08), and a path that is not there is a usage error.
 - `done` of a step that is not an ask MUST print each live pattern in scope that a changed file matches
   (CIP-05, "Paths"), whole with its examples, once, as a list, by id.
 - `drop` MUST refuse an empty reason, and `edit` one with no text, `--at` or `--check`, as usage errors.

@@ -108,7 +108,13 @@ impl Repo {
     }
 
     /// Runs `celis` in `folder` with `args`, this repo's home, the variables `env`, and `stdin`.
-    pub fn run(&self, folder: &Path, args: &[&str], env: &[(&str, &str)], stdin: &str) -> Output {
+    pub fn run(
+        &self,
+        folder: &Path,
+        args: &[&str],
+        env: &[(&str, &str)],
+        stdin: impl AsRef<[u8]>,
+    ) -> Output {
         let mut child = Command::new(env!("CARGO_BIN_EXE_celis"))
             .args(args)
             .current_dir(folder)
@@ -125,7 +131,7 @@ impl Repo {
             .stdin
             .take()
             .unwrap()
-            .write_all(stdin.as_bytes())
+            .write_all(stdin.as_ref())
             .unwrap();
         child.wait_with_output().unwrap()
     }

@@ -10,4 +10,5 @@ pub mod place;
 pub mod project;
 pub mod proof_file;
 pub mod secret;
+pub mod source;
 pub mod verified;

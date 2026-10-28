@@ -10,7 +10,7 @@ use crate::failure::Failure;
 use celis_patterns::pattern_record::when;
 use celis_patterns::{Example, Examples, Pattern, PatternRecord, PatternStore, Scope};
 use celis_store::records::id::short;
-use celis_store::{PatternId, Place, Project, Store};
+use celis_store::{PatternId, Place, Project, Source, Store};
 use celis_trails::{TrailStore, Written};
 use std::collections::HashSet;
 use std::io::Write;
@@ -90,18 +90,18 @@ impl Command {
         }
     }
 
-    /// The example `value` names: a URL, else a file of the working folder, kept as a blob, else a
-    /// step of the store.
+    /// The example `value` names: a URL, else a file of the working folder, stdin or a `data:` URI,
+    /// kept as a blob, else a step of the store.
     fn example(&self, trails: &Store, project: &Project, value: &str) -> Result<Example, Failure> {
         if value.contains("://") {
             return Ok(Example::Url(value.to_string()));
         }
-        let path = self.folder.join(value);
-        if path.is_file() {
-            let place = Place::resolve(value, &project.folder, &self.folder);
-            return Ok(Example::File(trails.keep(place, &path)?));
+        let source = Source::of(value, &self.folder);
+        if source.is_missing() {
+            return Ok(Example::Step(trails.steps().find(value)?.step_id()));
         }
-        Ok(Example::Step(trails.steps().find(value)?.step_id()))
+        let place = source.place(&project.folder, &self.folder);
+        Ok(Example::File(trails.keep(place, &source)?))
     }
 }
 

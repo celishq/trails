@@ -204,6 +204,7 @@ name = "celis-store"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "base64",
  "celis-nostr",
  "regex",
  "serde",

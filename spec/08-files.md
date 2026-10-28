@@ -22,12 +22,14 @@ file once, by its sha256, as a Blossom server does, so a later upload keeps the 
 ```
 
 - `imeta`: zero or more; a file of the proof, as NIP-92 gives it:
-  - `url`: its Blossom URI (BUD-10): the sha256, the file's extension or `bin`, the hex pubkey of the
-    account that signs, and the size.
+  - `url`: its Blossom URI (BUD-10): the sha256, the extension of its path or of its media type, else
+    `bin`, the hex pubkey of the account that signs, and the size.
   - `x`: the sha256 of its bytes, in lower-case hex.
-  - `m`: its media type, by its extension; `application/octet-stream` when the extension is unknown.
+  - `m`: its media type: by its extension, else as its `data:` URI gives it, else by its first bytes;
+    `application/octet-stream` when none gives one.
   - `size`: its size in bytes.
-  - `path`: its place when the step closed (CIP-01, "Places").
+  - `path`: its place when the step closed (CIP-01, "Places"); none for bytes of stdin or a `data:`
+    URI.
 - content: the proof, then the `url` of each file, one a line.
 
 **Writers**
