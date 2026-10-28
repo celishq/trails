@@ -118,7 +118,7 @@ impl Tree<'_> {
         if !text.is_empty() {
             lines.push(Row::Note {
                 rail: rail.clone(),
-                label: "",
+                label: String::new(),
                 text,
                 tone: DIM,
             });

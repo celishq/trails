@@ -76,7 +76,7 @@ impl Tree<'_> {
             if toggle == Some(true) {
                 let rail = after(&below, Span::raw("  "));
                 for (label, text) in more {
-                    self.labelled(lines, &rail, label, text);
+                    self.labelled(lines, &rail, &label, text);
                 }
             }
         }

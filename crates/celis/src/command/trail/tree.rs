@@ -483,23 +483,21 @@ fn after(rail: &Styled, more: Span<'static>) -> Styled {
     line
 }
 
-/// The labels a line of a step's or a pattern's text may start with, in any case, each before a `:`.
-pub(crate) const LABELS: [&str; 7] = ["expect", "for", "not", "ask me", "forces", "do", "because"];
-
-/// `lines` each with its label from `LABELS`, or `""` with none; an `ask me` line whose value is
-/// `none` is left out.
-pub(crate) fn details<'a>(lines: impl Iterator<Item = &'a str>) -> Vec<(&'static str, &'a str)> {
+/// `lines` each with its label in lower case, or `""` with none; an `ask me` line whose value is `none`
+/// is left out. A label is one or two words of letters or `-`, up to 12 characters, at the start of a
+/// line and before a `:` with a space or nothing after it.
+pub(crate) fn details<'a>(lines: impl Iterator<Item = &'a str>) -> Vec<(String, &'a str)> {
     let label = |line: &'a str| {
-        LABELS.iter().find_map(|label| {
-            let head = line.get(..label.len())?;
-            let text = line[label.len()..].strip_prefix(':')?;
-            head.eq_ignore_ascii_case(label)
-                .then(|| (*label, text.trim_start()))
-        })
+        let (key, text) = line.split_once(':')?;
+        let words = key.split(' ').collect::<Vec<_>>();
+        let word = |w: &&str| !w.is_empty() && w.chars().all(|c| c.is_alphabetic() || c == '-');
+        let keyed = key.chars().count() <= 12 && words.len() <= 2 && words.iter().all(word);
+        let spaced = text.is_empty() || text.starts_with(' ');
+        (keyed && spaced).then(|| (key.to_lowercase(), text.trim_start()))
     };
     lines
-        .map(|line| label(line).unwrap_or(("", line)))
-        .filter(|detail| *detail != ("ask me", "none"))
+        .map(|line| label(line).unwrap_or((String::new(), line)))
+        .filter(|(label, text)| (label.as_str(), *text) != ("ask me", "none"))
         .collect()
 }
 
