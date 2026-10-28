@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """The extraction bench: the celis:extraction agent learns again from past asks of celis-trails, on a copy of
-the person's real store, and celis grades each pattern it writes by the reasons of `celis patterns --tidy`.
+the person's real store. celis grades each pattern it writes by the reasons of `celis patterns --tidy`, and an
+Opus judge, who does not see the arm, says whether its When is a cue and its Forces a tension.
 
   run.py <arm> [--model sonnet|opus] [--jobs N] [--count N] [--asks id,id]
 
@@ -34,6 +35,20 @@ AGENT = ["--output-format", "stream-json", "--verbose", "--allowedTools", "Bash(
 BINS = {"base": Path(shutil.which("celis") or "/usr/local/bin/celis").parent,
         "new": Path(os.environ.get("CELIS_BIN", ROOT / "crates" / "target" / "debug"))}
 PLUGINS = {"base": MAIN / "plugins" / "celis", "new": Path(os.environ.get("CELIS_PLUGIN", ROOT / "plugins" / "celis"))}
+JUDGE = """You judge patterns that an agent wrote to guide later work, in Christopher Alexander's form. For each
+pattern below, answer two questions.
+
+cue: Is its When one context and the moment a choice is due, that an agent in other work would recognise as it
+happens? A When that names a topic, a project or a kind of work in general ("When the release is planned") is not.
+tension: Do its Forces name two goods that pull against each other, so that the Do resolves them? A preference,
+a rule or a single fact is not.
+
+Answer with JSON only:
+{{"patterns": [{{"id": "<id8>", "cue": true | false, "tension": true | false, "why": "<one short sentence>"}}]}}
+
+Patterns:
+{patterns}
+"""
 WEAK = ["nameless", "form", "topic", "tension", "fact", "many"]
 SKIP = {"e31b9a52", "6a9d3f68", "1d796c62"}
 
@@ -64,9 +79,26 @@ def grade(home, work, before):
     tidy = celis("new", home, "patterns", "--tidy", cwd=work)
     reasons = {m[0]: m[1].split(",") for m in re.findall(r"^([0-9a-f]{8}) (\S+) ", tidy, re.M)}
     page = celis("new", home, "patterns", "--markdown", cwd=work)
-    texts = dict(re.findall(r"^## .*?\n\n`([0-9a-f]{8})` .*?\n\n(.*?)(?=\n## |\Z)", page, re.M | re.S))
+    found = re.findall(r"^## (.*?)\n\n`([0-9a-f]{8})` .*?\n\n(.*?)(?=\n## |\Z)", page, re.M | re.S)
+    texts = {i: f"{head}\n{body}" for head, i, body in found}
     return [{"id": i, "weak": [r for r in reasons.get(i, []) if r in WEAK], "text": texts.get(i, "").strip()}
             for i in sorted(written)]
+
+
+def judge(written):
+    """The Opus judge's verdicts on each pattern of `written`, by its id."""
+    if not written:
+        return {}
+    listed = "\n\n".join(f"[{w['id']}]\n{w['text']}" for w in written)
+    out = subprocess.run(["claude", "-p", "--model", MODELS["opus"], "--output-format", "json", "--allowedTools", "",
+                          "--setting-sources", "project", "--strict-mcp-config", "--no-session-persistence"],
+                         input=JUDGE.format(patterns=listed), capture_output=True, text=True, timeout=600).stdout
+    text = json.loads(out).get("result", "") if out.startswith("{") else out
+    found = re.search(r"\{.*\}", text, re.S)
+    try:
+        return {v["id"]: v for v in json.loads(found.group(0))["patterns"]} if found else {}
+    except (json.JSONDecodeError, KeyError):
+        return {}
 
 
 def run(arm, model, name, ask):
@@ -95,12 +127,17 @@ def run(arm, model, name, ask):
     lines = [json.loads(l) for l in log.read_text().splitlines() if l.startswith("{")]
     result = next((l for l in reversed(lines) if l.get("type") == "result"), {})
     written = grade(home, work, before)
+    verdicts = judge(written)
+    for w in written:
+        w["judge"] = verdicts.get(w["id"], {})
     line = {"arm": arm, "model": model, "ask": ask, "cost": result.get("total_cost_usd", 0),
             "seconds": round(time.time() - start), "answer": result.get("result", ""), "written": written}
     with (RESULTS / f"{name}.jsonl").open("a") as out:
         out.write(json.dumps(line) + "\n")
     clean = sum(not w["weak"] for w in written)
-    print(f"{name} {ask}: {len(written)} written, {clean} with no weak reason", flush=True)
+    sharp = sum(bool(w["judge"].get("cue") and w["judge"].get("tension")) for w in written)
+    print(f"{name} {ask}: {len(written)} written, {clean} with no weak reason, {sharp} with a cue and a tension",
+          flush=True)
 
 
 def main():
