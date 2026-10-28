@@ -48,8 +48,8 @@ To try the plugin from this checkout for one session, run `claude --plugin-dir p
 
 - Branch from `dev`, open the pull request into `dev`, and keep one change in one pull request. A fix goes
   to `dev` too. `main` takes only the release PR from `dev`.
-- Write the commit title as `<type>: <what changed>`, where the type is `feat`, `fix`, `docs`, `refactor`
-  or `chore`.
+- Write the commit title as `<type>: <what changed>`, where the type is `feat`, `fix`, `docs`, `refactor`,
+  `test` or `chore`.
 - Say in the description which CIP the change follows, and how you checked it.
 
 By contributing, you agree that your work is licensed under the [MIT License](LICENSE).
