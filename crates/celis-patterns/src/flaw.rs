@@ -7,6 +7,7 @@ use std::sync::LazyLock;
 /// A sign that a pattern's text is weak, as `patterns --tidy` lists it (CIP-02, "Patterns").
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Flaw {
+    Nameless,
     Form,
     Topic,
     Tension,
@@ -18,6 +19,7 @@ impl Flaw {
     /// Each sign of a weak text that `content` shows, in the order of CIP-02, "Patterns".
     pub fn of(content: &str) -> Vec<Flaw> {
         let checks = [
+            (Flaw::Nameless, name(content).is_none()),
             (Flaw::Form, malformed(content)),
             (Flaw::Topic, TOPIC.is_match(when(content))),
             (
@@ -37,6 +39,7 @@ impl Flaw {
     /// Its reason word.
     pub fn word(self) -> &'static str {
         match self {
+            Flaw::Nameless => "nameless",
             Flaw::Form => "form",
             Flaw::Topic => "topic",
             Flaw::Tension => "tension",
@@ -48,6 +51,7 @@ impl Flaw {
     /// What it says of the text, for the agent that wrote it.
     pub fn meaning(self) -> &'static str {
         match self {
+            Flaw::Nameless => "the text has no Name: line, the resolved form as a noun phrase",
             Flaw::Form => "the When holds another line, or starts with When:",
             Flaw::Topic => "the When names a topic, not the moment a choice is due",
             Flaw::Tension => "the Forces name no two goods that pull against each other",

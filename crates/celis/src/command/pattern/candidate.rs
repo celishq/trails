@@ -73,9 +73,6 @@ impl<'a> Candidate<'a> {
                     reasons.push("churn".to_string());
                 }
                 let record = &pattern.record;
-                if record.name().is_none() {
-                    reasons.push("nameless".to_string());
-                }
                 let flaws = Flaw::of(&record.content).into_iter();
                 reasons.extend(flaws.map(|f| f.word().to_string()));
                 Candidate {

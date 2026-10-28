@@ -6,7 +6,7 @@ use celis_nostr::{Account, Note};
 pub fn decide(repo: &Repo, text: &str) -> String {
     let o = cli(repo, &["pattern", "--", text]);
     assert!(o.status.success(), "{}", err(&o));
-    out(&o).trim().to_string()
+    out(&o).lines().next().unwrap().to_string()
 }
 
 /// Another account, whose patterns and cells a test puts in the store.

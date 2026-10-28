@@ -282,8 +282,8 @@ A pattern's reasons, in this order:
 
 - `patterns` MUST print each live pattern in scope once, oldest first, so that a new pattern comes last.
 - `patterns` and `patterns <id>` MUST show the level of each pattern that has one ("Levels").
-- `pattern` MUST print a `warn    <reason>: <what it means>` line for each of its reasons `form`,
-  `topic`, `tension`, `fact` and `many`, in that order, and still write the pattern.
+- `pattern` MUST print on stderr a `warn    <reason>: <what it means>` line for each of its reasons `nameless`,
+  `form`, `topic`, `tension`, `fact` and `many`, in that order, and still write the pattern.
 - `patterns` MUST print a `match` line under a pattern for each `<file>` that one of its paths matches.
   A `<file>` is a path from the working folder, and a folder stands for each file in it.
 - With `--markdown`, `patterns` MUST print each live pattern in scope whole, with its examples, as one

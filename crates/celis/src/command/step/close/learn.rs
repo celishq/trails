@@ -98,9 +98,9 @@ impl Learn {
              as --bad. The mechanism: why does the choice resolve the tension? It is the Because; \
              \"the person asked\" is not a why. With no cue, write no pattern. With no tension, as in a \
              wish that holds always, give the person's choice as its Because: celis marks it fact, and \
-             tidy moves it into the project's files. Write it in the five lines the card shows: its \
-             Name is the resolved form, as a noun phrase, and its Do is one choice; write each other \
-             choice as a pattern of its own, --within the larger one. When the evidence does not give \
+             tidy moves it into the project's files. Write it in the five lines the card shows. Its \
+             first line is required: Name: <the resolved form>, as a noun phrase. Its Do is one \
+             choice; write each other choice as a pattern of its own, --within the larger one. When the evidence does not give \
              the mechanism, write your best guess, and name it on the Learned line for the person to \
              confirm. A reaction to a result, such as \"this one\" or \"too busy\", is a pattern of the \
              person's taste: --good the result they liked and --bad the one they did not, each a step \

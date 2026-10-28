@@ -74,7 +74,7 @@ impl Command {
         self.print(written, args, out, err)?;
         for flaw in &flaws {
             let line = format!("warn    {}: {}", flaw.word(), flaw.meaning());
-            crate::command::put(out, &line)?;
+            crate::command::put(err, &line)?;
         }
         if !flaws.is_empty() {
             let next = format!(

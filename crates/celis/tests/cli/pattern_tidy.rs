@@ -337,24 +337,28 @@ fn a_weak_pattern_needs_tidy() {
     assert_eq!(lines, want, "{listed}");
 }
 
-/// `pattern` writes a weak pattern, and prints a `warn` line for each sign of its weak text
-/// (`spec/02-cli.md`, "Patterns").
+/// `pattern` writes a weak pattern, and prints a `warn` line for each sign of its weak text, a missing
+/// Name too (`spec/02-cli.md`, "Patterns").
 #[test]
 fn a_weak_pattern_is_written_with_its_warnings() {
     let repo = Repo::new();
     let text = "Name: N\nWhen the product is planned\nForces: rows scroll\nDo: page it; sort it\nBecause: the person chose it";
     let o = cli(&repo, &["pattern", "--", text]);
     assert!(o.status.success(), "{}", err(&o));
-    let printed = out(&o);
+    let printed = err(&o);
     let warns: Vec<&str> = printed
         .lines()
         .filter_map(|l| l.strip_prefix("warn    "))
         .map(|l| l.split(':').next().unwrap())
         .collect();
     assert_eq!(warns, ["topic", "tension", "fact", "many"]);
+    assert_eq!(out(&o).lines().count(), 1, "{}", out(&o));
     let strong = "Name: N\nWhen a list outgrows one screen\nForces: a long page is simple, but rows scroll\nDo: page the list\nBecause: each row stays in view";
     let o = cli(&repo, &["pattern", "--", strong]);
-    assert!(!out(&o).contains("warn"), "{}", out(&o));
+    assert!(!err(&o).contains("warn"), "{}", err(&o));
+    let o = cli(&repo, &["pattern", "--", "When a menu grows\nDo: group it"]);
+    assert!(o.status.success(), "{}", err(&o));
+    assert!(err(&o).starts_with("warn    nameless: "), "{}", err(&o));
 }
 
 /// A `;` or a second sentence in code, in brackets, or before a condition is not a second choice, so the

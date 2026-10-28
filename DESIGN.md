@@ -51,8 +51,8 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
    way. A cell names its patterns (decision 16).
 3. **The agent loads a pattern at the choice it bears on.**
    - `celis patterns` gives the index: each live pattern in scope as its id and its Name, or its When
-     when it has no Name, with its level (decision 17). The Name is advice: celis writes a pattern
-     without one. `celis grep <id>` gives the whole pattern. celis has no vector, no word match and no
+     when it has no Name, with its level (decision 17). A writer gives each pattern a Name: celis
+     writes a pattern without one, with a warning, so that an older plugin still works. `celis grep <id>` gives the whole pattern. celis has no vector, no word match and no
      rank. The session start gives the index, and gives it again after each compaction, so the agent
      has it before the first ask.
    - When a choice of the work matches a When, the agent reads that pattern whole before it chooses,
