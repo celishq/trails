@@ -356,3 +356,25 @@ fn a_weak_pattern_is_written_with_its_warnings() {
     let o = cli(&repo, &["pattern", "--", strong]);
     assert!(!out(&o).contains("warn"), "{}", out(&o));
 }
+
+/// A `;` or a second sentence in code, in brackets, or before a condition is not a second choice, so the
+/// Do is not `many` (`spec/02-cli.md`, "Patterns").
+#[test]
+fn a_do_with_code_or_a_condition_is_one_choice() {
+    let repo = Repo::new();
+    let text = |n: &str, what: &str| {
+        format!("Name: {n}\nWhen {n}\nForces: a page is simple, but rows scroll\nDo: {what}\nBecause: each row stays in view")
+    };
+    for (n, what) in [
+        (
+            "tables overflow",
+            "page the list; when it cannot page, scroll it",
+        ),
+        ("keys collide", "mix the hash (h ^= h>>16; h *= 3) first"),
+        ("shells hang", "run `a; b` once"),
+        ("menus grow", "page the list. If it cannot page, scroll it"),
+    ] {
+        decide(&repo, &["--", &text(n, what)]);
+    }
+    assert_eq!(tidy(&repo), "4 patterns in the index");
+}

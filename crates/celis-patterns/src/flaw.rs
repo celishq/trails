@@ -25,10 +25,7 @@ impl Flaw {
                 field(content, "Forces:").is_some_and(one_sided),
             ),
             (Flaw::Fact, field(content, "Because:").is_some_and(choice)),
-            (
-                Flaw::Many,
-                field(content, "Do:").is_some_and(|d| MANY.is_match(d)),
-            ),
+            (Flaw::Many, field(content, "Do:").is_some_and(several)),
         ];
         checks
             .into_iter()
@@ -85,6 +82,16 @@ fn one_sided(forces: &str) -> bool {
     !forces.contains(';') && !words(forces).any(|w| SIDES.contains(&w.as_str()))
 }
 
+/// Whether `what` holds a `;` or a second sentence outside code and brackets that does not start a
+/// condition.
+fn several(what: &str) -> bool {
+    let plain = CODE.replace_all(what, "x");
+    MANY.find_iter(&plain).any(|m| {
+        let next = words(&plain[m.end() - 1..]).next().unwrap_or_default();
+        !CONDITIONS.contains(&next.as_str())
+    })
+}
+
 /// Whether `because` gives only the person's choice.
 fn choice(because: &str) -> bool {
     let lower = because.to_lowercase();
@@ -107,7 +114,14 @@ static TOPIC: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 /// A Do of more than one choice: a `;`, or a second sentence.
-static MANY: LazyLock<Regex> = LazyLock::new(|| Regex::new(r";|[.!?] [A-Z]").unwrap());
+static MANY: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\S; |[.!?] [A-Z]").unwrap());
+
+/// Code and brackets in a Do: a span in backticks, round brackets or quotes.
+static CODE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"`[^`]*`|\([^)]*\)|"[^"]*"|(^|\s)'[^']*'"#).unwrap());
+
+/// The words that start a condition of the same choice, not a second choice.
+const CONDITIONS: [&str; 6] = ["when", "if", "unless", "else", "otherwise", "where"];
 
 /// The words of Forces that name two sides.
 const SIDES: [&str; 9] = [

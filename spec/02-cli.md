@@ -274,7 +274,9 @@ A pattern's reasons, in this order:
   chooses, wants, wanted, asked, asks, said, says, set, stated, states, holds, prefers, preferred, likes,
   liked, picked, decided, decides or treats, and none of the words `because`, `so` or `since`, and no
   `:`.
-- `many`: its `Do:` line holds `;`, or a `.`, `!` or `?` followed by a space and a capital letter.
+- `many`: its `Do:` line, with each span in backticks, round brackets or quotes read as one word, holds
+  a `;` after a word and before a space, or a `.`, `!` or `?` followed by a space and a capital letter,
+  and the word after it is not when, if, unless, else, otherwise or where.
 
 **Rules**
 
