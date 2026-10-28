@@ -54,7 +54,7 @@ or the project. Its Do is one choice: a larger choice is a larger pattern, which
 ```
 Name: <the resolved form>
 When <the context and the moment its forces appear>
-Forces: <what pulls against what in it>
+Forces: <the two goods that pull against each other>
 Do: <the one choice>
 Because: <why that resolves the forces>
 ```

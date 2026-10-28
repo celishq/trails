@@ -93,7 +93,8 @@ impl Learn {
              evidence. The cue: what in the situation showed that a choice was due? It is the When, one \
              context and its moment, never a topic, the person or the project; it starts with \"When \", \
              with no colon, and --scope says where it holds. The tension: which two goods pulled \
-             against each other? They are the Forces; a preference is not a force. The novice move: \
+             against each other, and what does each side protect? They are the Forces; a defect, a \
+             cost, a risk or a preference is not a good. The novice move: \
              what would someone without this lesson do? When a step, a file or a URL shows it, give it \
              as --bad. The mechanism: why does the choice resolve the tension? It is the Because; \
              \"the person asked\" is not a why. With no cue, write no pattern. With no tension, as in a \

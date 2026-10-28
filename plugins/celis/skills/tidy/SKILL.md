@@ -19,7 +19,8 @@ A good tidy:
   `nameless` one, and the When, Forces, Do and Because on their own lines for each `form` one;
 - narrows a pattern that is broad, from the trails that used it: for a `topic` one, the cue that
   showed the choice was due becomes the When, one context and the moment its forces appear; for a
-  `tension` one, the two goods that pull against each other become the Forces. A `many` one, whose Do
+  `tension` one, the two goods that pull against each other become the Forces, each with what it
+  protects; a defect, a cost or a risk is not a good. A `many` one, whose Do
   holds several choices, becomes a larger pattern with the general choice, and a smaller pattern
   `--within` it for each other choice;
 - offers to promote each `fact` pattern, whose Because gives only the person's choice: it is a fact of

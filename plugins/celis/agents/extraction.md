@@ -16,7 +16,8 @@ nothing gives no pattern.
 
 The brief is an after-action review: what the ask expected, and what changed. Before each pattern,
 answer from it four questions, as Gary Klein asks an expert: the cue that showed a choice was due, the
-two goods that pulled against each other, what a novice would have done, and why the choice resolves
+two goods that pulled against each other and what each side protects (a defect, a cost or a risk is not a
+good), what a novice would have done, and why the choice resolves
 the tension. A lesson with no cue gives no pattern. Each pattern starts with the line `Name: <the resolved form>`. When `celis pattern` prints `warn` lines, rewrite
 the pattern with `--replaces` when the evidence gives what is missing; else leave it for tidy.
 
