@@ -3,6 +3,7 @@
 
 pub(crate) mod candidate;
 pub(crate) mod extract;
+pub(crate) mod level;
 pub(crate) mod patterns;
 
 use crate::command::{Args, Command};

@@ -372,3 +372,51 @@ fn a_bare_first_line_before_a_when_is_the_name() {
     let tidy = out(&cli(&repo, &["patterns", "--tidy"]));
     assert!(!tidy.contains("nameless"), "{tidy}");
 }
+
+/// A pattern has no level until 3 steps use it, `*` then, `**` when its uses are of 2 projects, and no
+/// level once it misled; the index and the whole pattern show it (`spec/02-cli.md`, "Levels").
+#[test]
+fn a_pattern_earns_its_level_from_its_uses() {
+    let repo = Repo::new();
+    let id = decide(&repo, &["--scope", "me"], "When a price prints: use cents.");
+    let other = repo.other("shop");
+    let line = |folder: &std::path::Path| {
+        let o = repo.run(folder, &["patterns"], &[], "");
+        out(&o).lines().next().unwrap().to_string()
+    };
+    let using = |folder: &std::path::Path, n: usize| {
+        let title = format!("Print price {n}");
+        let args = ["step", "add", "--new", "--uses", &id[..8], "--", &title];
+        let o = repo.run(folder, &args, &[], "");
+        assert!(o.status.success(), "{}", err(&o));
+    };
+    for n in 0..2 {
+        using(&repo.path(), n);
+    }
+    assert_eq!(
+        line(&repo.path()),
+        format!("{} me When a price prints", &id[..8])
+    );
+    using(&repo.path(), 2);
+    assert_eq!(
+        line(&repo.path()),
+        format!("{} me * When a price prints", &id[..8])
+    );
+    using(&other, 3);
+    assert_eq!(
+        line(&repo.path()),
+        format!("{} me ** When a price prints", &id[..8])
+    );
+    let whole = out(&cli(&repo, &["patterns", &id[..8]]));
+    assert!(whole.contains(" · me · **"), "{whole}");
+    let ask = add(&repo, &["--new", "--uses", &id[..8], "--", "Print price 4"]);
+    support::finish(&repo, &ask[..8]);
+    add(
+        &repo,
+        &["--replaces", &ask[..8], "--", "Print price 4 again"],
+    );
+    assert_eq!(
+        line(&repo.path()),
+        format!("{} me When a price prints", &id[..8])
+    );
+}
