@@ -51,10 +51,10 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
    way. A cell names its patterns (decision 16).
 3. **The agent loads a pattern at the choice it bears on.**
    - `celis patterns` gives the index: each live pattern in scope as its id and its Name, or its When
-     when it has no Name. The Name is advice: celis writes a pattern without one. `celis grep
-     <id>` gives the whole pattern. celis has no vector, no word match and no rank. The session start
-     gives the index, and gives it again after each compaction, so the agent has it before the first
-     ask.
+     when it has no Name, with its level (decision 17). The Name is advice: celis writes a pattern
+     without one. `celis grep <id>` gives the whole pattern. celis has no vector, no word match and no
+     rank. The session start gives the index, and gives it again after each compaction, so the agent
+     has it before the first ask.
    - When a choice of the work matches a When, the agent reads that pattern whole before it chooses,
      and names it with `--uses` on the step of that choice. There is no step at an ask that reads the
      patterns, and no agent for it. The uses are the evidence. `step add --recalled` is accepted and
@@ -69,14 +69,20 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
      pattern, and a reader ignores a `uses` that names a step, which older writers wrote.
 4. **What goes in matters most.** The agent decides when there is a lesson: a correction, a pick, a
    reaction to a result, a wish such as "from now on", or a fix of done work. It then runs `celis extract
-   <id>`, which prints the learn brief of an ask or a step, open or closed: the ask's `changed` lines,
-   its trail's notes, the person's prompts since the ask began, and the patterns in play, each one a
-   step of the ask used, so that a lesson can replace one that misled. `done` of an ask, or of a step
-   that fixes done work, because a fix is a correction, prints the same brief, and `--json` gives its
-   parts to an integration. The `celis:extraction` agent writes the patterns from it, in its own
-   context. The brief is the one place that says what to keep. A pattern is written only for a choice that will come back in other work, and never records what
-   the ask did. A lesson replaces a pattern that misled the work instead of adding a near copy, and
-   writes nothing when the ask taught nothing.
+   <id>`, which prints the learn brief of an ask or a step, open or closed: the ask's `expect`, `for`
+   and `not` lines, its `changed` lines, its trail's notes, the person's prompts since the ask began,
+   and the patterns in play, each one a step of the ask used, so that a lesson can replace one that
+   misled. `done` of an ask, or of a step that fixes done work, because a fix is a correction, prints
+   the same brief, and `--json` gives its parts to an integration. The `celis:extraction` agent writes
+   the patterns from it, in its own context. The brief is the one place that says what to keep. A
+   pattern is written only for a choice that will come back in other work, and never records what the
+   ask did. A lesson replaces a pattern that misled the work instead of adding a near copy, and writes
+   nothing when the ask taught nothing.
+   - The brief is an after-action review: what the ask expected, and what changed. From it the agent
+     answers Gary Klein's questions before it writes. The cue that showed a choice was due gives the
+     When. The two goods that pull against each other give the Forces. What a novice would do gives a
+     bad example. Why the Do resolves the tension gives the Because. With no cue or no tension, it
+     writes nothing: a missing pattern costs less than a broad one.
 5. **The agent writes each record with a celis call.** A hook may give the agent context, such as the
    patterns that fit, but it never captures the agent's tools to write records.
 6. **Patterns lead.** The card, the help and the README start with patterns, and trails come after.
@@ -110,10 +116,15 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
 13. **The outcomes are evidence, and celis lists what needs tidy.** A pattern misled a step that used
     it when a later step fixed that work. `celis patterns --tidy` lists each live pattern that misled
     twice or more, that has a near copy, that no step used in 60 days, that was replaced three times
-    or more, that has no Name, or whose When holds another of its lines, with the reason. Tidy narrows
-    a pattern that misled, and drops or widens one unused. It names each pattern, narrows a When that
-    names a topic, and splits a Do that holds more than one choice into smaller patterns `within` it:
-    celis lists the facts, and the tidy agent judges the breadth.
+    or more, that has no Name, or whose When holds another of its lines, with the reason. It also
+    lists the signs of a weak text: a When that names a topic, Forces with no two sides, a Because that
+    gives only the person's choice, and a Do of more than one choice. `celis pattern` prints these
+    signs as warnings when it writes, and keeps the pattern, so that no lesson is lost; the agent can
+    replace it at once, else tidy does. Tidy narrows a pattern that misled, and drops or widens one
+    unused. It names each pattern, narrows a When that names a topic, splits a Do that holds more than
+    one choice into smaller patterns `within` it, and offers to promote a pattern that gives only the
+    person's choice into the project's own files, because it is a fact and not a resolution: celis
+    lists the signs, and the tidy agent judges them.
     `celis stats` shows the use of each live pattern: its uses, misled, replaces, last use, examples and
     tidy reason. Its total gives the size of the index, the patterns written and replaced in the last 7
     days, and the gaps: the fixes of done work in that time whose ask used no pattern. Its lifecycle
@@ -147,6 +158,12 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
     patterns. An export holds only patterns: a Markdown file to read, the signed records, and the blobs.
     You can remove an imported cell from disk, but your own cells can only be off, because their records
     may be on relays.
+17. **A pattern's level is its evidence.** As in Alexander's asterisks, a level says how sure a pattern
+    is, but celis works it out from the trails, and a writer never sets it. A pattern with no level is
+    new or unproven. One star: 3 or more steps used it, and it misled none. Two stars: it also has uses
+    in 2 or more projects. A pattern that misled has no level until tidy replaces it. The index and a
+    whole pattern show it, so that the agent prefers a proven pattern when two fit. A pattern with no
+    level still applies: the level ranks, and never hides.
 
 ## What we do not do
 
