@@ -1,7 +1,7 @@
 //! A live pattern that needs tidy, and why.
 
 use crate::command::pattern::like;
-use celis_patterns::{Pattern, PatternStore};
+use celis_patterns::{Flaw, Pattern, PatternStore};
 use celis_store::records::id::short;
 use celis_store::Store;
 use celis_trails::TrailStore;
@@ -76,9 +76,8 @@ impl<'a> Candidate<'a> {
                 if record.name().is_none() {
                     reasons.push("nameless".to_string());
                 }
-                if malformed(&record.content) {
-                    reasons.push("form".to_string());
-                }
+                let flaws = Flaw::of(&record.content).into_iter();
+                reasons.extend(flaws.map(|f| f.word().to_string()));
                 Candidate {
                     pattern: pattern.clone(),
                     reasons,
@@ -110,15 +109,4 @@ impl<'a> Candidate<'a> {
             self.pattern.record.title()
         )
     }
-}
-
-/// Whether the When line of `content` starts with `When:`, or holds another line of a pattern (CIP-02,
-/// "Patterns").
-fn malformed(content: &str) -> bool {
-    let named = celis_patterns::pattern_record::name(content).is_some();
-    let line = content.lines().nth(usize::from(named)).unwrap_or("");
-    line.starts_with("When:")
-        || ["Forces:", "Do:", "Because:"]
-            .iter()
-            .any(|l| line.contains(l))
 }

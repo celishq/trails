@@ -8,7 +8,7 @@ pub(crate) mod patterns;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use celis_patterns::pattern_record::when;
-use celis_patterns::{Example, Examples, Pattern, PatternRecord, PatternStore, Scope};
+use celis_patterns::{Example, Examples, Flaw, Pattern, PatternRecord, PatternStore, Scope};
 use celis_store::records::id::short;
 use celis_store::{PatternId, Place, Project, Source, Store};
 use celis_trails::{TrailStore, Written};
@@ -46,6 +46,7 @@ impl Command {
             good: side(&args.good)?,
             bad: side(&args.bad)?,
         };
+        let flaws = Flaw::of(&content);
         let pattern = PatternRecord {
             anchor: project.anchor.clone(),
             scope,
@@ -70,6 +71,18 @@ impl Command {
         };
         let new = short(&written.records[0].id);
         self.print(written, args, out, err)?;
+        for flaw in &flaws {
+            let line = format!("warn    {}: {}", flaw.word(), flaw.meaning());
+            crate::command::put(out, &line)?;
+        }
+        if !flaws.is_empty() {
+            let next = format!(
+                "celis: {new} is kept, but its text is weak, as the warn lines say. Rewrite it with \
+                 celis pattern --replaces {new} -- <text> when the work shows the cue and the forces; \
+                 else tidy will."
+            );
+            crate::command::put(err, &next)?;
+        }
         for pattern in &like {
             let first = pattern.record.content.lines().next().unwrap_or("");
             let title = pattern.record.name().unwrap_or(first);

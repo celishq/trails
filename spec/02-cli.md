@@ -265,10 +265,11 @@ A pattern's reasons, in this order:
 - `churn`: it ends a chain of 3 or more `replaces` (CIP-05).
 - `nameless`: its text has no Name.
 - `form`: its When starts with `When:`, or holds `Forces:`, `Do:` or `Because:`.
-- `topic`: its When says that something `is` or `are` planned, designed, described, discussed,
-  explained, named, pitched, positioned or chosen, alone or first in a list joined by `,`, `or` or `and`.
-- `tension`: it has no `Forces:` line, or that line holds none of the words `but`, `yet`, `while`,
-  `though`, `although`, `whereas`, `against`, `versus` or `pulls`, and no `;`.
+- `topic`: its When holds `is` or `are`, then one of the words planned, designed, described,
+  discussed, explained, named, pitched, positioned or chosen, alone or in a list joined by `,`, `or` or
+  `and`.
+- `tension`: its `Forces:` line holds none of the words `but`, `yet`, `while`, `though`, `although`,
+  `whereas`, `against`, `versus` or `pulls`, and no `;`.
 - `fact`: its `Because:` line starts with `the person` or `the user`, then holds one of the words chose,
   chooses, wants, wanted, asked, asks, said, says, set, stated, states, holds, prefers, preferred, likes,
   liked, picked, decided, decides or treats, and none of the words `because`, `so` or `since`, and no
@@ -279,8 +280,8 @@ A pattern's reasons, in this order:
 
 - `patterns` MUST print each live pattern in scope once, oldest first, so that a new pattern comes last.
 - `patterns` and `patterns <id>` MUST show the level of each pattern that has one ("Levels").
-- `pattern` MUST print a `warn <reason>` line for each of its reasons `form`, `topic`, `tension`,
-  `fact` and `many`, in that order, and still write the pattern.
+- `pattern` MUST print a `warn    <reason>: <what it means>` line for each of its reasons `form`,
+  `topic`, `tension`, `fact` and `many`, in that order, and still write the pattern.
 - `patterns` MUST print a `match` line under a pattern for each `<file>` that one of its paths matches.
   A `<file>` is a path from the working folder, and a folder stands for each file in it.
 - With `--markdown`, `patterns` MUST print each live pattern in scope whole, with its examples, as one
