@@ -28,6 +28,25 @@ pub(super) enum Row {
 }
 
 impl Row {
+    /// Pads the labels of each run of notes to the longest of them.
+    pub fn aligned(rows: &mut [Row]) {
+        let notes = |a: &Row, b: &Row| matches!((a, b), (Row::Note { .. }, Row::Note { .. }));
+        for run in rows.chunk_by_mut(notes) {
+            let label = |row: &Row| match row {
+                Row::Note { label, .. } => label.chars().count(),
+                _ => 0,
+            };
+            let width = run.iter().map(label).max().unwrap_or(0);
+            for row in run {
+                if let Row::Note { label, .. } = row {
+                    if !label.is_empty() {
+                        *label = format!("{label:<width$}");
+                    }
+                }
+            }
+        }
+    }
+
     /// It moved right by `inset`: each lead, rail and text starts with it, a blank line kept blank.
     pub fn indent(&mut self, inset: &str) {
         let before = |line: &mut Styled| line.spans.insert(0, inset.to_string().into());

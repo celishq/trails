@@ -26,6 +26,25 @@ pub(super) enum Row {
 }
 
 impl Row {
+    /// Pads the labels of each run of notes to the longest of them.
+    pub fn aligned(rows: &mut [Row]) {
+        let notes = |a: &Row, b: &Row| matches!((a, b), (Row::Note { .. }, Row::Note { .. }));
+        for run in rows.chunk_by_mut(notes) {
+            let label = |row: &Row| match row {
+                Row::Note { label, .. } => label.chars().count(),
+                _ => 0,
+            };
+            let width = run.iter().map(label).max().unwrap_or(0);
+            for row in run {
+                if let Row::Note { label, .. } = row {
+                    if !label.is_empty() {
+                        *label = format!("{label:<width$}");
+                    }
+                }
+            }
+        }
+    }
+
     /// Its printed lines, its marks padded to `slot` and wrapped at `width`: a row's title bold when
     /// `picked` unless dim; a note's text after its label padded to 8 characters or more.
     pub fn lines(self, slot: usize, width: Option<usize>, picked: bool) -> Vec<Styled> {
