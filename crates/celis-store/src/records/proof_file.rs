@@ -14,26 +14,7 @@ impl ProofFile {
     /// The file at `place` whose bytes hash to `sha256` and count `size`, with the media type of its
     /// extension.
     pub fn new(place: String, sha256: String, size: u64) -> ProofFile {
-        let media = match ProofFile::extension(&place).as_str() {
-            "png" => "image/png",
-            "jpg" | "jpeg" => "image/jpeg",
-            "gif" => "image/gif",
-            "webp" => "image/webp",
-            "svg" => "image/svg+xml",
-            "mp3" => "audio/mpeg",
-            "wav" => "audio/wav",
-            "ogg" => "audio/ogg",
-            "mp4" => "video/mp4",
-            "webm" => "video/webm",
-            "pdf" => "application/pdf",
-            "html" => "text/html",
-            "md" => "text/markdown",
-            "txt" => "text/plain",
-            "json" => "application/json",
-            "glb" => "model/gltf-binary",
-            "gltf" => "model/gltf+json",
-            _ => "application/octet-stream",
-        };
+        let media = media_of(&ProofFile::extension(&place)).unwrap_or(UNKNOWN);
         ProofFile {
             place,
             sha256,
@@ -42,10 +23,19 @@ impl ProofFile {
         }
     }
 
+    /// It with `media`, else the media type of the first of `bytes`, when its extension gives none.
+    pub fn typed(mut self, media: Option<String>, bytes: &[u8]) -> ProofFile {
+        if self.media == UNKNOWN {
+            let sniffed = || sniff(bytes).map(str::to_string);
+            self.media = media.or_else(sniffed).unwrap_or(self.media);
+        }
+        self
+    }
+
     /// Its Blossom URI (BUD-10), with `pubkey` as the account that keeps it.
     pub fn url(&self, pubkey: &str) -> String {
         let ext = match ProofFile::extension(&self.place).as_str() {
-            "" => "bin".to_string(),
+            "" => extension_of(&self.media).unwrap_or("bin").to_string(),
             ext => ext.to_string(),
         };
         format!("blossom:{}.{ext}?as={pubkey}&sz={}", self.sha256, self.size)
@@ -53,14 +43,17 @@ impl ProofFile {
 
     /// Its `imeta` tag (NIP-92), with `pubkey` as the account that keeps it.
     pub fn tag(&self, pubkey: &str) -> Vec<String> {
-        vec![
+        let mut tag = vec![
             "imeta".to_string(),
             format!("url {}", self.url(pubkey)),
             format!("x {}", self.sha256),
             format!("m {}", self.media),
             format!("size {}", self.size),
-            format!("path {}", self.place),
-        ]
+        ];
+        if !self.place.is_empty() {
+            tag.push(format!("path {}", self.place));
+        }
+        tag
     }
 
     /// Each file that a tag of `note` names: an `imeta`, or a Blossom URI with its place.
@@ -100,7 +93,9 @@ impl ProofFile {
             .and_then(|s| s.parse().ok())
             .unwrap_or(0);
         let place = values.get(1).cloned().unwrap_or_default();
-        Some(ProofFile::new(place, sha256.to_string(), size))
+        let ext = query.split('?').next().unwrap_or("");
+        let file = ProofFile::new(place, sha256.to_string(), size);
+        Some(file.typed(media_of(ext).map(str::to_string), &[]))
     }
 
     /// The lower-case extension of `place`; empty when it has none.
@@ -112,4 +107,54 @@ impl ProofFile {
             .unwrap_or("")
             .to_ascii_lowercase()
     }
+}
+
+/// The media type of a file whose extension is unknown.
+const UNKNOWN: &str = "application/octet-stream";
+
+/// Each extension that celis knows, with its media type.
+const KINDS: &[(&str, &str)] = &[
+    ("png", "image/png"),
+    ("jpg", "image/jpeg"),
+    ("jpeg", "image/jpeg"),
+    ("gif", "image/gif"),
+    ("webp", "image/webp"),
+    ("svg", "image/svg+xml"),
+    ("mp3", "audio/mpeg"),
+    ("wav", "audio/wav"),
+    ("ogg", "audio/ogg"),
+    ("mp4", "video/mp4"),
+    ("webm", "video/webm"),
+    ("pdf", "application/pdf"),
+    ("html", "text/html"),
+    ("md", "text/markdown"),
+    ("txt", "text/plain"),
+    ("json", "application/json"),
+    ("glb", "model/gltf-binary"),
+    ("gltf", "model/gltf+json"),
+];
+
+/// The media type of the extension `ext`.
+fn media_of(ext: &str) -> Option<&'static str> {
+    KINDS.iter().find(|(e, _)| *e == ext).map(|(_, m)| *m)
+}
+
+/// The extension of the media type `media`.
+fn extension_of(media: &str) -> Option<&'static str> {
+    KINDS.iter().find(|(_, m)| *m == media).map(|(e, _)| *e)
+}
+
+/// The media type that the first of `bytes` show.
+fn sniff(bytes: &[u8]) -> Option<&'static str> {
+    let starts: [(&[u8], &str); 4] = [
+        (b"\x89PNG", "image/png"),
+        (b"\xff\xd8\xff", "image/jpeg"),
+        (b"GIF8", "image/gif"),
+        (b"%PDF", "application/pdf"),
+    ];
+    let webp = bytes.len() >= 12 && &bytes[..4] == b"RIFF" && &bytes[8..12] == b"WEBP";
+    let found = starts.iter().find(|(start, _)| bytes.starts_with(start));
+    found
+        .map(|(_, media)| *media)
+        .or(webp.then_some("image/webp"))
 }

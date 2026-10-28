@@ -12,7 +12,9 @@ their marks become one pattern. Add it as one ask, as the card says.
    them differ in one or two ways that matter for this kind of thing, such as tone, density or colour,
    and say in one line each how it differs.
 3. Show the person the 4 variants, and ask them to mark each `good`, `bad` or `neither`, with one line
-   of why. Wait for their marks.
+   of why. Wait for their marks. They can also give examples of their own, such as an image: each one
+   they mark is an example too, as a file, as bytes on stdin with `-`, or as base64 in a
+   `data:image/png;base64,...` URI.
 4. Write one pattern in the person's words, in the five lines the card shows, with `pattern --path <the
    files it acts on> --good <each good file> --bad <each bad file> -- "Name: <the form the good ones
    share>` and its `When <the kind of thing> is made`, `Forces`, `Do` and `Because` lines: the `Do` is what the good ones share, the `Forces`

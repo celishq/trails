@@ -120,7 +120,8 @@ me        in every project
 ```
 
 - `good`: optional, repeatable; an example the pattern shows as better: a done step (CIP-03), a file as
-  the Blossom URI of its blob (CIP-08) with its path from the project's top folder, or a URL.
+  the Blossom URI of its blob (CIP-08) with its path from the project's top folder when it has one, or a
+  URL.
 - `bad`: optional, repeatable; an example the pattern shows as worse, in the same forms.
 
 **Writers**

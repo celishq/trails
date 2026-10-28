@@ -7,7 +7,7 @@ use crate::command::step::close::Review;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
 use celis_store::records::id::short;
-use celis_store::{Link, Place, Project};
+use celis_store::{Link, Place, Project, Source};
 use celis_trails::{By, Done, Draft, Notice, TrailStore, Written};
 use std::io::Write;
 
@@ -117,8 +117,9 @@ impl Command {
         };
         let mut files = Vec::new();
         for file in &args.files {
-            let place = Place::resolve(file, &project.folder, &self.folder);
-            files.push(trails.keep(place, &self.folder.join(file))?);
+            let source = Source::of(file, &self.folder);
+            let place = source.place(&project.folder, &self.folder);
+            files.push(trails.keep(place, &source)?);
         }
         let done = Done {
             proof,

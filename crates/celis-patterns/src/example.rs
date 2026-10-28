@@ -16,7 +16,12 @@ impl Example {
         let mut tag = vec![side.to_string()];
         match self {
             Example::Step(id) => tag.push(id.to_string()),
-            Example::File(file) => tag.extend([file.url(pubkey), file.place.clone()]),
+            Example::File(file) => {
+                tag.push(file.url(pubkey));
+                if !file.place.is_empty() {
+                    tag.push(file.place.clone());
+                }
+            }
             Example::Url(url) => tag.push(url.clone()),
         }
         tag

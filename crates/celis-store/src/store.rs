@@ -1,8 +1,8 @@
 //! The records of a home at one moment, and the signed append of new ones.
 
-use crate::{Anchor, Home, ProofFile, Refusal, Secret};
+use crate::{Anchor, Home, ProofFile, Refusal, Secret, Source};
 use celis_nostr::{Account, Note, Pubkey};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 /// The records of a home at the time `now`, and the account's writes on them, each signed now. A
 /// step's check runs for `limit` seconds at most. Readers take the time from its steps.
@@ -69,11 +69,10 @@ impl Store {
         anchors.find(|a| a.project == project)
     }
 
-    /// Keeps the file at `path` as a blob, as a file of a proof at `place`; refuses one that holds a
+    /// Keeps the bytes of `source` as a blob, as a file of a proof at `place`; refuses one that holds a
     /// secret.
-    pub fn keep(&self, place: String, path: &Path) -> Result<ProofFile, Refusal> {
-        let bytes = std::fs::read(path)
-            .map_err(|_| Refusal::Usage(format!("no file {}", path.display())))?;
+    pub fn keep(&self, place: String, source: &Source) -> Result<ProofFile, Refusal> {
+        let (bytes, media) = source.read()?;
         if let Some(secret) = Secret::find(&String::from_utf8_lossy(&bytes)) {
             return Err(Refusal::Secret(format!(
                 "the file {place} holds {}",
@@ -81,7 +80,7 @@ impl Store {
             )));
         }
         let sha256 = self.home.keep(&bytes)?;
-        Ok(ProofFile::new(place, sha256, bytes.len() as u64))
+        Ok(ProofFile::new(place, sha256, bytes.len() as u64).typed(media, &bytes))
     }
 
     /// Keeps `bytes` as the blob `sha256` when they hash to it; whether they do.

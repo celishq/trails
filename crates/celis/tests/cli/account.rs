@@ -99,7 +99,7 @@ fn auth_login_keeps_the_phrase_stdin_gives() {
     let repo = Repo::plain();
     std::fs::write(repo.home().join("key"), "0".repeat(64)).unwrap();
     let theirs = Identity::generate().unwrap();
-    let o = repo.run(&repo.path(), &["auth", "login"], &[], &theirs.phrase());
+    let o = repo.run(&repo.path(), &["auth", "login"], &[], theirs.phrase());
     assert!(o.status.success(), "{}", err(&o));
     assert_eq!(out(&o).trim(), theirs.account().pubkey().npub());
     assert!(!repo.home().join("key").exists());

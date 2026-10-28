@@ -17,5 +17,6 @@ pub use records::place::Place;
 pub use records::project::Project;
 pub use records::proof_file::ProofFile;
 pub use records::secret::Secret;
+pub use records::source::Source;
 pub use refusal::Refusal;
 pub use store::Store;

@@ -134,6 +134,44 @@ fn pattern_refuses_an_unknown_step() {
     );
 }
 
+/// `pattern --good -` keeps the bytes of stdin, and `--bad data:...;base64,...` the decoded bytes, each
+/// as a blob named by its Blossom URI with no path (`spec/05-patterns.md`, "Examples").
+#[test]
+fn a_pattern_keeps_stdin_and_data_uris_as_examples() {
+    let repo = Repo::new();
+    let png: &[u8] = b"\x89PNG\r\n\x1a\n a picture";
+    let args = [
+        "pattern",
+        "--good",
+        "-",
+        "--bad",
+        "data:image/svg+xml;base64,PHN2Zy8+Cg==",
+        "--",
+        "When a logo is drawn: keep sharp corners, because the person picked them.",
+    ];
+    let o = repo.run(&repo.path(), &args, &[], png);
+    assert!(o.status.success(), "{}", err(&o));
+    let pattern = support::labelled(&repo, "pattern").remove(0);
+    let sha = |bytes: &[u8]| {
+        use sha2::{Digest, Sha256};
+        format!("{:x}", Sha256::digest(bytes))
+    };
+    let tag = |side: &str| pattern.tags.iter().find(|t| t[0] == side).unwrap().clone();
+    let (good, bad) = (tag("good"), tag("bad"));
+    assert_eq!(good.len(), 2, "{good:?}");
+    assert!(
+        good[1].starts_with(&format!("blossom:{}.png?", sha(png))),
+        "{good:?}"
+    );
+    assert!(
+        bad[1].starts_with(&format!("blossom:{}.svg?", sha(b"<svg/>\n"))),
+        "{bad:?}"
+    );
+    let blobs = repo.home().join("trails/blobs");
+    assert_eq!(std::fs::read(blobs.join(sha(png))).unwrap(), png);
+    assert!(blobs.join(sha(b"<svg/>\n")).is_file());
+}
+
 /// `pattern` takes `--good` and `--bad` again and again, as a file it keeps as a blob or a URL, and
 /// `grep` prints each (`spec/05-patterns.md`, "Examples").
 #[test]
