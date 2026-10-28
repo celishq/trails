@@ -17,10 +17,16 @@ A good tidy:
   place, code or command the project no longer has, or that later work contradicts, and a one-off note;
 - gives each pattern the five lines the card shows, in Christopher Alexander's form: a Name for each
   `nameless` one, and the When, Forces, Do and Because on their own lines for each `form` one;
-- narrows a pattern that is broad: a When that names a topic, such as "When the README is written",
-  becomes one context and the moment its forces appear, and Forces that hold only a preference become
-  what pulls against what. A Do of several choices becomes a larger pattern with the general choice,
-  and a smaller pattern `--within` it for each other choice;
+- narrows a pattern that is broad, from the trails that used it: for a `topic` one, the cue that
+  showed the choice was due becomes the When, one context and the moment its forces appear; for a
+  `tension` one, the two goods that pull against each other become the Forces, each with what it
+  protects; a defect, a cost or a risk is not a good. A `many` one, whose Do
+  holds several choices, becomes a larger pattern with the general choice, and a smaller pattern
+  `--within` it for each other choice;
+- offers to promote each `fact` pattern, whose Because gives only the person's choice: it is a fact of
+  the project or of the person, not a resolution, so it goes into the project's `AGENTS.md` or
+  `CLAUDE.md`, or the person's global `CLAUDE.md` for a `me` pattern. When the trails show a tension
+  behind it, offer to rewrite it as a pattern instead;
 - narrows the When of a pattern that misled the work, or replaces it, so that it says what the fixes
   showed;
 - drops a pattern that is `unused`, or widens its When when the work it names still comes back;

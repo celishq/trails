@@ -250,7 +250,7 @@ fn misled_needs_a_pattern_and_a_fix() {
 #[test]
 fn a_nameless_or_malformed_pattern_needs_tidy() {
     let repo = Repo::new();
-    let named = "Name: Light on two sides\nWhen a living room is lit\nForces: one window glares\nDo: add a second window\nBecause: two sides soften shadows";
+    let named = "Name: Light on two sides\nWhen a living room is lit\nForces: one window lights the room, but it glares\nDo: add a second window\nBecause: two sides soften shadows";
     decide(&repo, &["--", named]);
     let plain = decide(&repo, &["--", "When a price prints: use cents."]);
     let label = decide(
@@ -281,4 +281,104 @@ fn a_nameless_or_malformed_pattern_needs_tidy() {
     let mut want: Vec<&str> = want.iter().map(String::as_str).collect();
     want.sort();
     assert_eq!(lines, want, "{listed}");
+}
+
+/// A weak text needs tidy: a When that names a topic is `topic`, one-sided Forces are `tension`, a
+/// Because that gives only the person's choice is `fact`, and a Do of two choices is `many`
+/// (`spec/02-cli.md`, "Patterns").
+#[test]
+fn a_weak_pattern_needs_tidy() {
+    let repo = Repo::new();
+    let text = |when: &str, forces: &str, what: &str, because: &str| {
+        format!("Name: N\nWhen {when}\nForces: {forces}\nDo: {what}\nBecause: {because}")
+    };
+    let strong = text(
+        "a list outgrows one screen",
+        "a long page is simple, but rows scroll out of sight",
+        "page the list",
+        "the person sees each row: the page keeps them in view",
+    );
+    decide(&repo, &["--", &strong]);
+    let topic = text(
+        "the product is positioned, pitched or planned",
+        "reach pulls against focus",
+        "write for one audience",
+        "one voice is clear",
+    );
+    let tension = text(
+        "rows overflow the viewport",
+        "rows scroll out of sight",
+        "page the list",
+        "each row stays in view",
+    );
+    let fact = text(
+        "menus pass ten items",
+        "a long page is simple, but rows scroll out of sight",
+        "page the list",
+        "The person wants pages.",
+    );
+    let many = text(
+        "logs fill terminals",
+        "a long page is simple, but rows scroll out of sight",
+        "Page the list. Sort it by date",
+        "each row stays in view",
+    );
+    let ids = [topic, tension, fact, many].map(|t| decide(&repo, &["--", &t]));
+    let mut want: Vec<String> = ids
+        .iter()
+        .zip(["topic", "tension", "fact", "many"])
+        .map(|(id, reason)| format!("{} {reason} N", &id[..8]))
+        .chain(["5 patterns in the index".to_string()])
+        .collect();
+    want.sort();
+    let listed = tidy(&repo);
+    let mut lines: Vec<&str> = listed.lines().collect();
+    lines.sort();
+    assert_eq!(lines, want, "{listed}");
+}
+
+/// `pattern` writes a weak pattern, and prints a `warn` line for each sign of its weak text, a missing
+/// Name too (`spec/02-cli.md`, "Patterns").
+#[test]
+fn a_weak_pattern_is_written_with_its_warnings() {
+    let repo = Repo::new();
+    let text = "Name: N\nWhen the product is planned\nForces: rows scroll\nDo: page it; sort it\nBecause: the person chose it";
+    let o = cli(&repo, &["pattern", "--", text]);
+    assert!(o.status.success(), "{}", err(&o));
+    let printed = err(&o);
+    let warns: Vec<&str> = printed
+        .lines()
+        .filter_map(|l| l.strip_prefix("warn    "))
+        .map(|l| l.split(':').next().unwrap())
+        .collect();
+    assert_eq!(warns, ["topic", "tension", "fact", "many"]);
+    assert_eq!(out(&o).lines().count(), 1, "{}", out(&o));
+    let strong = "Name: N\nWhen a list outgrows one screen\nForces: a long page is simple, but rows scroll\nDo: page the list\nBecause: each row stays in view";
+    let o = cli(&repo, &["pattern", "--", strong]);
+    assert!(!err(&o).contains("warn"), "{}", err(&o));
+    let o = cli(&repo, &["pattern", "--", "When a menu grows\nDo: group it"]);
+    assert!(o.status.success(), "{}", err(&o));
+    assert!(err(&o).starts_with("warn    nameless: "), "{}", err(&o));
+}
+
+/// A `;` or a second sentence in code, in brackets, or before a condition is not a second choice, so the
+/// Do is not `many` (`spec/02-cli.md`, "Patterns").
+#[test]
+fn a_do_with_code_or_a_condition_is_one_choice() {
+    let repo = Repo::new();
+    let text = |n: &str, what: &str| {
+        format!("Name: {n}\nWhen {n}\nForces: a page is simple, but rows scroll\nDo: {what}\nBecause: each row stays in view")
+    };
+    for (n, what) in [
+        (
+            "tables overflow",
+            "page the list; when it cannot page, scroll it",
+        ),
+        ("keys collide", "mix the hash (h ^= h>>16; h *= 3) first"),
+        ("shells hang", "run `a; b` once"),
+        ("menus grow", "page the list. If it cannot page, scroll it"),
+    ] {
+        decide(&repo, &["--", &text(n, what)]);
+    }
+    assert_eq!(tidy(&repo), "4 patterns in the index");
 }

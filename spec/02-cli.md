@@ -197,6 +197,8 @@ move:
 
 ```
 celis: before you answer, learn from <id8>. …           what the agent keeps, and how
+  expect  <line>                                          each line of the ask's text that starts with
+                                                          `expect:`, `for:` or `not:`
   changed <id8> <text>                                    each `changed` of the ask and of its steps
   note    <text>                                          each note of its trail (CIP-04, "Notes")
   asked   <text>                                          each prompt on its trail (CIP-04, "Sessions") since
@@ -236,8 +238,9 @@ Each agent's hooks give `hook` the JSON of a prompt or of a session start.
 agent reads it, and reads the whole of a pattern with `patterns <id8>`.
 
 ```
-<id8> <scope> <Name>     each pattern; its Name is the text after `Name:` on the first line of its
-                         text, or a first line that does not start with `When` before one that does,
+<id8> <scope> [<level>] <Name>
+                         each pattern; its level ("Levels"); its Name is the text after `Name:` on
+                         the first line of its text, or a first line that does not start with `When` before one that does,
                          and with none, its When: the first line, and of a text of one line,
                          the part before its first `:`; the When of a named text is its next line
   path   <glob>          each `path` of it (CIP-05, "Paths")
@@ -262,10 +265,25 @@ A pattern's reasons, in this order:
 - `churn`: it ends a chain of 3 or more `replaces` (CIP-05).
 - `nameless`: its text has no Name.
 - `form`: its When starts with `When:`, or holds `Forces:`, `Do:` or `Because:`.
+- `topic`: its When holds `is` or `are`, then one of the words planned, designed, described,
+  discussed, explained, named, pitched, positioned or chosen, alone or in a list joined by `,`, `or` or
+  `and`.
+- `tension`: its `Forces:` line holds none of the words `but`, `yet`, `while`, `though`, `although`,
+  `whereas`, `against`, `versus` or `pulls`, and no `;`.
+- `fact`: its `Because:` line starts with `the person` or `the user`, then holds one of the words chose,
+  chooses, wants, wanted, asked, asks, said, says, set, stated, states, holds, prefers, preferred, likes,
+  liked, picked, decided, decides or treats, and none of the words `because`, `so` or `since`, and no
+  `:`.
+- `many`: its `Do:` line, with each span in backticks, round brackets or quotes read as one word, holds
+  a `;` after a word and before a space, or a `.`, `!` or `?` followed by a space and a capital letter,
+  and the word after it is not when, if, unless, else, otherwise or where.
 
 **Rules**
 
 - `patterns` MUST print each live pattern in scope once, oldest first, so that a new pattern comes last.
+- `patterns` and `patterns <id>` MUST show the level of each pattern that has one ("Levels").
+- `pattern` MUST print on stderr a `warn    <reason>: <what it means>` line for each of its reasons `nameless`,
+  `form`, `topic`, `tension`, `fact` and `many`, in that order, and still write the pattern.
 - `patterns` MUST print a `match` line under a pattern for each `<file>` that one of its paths matches.
   A `<file>` is a path from the working folder, and a folder stands for each file in it.
 - With `--markdown`, `patterns` MUST print each live pattern in scope whole, with its examples, as one
@@ -287,6 +305,16 @@ celis patterns shelf/prices.py shelf/
 celis patterns 9b0e11aa
 celis patterns --markdown > patterns.md
 celis patterns --tidy
+```
+
+## Levels
+
+A pattern's level is the evidence for it, from the steps that use it (CIP-06, "Uses"):
+
+```
+**      3 or more steps use it, of 2 or more projects, and it misled none (CIP-06, "Misled")
+*       3 or more steps use it, and it misled none
+        else; no level is shown
 ```
 
 ## Stats
@@ -360,10 +388,11 @@ celis stats --json
 ## Extract
 
 ```json
-{"ask": "<id>", "changed": [{"step": "<id>", "text": "<changed>"}], "notes": ["<note>"],
+{"ask": "<id>", "expect": ["<line>"], "changed": [{"step": "<id>", "text": "<changed>"}], "notes": ["<note>"],
  "asked": ["<prompt>"], "patterns": [{"id": "<id>", "when": "<When>"}]}
 ```
 
+- `expect`: each line of the ask's text that starts with `expect:`, `for:` or `not:`.
 - `changed`: each `changed` of the ask's steps and of the ask.
 - `notes`: each note of its trail.
 - `asked`: each prompt on its trail since the ask began.

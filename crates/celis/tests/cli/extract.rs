@@ -113,3 +113,34 @@ fn lesson_runs_as_extract_with_a_notice() {
         "celis: lesson is deprecated; run celis extract\n"
     );
 }
+
+/// The brief gives each `expect:`, `for:` and `not:` line of the ask's text first, and `--json` gives
+/// them as `expect` (`spec/02-cli.md`, "Extract"; `spec/02-cli.md`, "Step").
+#[test]
+fn extract_gives_what_the_ask_expected() {
+    let repo = Repo::new();
+    let text =
+        "Draw the logo\nexpect: a red logo\nfor: the shop sign\nnot: no gradient\nask me: none";
+    let ask = add(&repo, &["--", text]);
+    let shown = out(&cli(&repo, &["extract", &ask[..8]]));
+    let lines: Vec<&str> = shown.lines().skip(1).collect();
+    assert_eq!(
+        lines,
+        [
+            "  expect  expect: a red logo",
+            "  expect  for: the shop sign",
+            "  expect  not: no gradient",
+        ],
+        "{shown}"
+    );
+    let o = cli(&repo, &["extract", &ask[..8], "--json"]);
+    let brief: serde_json::Value = serde_json::from_str(out(&o).trim()).expect("one object");
+    assert_eq!(
+        brief["expect"],
+        serde_json::json!([
+            "expect: a red logo",
+            "for: the shop sign",
+            "not: no gradient"
+        ])
+    );
+}

@@ -7,6 +7,7 @@
 pub mod cell;
 pub mod example;
 pub mod examples;
+pub mod flaw;
 pub mod glob;
 pub mod pattern;
 pub mod pattern_end;
@@ -25,6 +26,7 @@ pub use cell::membership::Membership;
 pub use cell::Cell;
 pub use example::Example;
 pub use examples::Examples;
+pub use flaw::Flaw;
 pub use glob::Glob;
 pub use pattern::Pattern;
 pub use pattern_end::PatternEnd;

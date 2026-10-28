@@ -1,6 +1,7 @@
 //! `celis patterns`: the index of the person's patterns.
 
 use crate::command::pattern::candidate::Candidate;
+use crate::command::pattern::level::Level;
 use crate::command::step::files;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
@@ -50,11 +51,13 @@ impl Command {
         if patterns.is_empty() {
             return crate::command::put(out, NONE);
         }
+        let steps = trails.steps();
+        let level = Level::of(&steps);
         let mut page = vec!["# Patterns".to_string()];
         page.extend(
             patterns
                 .iter()
-                .flat_map(|pattern| markdown(pattern, &trails, &project)),
+                .flat_map(|pattern| markdown(pattern, &level, &trails, &project)),
         );
         crate::command::put(out, &page.join("\n"))
     }
@@ -73,7 +76,8 @@ impl Command {
         if let Some(step) = open {
             trails.recall(step.id(), pattern.id())?;
         }
-        let mut lines = markdown(&pattern, &trails, &project);
+        let level = Level::of(&steps);
+        let mut lines = markdown(&pattern, &level, &trails, &project);
         while lines.last().is_some_and(String::is_empty) {
             lines.pop();
         }
@@ -98,7 +102,9 @@ impl Command {
         let held: HashSet<&str> = held.map(|p| p.id()).collect();
         let ours = every.filter(|p| p.is_live());
         let ours = ours.filter(|p| patterns.holding(p).iter().any(|c| c.name == name));
-        let lines: Vec<String> = ours.map(|p| entry(p, &held, &[])).collect();
+        let steps = trails.steps();
+        let level = Level::of(&steps);
+        let lines: Vec<String> = ours.map(|p| entry(p, &level, &held, &[])).collect();
         Ok(match lines.is_empty() {
             true => NONE.to_string(),
             false => lines.join("\n"),
@@ -138,23 +144,32 @@ impl Command {
             .iter()
             .map(|f| (f.as_str(), files::paths(&here, &self.folder, f)))
             .collect();
+        let steps = trails.steps();
+        let level = Level::of(&steps);
         let lines: Vec<String> = patterns
             .iter()
             .rev()
-            .map(|pattern| entry(pattern, &held, &files))
+            .map(|pattern| entry(pattern, &level, &held, &files))
             .collect();
         Ok(Some(lines.join("\n")))
     }
 }
 
-/// The lines of `pattern` in the index: `<id8> <scope> <Name>`, then each of its paths, each of the
-/// `files` whose paths it matches, and each larger pattern of the `held` ids.
-fn entry(pattern: &Pattern, held: &HashSet<&str>, files: &[(&str, Vec<String>)]) -> String {
+/// The lines of `pattern` in the index: `<id8> <scope> [<level>] <Name>`, then each of its paths, each
+/// of the `files` whose paths it matches, and each larger pattern of the `held` ids.
+fn entry(
+    pattern: &Pattern,
+    level: &Level,
+    held: &HashSet<&str>,
+    files: &[(&str, Vec<String>)],
+) -> String {
     let record = &pattern.record;
+    let mark = level.mark(pattern.id()).map(|m| format!(" {m}"));
     let head = format!(
-        "{} {} {}",
+        "{} {}{} {}",
         short(pattern.id()),
         record.scope.text(),
+        mark.unwrap_or_default(),
         record.title()
     );
     let paths = record.paths.iter().map(|p| format!("  path   {p}"));
@@ -171,9 +186,15 @@ fn entry(pattern: &Pattern, held: &HashSet<&str>, files: &[(&str, Vec<String>)])
 
 /// The section of `pattern`: its Name, else its first line, as a heading, its id and scope, the rest of its text, then a line for each smaller pattern in scope in `project` and each example, a file as a
 /// link to its blob.
-fn markdown(pattern: &Pattern, trails: &Store, project: &str) -> Vec<String> {
+fn markdown(pattern: &Pattern, level: &Level, trails: &Store, project: &str) -> Vec<String> {
     let (note, record) = (pattern.note, &pattern.record);
-    let meta = format!("`{}` · {}", short(&note.id), record.scope.text());
+    let mark = level.mark(&note.id).map(|m| format!(" · {m}"));
+    let meta = format!(
+        "`{}` · {}{}",
+        short(&note.id),
+        record.scope.text(),
+        mark.unwrap_or_default()
+    );
     let mut tail = vec![];
     for smaller in trails.patterns().view(project).smaller(&note.id) {
         let first = smaller.record.content.lines().next().unwrap_or("");
