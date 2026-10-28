@@ -18,7 +18,7 @@ impl Tree<'_> {
         out: &mut Vec<Row>,
     ) {
         for (label, text) in details(note.record().detail()) {
-            self.labelled(out, rail, label, text);
+            self.labelled(out, rail, &label, text);
         }
         if let (Some(done), Some(line)) = (note.done_record(), crate::text::line::grade(note)) {
             self.labelled(out, rail, "done", &done.content);
@@ -41,18 +41,12 @@ impl Tree<'_> {
         found.map(|pattern| pattern.note).collect()
     }
 
-    /// Adds `text` dim after `rail` and `label` padded to 8 characters, or after `rail` alone with no
+    /// Adds `text` dim after `rail` and `label` padded to 8 characters or more, or after `rail` alone with no
     /// label.
-    pub(super) fn labelled(
-        &self,
-        lines: &mut Vec<Row>,
-        rail: &Styled,
-        label: &'static str,
-        text: &str,
-    ) {
+    pub(super) fn labelled(&self, lines: &mut Vec<Row>, rail: &Styled, label: &str, text: &str) {
         lines.push(Row::Note {
             rail: rail.clone(),
-            label,
+            label: label.to_string(),
             text: text.to_string(),
             tone: DIM,
         });

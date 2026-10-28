@@ -137,6 +137,66 @@ fn tree_prints_the_expect_line_in_the_label_column() {
     );
 }
 
+/// `tree <id> --full` prints each line of a step's text that starts with a key of one or two words of
+/// letters, up to 12 characters, and a `:` with a space or nothing after it, with that key in the label
+/// column, and each other line as plain text.
+#[test]
+fn tree_prints_any_key_of_a_step_in_the_label_column() {
+    let repo = Repo::new();
+    let by = support::account();
+    let at = support::now() - 600;
+    let trail = support::step_note(&repo, &by, None, "build the CRM", at);
+    support::step_note(
+        &repo,
+        &by,
+        Some(&trail),
+        "logo\nwhy: a brand\nRisk Note: none\nhttps://x.io\nat 10:30\nstep 1: run it\nmuch too long: no",
+        at + 5,
+    );
+    let lines = printed(&repo, &[short(&trail.id), "--full"]);
+    let at = lines.iter().position(|l| l.contains("logo")).unwrap();
+    assert_eq!(
+        lines[at + 1..at + 7],
+        [
+            "      why       a brand",
+            "      risk note none",
+            "      https://x.io",
+            "      at 10:30",
+            "      step 1: run it",
+            "      much too long: no"
+        ]
+    );
+}
+
+/// `tree <id> --full` lines up the text of each label of a step after its longest label.
+#[test]
+fn tree_lines_up_the_labels_of_a_step_after_its_longest() {
+    let repo = Repo::new();
+    let by = support::account();
+    let at = support::now() - 600;
+    let trail = support::step_note(&repo, &by, None, "build the CRM", at);
+    let logo = support::step_note(
+        &repo,
+        &by,
+        Some(&trail),
+        "logo\nwhy: a brand\nhttps://x.io\nconstraints: no favicon",
+        at + 5,
+    );
+    support::mark_note(&repo, &by, "done", &logo.id, "proof", at + 65);
+    let lines = printed(&repo, &[short(&trail.id), "--full"]);
+    let at = lines.iter().position(|l| l.contains("logo")).unwrap();
+    assert_eq!(
+        lines[at + 1..at + 6],
+        [
+            "      why         a brand",
+            "      https://x.io",
+            "      constraints no favicon",
+            "      done        proof",
+            "      took        1m 0s"
+        ]
+    );
+}
+
 /// `tree <id>` prints a stale step with the closed steps, after the notes.
 #[test]
 fn tree_prints_a_stale_step_with_the_closed_ones() {

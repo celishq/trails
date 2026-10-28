@@ -325,7 +325,8 @@ impl Tree<'_> {
     /// Prints `lines`, each row's marks padded to `SLOT`, so every title starts at one column, and
     /// wrapped at the width. In a watch, each line starts with the cursor column, a bar on
     /// each line of the selected element.
-    fn show(&self, lines: Vec<Row>, out: &mut Vec<Styled>) -> Result<(), Failure> {
+    fn show(&self, mut lines: Vec<Row>, out: &mut Vec<Styled>) -> Result<(), Failure> {
+        Row::aligned(&mut lines);
         let mut picked = false;
         for line in lines {
             let line = match line {

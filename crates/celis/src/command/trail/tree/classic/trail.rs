@@ -90,7 +90,7 @@ impl Tree<'_> {
         if !self.grouped || note.active() {
             lines.push(Row::Note {
                 rail: hair.clone(),
-                label: "project",
+                label: "project".to_string(),
                 text: step.anchor.name.clone(),
                 tone: PROJECT,
             });
