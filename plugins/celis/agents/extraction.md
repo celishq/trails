@@ -14,6 +14,12 @@ agent that builds a different kind of thing can still follow it. It replaces a
 pattern in play that misled the work, or a near copy, and does not sit beside it. An ask that taught
 nothing gives no pattern.
 
+The brief is an after-action review: what the ask expected, and what changed. Before each pattern,
+answer from it four questions, as Gary Klein asks an expert: the cue that showed a choice was due, the
+two goods that pulled against each other, what a novice would have done, and why the choice resolves
+the tension. A lesson with no cue gives no pattern. When `celis pattern` prints `warn` lines, rewrite
+the pattern with `--replaces` when the evidence gives what is missing; else leave it for tidy.
+
 Read what you need: `celis patterns` gives the index, `celis patterns <id>` a whole pattern with its
 examples, and `celis tree <id>` the ask and its steps. Write each pattern with `celis pattern`.
 
