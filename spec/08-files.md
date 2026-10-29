@@ -44,17 +44,20 @@ file once, by its sha256, as a Blossom server does, so a later upload keeps the 
 ## Blobs
 
 ```
-$CELIS_HOME/trails/blobs/<sha256>   the bytes of a file, named by their sha256
-<folder>/blobs/<sha256>             the same, in a linked folder (CIP-01, "Links")
+$CELIS_HOME/trails/blobs/<sha256>.<ext>   the bytes of a file, named by their sha256 and extension
+<folder>/blobs/<sha256>.<ext>             the same, in a linked folder (CIP-01, "Links")
 ```
 
 **Writers**
 
+- A writer MUST name a blob `<sha256>.<ext>`, where `<ext>` is the extension of its `url` (see "Files of
+  a done").
 - A blob file MUST NOT change once written, and a reader MUST NOT see it half written.
 - While a link is on, a writer MUST write each blob that an `imeta` or a file example (CIP-05,
   "Examples") of a held record names to the folder too.
 
 **Readers**
 
-- A reader MUST take a blob whose bytes do not hash to its name as missing.
+- A reader MUST take a blob named `<sha256>` as well as one named `<sha256>.<ext>`.
+- A reader MUST take a blob whose bytes do not hash to its sha256 as missing.
 - While a link is on, a reader MUST copy into the store each blob of the folder that the store lacks.

@@ -37,7 +37,7 @@ impl Command {
         }
         for file in export.files() {
             if let Some(bytes) = self.fetch(source, &Export::blob(file)) {
-                trails.hold(&file.sha256, &bytes)?;
+                trails.hold(file, &bytes)?;
             }
         }
         let records = export.patterns.iter().map(|(note, _)| note);

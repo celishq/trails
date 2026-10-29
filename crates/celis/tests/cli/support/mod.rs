@@ -246,6 +246,16 @@ pub fn account() -> Account {
         .clone()
 }
 
+/// The blob of the sha256 `sha` in `folder`, named with or without its extension; `folder/sha` when none is.
+pub fn blob(folder: &Path, sha: &str) -> PathBuf {
+    let found = std::fs::read_dir(folder).into_iter().flatten().flatten();
+    let named = found.map(|e| e.path()).find(|p| {
+        p.file_name()
+            .is_some_and(|n| n.to_string_lossy().split('.').next() == Some(sha))
+    });
+    named.unwrap_or_else(|| folder.join(sha))
+}
+
 /// What `o` wrote to stdout.
 pub fn out(o: &Output) -> String {
     String::from_utf8_lossy(&o.stdout).to_string()

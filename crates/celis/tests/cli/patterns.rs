@@ -168,8 +168,11 @@ fn a_pattern_keeps_stdin_and_data_uris_as_examples() {
         "{bad:?}"
     );
     let blobs = repo.home().join("trails/blobs");
-    assert_eq!(std::fs::read(blobs.join(sha(png))).unwrap(), png);
-    assert!(blobs.join(sha(b"<svg/>\n")).is_file());
+    assert_eq!(
+        std::fs::read(support::blob(&blobs, &sha(png))).unwrap(),
+        png
+    );
+    assert!(support::blob(&blobs, &sha(b"<svg/>\n")).is_file());
 }
 
 /// `pattern` takes `--good` and `--bad` again and again, as a file it keeps as a blob or a URL, and
@@ -355,7 +358,7 @@ fn a_link_carries_a_pattern_and_its_files() {
         use sha2::{Digest, Sha256};
         format!("{:x}", Sha256::digest(b"<svg id=\"flat\"/>\n"))
     };
-    assert!(repo.path().join(".celis/trails/blobs").join(&sha).is_file());
+    assert!(support::blob(&repo.path().join(".celis/trails/blobs"), &sha).is_file());
     let other = tempfile::tempdir().unwrap();
     let home = other.path().display().to_string();
     let env = [("CELIS_HOME", home.as_str())];
@@ -363,12 +366,12 @@ fn a_link_carries_a_pattern_and_its_files() {
     let said = out(&repo.run(&repo.path(), &["patterns", "--markdown"], &env, ""));
     assert!(said.contains("keep it flat"), "{said}");
     assert!(!said.contains("keep it bold"), "{said}");
-    let blob = other.path().join("trails/blobs").join(&sha);
+    let blob = support::blob(&other.path().join("trails/blobs"), &sha);
     assert!(said.contains(&blob.display().to_string()), "{said}");
 }
 
-/// `patterns --markdown` prints one page: a heading for each pattern, then a line for each example,
-/// a file as a link to its blob and a URL as a link.
+/// `patterns --markdown` prints one page: a heading for each pattern, then a line for each example, an
+/// image as a picture of its blob, and a URL as a link (`spec/05-patterns.md`, "Examples").
 #[test]
 fn patterns_print_as_markdown() {
     let repo = Repo::new();
@@ -391,12 +394,10 @@ fn patterns_print_as_markdown() {
     let blob = {
         use sha2::{Digest, Sha256};
         let sha = format!("{:x}", Sha256::digest(b"<svg id=\"flat\"/>\n"));
-        repo.home()
-            .join("trails/blobs")
-            .join(sha)
-            .display()
-            .to_string()
+        support::blob(&repo.home().join("trails/blobs"), &sha)
     };
+    assert_eq!(blob.extension().unwrap(), "svg");
+    let blob = blob.display().to_string();
     let said = out(&cli(&repo, &["patterns", "--markdown"]));
     assert_eq!(
         said.lines().collect::<Vec<_>>(),
@@ -407,11 +408,34 @@ fn patterns_print_as_markdown() {
             String::new(),
             format!("`{}` · project", &id[..8]),
             String::new(),
-            format!("- good: [logo.svg]({blob})"),
+            format!("- good: ![logo.svg]({blob})"),
             format!("- bad: <{url}>"),
         ],
         "{said}"
     );
+}
+
+/// Off a terminal, `patterns <id>` prints the text of a pattern with an image example and no escape
+/// sequence, so a pipe reads the text alone.
+#[test]
+fn patterns_with_an_id_draw_no_image_off_a_terminal() {
+    let repo = Repo::new();
+    repo.write("logo.png", "png bytes\n");
+    let o = cli(
+        &repo,
+        &[
+            "pattern",
+            "--good",
+            "logo.png",
+            "--",
+            "When a logo is drawn: keep it flat.",
+        ],
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let id = out(&o).lines().next().unwrap().to_string();
+    let said = out(&cli(&repo, &["patterns", &id[..8]]));
+    assert!(said.contains("When a logo is drawn"), "{said}");
+    assert!(!said.contains('\x1b'), "{said}");
 }
 
 /// `patterns <id>` prints that pattern whole, as `--markdown` does, and refuses an id that names no live

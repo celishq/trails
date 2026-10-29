@@ -34,7 +34,7 @@ fn done_with_a_file_keeps_it_as_a_blob() {
     let step = add(&repo, &["--under", &ask[..8], "--", "the logo"]);
     let said = done_with(&repo, &step, "art/logo.svg");
     let sha = sha_of("<svg/>\n");
-    let blob = repo.home().join("trails/blobs").join(&sha);
+    let blob = support::blob(&repo.home().join("trails/blobs"), &sha);
     assert_eq!(std::fs::read_to_string(&blob).unwrap(), "<svg/>\n");
     let shared = repo.home().join("trails/shared");
     let done: celis_nostr::Note = std::fs::read_dir(shared)
@@ -102,7 +102,7 @@ fn done_with_stdin_keeps_its_bytes_as_a_blob() {
     assert!(o.status.success(), "{}", err(&o));
     let sha = sha_of_bytes(PNG);
     assert_eq!(
-        std::fs::read(repo.home().join("trails/blobs").join(&sha)).unwrap(),
+        std::fs::read(support::blob(&repo.home().join("trails/blobs"), &sha)).unwrap(),
         PNG
     );
     let pubkey = support::account().pubkey().hex();
@@ -140,7 +140,7 @@ fn done_with_a_data_uri_keeps_its_bytes_as_a_blob() {
     );
     assert!(o.status.success(), "{}", err(&o));
     let sha = sha_of("<svg/>\n");
-    assert!(repo.home().join("trails/blobs").join(&sha).is_file());
+    assert!(support::blob(&repo.home().join("trails/blobs"), &sha).is_file());
     let tag = imeta(&repo);
     assert!(tag.contains(&"m image/svg+xml".to_string()), "{tag:?}");
     assert!(
@@ -204,7 +204,7 @@ fn a_link_carries_the_blobs_both_ways() {
     let said = done_with(&repo, &step, "logo.svg");
     let sha = sha_of("<svg/>\n");
     let folder = repo.path().join(".celis/trails/blobs");
-    assert!(folder.join(&sha).is_file());
+    assert!(support::blob(&folder, &sha).is_file());
     assert!(!said.contains("local only"), "{said}");
     repo.write("other.svg", "<svg id=\"b\"/>\n");
     let other = sha_of("<svg id=\"b\"/>\n");
@@ -212,7 +212,7 @@ fn a_link_carries_the_blobs_both_ways() {
     std::fs::write(folder.join("0bad"), "not its hash").unwrap();
     assert!(cli(&repo, &["tree"]).status.success());
     let store = repo.home().join("trails/blobs");
-    assert!(store.join(&other).is_file());
+    assert!(support::blob(&store, &other).is_file());
     assert!(!store.join("0bad").exists());
 }
 
@@ -229,10 +229,10 @@ fn the_last_step_beside_gives_the_blobs_of_the_others() {
     done_with(&repo, &a, "a.svg");
     repo.write("a.svg", "<svg id=\"b\"/>\n");
     let said = done_with(&repo, &b, "a.svg");
-    let first = repo
-        .home()
-        .join("trails/blobs")
-        .join(sha_of("<svg id=\"a\"/>\n"));
+    let first = support::blob(
+        &repo.home().join("trails/blobs"),
+        &sha_of("<svg id=\"a\"/>\n"),
+    );
     assert!(
         said.contains(&format!(
             "  beside  {} variant a · {}",

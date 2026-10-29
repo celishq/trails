@@ -5,15 +5,16 @@ use crate::command::pattern::level::Level;
 use crate::command::step::files;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
+use crate::text::image;
 use crate::text::line::plural;
 use crate::text::markdown;
 use celis_patterns::{Example, Pattern, PatternStore};
 use celis_store::records::id::short;
-use celis_store::Refusal;
 use celis_store::Store;
+use celis_store::{ProofFile, Refusal};
 use celis_trails::TrailStore;
 use std::collections::HashSet;
-use std::io::Write;
+use std::io::{IsTerminal, Write};
 
 impl Command {
     /// Prints the index of the live patterns in scope; with an id, that pattern whole; with `--markdown`,
@@ -81,7 +82,21 @@ impl Command {
         while lines.last().is_some_and(String::is_empty) {
             lines.pop();
         }
-        crate::command::put(out, &lines[1..].join("\n"))
+        crate::command::put(out, &lines[1..].join("\n"))?;
+        let program = self.env.get("TERM_PROGRAM").map(String::as_str);
+        if !image::drawn(std::io::stdout().is_terminal(), program) {
+            return Ok(());
+        }
+        for file in pictures(&pattern, &trails) {
+            let Some(bytes) = trails
+                .blob(&file.sha256)
+                .and_then(|p| std::fs::read(p).ok())
+            else {
+                continue;
+            };
+            crate::command::put(out, &image::inline(&file.place, &bytes))?;
+        }
+        Ok(())
     }
 
     /// The index of the live patterns of the cells named `name`, on or off, oldest first, as `index`
@@ -212,7 +227,7 @@ fn markdown(pattern: &Pattern, level: &Level, trails: &Store, project: &str) -> 
             let files = done.iter().flat_map(|d| d.files.iter());
             tail.extend(files.map(|f| {
                 let at = crate::text::line::blob(f, trails);
-                format!("  - [{}]({at})", f.place)
+                format!("  - {}", markdown::file_link(f, &at))
             }));
             continue;
         }
@@ -220,7 +235,7 @@ fn markdown(pattern: &Pattern, level: &Level, trails: &Store, project: &str) -> 
             Example::File(file) => crate::text::line::blob(file, trails),
             _ => String::new(),
         };
-        tail.extend(markdown::example(side, example, &link, false));
+        tail.extend(markdown::example(side, example, &link));
     }
     markdown::section(record, Some(meta), tail)
 }
@@ -228,6 +243,25 @@ fn markdown(pattern: &Pattern, level: &Level, trails: &Store, project: &str) -> 
 /// Whether `word` reads as a record id: 4 to 64 hex characters.
 fn is_id(word: &str) -> bool {
     (4..=64).contains(&word.len()) && word.chars().all(|c| c.is_ascii_hexdigit())
+}
+
+/// The image files of `pattern`: its file examples, and the files of its done steps.
+fn pictures(pattern: &Pattern, trails: &Store) -> Vec<ProofFile> {
+    let steps = trails.steps();
+    let mut files = vec![];
+    for (_, example) in pattern.record.examples.sides() {
+        match example {
+            Example::File(file) => files.push(file.clone()),
+            Example::Step(id) => {
+                let Ok(step) = steps.find(id) else { continue };
+                let done = step.done();
+                files.extend(done.iter().flat_map(|d| d.files.iter()).cloned());
+            }
+            Example::Url(_) => {}
+        }
+    }
+    files.retain(|file| file.media.starts_with("image/"));
+    files
 }
 
 /// What `patterns` prints when the store holds none.
