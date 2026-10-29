@@ -4,9 +4,11 @@ The cases that the card leaves out. Do not run `--help`.
 
 ## Paths
 
-A pattern of one file or folder takes it as `--path`, such as `shelf/**`. To find a pattern by its words,
-run `celis grep -i -E " pattern [0-9a-f]{8} live .*(<word>|<word>)"`. When you move a file,
-replace each pattern of its old place with one of the new `--path`.
+A pattern that holds in one module or for one kind of file takes it as `--path`, a glob such as
+`shelf/**` or `**/*.svg`, never one file: the When says the moment, and the path says the place. The
+index shows each path, so read it when you choose. To find a pattern by its words, run
+`celis grep -i -E " pattern [0-9a-f]{8} live .*(<word>|<word>)"`. When you move a module, replace each
+pattern of its old place with one of the new `--path`.
 
 ## Patterns
 

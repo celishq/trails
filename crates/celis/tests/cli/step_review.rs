@@ -50,7 +50,24 @@ fn done_of_the_last_open_step_names_the_close_of_its_ask() {
         done(&repo, &piece, &["--as-planned"]),
         [
             format!("celis: {p} is done; compare the result with its plan:"),
-            format!("celis: no step under {a} is open; when its work is done, close it with celis step done {a}, else add one step under it."),
+            format!("celis: no step under {a} is open; when its work is done, learn from it with celis extract {a} and close it with celis step done {a}, else add one step under it."),
+        ]
+    );
+}
+
+/// `done --changed` of the last open step under an ask names the close of that ask as the next move.
+#[test]
+fn done_changed_of_the_last_open_step_names_the_close_of_its_ask() {
+    let repo = Repo::new();
+    let ask = add(&repo, &["--", "the ask"]);
+    let piece = add(&repo, &["--under", &ask[..8], "--", "piece"]);
+    let (a, p) = (&ask[..8], &piece[..8]);
+    assert_eq!(
+        done(&repo, &piece, &["--changed", "it printed 4"]),
+        [
+            format!("celis: {p} is done; compare the result with its plan:"),
+            format!("  changed {p} it printed 4"),
+            format!("celis: it went otherwise than planned, and no step under {a} is open; when its work is done, learn from it with celis extract {a} and close it with celis step done {a}, else add one step under it."),
         ]
     );
 }
@@ -62,12 +79,14 @@ fn done_changed_asks_to_reshape_the_plan() {
     let trail = add(&repo, &["--", "the trail"]);
     let ask = add(&repo, &["--under", &trail[..8], "--", "the ask"]);
     let piece = add(&repo, &["--under", &ask[..8], "--", "piece"]);
-    let (a, p) = (&ask[..8], &piece[..8]);
+    let next = add(&repo, &["--under", &ask[..8], "--", "next"]);
+    let (a, p, n) = (&ask[..8], &piece[..8], &next[..8]);
     assert_eq!(
         done(&repo, &piece, &["--changed", "it printed 4"]),
         [
             format!("celis: {p} is done; compare the result with its plan:"),
             format!("  changed {p} it printed 4"),
+            format!("  open    {n} next"),
             format!("celis: it went otherwise than planned; replace or drop each open step it voids, then add one step under {a}."),
         ]
     );
@@ -164,7 +183,7 @@ fn a_total_with_nothing_to_flag_gives_only_the_steps() {
 
 /// The head of the learn brief of the ask `a`.
 fn learn(a: &str) -> String {
-    format!("celis: before you answer, learn from {a}. Write a pattern with celis pattern for each choice that will come back in other work; a wish or a correction that says always, never or from now on is one too. The lines below are its evidence, an after-action review: what the ask expected, and what changed. A pattern never records what this ask did, such as its function, its file or its fix. Before you write one, answer four questions from the evidence. The cue: what in the situation showed that a choice was due? It is the When, one context and its moment, never a topic, the person or the project; it starts with \"When \", with no colon, and --scope says where it holds. The tension: which two goods pulled against each other, and what does each side protect? They are the Forces; a defect, a cost, a risk or a preference is not a good. The novice move: what would someone without this lesson do? When a step, a file or a URL shows it, give it as --bad. The mechanism: why does the choice resolve the tension? It is the Because; \"the person asked\" is not a why. With no cue, write no pattern. With no tension, as in a wish that holds always, give the person's choice as its Because: celis marks it fact, and tidy moves it into the project's files. Write it in the five lines the card shows. Its first line is required: Name: <the resolved form>, as a noun phrase. Its Do is one choice; write each other choice as a pattern of its own, --within the larger one. When the evidence does not give the mechanism, write your best guess, and name it on the Learned line for the person to confirm. A reaction to a result, such as \"this one\" or \"too busy\", is a pattern of the person's taste: --good the result they liked and --bad the one they did not, each a step id, a file or a URL. Give --path for the files it acts on, --within for the larger pattern it completes, --scope me when it holds in any project, and --replaces <id> for a pattern that misled the work, such as one below, or a near copy. Write nothing when the work taught nothing. What holds only for this trail is a note: celis step note {a}.")
+    format!("celis: before you answer, learn from {a}. Write a pattern with celis pattern for each choice that will come back in other work; a wish or a correction that says always, never or from now on is one too. The lines below are its evidence, an after-action review: what the ask expected, and what changed. A pattern never records what this ask did, such as its function, its file or its fix. Before you write one, answer four questions from the evidence. The cue: what in the situation showed that a choice was due? It is the When, one context and its moment, never a topic, the person or the project; it starts with \"When \", with no colon, and --scope says where it holds. The tension: which two goods pulled against each other, and what does each side protect? They are the Forces; a defect, a cost, a risk or a preference is not a good. The novice move: what would someone without this lesson do? When a step, a file or a URL shows it, give it as --bad. The mechanism: why does the choice resolve the tension? It is the Because; \"the person asked\" is not a why. With no cue, write no pattern. With no tension, as in a wish that holds always, give the person's choice as its Because: celis marks it fact, and tidy moves it into the project's files. Write it in the five lines the card shows. Its first line is required: Name: <the resolved form>, as a noun phrase. Its Do is one choice; write each other choice as a pattern of its own, --within the larger one. When the evidence does not give the mechanism, write your best guess, and name it on the Learned line for the person to confirm. A reaction to a result, such as \"this one\" or \"too busy\", is a pattern of the person's taste: --good the result they liked and --bad the one they did not, each a step id, a file or a URL. Give --path for the module or the kind of file where it holds, as a glob such as src/billing/** or **/*.svg, never one file; --within for the larger pattern it completes, --scope me when it holds in any project, and --replaces <id> for a pattern that misled the work, such as one below, or a near copy. Write nothing when the work taught nothing. What holds only for this trail is a note: celis step note {a}.")
 }
 
 /// `done` of an ask begins with the learn brief: each `changed` of the ask and of its steps, each note of
@@ -281,10 +300,9 @@ fn done_by_takes_person_and_ignores_judge() {
     done(&repo, &trail, &["--as-planned", "--by", "person"]);
 }
 
-/// `done` of a step prints each pattern of the files git shows changed, and leaves out the rest
-/// (`spec/02-cli.md`, "Step").
+/// `done` of a step lists no pattern of the files git shows changed.
 #[test]
-fn done_prints_the_patterns_of_the_changed_files() {
+fn done_lists_no_pattern_of_the_changed_files() {
     let repo = Repo::new();
     let python = cli(
         &repo,
@@ -312,7 +330,7 @@ fn done_prints_the_patterns_of_the_changed_files() {
     let piece = add(&repo, &["--under", &ask[..8], "--", "piece"]);
     repo.write("new.py", "x = 1\n");
     let said = done(&repo, &piece, &["--as-planned"]).join("\n");
-    assert!(said.contains(&python[..8]), "{said}");
+    assert!(!said.contains(&python[..8]), "{said}");
     assert!(!said.contains(&rust[..8]), "{said}");
 }
 
@@ -345,28 +363,4 @@ fn done_of_an_ask_with_changed_files_closes_it() {
     let ask = add(&repo, &["--", "Round the prices\nexpect: cents"]);
     repo.write("new.py", "x = 1\n");
     done(&repo, &ask, &["--as-planned"]);
-}
-
-/// With no git, the `--file` of a `done` count as its changed files, and `done` prints the patterns of
-/// those files (`spec/02-cli.md`, "Step").
-#[test]
-fn the_files_of_a_done_count_as_changed_without_git() {
-    let repo = Repo::new();
-    std::fs::remove_dir_all(repo.path().join(".git")).unwrap();
-    let pattern = cli(
-        &repo,
-        &[
-            "pattern",
-            "--path",
-            "*.py",
-            "--",
-            "When Python changes: run ruff.",
-        ],
-    );
-    let pattern = out(&pattern);
-    let ask = add(&repo, &["--", "Round the prices"]);
-    let piece = add(&repo, &["--under", &ask[..8], "--", "piece"]);
-    repo.write("new.py", "x = 1\n");
-    let said = done(&repo, &piece, &["--as-planned", "--file", "new.py"]).join("\n");
-    assert!(said.contains(&pattern[..8]), "{said}");
 }

@@ -6,7 +6,6 @@ mod review;
 
 use crate::command::Command;
 use crate::failure::Failure;
-use celis_patterns::{Pattern, PatternStore};
 use celis_store::records::id::short;
 use celis_store::{ProofFile, Store};
 pub(crate) use end::End;
@@ -16,12 +15,12 @@ use std::io::Write;
 
 impl Command {
     /// Prints `review` on `err`: the step's plan against what it did, the open steps beside it, the blobs
-    /// of `trails` for its files and the files beside it, the patterns of the `changed` files, then the
-    /// next move; on an ask, only its end; with no `linked` folder, local blobs.
+    /// of `trails` for its files and the files beside it, then the next move; on an ask, only its end;
+    /// with no `linked` folder, local blobs.
     pub(crate) fn review(
         &self,
         review: &Review,
-        (trails, changed): (&Store, &[String]),
+        trails: &Store,
         linked: bool,
         err: &mut dyn Write,
     ) -> Result<(), Failure> {
@@ -60,55 +59,23 @@ impl Command {
         for (id, title, file) in &review.beside {
             lines.push(format!("  beside  {} {title} · {}", short(id), kept(file)));
         }
-        lines.extend(self.changed_patterns(trails, changed));
         lines.extend(review.learn.iter().flat_map(Learn::lines));
         let under = review.under.as_deref().map(short);
+        let close = |u: &str| match review.ask {
+            true => format!(
+                "learn from it with celis extract {u} and close it with celis step done {u}"
+            ),
+            false => format!("close it with celis step done {u}"),
+        };
         lines.extend(match (review.as_planned, under) {
+            (false, Some(u)) if review.open.is_empty() => Some(format!("celis: it went otherwise than planned, and no step under {u} is open; when its work is done, {}, else add one step under it.", close(&u))),
             (false, Some(u)) => Some(format!("celis: it went otherwise than planned; replace or drop each open step it voids, then add one step under {u}.")),
-            (true, Some(u)) if review.open.is_empty() => Some(format!("celis: no step under {u} is open; when its work is done, close it with celis step done {u}, else add one step under it.")),
+            (true, Some(u)) if review.open.is_empty() => Some(format!("celis: no step under {u} is open; when its work is done, {}, else add one step under it.", close(&u))),
             (true, Some(u)) => Some(format!("celis: take an open step beside it, add one step under {u}, or close {u} when its work is done.")),
             (_, None) => None,
         });
         lines
             .iter()
             .try_for_each(|line| crate::command::put(err, line))
-    }
-
-    /// The changed files of a `done` that names `files`: those git shows changed or new, and `files`.
-    pub(crate) fn changed(&self, files: &[String]) -> Vec<String> {
-        let mut changed = crate::command::step::files::changed(&self.folder);
-        for file in files {
-            if !changed.contains(file) {
-                changed.push(file.clone());
-            }
-        }
-        changed
-    }
-
-    /// The live patterns in scope that the `files` match, as `Patterns::matching` orders them.
-    fn matched<'a>(&self, trails: &'a Store, files: &[String]) -> Vec<Pattern<'a>> {
-        let project = self.project();
-        let paths: Vec<String> = files
-            .iter()
-            .flat_map(|f| crate::command::step::files::paths(&project, &self.folder, f))
-            .collect();
-        trails
-            .patterns()
-            .view(&project.anchor.project)
-            .matching(&paths)
-    }
-
-    /// The lines of the patterns that the `changed` files match, after a line that asks to check the
-    /// change against each; none when none matches.
-    fn changed_patterns(&self, trails: &Store, changed: &[String]) -> Vec<String> {
-        let patterns = self.matched(trails, changed);
-        if patterns.is_empty() {
-            return vec![];
-        }
-        let head = "celis: check the change against each pattern of the files git shows changed:";
-        let lines = patterns
-            .iter()
-            .map(|pattern| crate::text::line::pattern(pattern, trails));
-        std::iter::once(head.to_string()).chain(lines).collect()
     }
 }

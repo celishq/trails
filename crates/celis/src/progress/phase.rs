@@ -3,7 +3,7 @@
 use celis_trails::{State, Step};
 
 /// The mark a view prints for a step or trail: its state, or on an open one, started while it works and
-/// stale once its trail ended.
+/// stale once its trail ended; an ended trail whose steps are all closed, one of them done, is done.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Phase {
     Open,
@@ -18,6 +18,7 @@ impl Phase {
         match step.state() {
             State::Done => Phase::Done,
             State::Dropped => Phase::Dropped,
+            State::Open if settled(step) => Phase::Done,
             State::Open if step.stale() => Phase::Stale,
             State::Open if step.works() => Phase::Started,
             State::Open => Phase::Open,
@@ -43,4 +44,13 @@ impl Phase {
     pub fn ended(self) -> bool {
         !self.active()
     }
+}
+
+/// Whether `step` is an ended trail whose steps are all closed, one of them done.
+fn settled(step: &Step) -> bool {
+    let steps = step.children();
+    step.is_trail()
+        && step.ended()
+        && steps.iter().all(|s| s.closed().is_some())
+        && steps.iter().any(|s| s.state() == State::Done)
 }

@@ -128,13 +128,12 @@ impl Command {
             files,
             misled: args.misled.clone(),
         };
-        let changed = self.changed(&args.files);
         let written = trails.done(id, done.clone(), &project.folder)?;
         self.print(written, args, out, err)?;
         let steps = trails.steps();
         let review = Review::of(trails.records(), steps.find(id)?, &done);
         let linked = !Link::all(&self.home()?, &project.folder).is_empty();
-        self.review(&review, (&trails, &changed), linked, err)
+        self.review(&review, &trails, linked, err)
     }
 
     /// Drops the open step `args` names and each open step under it, and prints each drop's id.
@@ -213,6 +212,11 @@ impl Command {
             Notice::Ask(ask) => format!(
                 "celis: when {0} holds more than one job, a part a person can check alone such as an item of its list, \
                  add only its first job with step add --under {0}, and each next job after you close one.",
+                short(ask)
+            ),
+            Notice::Waits(ask) => format!(
+                "celis: the ask {0} is still open, and no step under it is open; when its work is done, \
+                 close it with celis step done {0}, else drop it with celis step drop {0}.",
                 short(ask)
             ),
             Notice::NotStarted(step) => format!(

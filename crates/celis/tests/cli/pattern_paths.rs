@@ -28,17 +28,17 @@ fn tagged(repo: &Repo, tags: &[(&str, &str)], content: &str, at: u64) -> Note {
     note
 }
 
-/// The pattern lines `celis step done` prints in `folder` for a step that changed `files`.
+/// The pattern lines that `celis patterns` in `folder` marks as matching `files`.
 fn found(repo: &Repo, folder: &Path, files: &[&str]) -> Vec<String> {
     support::matched(repo, folder, files)
 }
 
-/// The pattern lines `celis step done` prints in the main checkout for a step that changed `files`.
+/// The pattern lines that `celis patterns` in the main checkout marks as matching `files`.
 fn patterns(repo: &Repo, files: &[&str]) -> Vec<String> {
     found(repo, &repo.path(), files)
 }
 
-/// The text of each pattern `celis step done` prints for a step that changed `args`, without its id
+/// The text of each pattern that `celis patterns` marks as matching `args`, without its id
 /// and scope.
 fn texts(repo: &Repo, args: &[&str]) -> Vec<String> {
     let lines = patterns(repo, args).into_iter();
@@ -62,8 +62,8 @@ fn a_path_glob_matches_the_file() {
     assert!(texts(&repo, &["c.rs"]).is_empty());
 }
 
-/// A change under a folder gives the patterns of each changed file, ignored files left out
-/// (`spec/02-cli.md`, "Step").
+/// A folder gives the patterns of each file under it, ignored files left out (`spec/02-cli.md`,
+/// "Patterns").
 #[test]
 fn a_folder_gives_the_patterns_of_its_files() {
     let repo = Repo::new();
@@ -111,7 +111,7 @@ fn an_at_pattern_comes_at_its_place() {
 }
 
 /// A pattern with no path and no `at:<place>` never comes by a file, and a pattern with a path comes at its
-/// files (`spec/05-patterns.md`, "Paths"; `spec/02-cli.md`, "Step").
+/// files (`spec/05-patterns.md`, "Paths").
 #[test]
 fn a_pattern_with_no_path_never_comes() {
     let repo = Repo::new();
@@ -146,36 +146,6 @@ fn situation_is_no_flag_and_its_label_is_ignored() {
     let shown = out(&o);
     let line = shown.lines().find(|l| l.contains(&old.id[..8])).unwrap();
     assert!(line.ends_with("live {project} older"), "{shown}");
-}
-
-/// Patterns come by id, whatever their time and whether they name the file or a glob
-/// (`spec/02-cli.md`, "Step").
-#[test]
-fn patterns_come_by_id() {
-    let repo = Repo::new();
-    let at = support::now() - DAY;
-    let mut all = [
-        tagged(&repo, &[("path", "a.py")], "named old", at + 4),
-        tagged(&repo, &[("scope", "at:a.py")], "at new", at + 5),
-        tagged(&repo, &[("path", "*.py")], "wide old", at),
-        tagged(&repo, &[("path", "*.py")], "wide new", at + 1),
-    ];
-    all.sort_by(|a, b| a.id.cmp(&b.id));
-    let want: Vec<&str> = all.iter().map(|n| n.content.as_str()).collect();
-    assert_eq!(texts(&repo, &["a.py"]), want);
-}
-
-/// Every pattern that matches comes, on each close (`spec/02-cli.md`, "Step").
-#[test]
-fn every_pattern_comes_on_each_call() {
-    let repo = Repo::new();
-    let at = support::now() - DAY;
-    for n in 0..7u64 {
-        tagged(&repo, &[("path", "*.md")], &format!("rule {n}"), at + n);
-    }
-    let first = texts(&repo, &["README.md"]);
-    assert_eq!(first.len(), 7, "{first:?}");
-    assert_eq!(texts(&repo, &["README.md"]), first);
 }
 
 /// The grep view gives no mark for a path or for `--binds` (`spec/02-cli.md`, "Grep").

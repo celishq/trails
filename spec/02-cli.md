@@ -83,7 +83,7 @@ pattern  json  {"id", "created_at", "project", "scope", "replaces", "content",
 **Examples**
 
 ```
-celis pattern --path shelf/prices.py -- "When you change prices
+celis pattern --path "shelf/**" -- "When you change prices
 Forces: floats are simple, but they lose cents
 Do: keep prices in cents
 Because: floats lost a cent"
@@ -177,15 +177,11 @@ note  json  {"id", "created_at", "step", "content"}
   step's id as a usage error.
 - `done` MUST take one of `--changed <text>` and `--as-planned`, and a proof, else refuse as a usage
   error. It MUST refuse a step with an open step under it, with `open-steps`.
-- The changed files of a `done` are each file that `git diff --name-only HEAD` or
-  `git ls-files --others --exclude-standard` gives in the working folder, and each `--file`.
 - `done` MUST run the step's `check` in the project's top folder, and refuse with `check-failed` when it
   fails or runs past `CELIS_CHECK_SECONDS`, 600 when not set.
 - `done --changed` MUST write its text as `changed`, and `done --by` its value as `by`; `--by judge`, which
   older plugins give, MUST write no `by`, and any other `--by` is a usage error. Each `done --file` MUST be kept as a blob and named by an
   `imeta` tag (CIP-08), and a path that is not there is a usage error.
-- `done` of a step that is not an ask MUST print each live pattern in scope that a changed file matches
-  (CIP-05, "Paths"), whole with its examples, once, as a list, by id.
 - `drop` MUST refuse an empty reason, and `edit` one with no text, `--at` or `--check`, as usage errors.
 - `note` MUST write its text as a note on the step (CIP-03, "Notes"), and refuse empty text as a usage
   error.

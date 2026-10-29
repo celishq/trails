@@ -103,7 +103,8 @@ A bench checks a design; a design is never tuned to a bench.
 10. **A step is open, done or dropped.** A start gives an open step a start time, and is not a state. A
     done trail that a drop names is dropped. A step under a done trail reopens it until its next done,
     so a follow-up of a done ask goes on its trail. An open step of an ended trail stays open, and the
-    app shows it as stale, because a state by time is the app's.
+    app shows it as stale, because a state by time is the app's. An ended trail whose steps are all
+    closed, one of them done, shows done: its work is over even when the agent did not close the ask.
 11. **A trail is one ask.** The ask is a step with no `under`, and the steps of its work go under it. A
     session does not join steps to a trail by itself, and the agent chooses each time: while the
     session's trail is open, or done less than 30 minutes ago, `step add` takes `--under` it for a part
@@ -111,8 +112,8 @@ A bench checks a design; a design is never tuned to a bench.
     ask are on it. A reader reads an older trail, which held the asks of a session, as one ask with
     those asks as its steps. The migrate skill closes each older trail after the person agrees.
 12. **No judge.** celis keeps patterns, and to check work is the orchestration's. A step proves its work
-    with its own check or its proof, and `done` gives the patterns of the changed files to check the
-    change against. `done --by person` says that the person confirms the result. A reader reads an old
+    with its own check or its proof. A pattern's path is the module where it holds, which the index
+    shows, so the agent chooses it before the work, and `done` gives no patterns. `done --by person` says that the person confirms the result. A reader reads an old
     `by judge` as a proof by a reader that did not do the work. `done --by judge` is accepted and writes
     no `by`, so an older plugin still works with a newer `celis`.
 13. **The outcomes are evidence, and celis lists what needs tidy.** A pattern misled a step that used

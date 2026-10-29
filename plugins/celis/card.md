@@ -29,7 +29,10 @@ Read all that celis prints, never cut by `head` or `grep`, and do the next move 
    able to check when it is done, why they want it, its limits and the one-way doors ahead: write them
    in the text of the ask's `celis step add`, after its title, as the lines `expect: …`, `for: …`,
    `not: …` and `ask me: …`, send them to the person, and start in the same turn. Each part a person
-   can check alone is a step of its own, closed with a proof a person can check. A change to done work,
+   can check alone is a step of its own, closed with a proof a person can check. Run `celis step start
+   <id>` before the work of each step: it gives you the step's patterns and notes, and it keeps the
+   ask active while the step runs. A `--file` of a proof is what a person looks at, such as a
+   screenshot, a log or a page; never source code, which git already keeps. A change to done work,
    wherever you are, is a new step `celis step add --replaces <the id of that step>`, whose proof says
    what changed. The ask's title names the job of its whole trail: when the steps you add or change
    widen or shift that job, retitle the ask with `celis step edit <the ask's id> -- "<title>"`. Act, and

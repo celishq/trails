@@ -105,7 +105,8 @@ impl Learn {
              the mechanism, write your best guess, and name it on the Learned line for the person to \
              confirm. A reaction to a result, such as \"this one\" or \"too busy\", is a pattern of the \
              person's taste: --good the result they liked and --bad the one they did not, each a step \
-             id, a file or a URL. Give --path for the files it acts on, --within for the larger pattern \
+             id, a file or a URL. Give --path for the module or the kind of file where it holds, as a \
+             glob such as src/billing/** or **/*.svg, never one file; --within for the larger pattern \
              it completes, --scope me when it holds in any project, and --replaces <id> for a pattern \
              that misled the work, such as one below, or a near copy. Write nothing when the work \
              taught nothing. What holds only for this trail is a note: celis step note {ask}."

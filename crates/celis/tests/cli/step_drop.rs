@@ -203,3 +203,37 @@ fn drop_takes_a_live_pattern_once() {
         "closed",
     );
 }
+
+/// `add --replaces` of a done step of an open trail, with no `--under`, goes under that trail, and the
+/// done step stays done (`spec/03-steps.md`, "Dropping").
+#[test]
+fn a_fix_of_a_done_step_of_an_open_trail_goes_under_it() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    let part = add(&repo, &["--under", &trail[..8], "--", "deep part"]);
+    let done = add(&repo, &["--under", &part[..8], "--", "done part"]);
+    finish(&repo, &done[..8]);
+    let fix = add(
+        &repo,
+        &["--replaces", &done[..8], "--", "fix the done part"],
+    );
+    let fix = fix.lines().next().unwrap();
+    let tree = objects(&repo, &["tree", &trail[..8]]);
+    let step = |id: &str| {
+        tree.iter()
+            .filter_map(|v| v.get("step"))
+            .find(|s| s["id"] == id)
+            .cloned()
+            .unwrap_or_default()
+    };
+    let links = step(fix)["links"].clone();
+    assert!(
+        links
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|l| l["kind"] == "under" && l["to"] == trail),
+        "{links}"
+    );
+    assert_eq!(step(&done)["state"], "done");
+}

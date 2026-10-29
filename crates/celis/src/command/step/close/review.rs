@@ -7,12 +7,13 @@ use celis_trails::{Done, Step};
 
 /// How a done step went against its plan: its expect line and its own changed, the steps under it planned
 /// before the first started, added after, dropped with their reasons and changed, and the open steps
-/// beside it under `under`, each as an id and a title; the files of its proof, and when no step beside it
-/// is open, those of the done steps beside it; on an ask, its end; on another step that fixes done work,
-/// what it taught.
+/// beside it under `under`, each as an id and a title, and whether `under` is the ask; the files of its
+/// proof, and when no step beside it is open, those of the done steps beside it; on an ask, its end; on
+/// another step that fixes done work, what it taught.
 pub(crate) struct Review {
     pub step: StepId,
     pub under: Option<StepId>,
+    pub ask: bool,
     pub expect: Option<String>,
     pub as_planned: bool,
     pub planned: usize,
@@ -95,6 +96,7 @@ impl Review {
             },
             files: done.files.clone(),
             under: under.map(|u| u.step_id()),
+            ask: under.is_some_and(|u| u.is_trail()),
             end: ask.then(|| End::of(records, step, done)),
             learn: (!ask && step.fixes()).then(|| Learn::of(records, step, done.changed.clone())),
         }

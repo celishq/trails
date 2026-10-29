@@ -513,8 +513,8 @@ pub fn read_ids(repo: &Repo, folder: &Path, args: &[&str]) -> Vec<String> {
         .collect()
 }
 
-/// The ids, first 8 characters, of the patterns `celis step done` prints in `folder` for a step that
-/// changed the places of each `--at` of `args`, in order.
+/// The ids, first 8 characters, of the patterns that `celis patterns` in `folder` marks as matching the
+/// places of each `--at` of `args`, by id.
 pub fn place_ids(repo: &Repo, folder: &Path, args: &[&str]) -> Vec<String> {
     let pairs = args.windows(2).filter(|w| w[0] == "--at");
     let places: Vec<&str> = pairs.map(|w| w[1]).collect();
@@ -522,87 +522,43 @@ pub fn place_ids(repo: &Repo, folder: &Path, args: &[&str]) -> Vec<String> {
     lines.map(|l| l[..8].to_string()).collect()
 }
 
-/// The head line of each pattern `celis step done` prints in `folder` for a step under an ask, beside an
-/// open step, that changed only `files`, each file or each file git gives under a folder, in order.
+/// The head line of each pattern that `celis patterns` in `folder` marks as matching one of `files`, each
+/// file or each file git gives under a folder, by id, without its level.
 pub fn matched(repo: &Repo, folder: &Path, files: &[&str]) -> Vec<String> {
-    let git = |args: &[&str]| {
-        let mut all = vec!["-c", "user.name=t", "-c", "user.email=t@t"];
-        all.extend(args);
-        let o = Command::new("git").args(all).current_dir(folder).output();
-        String::from_utf8_lossy(&o.unwrap().stdout).to_string()
-    };
-    git(&["add", "-A"]);
-    git(&["commit", "-q", "--allow-empty", "-m", "before"]);
     for file in files {
         let path = folder.join(file);
-        let under: Vec<PathBuf> = match path.is_dir() {
-            true => git(&["ls-files", "--", file])
-                .lines()
-                .map(|f| folder.join(f))
-                .collect(),
-            false => vec![path],
-        };
-        for path in under {
+        if !path.exists() && path.extension().is_some() {
             std::fs::create_dir_all(path.parent().unwrap()).unwrap();
-            let f = std::fs::OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open(path);
-            f.unwrap().write_all(b"\n").unwrap();
+            std::fs::write(&path, "\n").unwrap();
         }
     }
-    let step = |args: &[&str]| {
-        let o = repo.run(folder, args, &[], "");
-        assert!(o.status.success(), "{}", err(&o));
-        out(&o).lines().next().unwrap().to_string()
-    };
-    let n = UNIX_EPOCH.elapsed().unwrap().as_nanos().to_string();
-    let trail = step(&[
-        "step",
-        "add",
-        "--new",
-        "--",
-        &format!("Change the files {n}"),
-    ]);
-    let ask = step(&[
-        "step",
-        "add",
-        "--under",
-        &trail,
-        "--",
-        &format!("Change them {n}"),
-    ]);
-    let part = step(&[
-        "step",
-        "add",
-        "--under",
-        &ask,
-        "--",
-        &format!("Change one {n}"),
-    ]);
-    step(&[
-        "step",
-        "add",
-        "--under",
-        &ask,
-        "--",
-        &format!("Change two {n}"),
-    ]);
-    let o = repo.run(
-        folder,
-        &["step", "done", &part, "--as-planned", "--", "done"],
-        &[],
-        "",
-    );
+    let mut args = vec!["patterns"];
+    args.extend(files);
+    let o = repo.run(folder, &args, &[], "");
     assert!(o.status.success(), "{}", err(&o));
-    let said = err(&o);
-    let head = "celis: check the change against each pattern";
-    let after = said.lines().skip_while(|l| !l.starts_with(head)).skip(1);
-    let lines = after.take_while(|l| !l.starts_with("celis:"));
-    lines
-        .filter(|l| !l.starts_with(' '))
-        .map(str::to_string)
-        .collect()
+    let text = out(&o);
+    let mut found = Vec::new();
+    let mut head: Option<&str> = None;
+    for line in text.lines() {
+        match line.strip_prefix("  match  ") {
+            Some(_) => found.extend(head.take().map(unlevelled)),
+            None if !line.starts_with(' ') => head = Some(line),
+            None => {}
+        }
+    }
+    found.sort();
+    found
+}
+
+/// The index head line `line` without its level mark.
+fn unlevelled(line: &str) -> String {
+    let words: Vec<&str> = line.splitn(4, ' ').collect();
+    match words.get(2) {
+        Some(mark) if mark.chars().all(|c| c == '*') && words.len() == 4 => {
+            format!("{} {} {}", words[0], words[1], words[3])
+        }
+        _ => line.to_string(),
+    }
 }
 
 /// A `TZ` where it is now about noon, so the hours before now fall on the same day.

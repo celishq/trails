@@ -20,8 +20,8 @@ pub trait TrailStore {
 
     fn notes(&self) -> Notes<'_>;
 
-    /// Writes the step `draft` states, where `parent` puts it. A replaced open step's open tree drops; a
-    /// replaced done step stays done. An open step with the same place and words is given back. A new
+    /// Writes the step `draft` states, where `parent` puts it, else a fix of a done step under its open
+    /// trail. A replaced open step's open tree drops; a replaced done step stays done. An open step with the same place and words is given back. A new
     /// ask beside its session's current trail is refused, unless it is `new`.
     fn add(&self, draft: Draft) -> Result<Written<'_>, Refusal>;
 
@@ -70,7 +70,11 @@ impl TrailStore for Store {
         let replaced = draft.replaces.as_deref().map(|id| replaced(&steps, id));
         let replaced = replaced.transpose()?;
         let moved = replaced.filter(|s| s.done_record().is_none());
-        let under = parent(&steps, &draft, moved)?;
+        let fixed = replaced.filter(|s| s.done_record().is_some() && !s.is_trail());
+        let fixed = fixed
+            .map(|s| s.trail())
+            .filter(|t| t.state() == State::Open);
+        let under = parent(&steps, &draft, moved)?.or(fixed);
         let uses = draft
             .uses
             .iter()
@@ -105,6 +109,14 @@ impl TrailStore for Store {
                  {id}, or an unrelated ask with step add --new"
             )));
         }
+        let waits = draft.session.as_deref().filter(|_| draft.new);
+        let waits = waits.and_then(|s| steps.current(&draft.anchor.project, s));
+        let waits = waits.filter(|t| {
+            t.state() == State::Open && t.children().iter().all(|s| s.closed().is_some())
+        });
+        written
+            .notices
+            .extend(waits.map(|t| Notice::Waits(t.step_id())));
         let record = StepRecord {
             anchor: draft.anchor,
             under: under.map(|u| u.step_id()),

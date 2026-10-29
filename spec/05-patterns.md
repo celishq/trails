@@ -29,8 +29,8 @@ forces are present, work resolves them; where they are not, it does not apply.
 
 - `scope`: optional; where the pattern holds ("Scope"). With none, it holds in the project.
 - `replaces`: optional; the pattern this one takes the place of.
-- `path`: optional, repeatable; a file the pattern acts on, as a glob from the project's top folder
-  ("Paths").
+- `path`: optional, repeatable; the module or the kind of file where the pattern holds, as a glob from
+  the project's top folder ("Paths").
 - content: text for an agent. Its first line MAY be `Name: <the resolved form>`, or the name alone before
   a `When` line. A reader MAY show it,
   and reads only its Name and its When (CIP-02, "Patterns").

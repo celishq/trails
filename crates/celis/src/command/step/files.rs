@@ -19,22 +19,6 @@ fn git(folder: &Path, args: &[&str]) -> Vec<String> {
         .collect()
 }
 
-/// The files that git shows changed or new in `folder`, each that exists, each once.
-pub(crate) fn changed(folder: &Path) -> Vec<String> {
-    let listed = git(folder, &["diff", "-z", "--name-only", "--relative", "HEAD"]);
-    let new = git(
-        folder,
-        &["ls-files", "-z", "--others", "--exclude-standard"],
-    );
-    let mut files: Vec<String> = Vec::new();
-    for file in listed.into_iter().chain(new) {
-        if folder.join(&file).is_file() && !files.contains(&file) {
-            files.push(file);
-        }
-    }
-    files
-}
-
 /// The path of the file `file`, given in `folder`, from the project's top folder; else of each file
 /// git gives under it when it is a folder.
 pub(crate) fn paths(project: &Project, folder: &Path, file: &str) -> Vec<String> {

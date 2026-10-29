@@ -97,24 +97,6 @@ fn a_pattern_at_a_file_is_at_that_file_whatever_line_and_a_folder_holds_what_lie
     assert_eq!(place_ids(&repo, &folder, &["--at", "src/xy"]), [sibling]);
 }
 
-/// A reader orders the patterns at a place by id, whatever their time (`spec/02-cli.md`, "Step").
-#[test]
-fn a_reader_orders_patterns_at_a_place_by_id() {
-    let repo = Repo::new();
-    let id = repo.project_id();
-    let project = (id.as_str(), "repo");
-    let make = |text: &str, at: u64| {
-        let scope = Some("at:src/a.rs");
-        short(&stored_pattern(&repo, project, &account(), (scope, None), text, at).id)
-    };
-    let same = now() - 3 * DAY;
-    let mut want: Vec<String> = ["a", "b", "c"].iter().map(|t| make(t, same)).collect();
-    want.push(make("n", now() - 2 * DAY));
-    want.push(make("o", now() - 5 * DAY));
-    want.sort();
-    assert_eq!(place_ids(&repo, &repo.path(), &["--at", "src/a.rs"]), want);
-}
-
 /// A place resolves against the working folder and reads as a path from the project's top folder, so
 /// `./a`, a full path and a path from a subfolder name one place (`spec/01-records.md`, "Places").
 #[test]
