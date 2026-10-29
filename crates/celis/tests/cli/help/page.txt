@@ -1,6 +1,6 @@
-celis remembers what your agents learn, and how they do your tasks.
+celis keeps what you teach your agents, and brings it to each task they do.
 
-Your agents record them through the celis plugin.
+Your agents record their work through the celis plugin.
 
 Usage
   celis <command> [<args>] [flags]
@@ -8,10 +8,10 @@ Usage
 Read
   patterns            Show the index of your patterns
   ├ --markdown        Print one Markdown page, each file a link to its blob
-  ├ --tidy            List the patterns that need tidy, and why
+  ├ --tidy            List the patterns that need tidy, with the reason
   └ --cell <name>     Show only the patterns of one cell, on or off
 
-  cells               Show each cell: its author, its patterns, and on or off
+  cells               Show each cell: its account, its patterns, and on or off
   tree [<id>]         Show your trails and their steps
   ├ --graph           Show today's trails as live graphs of cards
   ├ --full            Show each step's proof, grade, and reason
@@ -31,8 +31,7 @@ Record work · your agents run these
   ├ --path <glob>     A file it acts on; * and ? within a folder, ** across
   ├ --within <id>     The larger pattern it completes
   ├ --good <example>  A step, file, - (stdin), data: URI or URL that shows it
-  ├ --bad <example>   A step, file, - (stdin), data: URI or URL that breaks it
-  └ --project <id>    The id of a project in the store
+  └ --bad <example>   A step, file, - (stdin), data: URI or URL that breaks it
 
   step add            Add a new ask, or a step under one
   ├ --under <id>      The open step or done ask this step is part of
@@ -41,8 +40,7 @@ Record work · your agents run these
   ├ --uses <id>       A pattern it follows
   ├ --misled <id>     A pattern that misled the work it fixes
   ├ --at <place>      Where the work happens: a file:line, a URL, or any text
-  ├ --check <command> A command that proves the work
-  └ --project <id>    The id of a project in the store
+  └ --check <command> A command that proves the work
 
   step start <id>     Start a step and show the patterns and notes it keeps
   step done <id>      Finish a step with proof that it works
@@ -52,7 +50,7 @@ Record work · your agents run these
   ├ --misled <id>     A pattern it followed that did not fit
   └ --file <path>     A file of the proof, - (stdin) or a base64 data: URI
 
-  step drop <id>      Drop a step and the open steps under it
+  step drop <id>      Drop a step, a done trail or a pattern
   step edit <id>      Change a step's title, where it works, or its check
   ├ --at <place>      Where the work happens, in place of the old places
   └ --check <command> A command that proves the work, in place of the old one
@@ -88,4 +86,5 @@ Set up
 celis keeps your recovery phrase and records in $CELIS_HOME:
   <home>
 
+Add --json to tree, stats, extract, or a command that records work, for JSON.
 To learn more about a command, run `celis <command> --help`.

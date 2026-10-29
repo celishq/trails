@@ -6,7 +6,7 @@ Commands
   add      Add a new ask, or a step under one
   start    Start a step and show the patterns and notes it keeps
   done     Finish a step with proof that it works
-  drop     Drop a step and the open steps under it
+  drop     Drop a step, a done trail or a pattern
   edit     Change a step's title, where it works, or its check
   note     Leave a note for the work of the step's trail
 

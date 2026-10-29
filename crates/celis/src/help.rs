@@ -118,7 +118,7 @@ pub const GROUPS: &[Group] = &[
                 "Start a step and show the patterns and notes it keeps",
             ),
             ("done", "Finish a step with proof that it works"),
-            ("drop", "Drop a step and the open steps under it"),
+            ("drop", "Drop a step, a done trail or a pattern"),
             (
                 "edit",
                 "Change a step's title, where it works, or its check",
@@ -282,7 +282,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "stats",
         usage: &["celis stats [<id>] [--demo]"],
-        summary: "Show each live pattern: its uses, the steps it misled, its replaces, its last use, its examples and why it needs tidy. Then show the total: the size of the index, and the patterns written, the patterns replaced and the fixes that used no pattern in the last 7 days. Then show the lifecycle of the patterns by day, week and month, and the value of the last 28 days: asks that used a pattern, corrections and repeat ones, first-pass success with and without a pattern, recalls, uses, reach and promotions. With an id, show that step and its grade, and for a done ask its total: its steps, the patterns it used, and the patterns written since it began. On a terminal, show the totals of all time, then the last 14 days against the 14 before: reuse rate, first-pass success, resolved steps and median step time, then Learning, Quality, Output and speed, and Resources, each opened with enter, updating as work lands. Changes nothing.",
+        summary: "Show each live pattern and how it is used, then the totals of the index, its lifecycle and the value of the last 28 days. With an id, show that step's grade and, for a done ask, its total. On a terminal, show the same as live cards. Changes nothing.",
         args: &[
             ("<id>", "A step id, or its first 4 or more characters"),
             ("--demo", "Show four weeks of sample trails"),
@@ -325,7 +325,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "pattern",
         usage: &["celis pattern [--scope <scope>] [--replaces <id>] [--path <glob>]... [--within <id>]... [--good <example>]... [--bad <example>]... [--project <id>] -- <text>"],
-        summary: "Record a pattern that guides later work: when it applies, its forces, what to do, and why. With no --scope, it holds for the whole project. Its paths name the files it acts on, so celis step done gives it for them. Where its forces are present, the work resolves them in its own way.",
+        summary: "Record a pattern that guides later work: when it applies, its forces, what to do, and why. With no --scope, it holds for the whole project. Its paths name the files it acts on, so celis step done gives it for them. Where its forces are present, the work resolves them in its own way. It warns on stderr when the text has no Name, or has the signs of a weak pattern, and still records it.",
         args: &[
             ("--scope <scope>", "Where it applies: me, or project"),
             ("--replaces <id>", "The pattern this one replaces"),
@@ -337,21 +337,24 @@ pub const VERBS: &[Verb] = &[
             ("<text>", "Its lines: Name, When, Forces, Do and Because"),
         ],
         examples: &[
-            "celis pattern --path shelf/prices.py \\",
-            "  -- \"When you change prices: keep them in cents.\"",
+            "celis pattern --path shelf/prices.py -- \"Name: Prices in whole cents",
+            "When you change a price that a float would round",
+            "Forces: a float is easy to write, but it loses a cent",
+            "Do: keep each price as a whole number of cents",
+            "Because: a sum of whole numbers never rounds\"",
             "celis pattern --path \"*.svg\" --good logo.svg --bad 3fa2c1d0 \\",
-            "  -- \"When a logo is drawn: keep sharp corners.\"",
+            "  -- \"$(cat sharp-corners.txt)\"",
         ],
     },
     Verb {
         command: "patterns",
         usage: &["celis patterns [<id>] [<file>]... [--markdown] [--tidy] [--cell <name>]"],
-        summary: "Show the index of the patterns of this project and of you, the oldest first: each one's id, scope and When, with its paths, each named file they match, and the larger patterns it completes. With an id, print that pattern whole, with its examples, and mark it recalled on the session's open step. With --markdown, print each whole as one page, with its examples, each file a link to its blob, for a review or a skill file. With --tidy, list the patterns that need tidy, with the reason, then the size of the index.",
+        summary: "Show the index of the patterns of this project and of you, the oldest first: each one's id, scope, level and Name, with its paths, each named file they match, and the larger patterns it completes. A level of * or ** is the evidence of past uses. With an id, print that pattern whole, with its examples, and mark it recalled on the session's open step. With --markdown, print each whole as one page, with its examples, each file a link to its blob, for a review or a skill file. With --tidy, list the patterns that need tidy, with the reason (misled, near, unused, churn, nameless, form, topic, tension, fact or many), then the size of the index.",
         args: &[
             ("<id>", "A pattern id, or its first 4 or more characters"),
             ("<file>", "A file or folder; marks each pattern whose paths match it"),
             ("--markdown", "Print one Markdown page, each file a link to its blob"),
-            ("--tidy", "List the patterns that need tidy, and why"),
+            ("--tidy", "List the patterns that need tidy, with the reason"),
             ("--cell <name>", "Show only the patterns of one cell, on or off"),
         ],
         examples: &[
