@@ -415,6 +415,29 @@ fn patterns_print_as_markdown() {
     );
 }
 
+/// Off a terminal, `patterns <id>` prints the text of a pattern with an image example and no escape
+/// sequence, so a pipe reads the text alone.
+#[test]
+fn patterns_with_an_id_draw_no_image_off_a_terminal() {
+    let repo = Repo::new();
+    repo.write("logo.png", "png bytes\n");
+    let o = cli(
+        &repo,
+        &[
+            "pattern",
+            "--good",
+            "logo.png",
+            "--",
+            "When a logo is drawn: keep it flat.",
+        ],
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let id = out(&o).lines().next().unwrap().to_string();
+    let said = out(&cli(&repo, &["patterns", &id[..8]]));
+    assert!(said.contains("When a logo is drawn"), "{said}");
+    assert!(!said.contains('\x1b'), "{said}");
+}
+
 /// `patterns <id>` prints that pattern whole, as `--markdown` does, and refuses an id that names no live
 /// pattern with `no-pattern`; a word that names a file stays a file (`spec/02-cli.md`, "Patterns").
 #[test]

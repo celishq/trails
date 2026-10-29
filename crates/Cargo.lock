@@ -153,6 +153,7 @@ name = "celis"
 version = "0.0.0"
 dependencies = [
  "anyhow",
+ "base64",
  "celis-nostr",
  "celis-patterns",
  "celis-store",
