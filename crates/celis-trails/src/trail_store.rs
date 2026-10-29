@@ -105,6 +105,14 @@ impl TrailStore for Store {
                  {id}, or an unrelated ask with step add --new"
             )));
         }
+        let waits = draft.session.as_deref().filter(|_| draft.new);
+        let waits = waits.and_then(|s| steps.current(&draft.anchor.project, s));
+        let waits = waits.filter(|t| {
+            t.state() == State::Open && t.children().iter().all(|s| s.closed().is_some())
+        });
+        written
+            .notices
+            .extend(waits.map(|t| Notice::Waits(t.step_id())));
         let record = StepRecord {
             anchor: draft.anchor,
             under: under.map(|u| u.step_id()),

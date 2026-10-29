@@ -461,3 +461,34 @@ fn a_step_names_the_agent_its_session_variable_gives() {
         assert_eq!(step.tag("agent"), agent, "{env:?}");
     }
 }
+
+/// `step add --new` names the session's open ask whose steps are all closed, and the move to close it.
+#[test]
+fn a_new_ask_names_the_open_ask_that_waits_to_close() {
+    let repo = Repo::new();
+    let first = add(&repo, Some("s1"), "make the badges orange");
+    let part = run_add(
+        &repo,
+        Some("s1"),
+        &[],
+        &["--under", &first[..8], "--", "the badge"],
+    )
+    .remove(0);
+    support::finish(&repo, &part[..8]);
+    let env = [("CLAUDE_CODE_SESSION_ID", "s1")];
+    let o = repo.run(
+        &repo.path(),
+        &["step", "add", "--new", "--", "the buttons"],
+        &env,
+        "",
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let f = &first[..8];
+    assert!(
+        err(&o).contains(&format!(
+            "celis: the ask {f} is still open, and no step under it is open; when its work is done, close it with celis step done {f}, else drop it with celis step drop {f}."
+        )),
+        "{}",
+        err(&o)
+    );
+}

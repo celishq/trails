@@ -215,6 +215,11 @@ impl Command {
                  add only its first job with step add --under {0}, and each next job after you close one.",
                 short(ask)
             ),
+            Notice::Waits(ask) => format!(
+                "celis: the ask {0} is still open, and no step under it is open; when its work is done, \
+                 close it with celis step done {0}, else drop it with celis step drop {0}.",
+                short(ask)
+            ),
             Notice::NotStarted(step) => format!(
                 "celis: {} has not started; keep one step ahead: take it first, or drop it.",
                 short(step)
