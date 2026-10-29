@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: 50-narrow-not-patch
+context:
+  scaffold_script: ./setup.sh

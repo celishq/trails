@@ -11,7 +11,8 @@ Keep what the brief says. A good lesson is a choice that will come back, in the 
 pattern in Christopher Alexander's form, Name, When, Forces, Do and Because, that an agent who never saw
 this ask can act on. It is narrow in its problem, one context and one choice, and open in its field: an
 agent that builds a different kind of thing can still follow it. It replaces a
-pattern in play that misled the work, or a near copy, and does not sit beside it. An ask that taught
+pattern in play that misled the work, or a near copy, and does not sit beside it. A pattern in play
+whose When also matches the lesson's case it narrows with `--replaces`. An ask that taught
 nothing gives no pattern.
 
 The brief is an after-action review: what the ask expected, and what changed. Before each pattern,
