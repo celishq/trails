@@ -108,10 +108,11 @@ impl Learn {
              id, a file or a URL. Give --path for the module or the kind of file where it holds, as a \
              glob such as src/billing/** or **/*.svg, never one file; --within for the larger pattern \
              it completes, --scope me when it holds in any project, and --replaces <id> for a pattern \
-             that misled the work, such as one below, or a near copy. When a pattern went further \
-             than its evidence, as when its When also covers a case where its Do was wrong, replace \
-             it with a narrower When, and write that case as a pattern of its own, never as one \
-             beside it whose When names the other's rule. When a --bad is a step, say in the Forces \
+             that misled the work, such as one below, or a near copy. When the lesson builds on a \
+             pattern in play whose When also matches the lesson's case, such as a page of many \
+             screens and a pattern for any screen, that When is too wide: replace it with a When \
+             that names only its own case, and write the lesson as a pattern of its own. When a \
+             --bad is a step, say in the Forces \
              what was wrong with it: its proof says only what was built. Write nothing when the work \
              taught nothing. What holds only for this trail is a note: celis step note {ask}."
         )];
