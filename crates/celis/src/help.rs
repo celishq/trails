@@ -325,11 +325,11 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "pattern",
         usage: &["celis pattern [--scope <scope>] [--replaces <id>] [--path <glob>]... [--within <id>]... [--good <example>]... [--bad <example>]... [--project <id>] -- <text>"],
-        summary: "Record a pattern that guides later work: when it applies, its forces, what to do, and why. With no --scope, it holds for the whole project. Its paths name the files it acts on, so celis step done gives it for them. Where its forces are present, the work resolves them in its own way. It warns on stderr when the text has no Name, or has the signs of a weak pattern, and still records it.",
+        summary: "Record a pattern that guides later work: when it applies, its forces, what to do, and why. With no --scope, it holds for the whole project. Its paths name the module or the kind of file where it holds, which the index shows. Where its forces are present, the work resolves them in its own way. It warns on stderr when the text has no Name, or has the signs of a weak pattern, and still records it.",
         args: &[
             ("--scope <scope>", "Where it applies: me, or project"),
             ("--replaces <id>", "The pattern this one replaces"),
-            ("--path <glob>", "A file it acts on; * and ? within a folder, ** across"),
+            ("--path <glob>", "The module or kind of file where it holds, such as src/**"),
             ("--within <id>", "The larger pattern it completes"),
             ("--good <example>", "A step, file, - (stdin), data: URI or URL that shows it"),
             ("--bad <example>", "A step, file, - (stdin), data: URI or URL that breaks it"),
@@ -337,7 +337,7 @@ pub const VERBS: &[Verb] = &[
             ("<text>", "Its lines: Name, When, Forces, Do and Because"),
         ],
         examples: &[
-            "celis pattern --path shelf/prices.py -- \"Name: Prices in whole cents",
+            "celis pattern --path \"shelf/**\" -- \"Name: Prices in whole cents",
             "When you change a price that a float would round",
             "Forces: a float is easy to write, but it loses a cent",
             "Do: keep each price as a whole number of cents",

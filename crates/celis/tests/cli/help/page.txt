@@ -28,7 +28,7 @@ Record work · your agents run these
   pattern             Record a pattern that guides later work
   ├ --scope <scope>   Where it applies: me, or project
   ├ --replaces <id>   The pattern this one replaces
-  ├ --path <glob>     A file it acts on; * and ? within a folder, ** across
+  ├ --path <glob>     The module or kind of file where it holds, such as src/**
   ├ --within <id>     The larger pattern it completes
   ├ --good <example>  A step, file, - (stdin), data: URI or URL that shows it
   └ --bad <example>   A step, file, - (stdin), data: URI or URL that breaks it

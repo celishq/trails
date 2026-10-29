@@ -16,7 +16,7 @@ their marks become one pattern. Add it as one ask, as the card says.
    they mark is an example too, as a file, as bytes on stdin with `-`, or as base64 in a
    `data:image/png;base64,...` URI.
 4. Write one pattern in the person's words, in the five lines the card shows, with `pattern --path <the
-   files it acts on> --good <each good file> --bad <each bad file> -- "Name: <the form the good ones
+   kind of file, such as **/*.svg> --good <each good file> --bad <each bad file> -- "Name: <the form the good ones
    share>` and its `When <the kind of thing> is made`, `Forces`, `Do` and `Because` lines: the `Do` is what the good ones share, the `Forces`
    what the bad ones chose instead, the `Because` the person's why. When it adds to a pattern you
    read, replace that pattern with `--replaces <its id>`.

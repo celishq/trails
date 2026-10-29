@@ -83,7 +83,7 @@ pattern  json  {"id", "created_at", "project", "scope", "replaces", "content",
 **Examples**
 
 ```
-celis pattern --path shelf/prices.py -- "When you change prices
+celis pattern --path "shelf/**" -- "When you change prices
 Forces: floats are simple, but they lose cents
 Do: keep prices in cents
 Because: floats lost a cent"
