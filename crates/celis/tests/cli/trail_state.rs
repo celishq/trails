@@ -96,3 +96,24 @@ fn an_ended_trail_stays_open_and_shows_its_open_steps_stale() {
     assert!(o.status.success(), "{}", err(&o));
     assert_eq!(state(&repo, &left.id), "open");
 }
+
+/// An ended trail whose steps are all closed, one of them done, shows done in the tree, keeps its open
+/// state for the CIP, and still takes its own `done`.
+#[test]
+fn an_ended_trail_with_all_steps_closed_shows_done() {
+    use support::{account, mark_note, now, step_note};
+    let repo = Repo::new();
+    let old = now() - 31 * 60;
+    let ask = step_note(&repo, &account(), None, "settled", old);
+    let part = step_note(&repo, &account(), Some(&ask), "part", old);
+    mark_note(&repo, &account(), "done", &part.id, "proof", old);
+    let tree = out(&cli(&repo, &["tree", &ask.id[..8]]));
+    assert!(
+        tree.lines()
+            .any(|l| l.starts_with(&format!("✓   {} settled", &ask.id[..8]))),
+        "{tree}"
+    );
+    assert_eq!(state(&repo, &ask.id), "open");
+    finish(&repo, &ask.id[..8]);
+    assert_eq!(state(&repo, &ask.id), "done");
+}

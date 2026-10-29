@@ -103,7 +103,8 @@ A bench checks a design; a design is never tuned to a bench.
 10. **A step is open, done or dropped.** A start gives an open step a start time, and is not a state. A
     done trail that a drop names is dropped. A step under a done trail reopens it until its next done,
     so a follow-up of a done ask goes on its trail. An open step of an ended trail stays open, and the
-    app shows it as stale, because a state by time is the app's.
+    app shows it as stale, because a state by time is the app's. An ended trail whose steps are all
+    closed, one of them done, shows done: its work is over even when the agent did not close the ask.
 11. **A trail is one ask.** The ask is a step with no `under`, and the steps of its work go under it. A
     session does not join steps to a trail by itself, and the agent chooses each time: while the
     session's trail is open, or done less than 30 minutes ago, `step add` takes `--under` it for a part
