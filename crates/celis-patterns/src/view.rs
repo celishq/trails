@@ -38,14 +38,6 @@ impl<'p, 'a> View<'p, 'a> {
         find(every.filter(|p| p.is_live() && self.holds(p)), id)
     }
 
-    /// The live patterns in scope that match one of `paths`, by id.
-    pub fn matching(&self, paths: &[String]) -> Vec<Pattern<'a>> {
-        let live = self.live().into_iter();
-        let mut found: Vec<Pattern<'a>> = live.filter(|p| p.record.matches(paths)).collect();
-        found.sort_by_key(|p| p.id());
-        found
-    }
-
     /// The live patterns in scope whose `within` names `id`, newest first.
     pub fn smaller(&self, id: &str) -> Vec<Pattern<'a>> {
         let live = self.live().into_iter();

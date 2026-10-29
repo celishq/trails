@@ -300,10 +300,9 @@ fn done_by_takes_person_and_ignores_judge() {
     done(&repo, &trail, &["--as-planned", "--by", "person"]);
 }
 
-/// `done` of a step prints each pattern of the files git shows changed, and leaves out the rest
-/// (`spec/02-cli.md`, "Step").
+/// `done` of a step lists no pattern of the files git shows changed.
 #[test]
-fn done_prints_the_patterns_of_the_changed_files() {
+fn done_lists_no_pattern_of_the_changed_files() {
     let repo = Repo::new();
     let python = cli(
         &repo,
@@ -331,7 +330,7 @@ fn done_prints_the_patterns_of_the_changed_files() {
     let piece = add(&repo, &["--under", &ask[..8], "--", "piece"]);
     repo.write("new.py", "x = 1\n");
     let said = done(&repo, &piece, &["--as-planned"]).join("\n");
-    assert!(said.contains(&python[..8]), "{said}");
+    assert!(!said.contains(&python[..8]), "{said}");
     assert!(!said.contains(&rust[..8]), "{said}");
 }
 
@@ -364,28 +363,4 @@ fn done_of_an_ask_with_changed_files_closes_it() {
     let ask = add(&repo, &["--", "Round the prices\nexpect: cents"]);
     repo.write("new.py", "x = 1\n");
     done(&repo, &ask, &["--as-planned"]);
-}
-
-/// With no git, the `--file` of a `done` count as its changed files, and `done` prints the patterns of
-/// those files (`spec/02-cli.md`, "Step").
-#[test]
-fn the_files_of_a_done_count_as_changed_without_git() {
-    let repo = Repo::new();
-    std::fs::remove_dir_all(repo.path().join(".git")).unwrap();
-    let pattern = cli(
-        &repo,
-        &[
-            "pattern",
-            "--path",
-            "*.py",
-            "--",
-            "When Python changes: run ruff.",
-        ],
-    );
-    let pattern = out(&pattern);
-    let ask = add(&repo, &["--", "Round the prices"]);
-    let piece = add(&repo, &["--under", &ask[..8], "--", "piece"]);
-    repo.write("new.py", "x = 1\n");
-    let said = done(&repo, &piece, &["--as-planned", "--file", "new.py"]).join("\n");
-    assert!(said.contains(&pattern[..8]), "{said}");
 }

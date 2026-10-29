@@ -128,13 +128,12 @@ impl Command {
             files,
             misled: args.misled.clone(),
         };
-        let changed = self.changed(&args.files);
         let written = trails.done(id, done.clone(), &project.folder)?;
         self.print(written, args, out, err)?;
         let steps = trails.steps();
         let review = Review::of(trails.records(), steps.find(id)?, &done);
         let linked = !Link::all(&self.home()?, &project.folder).is_empty();
-        self.review(&review, (&trails, &changed), linked, err)
+        self.review(&review, &trails, linked, err)
     }
 
     /// Drops the open step `args` names and each open step under it, and prints each drop's id.
