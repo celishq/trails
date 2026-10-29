@@ -63,9 +63,16 @@ impl Command {
         lines.extend(self.changed_patterns(trails, changed));
         lines.extend(review.learn.iter().flat_map(Learn::lines));
         let under = review.under.as_deref().map(short);
+        let close = |u: &str| match review.ask {
+            true => format!(
+                "learn from it with celis extract {u} and close it with celis step done {u}"
+            ),
+            false => format!("close it with celis step done {u}"),
+        };
         lines.extend(match (review.as_planned, under) {
+            (false, Some(u)) if review.open.is_empty() => Some(format!("celis: it went otherwise than planned, and no step under {u} is open; when its work is done, {}, else add one step under it.", close(&u))),
             (false, Some(u)) => Some(format!("celis: it went otherwise than planned; replace or drop each open step it voids, then add one step under {u}.")),
-            (true, Some(u)) if review.open.is_empty() => Some(format!("celis: no step under {u} is open; when its work is done, close it with celis step done {u}, else add one step under it.")),
+            (true, Some(u)) if review.open.is_empty() => Some(format!("celis: no step under {u} is open; when its work is done, {}, else add one step under it.", close(&u))),
             (true, Some(u)) => Some(format!("celis: take an open step beside it, add one step under {u}, or close {u} when its work is done.")),
             (_, None) => None,
         });

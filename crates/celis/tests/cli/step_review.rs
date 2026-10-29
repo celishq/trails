@@ -50,7 +50,24 @@ fn done_of_the_last_open_step_names_the_close_of_its_ask() {
         done(&repo, &piece, &["--as-planned"]),
         [
             format!("celis: {p} is done; compare the result with its plan:"),
-            format!("celis: no step under {a} is open; when its work is done, close it with celis step done {a}, else add one step under it."),
+            format!("celis: no step under {a} is open; when its work is done, learn from it with celis extract {a} and close it with celis step done {a}, else add one step under it."),
+        ]
+    );
+}
+
+/// `done --changed` of the last open step under an ask names the close of that ask as the next move.
+#[test]
+fn done_changed_of_the_last_open_step_names_the_close_of_its_ask() {
+    let repo = Repo::new();
+    let ask = add(&repo, &["--", "the ask"]);
+    let piece = add(&repo, &["--under", &ask[..8], "--", "piece"]);
+    let (a, p) = (&ask[..8], &piece[..8]);
+    assert_eq!(
+        done(&repo, &piece, &["--changed", "it printed 4"]),
+        [
+            format!("celis: {p} is done; compare the result with its plan:"),
+            format!("  changed {p} it printed 4"),
+            format!("celis: it went otherwise than planned, and no step under {a} is open; when its work is done, learn from it with celis extract {a} and close it with celis step done {a}, else add one step under it."),
         ]
     );
 }
@@ -62,12 +79,14 @@ fn done_changed_asks_to_reshape_the_plan() {
     let trail = add(&repo, &["--", "the trail"]);
     let ask = add(&repo, &["--under", &trail[..8], "--", "the ask"]);
     let piece = add(&repo, &["--under", &ask[..8], "--", "piece"]);
-    let (a, p) = (&ask[..8], &piece[..8]);
+    let next = add(&repo, &["--under", &ask[..8], "--", "next"]);
+    let (a, p, n) = (&ask[..8], &piece[..8], &next[..8]);
     assert_eq!(
         done(&repo, &piece, &["--changed", "it printed 4"]),
         [
             format!("celis: {p} is done; compare the result with its plan:"),
             format!("  changed {p} it printed 4"),
+            format!("  open    {n} next"),
             format!("celis: it went otherwise than planned; replace or drop each open step it voids, then add one step under {a}."),
         ]
     );
