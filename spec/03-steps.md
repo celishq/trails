@@ -101,6 +101,7 @@ dropped   a `drop` settles it, or names it as a done trail
 - A writer that drops a step MUST also drop each open step under it, at any depth.
 - A step that `replaces` an open step MUST go under that step's `under` when it names none. Its writer
   MUST then drop the old step and its open steps with `replaced by <new id, first 8>`.
+- A step that `replaces` a done step of an open trail MUST go under that trail when it names no `under`.
 - A step MUST NOT replace a dropped step.
 - A writer MAY drop a done trail, and MUST NOT drop another done step.
 
