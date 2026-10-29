@@ -212,7 +212,7 @@ fn markdown(pattern: &Pattern, level: &Level, trails: &Store, project: &str) -> 
             let files = done.iter().flat_map(|d| d.files.iter());
             tail.extend(files.map(|f| {
                 let at = crate::text::line::blob(f, trails);
-                format!("  - [{}]({at})", f.place)
+                format!("  - {}", markdown::file_link(f, &at))
             }));
             continue;
         }
@@ -220,7 +220,7 @@ fn markdown(pattern: &Pattern, level: &Level, trails: &Store, project: &str) -> 
             Example::File(file) => crate::text::line::blob(file, trails),
             _ => String::new(),
         };
-        tail.extend(markdown::example(side, example, &link, false));
+        tail.extend(markdown::example(side, example, &link));
     }
     markdown::section(record, Some(meta), tail)
 }

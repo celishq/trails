@@ -370,8 +370,8 @@ fn a_link_carries_a_pattern_and_its_files() {
     assert!(said.contains(&blob.display().to_string()), "{said}");
 }
 
-/// `patterns --markdown` prints one page: a heading for each pattern, then a line for each example,
-/// a file as a link to its blob and a URL as a link.
+/// `patterns --markdown` prints one page: a heading for each pattern, then a line for each example, an
+/// image as a picture of its blob, and a URL as a link (`spec/05-patterns.md`, "Examples").
 #[test]
 fn patterns_print_as_markdown() {
     let repo = Repo::new();
@@ -395,9 +395,9 @@ fn patterns_print_as_markdown() {
         use sha2::{Digest, Sha256};
         let sha = format!("{:x}", Sha256::digest(b"<svg id=\"flat\"/>\n"));
         support::blob(&repo.home().join("trails/blobs"), &sha)
-            .display()
-            .to_string()
     };
+    assert_eq!(blob.extension().unwrap(), "svg");
+    let blob = blob.display().to_string();
     let said = out(&cli(&repo, &["patterns", "--markdown"]));
     assert_eq!(
         said.lines().collect::<Vec<_>>(),
@@ -408,7 +408,7 @@ fn patterns_print_as_markdown() {
             String::new(),
             format!("`{}` · project", &id[..8]),
             String::new(),
-            format!("- good: [logo.svg]({blob})"),
+            format!("- good: ![logo.svg]({blob})"),
             format!("- bad: <{url}>"),
         ],
         "{said}"

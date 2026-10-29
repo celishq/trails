@@ -29,21 +29,21 @@ pub(crate) fn section(
     lines
 }
 
-/// The line of a file or URL example on `side`, a file linked at `link`, as an image when `embed` and it
-/// is one; none for a step.
-pub(crate) fn example(side: &str, example: &Example, link: &str, embed: bool) -> Option<String> {
+/// The line of a file or URL example on `side`, a file linked at `link`; none for a step.
+pub(crate) fn example(side: &str, example: &Example, link: &str) -> Option<String> {
     match example {
-        Example::File(file) => Some(file_line(side, file, link, embed)),
+        Example::File(file) => Some(format!("- {side}: {}", file_link(file, link))),
         Example::Url(url) => Some(format!("- {side}: <{url}>")),
         Example::Step(_) => None,
     }
 }
 
-fn file_line(side: &str, file: &ProofFile, link: &str, embed: bool) -> String {
-    let bang = if embed && file.media.starts_with("image/") {
+/// A file as a link to `link`, or as a picture of it when it is an image.
+pub(crate) fn file_link(file: &ProofFile, link: &str) -> String {
+    let bang = if file.media.starts_with("image/") {
         "!"
     } else {
         ""
     };
-    format!("- {side}: {bang}[{}]({link})", file.place)
+    format!("{bang}[{}]({link})", file.place)
 }

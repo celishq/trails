@@ -47,7 +47,7 @@ fn page(export: &Export) -> String {
                 Example::File(file) => Export::blob(file),
                 _ => String::new(),
             };
-            markdown::example(side, example, &link, true)
+            markdown::example(side, example, &link)
         });
         lines.extend(markdown::section(record, None, examples.collect()));
     }
