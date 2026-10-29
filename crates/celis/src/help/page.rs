@@ -65,7 +65,7 @@ const PHRASES: &[(&str, &str)] = &[
     ("patterns", "Show the index of your patterns"),
     (
         "cells",
-        "Show each cell: its author, its patterns, and on or off",
+        "Show each cell: its account, its patterns, and on or off",
     ),
     ("stats", "Show how the patterns are used, and how work went"),
     ("extract", "Show what an ask taught, to extract as patterns"),
@@ -81,8 +81,8 @@ const PHRASES: &[(&str, &str)] = &[
     ("issue", "Write a problem report for the celis team"),
 ];
 
-/// The flags only the plugin's hooks pass, left off the page.
-const HIDDEN: &[&str] = &["--session"];
+/// The flags only the plugin passes, left off the page.
+const HIDDEN: &[&str] = &["--session", "--project"];
 
 /// The width of the column of command names with their arguments.
 const NAMES: usize = 20;
@@ -94,11 +94,11 @@ const FLAGS: usize = 18;
 /// `home`, when known.
 pub fn page(home: Option<&Path>) -> Vec<Styled> {
     let mut lines = vec![
-        Styled::raw("celis remembers what your agents learn, and how they do your tasks."),
+        Styled::raw("celis keeps what you teach your agents, and brings it to each task they do."),
         Styled::default(),
     ];
     lines.push(Styled::raw(
-        "Your agents record them through the celis plugin.",
+        "Your agents record their work through the celis plugin.",
     ));
     lines.push(Styled::default());
     lines.push(Styled::styled("Usage", BOLD));
@@ -138,6 +138,10 @@ pub fn page(home: Option<&Path>) -> Vec<Styled> {
         )),
     }
     lines.push(Styled::default());
+    lines.push(Styled::styled(
+        "Add --json to tree, stats, extract, or a command that records work, for JSON.",
+        DIM,
+    ));
     lines.push(Styled::styled(
         "To learn more about a command, run `celis <command> --help`.",
         DIM,
