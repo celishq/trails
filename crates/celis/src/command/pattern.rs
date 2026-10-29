@@ -93,7 +93,8 @@ impl Command {
             let next = format!(
                 "celis: the patterns above are like {new}. When {new} says the same as one, drop \
                  it with celis step drop {new} -- <reason>; when it changes one, drop it and write \
-                 it with celis pattern --replaces {} -- <text>.",
+                 it with celis pattern --replaces {} -- <text>; when both Do lines cannot hold in \
+                 one case, narrow the When of one with --replaces so that they never meet.",
                 short(pattern.id())
             );
             crate::command::put(err, &next)?;

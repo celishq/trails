@@ -507,7 +507,7 @@ fn each_form_of_the_labels_reads_as_a_plain_pattern() {
 }
 
 /// `pattern` prints each live pattern whose "When" shares words with the new one's, and names
-/// `--replaces` as the next move; it prints none for an unlike pattern.
+/// `--replaces` and a narrower When as the next moves; it prints none for an unlike pattern.
 #[test]
 fn pattern_prints_the_live_patterns_like_it() {
     let repo = Repo::new();
@@ -536,6 +536,11 @@ fn pattern_prints_the_live_patterns_like_it() {
     assert!(out(&like).lines().any(|l| l == line), "{}", out(&like));
     assert!(
         err(&like).contains(&format!("celis pattern --replaces {}", &old[..8])),
+        "{}",
+        err(&like)
+    );
+    assert!(
+        err(&like).contains("narrow the When of one"),
         "{}",
         err(&like)
     );
