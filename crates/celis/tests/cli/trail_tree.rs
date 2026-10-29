@@ -96,6 +96,23 @@ fn tree_prints_the_trail_its_notes_and_the_steps_under_it() {
     );
 }
 
+/// `tree <id>` prints the open steps of a level by the time each was made, newest first, and does not
+/// lift a working step above a newer open one.
+#[test]
+fn tree_keeps_a_working_step_where_its_made_time_puts_it() {
+    let repo = Repo::new();
+    let by = support::account();
+    let at = support::now() - 600;
+    let trail = support::step_note(&repo, &by, None, "build the CRM", at);
+    let older = support::step_note(&repo, &by, Some(&trail), "older part", at + 1);
+    support::mark_note(&repo, &by, "start", &older.id, "", at + 2);
+    support::step_note(&repo, &by, Some(&trail), "newer part", at + 3);
+    let lines = printed(&repo, &[short(&trail.id)]);
+    let row = |what: &str| lines.iter().position(|l| l.contains(what)).unwrap();
+    assert!(row("newer part") < row("older part"), "{lines:?}");
+    assert!(!lines[row("older part")].starts_with("  ○"), "{lines:?}");
+}
+
 /// `tree <id> --full` prints the expect, for, not and ask me lines of a step in the label column, with
 /// its proof and grade, and no ask me line whose value is none.
 #[test]

@@ -112,6 +112,78 @@ fn the_effect_says_what_each_share_counts() {
     assert!(effect.contains("▀▀▀ %"), "{effect}");
 }
 
+/// `worked`, with one more step under its trail done at `at`, seen at `at + 3_600`.
+fn worked_again(at: u64) -> (TempDir, Store) {
+    let (home, mut trails) = worked(3_600);
+    let trail = trails.steps().roots()[0].id().to_string();
+    trails.at(at - 60);
+    let part = trails
+        .add(Draft {
+            content: "the other part".into(),
+            anchor: Anchor {
+                project: "repo".into(),
+                name: "repo".into(),
+            },
+            places: vec![],
+            check: None,
+            under: Some(trail),
+            replaces: None,
+            uses: vec![],
+            misled: Vec::new(),
+            session: None,
+            new: false,
+            agent: None,
+        })
+        .unwrap()
+        .records[0]
+        .id
+        .clone();
+    trails.at(at - 60);
+    trails.start(&part).unwrap();
+    trails.at(at);
+    trails
+        .done(
+            &part,
+            celis_trails::Done::new("it works too".into(), None),
+            home.path(),
+        )
+        .unwrap();
+    trails.at(at + 3_600);
+    (home, trails)
+}
+
+/// The work card shows the total of its 14 days as the big number, not the count of today, and the
+/// time card shows the median a step took and a bar for each span.
+#[test]
+fn the_cards_show_the_14_day_total_and_the_time_spans() {
+    let (_home, trails) = worked_again(AT + 2 * DAY);
+    let all = Model::of(&trails, |model| cards(model, 92, 43, true));
+    let work: Vec<String> = all[2].face.iter().map(|r| r.to_string()).collect();
+    assert!(work[0].starts_with("2  steps done"), "{work:?}");
+    let time = face(&trails, "03 TIME");
+    assert!(time.starts_with("median 1m"), "{time}");
+    for span in ["< 5m", "5-15m", "15m-1h", "1-4h", "> 4h"] {
+        assert!(time.contains(span), "{span:?} in\n{time}");
+    }
+}
+
+/// The work card compares the total of its 14 days with the total of the 14 days before.
+#[test]
+fn the_work_card_compares_its_total_with_the_14_days_before() {
+    let (_home, trails) = worked_again(AT + 15 * DAY);
+    let work = face(&trails, "02 WORK");
+    assert!(work.contains("= vs 14 days before"), "{work}");
+}
+
+/// The effect counts each share among the steps done, not the asks: two steps done under one ask open
+/// count as two.
+#[test]
+fn the_effect_counts_its_shares_among_the_steps_done() {
+    let (_home, trails) = worked_again(AT + 60);
+    let effect = face(&trails, "00 EFFECT");
+    assert!(effect.contains("of 2 done, no change"), "{effect}");
+}
+
 /// `worked`, with a new trail added at `AT` and a step under it that uses a pattern.
 fn reused(later: u64) -> (TempDir, Store) {
     let (home, mut trails) = worked(later);
@@ -170,6 +242,17 @@ fn the_patterns_card_draws_each_day_as_a_column() {
     assert!(patterns.contains("pattern uses"), "{patterns}");
     assert!(patterns.contains("a rule holds"), "{patterns}");
     assert!(patterns.ends_with(" 1"), "{patterns}");
+}
+
+/// The patterns card cuts a pattern too long for its width to one line, and keeps its count at the end.
+#[test]
+fn the_patterns_card_cuts_a_long_pattern_to_its_width() {
+    let (_home, trails) = reused(3_600);
+    let all = Model::of(&trails, |model| cards(model, 92, 12, false));
+    let face: Vec<String> = all[1].face.iter().map(|r| r.to_string()).collect();
+    let item = face.iter().find(|l| l.starts_with("a rule")).expect("item");
+    assert!(item.contains('…') && item.ends_with("  1"), "{face:?}");
+    assert_eq!(item.chars().count(), 12, "{face:?}");
 }
 
 /// With no pattern use in the last 14 days, the patterns card says so in one line in place of its

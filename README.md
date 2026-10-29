@@ -2,7 +2,8 @@
 
 <h3 align="center">Teach your AI once, not every day</h3>
 
-<p align="center">Celis turns your corrections into patterns that every agent keeps.</p>
+<p align="center">Celis turns your corrections into patterns that every agent keeps.<br>
+Your CLAUDE.md and skills, but they write and update themselves.</p>
 
 <p align="center">
   <a href="https://github.com/celishq/trails/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/celishq/trails"></a>

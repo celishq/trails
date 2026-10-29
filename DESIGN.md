@@ -38,6 +38,8 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
   evidence     trail ──► step ──► done: proof, changed, by ──► note
 ```
 
+A bench checks a design; a design is never tuned to a bench.
+
 ## Decisions
 
 1. **A pattern holds in a project or for me, never in one trail.** The `trail:<id>` scope goes. What
@@ -69,7 +71,7 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
      pattern, and a reader ignores a `uses` that names a step, which older writers wrote.
 4. **What goes in matters most.** The agent decides when there is a lesson: a correction, a pick, a
    reaction to a result, a wish such as "from now on", or a fix of done work. It then runs `celis extract
-   <id>`, which prints the learn brief of an ask or a step, open or closed: the ask's `expect`, `for`
+<id>`, which prints the learn brief of an ask or a step, open or closed: the ask's `expect`, `for`
    and `not` lines, its `changed` lines, its trail's notes, the person's prompts since the ask began,
    and the patterns in play, each one a step of the ask used, so that a lesson can replace one that
    misled. `done` of an ask, or of a step that fixes done work, because a fix is a correction, prints
@@ -167,11 +169,9 @@ know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model
 
 ## What we do not do
 
-- No rank or grade of work by time.
+- No rank or grade of work by time, and no ask to the agent for the time it took.
 - No model, no index and no vector search in celis. The agent's own model reads the patterns.
+- No model call from a hook. A cheap model pick runs in a subagent that the card or a hook names.
+- No answer template in celis. It prints only tracking data from its trails, such as the learn brief and the
+  total line; how an answer looks stays in the person's own agent file.
 - No sharing over relays yet. A cell is shared as a folder.
-
-## Open questions
-
-- Which step duties can move from the agent to hooks, while decision 5 holds?
-- Which `--json` keys change with the label?

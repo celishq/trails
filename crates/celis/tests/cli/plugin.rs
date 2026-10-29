@@ -394,6 +394,20 @@ fn each_manifest_carries_one_version() {
     }
 }
 
+/// Each manifest that names an author, and each marketplace that names an owner, names Celis.
+#[test]
+fn each_manifest_and_marketplace_names_celis_as_its_publisher() {
+    for (file, field) in [
+        ("plugins/celis/.claude-plugin/plugin.json", "author"),
+        ("plugins/celis/.codex-plugin/plugin.json", "author"),
+        ("plugins/celis/.cursor-plugin/plugin.json", "author"),
+        (".claude-plugin/marketplace.json", "owner"),
+        (".cursor-plugin/marketplace.json", "owner"),
+    ] {
+        assert_eq!(read(file)[field]["name"], "Celis", "{file}");
+    }
+}
+
 /// The Claude and Cursor manifests give their directory listings the same links and logo, and the Claude
 /// manifest gives the pages its directory asks for.
 #[test]
