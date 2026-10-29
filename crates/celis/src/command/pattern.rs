@@ -61,6 +61,11 @@ impl Command {
         let patterns = trails.patterns();
         let replaced = args.replaces.as_deref();
         let replaced = replaced.and_then(|id| patterns.view(&project.anchor.project).find(id).ok());
+        let contrary = contrary(
+            &patterns.view(&project.anchor.project).live(),
+            &pattern.examples,
+            replaced.as_ref(),
+        );
         let like = like(
             &patterns.view(&project.anchor.project).live(),
             &pattern.content,
@@ -83,6 +88,15 @@ impl Command {
                  else tidy will."
             );
             crate::command::put(err, &next)?;
+        }
+        for (pattern, example, side) in &contrary {
+            let line = format!(
+                "warn    contradicts: {} marks {} {side}; say in the Forces which part of it each \
+                 pattern is about, or give another example",
+                short(pattern.id()),
+                label(example)
+            );
+            crate::command::put(err, &line)?;
         }
         for pattern in &like {
             let first = pattern.record.content.lines().next().unwrap_or("");
@@ -145,6 +159,38 @@ pub(crate) fn like<'a>(
         .take(LIKE)
         .map(|(_, p)| p.clone())
         .collect()
+}
+
+/// Each example of `examples` that a pattern of `live`, other than `replaced`, marks the other way,
+/// with that pattern and the side it marks.
+fn contrary<'a>(
+    live: &[Pattern<'a>],
+    examples: &Examples,
+    replaced: Option<&Pattern>,
+) -> Vec<(Pattern<'a>, Example, &'static str)> {
+    let mut found = Vec::new();
+    for pattern in live {
+        if replaced.is_some_and(|r| r.id() == pattern.id()) {
+            continue;
+        }
+        for (side, theirs) in pattern.record.examples.sides() {
+            for (ours, example) in examples.sides() {
+                if ours != side && example.same(theirs) {
+                    found.push((pattern.clone(), example.clone(), side));
+                }
+            }
+        }
+    }
+    found
+}
+
+/// How a warn line names `example`: a file by its place, a step by its short id, a URL whole.
+fn label(example: &Example) -> String {
+    match example {
+        Example::Step(id) => short(id).to_string(),
+        Example::File(file) => file.place.clone(),
+        Example::Url(url) => url.clone(),
+    }
 }
 
 /// The most live patterns like the new one that `pattern` prints.

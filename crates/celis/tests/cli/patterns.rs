@@ -506,6 +506,64 @@ fn each_form_of_the_labels_reads_as_a_plain_pattern() {
     }
 }
 
+/// `pattern` warns for each example a live pattern marks the other way, a file by its content; it
+/// does not warn for one marked the same way.
+#[test]
+fn pattern_warns_of_an_example_a_live_pattern_marks_the_other_way() {
+    let repo = Repo::new();
+    repo.write("1.svg", "<svg id=\"green\"/>\n");
+    let old = cli(
+        &repo,
+        &[
+            "pattern",
+            "--good",
+            "1.svg",
+            "--",
+            "When a ground is chosen: use green.",
+        ],
+    );
+    let old = out(&old).lines().next().unwrap().to_string();
+    repo.write("copy.svg", "<svg id=\"green\"/>\n");
+    let other = cli(
+        &repo,
+        &[
+            "pattern",
+            "--bad",
+            "copy.svg",
+            "--",
+            "When a photo is placed: grade it.",
+        ],
+    );
+    assert!(other.status.success(), "{}", err(&other));
+    let line = format!(
+        "warn    contradicts: {} marks copy.svg good; say in the Forces which part of it each pattern is about, or give another example",
+        &old[..8]
+    );
+    assert!(err(&other).lines().any(|l| l == line), "{}", err(&other));
+    repo.write("logo.svg", "<svg id=\"flat\"/>\n");
+    cli(
+        &repo,
+        &[
+            "pattern",
+            "--good",
+            "logo.svg",
+            "--",
+            "When a logo is drawn: keep it flat.",
+        ],
+    );
+    let same = cli(
+        &repo,
+        &[
+            "pattern",
+            "--good",
+            "logo.svg",
+            "--",
+            "When an icon is drawn: keep it flat.",
+        ],
+    );
+    assert!(!err(&same).contains("contradicts"), "{}", err(&same));
+}
+
 /// `pattern` prints each live pattern whose "When" shares words with the new one's, and names
 /// `--replaces` and a narrower When as the next moves; it prints none for an unlike pattern.
 #[test]

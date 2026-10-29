@@ -27,6 +27,14 @@ impl Example {
         tag
     }
 
+    /// Whether it names the same thing as `other`: a file by its content.
+    pub fn same(&self, other: &Example) -> bool {
+        match (self, other) {
+            (Example::File(a), Example::File(b)) => a.sha256 == b.sha256,
+            _ => self == other,
+        }
+    }
+
     /// The example the values of a `good` or `bad` tag name.
     pub fn read(values: &[String]) -> Option<Example> {
         let value = values.first()?;
