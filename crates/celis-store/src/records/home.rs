@@ -93,11 +93,12 @@ impl Home {
         Ok(path)
     }
 
-    /// Keeps `bytes` as a blob in `blobs/` and in each linked folder, unless it is there; its sha256.
-    pub fn keep(&self, bytes: &[u8]) -> Result<String> {
-        let sha = self.blobs.keep(bytes)?;
+    /// Keeps `bytes` as a blob named with `ext` in `blobs/` and in each linked folder, unless it is there;
+    /// its sha256.
+    pub fn keep(&self, bytes: &[u8], ext: &str) -> Result<String> {
+        let sha = self.blobs.keep(bytes, ext)?;
         for link in &self.links {
-            link_blobs(link).keep(bytes)?;
+            link_blobs(link).keep(bytes, ext)?;
         }
         Ok(sha)
     }
@@ -112,19 +113,20 @@ impl Home {
             }
         }
         for sha in blobs {
-            let _ = std::fs::remove_file(self.root.join("blobs").join(sha));
+            self.blobs.remove(sha);
         }
         *self.read.borrow_mut() = None;
         self.seen.borrow_mut().clear();
         Ok(())
     }
 
-    /// Keeps `bytes` as the blob `sha256` when they hash to it, as `keep` does; whether they do.
-    pub fn hold(&self, sha256: &str, bytes: &[u8]) -> Result<bool> {
-        if !self.blobs.hold(sha256, bytes)? {
+    /// Keeps `bytes` as the blob `sha256` named with `ext` when they hash to it, as `keep` does; whether
+    /// they do.
+    pub fn hold(&self, sha256: &str, bytes: &[u8], ext: &str) -> Result<bool> {
+        if !self.blobs.hold(sha256, bytes, ext)? {
             return Ok(false);
         }
-        self.keep(bytes)?;
+        self.keep(bytes, ext)?;
         Ok(true)
     }
 

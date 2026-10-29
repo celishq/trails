@@ -79,13 +79,14 @@ impl Store {
                 secret.kind
             )));
         }
-        let sha256 = self.home.keep(&bytes)?;
-        Ok(ProofFile::new(place, sha256, bytes.len() as u64).typed(media, &bytes))
+        let file = ProofFile::new(place, String::new(), bytes.len() as u64).typed(media, &bytes);
+        let sha256 = self.home.keep(&bytes, &file.ext())?;
+        Ok(ProofFile { sha256, ..file })
     }
 
-    /// Keeps `bytes` as the blob `sha256` when they hash to it; whether they do.
-    pub fn hold(&self, sha256: &str, bytes: &[u8]) -> Result<bool, Refusal> {
-        Ok(self.home.hold(sha256, bytes)?)
+    /// Keeps `bytes` as the blob of `file` when they hash to its sha256; whether they do.
+    pub fn hold(&self, file: &ProofFile, bytes: &[u8]) -> Result<bool, Refusal> {
+        Ok(self.home.hold(&file.sha256, bytes, &file.ext())?)
     }
 
     /// Removes the files of `records`, and the blobs `blobs` names.

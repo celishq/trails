@@ -31,7 +31,7 @@ fn cell_import_shows_the_cell_and_keeps_it_off_with_yes() {
         use sha2::Digest;
         format!("{:x}", sha2::Sha256::digest(b"a bowl"))
     };
-    assert!(repo.store().join("blobs").join(&sha).exists());
+    assert!(support::blob(&repo.store().join("blobs"), &sha).exists());
     assert!(cli(&repo, &["cell", "on", "east"]).status.success());
     assert!(out(&cli(&repo, &["patterns"])).contains(&pattern.id[..8]));
 }
@@ -97,7 +97,7 @@ fn cell_import_from_a_url_takes_only_blobs_that_match_their_hash() {
         use sha2::Digest;
         format!("{:x}", sha2::Sha256::digest(b"a bowl"))
     };
-    assert!(repo.store().join("blobs").join(&sha).exists());
+    assert!(support::blob(&repo.store().join("blobs"), &sha).exists());
     let repo = Repo::new();
     let (folder, _) = their_folder(&repo, "east");
     std::fs::write(folder.join(format!("blobs/{sha}.png")), "not a bowl").unwrap();

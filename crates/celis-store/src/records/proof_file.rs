@@ -32,13 +32,22 @@ impl ProofFile {
         self
     }
 
-    /// Its Blossom URI (BUD-10), with `pubkey` as the account that keeps it.
-    pub fn url(&self, pubkey: &str) -> String {
-        let ext = match ProofFile::extension(&self.place).as_str() {
+    /// Its extension: that of its place, else that of its media type, else `bin`.
+    pub fn ext(&self) -> String {
+        match ProofFile::extension(&self.place).as_str() {
             "" => extension_of(&self.media).unwrap_or("bin").to_string(),
             ext => ext.to_string(),
-        };
-        format!("blossom:{}.{ext}?as={pubkey}&sz={}", self.sha256, self.size)
+        }
+    }
+
+    /// Its Blossom URI (BUD-10), with `pubkey` as the account that keeps it.
+    pub fn url(&self, pubkey: &str) -> String {
+        format!(
+            "blossom:{}.{}?as={pubkey}&sz={}",
+            self.sha256,
+            self.ext(),
+            self.size
+        )
     }
 
     /// Its `imeta` tag (NIP-92), with `pubkey` as the account that keeps it.

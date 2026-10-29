@@ -16,7 +16,7 @@ fn cell_remove_removes_an_imported_cell_and_keeps_a_shared_blob() {
         .status
         .success());
     let sha = format!("{:x}", sha2::Sha256::digest(b"a bowl"));
-    let blob = repo.store().join("blobs").join(&sha);
+    let blob = support::blob(&repo.store().join("blobs"), &sha);
     let before = records(&repo);
     let o = cli(&repo, &["cell", "remove", "east"]);
     assert!(o.status.success(), "{}", err(&o));

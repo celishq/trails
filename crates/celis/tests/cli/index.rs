@@ -153,9 +153,7 @@ fn grep_gives_the_whole_pattern_with_its_examples() {
     let blob = {
         use sha2::{Digest, Sha256};
         let sha = format!("{:x}", Sha256::digest(b"<svg/>\n"));
-        repo.home()
-            .join("trails/blobs")
-            .join(sha)
+        support::blob(&repo.home().join("trails/blobs"), &sha)
             .display()
             .to_string()
     };

@@ -66,20 +66,37 @@ fn a_read_verifies_again_only_files_that_changed() {
     assert_eq!(texts, ["kelp"]);
 }
 
-/// A kept file is a blob in `blobs/`, named by the sha256 of its bytes, once; a blob whose bytes do not
-/// hash to its name reads as missing (`spec/08-files.md`, "Blobs").
+/// A kept file is a blob in `blobs/`, named by the sha256 of its bytes and its extension, once; a blob
+/// whose bytes do not hash to its name reads as missing (`spec/08-files.md`, "Blobs").
 #[test]
-fn a_kept_file_is_a_blob_named_by_its_sha256() {
+fn a_kept_file_is_a_blob_named_by_its_sha256_and_extension() {
     let home = tempfile::tempdir().unwrap();
     let store = Home::open(home.path()).unwrap();
-    let sha = store.keep(b"abc").unwrap();
+    let sha = store.keep(b"abc", "txt").unwrap();
     assert_eq!(
         sha,
         "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
     );
-    assert_eq!(store.keep(b"abc").unwrap(), sha);
+    assert_eq!(store.keep(b"abc", "md").unwrap(), sha);
     let path = store.blob(&sha).unwrap();
+    assert_eq!(
+        path,
+        home.path().join("trails/blobs").join(format!("{sha}.txt"))
+    );
     assert_eq!(std::fs::read(&path).unwrap(), b"abc");
     std::fs::write(&path, b"abd").unwrap();
     assert_eq!(store.blob(&sha), None);
+}
+
+/// A blob named by its sha256 alone, as older versions wrote it, reads as the blob of that sha256
+/// (`spec/08-files.md`, "Blobs").
+#[test]
+fn a_blob_named_by_its_sha256_alone_still_reads() {
+    let home = tempfile::tempdir().unwrap();
+    let store = Home::open(home.path()).unwrap();
+    let sha = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
+    let folder = home.path().join("trails/blobs");
+    std::fs::create_dir_all(&folder).unwrap();
+    std::fs::write(folder.join(sha), b"abc").unwrap();
+    assert_eq!(store.blob(sha), Some(folder.join(sha)));
 }

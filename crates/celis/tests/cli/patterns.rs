@@ -168,8 +168,11 @@ fn a_pattern_keeps_stdin_and_data_uris_as_examples() {
         "{bad:?}"
     );
     let blobs = repo.home().join("trails/blobs");
-    assert_eq!(std::fs::read(blobs.join(sha(png))).unwrap(), png);
-    assert!(blobs.join(sha(b"<svg/>\n")).is_file());
+    assert_eq!(
+        std::fs::read(support::blob(&blobs, &sha(png))).unwrap(),
+        png
+    );
+    assert!(support::blob(&blobs, &sha(b"<svg/>\n")).is_file());
 }
 
 /// `pattern` takes `--good` and `--bad` again and again, as a file it keeps as a blob or a URL, and
@@ -355,7 +358,7 @@ fn a_link_carries_a_pattern_and_its_files() {
         use sha2::{Digest, Sha256};
         format!("{:x}", Sha256::digest(b"<svg id=\"flat\"/>\n"))
     };
-    assert!(repo.path().join(".celis/trails/blobs").join(&sha).is_file());
+    assert!(support::blob(&repo.path().join(".celis/trails/blobs"), &sha).is_file());
     let other = tempfile::tempdir().unwrap();
     let home = other.path().display().to_string();
     let env = [("CELIS_HOME", home.as_str())];
@@ -363,7 +366,7 @@ fn a_link_carries_a_pattern_and_its_files() {
     let said = out(&repo.run(&repo.path(), &["patterns", "--markdown"], &env, ""));
     assert!(said.contains("keep it flat"), "{said}");
     assert!(!said.contains("keep it bold"), "{said}");
-    let blob = other.path().join("trails/blobs").join(&sha);
+    let blob = support::blob(&other.path().join("trails/blobs"), &sha);
     assert!(said.contains(&blob.display().to_string()), "{said}");
 }
 
@@ -391,9 +394,7 @@ fn patterns_print_as_markdown() {
     let blob = {
         use sha2::{Digest, Sha256};
         let sha = format!("{:x}", Sha256::digest(b"<svg id=\"flat\"/>\n"));
-        repo.home()
-            .join("trails/blobs")
-            .join(sha)
+        support::blob(&repo.home().join("trails/blobs"), &sha)
             .display()
             .to_string()
     };
