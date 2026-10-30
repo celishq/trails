@@ -98,7 +98,7 @@ fn the_session_start_gives_the_index_of_the_project() {
 fn the_session_start_gives_no_index_without_a_pattern() {
     let desk = Desk::new();
     let text = desk.start("claude", desk.project.path());
-    assert!(text.starts_with("How to do an ask"), "{text}");
+    assert!(text.contains("\nHow to do an ask"), "{text}");
     assert!(!text.contains("The patterns in scope here"), "{text}");
 }
 
@@ -122,4 +122,31 @@ fn a_session_start_with_a_pattern_does_not_offer_to_learn() {
     assert_eq!(write.run(&mut Vec::new(), &mut Vec::new()), 0);
     let text = desk.start("claude", desk.project.path());
     assert!(!text.contains("/celis:learn"), "{text}");
+}
+
+/// The session start opens with one status line: the version of celis and how many patterns are in
+/// scope here.
+#[test]
+fn the_session_start_opens_with_a_status_line() {
+    let desk = Desk::new();
+    let none = desk.start("claude", desk.project.path());
+    let first = none.lines().next().unwrap();
+    assert!(
+        first.ends_with(" is on: no pattern in scope here."),
+        "{none}"
+    );
+    for text in [
+        "When a logo is drawn: keep it flat.",
+        "When a list grows: page it.",
+    ] {
+        let write = desk.command(&["pattern", "--", text], desk.project.path());
+        assert_eq!(write.run(&mut Vec::new(), &mut Vec::new()), 0);
+    }
+    let two = desk.start("claude", desk.project.path());
+    let first = two.lines().next().unwrap();
+    assert!(first.starts_with("celis "), "{two}");
+    assert!(
+        first.ends_with(" is on: 2 patterns in scope here."),
+        "{two}"
+    );
 }

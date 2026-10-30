@@ -4,6 +4,7 @@ pub(crate) mod prompt;
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
+use celis_patterns::PatternStore;
 use celis_trails::TrailStore;
 use serde_json::{json, Value};
 use std::io::{Read, Write};
@@ -60,16 +61,17 @@ impl Command {
         }
     }
 
-    /// Marks that `agent` started a session, and gives the card, where the plugin's files are, the index
-    /// of the patterns in the project the JSON names, or the first time none, the offer to learn them,
-    /// and a version notice.
+    /// Marks that `agent` started a session, and gives the status line, the card, where the plugin's
+    /// files are, the index of the patterns in the project the JSON names, or the first time none, the
+    /// offer to learn them, and a version notice.
     fn start(&self, agent: &str, json: &Value, root: &Path) -> String {
         if let Ok(home) = self.home() {
             let _ = prompt::mark(&home.join(STARTED).join(agent));
         }
         let card = std::fs::read_to_string(root.join("card.md")).unwrap_or_default();
         let mut text = format!(
-            "How to do an ask with the celis plugin:\n{}\n\n",
+            "{}\n\nHow to do an ask with the celis plugin:\n{}\n\n",
+            self.here(json).status(),
             card.trim_end()
         );
         if agent != "claude" {
@@ -110,6 +112,23 @@ impl Command {
             text.push_str(&format!("\n\n{notice}"));
         }
         text
+    }
+
+    /// The status line: the version of celis, and how many patterns are live in scope here.
+    fn status(&self) -> String {
+        let here = self.project();
+        let count = match self.held() {
+            Ok(true) => self
+                .trails()
+                .map_or(0, |t| t.patterns().view(&here.anchor.project).live().len()),
+            _ => 0,
+        };
+        let patterns = match count {
+            0 => "no pattern".to_string(),
+            1 => "1 pattern".to_string(),
+            n => format!("{n} patterns"),
+        };
+        format!("{} is on: {patterns} in scope here.", crate::version())
     }
 
     /// The line that asks to offer `/celis:learn` on the person's past chats, the first time a session

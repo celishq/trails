@@ -167,7 +167,7 @@ fn prompts(repo: &Repo, step: &str) -> Vec<String> {
         .collect()
 }
 
-/// Each agent's session start gives the card; an agent other than Claude Code also gets its session, to
+/// Each agent's session start gives the status line, then the card; an agent other than Claude Code also gets its session, to
 /// pass with `--session`, and the path of `extraction.md`; no agent gets a path of `recall.md`, which is
 /// gone. Antigravity has no session start, and gets both before each call of the model.
 #[test]
@@ -176,8 +176,14 @@ fn each_agents_session_start_gives_the_card_and_its_session() {
     for agent in AGENTS {
         let stdout = agent.run(&repo, agent.start, &agent.payload("s1", &repo.path(), ""));
         let context = agent.context(&stdout);
+        let (status, card) = context.split_once("\n\n").unwrap();
         assert!(
-            context.starts_with("How to do an ask with the celis plugin:"),
+            status.ends_with(" is on: no pattern in scope here."),
+            "{}: {context}",
+            agent.name
+        );
+        assert!(
+            card.starts_with("How to do an ask with the celis plugin:"),
             "{}: {context}",
             agent.name
         );
