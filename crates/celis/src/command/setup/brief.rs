@@ -19,6 +19,7 @@ const PLUGINS: [(&str, &str, &[&str], &str); 5] = [
         &[
             "claude plugin marketplace add celishq/trails",
             "claude plugin install celis@celis",
+            "claude plugin install celis-ui@celis",
         ],
         "",
     ),

@@ -9,8 +9,9 @@
   `spec/`, read and follow `spec/README.md`, "How a CIP works".
 - `plugins/celis/` is the plugin: one manifest per agent, and the same hooks. Gemini CLI installs from the
   repo root, so `gemini-extension.json` and `hooks/` are there. Antigravity does too, so
-  `.antigravity-plugin/` and `hooks.json` are there. The card's command lines match the usage in
-  `crates/celis/src/help.rs`; `crates/celis/tests/cli/help.rs` checks it.
+  `.antigravity-plugin/` and `hooks.json` are there. `plugins/celis-ui/` is a Claude Code mod that shows
+  Celis in the status line; `claude plugin test plugins/celis-ui` runs its tests. The card's command lines
+  match the usage in `crates/celis/src/help.rs`; `crates/celis/tests/cli/help.rs` checks it.
 - `crates/celis/src/command` groups code by feature: `pattern/`, `step/`, `trail/`, `cell/`, `stats/`,
   `grep/`, `hook/` and `setup/`. A feature's root file holds its command and names its parts. Only code
   that all features share goes in `terminal/`.

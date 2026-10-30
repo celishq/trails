@@ -40,6 +40,7 @@ fn setup_names_the_commands_for_each_agent_with_no_celis_session() {
     for line in [
         "  claude plugin marketplace add celishq/trails",
         "  claude plugin install celis@celis",
+        "  claude plugin install celis-ui@celis",
         "  codex plugin marketplace add celishq/trails",
         "  codex plugin add celis@celis",
         "  - Restart Claude Code and Codex, so that the plugin loads.",
