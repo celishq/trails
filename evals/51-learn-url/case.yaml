@@ -1,0 +1,11 @@
+schema_version: "1.1"
+name: 51-learn-url
+context:
+  scaffold_script: ./setup.sh
+---
+max_turns: 40
+timeout_seconds: 900
+allowed_tools: [Read, Write, Edit, Agent, Bash, Skill]
+model: opus
+runs: 3
+plugins: [../../plugins/celis]
