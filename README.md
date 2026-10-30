@@ -93,6 +93,14 @@ job; it gives it what it needs to do the job well.
 
 ## Install
 
+Paste this line into your agent, and it installs Celis for you:
+
+```
+Install Celis: follow https://celis.ai/install.md
+```
+
+Or install it yourself:
+
 **1. Install `celis`:**
 
 ```bash
@@ -126,7 +134,7 @@ gh attestation verify celis-aarch64-apple-darwin.tar.gz -R celishq/trails
 
 </details>
 
-**2. Add the plugin to your agent:**
+**2. Add the plugin to your agent.** `celis setup` lists the agents on your machine and the commands for each, or use this table:
 
 | Agent       | Install                                                                         | Then                                                                                        |
 | ----------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |

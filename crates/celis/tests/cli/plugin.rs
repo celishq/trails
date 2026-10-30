@@ -435,7 +435,7 @@ fn each_listed_manifest_carries_its_links() {
     }
 }
 
-/// With no `celis` on PATH, each agent's session start says to install it from celis.ai, and each prompt
+/// With no `celis` on PATH, each agent's session start offers the install that celis.ai/install.md gives, and each prompt
 /// hook prints nothing.
 #[test]
 fn each_agents_hooks_say_how_to_install_a_missing_celis() {
@@ -450,7 +450,7 @@ fn each_agents_hooks_say_how_to_install_a_missing_celis() {
         );
         let context = agent.context(&stdout);
         assert!(
-            context.contains("install it from https://celis.ai"),
+            context.contains("follow https://celis.ai/install.md"),
             "{}: {context}",
             agent.name
         );
