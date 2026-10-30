@@ -54,7 +54,7 @@ A step's `replaces` (CIP-03, "Steps") MAY name a done step of any trail.
 **Readers**
 
 - The done step MUST stay done. It is revised by each step whose `replaces` names it, written at or after
-  its `done`.
+  its first `done`.
 - A step whose `uses` names a pattern misled the pattern once when the step is revised.
 
 ## Misled

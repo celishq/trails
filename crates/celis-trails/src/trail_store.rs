@@ -70,10 +70,9 @@ impl TrailStore for Store {
         let replaced = draft.replaces.as_deref().map(|id| replaced(&steps, id));
         let replaced = replaced.transpose()?;
         let moved = replaced.filter(|s| s.done_record().is_none());
-        let fixed = replaced.filter(|s| s.done_record().is_some() && !s.is_trail());
-        let fixed = fixed
-            .map(|s| s.trail())
-            .filter(|t| t.state() == State::Open);
+        let fixed = replaced
+            .filter(|s| s.done_record().is_some())
+            .map(|s| s.trail());
         let under = parent(&steps, &draft, moved)?.or(fixed);
         let uses = draft
             .uses

@@ -237,3 +237,54 @@ fn a_fix_of_a_done_step_of_an_open_trail_goes_under_it() {
     );
     assert_eq!(step(&done)["state"], "done");
 }
+
+/// `add --replaces` of a done ask, with no `--under`, goes under that ask (`spec/03-steps.md`,
+/// "Dropping").
+#[test]
+fn a_fix_of_a_done_ask_goes_under_it() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    finish(&repo, &trail[..8]);
+    let fix = add(&repo, &["--replaces", &trail[..8], "--", "fix the ask"]);
+    let fix = fix.lines().next().unwrap();
+    let tree = objects(&repo, &["tree", &trail[..8]]);
+    let step = tree
+        .iter()
+        .filter_map(|v| v.get("step"))
+        .find(|s| s["id"] == fix);
+    let links = step.map(|s| s["links"].clone()).unwrap_or_default();
+    assert!(
+        links
+            .as_array()
+            .is_some_and(|a| a.iter().any(|l| l["kind"] == "under" && l["to"] == trail)),
+        "{links}"
+    );
+}
+
+/// `add --replaces` of a done step of a done trail, with no `--under`, goes under that trail
+/// (`spec/03-steps.md`, "Dropping").
+#[test]
+fn a_fix_of_a_done_step_of_a_done_trail_goes_under_it() {
+    let repo = Repo::new();
+    let trail = add(&repo, &["--", "the trail"]);
+    let done = add(&repo, &["--under", &trail[..8], "--", "done part"]);
+    finish(&repo, &done[..8]);
+    finish(&repo, &trail[..8]);
+    let fix = add(
+        &repo,
+        &["--replaces", &done[..8], "--", "fix the done part"],
+    );
+    let fix = fix.lines().next().unwrap();
+    let tree = objects(&repo, &["tree", &trail[..8]]);
+    let step = tree
+        .iter()
+        .filter_map(|v| v.get("step"))
+        .find(|s| s["id"] == fix);
+    let links = step.map(|s| s["links"].clone()).unwrap_or_default();
+    assert!(
+        links
+            .as_array()
+            .is_some_and(|a| a.iter().any(|l| l["kind"] == "under" && l["to"] == trail)),
+        "{links}"
+    );
+}

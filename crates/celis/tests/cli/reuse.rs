@@ -283,10 +283,10 @@ fn a_uses_that_names_a_step_is_ignored() {
     assert!(!tree.contains(&past[..8]), "{tree}");
 }
 
-/// A new ask that `--replaces` a done ask goes on top and carries the link: the done ask reads as revised
-/// once (`spec/03-steps.md`, "Dropping"; `spec/06-reuse.md`, "Revisions").
+/// A step that `--replaces` a done ask, from another session, goes under it and carries the link: the
+/// done ask reads as revised once (`spec/03-steps.md`, "Dropping"; `spec/06-reuse.md`, "Revisions").
 #[test]
-fn a_new_ask_that_replaces_a_done_ask_links_it_once() {
+fn a_step_that_replaces_a_done_ask_goes_under_it_and_links_it_once() {
     let repo = Repo::new();
     let old = add(&repo, &["--", "the badge"]);
     finish(&repo, &old[..8]);
@@ -295,8 +295,8 @@ fn a_new_ask_that_replaces_a_done_ask_links_it_once() {
         "s2",
         &["--replaces", &old[..8], "--", "fix the badge"],
     )[0];
-    let json = step(&repo, fix, fix);
-    assert!(links(&json, "under").is_empty(), "{json}");
+    let json = step(&repo, &old, fix);
+    assert_eq!(links(&json, "under"), [old.as_str()], "{json}");
     assert_eq!(links(&json, "replaces"), [old.as_str()], "{json}");
     let revised = step(&repo, &old, &old);
     assert_eq!(revised["revised_by"], serde_json::json!([fix]), "{revised}");
