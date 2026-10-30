@@ -3,4 +3,4 @@ type: regex
 target: trace
 flags: i
 ---
-"command":"(?:[^"\\]|\\.)*celis pattern(?:[^"\\]|\\.)*--good [^ "\\]*\.(?:gif|mp4|webm)
+"command":"(?:[^"\\]|\\.)*celis pattern(?:[^"\\]|\\.)*--good [^ "\\]*\.(?:gif|mp4|webm)|^(?=[\s\S]*"command":"(?:[^"\\]|\\.)*(?:Chrome|chromium|playwright|puppeteer))(?=[\s\S]*(?:could(?:n.t| not)|cannot|can.t|unable to)(?:[^"\\]|\\.){0,40}(?:open|capture|start|run)(?:[^"\\]|\\.){0,40}(?:browser|Chrome|page))
