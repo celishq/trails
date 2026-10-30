@@ -123,6 +123,10 @@ fn brief(missing: &[&(&str, &str, &[&str], &str)]) -> Vec<String> {
             lines.push(format!("  - {after}"));
         }
     }
+    lines.push(
+        "  - In the first session, celis offers to learn patterns from your past chats."
+            .to_string(),
+    );
     lines.push(String::new());
     lines.push("When the person has restarted, run celis setup again to check.".to_string());
     lines

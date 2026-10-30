@@ -18,6 +18,9 @@ pub(crate) const AGENTS: [&str; 5] = ["claude", "codex", "cursor", "gemini", "an
 /// The folder under `$CELIS_HOME` that holds a file for each agent whose plugin started a session.
 pub(crate) const STARTED: &str = "started";
 
+/// The file under `$CELIS_HOME/offered` that marks that a session start offered `/celis:learn`.
+const LEARN: &str = "learn";
+
 /// The start of the title of the ask that `/celis:tidy` adds.
 const TIDY: &str = "Tidy the celis trails";
 
@@ -58,7 +61,8 @@ impl Command {
     }
 
     /// Marks that `agent` started a session, and gives the card, where the plugin's files are, the index
-    /// of the patterns in the project the JSON names, and a version notice.
+    /// of the patterns in the project the JSON names, or the first time none, the offer to learn them,
+    /// and a version notice.
     fn start(&self, agent: &str, json: &Value, root: &Path) -> String {
         if let Ok(home) = self.home() {
             let _ = prompt::mark(&home.join(STARTED).join(agent));
@@ -85,8 +89,13 @@ impl Command {
                  brief that celis extract prints."
             ));
         }
-        if let Some(index) = self.here(json).index(&[]).ok().flatten() {
-            text.push_str(&format!("\n\nThe patterns in scope here:\n{index}"));
+        match self.here(json).index(&[]).ok().flatten() {
+            Some(index) => text.push_str(&format!("\n\nThe patterns in scope here:\n{index}")),
+            None => {
+                if let Some(line) = self.learn() {
+                    text.push_str(&format!("\n\n{line}"));
+                }
+            }
         }
         if let Some(line) = self.here(json).tidy() {
             text.push_str(&format!("\n\n{line}"));
@@ -101,6 +110,21 @@ impl Command {
             text.push_str(&format!("\n\n{notice}"));
         }
         text
+    }
+
+    /// The line that asks to offer `/celis:learn` on the person's past chats, the first time a session
+    /// starts with no pattern in scope.
+    fn learn(&self) -> Option<String> {
+        let offered = self.home().ok()?.join("offered").join(LEARN);
+        if offered.exists() || prompt::mark(&offered).is_err() {
+            return None;
+        }
+        Some(
+            "celis: no pattern is kept here yet. Once in this session, after the person's first ask, \
+             offer them /celis:learn on their past chats with you, so that celis drafts patterns from \
+             the corrections they already gave."
+                .to_string(),
+        )
     }
 
     /// The line that asks to offer `/celis:tidy` once in the session: when patterns in scope here need
