@@ -163,9 +163,9 @@ impl<'a> Step<'a> {
         self.entry.drop
     }
 
-    /// The steps that replace it after it was done, oldest first.
+    /// The steps that replace it after its first done, oldest first.
     pub fn revised(self) -> Vec<Step<'a>> {
-        let Some(done) = self.done_record() else {
+        let Some(done) = self.entry.dones.first() else {
             return Vec::new();
         };
         let later = self.entry.replaced.iter();
@@ -194,12 +194,12 @@ impl<'a> Step<'a> {
         told
     }
 
-    /// Whether it fixes done work: the step it replaces is done.
+    /// Whether it fixes done work: the step it replaces was done.
     pub fn fixes(self) -> bool {
         let replaced = self.entry.step.replaces.as_deref();
         replaced
             .and_then(|id| self.steps.get(id))
-            .is_some_and(|s| s.done_record().is_some())
+            .is_some_and(|s| !s.entry.dones.is_empty())
     }
 
     /// The steps of its tree that a later step revised.

@@ -96,7 +96,7 @@ fn stats_prints_the_use_of_each_pattern_and_the_gaps() {
     );
     assert!(lines[21].starts_with("value last 28 days: asks:"), "{text}");
     assert_eq!(json[20]["lifecycle"]["span"], "month", "{json:?}");
-    assert_eq!(json[21]["value"]["covered"], 3, "{json:?}");
+    assert_eq!(json[21]["value"]["covered"], 1, "{json:?}");
     assert_eq!(
         lines[..4],
         [
@@ -112,7 +112,7 @@ fn stats_prints_the_use_of_each_pattern_and_the_gaps() {
                 "{} uses:2 misled:2 replaces:0 used:{day} examples:1 tidy:misled,nameless When logos render",
                 &misled[..8]
             ),
-            "total 3 patterns in the index · last 7 days: 3 written, 1 replaced, 3 gaps"
+            "total 3 patterns in the index · last 7 days: 3 written, 1 replaced, 1 gap"
                 .to_string(),
         ],
         "{text}"
@@ -129,6 +129,6 @@ fn stats_prints_the_use_of_each_pattern_and_the_gaps() {
     assert_eq!(json[2]["pattern"]["misled"], 2, "{json:?}");
     assert_eq!(
         json[3]["total"],
-        serde_json::json!({"index": 3, "written": 3, "replaced": 1, "gaps": 3})
+        serde_json::json!({"index": 3, "written": 3, "replaced": 1, "gaps": 1})
     );
 }
