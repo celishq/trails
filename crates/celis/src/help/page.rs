@@ -48,6 +48,7 @@ const SECTIONS: &[(&str, &str, &[&str])] = &[
         "Set up",
         "",
         &[
+            "setup",
             "link [<folder>]",
             "auth login",
             "auth status",
@@ -79,6 +80,7 @@ const PHRASES: &[(&str, &str)] = &[
         "Update celis to the latest version, or to one you choose",
     ),
     ("issue", "Write a problem report for the celis team"),
+    ("setup", "Show how to add the plugin to each agent here"),
 ];
 
 /// The flags only the plugin passes, left off the page.

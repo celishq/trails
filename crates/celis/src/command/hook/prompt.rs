@@ -126,7 +126,7 @@ impl Command {
 }
 
 /// Writes the empty file `path`, and its folder.
-fn mark(path: &Path) -> Result<(), Failure> {
+pub(crate) fn mark(path: &Path) -> Result<(), Failure> {
     if let Some(folder) = path.parent() {
         std::fs::create_dir_all(folder).map_err(anyhow::Error::from)?;
     }

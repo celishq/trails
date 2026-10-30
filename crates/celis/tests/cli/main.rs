@@ -31,6 +31,7 @@ mod reading;
 mod reuse;
 mod scope;
 mod secret;
+mod setup;
 mod spec_citations;
 mod stats;
 mod stats_watch;

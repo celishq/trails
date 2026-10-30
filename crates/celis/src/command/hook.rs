@@ -13,7 +13,10 @@ use std::path::{Path, PathBuf};
 mod tests;
 
 /// The agents whose hooks run `celis hook`.
-const AGENTS: [&str; 5] = ["claude", "codex", "cursor", "gemini", "antigravity"];
+pub(crate) const AGENTS: [&str; 5] = ["claude", "codex", "cursor", "gemini", "antigravity"];
+
+/// The folder under `$CELIS_HOME` that holds a file for each agent whose plugin started a session.
+pub(crate) const STARTED: &str = "started";
 
 /// The start of the title of the ask that `/celis:tidy` adds.
 const TIDY: &str = "Tidy the celis trails";
@@ -54,9 +57,12 @@ impl Command {
         }
     }
 
-    /// The card, where the plugin's files are, the index of the patterns in the project the JSON names,
-    /// and a version notice.
+    /// Marks that `agent` started a session, and gives the card, where the plugin's files are, the index
+    /// of the patterns in the project the JSON names, and a version notice.
     fn start(&self, agent: &str, json: &Value, root: &Path) -> String {
+        if let Ok(home) = self.home() {
+            let _ = prompt::mark(&home.join(STARTED).join(agent));
+        }
         let card = std::fs::read_to_string(root.join("card.md")).unwrap_or_default();
         let mut text = format!(
             "How to do an ask with the celis plugin:\n{}\n\n",

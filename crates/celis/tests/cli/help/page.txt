@@ -74,6 +74,7 @@ Share
   cell remove <name>  Remove a cell of another account from disk
 
 Set up
+  setup               Show how to add the plugin to each agent here
   link [<folder>]     Keep this project's trails in a folder to commit or share
   └ --off             Stop keeping the trails in the folder
 

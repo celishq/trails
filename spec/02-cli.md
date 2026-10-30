@@ -23,6 +23,7 @@ celis tree [<id>]... [--graph] [--full] [--all] [--demo]
 celis grep <grep option>... <pattern>                 every trail, through the system grep
 celis stats [<id>] [--demo]                           the use of the patterns, or a step's grade
 celis extract <id>                                    what an ask or a step taught, to extract as patterns
+celis setup                                           the commands that add the plugin to each agent here
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
 celis link [<folder>] [--off]                         keep this project's trails in a folder, or stop
 celis cells                                           each cell, its account, its patterns, and on or off here
