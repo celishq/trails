@@ -116,7 +116,11 @@ impl Command {
             let batch = Model::of(&trails, |model| {
                 page.renew(model, landed.as_deref());
                 loop {
-                    model.steps.at(crate::command::now());
+                    let steps = model.steps.at(crate::command::now());
+                    let model = &Model {
+                        steps: &steps,
+                        ..*model
+                    };
                     let drawn = page.page(model, screen)?;
                     let wake = show(&drawn, screen, out, &events)?;
                     match drain(wake, &events, page, &drawn, model, screen)? {
