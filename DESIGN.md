@@ -125,9 +125,10 @@ A bench checks a design; a design is never tuned to a bench.
     lists the signs, and the tidy agent judges them.
     `celis stats` shows the use of each live pattern: its uses, misled, replaces, last use, examples and
     tidy reason. Its total gives the size of the index, the patterns written and replaced in the last 7
-    days, and the gaps: the fixes of done work in that time whose ask used no pattern. Its lifecycle
-    gives, by day, week and month, the patterns written, replaced, dropped, promoted, recalled, used and
-    misled. Its value gives, for the last 28 days, what shows that celis pays: the asks that used a
+    days, and the gaps: the fixes of done work in that time whose ask used no pattern. Only these two
+    are in the spec. The board on a terminal also gives the lifecycle and the value, which are the
+    app's, because no other end reads them. The lifecycle gives, by day, week and month, the patterns written, replaced, dropped, promoted, recalled, used and
+    misled. The value gives, for the last 28 days, what shows that celis pays: the asks that used a
     pattern, the corrections and the repeat ones among them, first-pass success with and without a
     pattern, the recall funnel, the reach of the patterns to other projects and agents, and the
     promotions. A repeat correction failed when the fixed work used a pattern, and missed when it used

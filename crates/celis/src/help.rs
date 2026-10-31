@@ -282,7 +282,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "stats",
         usage: &["celis stats [<id>] [--demo]"],
-        summary: "Show each live pattern and how it is used, then the totals of the index, its lifecycle and the value of the last 28 days. With an id, show that step's grade and, for a done ask, its total. On a terminal, show the same as live cards. Changes nothing.",
+        summary: "Show each live pattern and how it is used, then the totals of the index. With an id, show that step's grade and, for a done ask, its total. On a terminal, show live cards, with the lifecycle of the patterns and the value of the last 28 days. Changes nothing.",
         args: &[
             ("<id>", "A step id, or its first 4 or more characters"),
             ("--demo", "Show four weeks of sample trails"),

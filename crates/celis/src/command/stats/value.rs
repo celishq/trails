@@ -4,7 +4,6 @@ use super::lifecycle::promoted;
 use crate::progress::Model;
 use celis_patterns::{PatternEnd, Scope};
 use celis_trails::{State, Step};
-use serde_json::json;
 use std::collections::{BTreeSet, HashSet};
 
 /// The seconds of the span the value counts.
@@ -111,40 +110,6 @@ impl Value {
             .filter(|p| matches!(p.end, Some(PatternEnd::Dropped(d)) if d.created_at >= since))
             .count();
         value
-    }
-
-    /// Its line of `stats` (CIP-02, "Stats").
-    pub fn line(&self) -> String {
-        let percent = |p: Option<u64>| p.map_or("-".to_string(), |p| format!("{p}%"));
-        let agents = match self.agents.is_empty() {
-            true => "-".to_string(),
-            false => self.agents.join(","),
-        };
-        format!(
-            "value last 28 days: asks:{} covered:{} corrections:{} failed:{} missed:{} first-pass:{}/{} \
-             recalled:{} used:{} held:{} reach:{} agents:{agents} promoted:{}",
-            self.asks,
-            self.covered,
-            self.corrections,
-            self.failed,
-            self.missed,
-            percent(self.with),
-            percent(self.without),
-            self.recalled,
-            self.used,
-            self.held,
-            self.reach,
-            self.promoted
-        )
-    }
-
-    /// Its object of `stats --json` (CIP-02, "Stats").
-    pub fn json(&self) -> serde_json::Value {
-        json!({"asks": self.asks, "covered": self.covered, "corrections": self.corrections,
-            "failed": self.failed, "missed": self.missed, "with": self.with,
-            "without": self.without, "recalled": self.recalled, "used": self.used,
-            "held": self.held, "reach": self.reach, "agents": self.agents,
-            "promoted": self.promoted})
     }
 }
 

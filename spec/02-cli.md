@@ -320,17 +320,8 @@ total <n> patterns in the index · last 7 days: <n> written, <n> replaced, <n> g
 ```
 
 ```
-lifecycle <day | week | month> <yyyy-mm-dd> written:<n> replaced:<n> dropped:<n> promoted:<n> recalled:<n> used:<n> misled:<n>
-                                         the last 7 days, 4 weeks and 6 months, oldest first
-value last 28 days: asks:<n> covered:<n> corrections:<n> failed:<n> missed:<n> first-pass:<n%|->/<n%|-> recalled:<n> used:<n> held:<n> reach:<n> agents:<name>[,<name>]... | - promoted:<n>
-```
-
-```
 pattern    json  {"id", "uses", "misled", "replaces", "used", "examples", "tidy": [], "name", "when"}
 total      json  {"index", "written", "replaced", "gaps"}
-lifecycle  json  {"span", "from", "written", "replaced", "dropped", "promoted", "recalled", "used", "misled"}
-value      json  {"asks", "covered", "corrections", "failed", "missed", "with", "without", "recalled",
-                  "used", "held", "reach", "agents": [], "promoted"}
 ```
 
 A pattern's fields: `uses`, how many steps name it in `uses` (CIP-06, "Uses"); `misled`, how many steps
@@ -343,29 +334,10 @@ The total's fields: `index`, how many patterns are live in scope; `written`, the
 in the last 7 days; `replaced`, those of them with a `replaces`; `gaps`, the steps of the project made in
 the last 7 days that fix done work (CIP-06, "Revisions") in a trail whose steps use no pattern.
 
-The lifecycle's fields, for the live and the ended patterns in scope, in a span: `span` is `day`,
-`week` or `month`, and `from` its first day: a day, 7 days that end on today or on a multiple of 7 days
-before, or a month of the calendar. `written`, the patterns made in it with no `replaces`; `replaced`,
-those made in it with a `replaces`; `dropped`, those a drop named in it; `promoted`, those of them whose
-drop reason starts with `promoted to`; `recalled`, the recalls of them written in it (CIP-06,
-"Recalls"); `used`, the uses of them by steps made in it (CIP-06, "Uses"); `misled`, the steps they
-misled (CIP-06, "Misled"), on the day of the `done` or the step that tells it.
-
-The value's fields, for the asks of the project done in the last 28 days and the patterns in scope:
-`asks`, those asks; `covered`, those of them whose tree uses a pattern; `corrections`, the steps of
-their trees that revise done work; `failed`, those corrections whose revised step's trail uses a
-pattern; `missed`, the others whose own trail has a pattern made since its ask began that replaces a
-pattern made before the revised step; `with` and `without`, the percent of done steps of their trees
-that no step revised, among those that use a pattern and those that use none, `null` and `-` with no
-such step; `recalled`, `used` and `held`, the recalls in their trees, the uses, and the uses by steps
-that no step revised and no `misled` names; `reach`, the uses of a `me` pattern by a step of another
-project, in the store; `agents`, each `agent` of a step that uses a pattern, `-` with none; `promoted`,
-the patterns promoted in that time.
-
 **Rules**
 
 - With no `<id>`, off a terminal or with `--json`, `stats` MUST print a line for each live pattern in
-  scope, oldest first, then the total, the lifecycle lines and the value line. With no record in the store, it MUST print `Nothing was reused
+  scope, oldest first, then the total. With no record in the store, it MUST print `Nothing was reused
   yet.`, and nothing with `--json`.
 
 **Examples**
