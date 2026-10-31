@@ -10,7 +10,7 @@ pub trait PatternStore {
 
     /// Writes `pattern`, each `within` taken whole from a live pattern of any project; replacing the live
     /// pattern of its project that `replaces` names, and keeping its examples and `within`.
-    fn decide(&self, pattern: PatternRecord, replaces: Option<&str>) -> Result<Note, Refusal>;
+    fn write(&self, pattern: PatternRecord, replaces: Option<&str>) -> Result<Note, Refusal>;
 }
 
 impl PatternStore for Store {
@@ -18,7 +18,7 @@ impl PatternStore for Store {
         Patterns::new(self.records())
     }
 
-    fn decide(&self, mut pattern: PatternRecord, replaces: Option<&str>) -> Result<Note, Refusal> {
+    fn write(&self, mut pattern: PatternRecord, replaces: Option<&str>) -> Result<Note, Refusal> {
         let project = pattern.anchor.project.clone();
         let patterns = self.patterns();
         let within: Result<Vec<PatternId>, Refusal> = pattern

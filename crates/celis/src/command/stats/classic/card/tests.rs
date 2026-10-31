@@ -201,7 +201,7 @@ fn reused(later: u64) -> (TempDir, Store) {
         examples: Default::default(),
     };
     trails.at(AT);
-    let pattern = trails.decide(pattern, None).unwrap().id;
+    let pattern = trails.write(pattern, None).unwrap().id;
     trails.at(AT);
     let draft = |content: &str, under: Option<String>, uses: Vec<String>| Draft {
         content: content.into(),

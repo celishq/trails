@@ -26,7 +26,7 @@ impl Total {
         let all = model.steps.all();
         let parts = || all.iter().filter(|s| s.is_work());
         let done = || parts().filter(|s| s.state() == State::Done);
-        let ruled = |s: &celis_trails::Step| !s.uses().is_empty();
+        let using = |s: &celis_trails::Step| !s.uses().is_empty();
         let named: HashSet<&str> = all.iter().flat_map(|s| s.uses()).collect();
         let live: Vec<_> = model
             .patterns
@@ -39,11 +39,11 @@ impl Total {
             trails: all.iter().filter(|s| s.is_trail()).count(),
             resolved: parts().filter(|s| s.closed_at().is_some()).count(),
             reused: done()
-                .filter(|s| s.revised().is_empty() && ruled(s))
+                .filter(|s| s.revised().is_empty() && using(s))
                 .count(),
             hits: all
                 .iter()
-                .filter(|s| s.state() == State::Done && ruled(s))
+                .filter(|s| s.state() == State::Done && using(s))
                 .count(),
             patterns: live.len(),
             used: live

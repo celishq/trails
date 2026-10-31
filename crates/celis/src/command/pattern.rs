@@ -70,7 +70,7 @@ impl Command {
             replaced,
         );
         let written = Written {
-            records: vec![trails.decide(pattern, args.replaces.as_deref())?],
+            records: vec![trails.write(pattern, args.replaces.as_deref())?],
             ..Written::default()
         };
         let new = short(&written.records[0].id);

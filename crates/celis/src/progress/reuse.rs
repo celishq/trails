@@ -9,19 +9,19 @@ use std::collections::HashMap;
 /// What later work reused of a store: which patterns each step used, and how often a step used each
 /// pattern.
 pub struct Reuse<'a> {
-    ruled: HashMap<&'a str, Vec<&'a str>>,
+    used: HashMap<&'a str, Vec<&'a str>>,
     uses: HashMap<&'a str, usize>,
 }
 
 impl<'a> Reuse<'a> {
     pub fn new(steps: &'a Steps<'a>) -> Reuse<'a> {
         let mut reuse = Reuse {
-            ruled: HashMap::new(),
+            used: HashMap::new(),
             uses: HashMap::new(),
         };
         for step in steps.all() {
             for id in step.uses() {
-                reuse.ruled.entry(step.id()).or_default().push(id);
+                reuse.used.entry(step.id()).or_default().push(id);
                 *reuse.uses.entry(id).or_default() += 1;
             }
         }
@@ -30,9 +30,8 @@ impl<'a> Reuse<'a> {
 
     /// The uses of a live pattern of `patterns` that `steps` made.
     pub fn uses_of(&self, steps: &[Step<'a>], patterns: &Patterns<'a>) -> usize {
-        let ruled = steps.iter().filter_map(|s| self.ruled.get(s.id()));
-        ruled
-            .flatten()
+        let used = steps.iter().filter_map(|s| self.used.get(s.id()));
+        used.flatten()
             .filter(|id| patterns.find(id).is_ok())
             .count()
     }

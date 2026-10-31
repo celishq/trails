@@ -93,7 +93,7 @@ impl Desk {
             within: vec![],
             examples: Default::default(),
         };
-        let id = self.trails.decide(pattern, None).unwrap().id;
+        let id = self.trails.write(pattern, None).unwrap().id;
         self.trails.at(noon() - ago);
         id
     }
@@ -113,7 +113,7 @@ impl Desk {
             within: vec![],
             examples: Default::default(),
         };
-        let id = self.trails.decide(pattern, None).unwrap().id;
+        let id = self.trails.write(pattern, None).unwrap().id;
         self.trails.at(noon() - ago);
         id
     }
