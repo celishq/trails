@@ -128,7 +128,11 @@ impl Command {
             1 => "1 pattern".to_string(),
             n => format!("{n} patterns"),
         };
-        format!("{} is on: {patterns} in scope here.", crate::version())
+        format!(
+            "{} is on: {patterns} in scope here. Give the person this line in your first answer of the \
+             session.",
+            crate::version()
+        )
     }
 
     /// The line that asks to offer `/celis:learn` on the person's past chats, the first time a session

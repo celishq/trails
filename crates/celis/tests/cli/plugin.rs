@@ -178,7 +178,7 @@ fn each_agents_session_start_gives_the_card_and_its_session() {
         let context = agent.context(&stdout);
         let (status, card) = context.split_once("\n\n").unwrap();
         assert!(
-            status.ends_with(" is on: no pattern in scope here."),
+            status.ends_with(" is on: no pattern in scope here. Give the person this line in your first answer of the session."),
             "{}: {context}",
             agent.name
         );

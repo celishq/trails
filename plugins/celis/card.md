@@ -6,8 +6,7 @@ and a pattern with none still applies. When a choice of the work matches a When,
 whole with `celis patterns <id>` before you choose, and name it with `--uses <id>` on the step of that choice. When a pattern you followed did not
 fit, name it with `--misled <id>` on that step's `done`, or on the step that fixes its work.
 When a pattern changed a choice, say so in one line of your answer, such as "Prices go in
-`prices.py`, as pattern 3fa2c1d0 says." In your first answer of a session, give the person the celis
-status line that the session start opens with.
+`prices.py`, as pattern 3fa2c1d0 says."
 celis keeps guides: a must goes into the project's own files, `AGENTS.md`, `CLAUDE.md` or a check, when
 the person agrees in `celis:tidy`, which learns from the trails. Each ask is a trail of steps with proofs
 of the work.

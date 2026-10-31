@@ -46,7 +46,7 @@ case "$version" in
 latest) url="$base/latest/download/$name" ;;
 *) url="$base/download/v$version/$name" ;;
 esac
-tmp="$(mktemp -d)"
+tmp="$(mktemp -d "${TMPDIR:-/tmp}/celis.XXXXXX")"
 trap 'rm -rf "$tmp"' EXIT
 
 echo "Downloading $name ($version)…"
