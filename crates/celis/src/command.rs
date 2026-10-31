@@ -95,6 +95,7 @@ impl Command {
             "stats" => self.stats(args, out),
             "extract" | "lesson" => self.extract(args, out),
             "issue" => self.issue(args, out),
+            "setup" => self.setup(args, out),
             "link" => self.link(args, out, &self.project()),
             "cell" => self.cell(args, out),
             "hook" => self.hook(args, out),

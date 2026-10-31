@@ -300,6 +300,13 @@ pub const VERBS: &[Verb] = &[
         examples: &["celis extract 3fa2c1d0", "celis extract 3fa2c1d0 --json"],
     },
     Verb {
+        command: "setup",
+        usage: &["celis setup"],
+        summary: "Show each agent on this machine, the commands that add the celis plugin to it, and what you do after. Changes nothing.",
+        args: &[],
+        examples: &["celis setup"],
+    },
+    Verb {
         command: "issue",
         usage: &["celis issue [<id>]... [-- <text>]"],
         summary: "Write a problem report for the celis team as Markdown. It includes your text, the version, system, project, and store, the end of the log, and the trail of each step you name. Changes nothing.",

@@ -4,6 +4,7 @@ pub(crate) mod prompt;
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
+use celis_patterns::PatternStore;
 use celis_trails::TrailStore;
 use serde_json::{json, Value};
 use std::io::{Read, Write};
@@ -14,6 +15,9 @@ mod tests;
 
 /// The agents whose hooks run `celis hook`.
 const AGENTS: [&str; 5] = ["claude", "codex", "cursor", "gemini", "antigravity"];
+
+/// The file under `$CELIS_HOME/offered` that marks that a session start offered `/celis:learn`.
+const LEARN: &str = "learn";
 
 /// The start of the title of the ask that `/celis:tidy` adds.
 const TIDY: &str = "Tidy the celis trails";
@@ -54,12 +58,13 @@ impl Command {
         }
     }
 
-    /// The card, where the plugin's files are, the index of the patterns in the project the JSON names,
-    /// and a version notice.
+    /// The status line, the card, where the plugin's files are, the index of the patterns in the project
+    /// the JSON names, or the first time none, the offer to learn them, and a version notice.
     fn start(&self, agent: &str, json: &Value, root: &Path) -> String {
         let card = std::fs::read_to_string(root.join("card.md")).unwrap_or_default();
         let mut text = format!(
-            "How to do an ask with the celis plugin:\n{}\n\n",
+            "{}\n\nHow to do an ask with the celis plugin:\n{}\n\n",
+            self.here(json).status(),
             card.trim_end()
         );
         if agent != "claude" {
@@ -79,8 +84,13 @@ impl Command {
                  brief that celis extract prints."
             ));
         }
-        if let Some(index) = self.here(json).index(&[]).ok().flatten() {
-            text.push_str(&format!("\n\nThe patterns in scope here:\n{index}"));
+        match self.here(json).index(&[]).ok().flatten() {
+            Some(index) => text.push_str(&format!("\n\nThe patterns in scope here:\n{index}")),
+            None => {
+                if let Some(line) = self.learn() {
+                    text.push_str(&format!("\n\n{line}"));
+                }
+            }
         }
         if let Some(line) = self.here(json).tidy() {
             text.push_str(&format!("\n\n{line}"));
@@ -95,6 +105,38 @@ impl Command {
             text.push_str(&format!("\n\n{notice}"));
         }
         text
+    }
+
+    /// The status line: the version of celis, and how many patterns are live in scope here.
+    fn status(&self) -> String {
+        let here = self.project();
+        let count = match self.held() {
+            Ok(true) => self
+                .trails()
+                .map_or(0, |t| t.patterns().view(&here.anchor.project).live().len()),
+            _ => 0,
+        };
+        let patterns = match count {
+            0 => "no pattern".to_string(),
+            1 => "1 pattern".to_string(),
+            n => format!("{n} patterns"),
+        };
+        format!("{} is on: {patterns} in scope here.", crate::version())
+    }
+
+    /// The line that asks to offer `/celis:learn` on the person's past chats, the first time a session
+    /// starts with no pattern in scope.
+    fn learn(&self) -> Option<String> {
+        let offered = self.home().ok()?.join("offered").join(LEARN);
+        if offered.exists() || prompt::mark(&offered).is_err() {
+            return None;
+        }
+        Some(
+            "celis: no pattern is kept here yet. At the end of your answer to the person's first ask \
+             in this session, offer them /celis:learn on their past chats with you, so that celis drafts \
+             patterns from the corrections they already gave."
+                .to_string(),
+        )
     }
 
     /// The line that asks to offer `/celis:tidy` once in the session: when patterns in scope here need

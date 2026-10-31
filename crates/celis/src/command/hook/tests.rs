@@ -98,6 +98,55 @@ fn the_session_start_gives_the_index_of_the_project() {
 fn the_session_start_gives_no_index_without_a_pattern() {
     let desk = Desk::new();
     let text = desk.start("claude", desk.project.path());
-    assert!(text.starts_with("How to do an ask"), "{text}");
+    assert!(text.contains("\nHow to do an ask"), "{text}");
     assert!(!text.contains("The patterns in scope here"), "{text}");
+}
+
+/// The first session start with no pattern in scope offers `/celis:learn` on the person's past chats,
+/// and no later one does.
+#[test]
+fn the_first_session_start_without_a_pattern_offers_to_learn_once() {
+    let desk = Desk::new();
+    let first = desk.start("claude", desk.project.path());
+    assert!(first.contains("offer them /celis:learn"), "{first}");
+    let second = desk.start("claude", desk.project.path());
+    assert!(!second.contains("/celis:learn"), "{second}");
+}
+
+/// A session start with a pattern in scope does not offer `/celis:learn`.
+#[test]
+fn a_session_start_with_a_pattern_does_not_offer_to_learn() {
+    let desk = Desk::new();
+    let words = ["pattern", "--", "When a logo is drawn: keep it flat."];
+    let write = desk.command(&words, desk.project.path());
+    assert_eq!(write.run(&mut Vec::new(), &mut Vec::new()), 0);
+    let text = desk.start("claude", desk.project.path());
+    assert!(!text.contains("/celis:learn"), "{text}");
+}
+
+/// The session start opens with one status line: the version of celis and how many patterns are in
+/// scope here.
+#[test]
+fn the_session_start_opens_with_a_status_line() {
+    let desk = Desk::new();
+    let none = desk.start("claude", desk.project.path());
+    let first = none.lines().next().unwrap();
+    assert!(
+        first.ends_with(" is on: no pattern in scope here."),
+        "{none}"
+    );
+    for text in [
+        "When a logo is drawn: keep it flat.",
+        "When a list grows: page it.",
+    ] {
+        let write = desk.command(&["pattern", "--", text], desk.project.path());
+        assert_eq!(write.run(&mut Vec::new(), &mut Vec::new()), 0);
+    }
+    let two = desk.start("claude", desk.project.path());
+    let first = two.lines().next().unwrap();
+    assert!(first.starts_with("celis "), "{two}");
+    assert!(
+        first.ends_with(" is on: 2 patterns in scope here."),
+        "{two}"
+    );
 }
