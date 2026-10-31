@@ -5,8 +5,9 @@ A `*` or `**` after the scope is the evidence of past uses: when two patterns fi
 and a pattern with none still applies. When a choice of the work matches a When, read that pattern
 whole with `celis patterns <id>` before you choose, and name it with `--uses <id>` on the step of that choice. When a pattern you followed did not
 fit, name it with `--misled <id>` on that step's `done`, or on the step that fixes its work.
-In your first answer of a session, give the person the celis status line that the session start opens
-with.
+Start your first answer of a session with the celis status line that the session start opens with,
+word for word, as its first line: the person does not see what the session start gives you, and the
+line shows them that celis runs.
 celis keeps guides: a must goes into the project's own files, `AGENTS.md`, `CLAUDE.md` or a check, when
 the person agrees in `celis:tidy`, which learns from the trails. Each ask is a trail of steps with proofs
 of the work.
