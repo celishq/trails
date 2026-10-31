@@ -60,16 +60,9 @@ impl Command {
             .collect();
         let mut lines = vec![format!("{} is installed.", crate::version()), String::new()];
         match found.is_empty() {
-            true => {
-                let names: Vec<String> = PLUGINS
-                    .iter()
-                    .map(|(name, bin, _, _)| format!("{name} ({bin})"))
-                    .collect();
-                lines.push(format!(
-                    "No agent that celis setup knows is on PATH: {}. Add the plugin to your agent as {STEPS} shows.",
-                    names.join(", ")
-                ));
-            }
+            true => lines.push(format!(
+                "No agent that celis setup knows is on PATH. Add the plugin to your agent as {STEPS} shows."
+            )),
             false => lines.extend(brief(&found)),
         }
         let text = lines.join("\n");
@@ -89,15 +82,9 @@ fn brief(found: &[&(&str, &str, &[&str], &str)]) -> Vec<String> {
     for (_, _, commands, _) in found {
         lines.extend(commands.iter().map(|c| format!("  {c}")));
     }
-    let names: Vec<&str> = found.iter().map(|(name, _, _, _)| *name).collect();
-    let names = match names.split_last() {
-        Some((last, [])) => last.to_string(),
-        Some((last, rest)) => format!("{} and {last}", rest.join(", ")),
-        None => String::new(),
-    };
     lines.push(String::new());
     lines.push("Then tell the person:".to_string());
-    lines.push(format!("  - Restart {names}, so that the plugin loads."));
+    lines.push("  - Restart each agent above, so that the plugin loads.".to_string());
     for (_, _, _, after) in found {
         if !after.is_empty() {
             lines.push(format!("  - {after}"));

@@ -7,7 +7,6 @@ claude-sonnet-5-5, on 31-10-2026.
 | ------------ | --------------------------- | ------------------------------------------------- |
 | offers-learn | 2/5                         | 5/5                                               |
 | did-the-work | 5/5                         | 5/5                                               |
-| tests-pass   | 5/5                         | 5/5                                               |
 | Cost         | $0.49                       | $0.62                                             |
 
 With "after the first ask", 3 runs left the offer for a later answer that a one-prompt run never gives.

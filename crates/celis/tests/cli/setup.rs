@@ -34,7 +34,7 @@ fn setup_names_the_commands_for_each_agent_on_path() {
         "  claude plugin install celis@celis",
         "  codex plugin marketplace add celishq/trails",
         "  codex plugin add celis@celis",
-        "  - Restart Claude Code and Codex, so that the plugin loads.",
+        "  - Restart each agent above, so that the plugin loads.",
         "  - In Codex, trust the celis hooks with /hooks.",
         "  - In the first session, celis offers to learn patterns from your past chats.",
     ] {

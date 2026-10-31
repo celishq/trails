@@ -167,9 +167,10 @@ fn prompts(repo: &Repo, step: &str) -> Vec<String> {
         .collect()
 }
 
-/// Each agent's session start gives the status line, then the card; an agent other than Claude Code also gets its session, to
-/// pass with `--session`, and the path of `extraction.md`; no agent gets a path of `recall.md`, which is
-/// gone. Antigravity has no session start, and gets both before each call of the model.
+/// Each agent's session start gives the status line, then the card; an agent other than Claude Code also
+/// gets its session, to pass with `--session`, and the path of `extraction.md`; no agent gets a path of
+/// `recall.md`, which is gone. Antigravity has no session start, and gets both before each call of the
+/// model.
 #[test]
 fn each_agents_session_start_gives_the_card_and_its_session() {
     let repo = Repo::new();
@@ -441,8 +442,8 @@ fn each_listed_manifest_carries_its_links() {
     }
 }
 
-/// With no `celis` on PATH, each agent's session start offers the install that celis.ai/install.md gives, and each prompt
-/// hook prints nothing.
+/// With no `celis` on PATH, each agent's session start offers the install that celis.ai/install.md gives,
+/// and each prompt hook prints nothing.
 #[test]
 fn each_agents_hooks_say_how_to_install_a_missing_celis() {
     let repo = Repo::new();
