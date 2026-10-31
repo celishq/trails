@@ -138,7 +138,7 @@ gh attestation verify celis-aarch64-apple-darwin.tar.gz -R celishq/trails
 
 | Agent       | Install                                                                         | Then                                                                                        |
 | ----------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| Claude Code | `/plugin marketplace add celishq/trails`<br>`/plugin install celis@celis`       | To see Celis in the status line, also run `/plugin install celis-ui@celis`.                 |
+| Claude Code | `/plugin marketplace add celishq/trails`<br>`/plugin install celis@celis`       | —                                                                                           |
 | Codex       | `codex plugin marketplace add celishq/trails`<br>`codex plugin add celis@celis` | Trust its hooks with `/hooks`. In a sandbox, let it write the folder Celis keeps trails in. |
 | Cursor      | `cursor-agent plugin marketplace add https://github.com/celishq/trails`         | Install `celis` from `/plugins`. Cursor doesn't remind the agent on each message.           |
 | Gemini CLI  | `gemini extensions install https://github.com/celishq/trails`                   | —                                                                                           |

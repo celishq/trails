@@ -3,7 +3,6 @@
   "owner": { "name": "Celis" },
   "description": "Celis: your team's know-how, in every AI agent.",
   "plugins": [
-    { "name": "celis", "source": "./plugins/celis", "description": "Celis: your team's know-how, in every AI agent." },
-    { "name": "celis-ui", "source": "./plugins/celis-ui", "description": "Shows Celis in Claude Code: whether it is on, and each pattern the agent keeps or uses." }
+    { "name": "celis", "source": "./plugins/celis", "description": "Celis: your team's know-how, in every AI agent." }
   ]
 }
