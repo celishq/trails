@@ -108,7 +108,6 @@ impl Command {
         let by = match args.by.as_deref() {
             None => None,
             Some("person") => Some(By::Person),
-            Some("judge") => None,
             Some(text) => {
                 return Err(Failure::usage(format!(
                     "step done --by takes person, not {text}"

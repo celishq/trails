@@ -4,8 +4,7 @@ use crate::support;
 
 use celis_nostr::Note;
 use support::{
-    account, add, cli, err, labelled, now, out, pattern_tags, put, refusal, stored_pattern,
-    tagged_pattern, Repo, DAY,
+    account, add, cli, err, now, out, pattern_tags, put, stored_pattern, tagged_pattern, Repo, DAY,
 };
 
 /// The id `celis pattern <args> -- <text>` prints.
@@ -16,25 +15,6 @@ fn decide(repo: &Repo, args: &[&str], text: &str) -> String {
     let o = cli(repo, &all);
     assert!(o.status.success(), "{}", err(&o));
     out(&o).lines().next().unwrap().to_string()
-}
-
-/// `search`, which older plugins give, refuses as a usage error that names `celis patterns`, with any
-/// flag (`spec/02-cli.md`, "Commands").
-#[test]
-fn search_refuses_and_names_patterns() {
-    let repo = Repo::new();
-    for args in [
-        &["search", "--", "prices"][..],
-        &["search", "src/a.rs", "--kind", "pattern", "--", "prices"],
-        &["search", "--limit", "3", "--", "prices"],
-    ] {
-        let o = cli(&repo, args);
-        assert_eq!(o.status.code(), Some(2), "{}", err(&o));
-        assert!(err(&o).contains("celis patterns"), "{}", err(&o));
-        let mut json = args.to_vec();
-        json.insert(1, "--json");
-        refusal(&cli(&repo, &json), 2, "usage");
-    }
 }
 
 /// `patterns` prints each live pattern in scope once, oldest first: its id, scope and When, then its
@@ -168,35 +148,6 @@ fn grep_gives_the_whole_pattern_with_its_examples() {
     assert_eq!(lines, want, "{said}");
 }
 
-/// A pattern with the `binds` label that older writers wrote reads as a plain pattern in the index,
-/// and the `grep` view marks it `old-rule` (`spec/05-patterns.md`, "Reading").
-#[test]
-fn an_old_rule_reads_as_a_plain_pattern() {
-    let repo = Repo::new();
-    let id = repo.project_id();
-    let label = vec![vec![
-        "l".to_string(),
-        "binds".to_string(),
-        "celis.pattern".to_string(),
-    ]];
-    let old = tagged_pattern(
-        &repo,
-        (&id, "repo"),
-        &account(),
-        (None, None),
-        label,
-        "When a logo is drawn: keep it flat.",
-        now() - DAY,
-    );
-    let said = out(&cli(&repo, &["patterns"]));
-    assert_eq!(
-        said.trim(),
-        format!("{} project When a logo is drawn", &old.id[..8])
-    );
-    let line = out(&cli(&repo, &["grep", &old.id[..8]]));
-    assert!(line.contains(" old-rule"), "{line}");
-}
-
 /// A pattern with the deprecated `promoted` label reads as a plain pattern, with no `old-rule` mark
 /// (`spec/README.md`, "Names").
 #[test]
@@ -221,29 +172,6 @@ fn a_promoted_pattern_guides() {
     assert!(said.contains(&old.id[..8]), "{said}");
     let line = out(&cli(&repo, &["grep", &old.id[..8]]));
     assert!(!line.contains(" old-rule"), "{line}");
-}
-
-/// `step add` accepts `--recalled`, which older plugins give, with any id and on any step, and writes
-/// nothing for it (`spec/02-cli.md`, "Step").
-#[test]
-fn step_add_accepts_recalled_and_writes_nothing_for_it() {
-    let repo = Repo::new();
-    let a = decide(&repo, &[], "When a logo is drawn: keep it flat.");
-    let ask = add(&repo, &["--recalled", &a[..8], "--", "Draw the logo"]);
-    add(
-        &repo,
-        &[
-            "--under",
-            &ask[..8],
-            "--recalled",
-            "0000aaaa",
-            "--",
-            "A part",
-        ],
-    );
-    let steps = labelled(&repo, "step");
-    assert_eq!(steps.len(), 2);
-    assert!(steps.iter().all(|n| n.tag("recalled").is_none()));
 }
 
 /// The `grep` view counts the steps that use a pattern, and gives the day of the newest

@@ -473,7 +473,6 @@ impl Demo {
             replaces: None,
             content: text.to_string(),
             paths: vec![],
-            old_rule: false,
             within: vec![],
             examples: Default::default(),
         };

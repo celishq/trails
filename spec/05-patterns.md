@@ -62,21 +62,6 @@ me        in every project
   know.
 - A `me` pattern holds in every project. Any other holds only in its own project.
 
-## Reading
-
-**Readers**
-
-- A reader MUST read `decision` in `celis.decision`, which older writers wrote, as `pattern` in
-  `celis.pattern`.
-- A reader MUST read a pattern with the `binds` label in `celis.pattern` or `celis.decision`, which older
-  writers wrote, as a plain pattern.
-- A reader MUST ignore a `cell` tag, which older writers wrote.
-- A reader MUST read the scope `at:<place>`, which older writers wrote, as `project`, with two more
-  `path` globs: the place's path without its line, and that path with `/**` after it. A place of the
-  project's top folder, such as `.`, adds no `path`.
-- A reader MUST read a live pattern with the scope `trail:<id>`, which older writers wrote, as a note on
-  the trail `<id>` (CIP-04, "Notes"), and not as a pattern.
-
 ## Paths
 
 ```

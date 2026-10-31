@@ -2,23 +2,18 @@
 
 use crate::{Mark, Step};
 use celis_nostr::Note;
-use celis_patterns::PatternRecord;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
-/// The notes of a store by the step they are on, oldest first: each note mark, and each live pattern with
-/// a `trail:<id>` scope, on that trail.
+/// The notes of a store by the step they are on, oldest first.
 pub struct Notes<'a> {
     on: HashMap<&'a str, Vec<&'a Note>>,
 }
 
 impl<'a> Notes<'a> {
     pub fn new(records: &'a [Note]) -> Notes<'a> {
-        let drops = Mark::drops(records);
-        let replaced: HashSet<&str> = records.iter().filter_map(|n| n.tag("replaces")).collect();
-        let live = |n: &Note| !replaced.contains(n.id.as_str()) && !drops.contains_key(&n.id);
         let mut on: HashMap<&'a str, Vec<&'a Note>> = HashMap::new();
         for note in records {
-            if let Some(step) = Notes::step(note).filter(|_| live(note)) {
+            if let Some(step) = Notes::step(note) {
                 on.entry(step).or_default().push(note);
             }
         }
@@ -28,12 +23,11 @@ impl<'a> Notes<'a> {
         Notes { on }
     }
 
-    /// The whole id of the step that `note` is on, when it is a note mark or a pattern with a
-    /// `trail:<id>` scope.
+    /// The whole id of the step that `note` is on, when it is a note mark.
     pub fn step(note: &Note) -> Option<&str> {
         match Mark::read(note) {
             Some((_, Mark::Note { .. })) => note.tag("e"),
-            _ => PatternRecord::trail(note),
+            _ => None,
         }
     }
 

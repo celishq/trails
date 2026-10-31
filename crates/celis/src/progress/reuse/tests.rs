@@ -41,7 +41,6 @@ fn pattern(text: &str, at: u64, replaces: Option<&Note>) -> Note {
         replaces: replaces.map(|n| PatternId::new(&n.id)),
         content: text.into(),
         paths: vec![],
-        old_rule: false,
         within: vec![],
         examples: Default::default(),
     }

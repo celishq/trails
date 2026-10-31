@@ -276,27 +276,25 @@ fn done_of_a_fix_of_done_work_ends_with_the_learn_brief() {
     );
 }
 
-/// `done --by` takes `person`, writes no `by` for `judge`, and refuses any other value
-/// (`spec/03-steps.md`, "Closing"; `spec/02-cli.md`, "Step").
+/// `done --by` takes `person`, and refuses any other value (`spec/02-cli.md`, "Step").
 #[test]
-fn done_by_takes_person_and_ignores_judge() {
+fn done_by_takes_person_only() {
     let repo = Repo::new();
     let trail = add(&repo, &["--", "the trail"]);
-    let args = [
-        "step",
-        "done",
-        &trail[..8],
-        "--as-planned",
-        "--by",
-        "robot",
-        "--",
-        "p",
-    ];
-    let o = cli(&repo, &args);
-    assert_eq!(o.status.code(), Some(2), "{}", err(&o));
-    let judged = add(&repo, &["--", "the judged ask"]);
-    let lines = done(&repo, &judged, &["--as-planned", "--by", "judge"]);
-    assert_eq!(lines.last().unwrap(), "celis · 1 step");
+    for by in ["robot", "judge"] {
+        let args = [
+            "step",
+            "done",
+            &trail[..8],
+            "--as-planned",
+            "--by",
+            by,
+            "--",
+            "p",
+        ];
+        let o = cli(&repo, &args);
+        assert_eq!(o.status.code(), Some(2), "{}", err(&o));
+    }
     done(&repo, &trail, &["--as-planned", "--by", "person"]);
 }
 

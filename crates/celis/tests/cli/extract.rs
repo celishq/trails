@@ -99,21 +99,6 @@ fn extract_json_prints_the_brief_as_one_object() {
     );
 }
 
-/// `lesson`, which older plugins give, runs as `extract` and names itself deprecated
-/// (`spec/02-cli.md`, "Output and errors").
-#[test]
-fn lesson_runs_as_extract_with_a_notice() {
-    let repo = Repo::new();
-    let (a, _, _) = an_ask(&repo);
-    let old = cli(&repo, &["lesson", &a]);
-    assert!(old.status.success(), "{}", err(&old));
-    assert_eq!(out(&old), out(&cli(&repo, &["extract", &a])));
-    assert_eq!(
-        err(&old),
-        "celis: lesson is deprecated; run celis extract\n"
-    );
-}
-
 /// The brief gives each `expect:`, `for:` and `not:` line of the ask's text first, and `--json` gives
 /// them as `expect` (`spec/02-cli.md`, "Extract"; `spec/02-cli.md`, "Step").
 #[test]

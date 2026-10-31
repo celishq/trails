@@ -434,6 +434,13 @@ pub const VERBS: &[Verb] = &[
         examples: &["celis cell export eating-east", "celis cell export eating-east --to ~/cells/east"],
     },
     Verb {
+        command: "migrate",
+        usage: &["celis migrate [--yes]"],
+        summary: "Show each live pattern of yours in a form that older versions wrote and celis no longer reads. With --yes, write each again in the current form: a pattern that replaces it, or a note on its trail.",
+        args: &[("--yes", "Write each pattern again in the current form")],
+        examples: &["celis migrate", "celis migrate --yes"],
+    },
+    Verb {
         command: "cell import",
         usage: &["celis cell import <source> [--yes]"],
         summary: "Read a cell that another person exported, check that each of its records is signed and unchanged, and show its patterns. With --yes, keep it. A kept cell is off until you turn it on with celis cell on, and you change it only with your own patterns that replace its patterns.",

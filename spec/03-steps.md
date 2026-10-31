@@ -86,8 +86,6 @@ dropped   a `drop` settles it, or names it as a done trail
 - The first `done` or `drop` that names a step MUST settle it, except that a done trail MUST read open
   while a step under it is open or newer than its newest `done`.
 - A reader MUST ignore a `done` with no content.
-- A reader MUST read a `by` of `judge`, which older writers wrote, as a proof by a reader that did not do
-  the work.
 
 ## Dropping
 

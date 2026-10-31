@@ -5,9 +5,7 @@ use crate::support;
 use celis_nostr::Note;
 use serde_json::json;
 use std::path::Path;
-use support::{
-    account, add, err, labelled, objects, out, pattern_tags, put, stored_pattern, Repo, DAY,
-};
+use support::{account, add, err, objects, out, pattern_tags, put, Repo, DAY};
 
 /// The id `celis pattern <args> -- <text>` prints in the main checkout.
 fn decide(repo: &Repo, args: &[&str], text: &str) -> String {
@@ -97,19 +95,6 @@ fn an_older_pattern_with_a_tool_tag_has_no_path() {
     assert!(patterns(&repo, &["."]).is_empty());
 }
 
-/// An older pattern `at:<place>` reads with that place as its `path`, and holds under a folder it names
-/// (`spec/05-patterns.md`, "Reading").
-#[test]
-fn an_at_pattern_comes_at_its_place() {
-    let repo = Repo::new();
-    let at = support::now() - DAY;
-    tagged(&repo, &[("scope", "at:shelf")], "in the shelf", at);
-    tagged(&repo, &[("scope", "at:a.py:3")], "at a line", at + 1);
-    assert_eq!(texts(&repo, &["shelf/b.py"]), ["in the shelf"]);
-    assert_eq!(texts(&repo, &["a.py"]), ["at a line"]);
-    assert!(patterns(&repo, &["b.py"]).is_empty());
-}
-
 /// A pattern with no path and no `at:<place>` never comes by a file, and a pattern with a path comes at its
 /// files (`spec/05-patterns.md`, "Paths").
 #[test]
@@ -123,7 +108,7 @@ fn a_pattern_with_no_path_never_comes() {
 }
 
 /// `pattern --situation` is a usage error, and a reader ignores an older `situation` label
-/// (`spec/02-cli.md`, "Commands"; `spec/README.md`, "Deprecated").
+/// (`spec/02-cli.md`, "Commands"; `spec/README.md`, "Names").
 #[test]
 fn situation_is_no_flag_and_its_label_is_ignored() {
     let repo = Repo::new();
@@ -148,12 +133,12 @@ fn situation_is_no_flag_and_its_label_is_ignored() {
     assert!(line.ends_with("live {project} older"), "{shown}");
 }
 
-/// The grep view gives no mark for a path or for `--binds` (`spec/02-cli.md`, "Grep").
+/// The grep view gives no mark for a path (`spec/02-cli.md`, "Grep").
 #[test]
 fn grep_marks_no_paths() {
     let repo = Repo::new();
     let path = decide(&repo, &["--path", "Makefile"], "path");
-    let all = decide(&repo, &["--path", "*.md", "--binds"], "all");
+    let all = decide(&repo, &["--path", "*.md"], "all");
     let plain = decide(&repo, &[], "plain");
     let o = repo.run(&repo.path(), &["grep", " pattern "], &[], "");
     let shown = out(&o);
@@ -169,18 +154,16 @@ fn grep_marks_no_paths() {
     assert!(line(&plain).ends_with("live {project} plain"), "{shown}");
 }
 
-/// `pattern` writes each `--path` from the project's top folder, and a reader reads them back; it takes
-/// `--binds` and writes nothing for it; `--promoted`, `--tool`, `--content` and `--command` are no
-/// flags (`spec/02-cli.md`, "Commands").
+/// `pattern` writes each `--path` from the project's top folder, and a reader reads them back;
+/// `--binds`, `--promoted`, `--tool`, `--content` and `--command` are no flags (`spec/02-cli.md`,
+/// "Commands").
 #[test]
 fn pattern_writes_the_paths_and_labels() {
     let repo = Repo::new();
     std::fs::create_dir_all(repo.path().join("shelf")).unwrap();
     let o = repo.run(
         &repo.path().join("shelf"),
-        &[
-            "pattern", "--path", "*.py", "--path", "b.md", "--binds", "--", "kept",
-        ],
+        &["pattern", "--path", "*.py", "--path", "b.md", "--", "kept"],
         &[],
         "",
     );
@@ -191,38 +174,14 @@ fn pattern_writes_the_paths_and_labels() {
     let shown = objects(&repo, &["step", "start", step]);
     let pattern = shown.iter().find_map(|v| v.get("pattern")).unwrap();
     assert_eq!(pattern["paths"], json!(["shelf/*.py", "shelf/b.md"]));
-    assert!(pattern.get("binds").is_none(), "{pattern}");
-    let o = repo.run(&repo.path(), &["pattern", "--promoted", "--", "t"], &[], "");
-    assert_eq!(o.status.code(), Some(2), "{o:?}");
+    for flag in ["--binds", "--promoted"] {
+        let o = repo.run(&repo.path(), &["pattern", flag, "--", "t"], &[], "");
+        assert_eq!(o.status.code(), Some(2), "{o:?}");
+    }
     for flag in ["--tool", "--content", "--command"] {
         let o = repo.run(&repo.path(), &["pattern", flag, "x", "--", "t"], &[], "");
         assert_eq!(o.status.code(), Some(2), "{o:?}");
     }
-}
-
-/// A pattern from before paths still reads, with its place as its paths and no label, and comes at
-/// its place (`spec/05-patterns.md`, "Reading").
-#[test]
-fn an_older_pattern_with_no_path_still_reads() {
-    let repo = Repo::new();
-    let id = repo.project_id();
-    let at = support::now() - DAY;
-    let old = stored_pattern(
-        &repo,
-        (&id, "repo"),
-        &account(),
-        (Some("at:a.py"), None),
-        "old",
-        at,
-    );
-    assert_eq!(texts(&repo, &["a.py"]), ["old"]);
-    let step = add(&repo, &["--new", "--uses", &old.id, "--", "t"]);
-    let step = step.lines().next().unwrap();
-    let shown = objects(&repo, &["step", "start", step]);
-    let pattern = shown.iter().find_map(|v| v.get("pattern")).unwrap();
-    assert_eq!(pattern["paths"], json!(["a.py", "a.py/**"]));
-    assert_eq!(pattern["scope"], json!("project"));
-    assert_eq!(texts(&repo, &["a.py"]), ["old"]);
 }
 
 /// `pattern --scope at:<place>` is a usage error (`spec/02-cli.md`, "Commands").
@@ -238,22 +197,8 @@ fn an_at_scope_is_no_scope() {
     assert_eq!(o.status.code(), Some(2), "{o:?}");
 }
 
-/// `pattern` takes `--cell` and writes nothing for it (`spec/02-cli.md`, "Commands").
-#[test]
-fn pattern_takes_a_cell_and_writes_nothing_for_it() {
-    let repo = Repo::new();
-    let id = decide(
-        &repo,
-        &["--cell", "cli-help"],
-        "When a flag gets help: keep it short.",
-    );
-    let notes = labelled(&repo, "pattern");
-    let note = notes.iter().find(|n| n.id == id).unwrap();
-    assert!(note.tags.iter().all(|t| t[0] != "cell"), "{:?}", note.tags);
-}
-
 /// A pattern with a `cell` tag, which older writers wrote, still reads, and shows no cell
-/// (`spec/05-patterns.md`, "Reading").
+/// (`spec/01-records.md`, "Records").
 #[test]
 fn an_older_pattern_with_a_cell_still_reads() {
     let repo = Repo::new();

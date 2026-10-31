@@ -24,7 +24,7 @@ Every change of `spec/` MUST keep these rules:
 4. **MUST only where interop breaks.** Else plain words, or MAY.
 5. **One concept a CIP.** A CIP cites what another owns, and never repeats it.
 6. **The base CIP says once that a reader ignores what it does not know.**
-7. **This README is the one registry** of kinds, tags, scopes, errors and deprecated names.
+7. **This README is the one registry** of kinds, tags, scopes, errors and retired names.
 8. **Examples are real records or commands,** not stories.
 9. **A rule states what, never how or why.** How belongs in the code, why in `DESIGN.md` or the plan.
 10. **A section heading is stable.** Tests cite it, so a rename or removal changes each citation in the same
@@ -77,8 +77,9 @@ Every change of `spec/` MUST keep these rules:
 | 1985 with `on` · `off` in `celis.mask` · `cell` · `p` · `scope` | kind: a mask of a cell, and its tags (NIP-32) | 09 |
 | `cell.jsonl` · `cell.md` · `blobs/<sha256>.<ext>` | the files of an exported cell | 09 |
 
-**Deprecated.** A reader ignores each of these, unless its row says how it reads it. Older versions wrote
-them.
+**Retired.** Older versions wrote these names, and no new name takes one. A reader ignores each of them,
+and `celis` refuses each command and flag as a usage error. `migrate` reads the ones its row names
+(CIP-02, "Migrate").
 
 | Name | Was |
 |---|---|
@@ -87,21 +88,21 @@ them.
 | 1111 in `celis.cairn` · kind 7 · `celis.outcome` · `celis.source` · splits | cairns, ratings, outcomes, sources, splits |
 | a `done` with a `step` tag in place of `e` | a done of a step in the code |
 | 1985 with `name` in `celis.step` · `skill:<name>` | the name of a trail, and the project of a trail from a skill file |
-| 1111 with `decision` in `celis.decision` | a pattern, now `pattern` in `celis.pattern`; a reader reads it as CIP-05, "Reading", states |
-| `binds` in `celis.pattern` or `celis.decision` | a pattern label: the pattern was a rule; a reader reads it as CIP-05, "Reading", states |
+| 1111 with `decision` in `celis.decision` | a pattern, now `pattern` in `celis.pattern`; `migrate` reads it |
+| `binds` in `celis.pattern` or `celis.decision` | a pattern label: the pattern was a rule |
 | `promoted` in `celis.decision` | a pattern label, later `binds` |
 | `situation` in `celis.decision` | a pattern label: the pattern also held where no file shows it ahead |
 | `tool` | a rule tag: the other tool calls a rule acted on |
-| `cell` on a pattern | a pattern tag: a topic the pattern was in; a reader ignores it, as CIP-05, "Reading", states |
-| `at:<place>` as the `scope` of a pattern | a scope, now `path` globs; a reader reads it as CIP-05, "Reading", states |
-| `trail:<id>` as the `scope` of a pattern | a scope, now a note on the trail; a reader reads it as CIP-05, "Reading", states |
-| `uses` that names a step | a step tag: a follow of a past step; a reader ignores it, as CIP-06, "Uses", states |
+| `cell` on a pattern | a pattern tag: a topic the pattern was in |
+| `at:<place>` as the `scope` of a pattern | a scope, now `path` globs; `migrate` reads it |
+| `trail:<id>` as the `scope` of a pattern | a scope, now a note on the trail; `migrate` reads it |
+| `uses` that names a step | a step tag: a follow of a past step |
 | `recalled` | an ask tag: a pattern the agent read for the ask |
-| `judge` as the `by` of a `done` | a proof by a reader that did not do the work; a reader reads it as CIP-03, "Closing", states |
-| `celis lesson <id>` | a command, now `celis extract <id>`; `celis` runs it as `extract` |
-| `pattern --binds` · `pattern --cell <topic>` | flags of a rule and a topic; `celis` ignores them |
-| `step add --recalled <id>` | a flag of a pattern read for an ask; `celis` ignores it |
-| `step done --by judge` | a flag of a proof by the judge; `celis` writes no `by` |
+| `judge` as the `by` of a `done` | a proof by a reader that did not do the work |
+| `celis lesson <id>` · `celis search` | commands, now `celis extract <id>` and `celis patterns` |
+| `pattern --binds` · `pattern --cell <topic>` | flags of a rule and a topic |
+| `step add --recalled <id>` | a flag of a pattern read for an ask |
+| `step done --by judge` | a flag of a proof by the judge |
 
 ## Words
 

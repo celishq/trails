@@ -10,7 +10,7 @@ fn a_done_carries_its_proof() {
     let done = Mark::Done(Done {
         proof: "proof".into(),
         changed: Some("changed".into()),
-        by: Some(By::Judge),
+        by: Some(By::Person),
         files: vec![],
         misled: vec![],
     });

@@ -89,7 +89,6 @@ fn a_period_counts_its_done_steps_that_use_a_pattern() {
         replaces: None,
         content: "keep cents".into(),
         paths: vec![],
-        old_rule: false,
         within: vec![],
         examples: Default::default(),
     }
@@ -157,7 +156,6 @@ fn a_period_counts_an_ask_with_no_steps_under_it() {
         replaces: None,
         content: "keep cents".into(),
         paths: vec![],
-        old_rule: false,
         within: vec![],
         examples: Default::default(),
     }

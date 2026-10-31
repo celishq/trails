@@ -11,7 +11,7 @@ mod cell_remove;
 mod cell_view;
 mod closing;
 mod commands;
-mod deprecated;
+
 mod extract;
 mod files;
 mod help;
@@ -19,6 +19,7 @@ mod index;
 mod issue;
 mod link;
 mod log;
+mod migrate;
 mod output;
 mod pattern_ends;
 mod pattern_graph;

@@ -38,7 +38,7 @@ CIP.
 
 **Readers**
 
-- A reader MUST ignore a kind, label or tag it does not know, and each deprecated name of the README.
+- A reader MUST ignore a kind, label or tag it does not know, and each retired name of the README.
 
 ## The store
 

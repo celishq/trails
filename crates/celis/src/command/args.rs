@@ -39,8 +39,6 @@ pub(crate) struct Args {
     pub cell: Option<String>,
     pub to: Option<String>,
     pub yes: bool,
-    /// Each deprecated name it gave, in order (`spec/README.md`, "Names").
-    pub old: Vec<&'static str>,
 }
 
 impl Args {
@@ -53,8 +51,8 @@ impl Args {
                 .any(|a| a == "--json")
     }
 
-    /// The words of `args`, only the verb when they are raw; an unknown flag, a flag without its value,
-    /// and the `search` that older plugins give are usage errors.
+    /// The words of `args`, only the verb when they are raw; an unknown flag and a flag without its value
+    /// are usage errors.
     pub fn parse(args: &[String]) -> Result<Args, Failure> {
         let mut parsed = Args::default();
         if crate::help::raw(args) {
@@ -77,7 +75,6 @@ impl Args {
                 "--demo" => parsed.demo = true,
                 "--new" => parsed.new = true,
                 "--as-planned" => parsed.planned = true,
-                "--binds" => parsed.old.push("--binds"),
                 "--next" => parsed.next = true,
                 "--off" => parsed.off = true,
                 "--markdown" => parsed.markdown = true,
@@ -88,10 +85,6 @@ impl Args {
                 "--replaces" => parsed.replaces = Some(value(arg, rest.next())?),
                 "--uses" => parsed.uses.push(value(arg, rest.next())?),
                 "--misled" => parsed.misled.push(value(arg, rest.next())?),
-                "--recalled" => {
-                    value(arg, rest.next())?;
-                    parsed.old.push("--recalled");
-                }
                 "--check" => parsed.check = Some(value(arg, rest.next())?),
                 "--changed" => parsed.changed = Some(value(arg, rest.next())?),
                 "--by" => parsed.by = Some(value(arg, rest.next())?),
@@ -111,20 +104,6 @@ impl Args {
                 }
                 word => parsed.words.push(word.to_string()),
             }
-        }
-        if parsed.cell.is_some() && parsed.words.first().is_some_and(|w| w == "pattern") {
-            parsed.old.push("--cell");
-        }
-        if parsed.words.first().is_some_and(|w| w == "lesson") {
-            parsed.old.insert(0, "lesson");
-        }
-        if parsed.by.as_deref() == Some("judge") {
-            parsed.old.push("--by judge");
-        }
-        if parsed.words.first().is_some_and(|w| w == "search") {
-            return Err(Failure::usage(
-                "search is gone; read the index of patterns with celis patterns",
-            ));
         }
         match bad {
             Some(failure) if !parsed.help => Err(failure),

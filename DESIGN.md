@@ -43,24 +43,19 @@ A bench checks a design; a design is never tuned to a bench.
 ## Decisions
 
 1. **A pattern holds in a project or for me, never in one trail.** The `trail:<id>` scope goes. What
-   holds for one trail only is a note on its step. A reader reads an old trail pattern as a note of
-   that trail.
-2. **One record: the pattern.** Its label is `pattern` in `celis.pattern`. A writer writes this label, and
-   a reader still reads `decision` in `celis.decision`. A reader reads an old `binds` record as a plain
-   pattern. Only the `grep` view marks it `old-rule`, so that tidy can find it. `pattern --binds` is
-   accepted and ignored, so an older plugin still works with a newer `celis`. A pattern record names
-   no cell: a reader ignores an old `cell` tag, and `pattern --cell` is accepted and ignored in the same
-   way. A cell names its patterns (decision 16).
+   holds for one trail only is a note on its step. `celis migrate` writes an old trail pattern again as
+   a note of that trail.
+2. **One record: the pattern.** Its label is `pattern` in `celis.pattern`. A pattern record names no
+   cell: a cell names its patterns (decision 16).
 3. **The agent loads a pattern at the choice it bears on.**
    - `celis patterns` gives the index: each live pattern in scope as its id and its Name, or its When
      when it has no Name, with its level (decision 17). A writer gives each pattern a Name: celis
-     writes a pattern without one, with a warning, so that an older plugin still works. `celis grep <id>` gives the whole pattern. celis has no vector, no word match and no
+     writes a pattern without one, with a warning. `celis grep <id>` gives the whole pattern. celis has no vector, no word match and no
      rank. The session start gives the index, and gives it again after each compaction, so the agent
      has it before the first ask.
    - When a choice of the work matches a When, the agent reads that pattern whole before it chooses,
      and names it with `--uses` on the step of that choice. There is no step at an ask that reads the
-     patterns, and no agent for it. The uses are the evidence. `step add --recalled` is accepted and
-     ignored, and a reader ignores the `recalled` tag that older writers wrote on an ask.
+     patterns, and no agent for it. The uses are the evidence.
    - `patterns <id>` writes a recall on the session's newest open step, and nothing when the session
      has no open step. A recall, then a use, then a step that no fix revises, is the funnel that shows
      whether the index finds the right pattern.
@@ -68,7 +63,7 @@ A bench checks a design; a design is never tuned to a bench.
      the `done` of a step where the pattern did not fit. A revision of a step that used a pattern still
      counts as misled, because the agent does not always mark it.
    - Past trails serve the learn and tidy. Nothing follows a past step: a step's `uses` names only a
-     pattern, and a reader ignores a `uses` that names a step, which older writers wrote.
+     pattern.
 4. **What goes in matters most.** The agent decides when there is a lesson: a correction, a pick, a
    reaction to a result, a wish such as "from now on", or a fix of done work. It then runs `celis extract
 <id>`, which prints the learn brief of an ask or a step, open or closed: the ask's `expect`, `for`
@@ -114,9 +109,8 @@ A bench checks a design; a design is never tuned to a bench.
     those asks as its steps. The migrate skill closes each older trail after the person agrees.
 12. **No judge.** celis keeps patterns, and to check work is the orchestration's. A step proves its work
     with its own check or its proof. A pattern's path is the module where it holds, which the index
-    shows, so the agent chooses it before the work, and `done` gives no patterns. `done --by person` says that the person confirms the result. A reader reads an old
-    `by judge` as a proof by a reader that did not do the work. `done --by judge` is accepted and writes
-    no `by`, so an older plugin still works with a newer `celis`.
+    shows, so the agent chooses it before the work, and `done` gives no patterns. `done --by person`
+    says that the person confirms the result.
 13. **The outcomes are evidence, and celis lists what needs tidy.** A pattern misled a step that used
     it when a later step fixed that work. `celis patterns --tidy` lists each live pattern that misled
     twice or more, that has a near copy, that no step used in 60 days, that was replaced three times
@@ -147,11 +141,12 @@ A bench checks a design; a design is never tuned to a bench.
     named by where it lives, such as `API_KEY in .env`. The prompt hook keeps no prompt that holds a
     secret. A guide in the card alone did not hold: agents gave `.env` as a proof file.
 
-15. **An old name is deprecated, and still works.** celis accepts each name that an older plugin gives,
-    such as `lesson`, `--binds`, `--cell`, `--new`, `--recalled` and `--by judge`, does what its row in
-    the spec says, and prints one line on stderr that names it as deprecated. So an older plugin works
-    with a newer `celis`, and its agent learns the new name. A reader reads each old record as before,
-    because a record cannot be deleted.
+15. **An old form is migrated once, and never read again.** celis reads and writes only the current
+    forms, so that no reader keeps a branch for each form that an older version wrote. A record cannot
+    be deleted, so `celis migrate` is the one reader of an old form: after the person agrees, it writes
+    each live pattern of an old form again in the current form, and the session start says when one
+    remains. An old flag or command is a usage error.
+    The spec keeps each old name as retired, so that no new name takes it.
 16. **A cell is a layer of patterns that you can turn on and off, and share.** The log stays one log. A
     cell is a label event that names a cell and its patterns, and only the cell's author adds to it. The
     patterns in no cell are the base layer, which is always on. A mask record turns a cell on or off in a

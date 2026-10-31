@@ -90,7 +90,6 @@ impl Desk {
             replaces: None,
             content: "When you price: round down, because the shelf does.".into(),
             paths: vec![],
-            old_rule: false,
             within: vec![],
             examples: Default::default(),
         };
@@ -111,7 +110,6 @@ impl Desk {
             replaces: Some(celis_store::PatternId::new(old)),
             content: "When you price: round up, because the till does.".into(),
             paths: vec![],
-            old_rule: false,
             within: vec![],
             examples: Default::default(),
         };
