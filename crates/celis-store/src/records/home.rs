@@ -7,21 +7,18 @@ use crate::{Link, Phrase, ProofFile, Refusal};
 use anyhow::Result;
 use blobs::Blobs;
 use celis_nostr::{Account, Note, Pubkey};
-use std::cell::{OnceCell, RefCell};
+use std::cell::OnceCell;
 use std::collections::{HashMap, HashSet};
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
-/// The records in `$CELIS_HOME/trails/`, and the account of `$CELIS_HOME/phrase` that signs new ones. It
-/// reads the records from disk once, keeps those it writes after, and the names of the files of
-/// `shared/` it holds, and the blobs of `blobs/`. It reads and writes its linked folders too.
+/// The records in `$CELIS_HOME/trails/`, and the account of `$CELIS_HOME/phrase` that signs new ones, and
+/// the blobs of `blobs/`. It reads and writes its linked folders too.
 pub struct Home {
     root: PathBuf,
     phrase: Phrase,
     links: Vec<Link>,
     account: OnceCell<Account>,
-    read: RefCell<Option<Vec<Note>>>,
-    seen: RefCell<HashSet<String>>,
     pack: Pack,
     blobs: Blobs,
 }
@@ -40,8 +37,6 @@ impl Home {
             phrase: Phrase::at(home),
             links: vec![],
             account: OnceCell::new(),
-            read: RefCell::new(None),
-            seen: RefCell::default(),
             pack: Pack::open(home.join("cache/pack")),
             blobs: Blobs::at(root.join("blobs")),
             root,
@@ -74,23 +69,21 @@ impl Home {
         Ok(kept.map(|identity| identity.account().pubkey()))
     }
 
-    /// Writes `record` once to `shared/`, and to each linked folder that holds it.
-    pub fn write(&self, record: &Note) -> Result<PathBuf> {
-        let (path, new) = put(&self.root.join("shared"), record)?;
-        if new {
-            if let Some(read) = self.read.borrow_mut().as_mut() {
-                read.push(record.clone());
-                self.seen.borrow_mut().insert(name(record));
-            }
-        }
+    /// Writes `record` once to `shared/`, and to each linked folder that holds it beside the records
+    /// `all`; its path, and whether it was new.
+    pub fn write(&self, record: &Note, all: &[&Note]) -> Result<(PathBuf, bool)> {
+        let written = put(&self.root.join("shared"), record)?;
         if !self.links.is_empty() {
-            let records = self.records();
-            let all = records.iter().map(|r| (r.id.as_str(), r)).collect();
+            let all = all
+                .iter()
+                .chain([&record])
+                .map(|r| (r.id.as_str(), *r))
+                .collect();
             for link in self.links.iter().filter(|l| l.holds(record, &all)) {
                 put(&link.folder, record)?;
             }
         }
-        Ok(path)
+        Ok(written)
     }
 
     /// Keeps `bytes` as a blob named with `ext` in `blobs/` and in each linked folder, unless it is there;
@@ -115,8 +108,6 @@ impl Home {
         for sha in blobs {
             self.blobs.remove(sha);
         }
-        *self.read.borrow_mut() = None;
-        self.seen.borrow_mut().clear();
         Ok(())
     }
 
@@ -139,7 +130,7 @@ impl Home {
     /// record of a linked folder the store lacks into `shared/`. Returns the counts of records copied out
     /// and in.
     pub fn sync(&self) -> Result<(usize, usize)> {
-        let mut kept = read(&self.root.join("shared"), |_| true, &self.pack);
+        let mut kept = read(&self.root.join("shared"), &self.pack);
         let came = self.take_in(&mut kept)?;
         let all: HashMap<&str, &Note> = kept.iter().map(|r| (r.id.as_str(), r)).collect();
         let mut went = 0;
@@ -151,31 +142,21 @@ impl Home {
                 }
             }
         }
-        *self.read.borrow_mut() = None;
-        self.seen.borrow_mut().clear();
         Ok((went, came))
     }
 
-    /// Every record that parses and verifies, whatever account signed it.
+    /// Every record that parses and verifies, whatever account signed it, read from disk, oldest first.
     pub fn records(&self) -> Vec<Note> {
-        let mut all = self
-            .read
-            .borrow_mut()
-            .get_or_insert_with(|| self.files())
-            .clone();
+        let mut all = read(&self.root.join("shared"), &self.pack);
+        let _ = self.take_in(&mut all);
         all.sort_by(|a, b| (a.created_at, &a.id).cmp(&(b.created_at, &b.id)));
         all
     }
 
-    /// The records of the files `paths` names that it lacks, in `shared/` or a linked folder, that parse and
-    /// verify; each is copied into `shared/` when it is not there, and they join the records. None before
-    /// the first read.
-    pub fn take(&self, paths: &[PathBuf]) -> Vec<Note> {
-        let mut read = self.read.borrow_mut();
-        let Some(read) = read.as_mut() else {
-            return Vec::new();
-        };
-        let mut seen = self.seen.borrow_mut();
+    /// The records of the files `paths` names that are not `known` by file name, in `shared/` or a
+    /// linked folder, that parse and verify; each is copied into `shared/` when it is not there.
+    pub fn take(&self, paths: &[PathBuf], known: &HashSet<String>) -> Vec<Note> {
+        let mut seen = known.clone();
         let mut taken = Vec::new();
         for path in paths {
             let file = path.file_name().and_then(|f| f.to_str()).unwrap_or("");
@@ -191,28 +172,8 @@ impl Home {
             let _ = put(&self.root.join("shared"), &record);
             taken.push(record);
         }
-        read.extend(taken.iter().cloned());
         self.pack.save();
         taken
-    }
-
-    /// Every record in `shared/` and in the linked folders that parses and verifies.
-    fn files(&self) -> Vec<Note> {
-        let mut all = self.unseen();
-        let _ = self.take_in(&mut all);
-        all
-    }
-
-    /// Every record in `shared/` of a file not read before, that parses and verifies.
-    fn unseen(&self) -> Vec<Note> {
-        let mut seen = self.seen.borrow_mut();
-        let fresh = read(
-            &self.root.join("shared"),
-            |file| !seen.contains(file),
-            &self.pack,
-        );
-        seen.extend(fresh.iter().map(name));
-        fresh
     }
 
     /// Copies each record of the linked folders that `shared/` lacks into it, and adds it to `all`, and
@@ -223,9 +184,8 @@ impl Home {
         }
         let mut came = 0;
         let linked = self.links.iter();
-        for record in linked.flat_map(|l| read(&l.folder, |_| true, &self.pack)) {
+        for record in linked.flat_map(|l| read(&l.folder, &self.pack)) {
             if put(&self.root.join("shared"), &record)?.1 {
-                self.seen.borrow_mut().insert(name(&record));
                 all.push(record);
                 came += 1;
             }
@@ -276,18 +236,13 @@ fn unwritten(folder: &Path, error: std::io::Error) -> anyhow::Error {
     anyhow::Error::new(error).context(format!("cannot write {}{hint}", folder.display()))
 }
 
-/// Every record in `folder` of a file `wanted` names, that parses and verifies, read on as many threads
+/// Every record in `folder` that parses and verifies, read on as many threads
 /// as the machine runs; a record `pack` holds is taken from it.
-fn read(folder: &Path, wanted: impl Fn(&str) -> bool, pack: &Pack) -> Vec<Note> {
+fn read(folder: &Path, pack: &Pack) -> Vec<Note> {
     let paths: Vec<PathBuf> = std::fs::read_dir(folder)
         .into_iter()
         .flatten()
         .filter_map(|entry| Some(entry.ok()?.path()))
-        .filter(|path| {
-            path.file_name()
-                .and_then(|f| f.to_str())
-                .is_some_and(&wanted)
-        })
         .collect();
     let threads = std::thread::available_parallelism().map_or(1, |n| n.get());
     let size = paths.len().div_ceil(threads).max(1);
