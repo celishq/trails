@@ -132,7 +132,7 @@ fn the_session_start_opens_with_a_status_line() {
     let none = desk.start("claude", desk.project.path());
     let first = none.lines().next().unwrap();
     assert!(
-        first.ends_with(" is on: no pattern in scope here. Give the person this line in your first answer of the session."),
+        first.ends_with(" is on: no pattern in scope here."),
         "{none}"
     );
     for text in [
@@ -146,7 +146,7 @@ fn the_session_start_opens_with_a_status_line() {
     let first = two.lines().next().unwrap();
     assert!(first.starts_with("celis "), "{two}");
     assert!(
-        first.ends_with(" is on: 2 patterns in scope here. Give the person this line in your first answer of the session."),
+        first.ends_with(" is on: 2 patterns in scope here."),
         "{two}"
     );
 }
