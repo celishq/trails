@@ -1,7 +1,9 @@
 //! The records of a home at one moment, and the signed append of new ones.
 
+use crate::records::pack::name;
 use crate::{Anchor, Home, ProofFile, Refusal, Secret, Source};
 use celis_nostr::{Account, Note, Pubkey};
+use std::cell::RefCell;
 use std::path::PathBuf;
 
 /// The records of a home at the time `now`, and the account's writes on them, each signed now. A
@@ -10,6 +12,7 @@ pub struct Store {
     now: u64,
     home: Home,
     records: Vec<Note>,
+    written: RefCell<Vec<Note>>,
     limit: u64,
 }
 
@@ -18,6 +21,7 @@ impl Store {
     pub fn open(home: Home, now: u64, limit: u64) -> Store {
         Store {
             records: home.records(),
+            written: RefCell::default(),
             home,
             now,
             limit,
@@ -27,7 +31,8 @@ impl Store {
     /// Moves it to `now`, with the records of its home as it last read them and as it wrote them since.
     pub fn at(&mut self, now: u64) {
         self.now = now;
-        self.records = self.home.records();
+        let written = self.written.take();
+        self.join(written);
     }
 
     pub fn now(&self) -> u64 {
@@ -42,10 +47,11 @@ impl Store {
     /// Adds the records of the files `paths` names that it lacks, as `Home::take` reads them; those
     /// records.
     pub fn take(&mut self, paths: &[PathBuf]) -> Vec<Note> {
-        let taken = self.home.take(paths);
-        self.records.extend(taken.iter().cloned());
-        self.records
-            .sort_by(|a, b| (a.created_at, &a.id).cmp(&(b.created_at, &b.id)));
+        let written = self.written.take();
+        self.join(written);
+        let known = self.records.iter().map(name).collect();
+        let taken = self.home.take(paths, &known);
+        self.join(taken.clone());
         taken
     }
 
@@ -92,14 +98,14 @@ impl Store {
     /// Removes the files of `records`, and the blobs `blobs` names.
     pub fn remove(&mut self, records: &[Note], blobs: &[String]) -> Result<(), Refusal> {
         self.home.remove(records, blobs)?;
+        self.written.take();
         self.records = self.home.records();
         Ok(())
     }
 
     /// Writes `record`, signed by any account, as it is.
     pub fn put(&self, record: &Note) -> Result<(), Refusal> {
-        self.home.write(record)?;
-        Ok(())
+        self.write(record)
     }
 
     /// The blob `sha256` of the home, when its bytes hash to its name.
@@ -114,7 +120,7 @@ impl Store {
         record: impl FnOnce(&Account, u64) -> anyhow::Result<Note>,
     ) -> Result<Note, Refusal> {
         let note = self.seal(record)?;
-        self.home.write(&note)?;
+        self.write(&note)?;
         Ok(note)
     }
 
@@ -133,4 +139,24 @@ impl Store {
         }
         Ok(note)
     }
+
+    /// Writes `record` to the home, and keeps it for the next moment when it is new.
+    fn write(&self, record: &Note) -> Result<(), Refusal> {
+        let mut written = self.written.borrow_mut();
+        let all: Vec<&Note> = self.records.iter().chain(written.iter()).collect();
+        if self.home.write(record, &all)?.1 {
+            written.push(record.clone());
+        }
+        Ok(())
+    }
+
+    /// Adds `records` to its records, oldest first.
+    fn join(&mut self, records: Vec<Note>) {
+        self.records.extend(records);
+        self.records
+            .sort_by(|a, b| (a.created_at, &a.id).cmp(&(b.created_at, &b.id)));
+    }
 }
+
+#[cfg(test)]
+mod tests;

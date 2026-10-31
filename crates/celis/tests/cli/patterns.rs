@@ -481,15 +481,11 @@ fn forms() -> Vec<serde_json::Value> {
     fixture["forms"].as_array().unwrap().clone()
 }
 
-/// A new pattern carries the labels in `celis.pattern`, and no `binds` label with `--binds`
-/// (`spec/05-patterns.md`, "Patterns").
+/// A new pattern carries the labels in `celis.pattern` (`spec/05-patterns.md`, "Patterns").
 #[test]
 fn a_new_pattern_carries_the_labels_in_celis_pattern() {
     let repo = Repo::new();
-    let o = cli(
-        &repo,
-        &["pattern", "--binds", "--", "When you test: set A=1."],
-    );
+    let o = cli(&repo, &["pattern", "--", "When you test: set A=1."]);
     assert!(o.status.success(), "{}", err(&o));
     let pattern = support::labelled(&repo, "pattern").remove(0);
     let labels: Vec<Vec<String>> = pattern
@@ -503,10 +499,10 @@ fn a_new_pattern_carries_the_labels_in_celis_pattern() {
     assert_eq!(labels, want);
 }
 
-/// A record in each form of the fixture reads as a plain pattern, and the `grep` view marks it
-/// `old-rule` when it has `binds` (`spec/05-patterns.md`, "Reading").
+/// A record in each form of the fixture that it marks `read` reads as a plain pattern, and `migrate`
+/// lists each other (`spec/02-cli.md`, "Migrate").
 #[test]
-fn each_form_of_the_labels_reads_as_a_plain_pattern() {
+fn each_form_of_the_labels_reads_as_a_plain_pattern_or_goes_to_migrate() {
     let repo = Repo::new();
     let by = support::account();
     let mut want = Vec::new();
@@ -518,15 +514,14 @@ fn each_form_of_the_labels_reads_as_a_plain_pattern() {
         let note = celis_nostr::Note::write(&by, 1111u16, 1_700_000_000 + n as u64, tags, content)
             .unwrap();
         support::put(&repo, &note);
-        want.push((note.id[..8].to_string(), form["old_rule"] == true));
+        want.push((note.id[..8].to_string(), form["read"] == true));
     }
     let said = out(&cli(&repo, &["patterns", "--markdown"]));
-    let grep = out(&cli(&repo, &["grep", " pattern "]));
-    for (id, old_rule) in &want {
+    let old = out(&cli(&repo, &["migrate"]));
+    for (id, read) in &want {
         let head = format!("`{id}` · project");
-        assert!(said.lines().any(|l| l == head), "{head}\n{said}");
-        let line = grep.lines().find(|l| l.contains(id.as_str())).unwrap();
-        assert_eq!(line.contains(" old-rule"), *old_rule, "{line}");
+        assert_eq!(said.lines().any(|l| l == head), *read, "{head}\n{said}");
+        assert_eq!(old.contains(&format!("old {id} decision")), !*read, "{old}");
     }
 }
 

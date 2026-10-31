@@ -23,6 +23,7 @@ celis tree [<id>]... [--graph] [--full] [--all] [--demo]
 celis grep <grep option>... <pattern>                 every trail, through the system grep
 celis stats [<id>] [--demo]                           the use of the patterns, or a step's grade
 celis extract <id>                                    what an ask or a step taught, to extract as patterns
+celis migrate [--yes]                                 the patterns of a retired form, and their rewrite with --yes
 celis setup                                           the commands that add the plugin to each agent here
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
 celis link [<folder>] [--off]                         keep this project's trails in a folder, or stop
@@ -62,8 +63,6 @@ pattern  json  {"id", "created_at", "project", "scope", "replaces", "content",
 
 - Off macOS, `$CELIS_HOME` MUST default to `~/.local/share/celis`.
 - A command that "Commands" does not name, and a flag no command takes, is a usage error.
-- `search`, which older plugins give, MUST refuse as a usage error with a message that names
-  `celis patterns`.
 - `pattern` MUST write a pattern of the working folder's project (CIP-05), with `--scope` and
   `--replaces` as its tags, and no `scope` tag for `project`; each `--path`, from the project's top
   folder, as a `path` tag, each `--within` as a `within` tag (CIP-05, "Graph"),
@@ -73,13 +72,10 @@ pattern  json  {"id", "created_at", "project", "scope", "replaces", "content",
 - A file value of `pattern --good`, `--bad` and `done --file` is a file of the working folder, `-` for the
   bytes of stdin, or a `data:` URI with `;base64` for its decoded bytes. Stdin with no bytes, a `data:`
   URI with no `;base64`, and base64 that does not decode are usage errors.
-- `pattern` MUST accept `--binds` and `--cell <topic>`, which older plugins give, and write nothing for
-  them.
 - `--project` on `pattern` and `step add` MUST write the records of the project it names in place of the
   working folder's: a project id that a record of the store has, with that record's project name. It MUST refuse any other id as a usage error.
-- `pattern` MUST refuse empty text, and a scope that is not `me` or `project`, as a usage error, with a
-  message that names `step note` for `trail:<id>`; and a `--replaces` that no live pattern of the
-  project has, with `no-pattern`.
+- `pattern` MUST refuse empty text, and a scope that is not `me` or `project`, as a usage error; and a
+  `--replaces` that no live pattern of the project has, with `no-pattern`.
 
 **Examples**
 
@@ -113,11 +109,9 @@ celis pattern --path "**/prices*.py" -- "When you change prices: keep them in ce
 - A command that writes records MUST print the id of each, its main record first.
 - With `--json`, a command but `grep` MUST print one JSON object a line, and nothing else, to stdout. A
   printed id is `{"id"}`.
-- Only `pattern`, `step`, `cell` and `hook ask` MAY write a record. A command that refuses MUST write nothing.
+- Only `pattern`, `step`, `cell`, `migrate` and `hook ask` MAY write a record. A command that refuses MUST write nothing.
 - A command MUST NOT ask a question, but `auth login`.
 - A command MUST exit 0 when done, 2 on a usage error, and 1 on any other error.
-- A command MUST take each deprecated command and flag of the README, and, without `--json`, MUST print one
-  line on stderr that names it as deprecated.
 - An error MUST be named `usage`, `no-pattern`, `no-step`, `closed`, `open-steps`, `check-failed`,
   `secret` (CIP-01, "The account"), `no-cell`, `cell-taken`, `cell-yours`, `invalid` ("Cells"), else `error`. With `--json`, it MUST be one object on stderr,
   `{"error": "<name>", "message": "<text>"}`.
@@ -165,7 +159,6 @@ note  json  {"id", "created_at", "step", "content"}
 - `add` MUST write no step when an open step of the same project and `under` has the same text, and
   print that step's id. With `--uses`, or a `--replaces` of a done step, it MUST refuse it as a usage
   error.
-- `add` MUST accept `--recalled <id>`, which older plugins give, and write nothing for it.
 - `add` with no `--under`, `--replaces` or `--new` MUST refuse as a usage error when its session has a
   current trail (CIP-04, "Sessions"), with a message that names that trail's id.
 - `add` MUST refuse empty text as a usage error; a dropped `--under`, a done `--under` that is not a
@@ -180,8 +173,8 @@ note  json  {"id", "created_at", "step", "content"}
   error. It MUST refuse a step with an open step under it, with `open-steps`.
 - `done` MUST run the step's `check` in the project's top folder, and refuse with `check-failed` when it
   fails or runs past `CELIS_CHECK_SECONDS`, 600 when not set.
-- `done --changed` MUST write its text as `changed`, and `done --by` its value as `by`; `--by judge`, which
-  older plugins give, MUST write no `by`, and any other `--by` is a usage error. Each `done --file` MUST be kept as a blob and named by an
+- `done --changed` MUST write its text as `changed`, and `done --by` its value as `by`; any other `--by` than
+  `person` is a usage error. Each `done --file` MUST be kept as a blob and named by an
   `imeta` tag (CIP-08), and a path that is not there is a usage error.
 - `drop` MUST refuse an empty reason, and `edit` one with no text, `--at` or `--check`, as usage errors.
 - `note` MUST write its text as a note on the step (CIP-03, "Notes"), and refuse empty text as a usage
@@ -327,17 +320,8 @@ total <n> patterns in the index · last 7 days: <n> written, <n> replaced, <n> g
 ```
 
 ```
-lifecycle <day | week | month> <yyyy-mm-dd> written:<n> replaced:<n> dropped:<n> promoted:<n> recalled:<n> used:<n> misled:<n>
-                                         the last 7 days, 4 weeks and 6 months, oldest first
-value last 28 days: asks:<n> covered:<n> corrections:<n> failed:<n> missed:<n> first-pass:<n%|->/<n%|-> recalled:<n> used:<n> held:<n> reach:<n> agents:<name>[,<name>]... | - promoted:<n>
-```
-
-```
 pattern    json  {"id", "uses", "misled", "replaces", "used", "examples", "tidy": [], "name", "when"}
 total      json  {"index", "written", "replaced", "gaps"}
-lifecycle  json  {"span", "from", "written", "replaced", "dropped", "promoted", "recalled", "used", "misled"}
-value      json  {"asks", "covered", "corrections", "failed", "missed", "with", "without", "recalled",
-                  "used", "held", "reach", "agents": [], "promoted"}
 ```
 
 A pattern's fields: `uses`, how many steps name it in `uses` (CIP-06, "Uses"); `misled`, how many steps
@@ -350,29 +334,10 @@ The total's fields: `index`, how many patterns are live in scope; `written`, the
 in the last 7 days; `replaced`, those of them with a `replaces`; `gaps`, the steps of the project made in
 the last 7 days that fix done work (CIP-06, "Revisions") in a trail whose steps use no pattern.
 
-The lifecycle's fields, for the live and the ended patterns in scope, in a span: `span` is `day`,
-`week` or `month`, and `from` its first day: a day, 7 days that end on today or on a multiple of 7 days
-before, or a month of the calendar. `written`, the patterns made in it with no `replaces`; `replaced`,
-those made in it with a `replaces`; `dropped`, those a drop named in it; `promoted`, those of them whose
-drop reason starts with `promoted to`; `recalled`, the recalls of them written in it (CIP-06,
-"Recalls"); `used`, the uses of them by steps made in it (CIP-06, "Uses"); `misled`, the steps they
-misled (CIP-06, "Misled"), on the day of the `done` or the step that tells it.
-
-The value's fields, for the asks of the project done in the last 28 days and the patterns in scope:
-`asks`, those asks; `covered`, those of them whose tree uses a pattern; `corrections`, the steps of
-their trees that revise done work; `failed`, those corrections whose revised step's trail uses a
-pattern; `missed`, the others whose own trail has a pattern made since its ask began that replaces a
-pattern made before the revised step; `with` and `without`, the percent of done steps of their trees
-that no step revised, among those that use a pattern and those that use none, `null` and `-` with no
-such step; `recalled`, `used` and `held`, the recalls in their trees, the uses, and the uses by steps
-that no step revised and no `misled` names; `reach`, the uses of a `me` pattern by a step of another
-project, in the store; `agents`, each `agent` of a step that uses a pattern, `-` with none; `promoted`,
-the patterns promoted in that time.
-
 **Rules**
 
 - With no `<id>`, off a terminal or with `--json`, `stats` MUST print a line for each live pattern in
-  scope, oldest first, then the total, the lifecycle lines and the value line. With no record in the store, it MUST print `Nothing was reused
+  scope, oldest first, then the total. With no record in the store, it MUST print `Nothing was reused
   yet.`, and nothing with `--json`.
 
 **Examples**
@@ -405,6 +370,39 @@ celis stats --json
 ```
 celis extract 3fa2c1d0
 celis extract 3fa2c1d0 --json
+```
+
+## Migrate
+
+`migrate` gives each live pattern of the store in a retired form (README, "Names"): a `decision` in
+`celis.decision` with a scope of CIP-05 or none, a `scope` of `at:<place>`, or a `scope` of
+`trail:<id>`. Readers read none of them.
+
+```
+old <id8> <decision | at | trail> <its first line>     each one, oldest first
+```
+
+```
+old    json  {"id", "form", "text"}
+```
+
+**Rules**
+
+- A pattern of a retired form is live when no record's `replaces` names it and no drop names it.
+- `migrate` MUST print a line for each live pattern of a retired form; with none, `Nothing to
+  migrate.`, and nothing with `--json`.
+- `migrate --yes` MUST write each one again, and print the id of each record it writes. A `trail:<id>`
+  pattern MUST become a note (CIP-03, "Notes") on `<id>` with its content, and a drop of the pattern.
+  Any other MUST become a pattern (CIP-05) of its project with its content, scope, `path`, `within` and
+  examples, and a `replaces` of its id. An `at:<place>` scope MUST become `project` with two more `path`
+  globs: the place's path without its line, and that path with `/**` after it; a place of the
+  project's top folder, such as `.`, adds no `path`.
+
+**Examples**
+
+```
+celis migrate
+celis migrate --yes
 ```
 
 ## Hooks
@@ -497,7 +495,7 @@ trails with it.
 view    <yyyy-mm-dd> <trail id8 | -> [<project name>] <kind> <id8> <fields> <text>
           trail | step   <open | done | dropped>[ revised-by <id>,…][ at:<place>]…
           pattern        <live | replaced-by <id> | dropped> {<me | project>}
-                           [ old-rule][ uses:<n>][ misled:<n>][ used:<yyyy-mm-dd>][ cell:<name>]…
+                           [ uses:<n>][ misled:<n>][ used:<yyyy-mm-dd>][ cell:<name>]…
           proof | changed | dropped | note                       the step's or pattern's id, no fields
           prompt                                                 the trail's id, no fields (CIP-04, "Sessions")
           good | bad                                             the pattern's id, no fields, and an example:
@@ -512,8 +510,7 @@ end     project [<project name>]
 ```
 
 `<id8>` is the first 8 characters of an id. A text holds each newline as a space. After its state and
-scope, a pattern's fields give ` old-rule` when it has the `binds` label that older writers wrote (CIP-05,
-"Reading"), ` uses:<n>` with how many steps name it in `uses` (CIP-06, "Uses"), when not 0, ` misled:<n>` with how
+scope, a pattern's fields give ` uses:<n>` with how many steps name it in `uses` (CIP-06, "Uses"), when not 0, ` misled:<n>` with how
 many steps it misled (CIP-06, "Misled"), when not 0, ` used:<day>` with the day of the newest step
 whose `uses` names it, and ` cell:<name>` for each cell that is on and holds it (CIP-09).
 

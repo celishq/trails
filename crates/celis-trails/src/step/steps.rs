@@ -4,31 +4,34 @@ use crate::{Mark, State, Step, StepRecord};
 use celis_nostr::Note;
 use celis_patterns::PatternRecord;
 use celis_store::Refusal;
-use std::cell::Cell;
 use std::collections::{HashMap, HashSet};
+use std::rc::Rc;
 
 /// The step records and marks of a store at the time `now`: which steps are open, how they nest, and how
 /// each went.
 pub struct Steps<'a> {
-    now: Cell<u64>,
-    index: Index<'a>,
+    now: u64,
+    index: Rc<Index<'a>>,
 }
 
 impl<'a> Steps<'a> {
     pub fn new(records: &'a [Note], now: u64) -> Steps<'a> {
         Steps {
-            now: Cell::new(now),
-            index: Index::of(records),
+            now,
+            index: Rc::new(Index::of(records)),
         }
     }
 
     pub fn now(&self) -> u64 {
-        self.now.get()
+        self.now
     }
 
-    /// Moves it to the time `now`, with the same records.
-    pub fn at(&self, now: u64) {
-        self.now.set(now);
+    /// The same steps at the time `now`.
+    pub fn at(&self, now: u64) -> Steps<'a> {
+        Steps {
+            now,
+            index: Rc::clone(&self.index),
+        }
     }
 
     /// Every step, oldest first.

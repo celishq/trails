@@ -90,11 +90,10 @@ impl Desk {
             replaces: None,
             content: "When you price: round down, because the shelf does.".into(),
             paths: vec![],
-            old_rule: false,
             within: vec![],
             examples: Default::default(),
         };
-        let id = self.trails.decide(pattern, None).unwrap().id;
+        let id = self.trails.write(pattern, None).unwrap().id;
         self.trails.at(noon() - ago);
         id
     }
@@ -111,11 +110,10 @@ impl Desk {
             replaces: Some(celis_store::PatternId::new(old)),
             content: "When you price: round up, because the till does.".into(),
             paths: vec![],
-            old_rule: false,
             within: vec![],
             examples: Default::default(),
         };
-        let id = self.trails.decide(pattern, None).unwrap().id;
+        let id = self.trails.write(pattern, None).unwrap().id;
         self.trails.at(noon() - ago);
         id
     }

@@ -691,10 +691,7 @@ fn watch_prints_open_steps_then_notes_then_closed_steps() {
     let by = support::account();
     let at = support::now() - 60;
     let trail = support::step_note(&repo, &by, None, "the trail", at);
-    let scope = format!("trail:{}", trail.id);
-    let project = (repo.project_id(), "repo");
-    let pattern = (Some(scope.as_str()), None);
-    support::stored_pattern(&repo, (&project.0, project.1), &by, pattern, "a rule", at);
+    support::mark_note(&repo, &by, "note", &trail.id, "a rule", at);
     let finished = support::step_note(&repo, &by, Some(&trail), "finished", at + 1);
     support::mark_note(&repo, &by, "done", &finished.id, "proof", at + 2);
     let parent = support::step_note(&repo, &by, Some(&trail), "parent", at + 3);
@@ -872,17 +869,8 @@ fn watch_prints_a_trail_lines_details_under_its_title() {
         support::mark_note(&repo, &by, "done", &part.id, "proof", at + 20);
     }
     support::mark_note(&repo, &by, "done", &many.id, "proof", at + 20);
-    let project = repo.project_id();
     for n in 0..10 {
-        let scope = format!("trail:{}", one.id);
-        support::stored_pattern(
-            &repo,
-            (&project, "repo"),
-            &by,
-            (Some(&scope), None),
-            &format!("rule {n}"),
-            at,
-        );
+        support::mark_note(&repo, &by, "note", &one.id, &format!("rule {n}"), at);
     }
     let mut watch = Watch::start(&repo, &["tree"]);
     watch.size(24, 100);
@@ -1488,17 +1476,8 @@ fn next_watch_prints_a_trail_lines_details_under_its_title() {
         support::mark_note(&repo, &by, "done", &part.id, "proof", at + 20);
     }
     support::mark_note(&repo, &by, "done", &many.id, "proof", at + 20);
-    let project = repo.project_id();
     for n in 0..10 {
-        let scope = format!("trail:{}", one.id);
-        support::stored_pattern(
-            &repo,
-            (&project, "repo"),
-            &by,
-            (Some(&scope), None),
-            &format!("rule {n}"),
-            at,
-        );
+        support::mark_note(&repo, &by, "note", &one.id, &format!("rule {n}"), at);
     }
     let mut watch = Watch::start(&repo, &["tree", "--next"]);
     watch.size(24, 100);
@@ -1529,10 +1508,7 @@ fn next_watch_prints_open_steps_then_notes_then_closed_steps() {
     let by = support::account();
     let at = support::now() - 60;
     let trail = support::step_note(&repo, &by, None, "the trail", at);
-    let scope = format!("trail:{}", trail.id);
-    let project = (repo.project_id(), "repo");
-    let pattern = (Some(scope.as_str()), None);
-    support::stored_pattern(&repo, (&project.0, project.1), &by, pattern, "a rule", at);
+    support::mark_note(&repo, &by, "note", &trail.id, "a rule", at);
     let finished = support::step_note(&repo, &by, Some(&trail), "finished", at + 1);
     support::mark_note(&repo, &by, "done", &finished.id, "proof", at + 2);
     let parent = support::step_note(&repo, &by, Some(&trail), "parent", at + 3);

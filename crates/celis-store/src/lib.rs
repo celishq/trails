@@ -8,6 +8,7 @@ pub mod refusal;
 pub mod store;
 
 pub use records::anchor::Anchor;
+pub use records::drops::Drops;
 pub use records::home::Home;
 pub use records::id::pattern_id::PatternId;
 pub use records::id::step_id::StepId;

@@ -197,12 +197,11 @@ fn reused(later: u64) -> (TempDir, Store) {
         replaces: None,
         content: "When a rule holds: keep it, because it works.".into(),
         paths: vec![],
-        old_rule: false,
         within: vec![],
         examples: Default::default(),
     };
     trails.at(AT);
-    let pattern = trails.decide(pattern, None).unwrap().id;
+    let pattern = trails.write(pattern, None).unwrap().id;
     trails.at(AT);
     let draft = |content: &str, under: Option<String>, uses: Vec<String>| Draft {
         content: content.into(),

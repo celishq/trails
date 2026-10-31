@@ -50,13 +50,7 @@ impl StepRecord {
             return None;
         }
         let owned = |name: &str| note.tag(name).map(str::to_string);
-        let tagged = |name: &str| {
-            note.tags
-                .iter()
-                .filter(|t| t.len() >= 2 && t[0] == name)
-                .map(|t| t[1].clone())
-                .collect::<Vec<_>>()
-        };
+        let tagged = |name: &str| note.values(name).map(str::to_string).collect::<Vec<_>>();
         Some(StepRecord {
             anchor: Anchor::read(note)?,
             under: owned("under").map(StepId::new),

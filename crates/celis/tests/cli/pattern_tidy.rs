@@ -61,23 +61,12 @@ fn a_pattern_whose_uses_were_fixed_twice_needs_tidy_as_misled() {
     assert!(stats.contains(" misled:2 "), "{stats}");
 }
 
-/// An ask that used a pattern and was then fixed misled it once, and the `--recalled` that older plugins
-/// give counts for nothing (`spec/06-reuse.md`, "Revisions").
+/// An ask that used a pattern and was then fixed misled it once (`spec/06-reuse.md`, "Revisions").
 #[test]
 fn a_fixed_ask_that_used_a_pattern_misled_it_once() {
     let repo = Repo::new();
     let id = decide(&repo, &["--", "When a price prints: use cents."]);
-    let ask = add(
-        &repo,
-        &[
-            "--recalled",
-            &id[..8],
-            "--uses",
-            &id[..8],
-            "--",
-            "Print the prices",
-        ],
-    );
+    let ask = add(&repo, &["--uses", &id[..8], "--", "Print the prices"]);
     finish(&repo, &ask[..8]);
     add(
         &repo,

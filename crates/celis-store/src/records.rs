@@ -2,13 +2,14 @@
 //! and places they name, and the folders a project links.
 
 pub mod anchor;
+pub mod drops;
 pub mod home;
 pub mod id;
 pub mod link;
+pub mod pack;
 pub mod phrase;
 pub mod place;
 pub mod project;
 pub mod proof_file;
 pub mod secret;
 pub mod source;
-pub mod verified;

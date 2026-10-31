@@ -97,7 +97,7 @@ pub(super) fn effect(window: &Window, inside: usize, ink: Ink) -> Card {
         Measure::new("REWORK", Period::reworked, window, "revised", false),
         Measure::new(
             "PATTERNS REUSED",
-            Period::ruled,
+            Period::using,
             window,
             "used a pattern",
             true,

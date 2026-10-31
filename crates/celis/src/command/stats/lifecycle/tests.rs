@@ -20,7 +20,7 @@ fn shop() -> Desk {
 }
 
 /// Each span counts the patterns written, replaced, dropped and promoted in it, and the recalls, uses
-/// and misled steps of them (`spec/02-cli.md`, "Stats").
+/// and misled steps of them.
 #[test]
 fn each_span_counts_what_happened_to_the_patterns_in_it() {
     let mut desk = shop();
@@ -48,11 +48,4 @@ fn each_span_counts_what_happened_to_the_patterns_in_it() {
     assert_eq!(counts(&spans[4]), [1, 0, 0, 0, 0, 0, 0]);
     assert_eq!(counts(&spans[10]), [2, 1, 1, 1, 1, 1, 1]);
     assert_eq!(counts(&spans[16]), [2, 1, 1, 1, 1, 1, 1]);
-    assert_eq!(
-        today.line(),
-        format!(
-            "lifecycle day {} written:1 replaced:1 dropped:1 promoted:1 recalled:1 used:1 misled:1",
-            crate::text::clock::date(noon())
-        )
-    );
 }

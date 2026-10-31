@@ -179,11 +179,11 @@ fn frame(
         unfolded: &unfolded,
         at: model.steps.now(),
     };
-    let ruled: Vec<Step> = match (view.mode(), shown) {
+    let using: Vec<Step> = match (view.mode(), shown) {
         (Mode::Trail, Some(trail)) => vec![trail],
         _ => matches.clone(),
     };
-    let patterns = learned(model, &ruled, view.mode() == Mode::All);
+    let patterns = learned(model, &using, view.mode() == Mode::All);
     view.learned = patterns.learned.iter().map(|r| r.id.clone()).collect();
     let mut out = lines(&head(trails, &matches, shown, view, width, &m));
     if view.patterns {
@@ -569,7 +569,7 @@ fn printed(model: &Model, id: Option<&str>) -> Result<String, Failure> {
         .and_then(|id| trails.iter().find(|t| t.id() == id))
         .copied();
     let mut out = lines(&head(&trails, &trails, shown, &view, PRINTED, &m));
-    let (canvas, ruled) = match (view.mode(), shown) {
+    let (canvas, using) = match (view.mode(), shown) {
         (Mode::Trail, Some(trail)) => (chain(trail, PRINTED, &mut view, &m).0, vec![trail]),
         _ => {
             view.pick = None;
@@ -580,7 +580,7 @@ fn printed(model: &Model, id: Option<&str>) -> Result<String, Failure> {
         }
     };
     out.extend(lines(&canvas));
-    let patterns = learned(model, &ruled, view.mode() == Mode::All);
+    let patterns = learned(model, &using, view.mode() == Mode::All);
     if let Some(pinned) = patterns.pinned(PRINTED, u16::MAX, &m) {
         out.extend(lines(&pinned));
     }

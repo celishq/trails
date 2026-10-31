@@ -473,12 +473,11 @@ impl Demo {
             replaces: None,
             content: text.to_string(),
             paths: vec![],
-            old_rule: false,
             within: vec![],
             examples: Default::default(),
         };
         let trails = self.trails(ago)?;
-        Ok(trails.decide(pattern, None)?.id)
+        Ok(trails.write(pattern, None)?.id)
     }
 }
 

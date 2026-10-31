@@ -6,6 +6,7 @@ use celis_store::Store;
 use celis_trails::{Notes, Steps, TrailStore};
 
 /// The steps, patterns, notes and reuse of a store at one moment.
+#[derive(Clone, Copy)]
 pub struct Model<'a> {
     pub steps: &'a Steps<'a>,
     pub patterns: &'a Patterns<'a>,

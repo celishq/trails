@@ -7,8 +7,7 @@ The person wants a small index of patterns that guide, and no musts in celis: a 
 project's own files. Ask what to tidy: this project, this project and the `me` patterns, or all
 projects. Do the tidy as one ask titled `Tidy the celis trails`, so that celis knows when the last tidy
 was. Start from `celis patterns --tidy`: each pattern that needs tidy, and why. `celis patterns` gives
-the index, and `celis grep` gives each pattern with its uses, misled, last use and replaces; an older
-pattern that its grep line marks ` old-rule` was written as a rule. A pattern whose grep line names
+the index, and `celis grep` gives each pattern with its uses, misled, last use and replaces. A pattern whose grep line names
 ` cell:<name>` is in that cell, and `celis cells` lists the cells.
 
 A good tidy:
@@ -33,7 +32,7 @@ A good tidy:
 - merges patterns that say the same thing into one that keeps all their examples, and settles patterns
   that say to do different things in the same case, with the drop reason `merged into <id8>` or
   `conflicts with <id8>`;
-- promotes each ` old-rule` pattern, then each pattern that steps used often, that never misled and
+- promotes each pattern that steps used often, that never misled and
   that was never replaced: a check such as a test, a lint or CI when a tool can hold it, else a line in
   the project's `AGENTS.md` or `CLAUDE.md` for a project pattern, or in the person's global `CLAUDE.md`
   for a `me` pattern. Then it drops the pattern with the reason `promoted to <file>`;

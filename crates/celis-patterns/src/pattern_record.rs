@@ -3,11 +3,10 @@
 use crate::{Examples, Glob, Scope};
 use anyhow::Result;
 use celis_nostr::{Account, Note};
-use celis_store::{Anchor, PatternId, Place};
+use celis_store::{Anchor, PatternId};
 
 /// What one pattern says: written on a project, it holds in its scope; with the globs of the files it
-/// acts on, the larger patterns it completes, its examples, and whether an older writer gave it the
-/// `binds` label.
+/// acts on, the larger patterns it completes, and its examples.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PatternRecord {
     pub anchor: Anchor,
@@ -15,7 +14,6 @@ pub struct PatternRecord {
     pub replaces: Option<PatternId>,
     pub content: String,
     pub paths: Vec<String>,
-    pub old_rule: bool,
     pub within: Vec<PatternId>,
     pub examples: Examples,
 }
@@ -73,32 +71,15 @@ impl PatternRecord {
         }
     }
 
-    /// The pattern `note` holds; `None` when it is not a pattern, or names a scope no reader knows, such
-    /// as `trail:<id>`.
+    /// The pattern `note` holds; `None` when it is not a pattern, or names a scope no reader knows.
     pub fn read(note: &Note) -> Option<PatternRecord> {
-        let pattern = [(NAMESPACE, "pattern"), (OLD_NAMESPACE, "decision")]
-            .into_iter()
-            .any(|(namespace, label)| labelled(note, label, namespace));
+        let pattern = note.labels(NAMESPACE).any(|l| l == "pattern");
         if !pattern || note.kind != 1111 || note.tag("K")? != "project" {
             return None;
         }
-        let mut paths: Vec<String> = note
-            .tags
-            .iter()
-            .filter(|t| t.len() >= 2 && t[0] == "path")
-            .map(|t| t[1].clone())
-            .collect();
+        let paths: Vec<String> = note.values("path").map(str::to_string).collect();
         let scope = match note.tag("scope") {
-            Some(text) => match text.strip_prefix("at:").filter(|p| !p.is_empty()) {
-                Some(place) => {
-                    let path = Place::new(place).path().trim_end_matches('/');
-                    if !matches!(path, "." | "") {
-                        paths.extend([path.to_string(), format!("{path}/**")]);
-                    }
-                    Scope::Project
-                }
-                None => Scope::parse(text)?,
-            },
+            Some(text) => Scope::parse(text)?,
             None => Scope::Project,
         };
         let owned = |name: &str| note.tag(name).map(str::to_string);
@@ -108,28 +89,9 @@ impl PatternRecord {
             replaces: owned("replaces").map(PatternId::new),
             content: note.content.clone(),
             paths,
-            old_rule: [NAMESPACE, OLD_NAMESPACE]
-                .iter()
-                .any(|namespace| labelled(note, "binds", namespace)),
-            within: note
-                .tags
-                .iter()
-                .filter(|t| t.len() >= 2 && t[0] == "within")
-                .map(|t| PatternId::new(&t[1]))
-                .collect(),
+            within: note.values("within").map(PatternId::new).collect(),
             examples: Examples::read(note),
         })
-    }
-
-    /// The whole id of the trail that `note`, a pattern with a `trail:<id>` scope that older writers
-    /// wrote, names; `None` for any other record (CIP-05, "Reading").
-    pub fn trail(note: &Note) -> Option<&str> {
-        let pattern = [(NAMESPACE, "pattern"), (OLD_NAMESPACE, "decision")];
-        let pattern = pattern
-            .into_iter()
-            .any(|(namespace, label)| labelled(note, label, namespace));
-        let trail = note.tag("scope")?.strip_prefix("trail:")?;
-        (pattern && note.kind == 1111 && !trail.is_empty()).then_some(trail)
     }
 
     /// Whether the pattern matches one of `paths` (CIP-05, "Paths").
@@ -167,13 +129,5 @@ pub fn when(content: &str) -> &str {
     }
 }
 
-/// Whether `note` holds the label `label` in `namespace`.
-fn labelled(note: &Note, label: &str, namespace: &str) -> bool {
-    note.labels(namespace).any(|l| l == label)
-}
-
 /// The label namespace of a pattern.
 const NAMESPACE: &str = "celis.pattern";
-
-/// The label namespace of a pattern that older versions wrote.
-const OLD_NAMESPACE: &str = "celis.decision";

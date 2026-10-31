@@ -58,7 +58,7 @@ fn a_record_must_be_written_to_a_file_named_by_its_time_and_id() {
     let repo = Repo::new();
     let store = Home::open(&repo.home()).ok().unwrap();
     let record = Note::write(&account(), 1111u16, 1759400060, vec![], "first").unwrap();
-    let path = store.write(&record).unwrap();
+    let path = store.write(&record, &[]).unwrap().0;
     assert_eq!(
         path.file_name().unwrap().to_str().unwrap(),
         format!("{}-{}.json", record.created_at, record.id)
@@ -77,7 +77,7 @@ fn a_record_file_must_not_change_once_written() {
     let shared = repo.store().join("shared");
     let path = shared.join(format!("{}-{}.json", record.created_at, record.id));
     std::fs::write(&path, "already here").unwrap();
-    store.write(&record).unwrap();
+    store.write(&record, &[]).unwrap();
     assert_eq!(std::fs::read_to_string(&path).unwrap(), "already here");
 
     let other = Note::write(&account(), 1111u16, 1759400070, vec![], "second").unwrap();
@@ -114,7 +114,7 @@ fn a_record_file_must_never_be_seen_half_written() {
                 }
             }
         });
-        store.write(&record).unwrap();
+        store.write(&record, &[]).unwrap();
         done.store(true, Ordering::SeqCst);
         watch.join().unwrap()
     });
@@ -128,7 +128,7 @@ fn a_reader_must_skip_a_file_that_does_not_parse_or_verify() {
     let repo = Repo::new();
     let store = Home::open(&repo.home()).ok().unwrap();
     let good = Note::write(&account(), 1111u16, 1759400060, vec![], "good").unwrap();
-    store.write(&good).unwrap();
+    store.write(&good, &[]).unwrap();
 
     let shared = repo.store().join("shared");
     std::fs::write(shared.join("1759400061-garbage.json"), "{ not json").unwrap();

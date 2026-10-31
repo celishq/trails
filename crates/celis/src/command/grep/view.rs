@@ -191,9 +191,6 @@ fn pattern(entry: &Pattern, cells: &[&str], steps: &Steps, trails: &Store) -> Ve
         text: flat(text),
     };
     let mut fields = vec![state, format!("{{{}}}", pattern.scope.text())];
-    if pattern.old_rule {
-        fields.push("old-rule".to_string());
-    }
     let uses = steps.uses(&note.id);
     if !uses.is_empty() {
         fields.push(format!("uses:{}", uses.len()));

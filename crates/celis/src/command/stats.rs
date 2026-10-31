@@ -4,7 +4,7 @@ use crate::command::pattern::candidate::Candidate;
 use crate::command::step::close::End;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use crate::progress::{Grade, Model};
+use crate::progress::Grade;
 use crate::text::clock::date;
 use crate::text::line::plural;
 use celis_patterns::PatternStore;
@@ -12,10 +12,8 @@ use celis_store::records::id::short;
 use celis_store::Refusal;
 use celis_store::Store;
 use celis_trails::{Step, Trail, TrailStore};
-use lifecycle::Lifecycle;
 use serde_json::json;
 use std::io::{IsTerminal, Write};
-use value::Value;
 
 /// What `stats` prints when the store holds no record.
 const NOTHING: &str = "Nothing was reused yet.";
@@ -56,8 +54,8 @@ impl Command {
     }
 }
 
-/// Prints each live pattern in scope in `project` with its use, oldest first, then the total, the
-/// lifecycle and the value (CIP-02, "Stats").
+/// Prints each live pattern in scope in `project` with its use, oldest first, then the total (CIP-02,
+/// "Stats").
 fn uses(trails: &Store, project: &str, json: bool, out: &mut dyn Write) -> Result<(), Failure> {
     let steps = trails.steps();
     let live = Candidate::every(trails, project);
@@ -108,14 +106,7 @@ fn uses(trails: &Store, project: &str, json: bool, out: &mut dyn Write) -> Resul
         written.len(),
         plural(gaps, "gap")
     );
-    crate::command::show(out, json, "total", value, &line)?;
-    let (spans, value) = Model::of(trails, |m| {
-        (Lifecycle::of(m, Some(project)), Value::of(m, Some(project)))
-    });
-    for span in spans {
-        crate::command::show(out, json, "lifecycle", span.json(), &span.line())?;
-    }
-    crate::command::show(out, json, "value", value.json(), &value.line())
+    crate::command::show(out, json, "total", value, &line)
 }
 
 /// Prints `step` with its grade, then with no `json`, of a done ask, its total from `trails`.

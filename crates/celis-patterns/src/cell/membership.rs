@@ -32,8 +32,7 @@ impl Membership {
             name: name.to_string(),
             author: note.pubkey,
         };
-        let ids = note.tags.iter().filter(|t| t.len() >= 2 && t[0] == "e");
-        let patterns = ids.map(|t| t[1].clone()).collect();
+        let patterns = note.values("e").map(str::to_string).collect();
         Some(Membership { cell, patterns })
     }
 }

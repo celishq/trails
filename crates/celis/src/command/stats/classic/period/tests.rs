@@ -89,7 +89,6 @@ fn a_period_counts_its_done_steps_that_use_a_pattern() {
         replaces: None,
         content: "keep cents".into(),
         paths: vec![],
-        old_rule: false,
         within: vec![],
         examples: Default::default(),
     }
@@ -97,7 +96,7 @@ fn a_period_counts_its_done_steps_that_use_a_pattern() {
     .unwrap();
     let trail = step("trail", 10, None, &[], None);
     let source = step("source", 11, Some(&trail), &[], None);
-    let ruled = step("ruled", 21, Some(&trail), &[&pattern.id], None);
+    let using = step("using", 21, Some(&trail), &[&pattern.id], None);
     let follows = step("follows", 22, Some(&trail), &[&source.id], None);
     let dangling = step("dangling", 23, Some(&trail), &["ab12cd34"], None);
     let late = step("late", 45, Some(&trail), &[&pattern.id], None);
@@ -106,21 +105,21 @@ fn a_period_counts_its_done_steps_that_use_a_pattern() {
         pattern,
         trail,
         source,
-        ruled.clone(),
+        using.clone(),
         follows.clone(),
         dangling,
         open,
         late,
-        done(&ruled.id, None, 30),
+        done(&using.id, None, 30),
         done(&follows.id, None, 31),
     ];
     let steps = Steps::new(&records, 50);
     let period = Period::new(&steps, 20, 40);
     assert_eq!(
         titles(period.added()),
-        ["ruled", "follows", "dangling", "open"]
+        ["using", "follows", "dangling", "open"]
     );
-    assert_eq!(period.ruled(), 1);
+    assert_eq!(period.using(), 1);
 }
 
 /// A period's closed steps are those done or dropped in it, and those that went stale with a trail whose
@@ -157,7 +156,6 @@ fn a_period_counts_an_ask_with_no_steps_under_it() {
         replaces: None,
         content: "keep cents".into(),
         paths: vec![],
-        old_rule: false,
         within: vec![],
         examples: Default::default(),
     }
@@ -168,5 +166,5 @@ fn a_period_counts_an_ask_with_no_steps_under_it() {
     let steps = Steps::new(&records, 50);
     let period = Period::new(&steps, 20, 40);
     assert_eq!(titles(period.done()), ["alone"]);
-    assert_eq!(period.ruled(), 1);
+    assert_eq!(period.using(), 1);
 }

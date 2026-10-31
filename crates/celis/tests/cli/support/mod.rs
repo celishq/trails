@@ -189,7 +189,7 @@ fn shared(repo: &Repo) -> std::path::PathBuf {
 }
 
 pub fn put(repo: &Repo, note: &Note) {
-    Home::open(&repo.home()).unwrap().write(note).unwrap();
+    Home::open(&repo.home()).unwrap().write(note, &[]).unwrap();
 }
 
 /// A cairn on the repo that `by` signed at `at`, with the extra tags `extra`.

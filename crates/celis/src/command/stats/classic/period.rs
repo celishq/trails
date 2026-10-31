@@ -54,7 +54,7 @@ impl<'a> Period<'a> {
     }
 
     /// How many of its done steps use a pattern.
-    pub fn ruled(&self) -> usize {
+    pub fn using(&self) -> usize {
         let done = self.done().into_iter();
         done.filter(|s| !s.uses().is_empty()).count()
     }

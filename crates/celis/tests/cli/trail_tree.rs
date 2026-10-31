@@ -27,16 +27,7 @@ fn tree_prints_the_trail_its_notes_and_the_steps_under_it() {
     let by = support::account();
     let at = support::now() - 600;
     let trail = support::step_note(&repo, &by, None, "build the CRM", at);
-    let scope = format!("trail:{}", trail.id);
-    let project = (repo.project_id(), "repo");
-    let pattern = support::stored_pattern(
-        &repo,
-        (&project.0, project.1),
-        &by,
-        (Some(&scope), None),
-        "colours are tokens",
-        at,
-    );
+    let pattern = support::mark_note(&repo, &by, "note", &trail.id, "colours are tokens", at);
     let colours = support::step_note(&repo, &by, Some(&trail), "colours", at);
     support::mark_note(&repo, &by, "done", &colours.id, "proof", at + 90);
     let page = support::step_note(&repo, &by, Some(&trail), "customers page", at + 1);
@@ -221,16 +212,7 @@ fn tree_prints_a_stale_step_with_the_closed_ones() {
     let by = support::account();
     let at = support::now() - 2 * 3600;
     let trail = support::step_note(&repo, &by, None, "the trail", at);
-    let scope = format!("trail:{}", trail.id);
-    let project = (repo.project_id(), "repo");
-    let pattern = support::stored_pattern(
-        &repo,
-        (&project.0, project.1),
-        &by,
-        (Some(&scope), None),
-        "a rule",
-        at,
-    );
+    let pattern = support::mark_note(&repo, &by, "note", &trail.id, "a rule", at);
     let done = support::step_note(&repo, &by, Some(&trail), "done part", at + 1);
     support::mark_note(&repo, &by, "done", &done.id, "proof", at + 31);
     let left = support::step_note(&repo, &by, Some(&trail), "left part", at + 2);
@@ -687,16 +669,7 @@ fn tree_graph_prints_the_trail_as_a_chain_of_cards() {
     let by = support::account();
     let at = support::now() - 600;
     let trail = support::step_note(&repo, &by, None, "build the CRM", at);
-    let scope = format!("trail:{}", trail.id);
-    let project = (repo.project_id(), "repo");
-    support::stored_pattern(
-        &repo,
-        (&project.0, project.1),
-        &by,
-        (Some(&scope), None),
-        "colours are tokens",
-        at,
-    );
+    support::mark_note(&repo, &by, "note", &trail.id, "colours are tokens", at);
     let colours = support::step_note(&repo, &by, Some(&trail), "colours", at);
     support::mark_note(&repo, &by, "done", &colours.id, "proof", at + 90);
     let page = support::step_note(&repo, &by, Some(&trail), "customers page", at + 1);

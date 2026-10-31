@@ -140,21 +140,6 @@ fn pattern_refuses_empty_text_and_an_unknown_scope_as_a_usage_error() {
     assert_eq!(records(&repo), 0);
 }
 
-/// `pattern` refuses the scope `trail:<id>` as a usage error that names `step note`, and writes nothing
-/// (`spec/02-cli.md`, "Commands").
-#[test]
-fn pattern_refuses_a_trail_scope_and_names_step_note() {
-    let repo = Repo::new();
-    let trail = out(&run(&repo, &["step", "add", "--", "t"]))
-        .trim()
-        .to_string();
-    let scope = format!("trail:{trail}");
-    let o = run(&repo, &["pattern", "--json", "--scope", &scope, "--", WORK]);
-    refusal(&o, 2, "usage");
-    assert!(err(&o).contains("step note"), "{}", err(&o));
-    assert!(labelled(&repo, "pattern").is_empty());
-}
-
 /// `pattern` refuses a `--replaces` no live pattern has, with `no-pattern`
 /// (`spec/02-cli.md`, "Commands").
 #[test]

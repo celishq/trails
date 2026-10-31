@@ -109,7 +109,6 @@ fn a_record_forgets_only_the_group_of_its_trail() {
         replaces: None,
         content: "a rule".into(),
         paths: vec![],
-        old_rule: false,
         within: vec![],
         examples: Default::default(),
     }

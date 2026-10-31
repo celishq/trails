@@ -5,7 +5,6 @@ use crate::{By, Done};
 use anyhow::Result;
 use celis_nostr::{Account, Note};
 use celis_store::ProofFile;
-use std::collections::HashMap;
 
 /// What an agent does to a step: takes it up, closes it done, or drops it with the reason its work is no
 /// longer wanted. It gives a step a new title or text, places or check, or a note for the work of its
@@ -83,20 +82,6 @@ impl Mark {
         Note::write(signer, 1985u16, at, tags, &content)
     }
 
-    /// The first drop of each record id that `records` holds, by when it was written, then by id.
-    pub fn drops(records: &[Note]) -> HashMap<String, &Note> {
-        let mut drops: HashMap<String, &Note> = HashMap::new();
-        for note in records {
-            if let Some((id, Mark::Drop { .. })) = Mark::read(note) {
-                let first = drops.entry(id).or_insert(note);
-                if (note.created_at, &note.id) < (first.created_at, &first.id) {
-                    *first = note;
-                }
-            }
-        }
-        drops
-    }
-
     /// The step id and the mark `note` holds; `None` when it is not a mark, or is a done, a drop or a
     /// note with no content.
     pub fn read(note: &Note) -> Option<(String, Mark)> {
@@ -117,12 +102,7 @@ impl Mark {
                     changed: note.tag("changed").map(str::to_string),
                     by: note.tag("by").and_then(By::parse),
                     files,
-                    misled: note
-                        .tags
-                        .iter()
-                        .filter(|t| t.len() >= 2 && t[0] == "misled")
-                        .map(|t| t[1].clone())
-                        .collect(),
+                    misled: note.values("misled").map(str::to_string).collect(),
                 })
             }
             "drop" => Mark::Drop {
@@ -130,12 +110,7 @@ impl Mark {
             },
             "edit" => Mark::Edit {
                 text: note.content.clone(),
-                places: note
-                    .tags
-                    .iter()
-                    .filter(|t| t.len() >= 2 && t[0] == "at")
-                    .map(|t| t[1].clone())
-                    .collect(),
+                places: note.values("at").map(str::to_string).collect(),
                 check: note.tag("check").map(str::to_string),
             },
             "prompt" => Mark::Prompt {

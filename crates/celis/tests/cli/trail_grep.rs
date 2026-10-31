@@ -415,13 +415,11 @@ fn the_view_and_the_steps_pattern_search_match_the_fixture() {
         &chart.id,
         t + 4,
     );
-    let scope = format!("trail:{}", trail.id);
-    stored_pattern(
-        &repo,
-        project,
-        &by,
-        (Some(&scope), None),
-        "When a vendor has no logo: show its initials.",
+    mark(
+        Mark::Note {
+            text: "When a vendor has no logo: show its initials.".into(),
+        },
+        &trail.id,
         t + 5,
     );
     let tag = |tag: &[&str]| vec![tag.iter().map(|t| t.to_string()).collect()];

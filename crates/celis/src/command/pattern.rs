@@ -28,7 +28,6 @@ impl Command {
     ) -> Result<(), Failure> {
         let content = args.required_text("pattern needs its text after --")?;
         let scope = match args.scope.as_deref() {
-            Some(text) if text.starts_with("trail:") => return Err(Failure::usage(TRAIL)),
             Some(text) => Scope::parse(text)
                 .ok_or_else(|| Failure::usage(format!("a scope is me or project, not {text}")))?,
             None => Scope::Project,
@@ -54,7 +53,6 @@ impl Command {
             replaces: None,
             content,
             paths,
-            old_rule: false,
             within: args.within.iter().map(PatternId::new).collect(),
             examples,
         };
@@ -72,7 +70,7 @@ impl Command {
             replaced,
         );
         let written = Written {
-            records: vec![trails.decide(pattern, args.replaces.as_deref())?],
+            records: vec![trails.write(pattern, args.replaces.as_deref())?],
             ..Written::default()
         };
         let new = short(&written.records[0].id);
@@ -204,11 +202,6 @@ const SCOPES: &str = "celis: the pattern holds in this project. When it holds fo
                       project, such as a pattern about a framework, a platform or a review's convention, \
                       replace it with --scope me; when it holds only for this trail, drop it and write \
                       it with celis step note <id>.";
-
-/// What `pattern` with a `trail:<id>` scope says.
-const TRAIL: &str =
-    "a pattern holds in the project or for me; write what holds only for one trail with \
-                     celis step note <id> -- <text>";
 
 /// Words too common to tell patterns apart.
 const COMMON: &[&str] = &[

@@ -2,7 +2,7 @@
 
 use crate::{Cell, Cells, Pattern, PatternEnd, PatternRecord, View};
 use celis_nostr::Note;
-use celis_store::Refusal;
+use celis_store::{Drops, Refusal};
 use std::collections::HashMap;
 
 /// The patterns of a store, read once, newest first, then by id, and the cells that hold them.
@@ -22,7 +22,7 @@ impl<'a> Patterns<'a> {
             .iter()
             .filter_map(|(n, d)| Some((d.replaces.as_ref()?.to_string(), *n)))
             .collect();
-        let drops = drops(records);
+        let drops = Drops::of(records);
         let mut every: Vec<Pattern<'a>> = read
             .into_iter()
             .map(|(note, record)| Pattern {
@@ -32,7 +32,7 @@ impl<'a> Patterns<'a> {
                     .get(note.id.as_str())
                     .copied()
                     .map(PatternEnd::Replaced)
-                    .or(drops.get(note.id.as_str()).map(|d| PatternEnd::Dropped(d))),
+                    .or(drops.get(&note.id).map(PatternEnd::Dropped)),
             })
             .collect();
         every.sort_by(|a, b| (b.note.created_at, &a.note.id).cmp(&(a.note.created_at, &b.note.id)));
@@ -93,22 +93,4 @@ pub(crate) fn find<'p, 'a: 'p>(
     let note = note.ok_or_else(|| Refusal::NoPattern(id.to_string()))?;
     let found = live.into_iter().find(|p| p.note.id == note.id);
     Ok(found.cloned().expect("the note is of a live pattern"))
-}
-
-/// The first drop of each record id that `records` holds, by when it was written, then by id: a kind
-/// 1985 record with the label `drop` in `celis.step`, a reason, and an `e` tag (CIP-03, "Dropping").
-fn drops(records: &[Note]) -> HashMap<&str, &Note> {
-    let mut drops: HashMap<&str, &Note> = HashMap::new();
-    let drop = |n: &Note| {
-        let label = n.label("celis.step");
-        n.kind == 1985 && label == Some("drop") && !n.content.trim().is_empty()
-    };
-    for note in records.iter().filter(|n| drop(n)) {
-        let Some(id) = note.tag("e") else { continue };
-        let first = drops.entry(id).or_insert(note);
-        if (note.created_at, &note.id) < (first.created_at, &first.id) {
-            *first = note;
-        }
-    }
-    drops
 }

@@ -1,9 +1,8 @@
 //! The lifecycle of the patterns: what happened to them by day, week and month.
 
 use crate::progress::Model;
-use crate::text::clock::{date, midnight, month};
+use crate::text::clock::{midnight, month};
 use celis_patterns::{Pattern, PatternEnd};
-use serde_json::{json, Value};
 use std::collections::HashSet;
 
 /// The seconds of a day.
@@ -77,29 +76,6 @@ impl Lifecycle {
                 life
             })
             .collect()
-    }
-
-    /// Its line of `stats` (CIP-02, "Stats").
-    pub fn line(&self) -> String {
-        format!(
-            "lifecycle {} {} written:{} replaced:{} dropped:{} promoted:{} recalled:{} used:{} misled:{}",
-            self.span,
-            date(self.from),
-            self.written,
-            self.replaced,
-            self.dropped,
-            self.promoted,
-            self.recalled,
-            self.used,
-            self.misled
-        )
-    }
-
-    /// Its object of `stats --json` (CIP-02, "Stats").
-    pub fn json(&self) -> Value {
-        json!({"span": self.span, "from": date(self.from), "written": self.written,
-            "replaced": self.replaced, "dropped": self.dropped, "promoted": self.promoted,
-            "recalled": self.recalled, "used": self.used, "misled": self.misled})
     }
 
     /// Takes in one `event`.

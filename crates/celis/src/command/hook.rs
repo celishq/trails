@@ -95,6 +95,9 @@ impl Command {
         if let Some(line) = self.here(json).tidy() {
             text.push_str(&format!("\n\n{line}"));
         }
+        if let Some(line) = self.old() {
+            text.push_str(&format!("\n\n{line}"));
+        }
         let manifest = std::fs::read_to_string(root.join(".claude-plugin/plugin.json"));
         let plugin = manifest
             .ok()
@@ -162,6 +165,19 @@ impl Command {
         };
         Some(format!(
             "celis: once in this session, after the person's first ask, offer them /celis:tidy: {need}."
+        ))
+    }
+
+    /// The line that asks to offer `/celis:migrate` while a pattern of a retired form remains.
+    fn old(&self) -> Option<String> {
+        let need = match self.unmigrated() {
+            0 => return None,
+            1 => "1 pattern is".to_string(),
+            n => format!("{n} patterns are"),
+        };
+        Some(format!(
+            "celis: {need} in an old form that celis no longer reads; once in this session, offer the \
+             person /celis:migrate."
         ))
     }
 
