@@ -31,8 +31,8 @@ https://github.com/celishq/trails. Do these steps in order.
 5. Tell the person each thing that `celis setup` says only they can do, such as a restart of the agent.
    You cannot restart yourself, so stop there.
 
-6. When the person comes back after the restart, run `celis setup` again. It says `All set.` when each
-   agent has started a session with the Celis plugin.
+6. After the restart, the agent's first answer starts with the celis status line, such as
+   `celis 0.0.42 is on: no pattern in scope here.` That line shows the person that the plugin works.
 
 On Windows, do all of this in WSL. Celis keeps its data on this machine only. To see what Celis keeps,
 sends and runs, read https://github.com/celishq/trails/blob/main/SECURITY.md.

@@ -302,7 +302,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "setup",
         usage: &["celis setup"],
-        summary: "Show each agent on this machine and whether its celis plugin has started a session. For each that has not, show the commands that add the plugin and what you do after. Run it again to check. Changes nothing.",
+        summary: "Show each agent on this machine, the commands that add the celis plugin to it, and what you do after. Changes nothing.",
         args: &[],
         examples: &["celis setup"],
     },

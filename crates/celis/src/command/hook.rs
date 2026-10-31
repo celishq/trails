@@ -14,10 +14,7 @@ use std::path::{Path, PathBuf};
 mod tests;
 
 /// The agents whose hooks run `celis hook`.
-pub(crate) const AGENTS: [&str; 5] = ["claude", "codex", "cursor", "gemini", "antigravity"];
-
-/// The folder under `$CELIS_HOME` that holds a file for each agent whose plugin started a session.
-pub(crate) const STARTED: &str = "started";
+const AGENTS: [&str; 5] = ["claude", "codex", "cursor", "gemini", "antigravity"];
 
 /// The file under `$CELIS_HOME/offered` that marks that a session start offered `/celis:learn`.
 const LEARN: &str = "learn";
@@ -61,13 +58,9 @@ impl Command {
         }
     }
 
-    /// Marks that `agent` started a session, and gives the status line, the card, where the plugin's
-    /// files are, the index of the patterns in the project the JSON names, or the first time none, the
-    /// offer to learn them, and a version notice.
+    /// The status line, the card, where the plugin's files are, the index of the patterns in the project
+    /// the JSON names, or the first time none, the offer to learn them, and a version notice.
     fn start(&self, agent: &str, json: &Value, root: &Path) -> String {
-        if let Ok(home) = self.home() {
-            let _ = prompt::mark(&home.join(STARTED).join(agent));
-        }
         let card = std::fs::read_to_string(root.join("card.md")).unwrap_or_default();
         let mut text = format!(
             "{}\n\nHow to do an ask with the celis plugin:\n{}\n\n",
