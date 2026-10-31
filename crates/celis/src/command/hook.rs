@@ -139,9 +139,9 @@ impl Command {
             return None;
         }
         Some(
-            "celis: no pattern is kept here yet. Once in this session, after the person's first ask, \
-             offer them /celis:learn on their past chats with you, so that celis drafts patterns from \
-             the corrections they already gave."
+            "celis: no pattern is kept here yet. At the end of your answer to the person's first ask \
+             in this session, offer them /celis:learn on their past chats with you, so that celis drafts \
+             patterns from the corrections they already gave."
                 .to_string(),
         )
     }
