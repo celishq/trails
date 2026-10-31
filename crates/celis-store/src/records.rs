@@ -2,6 +2,7 @@
 //! and places they name, and the folders a project links.
 
 pub mod anchor;
+pub mod drops;
 pub mod home;
 pub mod id;
 pub mod link;

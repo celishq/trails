@@ -2,7 +2,7 @@
 
 use celis_nostr::Note;
 use celis_patterns::{Examples, PatternRecord, Scope};
-use celis_store::{Anchor, PatternId, Place, Refusal, Store};
+use celis_store::{Anchor, Drops, PatternId, Place, Refusal, Store};
 use celis_trails::Mark;
 use std::collections::HashSet;
 
@@ -24,8 +24,8 @@ impl<'a> Old<'a> {
     /// Each live pattern of a retired form in `records`, oldest first.
     pub fn every(records: &'a [Note]) -> Vec<Old<'a>> {
         let replaced: HashSet<&str> = records.iter().filter_map(|n| n.tag("replaces")).collect();
-        let drops = Mark::drops(records);
-        let live = |n: &Note| !replaced.contains(n.id.as_str()) && !drops.contains_key(&n.id);
+        let drops = Drops::of(records);
+        let live = |n: &Note| !replaced.contains(n.id.as_str()) && drops.get(&n.id).is_none();
         let mut old: Vec<Old> = records
             .iter()
             .filter(|n| live(n))

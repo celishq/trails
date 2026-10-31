@@ -5,7 +5,6 @@ use crate::{By, Done};
 use anyhow::Result;
 use celis_nostr::{Account, Note};
 use celis_store::ProofFile;
-use std::collections::HashMap;
 
 /// What an agent does to a step: takes it up, closes it done, or drops it with the reason its work is no
 /// longer wanted. It gives a step a new title or text, places or check, or a note for the work of its
@@ -81,20 +80,6 @@ impl Mark {
             tags.extend(check.iter().map(|c| vec!["check".to_string(), c.clone()]));
         }
         Note::write(signer, 1985u16, at, tags, &content)
-    }
-
-    /// The first drop of each record id that `records` holds, by when it was written, then by id.
-    pub fn drops(records: &[Note]) -> HashMap<String, &Note> {
-        let mut drops: HashMap<String, &Note> = HashMap::new();
-        for note in records {
-            if let Some((id, Mark::Drop { .. })) = Mark::read(note) {
-                let first = drops.entry(id).or_insert(note);
-                if (note.created_at, &note.id) < (first.created_at, &first.id) {
-                    *first = note;
-                }
-            }
-        }
-        drops
     }
 
     /// The step id and the mark `note` holds; `None` when it is not a mark, or is a done, a drop or a
