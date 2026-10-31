@@ -117,12 +117,7 @@ impl Mark {
                     changed: note.tag("changed").map(str::to_string),
                     by: note.tag("by").and_then(By::parse),
                     files,
-                    misled: note
-                        .tags
-                        .iter()
-                        .filter(|t| t.len() >= 2 && t[0] == "misled")
-                        .map(|t| t[1].clone())
-                        .collect(),
+                    misled: note.values("misled").map(str::to_string).collect(),
                 })
             }
             "drop" => Mark::Drop {
@@ -130,12 +125,7 @@ impl Mark {
             },
             "edit" => Mark::Edit {
                 text: note.content.clone(),
-                places: note
-                    .tags
-                    .iter()
-                    .filter(|t| t.len() >= 2 && t[0] == "at")
-                    .map(|t| t[1].clone())
-                    .collect(),
+                places: note.values("at").map(str::to_string).collect(),
                 check: note.tag("check").map(str::to_string),
             },
             "prompt" => Mark::Prompt {

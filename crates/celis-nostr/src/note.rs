@@ -77,6 +77,13 @@ impl Note {
         self.slot(name, 1)
     }
 
+    /// The first value of each `name` tag, in order.
+    pub fn values<'a>(&'a self, name: &'a str) -> impl Iterator<Item = &'a str> + 'a {
+        let tags = self.tags.iter();
+        tags.filter(move |t| t.len() >= 2 && t[0] == name)
+            .map(|t| t[1].as_str())
+    }
+
     /// The values of its NIP-32 `l` tags in `namespace`, in order.
     pub fn labels<'a>(&'a self, namespace: &'a str) -> impl Iterator<Item = &'a str> + 'a {
         let tags = self.tags.iter();

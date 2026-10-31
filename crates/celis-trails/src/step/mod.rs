@@ -183,11 +183,11 @@ impl<'a> Step<'a> {
             told.extend(self.uses().into_iter().map(|p| (p, at)));
         }
         if let Some(done) = self.done_record() {
-            told.extend(tagged(done, "misled").map(|p| (p, done.created_at)));
+            told.extend(done.values("misled").map(|p| (p, done.created_at)));
         }
         for fix in revised {
             let at = fix.note().created_at;
-            told.extend(tagged(fix.note(), "misled").map(|p| (p, at)));
+            told.extend(fix.note().values("misled").map(|p| (p, at)));
         }
         let mut seen = HashSet::new();
         told.retain(|(p, _)| self.steps.holds_pattern(p) && seen.insert(*p));
@@ -269,13 +269,4 @@ impl std::fmt::Debug for Step<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_tuple("Step").field(&self.id()).finish()
     }
-}
-
-/// Each value of the tags named `name` of `note`.
-fn tagged<'a>(note: &'a Note, name: &'a str) -> impl Iterator<Item = &'a str> {
-    let tags = note
-        .tags
-        .iter()
-        .filter(move |t| t.len() >= 2 && t[0] == name);
-    tags.map(|t| t[1].as_str())
 }

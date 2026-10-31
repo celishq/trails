@@ -55,12 +55,7 @@ impl<'a> Old<'a> {
                 store.sign(|account, now| reason.record(account, &note.id, now))?,
             ]);
         }
-        let mut paths: Vec<String> = note
-            .tags
-            .iter()
-            .filter(|t| t.len() >= 2 && t[0] == "path")
-            .map(|t| t[1].clone())
-            .collect();
+        let mut paths: Vec<String> = note.values("path").map(str::to_string).collect();
         let scope = match &self.form {
             Form::At(place) => {
                 let path = Place::new(place).path().trim_end_matches('/');
@@ -80,12 +75,7 @@ impl<'a> Old<'a> {
             replaces: Some(PatternId::new(&note.id)),
             content: note.content.clone(),
             paths,
-            within: note
-                .tags
-                .iter()
-                .filter(|t| t.len() >= 2 && t[0] == "within")
-                .map(|t| PatternId::new(&t[1]))
-                .collect(),
+            within: note.values("within").map(PatternId::new).collect(),
             examples: Examples::read(note),
         };
         Ok(vec![

@@ -77,12 +77,7 @@ impl PatternRecord {
         if !pattern || note.kind != 1111 || note.tag("K")? != "project" {
             return None;
         }
-        let paths: Vec<String> = note
-            .tags
-            .iter()
-            .filter(|t| t.len() >= 2 && t[0] == "path")
-            .map(|t| t[1].clone())
-            .collect();
+        let paths: Vec<String> = note.values("path").map(str::to_string).collect();
         let scope = match note.tag("scope") {
             Some(text) => Scope::parse(text)?,
             None => Scope::Project,
@@ -94,12 +89,7 @@ impl PatternRecord {
             replaces: owned("replaces").map(PatternId::new),
             content: note.content.clone(),
             paths,
-            within: note
-                .tags
-                .iter()
-                .filter(|t| t.len() >= 2 && t[0] == "within")
-                .map(|t| PatternId::new(&t[1]))
-                .collect(),
+            within: note.values("within").map(PatternId::new).collect(),
             examples: Examples::read(note),
         })
     }
