@@ -23,7 +23,7 @@ lines that the card shows. Write nothing to the store before the person says yes
    `celis tree <its trail> --json` or its grep line shows; `{project}` takes no `--scope`. Its examples
    stay. To write into another project, add `--project <its id>`.
 8. Ask the person whether to remove what celis no longer uses from its home, the folder that
-   `celis help` names: `models/`, `index/`, `recalled/`, `asked/`, `cache/` and `retrieval.log`. After a
+   `celis help` names: `models/`, `index/`, `recalled/`, `asked/`, `cache/verified` and `retrieval.log`. After a
    yes, remove each of them that is there, and nothing else.
 9. Ask the person whether to close the older trails that are still open. An older celis held the asks
    of a session under one trail, the first ask with the trail's own title; `celis tree --all` shows
