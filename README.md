@@ -114,7 +114,7 @@ curl -fsSLO https://celis.ai/install.sh
 sh install.sh
 ```
 
-To update it later, run `celis update`.
+To update it later, run `celis update`. Then update the plugin in your agents, and run `/celis:migrate` when celis asks for it.
 
 <details>
 <summary>What the script does, and how to check the download</summary>
