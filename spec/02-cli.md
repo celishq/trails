@@ -228,11 +228,11 @@ Each agent's hooks give `hook` the JSON of a prompt or of a session start.
 agent reads it, and reads the whole of a pattern with `patterns <id8>`.
 
 ```
-<id8> <scope> [<level>] <Name>
-                         each pattern; its level ("Levels"); its Name is the text after `Name:` on
-                         the first line of its text, or a first line that does not start with `When` before one that does,
-                         and with none, its When: the first line, and of a text of one line,
-                         the part before its first `:`; the When of a named text is its next line
+<id8> <scope> [<level>] <When>
+                         each pattern; its level ("Levels"); its When is the line after its Name,
+                         else its first line, and of a text of one line, the part before its first
+                         `:`; its Name is the text after `Name:` on the first line of its text, or a
+                         first line that does not start with `When` before one that does
   path   <glob>          each `path` of it (CIP-05, "Paths")
   match  <file>          each `<file>` that one of its paths matches (CIP-05, "Paths")
   within <id8>           each larger pattern it completes (CIP-05, "Graph")
@@ -422,9 +422,7 @@ antigravity     {"injectSteps": [{"ephemeralMessage": "<text>"}]}
   folder the JSON names in `cwd`, else in the first of `workspace_roots`, else of `workspacePaths`.
 - `hook start` MUST read the card from `card.md` and the plugin's version from `.claude-plugin/plugin.json`
   in `<plugin folder>`.
-- After the card, `hook start` MUST print the line `The patterns in scope here:`, then what `patterns`
-  prints with no `<file>` ("Patterns"), at a session start and after a compaction alike. It MUST print
-  neither when no pattern is live in scope.
+- `hook start` MUST NOT print the index ("Patterns"); an agent reads it with `patterns`.
 - When `patterns --tidy` lists `<n>` patterns, 1 or more, and no ask whose title starts with `Tidy the
   celis trails` began in the last 7 days, `hook start` asks the agent to offer `/celis:tidy` once in the
   session, after the person's first ask, and names `<n>`.

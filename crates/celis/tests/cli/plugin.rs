@@ -168,7 +168,7 @@ fn prompts(repo: &Repo, step: &str) -> Vec<String> {
 }
 
 /// Each agent's session start gives the status line, then the card; an agent other than Claude Code also
-/// gets its session, to pass with `--session`, and the path of `extraction.md`; no agent gets a path of
+/// gets its session, to pass with `--session`, and the paths of `patterns.md` and `extraction.md`; no agent gets a path of
 /// `recall.md`, which is gone. Antigravity has no session start, and gets both before each call of the
 /// model.
 #[test]
@@ -192,27 +192,17 @@ fn each_agents_session_start_gives_the_card_and_its_session() {
         assert_eq!(named, agent.name != "claude", "{}: {context}", agent.name);
         let taught = context.contains("agents/extraction.md. With no subagents");
         assert_eq!(taught, agent.name != "claude", "{}: {context}", agent.name);
+        let found = context.contains("agents/patterns.md. With no subagents");
+        assert_eq!(found, agent.name != "claude", "{}: {context}", agent.name);
         assert!(!context.contains("recall.md"), "{}: {context}", agent.name);
     }
 }
 
-/// Each agent's session start gives, after the card, the index of the patterns in scope in the person's
-/// project, under one heading line, and Claude Code's gives it again after a compaction; none while the
-/// store holds no pattern (`spec/02-cli.md`, "Hooks").
+/// No agent's session start gives the index of the patterns, at a session start or after a compaction;
+/// the status line still counts them (`spec/02-cli.md`, "Hooks").
 #[test]
-fn each_agents_session_start_gives_the_index_of_the_patterns() {
+fn no_agents_session_start_gives_the_index_of_the_patterns() {
     let repo = Repo::new();
-    let start = |agent: &Agent| {
-        let stdout = agent.run(&repo, agent.start, &agent.payload("s1", &repo.path(), ""));
-        agent.context(&stdout)
-    };
-    for agent in AGENTS {
-        assert!(
-            !start(&agent).contains("The patterns in scope here:"),
-            "{}",
-            agent.name
-        );
-    }
     let o = repo.run(
         &repo.path(),
         &["pattern", "--", "When you test: set A=1."],
@@ -221,18 +211,21 @@ fn each_agents_session_start_gives_the_index_of_the_patterns() {
     );
     assert!(o.status.success(), "{}", err(&o));
     let id = out(&o).lines().next().unwrap().to_string();
-    let index = format!(
-        "The patterns in scope here:\n{} project When you test",
-        &id[..8]
-    );
+    let line = format!("{} project When you test", &id[..8]);
     for agent in AGENTS {
-        let context = start(&agent);
-        assert!(context.contains(&index), "{}: {context}", agent.name);
+        let stdout = agent.run(&repo, agent.start, &agent.payload("s1", &repo.path(), ""));
+        let context = agent.context(&stdout);
+        assert!(
+            context.contains(" is on: 1 pattern in scope here."),
+            "{}: {context}",
+            agent.name
+        );
+        assert!(!context.contains(&line), "{}: {context}", agent.name);
     }
     let claude = &AGENTS[0];
     let compact = serde_json::json!({"session_id": "s1", "cwd": repo.path(), "source": "compact"});
     let said = claude.run(&repo, claude.start, &compact.to_string());
-    assert!(said.contains(&index), "{said}");
+    assert!(!said.contains(&line), "{said}");
 }
 
 /// Claude Code's session start asks to offer `/celis:tidy` while `patterns --tidy` lists a pattern and no

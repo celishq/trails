@@ -1,9 +1,12 @@
 celis keeps what the person taught you as patterns. A pattern guides your
 judgement: when its forces are present here, resolve them in your own way; when they are not, it does
-not apply. Their index, one `<id> <scope> <When>` line each, is in your context from the session start.
-A `*` or `**` after the scope is the evidence of past uses: when two patterns fit, prefer more stars,
-and a pattern with none still applies. When a choice of the work matches a When, read that pattern
-whole with `celis patterns <id>` before you choose, and name it with `--uses <id>` on the step of that choice. When a pattern you followed did not
+not apply. Right after the ask's `celis step add`, before its work, give the `celis:patterns` agent
+the ask, the choices you plan and the files you will touch: it answers with the patterns that bear on
+them, whole. When a new choice comes up during the work, read the index yourself with
+`celis patterns [<file>]...`, one `<id> <scope> <When>` line each. A `*` or `**` after the scope is the
+evidence of past uses: when two patterns fit, prefer more stars, and a pattern with none still applies.
+When a choice of the work matches a When, read that pattern whole with `celis patterns <id>` before you
+choose, unless the agent gave it to you, and name it with `--uses <id>` on the step of that choice. When a pattern you followed did not
 fit, name it with `--misled <id>` on that step's `done`, or on the step that fixes its work.
 Start your first answer of a session with the celis status line that the session start opens with,
 word for word, as its first line: the person does not see what the session start gives you, and the

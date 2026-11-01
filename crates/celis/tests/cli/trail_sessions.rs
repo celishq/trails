@@ -301,8 +301,8 @@ fn the_prompt_hook_names_the_close_of_an_ask_with_no_open_step() {
 }
 
 /// The line `prompt` gives: a prompt that goes on with the current ask `current` adds steps under it,
-/// and a new ask is a new step; how done work is fixed; and, when the store holds a record, when a
-/// pattern is read.
+/// and a new ask is a new step; how done work is fixed; and, when the store holds a record, when the
+/// patterns agent runs and when a pattern is read.
 fn note(held: bool, current: Option<&str>) -> String {
     let ask = match current {
         Some(id) => format!(
@@ -312,8 +312,10 @@ fn note(held: bool, current: Option<&str>) -> String {
         None => "when this prompt is a new ask, add it with celis step add".to_string(),
     };
     let load = match held {
-        true => " When a choice of the work matches a When of the index, read that pattern with celis \
-                 patterns <id> before you choose, and name it with --uses <id> on the step of that choice.",
+        true => " After the step add of a new ask, give the celis:patterns agent the ask, the choices you \
+                 plan and the files you will touch. When a choice of the work matches a When, read that \
+                 pattern with celis patterns <id> before you choose, and name it with --uses <id> on the \
+                 step of that choice.",
         false => "",
     };
     format!(

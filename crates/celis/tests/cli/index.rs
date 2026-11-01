@@ -237,8 +237,8 @@ fn an_old_recalled_tag_is_ignored() {
     assert!(!lesson.contains("  pattern "), "{lesson}");
 }
 
-/// A pattern whose first line is `Name: <name>` shows its Name in the index, in `stats`, in the `like`
-/// lines and as the heading of `patterns <id>`, and its When is its next line (`spec/02-cli.md`,
+/// A pattern whose first line is `Name: <name>` shows its Name in `stats`, in the `like` lines and as
+/// the heading of `patterns <id>`, and its When, its next line, in the index (`spec/02-cli.md`,
 /// "Patterns").
 #[test]
 fn a_named_pattern_shows_its_name() {
@@ -248,7 +248,7 @@ fn a_named_pattern_shows_its_name() {
     let index = out(&cli(&repo, &["patterns"]));
     assert_eq!(
         index.trim_end(),
-        format!("{} project Light on two sides", &room[..8])
+        format!("{} project When a living room is lit", &room[..8])
     );
     let whole = out(&cli(&repo, &["patterns", &room[..8]]));
     assert!(whole.starts_with("## Light on two sides\n"), "{whole}");
@@ -293,8 +293,10 @@ fn a_bare_first_line_before_a_when_is_the_name() {
     let index = out(&cli(&repo, &["patterns"]));
     assert_eq!(
         index.trim_end(),
-        format!("{} project Light on two sides", &room[..8])
+        format!("{} project When a living room is lit", &room[..8])
     );
+    let whole = out(&cli(&repo, &["patterns", &room[..8]]));
+    assert!(whole.starts_with("## Light on two sides\n"), "{whole}");
     let tidy = out(&cli(&repo, &["patterns", "--tidy"]));
     assert!(!tidy.contains("nameless"), "{tidy}");
 }
