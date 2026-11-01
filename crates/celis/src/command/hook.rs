@@ -58,8 +58,8 @@ impl Command {
         }
     }
 
-    /// The status line, the card, where the plugin's files are, the index of the patterns in the project
-    /// the JSON names, or the first time none, the offer to learn them, and a version notice.
+    /// The status line, the card, where the plugin's files are, the first time no pattern is in the
+    /// project the JSON names, the offer to learn them, and a version notice.
     fn start(&self, agent: &str, json: &Value, root: &Path) -> String {
         let card = std::fs::read_to_string(root.join("card.md")).unwrap_or_default();
         let mut text = format!(
@@ -78,18 +78,19 @@ impl Command {
         }
         text.push_str(&format!("steps.md: {}", root.join("steps.md").display()));
         if agent != "claude" {
+            let patterns = root.join("agents/patterns.md").display().to_string();
+            text.push_str(&format!(
+                "\npatterns.md: {patterns}. With no subagents, do what it says yourself, for the ask."
+            ));
             let extraction = root.join("agents/extraction.md").display().to_string();
             text.push_str(&format!(
                 "\nextraction.md: {extraction}. With no subagents, do what it says yourself, with the \
                  brief that celis extract prints."
             ));
         }
-        match self.here(json).index(&[]).ok().flatten() {
-            Some(index) => text.push_str(&format!("\n\nThe patterns in scope here:\n{index}")),
-            None => {
-                if let Some(line) = self.learn() {
-                    text.push_str(&format!("\n\n{line}"));
-                }
+        if self.here(json).index(&[]).ok().flatten().is_none() {
+            if let Some(line) = self.learn() {
+                text.push_str(&format!("\n\n{line}"));
             }
         }
         if let Some(line) = self.here(json).tidy() {

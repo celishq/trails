@@ -51,11 +51,13 @@ A bench checks a design; a design is never tuned to a bench.
    - `celis patterns` gives the index: each live pattern in scope as its id and its When, with its
      level (decision 17). The When is the moment a choice is due, so a reader can match it to the work. A writer gives each pattern a Name: celis
      writes a pattern without one, with a warning. `celis grep <id>` gives the whole pattern. celis has no vector, no word match and no
-     rank. The session start gives the index, and gives it again after each compaction, so the agent
-     has it before the first ask.
+     rank. The session start does not give the index: past a few dozen patterns it grows too large
+     for the agent's session start, which cuts it. Right after an ask's step add, the agent gives the
+     `celis:patterns` agent the ask, its planned choices and its files; that agent reads the index and
+     answers with the patterns that bear on them, whole. During the work, the agent reads the index
+     itself when a new choice comes up.
    - When a choice of the work matches a When, the agent reads that pattern whole before it chooses,
-     and names it with `--uses` on the step of that choice. There is no step at an ask that reads the
-     patterns, and no agent for it. The uses are the evidence.
+     and names it with `--uses` on the step of that choice. The uses are the evidence.
    - `patterns <id>` writes a recall on the session's newest open step, and nothing when the session
      has no open step. A recall, then a use, then a step that no fix revises, is the funnel that shows
      whether the index finds the right pattern.

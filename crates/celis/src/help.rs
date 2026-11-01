@@ -356,7 +356,7 @@ pub const VERBS: &[Verb] = &[
     Verb {
         command: "patterns",
         usage: &["celis patterns [<id>] [<file>]... [--markdown] [--tidy] [--cell <name>]"],
-        summary: "Show the index of the patterns of this project and of you, the oldest first: each one's id, scope, level and Name, with its paths, each named file they match, and the larger patterns it completes. A level of * or ** is the evidence of past uses. With an id, print that pattern whole, with its examples, and mark it recalled on the session's open step. With --markdown, print each whole as one page, with its examples, each file a link to its blob, for a review or a skill file. With --tidy, list the patterns that need tidy, with the reason (misled, near, unused, churn, nameless, form, topic, tension, fact or many), then the size of the index.",
+        summary: "Show the index of the patterns of this project and of you, the oldest first: each one's id, scope, level and When, with its paths, each named file they match, and the larger patterns it completes. A level of * or ** is the evidence of past uses. With an id, print that pattern whole, with its examples, and mark it recalled on the session's open step. With --markdown, print each whole as one page, with its examples, each file a link to its blob, for a review or a skill file. With --tidy, list the patterns that need tidy, with the reason (misled, near, unused, churn, nameless, form, topic, tension, fact or many), then the size of the index.",
         args: &[
             ("<id>", "A pattern id, or its first 4 or more characters"),
             ("<file>", "A file or folder; marks each pattern whose paths match it"),

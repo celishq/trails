@@ -422,9 +422,7 @@ antigravity     {"injectSteps": [{"ephemeralMessage": "<text>"}]}
   folder the JSON names in `cwd`, else in the first of `workspace_roots`, else of `workspacePaths`.
 - `hook start` MUST read the card from `card.md` and the plugin's version from `.claude-plugin/plugin.json`
   in `<plugin folder>`.
-- After the card, `hook start` MUST print the line `The patterns in scope here:`, then what `patterns`
-  prints with no `<file>` ("Patterns"), at a session start and after a compaction alike. It MUST print
-  neither when no pattern is live in scope.
+- `hook start` MUST NOT print the index ("Patterns"); an agent reads it with `patterns`.
 - When `patterns --tidy` lists `<n>` patterns, 1 or more, and no ask whose title starts with `Tidy the
   celis trails` began in the last 7 days, `hook start` asks the agent to offer `/celis:tidy` once in the
   session, after the person's first ask, and names `<n>`.

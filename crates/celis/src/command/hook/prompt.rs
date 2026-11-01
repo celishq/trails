@@ -32,7 +32,7 @@ impl Command {
     /// Writes `prompt` on its session's open trail, signed now, else keeps it for the session's next step,
     /// unless it holds a secret;
     /// then, unless it is a task, gives on `err` one line: how a step of the current ask and a new ask
-    /// are added, and when a pattern of the index is read.
+    /// are added, when the patterns agent runs, and when a pattern is read.
     fn ask(&self, err: &mut dyn Write, project: &Project, prompt: Prompt) -> Result<(), Failure> {
         let offered = self.offered(&prompt.session)?;
         let kept = Secret::find(&prompt.text).is_none();
@@ -141,8 +141,8 @@ fn waits(ask: Step) -> bool {
 }
 
 /// The line on a prompt: a prompt that goes on with the current ask `current` adds steps under it, and a
-/// new ask is a new step; how done work is fixed; and, when the store holds a record, when a pattern is
-/// read.
+/// new ask is a new step; how done work is fixed; and, when the store holds a record, when the patterns
+/// agent runs and when a pattern is read.
 fn note(held: bool, current: Option<&str>) -> String {
     let ask = match current {
         Some(id) => format!(
@@ -152,8 +152,10 @@ fn note(held: bool, current: Option<&str>) -> String {
         None => "when this prompt is a new ask, add it with celis step add".to_string(),
     };
     let load = match held {
-        true => " When a choice of the work matches a When of the index, read that pattern with celis \
-                 patterns <id> before you choose, and name it with --uses <id> on the step of that choice.",
+        true => " After the step add of a new ask, give the celis:patterns agent the ask, the choices you \
+                 plan and the files you will touch. When a choice of the work matches a When, read that \
+                 pattern with celis patterns <id> before you choose, and name it with --uses <id> on the \
+                 step of that choice.",
         false => "",
     };
     format!(

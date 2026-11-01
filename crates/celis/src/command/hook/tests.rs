@@ -68,10 +68,10 @@ impl Desk {
     }
 }
 
-/// The session start gives the index of the patterns in scope in the project the JSON names, under one
-/// heading line, after the card (`spec/02-cli.md`, "Hooks").
+/// The session start counts the patterns in scope in the project the JSON names, and gives no index of
+/// them (`spec/02-cli.md`, "Hooks").
 #[test]
-fn the_session_start_gives_the_index_of_the_project() {
+fn the_session_start_counts_the_patterns_of_the_project_without_their_index() {
     let desk = Desk::new();
     let words = [
         "pattern",
@@ -82,15 +82,10 @@ fn the_session_start_gives_the_index_of_the_project() {
     ];
     let write = desk.command(&words, desk.project.path());
     assert_eq!(write.run(&mut Vec::new(), &mut Vec::new()), 0);
-    let mut index = Vec::new();
-    let read = desk.command(&["patterns"], desk.project.path());
-    assert_eq!(read.run(&mut index, &mut Vec::new()), 0);
-    let index = String::from_utf8(index).unwrap();
     let elsewhere = tempfile::tempdir().unwrap();
     let text = desk.start("claude", elsewhere.path());
-    let given = format!("\n\nThe patterns in scope here:\n{}", index.trim_end());
-    assert!(text.contains(&given), "{text}");
-    assert!(text.find("How to do an ask").unwrap() < text.find(&given).unwrap());
+    assert!(text.contains(" is on: 1 pattern in scope here."), "{text}");
+    assert!(!text.contains("When a logo is drawn"), "{text}");
 }
 
 /// The session start gives no index while the store holds no pattern (`spec/02-cli.md`, "Hooks").
