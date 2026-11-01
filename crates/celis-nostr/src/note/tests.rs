@@ -99,3 +99,12 @@ fn the_id_covers_every_signed_field() {
         ..note.clone()
     });
 }
+
+#[test]
+fn values_gives_each_value_of_a_tag_in_order() {
+    let note = wild(WILD_KIND_3);
+    let values: Vec<&str> = note.values("p").collect();
+    assert_eq!(values.len(), 3);
+    assert_eq!(values[0], note.tag("p").unwrap());
+    assert_eq!(note.values("e").count(), 0);
+}

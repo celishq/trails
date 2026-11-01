@@ -1,33 +1,37 @@
 //! The steps of a store, as they stand at one moment.
 
-use crate::{Mark, Name, NamedTrail, Refusal, Rule, Step, StepRecord};
+use crate::{Mark, State, Step, StepRecord};
 use celis_nostr::Note;
-use std::cell::Cell;
-use std::collections::hash_map::Entry::Vacant;
+use celis_patterns::PatternRecord;
+use celis_store::Refusal;
 use std::collections::{HashMap, HashSet};
+use std::rc::Rc;
 
 /// The step records and marks of a store at the time `now`: which steps are open, how they nest, and how
 /// each went.
 pub struct Steps<'a> {
-    now: Cell<u64>,
-    index: Index<'a>,
+    now: u64,
+    index: Rc<Index<'a>>,
 }
 
 impl<'a> Steps<'a> {
     pub fn new(records: &'a [Note], now: u64) -> Steps<'a> {
         Steps {
-            now: Cell::new(now),
-            index: Index::of(records),
+            now,
+            index: Rc::new(Index::of(records)),
         }
     }
 
     pub fn now(&self) -> u64 {
-        self.now.get()
+        self.now
     }
 
-    /// Moves it to the time `now`, with the same records.
-    pub fn at(&self, now: u64) {
-        self.now.set(now);
+    /// The same steps at the time `now`.
+    pub fn at(&self, now: u64) -> Steps<'a> {
+        Steps {
+            now,
+            index: Rc::clone(&self.index),
+        }
     }
 
     /// Every step, oldest first.
@@ -36,9 +40,22 @@ impl<'a> Steps<'a> {
         all.filter_map(|n| self.get(&n.id)).collect()
     }
 
-    /// Whether a rule record has the id `id`.
-    pub(crate) fn holds_rule(&self, id: &str) -> bool {
-        self.index.rules.contains(id)
+    /// The steps whose `uses` names `id`, newest first.
+    pub fn uses(&'a self, id: &str) -> Vec<Step<'a>> {
+        let all = self.all().into_iter().rev();
+        all.filter(|s| s.uses().contains(&id)).collect()
+    }
+
+    /// The steps that the pattern `id` misled (CIP-06, "Misled").
+    pub fn misled(&'a self, id: &str) -> Vec<Step<'a>> {
+        let all = self.all().into_iter();
+        all.filter(|s| s.misled().iter().any(|(p, _)| *p == id))
+            .collect()
+    }
+
+    /// Whether a pattern record has the id `id`.
+    pub(crate) fn holds_pattern(&self, id: &str) -> bool {
+        self.index.patterns.contains(id)
     }
 
     /// The step whose id is `id`.
@@ -51,7 +68,7 @@ impl<'a> Steps<'a> {
     pub fn find(&'a self, id: &str) -> Result<Step<'a>, Refusal> {
         let note = match self.index.entries.get(id) {
             Some(entry) => Some(entry.note),
-            None => crate::records::id::find(self.index.all.iter().copied(), id),
+            None => celis_store::records::id::find(self.index.all.iter().copied(), id),
         };
         note.and_then(|n| self.get(&n.id))
             .ok_or_else(|| Refusal::NoStep(id.to_string()))
@@ -66,7 +83,7 @@ impl<'a> Steps<'a> {
         }
     }
 
-    /// Whether a step that is not a trail has ended: done, dropped or expired.
+    /// Whether a step that is not a trail has ended: done, dropped or stale.
     pub fn closed_any(&'a self) -> bool {
         let all = self.all().into_iter();
         all.filter(|s| !s.is_trail())
@@ -87,39 +104,30 @@ impl<'a> Steps<'a> {
         roots.filter_map(|n| self.get(&n.id)).collect()
     }
 
-    /// The trail that holds the name `name`.
-    pub fn named(&'a self, name: &Name) -> Option<NamedTrail<'a>> {
-        let (name, record) = self.index.names.get_key_value(name)?;
-        let trail = self.get(record.tag("e")?)?;
-        Some(NamedTrail {
-            name,
-            trail,
-            record,
+    /// The newest open step of the session `session` in the project `project` with no open step under it.
+    pub fn open(&'a self, project: &str, session: &str) -> Option<Step<'a>> {
+        self.all().into_iter().rev().find(|s| {
+            let record = s.record();
+            record.anchor.project == project
+                && record.session.as_deref() == Some(session)
+                && s.closed().is_none()
+                && s.children().iter().all(|c| c.closed().is_some())
         })
     }
 
-    /// `step` with the name it holds first; `None` when it holds none.
-    pub(crate) fn named_of(&'a self, step: Step<'a>) -> Option<NamedTrail<'a>> {
-        let record = self.index.entries.get(step.id())?.name?;
-        let (name, _) = self
-            .index
-            .names
-            .get_key_value(&Name::parse(&record.content)?)?;
-        Some(NamedTrail {
-            name,
-            trail: step,
-            record,
-        })
-    }
-
-    /// Each named trail, by name.
-    pub fn names(&'a self) -> Vec<NamedTrail<'a>> {
-        let mut names: Vec<&Name> = self.index.names.keys().collect();
-        names.sort_by_key(|name| name.as_str());
-        names
-            .into_iter()
-            .filter_map(|name| self.named(name))
-            .collect()
+    /// The current trail of the session `session` in the project `project`: its open trail, else the
+    /// trail of its newest step while its done is less than `LIFE` old.
+    pub fn current(&'a self, project: &str, session: &str) -> Option<Step<'a>> {
+        let newest = self.all().into_iter().rev().find(|s| {
+            let record = s.record();
+            record.anchor.project == project && record.session.as_deref() == Some(session)
+        })?;
+        let trail = newest.trail();
+        match (trail.state(), trail.done_record()) {
+            (State::Open, _) => Some(trail),
+            (State::Done, Some(done)) if self.now() < done.created_at + LIFE => Some(trail),
+            _ => None,
+        }
     }
 
     /// The open trail of the session `session` in the project `project`: the trail of its newest step,
@@ -137,19 +145,20 @@ impl<'a> Steps<'a> {
 /// The seconds a trail stays active after the newest record of its tree.
 pub const LIFE: u64 = 30 * 60;
 
+/// The seconds a trail stays active after the newest record of its tree while a step of it works.
+pub const BUSY_LIFE: u64 = 3 * 60 * 60;
+
 /// The step records, oldest first, and what the marks say of each step.
 pub(crate) struct Index<'a> {
     all: Vec<&'a Note>,
     roots: Vec<&'a Note>,
     entries: HashMap<&'a str, Entry<'a>>,
-    rules: HashSet<&'a str>,
-    names: HashMap<Name, &'a Note>,
+    patterns: HashSet<&'a str>,
 }
 
 /// One step: its record, its text with its edits, its links, the steps that replace it, how its marks
-/// left it, the drop that counts on it, the record of the first name it holds, and its newest prompt;
-/// of its tree, the newest record, whether a step works, whether a step under it is open, and when the
-/// last of its steps closed.
+/// left it, the drop that counts on it and its recalls; of its tree, the newest record and whether a step
+/// works.
 pub(crate) struct Entry<'a> {
     pub(crate) note: &'a Note,
     pub(crate) step: StepRecord,
@@ -157,14 +166,12 @@ pub(crate) struct Entry<'a> {
     pub(crate) replaced: Vec<&'a Note>,
     pub(crate) start: Option<&'a Note>,
     pub(crate) close: Option<(&'a Note, Close)>,
+    pub(crate) dones: Vec<&'a Note>,
     pub(crate) drop: Option<&'a Note>,
-    pub(crate) name: Option<&'a Note>,
     pub(crate) touched: u64,
     pub(crate) newest: u64,
     pub(crate) busy: bool,
-    pub(crate) loose: bool,
-    pub(crate) asked: u64,
-    pub(crate) shut: u64,
+    pub(crate) recalls: Vec<(String, u64)>,
 }
 
 /// How a step was closed.
@@ -193,14 +200,12 @@ impl<'a> Index<'a> {
                         replaced: Vec::new(),
                         start: None,
                         close: None,
+                        dones: Vec::new(),
                         drop: None,
-                        name: None,
                         touched: note.created_at,
                         newest: 0,
                         busy: false,
-                        loose: false,
-                        asked: 0,
-                        shut: 0,
+                        recalls: Vec::new(),
                     },
                 );
             }
@@ -215,7 +220,6 @@ impl<'a> Index<'a> {
                 old.replaced.push(note);
             }
         }
-        let mut named = Vec::new();
         for &note in &sorted {
             let Some((id, mark)) = Mark::read(note) else {
                 continue;
@@ -223,33 +227,49 @@ impl<'a> Index<'a> {
             let Some(entry) = entries.get_mut(&*id) else {
                 continue;
             };
-            if let Mark::Name { name } = &mark {
-                named.extend(Name::parse(name).map(|name| (name, id.clone(), note)));
-            }
             entry.touched = entry.touched.max(note.created_at);
             entry.mark(note, mark);
         }
-        let mut names = HashMap::new();
-        for (name, id, note) in named {
-            let Some(entry) = entries.get_mut(&*id) else {
-                continue;
-            };
-            if let (None, Vacant(free)) = (entry.drop, names.entry(name)) {
-                free.insert(note);
-                entry.name.get_or_insert(note);
-            }
-        }
+        reopen(&mut entries);
         sum(&mut entries);
         let roots = all.iter().copied();
         let roots = roots.filter(|n| entries[n.id.as_str()].step.under.is_none());
-        let rules = sorted.iter().filter(|n| Rule::read(n).is_some());
-        let rules = rules.map(|n| n.id.as_str()).collect();
+        let patterns = sorted.iter().filter(|n| PatternRecord::read(n).is_some());
+        let patterns = patterns.map(|n| n.id.as_str()).collect();
         Index {
             roots: roots.collect(),
             all,
             entries,
-            rules,
-            names,
+            patterns,
+        }
+    }
+}
+
+/// Reads each done trail of `entries` as open while a step under it is open or newer than its newest done,
+/// and as settled by its first done after that; a drop of a reopened trail settles it.
+fn reopen(entries: &mut HashMap<&str, Entry>) {
+    let mut settled = Vec::new();
+    for (id, entry) in entries.iter() {
+        let Some((first, Close::Done)) = entry.close else {
+            continue;
+        };
+        let children = entry.children.iter().map(|n| &entries[n.id.as_str()]);
+        let open = children.clone().any(|c| c.close.is_none());
+        let newest = children.map(|c| c.note.created_at).max().unwrap_or(0);
+        if entry.step.under.is_some() || (!open && newest <= first.created_at) {
+            continue;
+        }
+        let done = entry.dones.iter().find(|d| !open && d.created_at >= newest);
+        let close = match (done, entry.drop) {
+            (Some(&done), _) => Some((done, Close::Done)),
+            (None, Some(drop)) => Some((drop, Close::Dropped)),
+            (None, None) => None,
+        };
+        settled.push((*id, close));
+    }
+    for (id, close) in settled {
+        if let Some(entry) = entries.get_mut(id) {
+            entry.close = close;
         }
     }
 }
@@ -275,17 +295,13 @@ fn sum<'a>(entries: &mut HashMap<&'a str, Entry<'a>>) {
         let entry = &entries[id];
         let mut newest = entry.touched;
         let mut busy = entry.start.is_some() && entry.close.is_none();
-        let mut loose = false;
-        let mut shut = entry.close.map_or(0, |(note, _)| note.created_at);
         for child in &entry.children {
             let child = &entries[child.id.as_str()];
             newest = newest.max(child.newest);
             busy |= child.busy;
-            loose |= child.loose || child.close.is_none();
-            shut = shut.max(child.shut);
         }
         if let Some(entry) = entries.get_mut(id) {
-            (entry.newest, entry.busy, entry.loose, entry.shut) = (newest, busy, loose, shut);
+            (entry.newest, entry.busy) = (newest, busy);
         }
     }
 }
@@ -297,8 +313,14 @@ impl<'a> Entry<'a> {
             Mark::Start => {
                 self.start.get_or_insert(note);
             }
-            Mark::Prompt { .. } => self.asked = self.asked.max(note.created_at),
-            Mark::Done { .. } => {
+            Mark::Prompt { .. } => {}
+            Mark::Recall { pattern } => {
+                if self.recalls.iter().all(|(p, _)| *p != pattern) {
+                    self.recalls.push((pattern, note.created_at));
+                }
+            }
+            Mark::Done(_) => {
+                self.dones.push(note);
                 self.close.get_or_insert((note, Close::Done));
             }
             Mark::Drop { .. } if self.close.is_none() => {

@@ -1,30 +1,22 @@
 //! One run of `celis`.
 
 mod args;
-mod auth;
-mod graph;
+mod cell;
 mod grep;
 mod hook;
-mod issue;
-mod link;
-mod name;
-mod names;
-mod prompt;
-pub(crate) mod report;
-mod review;
-mod rule;
-mod rules;
+mod migrate;
+mod pattern;
+mod setup;
 mod stats;
 mod step;
-pub(crate) mod tree;
-mod update;
+mod trail;
 
 use crate::failure::Failure;
 use crate::help::{self, VERBS};
 pub(crate) use args::Args;
 use celis_nostr::Note;
-use celis_trails::records::id::short;
-use celis_trails::{Link, Name, Project, Store, Trails};
+use celis_store::records::id::short;
+use celis_store::{Home, Link, Project, Store};
 use serde_json::json;
 use std::collections::HashMap;
 use std::io::{IsTerminal, Write};
@@ -48,7 +40,7 @@ impl Command {
     /// Runs, writing to `out` and `err`, or prints the help page its words name. Returns the exit code.
     pub fn run(&self, out: &mut dyn Write, err: &mut dyn Write) -> i32 {
         let colour = std::io::stdout().is_terminal() && self.colour();
-        if let Some(page) = help::named(&self.args) {
+        if let Some(page) = help::named(&self.args, self.home().ok().as_deref()) {
             let _ = writeln!(out, "{}", help::text(&page, colour));
             return 0;
         }
@@ -83,19 +75,18 @@ impl Command {
     fn go(&self, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> Result<(), Failure> {
         match args.words.first().map(String::as_str).unwrap_or("") {
             "step" => self.step(args, out, err, &self.project_of(args)?),
-            "decide" => self.decide(args, out, err, &self.project_of(args)?),
-            "name" => self.name(args, out),
-            "names" => self.names(args, out),
+            "pattern" => self.pattern(args, out, err, &self.project_of(args)?),
             "tree" => self.tree(args, out),
-            "rules" => self.rules(args, out),
+            "patterns" => self.patterns(args, out),
+            "cells" => self.cells(out),
             "grep" => self.grep(&self.args[1..], out),
-            "past" => self.past(out),
             "stats" => self.stats(args, out),
-            "report" => self.report(args, out),
+            "extract" => self.extract(args, out),
+            "migrate" => self.migrate(args, out),
             "issue" => self.issue(args, out),
+            "setup" => self.setup(args, out),
             "link" => self.link(args, out, &self.project()),
-            "unlink" => self.unlink(args, out, &self.project()),
-            "prompt" => self.prompt(args, out, err, &self.project()),
+            "cell" => self.cell(args, out),
             "hook" => self.hook(args, out),
             "auth" => self.auth(args, out, err),
             "update" => self.update(args),
@@ -137,20 +128,14 @@ impl Command {
         Project::at(&self.folder)
     }
 
-    /// The project `--project` names, `skill:<name>` or a project of the store with the name of its
-    /// newest record, else the project of the working folder; any other id is a usage error.
+    /// The project `--project` names, a project of the store with the name of its newest record, else the project of the working folder; any other id is a usage error.
     fn project_of(&self, args: &Args) -> Result<Project, Failure> {
         let project = self.project();
         let Some(id) = &args.project else {
             return Ok(project);
         };
-        if let Some(name) = id.strip_prefix("skill:").and_then(Name::parse) {
-            return Ok(project.skill(&name));
-        }
         let anchor = self.trails()?.anchor(id).ok_or_else(|| {
-            Failure::usage(format!(
-                "--project takes skill:<name> or a project of the store, not {id}"
-            ))
+            Failure::usage(format!("--project takes a project of the store, not {id}"))
         })?;
         Ok(project.with(anchor))
     }
@@ -170,7 +155,7 @@ impl Command {
 
     /// The agent session this run belongs to, from the first set variable of `$CLAUDE_CODE_SESSION_ID`,
     /// `$CODEX_THREAD_ID` and `$CELIS_SESSION_ID`.
-    fn session(&self) -> Option<String> {
+    pub(crate) fn session(&self) -> Option<String> {
         [
             "CLAUDE_CODE_SESSION_ID",
             "CODEX_THREAD_ID",
@@ -182,9 +167,24 @@ impl Command {
         .cloned()
     }
 
+    /// The agent this run belongs to: `claude` with `$CLAUDE_CODE_SESSION_ID`, `codex` with
+    /// `$CODEX_THREAD_ID`, else `$CELIS_AGENT`.
+    fn agent(&self) -> Option<String> {
+        let set = |name: &str| self.env.get(name).is_some_and(|v| !v.is_empty());
+        match (set("CLAUDE_CODE_SESSION_ID"), set("CODEX_THREAD_ID")) {
+            (true, _) => Some("claude".into()),
+            (_, true) => Some("codex".into()),
+            _ => self
+                .env
+                .get("CELIS_AGENT")
+                .filter(|a| !a.is_empty())
+                .cloned(),
+        }
+    }
+
     /// Whether the store exists.
     pub(crate) fn held(&self) -> Result<bool, Failure> {
-        Ok(Store::exists(&self.home()?))
+        Ok(Home::exists(&self.home()?))
     }
 
     /// The file whose presence says the opening scene was shown: `$CELIS_OPENING`, else `opening` in
@@ -206,7 +206,7 @@ impl Command {
 
     /// The trails of the store, with the working folder's linked folders that are on, opened now; a check
     /// runs for `CELIS_CHECK_SECONDS`, 600 when not set.
-    pub(crate) fn trails(&self) -> Result<Trails, Failure> {
+    pub(crate) fn trails(&self) -> Result<Store, Failure> {
         let limit = self
             .env
             .get("CELIS_CHECK_SECONDS")
@@ -214,8 +214,8 @@ impl Command {
             .unwrap_or(600);
         let home = self.home()?;
         let links = Link::all(&home, &self.folder);
-        let store = links.into_iter().fold(Store::open(&home)?, Store::with);
-        Ok(Trails::open(store, now(), limit))
+        let store = links.into_iter().fold(Home::open(&home)?, Home::with);
+        Ok(Store::open(store, now(), limit))
     }
 
     /// Prints the id of `note`: its first 8 characters on a terminal, else whole; `{"id"}` with

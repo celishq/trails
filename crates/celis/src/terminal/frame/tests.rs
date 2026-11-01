@@ -42,7 +42,7 @@ fn the_picked_card_has_a_heavy_frame() {
 fn a_divider_row_crosses_the_card() {
     let card = Frame {
         title: "c".into(),
-        rows: vec!["a".into(), RULE.into(), "b".into()],
+        rows: vec!["a".into(), PATTERN.into(), "b".into()],
         picked: false,
     };
     assert_eq!(

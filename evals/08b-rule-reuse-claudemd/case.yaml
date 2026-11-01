@@ -1,4 +1,0 @@
-schema_version: "1.1"
-name: 08b-rule-reuse-claudemd
-context:
-  scaffold_script: ./setup.sh

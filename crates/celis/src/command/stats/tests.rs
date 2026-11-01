@@ -1,7 +1,9 @@
 use super::month::Month;
 use crate::progress::Model;
 use crate::text::clock::midnight;
-use celis_trails::{Anchor, Draft, Rule, Scope, Store, Trails};
+use celis_patterns::{PatternRecord, PatternStore, Scope};
+use celis_store::{Anchor, Home, Store};
+use celis_trails::{Draft, TrailStore};
 use tempfile::TempDir;
 
 /// Noon of a day, the time a desk reads its month at.
@@ -12,13 +14,13 @@ pub(super) fn noon() -> u64 {
 /// A store the tests write in at the times they pick: its folder and its trails.
 pub(super) struct Desk {
     pub home: TempDir,
-    pub trails: Trails,
+    pub trails: Store,
 }
 
 impl Desk {
     pub fn new() -> Desk {
         let home = tempfile::tempdir().unwrap();
-        let trails = Trails::open(Store::open(home.path()).unwrap(), noon(), 600);
+        let trails = Store::open(Home::open(home.path()).unwrap(), noon(), 600);
         Desk { home, trails }
     }
 
@@ -45,8 +47,10 @@ impl Desk {
             under: under.map(str::to_string),
             replaces: replaces.map(str::to_string),
             uses: uses.iter().map(|u| u.to_string()).collect(),
+            misled: Vec::new(),
             session: None,
-            new: under.is_none(),
+            new: false,
+            agent: None,
         };
         let id = self.trails.add(draft).unwrap().records[0].id.clone();
         self.trails.at(noon() - ago);
@@ -60,7 +64,7 @@ impl Desk {
         self.trails.at(noon() - ago);
         let home = self.home.path().to_path_buf();
         self.trails
-            .done(id, "it works".into(), None, None, &home)
+            .done(id, celis_trails::Done::new("it works".into(), None), &home)
             .unwrap();
         self.trails.at(noon() - ago);
     }
@@ -74,10 +78,10 @@ impl Desk {
         self.trails.at(noon() - ago);
     }
 
-    /// Writes a rule of `project` `ago` seconds before noon; its id.
-    pub fn rule(&mut self, ago: u64, project: &str) -> String {
+    /// Writes a pattern of `project` `ago` seconds before noon; its id.
+    pub fn pattern(&mut self, ago: u64, project: &str) -> String {
         self.trails.at(noon() - ago);
-        let rule = Rule {
+        let pattern = PatternRecord {
             anchor: Anchor {
                 project: project.to_string(),
                 name: project.to_string(),
@@ -86,14 +90,39 @@ impl Desk {
             replaces: None,
             content: "When you price: round down, because the shelf does.".into(),
             paths: vec![],
-            situation: false,
-            promoted: false,
+            within: vec![],
+            examples: Default::default(),
         };
-        let id = self.trails.decide(rule, None).unwrap().records[0]
-            .id
-            .clone();
+        let id = self.trails.write(pattern, None).unwrap().id;
         self.trails.at(noon() - ago);
         id
+    }
+
+    /// Writes, `ago` seconds before noon, a pattern of `project` that replaces `old`; its id.
+    pub fn revise(&mut self, ago: u64, project: &str, old: &str) -> String {
+        self.trails.at(noon() - ago);
+        let pattern = PatternRecord {
+            anchor: Anchor {
+                project: project.to_string(),
+                name: project.to_string(),
+            },
+            scope: Scope::Project,
+            replaces: Some(celis_store::PatternId::new(old)),
+            content: "When you price: round up, because the till does.".into(),
+            paths: vec![],
+            within: vec![],
+            examples: Default::default(),
+        };
+        let id = self.trails.write(pattern, None).unwrap().id;
+        self.trails.at(noon() - ago);
+        id
+    }
+
+    /// Writes, `ago` seconds before noon, a recall of `pattern` on the step `id`.
+    pub fn recall(&mut self, ago: u64, id: &str, pattern: &str) {
+        self.trails.at(noon() - ago);
+        self.trails.recall(id, pattern).unwrap();
+        self.trails.at(noon() - ago);
     }
 
     /// The month of the store at noon.
@@ -104,7 +133,7 @@ impl Desk {
 }
 
 /// A store of `shop` whose steps 20 days ago and today end each way: a step done new 20 days ago, then
-/// today one done that follows it and applies a rule, one done that a later step revises, the revision,
+/// today one done that applies a pattern, one done that a later step revises, the revision,
 /// and one dropped.
 pub(super) fn shop() -> Desk {
     let mut desk = Desk::new();
@@ -112,16 +141,9 @@ pub(super) fn shop() -> Desk {
     let old = desk.add(20 * day, "shop", None, "the old trail", &[], None);
     let source = desk.add(20 * day, "shop", Some(&old), "the source", &[], None);
     desk.done(20 * day - 600, 600, &source);
-    let rule = desk.rule(3_000, "shop");
+    let pattern = desk.pattern(3_000, "shop");
     let trail = desk.add(3_000, "shop", None, "the trail", &[], None);
-    let reused = desk.add(
-        3_000,
-        "shop",
-        Some(&trail),
-        "reused",
-        &[&source, &rule],
-        None,
-    );
+    let reused = desk.add(3_000, "shop", Some(&trail), "reused", &[&pattern], None);
     let revised = desk.add(3_000, "shop", Some(&trail), "revised", &[], None);
     let dropped = desk.add(3_000, "shop", Some(&trail), "dropped", &[], None);
     desk.done(2_700, 300, &reused);

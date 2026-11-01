@@ -35,3 +35,113 @@ fn each_agent_reads_the_text_in_its_shape() {
         serde_json::from_str(&shape("antigravity", "SessionStart", "a")).unwrap();
     assert_eq!(antigravity["injectSteps"][0]["ephemeralMessage"], "a");
 }
+
+/// A run of `celis` in a new project, with its own store.
+struct Desk {
+    home: tempfile::TempDir,
+    project: tempfile::TempDir,
+}
+
+impl Desk {
+    fn new() -> Desk {
+        Desk {
+            home: tempfile::tempdir().unwrap(),
+            project: tempfile::tempdir().unwrap(),
+        }
+    }
+
+    /// The command of `words`, in the folder `folder`.
+    fn command(&self, words: &[&str], folder: &Path) -> Command {
+        let home = self.home.path().display().to_string();
+        Command {
+            args: words.iter().map(|w| w.to_string()).collect(),
+            env: [("CELIS_HOME".to_string(), home)].into(),
+            folder: folder.to_path_buf(),
+        }
+    }
+
+    /// What the session start in the project gives `agent`, from a hook that runs in `folder`.
+    fn start(&self, agent: &str, folder: &Path) -> String {
+        let json = json!({"session_id": "s1", "cwd": self.project.path()});
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../plugins/celis");
+        self.command(&[], folder).start(agent, &json, &root)
+    }
+}
+
+/// The session start counts the patterns in scope in the project the JSON names, and gives no index of
+/// them (`spec/02-cli.md`, "Hooks").
+#[test]
+fn the_session_start_counts_the_patterns_of_the_project_without_their_index() {
+    let desk = Desk::new();
+    let words = [
+        "pattern",
+        "--path",
+        "*.svg",
+        "--",
+        "When a logo is drawn: keep it flat.",
+    ];
+    let write = desk.command(&words, desk.project.path());
+    assert_eq!(write.run(&mut Vec::new(), &mut Vec::new()), 0);
+    let elsewhere = tempfile::tempdir().unwrap();
+    let text = desk.start("claude", elsewhere.path());
+    assert!(text.contains(" is on: 1 pattern in scope here."), "{text}");
+    assert!(!text.contains("When a logo is drawn"), "{text}");
+}
+
+/// The session start gives no index while the store holds no pattern (`spec/02-cli.md`, "Hooks").
+#[test]
+fn the_session_start_gives_no_index_without_a_pattern() {
+    let desk = Desk::new();
+    let text = desk.start("claude", desk.project.path());
+    assert!(text.contains("\nHow to do an ask"), "{text}");
+    assert!(!text.contains("The patterns in scope here"), "{text}");
+}
+
+/// The first session start with no pattern in scope offers `/celis:learn` on the person's past chats,
+/// and no later one does.
+#[test]
+fn the_first_session_start_without_a_pattern_offers_to_learn_once() {
+    let desk = Desk::new();
+    let first = desk.start("claude", desk.project.path());
+    assert!(first.contains("offer them /celis:learn"), "{first}");
+    let second = desk.start("claude", desk.project.path());
+    assert!(!second.contains("/celis:learn"), "{second}");
+}
+
+/// A session start with a pattern in scope does not offer `/celis:learn`.
+#[test]
+fn a_session_start_with_a_pattern_does_not_offer_to_learn() {
+    let desk = Desk::new();
+    let words = ["pattern", "--", "When a logo is drawn: keep it flat."];
+    let write = desk.command(&words, desk.project.path());
+    assert_eq!(write.run(&mut Vec::new(), &mut Vec::new()), 0);
+    let text = desk.start("claude", desk.project.path());
+    assert!(!text.contains("/celis:learn"), "{text}");
+}
+
+/// The session start opens with one status line: the version of celis and how many patterns are in
+/// scope here.
+#[test]
+fn the_session_start_opens_with_a_status_line() {
+    let desk = Desk::new();
+    let none = desk.start("claude", desk.project.path());
+    let first = none.lines().next().unwrap();
+    assert!(
+        first.ends_with(" is on: no pattern in scope here."),
+        "{none}"
+    );
+    for text in [
+        "When a logo is drawn: keep it flat.",
+        "When a list grows: page it.",
+    ] {
+        let write = desk.command(&["pattern", "--", text], desk.project.path());
+        assert_eq!(write.run(&mut Vec::new(), &mut Vec::new()), 0);
+    }
+    let two = desk.start("claude", desk.project.path());
+    let first = two.lines().next().unwrap();
+    assert!(first.starts_with("celis "), "{two}");
+    assert!(
+        first.ends_with(" is on: 2 patterns in scope here."),
+        "{two}"
+    );
+}

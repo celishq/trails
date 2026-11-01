@@ -1,7 +1,9 @@
 use super::*;
 use celis_nostr::{Account, Note};
+use celis_patterns::{PatternRecord, Scope};
+use celis_store::{Anchor, StepId};
 use celis_trails::step::steps::LIFE;
-use celis_trails::{Anchor, Mark, Rule, Scope, StepId, StepRecord, Steps};
+use celis_trails::{Mark, StepRecord, Steps};
 
 fn account() -> Account {
     Account::new(&[1u8; 32]).unwrap()
@@ -17,9 +19,11 @@ fn step(text: &str, at: u64, under: Option<&Note>, uses: &[&str], replaces: Opti
         under: under.map(|n| StepId::new(&n.id)),
         replaces: replaces.map(|n| StepId::new(&n.id)),
         uses: uses.iter().map(|u| u.to_string()).collect(),
+        misled: Vec::new(),
         places: Vec::new(),
         check: None,
         session: None,
+        agent: None,
         content: text.into(),
     }
     .record(&account(), at)
@@ -27,10 +31,10 @@ fn step(text: &str, at: u64, under: Option<&Note>, uses: &[&str], replaces: Opti
 }
 
 fn done(id: &str, changed: Option<&str>, at: u64) -> Note {
-    let mark = Mark::Done {
-        proof: "proof".into(),
-        changed: changed.map(str::to_string),
-    };
+    let mark = Mark::Done(celis_trails::Done::new(
+        "proof".into(),
+        changed.map(str::to_string),
+    ));
     mark.record(&account(), id, at).unwrap()
 }
 
@@ -72,11 +76,11 @@ fn a_period_counts_its_done_steps_as_planned_and_reworked() {
     assert_eq!(period.reworked(), 1);
 }
 
-/// A period counts the steps done in it that use a rule, and not those that use only a step or an id
+/// A period counts the steps done in it that use a pattern, and not those that use only a step or an id
 /// that names no record (`spec/06-reuse.md`, "Uses").
 #[test]
-fn a_period_counts_its_done_steps_that_use_a_rule() {
-    let rule = Rule {
+fn a_period_counts_its_done_steps_that_use_a_pattern() {
+    let pattern = PatternRecord {
         anchor: Anchor {
             project: "p".into(),
             name: "repo".into(),
@@ -85,43 +89,43 @@ fn a_period_counts_its_done_steps_that_use_a_rule() {
         replaces: None,
         content: "keep cents".into(),
         paths: vec![],
-        situation: false,
-        promoted: false,
+        within: vec![],
+        examples: Default::default(),
     }
     .record(&account(), 5)
     .unwrap();
     let trail = step("trail", 10, None, &[], None);
     let source = step("source", 11, Some(&trail), &[], None);
-    let ruled = step("ruled", 21, Some(&trail), &[&rule.id], None);
+    let using = step("using", 21, Some(&trail), &[&pattern.id], None);
     let follows = step("follows", 22, Some(&trail), &[&source.id], None);
     let dangling = step("dangling", 23, Some(&trail), &["ab12cd34"], None);
-    let late = step("late", 45, Some(&trail), &[&rule.id], None);
-    let open = step("open", 24, Some(&trail), &[&rule.id], None);
+    let late = step("late", 45, Some(&trail), &[&pattern.id], None);
+    let open = step("open", 24, Some(&trail), &[&pattern.id], None);
     let records = vec![
-        rule,
+        pattern,
         trail,
         source,
-        ruled.clone(),
+        using.clone(),
         follows.clone(),
         dangling,
         open,
         late,
-        done(&ruled.id, None, 30),
+        done(&using.id, None, 30),
         done(&follows.id, None, 31),
     ];
     let steps = Steps::new(&records, 50);
     let period = Period::new(&steps, 20, 40);
     assert_eq!(
         titles(period.added()),
-        ["ruled", "follows", "dangling", "open"]
+        ["using", "follows", "dangling", "open"]
     );
-    assert_eq!(period.ruled(), 1);
+    assert_eq!(period.using(), 1);
 }
 
-/// A period's closed steps are those done or dropped in it, and those that expired with a trail whose
+/// A period's closed steps are those done or dropped in it, and those that went stale with a trail whose
 /// newest record is in it.
 #[test]
-fn a_period_closes_done_dropped_and_expired_steps() {
+fn a_period_closes_done_dropped_and_stale_steps() {
     let trail = step("trail", 100, None, &[], None);
     let finished = step("finished", 101, Some(&trail), &[], None);
     let gone = step("gone", 102, Some(&trail), &[], None);
@@ -138,4 +142,29 @@ fn a_period_closes_done_dropped_and_expired_steps() {
     let period = Period::new(&steps, 100, 200);
     assert_eq!(titles(period.closed()), ["finished", "gone", "left"]);
     assert!(Period::new(&steps, 200, 300).closed().is_empty());
+}
+
+/// A period counts an ask with no steps under it as a done step, with its uses.
+#[test]
+fn a_period_counts_an_ask_with_no_steps_under_it() {
+    let pattern = PatternRecord {
+        anchor: Anchor {
+            project: "p".into(),
+            name: "repo".into(),
+        },
+        scope: Scope::Project,
+        replaces: None,
+        content: "keep cents".into(),
+        paths: vec![],
+        within: vec![],
+        examples: Default::default(),
+    }
+    .record(&account(), 5)
+    .unwrap();
+    let alone = step("alone", 21, None, &[&pattern.id], None);
+    let records = vec![pattern, alone.clone(), done(&alone.id, None, 30)];
+    let steps = Steps::new(&records, 50);
+    let period = Period::new(&steps, 20, 40);
+    assert_eq!(titles(period.done()), ["alone"]);
+    assert_eq!(period.using(), 1);
 }

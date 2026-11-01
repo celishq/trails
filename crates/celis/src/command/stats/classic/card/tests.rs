@@ -1,15 +1,17 @@
 use super::super::window::DAY;
 use super::*;
-use celis_trails::{Anchor, Draft, Rule, Scope, Store, Trails};
+use celis_patterns::{PatternRecord, PatternStore, Scope};
+use celis_store::{Anchor, Home, Store};
+use celis_trails::{Draft, TrailStore};
 use tempfile::TempDir;
 
 /// The second a store's one step closed.
 const AT: u64 = 1_800_000_000;
 
 /// A store with a trail and one step under it done as planned at `AT`, seen at `AT + later`.
-fn worked(later: u64) -> (TempDir, Trails) {
+fn worked(later: u64) -> (TempDir, Store) {
     let home = tempfile::tempdir().unwrap();
-    let mut trails = Trails::open(Store::open(home.path()).unwrap(), AT - 60, 600);
+    let mut trails = Store::open(Home::open(home.path()).unwrap(), AT - 60, 600);
     let draft = |text: &str, under: Option<String>| Draft {
         content: text.to_string(),
         anchor: Anchor {
@@ -21,8 +23,10 @@ fn worked(later: u64) -> (TempDir, Trails) {
         under,
         replaces: None,
         uses: vec![],
+        misled: Vec::new(),
         session: None,
         new: false,
+        agent: None,
     };
     let trail = trails.add(draft("the trail", None)).unwrap().records[0]
         .id
@@ -35,19 +39,23 @@ fn worked(later: u64) -> (TempDir, Trails) {
     trails.start(&part).unwrap();
     trails.at(AT);
     trails
-        .done(&part, "it works".into(), None, None, home.path())
+        .done(
+            &part,
+            celis_trails::Done::new("it works".into(), None),
+            home.path(),
+        )
         .unwrap();
     trails.at(AT + later);
     (home, trails)
 }
 
 /// The cards of `trails`, 92 and 43 characters wide inside.
-fn drawn(trails: &Trails) -> [Card; CARDS] {
+fn drawn(trails: &Store) -> [Card; CARDS] {
     Model::of(trails, |model| cards(model, 92, 43, false))
 }
 
 /// The face of the card of `trails` whose title starts with `title`, its rows joined by new lines.
-fn face(trails: &Trails, title: &str) -> String {
+fn face(trails: &Store, title: &str) -> String {
     let cards = drawn(trails);
     let card = cards.iter().find(|s| s.title.starts_with(title));
     let face = card.expect(title).face.iter().map(|r| r.to_string());
@@ -66,7 +74,7 @@ fn a_card_with_no_data_before_shows_no_change() {
     assert_eq!(cards[0].face.len(), 5, "{effect}");
     assert!(!effect.contains("no data before"), "{effect}");
     assert!(!effect.contains("few records"), "{effect}");
-    let work = face(&trails, "03 WORK");
+    let work = face(&trails, "02 WORK");
     assert!(!work.contains("first 14 days"), "{work}");
     assert!(!work.contains("vs 14 days before"), "{work}");
     assert!(work.contains("· · ·"), "{work}");
@@ -77,13 +85,13 @@ fn a_card_with_no_data_before_shows_no_change() {
 #[test]
 fn a_card_with_nothing_in_14_days_says_so() {
     let (_home, trails) = worked(20 * DAY);
-    let work = face(&trails, "03 WORK");
+    let work = face(&trails, "02 WORK");
     assert!(work.contains("no step done in 14 days"), "{work}");
     assert!(!work.contains("today"), "{work}");
-    let time = face(&trails, "04 TIME");
+    let time = face(&trails, "03 TIME");
     assert!(time.contains("no step done in 14 days"), "{time}");
     assert!(!time.contains("< 5m"), "{time}");
-    let outcome = face(&trails, "05 OUTCOME");
+    let outcome = face(&trails, "04 OUTCOME");
     assert!(outcome.contains("no step closed in 14 days"), "{outcome}");
     assert!(!outcome.contains("dropped"), "{outcome}");
 }
@@ -97,44 +105,116 @@ fn the_effect_says_what_each_share_counts() {
     for counts in [
         "of 1 done, no change",
         "of 1 done, revised",
-        "of 1 done, used a rule",
+        "of 1 done, used a pattern",
     ] {
         assert!(effect.contains(counts), "{counts:?} in\n{effect}");
     }
     assert!(effect.contains("▀▀▀ %"), "{effect}");
 }
 
-/// `worked`, with a new trail added at `AT` and a step under it that follows the done step and uses a
-/// rule.
-fn reused(later: u64) -> (TempDir, Trails) {
+/// `worked`, with one more step under its trail done at `at`, seen at `at + 3_600`.
+fn worked_again(at: u64) -> (TempDir, Store) {
+    let (home, mut trails) = worked(3_600);
+    let trail = trails.steps().roots()[0].id().to_string();
+    trails.at(at - 60);
+    let part = trails
+        .add(Draft {
+            content: "the other part".into(),
+            anchor: Anchor {
+                project: "repo".into(),
+                name: "repo".into(),
+            },
+            places: vec![],
+            check: None,
+            under: Some(trail),
+            replaces: None,
+            uses: vec![],
+            misled: Vec::new(),
+            session: None,
+            new: false,
+            agent: None,
+        })
+        .unwrap()
+        .records[0]
+        .id
+        .clone();
+    trails.at(at - 60);
+    trails.start(&part).unwrap();
+    trails.at(at);
+    trails
+        .done(
+            &part,
+            celis_trails::Done::new("it works too".into(), None),
+            home.path(),
+        )
+        .unwrap();
+    trails.at(at + 3_600);
+    (home, trails)
+}
+
+/// The work card shows the total of its 14 days as the big number, not the count of today, and the
+/// time card shows the median a step took and a bar for each span.
+#[test]
+fn the_cards_show_the_14_day_total_and_the_time_spans() {
+    let (_home, trails) = worked_again(AT + 2 * DAY);
+    let all = Model::of(&trails, |model| cards(model, 92, 43, true));
+    let work: Vec<String> = all[2].face.iter().map(|r| r.to_string()).collect();
+    assert!(work[0].starts_with("2  steps done"), "{work:?}");
+    let time = face(&trails, "03 TIME");
+    assert!(time.starts_with("median 1m"), "{time}");
+    for span in ["< 5m", "5-15m", "15m-1h", "1-4h", "> 4h"] {
+        assert!(time.contains(span), "{span:?} in\n{time}");
+    }
+}
+
+/// The work card compares the total of its 14 days with the total of the 14 days before.
+#[test]
+fn the_work_card_compares_its_total_with_the_14_days_before() {
+    let (_home, trails) = worked_again(AT + 15 * DAY);
+    let work = face(&trails, "02 WORK");
+    assert!(work.contains("= vs 14 days before"), "{work}");
+}
+
+/// The effect counts each share among the steps done, not the asks: two steps done under one ask open
+/// count as two.
+#[test]
+fn the_effect_counts_its_shares_among_the_steps_done() {
+    let (_home, trails) = worked_again(AT + 60);
+    let effect = face(&trails, "00 EFFECT");
+    assert!(effect.contains("of 2 done, no change"), "{effect}");
+}
+
+/// `worked`, with a new trail added at `AT` and a step under it that uses a pattern.
+fn reused(later: u64) -> (TempDir, Store) {
     let (home, mut trails) = worked(later);
-    let part = Model::of(&trails, |m| m.steps.all()[1].id().to_string());
     let anchor = Anchor {
         project: "repo".into(),
         name: "repo".into(),
     };
-    let rule = Rule {
+    let pattern = PatternRecord {
         anchor: anchor.clone(),
         scope: Scope::Project,
         replaces: None,
         content: "When a rule holds: keep it, because it works.".into(),
         paths: vec![],
-        situation: false,
-        promoted: false,
+        within: vec![],
+        examples: Default::default(),
     };
     trails.at(AT);
-    let rule = trails.decide(rule, None).unwrap().records[0].id.clone();
+    let pattern = trails.write(pattern, None).unwrap().id;
     trails.at(AT);
     let draft = |content: &str, under: Option<String>, uses: Vec<String>| Draft {
         content: content.into(),
         anchor: anchor.clone(),
         places: vec![],
         check: None,
-        new: under.is_none(),
         under,
         replaces: None,
         uses,
+        misled: Vec::new(),
         session: None,
+        new: false,
+        agent: None,
     };
     let trail = trails
         .add(draft("the next trail", None, vec![]))
@@ -144,42 +224,47 @@ fn reused(later: u64) -> (TempDir, Trails) {
         .clone();
     trails.at(AT);
     trails
-        .add(draft("the next", Some(trail), vec![part, rule]))
+        .add(draft("the next", Some(trail), vec![pattern]))
         .unwrap();
     trails.at(AT + later);
     (home, trails)
 }
 
-/// The reuse and rules cards draw the follows and rule uses of each of the last 14 days as columns, a
-/// dot on each day with none, then the steps and rules used most.
+/// The patterns card draws the pattern uses of each of the last 14 days as columns, a dot on each day
+/// with none, then the patterns used most.
 #[test]
-fn the_reuse_cards_draw_each_day_as_a_column() {
+fn the_patterns_card_draws_each_day_as_a_column() {
     let (_home, trails) = reused(3_600);
-    for title in ["01 REUSE", "02 RULES USED"] {
-        let face = face(&trails, title);
-        assert!(face.contains("· · ·"), "{face}");
-        assert!(face.contains("today"), "{face}");
-    }
-    let reuse = face(&trails, "01 REUSE");
-    assert!(reuse.contains("follows"), "{reuse}");
-    assert!(reuse.ends_with(" 1"), "{reuse}");
-    let rules = face(&trails, "02 RULES USED");
-    assert!(rules.contains("rule uses"), "{rules}");
-    assert!(rules.contains("a rule holds"), "{rules}");
-    assert!(rules.ends_with(" 1"), "{rules}");
+    let patterns = face(&trails, "01 PATTERNS USED");
+    assert!(patterns.contains("· · ·"), "{patterns}");
+    assert!(patterns.contains("today"), "{patterns}");
+    assert!(patterns.contains("pattern uses"), "{patterns}");
+    assert!(patterns.contains("a rule holds"), "{patterns}");
+    assert!(patterns.ends_with(" 1"), "{patterns}");
 }
 
-/// With no follow and no rule use in the last 14 days, the reuse and rules cards each say so in one line
-/// in place of their columns.
+/// The patterns card cuts a pattern too long for its width to one line, and keeps its count at the end.
 #[test]
-fn the_reuse_cards_with_nothing_in_14_days_say_so() {
+fn the_patterns_card_cuts_a_long_pattern_to_its_width() {
+    let (_home, trails) = reused(3_600);
+    let all = Model::of(&trails, |model| cards(model, 92, 12, false));
+    let face: Vec<String> = all[1].face.iter().map(|r| r.to_string()).collect();
+    let item = face.iter().find(|l| l.starts_with("a rule")).expect("item");
+    assert!(item.contains('…') && item.ends_with("  1"), "{face:?}");
+    assert_eq!(item.chars().count(), 12, "{face:?}");
+}
+
+/// With no pattern use in the last 14 days, the patterns card says so in one line in place of its
+/// columns.
+#[test]
+fn the_patterns_card_with_nothing_in_14_days_says_so() {
     let (_home, trails) = reused(20 * DAY);
-    let reuse = face(&trails, "01 REUSE");
-    assert!(reuse.contains("no follow in 14 days"), "{reuse}");
-    assert!(!reuse.contains("today"), "{reuse}");
-    let rules = face(&trails, "02 RULES USED");
-    assert!(rules.contains("no rule used in 14 days"), "{rules}");
-    assert!(!rules.contains("today"), "{rules}");
+    let patterns = face(&trails, "01 PATTERNS USED");
+    assert!(
+        patterns.contains("no pattern used in 14 days"),
+        "{patterns}"
+    );
+    assert!(!patterns.contains("today"), "{patterns}");
 }
 
 /// The projects card ends each time at one column, the widest time setting it.
@@ -195,11 +280,13 @@ fn the_projects_card_aligns_its_times() {
         anchor: anchor.clone(),
         places: vec![],
         check: None,
-        new: under.is_none(),
         under,
         replaces: None,
         uses: vec![],
+        misled: Vec::new(),
         session: None,
+        new: false,
+        agent: None,
     };
     let long = AT + 19 * 3_600 + 14 * 60;
     trails.at(AT);
@@ -221,11 +308,42 @@ fn the_projects_card_aligns_its_times() {
     trails.start(&part).unwrap();
     trails.at(long);
     trails
-        .done(&part, "it took long".into(), None, None, home.path())
+        .done(
+            &part,
+            celis_trails::Done::new("it took long".into(), None),
+            home.path(),
+        )
         .unwrap();
     trails.at(long + 60);
-    let face = face(&trails, "06 PROJECTS");
+    let face = face(&trails, "05 PROJECTS");
     let ends: Vec<usize> = face.lines().map(|l| l.chars().count()).collect();
     assert!(face.contains("19h 14m"), "{face}");
     assert_eq!(ends[0], ends[1], "{face}");
+}
+
+/// The value card says when no ask was done in 28 days, else how many asks used a pattern and the
+/// recall funnel, and opens to a row for each span of the lifecycle.
+#[test]
+fn the_value_card_counts_the_asks_and_opens_to_the_lifecycle() {
+    let (home, mut trails) = worked(3_600);
+    assert_eq!(face(&trails, "06 VALUE"), "no ask done in 28 days");
+    let ask = trails.steps().roots()[0].id().to_string();
+    trails.at(AT + 60);
+    trails
+        .done(
+            &ask,
+            celis_trails::Done::new("all works".into(), None),
+            home.path(),
+        )
+        .unwrap();
+    trails.at(AT + 3_600);
+    let value = face(&trails, "06 VALUE");
+    assert!(value.starts_with("0 of 1 asks used a pattern"), "{value}");
+    assert!(value.contains("0 recalled → 0 used → 0 held"), "{value}");
+    let cards = drawn(&trails);
+    let card = cards
+        .iter()
+        .find(|c| c.title.starts_with("06 VALUE"))
+        .unwrap();
+    assert_eq!(card.table.rows.len(), 17);
 }

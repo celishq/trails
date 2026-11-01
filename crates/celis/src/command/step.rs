@@ -1,10 +1,14 @@
 //! `celis step`: leave, close and drop steps.
 
+pub(crate) mod close;
+pub(crate) mod files;
+
+use crate::command::step::close::Review;
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use crate::progress::Review;
-use celis_trails::records::id::short;
-use celis_trails::{Draft, Notice, Place, Project, Written};
+use celis_store::records::id::short;
+use celis_store::{Link, Place, Project, Source};
+use celis_trails::{By, Done, Draft, Notice, TrailStore, Written};
 use std::io::Write;
 
 impl Command {
@@ -22,12 +26,13 @@ impl Command {
             "done" => self.step_close(args, out, err, project),
             "drop" => self.step_drop(args, out),
             "edit" => self.step_edit(args, out, project),
+            "note" => self.step_note(args, out),
             "" => Err(Failure::usage("expected: celis step <command>")),
             verb => Err(Failure::usage(format!("no command \"step {verb}\""))),
         }
     }
 
-    /// Writes the step `args` states on `project`, and prints the ids `Trails::add` gives.
+    /// Writes the step `args` states on `project`, and prints the ids `TrailStore::add` gives.
     fn step_add(
         &self,
         args: &Args,
@@ -52,15 +57,22 @@ impl Command {
             under: args.under.clone(),
             replaces: args.replaces.clone(),
             uses: args.uses.clone(),
+            misled: args.misled.clone(),
             session: args.session.clone().or_else(|| self.session()),
             new: args.new,
+            agent: self.agent(),
         };
-        let written = self.trails()?.add(draft)?;
+        let session = draft.session.clone();
+        let trails = self.trails()?;
+        let written = trails.add(draft)?;
+        if let (Some(session), Some(step)) = (session, written.records.first()) {
+            self.place_kept(&session, &step.id)?;
+        }
         self.print(written, args, out, err)
     }
 
-    /// Starts the open step `args` names, and prints the id of its start, then the rules its plan
-    /// links.
+    /// Starts the open step `args` names, and prints the id of its start, then the patterns and notes
+    /// its plan links.
     fn step_start(
         &self,
         args: &Args,
@@ -68,12 +80,13 @@ impl Command {
         err: &mut dyn Write,
     ) -> Result<(), Failure> {
         let id = args.id("step start")?;
-        let written = self.trails()?.start(id)?;
+        let trails = self.trails()?;
+        let written = trails.start(id)?;
         self.print(written, args, out, err)
     }
 
-    /// Closes the open step `args` names, done with its proof and what changed from its plan, and prints
-    /// the id of the done record, then of its pitfall's rule, and its review.
+    /// Closes the open step `args` names, done with its proof, what changed from its plan, who gave the
+    /// proof and the files it keeps, and prints the id of the done record and its review.
     fn step_close(
         &self,
         args: &Args,
@@ -92,12 +105,34 @@ impl Command {
                     "step done needs one of --changed <what differs from the plan> or --as-planned",
                 )),
             };
-        let pitfall = args.pitfall.clone();
-        let written = trails.done(id, proof, changed.clone(), pitfall, &project.folder)?;
+        let by = match args.by.as_deref() {
+            None => None,
+            Some("person") => Some(By::Person),
+            Some(text) => {
+                return Err(Failure::usage(format!(
+                    "step done --by takes person, not {text}"
+                )))
+            }
+        };
+        let mut files = Vec::new();
+        for file in &args.files {
+            let source = Source::of(file, &self.folder);
+            let place = source.place(&project.folder, &self.folder);
+            files.push(trails.keep(place, &source)?);
+        }
+        let done = Done {
+            proof,
+            changed,
+            by,
+            files,
+            misled: args.misled.clone(),
+        };
+        let written = trails.done(id, done.clone(), &project.folder)?;
         self.print(written, args, out, err)?;
         let steps = trails.steps();
-        let review = Review::of(trails.records(), steps.find(id)?, changed.as_deref());
-        self.review(&review, err)
+        let review = Review::of(trails.records(), steps.find(id)?, &done);
+        let linked = !Link::all(&self.home()?, &project.folder).is_empty();
+        self.review(&review, &trails, linked, err)
     }
 
     /// Drops the open step `args` names and each open step under it, and prints each drop's id.
@@ -133,8 +168,16 @@ impl Command {
         self.print(written, args, out, &mut std::io::sink())
     }
 
-    /// Prints the id of each record of `written` and each of its rules on `out`, and its notices on
-    /// `err`.
+    /// Writes the text after `--` as a note on the step `args` names, and prints the note's id.
+    fn step_note(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
+        let id = args.id("step note")?;
+        let trails = self.trails()?;
+        let text = args.required_text("step note needs its text after --")?;
+        self.print(trails.note(id, text)?, args, out, &mut std::io::sink())
+    }
+
+    /// Prints the id of each record of `written`, each of its patterns and each of its notes on `out`, and
+    /// its notices on `err`.
     pub(crate) fn print(
         &self,
         written: Written,
@@ -145,15 +188,17 @@ impl Command {
         for record in &written.records {
             self.id(out, args, record)?;
         }
-        for (said, rule) in &written.rules {
-            let line = crate::text::line::rule(said, rule);
-            super::show(
-                out,
-                args.json,
-                "decision",
-                crate::text::json::rule(said, rule),
-                &line,
-            )?;
+        if !written.patterns.is_empty() {
+            let trails = self.trails()?;
+            for pattern in &written.patterns {
+                let line = crate::text::line::pattern(pattern, &trails);
+                let json = crate::text::json::pattern(pattern);
+                crate::command::show(out, args.json, "pattern", json, &line)?;
+            }
+        }
+        for note in &written.notes {
+            let (line, json) = (crate::text::line::note(note), crate::text::json::note(note));
+            crate::command::show(out, args.json, "note", json, &line)?;
         }
         for notice in &written.notices {
             self.notice(notice, err)?;
@@ -163,31 +208,21 @@ impl Command {
 
     fn notice(&self, notice: &Notice, err: &mut dyn Write) -> Result<(), Failure> {
         let line = match notice {
-            Notice::Started { ask, trail } => format!(
-                "celis: {} is the ask, under its new trail {}.",
-                short(ask),
-                short(trail)
-            ),
             Notice::Ask(ask) => format!(
-                "celis: when {0} holds more than one job, a part a person can check alone such as an item \
-                 of its list, add only its first job with step add --under {0}, and each next job after \
-                 you close one.",
+                "celis: when {0} holds more than one job, a part a person can check alone such as an item of its list, \
+                 add only its first job with step add --under {0}, and each next job after you close one.",
                 short(ask)
             ),
-            Notice::Joined(trail) => format!(
-                "celis: the step joined the trail {}; edit its title when it no longer covers the work.",
-                short(trail)
+            Notice::Waits(ask) => format!(
+                "celis: the ask {0} is still open, and no step under it is open; when its work is done, \
+                 close it with celis step done {0}, else drop it with celis step drop {0}.",
+                short(ask)
             ),
             Notice::NotStarted(step) => format!(
                 "celis: {} has not started; keep one step ahead: take it first, or drop it.",
                 short(step)
             ),
-            Notice::Ended { rule, project } => format!(
-                "celis: this ends the override {} of [{project}]; tell the person, and write it again \
-                 there with decide --replaces when it still holds.",
-                short(rule)
-            ),
         };
-        super::put(err, &line)
+        crate::command::put(err, &line)
     }
 }

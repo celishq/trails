@@ -1,17 +1,18 @@
-//! `--demo` of `tree`, `stats` and `report`: made-up trails in every state, with four weeks of history,
+//! `--demo` of `tree` and `stats`: made-up trails in every state, with four weeks of history,
 //! in a folder of their own; and of `tree --graph`, eleven trails of today that move live.
 
 use crate::command::{Args, Command};
 use crate::failure::Failure;
-use celis_trails::{Anchor, Draft, Rule, Scope, Store, Trails};
+use celis_patterns::{PatternRecord, PatternStore, Scope};
+use celis_store::{Anchor, Home, Store};
+use celis_trails::{Draft, TrailStore};
 use std::cell::{RefCell, RefMut};
 use std::io::{IsTerminal, Write};
 use std::path::PathBuf;
 
 impl Command {
-    /// Runs the command `args` names, `tree`, `stats` or `report`, on made-up trails written to a folder
-    /// of their own, and removes the folder at the end; `report` reports the trail with every state, and
-    /// `tree --graph` shows the trails of the graph's demo, written live on a terminal.
+    /// Runs the command `args` names, `tree` or `stats`, on made-up trails written to a folder of their
+    /// own, and removes the folder at the end; `tree --graph` shows the trails of the graph's demo, written live on a terminal.
     pub(crate) fn demo(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         let home = std::env::temp_dir().join(format!("celis-demo-{}", std::process::id()));
         let demo = Demo {
@@ -44,10 +45,10 @@ impl Command {
             return shown;
         }
         let written = match args.words[0].as_str() {
-            "stats" if args.next => demo.month().map(|_| String::new()),
+            "stats" if args.next => demo.month().map(|_| ()),
             _ => demo.write(),
         };
-        let shown = written.and_then(|tier| {
+        let shown = written.and_then(|()| {
             let mut env = self.env.clone();
             env.insert("CELIS_HOME".to_string(), home.display().to_string());
             if let Some(opening) = self.opening() {
@@ -58,16 +59,12 @@ impl Command {
                 env,
                 folder: self.folder.clone(),
             };
-            let mut args = Args {
+            let args = Args {
                 demo: false,
                 ..args.clone()
             };
             match args.words[0].as_str() {
                 "stats" => command.stats(&args, out),
-                "report" => {
-                    args.words.push(tier);
-                    command.report(&args, out)
-                }
                 _ => command.tree(&args, out),
             }
         });
@@ -81,14 +78,14 @@ impl Command {
 struct Demo {
     home: PathBuf,
     now: u64,
-    trails: RefCell<Option<Trails>>,
+    trails: RefCell<Option<Store>>,
 }
 
 impl Demo {
     /// Writes the made-up trails: the history of four weeks; a done one of a past day; today, an active
-    /// one with a step in each state, rules and a change, a revised one, and in a second project an
-    /// active, an expired and a dropped one. The id of the active one.
-    fn write(&self) -> Result<String, Failure> {
+    /// one with a step in each state, patterns, notes and a change, a revised one, and in a second project an
+    /// active, a stale and a dropped one.
+    fn write(&self) -> Result<(), Failure> {
         let (shop, crm) = (anchor("shop"), anchor("crm"));
         self.history(&shop, &crm)?;
         let day = 2 * 24 * 3600;
@@ -191,20 +188,23 @@ impl Demo {
             &[],
         )?;
 
-        let tier = self.add(
+        let senior = self.write_pattern(1510, &shop, Scope::Project, "When you price a senior: pay 80% of the price, rounded down to the cent, because the receipt must match the shelf.")?;
+        let currency = self.write_pattern(
+            1505,
+            &shop,
+            Scope::Project,
+            "When you show a price: use the shop's currency, because the receipt showed dollars.",
+        )?;
+        let tier = self.write_step(
             1500,
             &shop,
             None,
             "Add a senior tier to the price list\nexpect: a senior pays 80% on the shelf, the receipt and the frame",
             &[],
+            None,
+            &[senior, currency],
         )?;
-        self.rule(1490, &shop, &tier, "When you price a senior: pay 80% of the price, rounded down to the cent, because the receipt must match the shelf.")?;
-        self.rule(
-            1480,
-            &shop,
-            &tier,
-            "When you show a price: use the shop's currency, because the receipt showed dollars.",
-        )?;
+        self.note(1490, &tier, "Keep the old prices until the release.")?;
         let pays = self.add(
             1470,
             &shop,
@@ -258,6 +258,7 @@ impl Demo {
             "Show the tier in the frame\nexpect: the frame shows the senior price",
             &["web/frame.tsx"],
         )?;
+        self.note(955, &frame, "The frame reads the tier from the price list.")?;
         let label = self.add(
             950,
             &shop,
@@ -273,22 +274,22 @@ impl Demo {
             "Round the price down\nexpect: no price has a part of a cent",
             &[],
         )?;
-        Ok(tier)
+        Ok(())
     }
 
     /// Writes a trail of three steps each day from 27 days to 3 days ago, in turn in each project: the
-    /// first uses a rule, the others follow the steps of a week before and take less time. The later
-    /// two weeks change, revise and take longer less often, and use rules more.
+    /// first uses a pattern, the others take less time than the steps of a week before. The later
+    /// two weeks change, revise and take longer less often, and use patterns more.
     fn history(&self, shop: &Anchor, crm: &Anchor) -> Result<(), Failure> {
         let start = 28 * DAY;
-        let mut rules = vec![];
+        let mut patterns = vec![];
         for (anchor, text) in [
             (shop, "When you change a price: change the shelf label in the same step, because a shopper pays what the shelf says."),
             (shop, "When you test the till: run it with an empty cart first, because an empty cart broke the total twice."),
             (crm, "When you import contacts: match them by email before by name, because names repeat."),
             (crm, "When you change a contact field: keep the old value in its history, because sales asks for it."),
         ] {
-            rules.push((anchor, self.write_rule(start, anchor, Scope::Project, text)?));
+            patterns.push((anchor, self.write_pattern(start, anchor, Scope::Project, text)?));
         }
         let mut days: Vec<[(String, u64); 3]> = vec![];
         for (i, day) in (3..28u64).rev().enumerate() {
@@ -297,12 +298,12 @@ impl Demo {
             let [first, second, third] = TASKS[i % TASKS.len()];
             let at = day * DAY + 3_600 * (i as u64 % 5);
             let trail = self.add(at, anchor, None, first, &[])?;
-            let own: Vec<&String> = rules
+            let own: Vec<&String> = patterns
                 .iter()
                 .filter(|(a, _)| *a == anchor)
                 .map(|(_, id)| id)
                 .collect();
-            let rule = (recent || i % 3 == 0).then(|| own[i / 2 % own.len()].clone());
+            let pattern = (recent || i % 3 == 0).then(|| own[i / 2 % own.len()].clone());
             let a = self.write_step(
                 at - 60,
                 anchor,
@@ -310,7 +311,7 @@ impl Demo {
                 second,
                 &[],
                 None,
-                rule.as_slice(),
+                pattern.as_slice(),
             )?;
             let took = 300 + (i as u64 * 137) % 1_500;
             let changed = match recent {
@@ -327,16 +328,8 @@ impl Demo {
             let ago = days.len().checked_sub(7).map(|w| days[w].clone());
             let mut ids = vec![(a, took)];
             for (k, title) in [(1, third), (2, "Try it on the staging shop")] {
-                let uses: Vec<String> = ago.iter().map(|w| w[k].0.clone()).collect();
-                let id = self.write_step(
-                    at - 180 - took,
-                    anchor,
-                    Some(&trail),
-                    title,
-                    &[],
-                    None,
-                    &uses,
-                )?;
+                let id =
+                    self.write_step(at - 180 - took, anchor, Some(&trail), title, &[], None, &[])?;
                 let less = match (&ago, recent) {
                     (Some(w), true) => (w[k].1 / 2).max(60),
                     (Some(w), false) => (w[k].1 * 4 / 5).max(60),
@@ -369,10 +362,10 @@ impl Demo {
     }
 
     /// The trails as they stand `ago` seconds before now, writing at that time.
-    fn trails(&self, ago: u64) -> Result<RefMut<'_, Trails>, Failure> {
+    fn trails(&self, ago: u64) -> Result<RefMut<'_, Store>, Failure> {
         let mut trails = self.trails.borrow_mut();
         if trails.is_none() {
-            *trails = Some(Trails::open(Store::open(&self.home)?, self.now - ago, 600));
+            *trails = Some(Store::open(Home::open(&self.home)?, self.now - ago, 600));
         }
         let mut trails = RefMut::map(trails, |t| t.as_mut().expect("opened"));
         trails.at(self.now - ago);
@@ -424,10 +417,13 @@ impl Demo {
             under: under.map(str::to_string),
             replaces: replaces.map(str::to_string),
             uses: uses.to_vec(),
+            misled: Vec::new(),
             session: None,
             new: false,
+            agent: None,
         };
-        let written = self.trails(ago)?.add(draft)?;
+        let trails = self.trails(ago)?;
+        let written = trails.add(draft)?;
         Ok(written.records[0].id.clone())
     }
 
@@ -449,36 +445,39 @@ impl Demo {
     ) -> Result<(), Failure> {
         self.trails(ago + took)?.start(id)?;
         let changed = changed.map(str::to_string);
-        self.trails(ago)?
-            .done(id, proof.to_string(), changed, None, &self.home)?;
+        self.trails(ago)?.done(
+            id,
+            celis_trails::Done::new(proof.to_string(), changed),
+            &self.home,
+        )?;
         Ok(())
     }
 
-    /// Writes the rule `text` of the trail `trail`, `ago` seconds before now.
-    fn rule(&self, ago: u64, anchor: &Anchor, trail: &str, text: &str) -> Result<(), Failure> {
-        self.write_rule(ago, anchor, Scope::Trail(trail.to_string()), text)?;
+    /// Writes the note `text` on the step `step`, `ago` seconds before now.
+    fn note(&self, ago: u64, step: &str, text: &str) -> Result<(), Failure> {
+        self.trails(ago)?.note(step, text.to_string())?;
         Ok(())
     }
 
-    /// Writes the rule `text` of `anchor` in `scope`, `ago` seconds before now; its id.
-    fn write_rule(
+    /// Writes the pattern `text` of `anchor` in `scope`, `ago` seconds before now; its id.
+    fn write_pattern(
         &self,
         ago: u64,
         anchor: &Anchor,
         scope: Scope,
         text: &str,
     ) -> Result<String, Failure> {
-        let rule = Rule {
+        let pattern = PatternRecord {
             anchor: anchor.clone(),
             scope,
             replaces: None,
             content: text.to_string(),
             paths: vec![],
-            situation: false,
-            promoted: false,
+            within: vec![],
+            examples: Default::default(),
         };
-        let written = self.trails(ago)?.decide(rule, None)?;
-        Ok(written.records[0].id.clone())
+        let trails = self.trails(ago)?;
+        Ok(trails.write(pattern, None)?.id)
     }
 }
 

@@ -7,6 +7,7 @@ pub mod classic;
 pub mod contrast;
 pub mod frame;
 pub mod glyph;
+pub mod grid;
 pub mod ink;
 pub mod legend;
 pub mod live;

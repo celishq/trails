@@ -1,9 +1,9 @@
 <h1 align="center">Celis</h1>
 
-<h3 align="center">Stop babysitting your coding agent</h3>
+<h3 align="center">Teach your AI once, not every day</h3>
 
-<p align="center">Celis keeps your rules and gives your agent the discipline to follow them, in every project
-and every agent.</p>
+<p align="center">Celis turns your corrections into patterns that every agent keeps.<br>
+Your CLAUDE.md and skills, but they write and update themselves.</p>
 
 <p align="center">
   <a href="https://github.com/celishq/trails/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/celishq/trails"></a>
@@ -17,33 +17,50 @@ https://github.com/user-attachments/assets/8cb59450-fb36-4fa6-82ae-5bcd59b1384b
 
 ## Why
 
-- **Your agent follows through.** It gets the rule that matters right before it acts, not buried in a
-  manual it read an hour ago. You stop catching the same mistake twice.
-- **Correct it once.** A correction in chat or a code review becomes a rule that Celis keeps, in every
-  project. On a new job, your agent also starts from similar work that went well.
-- **Every agent keeps the same rules.** What you tell Claude Code, Codex and Cursor follow too.
-- **You can check its work.** Every step comes with proof, like a passing test or a command's output, on
+- **You already teach your agent.** Each correction in chat or a code review becomes a pattern that
+  Celis keeps: what to do, and why. When a job closes, your agent writes down what it learned.
+- **It comes back when it matters.** Before your agent makes a choice, it reads the patterns that bear
+  on it, not a manual it read an hour ago. You stop catching the same mistake twice.
+- **Every agent learns it.** What you teach Claude Code, Codex and Cursor use too, in every project.
+- **You can check what it learned.** Every step comes with proof, like a passing test or a command's output, on
   a trail you can watch.
 
 ## How it works
 
 A CLAUDE.md is a manual. Your agent reads it once at the start, and by the time it edits a file, the
 one rule that matters is lost among hundreds of others. Celis is a checklist. It hands your agent the
-few rules that apply right now: when a job starts, before it changes a file, and before it says it's
+few patterns that apply right now: when a job starts, before it changes a file, and before it says it's
 done.
 
-Those rules come from your corrections and code reviews. Your agent works one step at a time, tries
-the part it's least sure of first, proves each step works, and keeps what it learned as a rule. Each
-step lands on a trail you can watch, so you see what your agent did and why.
+Patterns are the core. A pattern says what to choose in a context, and why. It guides your agent's
+judgement: when its forces are present, the agent resolves them in its own way. Good and bad examples
+show your taste. They come from your corrections and code reviews. Your agent has the index of the
+patterns from the session start, and reads a pattern whole at the choice it bears on.
+
+```
+  knowledge    pattern
+               When · Forces · Do · Because
+               good / bad examples, path globs
+               scope: project | me
+               within ──► a larger pattern
+                  ▲                 │
+   examples, uses, misled           │ activates
+                  │                 ▼
+  evidence     trail ──► step ──► done: proof, changed, by ──► note
+```
+
+Trails are the evidence. Your agent works one step at a time, tries the part it's least sure of
+first, proves each step works, and keeps what it learned as a pattern. Each step lands on a trail you
+can watch, so you see what your agent did and why.
 
 ```
 Job: seniors pay 20% less
 ├─ ✓ Find where prices are set
 ├─ ⠏ Change how the price is worked out     ← not sure how yet, so it's split up
 │  ├─ ✗ Change the price in the cart           dropped: the cart doesn't know the age
-│  │                                           rule: set prices in prices.py, not the cart
+│  │                                           pattern: set prices in prices.py, not the cart
 │  ├─ ✓ Write a test: seniors pay 80%          proof: passes, once SHELF_OFFLINE=1 was set
-│  │                                           rule: tests need SHELF_OFFLINE=1
+│  │                                           pattern: tests need SHELF_OFFLINE=1
 │  └─ ○ Use the new price in prices.py      ← up next
 └─ ○ Show the senior price on the page      ← will split this later
 
@@ -51,7 +68,7 @@ Job: seniors pay 20% less
 ```
 
 A week later, you ask for a student discount, and the agent starts with the senior discount's trail and
-its two rules.
+its two patterns.
 
 ## Does it work?
 
@@ -67,18 +84,22 @@ the old version of a rule that changed. With Celis, the agent broke fewer rules 
 followed old rules far less often. Real repos already have 80 to 280 rules in one agent file.
 
 **Why?** The rules fit in the context window, but the agent's attention doesn't stretch that far. The
-one rule that matters gets lost among hundreds of others. Celis gives the agent the right rules at
-the right time: when a job starts, before it changes a file, and before it says it's done.
+one rule that matters gets lost among hundreds of others. Celis gives the agent a short index of your
+patterns when a job starts. The agent opens the ones that bear on the job, and when it closes a step,
+Celis gives it the patterns of the files it changed to check the result against.
 
 We treat the agent as a capable collaborator that owns its work. Celis doesn't tell it how to do the
 job; it gives it what it needs to do the job well.
 
-**It works across agents, too.** In another test, Claude Code learned the review rules of real
-Supabase pull requests. Codex then broke 0.25 of them per job with Celis, against 2.38 without.
-
-The full setup, numbers and limits are in [evals/drift](evals/drift/README.md).
-
 ## Install
+
+Paste this line into your agent, and it installs Celis for you:
+
+```
+Install Celis: follow https://celis.ai/install.md
+```
+
+Or install it yourself:
 
 **1. Install `celis`:**
 
@@ -93,7 +114,7 @@ curl -fsSLO https://celis.ai/install.sh
 sh install.sh
 ```
 
-To update it later, run `celis update`.
+To update it later, run `celis update`. Then update the plugin in your agents, and run `/celis:migrate` when celis asks for it.
 
 <details>
 <summary>What the script does, and how to check the download</summary>
@@ -113,7 +134,7 @@ gh attestation verify celis-aarch64-apple-darwin.tar.gz -R celishq/trails
 
 </details>
 
-**2. Add the plugin to your agent:**
+**2. Add the plugin to your agent.** `celis setup` lists the agents on your machine and the commands for each, or use this table:
 
 | Agent       | Install                                                                         | Then                                                                                        |
 | ----------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
@@ -136,11 +157,11 @@ Questions don't leave a trail; only jobs that change files do.
 
 ## Questions
 
-**How do I fix a bad rule?** Tell your agent. It writes a new rule that replaces the old one, and
+**How do I fix a bad pattern?** Tell your agent. It writes a new pattern that replaces the old one, and
 agents stop seeing the old one.
 
 **How do I share trails with my team?** Run `celis link` in the project. It keeps a copy of the
-project's trails in `.celis/trails/`, so you can commit them. Rules you keep for all your own work
+project's trails in `.celis/trails/`, so you can commit them. Patterns you keep for all your own work
 stay private.
 
 **Where is my data?** On your machine only: `~/Library/Application Support/Celis` on macOS, and
@@ -149,8 +170,7 @@ key, and Celis never sends it anywhere. To use another folder, set `CELIS_HOME` 
 agent. Run `celis auth phrase` to see your recovery phrase, and `celis auth login` on another
 computer.
 
-**What else can I run?** `celis help` lists every command, such as `celis grep` to search your trails
-and `celis report` to turn a trail into Markdown for a pull request.
+**What else can I run?** `celis help` lists every command, such as `celis grep` to search your trails.
 
 **Does it work on Windows?** Through WSL.
 

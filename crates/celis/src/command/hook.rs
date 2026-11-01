@@ -1,7 +1,11 @@
 //! `celis hook`: what an agent's hook reads, in the shape the agent reads it.
 
+pub(crate) mod prompt;
+
 use crate::command::{Args, Command};
 use crate::failure::Failure;
+use celis_patterns::PatternStore;
+use celis_trails::TrailStore;
 use serde_json::{json, Value};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -12,12 +16,14 @@ mod tests;
 /// The agents whose hooks run `celis hook`.
 const AGENTS: [&str; 5] = ["claude", "codex", "cursor", "gemini", "antigravity"];
 
-/// What the prompt note asks of an agent that loads the past agent, and of one that does not.
-const PAST: (&str, &str) = (
-    "run the celis:past agent in the foreground with the ask and the places it may touch, and wait for its \
-     answer",
-    "do what past.md says, yourself, for the ask and the places it may touch",
-);
+/// The file under `$CELIS_HOME/offered` that marks that a session start offered `/celis:learn`.
+const LEARN: &str = "learn";
+
+/// The start of the title of the ask that `/celis:tidy` adds.
+const TIDY: &str = "Tidy the celis trails";
+
+/// How many days after a tidy the session start asks to offer the next.
+const TIDY_DAYS: u64 = 7;
 
 impl Command {
     /// Acts on the hook's JSON on stdin for `hook start <agent> <plugin folder>` or `hook ask <agent>`,
@@ -42,23 +48,23 @@ impl Command {
         let json: Value = serde_json::from_str(&input).unwrap_or(Value::Null);
         let text = match root {
             Some(root) => self.start(agent, &json, root),
-            None => self.note(agent, &json),
+            None => self.note(&json),
         };
         match (agent, event) {
-            ("cursor", "ask") => super::put(out, r#"{"continue": true}"#),
+            ("cursor", "ask") => crate::command::put(out, r#"{"continue": true}"#),
             _ if text.is_empty() => Ok(()),
-            (_, "start") => super::put(out, &shape(agent, "SessionStart", &text)),
-            _ => super::put(out, &shape(agent, "BeforeAgent", &text)),
+            (_, "start") => crate::command::put(out, &shape(agent, "SessionStart", &text)),
+            _ => crate::command::put(out, &shape(agent, "BeforeAgent", &text)),
         }
     }
 
-    /// The card, where the plugin's files are, the named trails and a version notice; a compaction lets
-    /// the session ask for the past agent again.
+    /// The status line, the card, where the plugin's files are, the first time no pattern is in the
+    /// project the JSON names, the offer to learn them, and a version notice.
     fn start(&self, agent: &str, json: &Value, root: &Path) -> String {
-        let _ = self.act_on(json, &mut std::io::sink(), &mut std::io::sink());
         let card = std::fs::read_to_string(root.join("card.md")).unwrap_or_default();
         let mut text = format!(
-            "How to do an ask with the celis plugin:\n{}\n\n",
+            "{}\n\nHow to do an ask with the celis plugin:\n{}\n\n",
+            self.here(json).status(),
             card.trim_end()
         );
         if agent != "claude" {
@@ -72,21 +78,26 @@ impl Command {
         }
         text.push_str(&format!("steps.md: {}", root.join("steps.md").display()));
         if agent != "claude" {
-            let past = root.join("agents/past.md");
-            text.push_str(&format!("\npast.md: {}", past.display()));
-        }
-        let mut named = Vec::new();
-        let limit = Args {
-            limit: Some("20".to_string()),
-            ..Args::default()
-        };
-        let _ = self.names(&limit, &mut named);
-        let named = String::from_utf8_lossy(&named);
-        if !named.trim().is_empty() {
+            let patterns = root.join("agents/patterns.md").display().to_string();
             text.push_str(&format!(
-                "\n\nNamed trails: when an ask does what one does, add the ask with --uses <its name>.\n{}",
-                named.trim_end()
+                "\npatterns.md: {patterns}. With no subagents, do what it says yourself, for the ask."
             ));
+            let extraction = root.join("agents/extraction.md").display().to_string();
+            text.push_str(&format!(
+                "\nextraction.md: {extraction}. With no subagents, do what it says yourself, with the \
+                 brief that celis extract prints."
+            ));
+        }
+        if self.here(json).index(&[]).ok().flatten().is_none() {
+            if let Some(line) = self.learn() {
+                text.push_str(&format!("\n\n{line}"));
+            }
+        }
+        if let Some(line) = self.here(json).tidy() {
+            text.push_str(&format!("\n\n{line}"));
+        }
+        if let Some(line) = self.old() {
+            text.push_str(&format!("\n\n{line}"));
         }
         let manifest = std::fs::read_to_string(root.join(".claude-plugin/plugin.json"));
         let plugin = manifest
@@ -100,26 +111,98 @@ impl Command {
         text
     }
 
-    /// The note on the prompt, after it is acted on in the project the JSON names; past.md in place of
-    /// the past agent for an agent that does not load it.
-    fn note(&self, agent: &str, json: &Value) -> String {
+    /// The status line: the version of celis, and how many patterns are live in scope here.
+    fn status(&self) -> String {
+        let here = self.project();
+        let count = match self.held() {
+            Ok(true) => self
+                .trails()
+                .map_or(0, |t| t.patterns().view(&here.anchor.project).live().len()),
+            _ => 0,
+        };
+        let patterns = match count {
+            0 => "no pattern".to_string(),
+            1 => "1 pattern".to_string(),
+            n => format!("{n} patterns"),
+        };
+        format!("{} is on: {patterns} in scope here.", crate::version())
+    }
+
+    /// The line that asks to offer `/celis:learn` on the person's past chats, the first time a session
+    /// starts with no pattern in scope.
+    fn learn(&self) -> Option<String> {
+        let offered = self.home().ok()?.join("offered").join(LEARN);
+        if offered.exists() || prompt::mark(&offered).is_err() {
+            return None;
+        }
+        Some(
+            "celis: no pattern is kept here yet. At the end of your answer to the person's first ask \
+             in this session, offer them /celis:learn on their past chats with you, so that celis drafts \
+             patterns from the corrections they already gave."
+                .to_string(),
+        )
+    }
+
+    /// The line that asks to offer `/celis:tidy` once in the session: when patterns in scope here need
+    /// tidy, and no step whose title starts with `TIDY` began in the last `TIDY_DAYS` days.
+    fn tidy(&self) -> Option<String> {
+        let (found, _) = self.candidates().ok()?;
+        if found.is_empty() {
+            return None;
+        }
+        let trails = self.trails().ok()?;
+        let steps = trails.steps();
+        let since = crate::command::now().saturating_sub(TIDY_DAYS * 86_400);
+        let all = steps.all().into_iter();
+        if all
+            .filter(|s| s.title().starts_with(TIDY))
+            .any(|s| s.note().created_at >= since)
+        {
+            return None;
+        }
+        let need = match found.len() {
+            1 => "1 pattern needs it".to_string(),
+            n => format!("{n} patterns need it"),
+        };
+        Some(format!(
+            "celis: once in this session, after the person's first ask, offer them /celis:tidy: {need}."
+        ))
+    }
+
+    /// The line that asks to offer `/celis:migrate` while a pattern of a retired form remains.
+    fn old(&self) -> Option<String> {
+        let need = match self.unmigrated() {
+            0 => return None,
+            1 => "1 pattern is".to_string(),
+            n => format!("{n} patterns are"),
+        };
+        Some(format!(
+            "celis: {need} in an old form that celis no longer reads; once in this session, offer the \
+             person /celis:migrate."
+        ))
+    }
+
+    /// The note on the prompt, after it is acted on in the project the JSON names.
+    fn note(&self, json: &Value) -> String {
+        let mut note = Vec::new();
+        if self.here(json).act_on(json, &mut note).is_err() {
+            return String::new();
+        }
+        String::from_utf8_lossy(&note).trim_end().to_string()
+    }
+
+    /// This run in the folder the JSON names in `cwd`, else in the first of `workspace_roots` or of
+    /// `workspacePaths`, else in its own.
+    fn here(&self, json: &Value) -> Command {
         let folder = json["cwd"]
             .as_str()
             .or(json["workspace_roots"][0].as_str())
+            .or(json["workspacePaths"][0].as_str())
             .map_or(self.folder.clone(), PathBuf::from);
-        let here = Command {
+        Command {
             args: vec![],
             env: self.env.clone(),
             folder,
-        };
-        let mut note = Vec::new();
-        if here.act_on(json, &mut std::io::sink(), &mut note).is_err() {
-            return String::new();
-        }
-        let note = String::from_utf8_lossy(&note).trim_end().to_string();
-        match agent {
-            "codex" | "gemini" => note.replace(PAST.0, PAST.1),
-            _ => note,
         }
     }
 }

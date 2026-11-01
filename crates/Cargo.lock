@@ -153,7 +153,10 @@ name = "celis"
 version = "0.0.0"
 dependencies = [
  "anyhow",
+ "base64",
  "celis-nostr",
+ "celis-patterns",
+ "celis-store",
  "celis-trails",
  "libc",
  "notify",
@@ -187,16 +190,39 @@ dependencies = [
 ]
 
 [[package]]
+name = "celis-patterns"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "celis-nostr",
+ "celis-store",
+ "regex",
+ "serde_json",
+]
+
+[[package]]
+name = "celis-store"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "base64",
+ "celis-nostr",
+ "regex",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+]
+
+[[package]]
 name = "celis-trails"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "celis-nostr",
+ "celis-patterns",
+ "celis-store",
  "libc",
- "regex",
- "serde",
- "serde_json",
- "tempfile",
 ]
 
 [[package]]

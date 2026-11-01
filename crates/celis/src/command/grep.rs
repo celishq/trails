@@ -1,44 +1,34 @@
 //! `celis grep`: every trail of every project as lines, through the system `grep`.
 
-mod found;
-mod header;
-mod kind;
-mod row;
-mod view;
+pub(crate) mod view;
 
-use super::Command;
+mod found;
+
+use crate::command::grep::view::View;
+use crate::command::Command;
 use crate::failure::Failure;
 use found::Found;
 use std::io::Write;
 use std::process::Stdio;
-use view::View;
 
 impl Command {
     /// Gives `words` to the system `grep` with the view on its stdin, and prints what it found,
     /// grouped by trail. Writes no record.
     pub(crate) fn grep(&self, words: &[String], out: &mut dyn Write) -> Result<(), Failure> {
         let view = match self.held()? {
-            true => View::of(&self.trails()?),
+            true => View::of(&self.trails()?, &self.project().anchor.project),
             false => View::default(),
         };
         let Some(found) = run(words, view.text())? else {
-            return super::put(out, "No line matches.");
+            return crate::command::put(out, "No line matches.");
         };
         if found.is_empty() {
             return Ok(());
         }
         match Found::of(&found, &view) {
-            Some(lines) => super::put(out, &lines.text(&self.project().anchor.name)),
-            None => super::put(out, &found),
+            Some(lines) => crate::command::put(out, &lines.text(&self.project().anchor.name)),
+            None => crate::command::put(out, &found),
         }
-    }
-
-    /// Prints that `celis past` is gone, for a plugin from before. Writes no record.
-    pub(crate) fn past(&self, out: &mut dyn Write) -> Result<(), Failure> {
-        super::put(
-            out,
-            "celis past is gone: update the celis plugin, whose past.md searches the trails with celis grep.",
-        )
     }
 }
 

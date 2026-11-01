@@ -1,6 +1,6 @@
 //! The rows behind a card of stats, as an opened card shows them and as Markdown.
 
-use crate::command::tree::wrap;
+use crate::command::trail::tree::wrap;
 use crate::terminal::canvas::{cut, paint, visible, Styled, BOLD, DIM};
 use ratatui::text::Span;
 

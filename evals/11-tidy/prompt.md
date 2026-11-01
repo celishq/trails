@@ -1,6 +1,6 @@
 ---
-max_turns: 60
-timeout_seconds: 900
+max_turns: 90
+timeout_seconds: 1500
 allowed_tools: [Read, Write, Edit, Agent, Bash, Skill]
 model: opus
 runs: 3

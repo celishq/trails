@@ -1,0 +1,133 @@
+//! The account's writes of cells.
+
+use crate::{Cell, Cells, Export, Mask, Membership, PatternRecord, PatternStore};
+use celis_nostr::Note;
+use celis_store::{Anchor, ProofFile, Refusal, Store};
+use std::collections::HashSet;
+
+/// The account's writes of cells (CIP-09), each signed at the store's time.
+pub trait CellStore {
+    /// Writes a membership that puts the live patterns of the account that `ids` name in its cell
+    /// `name`; refuses a name that a cell of another account holds.
+    fn join(&self, name: &str, ids: &[String]) -> Result<Note, Refusal>;
+
+    /// Writes a mask that turns the cell `name` on or off in the project of `anchor`, or in every project
+    /// with none; refuses a name that no cell or two cells hold.
+    fn turn(&self, name: &str, on: bool, anchor: Option<&Anchor>) -> Result<Note, Refusal>;
+
+    /// Removes the records of the cell `name` of another account, and each blob that only they name;
+    /// how many records. Refuses a cell of the account, and a name that no cell holds.
+    fn leave(&mut self, name: &str) -> Result<usize, Refusal>;
+
+    /// The export of the account's cell `name`: its live patterns and a new membership, signed and not
+    /// written; refuses a name that no cell of the account with a live pattern holds.
+    fn export(&self, name: &str) -> Result<Export, Refusal>;
+}
+
+impl CellStore for Store {
+    fn join(&self, name: &str, ids: &[String]) -> Result<Note, Refusal> {
+        if !Cell::is_name(name) {
+            return Err(Refusal::Usage(format!(
+                "a cell name is 1 to 64 characters of a-z, 0-9 and -, not {name}"
+            )));
+        }
+        if ids.is_empty() {
+            return Err(Refusal::Usage("cell add needs a pattern id".to_string()));
+        }
+        let author = self.author()?;
+        let cells = Cells::new(self.records());
+        if cells.named(name).iter().any(|c| Some(c.author) != author) {
+            return Err(Refusal::CellTaken(name.to_string()));
+        }
+        let patterns = self.patterns();
+        let found: Result<Vec<&str>, Refusal> = ids
+            .iter()
+            .map(|id| {
+                let pattern = patterns.find(id)?;
+                match Some(pattern.note.pubkey) == author {
+                    true => Ok(pattern.id()),
+                    false => Err(Refusal::NoPattern(id.clone())),
+                }
+            })
+            .collect();
+        let found = found?;
+        self.sign(|account, now| Membership::write(account, now, name, &found))
+    }
+
+    fn turn(&self, name: &str, on: bool, anchor: Option<&Anchor>) -> Result<Note, Refusal> {
+        let cells = Cells::new(self.records());
+        let cell = match cells.named(name)[..] {
+            [] => return Err(Refusal::NoCell(name.to_string())),
+            [cell] => cell.clone(),
+            _ => return Err(Refusal::CellTaken(name.to_string())),
+        };
+        let project = anchor.map(|a| a.project.as_str());
+        let after = cells.newest(&cell, project).map_or(0, |m| m.at + 1);
+        self.sign(|account, now| {
+            let mask = Mask {
+                cell,
+                on,
+                anchor: anchor.cloned(),
+                at: now.max(after),
+            };
+            mask.record(account)
+        })
+    }
+
+    fn leave(&mut self, name: &str) -> Result<usize, Refusal> {
+        let author = self.author()?;
+        let patterns = self.patterns();
+        let named = patterns.cells().named(name);
+        let cell = match named.first() {
+            None => return Err(Refusal::NoCell(name.to_string())),
+            Some(_) if named.iter().any(|c| Some(c.author) == author) => {
+                return Err(Refusal::CellYours(name.to_string()))
+            }
+            Some(cell) => (*cell).clone(),
+        };
+        let held = patterns.every().iter();
+        let held = held.filter(|p| patterns.holding(p).contains(&&cell));
+        let mut gone: HashSet<&str> = held.map(|p| p.id()).collect();
+        let memberships = self
+            .records()
+            .iter()
+            .filter(|n| Membership::read(n).is_some_and(|m| m.cell == cell));
+        gone.extend(memberships.map(|n| n.id.as_str()));
+        let (records, kept): (Vec<&Note>, Vec<&Note>) = self
+            .records()
+            .iter()
+            .partition(|n| gone.contains(n.id.as_str()));
+        let named: HashSet<String> = kept.iter().flat_map(|n| shas(n)).collect();
+        let blobs: HashSet<String> = records.iter().flat_map(|n| shas(n)).collect();
+        let blobs: Vec<String> = blobs.difference(&named).cloned().collect();
+        let records: Vec<Note> = records.into_iter().cloned().collect();
+        self.remove(&records, &blobs)?;
+        Ok(records.len())
+    }
+
+    fn export(&self, name: &str) -> Result<Export, Refusal> {
+        let no_cell = || Refusal::NoCell(name.to_string());
+        let author = self.author()?.ok_or_else(no_cell)?;
+        let cell = Cell {
+            name: name.to_string(),
+            author,
+        };
+        let patterns = self.patterns();
+        let every = patterns.every().iter().rev().filter(|p| p.is_live());
+        let ours: Vec<(Note, PatternRecord)> = every
+            .filter(|p| patterns.holding(p).contains(&&cell))
+            .map(|p| (p.note.clone(), p.record.clone()))
+            .collect();
+        if ours.is_empty() {
+            return Err(no_cell());
+        }
+        let ids: Vec<&str> = ours.iter().map(|(n, _)| n.id.as_str()).collect();
+        let membership = self.seal(|account, now| Membership::write(account, now, name, &ids))?;
+        Ok(Export::new(ours, membership))
+    }
+}
+
+/// The sha256 of each file that `note` names.
+fn shas(note: &Note) -> impl Iterator<Item = String> {
+    ProofFile::all(note).into_iter().map(|f| f.sha256)
+}

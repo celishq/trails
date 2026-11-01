@@ -9,7 +9,7 @@ if command -v celis >/dev/null; then
   esac
 fi
 [ "$1" = start ] || exit 0
-text='The celis plugin needs the celis command, and none is on PATH. Tell the person to install it from https://celis.ai.'
+text='The celis plugin needs the celis command, and none is on PATH. Offer the person to install it: with their yes, follow https://celis.ai/install.md.'
 case "$2" in
   cursor) printf '{"additional_context": "%s"}\n' "$text" ;;
   gemini) printf '{"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": "%s"}}\n' "$text" ;;

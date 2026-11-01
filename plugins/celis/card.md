@@ -1,58 +1,77 @@
-celis keeps each ask as a trail: its steps, their proofs, and the rules that later work must keep.
+celis keeps what the person taught you as patterns. A pattern guides your
+judgement: when its forces are present here, resolve them in your own way; when they are not, it does
+not apply. Right after the ask's `celis step add`, before its work, give the `celis:patterns` agent
+the ask, the choices you plan and the files you will touch: it answers with the patterns that bear on
+them, whole. When a new choice comes up during the work, read the index yourself with
+`celis patterns [<file>]...`, one `<id> <scope> <When>` line each. A `*` or `**` after the scope is the
+evidence of past uses: when two patterns fit, prefer more stars, and a pattern with none still applies.
+When a choice of the work matches a When, read that pattern whole with `celis patterns <id>` before you
+choose, unless the agent gave it to you, and name it with `--uses <id>` on the step of that choice. When a pattern you followed did not
+fit, name it with `--misled <id>` on that step's `done`, or on the step that fixes its work.
+Start your first answer of a session with the celis status line that the session start opens with,
+word for word, as its first line: the person does not see what the session start gives you, and the
+line shows them that celis runs.
+celis keeps guides: a must goes into the project's own files, `AGENTS.md`, `CLAUDE.md` or a check, when
+the person agrees in `celis:tidy`, which learns from the trails. Each ask is a trail of steps with proofs
+of the work.
 
 ```
-celis rules [<file>]... [--diff]
-celis grep <grep option>... "<pattern>"
-celis decide [--scope at:<place> | trail:<id> | me] [--replaces <id>] [--path <glob>]... [--situation] [--promoted] [--project <id>] -- "<rule>"
-celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>] [--check <command>] [--new] [--session <id>] [--project <id>] -- "<title>"
+celis patterns [<file>]...
+celis patterns <id>
+celis extract <id>
+celis step add [--under <id>] [--new] [--replaces <id>] [--uses <id>]... [--misled <id>]... [--check <command>] -- "<title>"
 celis step start <id>
-celis step done <id> [--changed "<what differs>"] [--as-planned] [--pitfall "<rule>"] -- "<proof>"
-celis step drop <id> -- "<why>"
-celis step edit <id> [--at <place>]... [--check <command>] [-- "<new title>"]
-celis name <trail id> <name>
-celis tree [<id>] [--graph] [--full] [--all] [--demo]
+celis step done <id> [--changed "<what differs>"] [--as-planned] [--by person] [--misled <id>]... [--file <path>]... -- "<proof>"
+celis step note <id> -- "<note>"
+celis step edit <id> -- "<title>"
+celis pattern [--scope me] [--replaces <id>] [--path <glob>]... [--within <id>]... [--good <example>]... [--bad <example>]... -- "<pattern>"
 ```
 
-1. At a new ask, run the `celis:past` agent when celis asks for it, even for a simple ask: it brings
-   the rules of the ask and past steps like it. To find more rules, run `celis rules` for the words the
-   rules use, and search them with `celis grep -i -E " rule [0-9a-f]{8} live .*(<word>|<word>)"`. Keep
-   each rule in your own context. When the ask conflicts with a rule, the ask wins: replace the rule.
-2. An ask that changes a file, however small, or that works toward a result someone can check, gets a
-   step: review feedback to fix too. A question, an explanation, or a review or investigation you only
-   report on gets none: answer it. Add the ask with `step add` where the prompt hook says. With no hint,
-   add it under the session's trail, else with `--new`. An ask that corrects done work takes
-   `--replaces <its id>`. Give the ask the project's own check, and `--uses <id>` for each rule, past
-   step or named trail it follows. `--uses` takes a trail's name.
-3. A step's title names what the person wants done: a verb and what it acts on, in words that hold in
-   another project. On the line after the title, write `expect: <what a person can check when it is
-   done>`. Split an ask by its jobs: a job is a part of the ask that a person can check alone, such as
-   an item of its list or a module. An ask with one job, such as a function and its test, is one step. Add the jobs as the work
-   goes: the first job when you start, the next job after you close one, and steps under a job only when
-   you take it and it holds more than one job. Only the step you take next gets `--at` and a `--check`
-   that proves it.
-4. For each step: `start`, and keep the rules it prints. Run `celis rules <files>` before each change,
-   and before `done`, check your change against `celis rules --diff`. Read all
-   that celis prints: never cut it with `head` or `grep`. Then `done` with a proof a person can check,
-   such as a command and its result: `--as-planned` when the result matches `expect`, else
-   `--changed`. A wrong step, or a fix to done work, takes `--replaces <id>`. When a step grows past one
-   action, or you try the same thing twice, stop and split it. When you give work to a subagent, put in
-   its task each rule of that work, as celis printed it. Name a secret by where it lives, such as
-   `API_KEY in .env`, never by its value: a record is signed and cannot be deleted.
-5. When something surprises you, or the person corrects you, write the rule that would have saved you
-   with `decide`, before you go on. Give it `--path` for the files it acts on, as narrow as the rule
-   allows, and `--situation` only when no file shows it ahead. A
-   correction replaces the wrong rule with `--replaces <id>`: never keep two rules for one point.
-6. Do what celis prints after each command. It names the next move.
-7. Close the ask, never the trail. Tell the person about the ask by the steps right under it, and each
-   rule you wrote.
+Read all that celis prints, never cut by `head` or `grep`, and do the next move it names.
 
-A rule reads "When <what you see>: <what to do>, because <the reason>." The "When" names the work the rule
-acts on, such as "When a Raycast extension changes", never the review, the person or the project it came
-from, so it matches the next task like it. The trigger says when the rule comes; the text stays general.
-Its scope is `trail:<id>` when it holds for this trail, `project` (the default) for the repo, and `me`
-when it holds for that kind of work in any project: a rule about a framework, a platform or a review's
-convention. When the person asks you to remember something, or states how the work must be done, write
-each point as one rule before you do the work.
+1. **Work.** An ask that changes a file, or works toward a result someone can check, gets a step; a
+   question, an explanation or a review you only report on gets none. Its title names what it changes,
+   in words that hold in another project. Before the work, the person needs to see what they will be
+   able to check when it is done, why they want it, its limits and the one-way doors ahead: write them
+   in the text of the ask's `celis step add`, after its title, as the lines `expect: …`, `for: …`,
+   `not: …` and `ask me: …`, send them to the person, and start in the same turn. Each part a person
+   can check alone is a step of its own, closed with a proof a person can check. Run `celis step start
+   <id>` before the work of each step: it gives you the step's patterns and notes, and it keeps the
+   ask active while the step runs. A `--file` of a proof is what a person looks at, such as a
+   screenshot, a log or a page; never source code, which git already keeps. A change to done work,
+   wherever you are, is a new step `celis step add --replaces <the id of that step>`, whose proof says
+   what changed. The ask's title names the job of its whole trail: when the steps you add or change
+   widen or shift that job, retitle the ask with `celis step edit <the ask's id> -- "<title>"`. Act, and
+   tell after: ask only when you cannot write `expect` without a guess, or at a one-way door, such as
+   a new dependency, a schema, money or a deploy. Take every other choice yourself, and name it in
+   your answer.
+2. **Close.** When the work of the ask is done, learn from it first, then close it with its proof. When
+   only the person can check it, ask them, and close it `--by person` with their answer.
 
-For more: `celis tree` shows the work. Read the `steps.md` the session start names for moved files, past
-work, named trails, subagents, links, and when to stop.
+3. **Learn.** A lesson is a correction, a pick, a reaction to a result, a wish such as "from now on",
+   or a fix of done work. When you see one, also in the ask's first prompt, run `celis extract <the
+   ask's id>` before the ask's `done`; `done` of an ask or of a fix prints the same brief, for a lesson
+   you did not see. Give the brief to the `celis:extraction` agent, and name what it wrote in
+   your answer.
+
+A pattern has five lines, in Christopher Alexander's form. Its Name is the form that resolves it, as a
+noun phrase, such as "Light on two sides of every room". Its When is one context and the moment its
+forces appear, such as "When a list gets more rows than fit on one screen", never a topic, the person
+or the project. Its Do is one choice: a larger choice is a larger pattern, which it names with
+`--within`. Say it in words that hold in other fields, so that it can guide work there too:
+
+```
+Name: <the resolved form>
+When <the context and the moment its forces appear>
+Forces: <the two goods that pull against each other>
+Do: <the one choice>
+Because: <why that resolves the forces>
+```
+
+A subagent does not see your context. Put the whole text of each pattern that bears on its work in its
+task, say that its work must follow them, and ask it to reply with only its output and proof, not the
+steps it took.
+A cell is a set of patterns that the person turns on or off, and shares. Only the person runs
+`celis cell`; you never add, turn on, turn off, export, import or drop a cell.
+Name a secret by where it lives, such as `API_KEY in .env`, never by its value: a record is signed and
+cannot be deleted. Read `steps.md`.

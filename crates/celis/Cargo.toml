@@ -8,6 +8,8 @@ name = "celis"
 path = "src/main.rs"
 
 [dependencies]
+celis-store = { path = "../celis-store" }
+celis-patterns = { path = "../celis-patterns" }
 celis-trails = { path = "../celis-trails" }
 celis-nostr = { path = "../celis-nostr" }
 anyhow = "1"
@@ -17,8 +19,11 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 ratatui = { version = "0.30.2", default-features = false, features = ["std"] }
 unicode-width = "0.2"
+base64 = "0.22"
 
 [dev-dependencies]
+celis-store = { path = "../celis-store" }
+celis-patterns = { path = "../celis-patterns" }
 celis-trails = { path = "../celis-trails" }
 celis-nostr = { path = "../celis-nostr" }
 libc = "0.2"

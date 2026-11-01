@@ -1,19 +1,22 @@
 //! CIP-03: a step, what it says, the marks agents leave on it, and how it stands.
 
+pub mod by;
 pub mod check;
+pub mod done;
 pub mod mark;
+pub mod notes;
 pub mod state;
 pub mod step_record;
 pub mod steps;
-pub mod used;
 
-use crate::step::steps::{Close, Entry, LIFE};
-use crate::{Mark, NamedTrail, State, StepId, StepRecord, Steps, Trail, Used};
+use crate::step::steps::{Close, Entry, BUSY_LIFE, LIFE};
+use crate::{Done, Mark, State, StepRecord, Steps, Trail};
 use celis_nostr::Note;
+use celis_store::StepId;
 use std::collections::HashSet;
 
 /// One step of a store as it stands: its record with its edits, where it sits in its trail, and how its
-/// marks left it. A step under no other is a trail.
+/// marks left it. A step under no other is an ask, and its trail.
 #[derive(Clone, Copy)]
 pub struct Step<'a> {
     steps: &'a Steps<'a>,
@@ -47,13 +50,13 @@ impl<'a> Step<'a> {
         self.entry.step.title()
     }
 
-    /// It, with the name it holds first (CIP-07); `None` when it holds none.
-    pub fn named(self) -> Option<NamedTrail<'a>> {
-        self.steps.named_of(self)
-    }
-
     pub fn is_trail(self) -> bool {
         self.entry.step.under.is_none()
+    }
+
+    /// Whether it is a part of the work: a step under an ask, or an ask with no steps under it.
+    pub fn is_work(self) -> bool {
+        !self.is_trail() || self.entry.children.is_empty()
     }
 
     /// The step it is a part of; `None` for a trail.
@@ -61,53 +64,26 @@ impl<'a> Step<'a> {
         self.steps.get(self.entry.step.under.as_deref()?)
     }
 
-    /// What each of its `uses` names, once each, in the order it names them; an id that names no step
-    /// and no rule is left out.
-    pub fn uses(self) -> Vec<Used<'a>> {
+    /// The id of each pattern its `uses` names, once each, in the order it names them; an id that names a
+    /// step or nothing is left out (CIP-06, "Uses").
+    pub fn uses(self) -> Vec<&'a str> {
         let mut seen = HashSet::new();
-        let ids = self
-            .entry
-            .step
-            .uses
-            .iter()
-            .filter(|id| seen.insert(id.as_str()));
-        ids.filter_map(|id| match self.steps.get(id) {
-            Some(step) => Some(Used::Follow(step)),
-            None => self.steps.holds_rule(id).then_some(Used::Rule(id)),
-        })
-        .collect()
-    }
-
-    /// The trails that the steps on its `under` chain follow, then, past each named trail (CIP-07), the
-    /// trails that its steps follow, at any depth; each once.
-    pub fn followed(self) -> Vec<Step<'a>> {
-        let follows = |s: Step<'a>| {
-            let used = s.uses().into_iter();
-            used.filter_map(|u| match u {
-                Used::Follow(step) => Some(step.trail()),
-                Used::Rule(_) => None,
-            })
-        };
-        let chain = std::iter::successors(Some(self), |s| s.under());
-        let mut next: Vec<Step<'a>> = chain.flat_map(follows).collect();
-        next.reverse();
-        let mut found: Vec<Step<'a>> = Vec::new();
-        while let Some(trail) = next.pop() {
-            if found.iter().any(|f| f.id() == trail.id()) {
-                continue;
-            }
-            if trail.named().is_some() {
-                next.extend(trail.tree().into_iter().flat_map(follows));
-            }
-            found.push(trail);
-        }
-        found
+        let ids = self.entry.step.uses.iter().map(String::as_str);
+        ids.filter(|id| seen.insert(*id) && self.steps.holds_pattern(id))
+            .collect()
     }
 
     /// The steps directly under it, oldest first.
     pub fn children(self) -> Vec<Step<'a>> {
         let children = self.entry.children.iter();
         children.filter_map(|n| self.steps.get(&n.id)).collect()
+    }
+
+    /// Each pattern the store holds that a recall on it names, once, with when it was first recalled.
+    pub fn recalls(self) -> Vec<(&'a str, u64)> {
+        let recalls = self.entry.recalls.iter();
+        let held = recalls.filter(|(id, _)| self.steps.holds_pattern(id));
+        held.map(|(id, at)| (id.as_str(), *at)).collect()
     }
 
     /// The step and every step under it, at any depth.
@@ -130,20 +106,6 @@ impl<'a> Step<'a> {
         top
     }
 
-    /// The step on its `under` chain right under its trail; `None` for a trail.
-    pub fn ask(self) -> Option<Step<'a>> {
-        let mut ask = self;
-        while let Some(up) = ask.under().filter(|u| !u.is_trail()) {
-            ask = up;
-        }
-        (!ask.is_trail()).then_some(ask)
-    }
-
-    /// Whether it sits right under its trail.
-    pub fn is_ask(self) -> bool {
-        self.under().is_some_and(|u| u.is_trail())
-    }
-
     /// The first start record that names it.
     pub fn start(self) -> Option<&'a Note> {
         self.entry.start
@@ -162,17 +124,25 @@ impl<'a> Step<'a> {
     }
 
     /// The second it ended: when a done or a drop closed it, or the newest record of its trail when it
-    /// expired; none while it is open.
+    /// is stale; none while it is open.
     pub fn closed_at(self) -> Option<u64> {
-        match (self.closed(), self.state()) {
-            (Some(close), _) => Some(close.created_at),
-            (None, State::Expired) => Some(self.trail().newest()),
+        match self.closed() {
+            Some(close) => Some(close.created_at),
+            None if self.stale() => Some(self.trail().newest()),
+            None => None,
+        }
+    }
+
+    /// What it was closed done with; none while it is not done.
+    pub fn done(self) -> Option<Done> {
+        match Mark::read(self.done_record()?)? {
+            (_, Mark::Done(done)) => Some(done),
             _ => None,
         }
     }
 
     /// The done record that closed it.
-    pub fn done(self) -> Option<&'a Note> {
+    pub fn done_record(self) -> Option<&'a Note> {
         match self.entry.close {
             Some((note, Close::Done)) => Some(note),
             _ => None,
@@ -193,22 +163,43 @@ impl<'a> Step<'a> {
         self.entry.drop
     }
 
-    /// The word for its state that `grep` gives: `done-dropped` for a done trail a drop names.
-    pub fn state_word(self) -> &'static str {
-        match (self.state(), self.drop_mark()) {
-            (State::Done, Some(_)) => "done-dropped",
-            (state, _) => state.text(),
-        }
-    }
-
-    /// The steps that replace it after it was done, oldest first.
+    /// The steps that replace it after its first done, oldest first.
     pub fn revised(self) -> Vec<Step<'a>> {
-        let Some(done) = self.done() else {
+        let Some(done) = self.entry.dones.first() else {
             return Vec::new();
         };
         let later = self.entry.replaced.iter();
         let later = later.filter(|n| n.created_at >= done.created_at);
         later.filter_map(|n| self.steps.get(&n.id)).collect()
+    }
+
+    /// Each pattern the store holds that misled it, once, with the second that told it: a pattern it
+    /// uses when a step revised it, and a `misled` of its done or of a step that revised it (CIP-06).
+    pub fn misled(self) -> Vec<(&'a str, u64)> {
+        let revised = self.revised();
+        let mut told: Vec<(&'a str, u64)> = Vec::new();
+        if let Some(first) = revised.first() {
+            let at = first.note().created_at;
+            told.extend(self.uses().into_iter().map(|p| (p, at)));
+        }
+        if let Some(done) = self.done_record() {
+            told.extend(done.values("misled").map(|p| (p, done.created_at)));
+        }
+        for fix in revised {
+            let at = fix.note().created_at;
+            told.extend(fix.note().values("misled").map(|p| (p, at)));
+        }
+        let mut seen = HashSet::new();
+        told.retain(|(p, _)| self.steps.holds_pattern(p) && seen.insert(*p));
+        told
+    }
+
+    /// Whether it fixes done work: the step it replaces was done.
+    pub fn fixes(self) -> bool {
+        let replaced = self.entry.step.replaces.as_deref();
+        replaced
+            .and_then(|id| self.steps.get(id))
+            .is_some_and(|s| !s.entry.dones.is_empty())
     }
 
     /// The steps of its tree that a later step revised.
@@ -223,21 +214,36 @@ impl<'a> Step<'a> {
             Some(_) => self,
             None => Trail::new(self).work(),
         };
-        work.done()?.tag("changed")
+        work.done_record()?.tag("changed")
     }
 
     /// Where it stands at the time of its store.
     pub fn state(self) -> State {
-        if self.is_trail() {
-            return self.trail_state();
-        }
         match self.entry.close {
+            _ if self.entry.drop.is_some() => State::Dropped,
             Some((_, Close::Done)) => State::Done,
             Some((_, Close::Dropped)) => State::Dropped,
-            None if self.trail().ended() => State::Expired,
-            None if self.start().is_some() => State::Working,
             None => State::Open,
         }
+    }
+
+    /// Whether it is open and its trail ended.
+    pub fn stale(self) -> bool {
+        self.state() == State::Open && self.trail().ended()
+    }
+
+    /// Whether it is open and not stale.
+    pub fn active(self) -> bool {
+        self.state() == State::Open && !self.stale()
+    }
+
+    /// Whether it is open and not stale, and a start names it, or, as a trail, a step of it.
+    pub fn works(self) -> bool {
+        let started = match self.is_trail() {
+            true => self.entry.busy,
+            false => self.start().is_some(),
+        };
+        started && self.active()
     }
 
     /// The time of the newest record of its tree: its steps, and the marks that name them.
@@ -245,29 +251,17 @@ impl<'a> Step<'a> {
         self.entry.newest
     }
 
-    /// Whether, as a trail, it is open and ended: steps sit under it, none is open and no prompt came
-    /// after the last of them closed, or 30 minutes passed after the newest record of its tree.
+    /// Whether, as a trail, it is open and ended: 30 minutes passed after the newest record of its tree,
+    /// or 3 hours while a step of it works.
     pub fn ended(self) -> bool {
         if self.closed().is_some() {
             return false;
         }
-        let asked = self.entry.asked > self.entry.shut;
-        let idle = !self.entry.children.is_empty() && !self.entry.loose && !asked;
-        idle || self.steps.now().saturating_sub(self.newest()) >= LIFE
-    }
-
-    /// Where it stands as a trail: working while open and a step of it works, else open; expired when
-    /// it ended with a step open; dropped; else done.
-    fn trail_state(self) -> State {
-        match self.entry.close {
-            Some((_, Close::Dropped)) => State::Dropped,
-            None if !self.ended() => match self.entry.busy {
-                true => State::Working,
-                false => State::Open,
-            },
-            None if self.entry.loose => State::Expired,
-            _ => State::Done,
-        }
+        let life = match self.entry.busy {
+            true => BUSY_LIFE,
+            false => LIFE,
+        };
+        self.steps.now().saturating_sub(self.newest()) >= life
     }
 }
 

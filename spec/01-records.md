@@ -7,13 +7,13 @@ depends: []
 
 # CIP-01 — Records
 
-Every trail, step and rule is a nostr record in one store on the machine. This CIP defines the
+Every trail, step and pattern is a nostr record in one store on the machine. This CIP defines the
 record, the store, the account that signs, the project a record names, its places, and the folders a
 project links.
 
 ## Records
 
-A record is a NIP-01 event. A step or a rule is a NIP-22 comment on its project (kind 1111). A start,
+A record is a NIP-01 event. A step or a pattern is a NIP-22 comment on its project (kind 1111). A start,
 done, drop, edit or prompt is a NIP-32 label on a step (kind 1985). Each carries the label namespace of its
 CIP.
 
@@ -30,7 +30,7 @@ CIP.
 
 - `I` `K` `i` `k`: the project anchor, as NIP-22 gives it.
 - `project`: the project's name.
-- `L` `l`: what the record is: `decision` in `celis.decision`, or a label in `celis.step`.
+- `L` `l`: what the record is: `pattern` in `celis.pattern`, or a label in `celis.step`.
 
 **Writers**
 
@@ -38,7 +38,7 @@ CIP.
 
 **Readers**
 
-- A reader MUST ignore a kind, label or tag it does not know, and each deprecated name of the README.
+- A reader MUST ignore a kind, label or tag it does not know, and each retired name of the README.
 
 ## The store
 
@@ -73,6 +73,9 @@ phrase.
 - A writer MUST mint the phrase only when it writes a record and none exists. Two writers that mint at
   once MUST end with one phrase.
 - A record MUST NOT carry the phrase or the account's secret.
+- A writer MUST refuse a record whose content or tag values hold a secret, such as an API key, a token,
+  a private key or a password, and a blob whose bytes hold one, with `secret` (CIP-02), and write
+  nothing.
 
 **Readers**
 
@@ -132,7 +135,7 @@ $CELIS_HOME/links                   one link a line: `<project id>\t<folder>`
 
 **Writers**
 
-- Only `celis link` and `celis unlink` (CIP-02) MAY write `$CELIS_HOME/links`. A project MAY have more than
+- Only `celis link` (CIP-02) MAY write `$CELIS_HOME/links`. A project MAY have more than
   one link.
 - While a link is on, a writer MUST write each record the folder holds to the folder too.
 

@@ -138,7 +138,7 @@ def seed(arm, root, standing):
         (root / "seed").mkdir()
         sh("git", "init", "-q", cwd=root / "seed")
         for rule in standing:
-            subprocess.run(["celis", "decide", "--scope", "me", "--", rule], cwd=root / "seed", env=env, check=True,
+            subprocess.run(["celis", "pattern", "--scope", "me", "--", rule], cwd=root / "seed", env=env, check=True,
                            capture_output=True)
 
 

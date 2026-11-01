@@ -1,0 +1,220 @@
+//! CIP-05, "Paths", and CIP-02, "Step".
+
+use crate::support;
+
+use celis_nostr::Note;
+use serde_json::json;
+use std::path::Path;
+use support::{account, add, err, objects, out, pattern_tags, put, Repo, DAY};
+
+/// The id `celis pattern <args> -- <text>` prints in the main checkout.
+fn decide(repo: &Repo, args: &[&str], text: &str) -> String {
+    let mut all = vec!["pattern"];
+    all.extend(args);
+    all.extend(["--", text]);
+    let o = repo.run(&repo.path(), &all, &[], "");
+    assert!(o.status.success(), "{}", err(&o));
+    out(&o).trim().to_string()
+}
+
+/// A pattern of this repo with the extra tags `tags`, saying `content`, made at `at`, put in the store.
+fn tagged(repo: &Repo, tags: &[(&str, &str)], content: &str, at: u64) -> Note {
+    let mut all = pattern_tags((&repo.project_id(), "repo"));
+    all.extend(tags.iter().map(|(n, v)| vec![n.to_string(), v.to_string()]));
+    let note = Note::write(&account(), 1111u16, at, all, content).unwrap();
+    put(repo, &note);
+    note
+}
+
+/// The pattern lines that `celis patterns` in `folder` marks as matching `files`.
+fn found(repo: &Repo, folder: &Path, files: &[&str]) -> Vec<String> {
+    support::matched(repo, folder, files)
+}
+
+/// The pattern lines that `celis patterns` in the main checkout marks as matching `files`.
+fn patterns(repo: &Repo, files: &[&str]) -> Vec<String> {
+    found(repo, &repo.path(), files)
+}
+
+/// The text of each pattern that `celis patterns` marks as matching `args`, without its id
+/// and scope.
+fn texts(repo: &Repo, args: &[&str]) -> Vec<String> {
+    let lines = patterns(repo, args).into_iter();
+    lines
+        .map(|l| l.splitn(3, ' ').nth(2).unwrap().to_string())
+        .collect()
+}
+
+/// A pattern matches a file when one of its `path` globs matches the file's path, whether the file exists
+/// or not (`spec/05-patterns.md`, "Paths").
+#[test]
+fn a_path_glob_matches_the_file() {
+    let repo = Repo::new();
+    decide(&repo, &["--path", "**/*.py"], "python");
+    decide(&repo, &["--path", "shelf/*.py"], "shelf");
+    repo.write("shelf/a.py", "x = 1\n");
+    let mut shelf = texts(&repo, &["shelf/a.py"]);
+    shelf.sort();
+    assert_eq!(shelf, ["python", "shelf"]);
+    assert_eq!(texts(&repo, &["new.py"]), ["python"]);
+    assert!(texts(&repo, &["c.rs"]).is_empty());
+}
+
+/// A folder gives the patterns of each file under it, ignored files left out (`spec/02-cli.md`,
+/// "Patterns").
+#[test]
+fn a_folder_gives_the_patterns_of_its_files() {
+    let repo = Repo::new();
+    decide(&repo, &["--path", "shelf/*.py"], "floats");
+    decide(&repo, &["--path", "**/*.md"], "markdown");
+    decide(&repo, &["--path", "*.log"], "logs");
+    repo.write("shelf/a.py", "x = float(1)\n");
+    repo.write("shelf/docs/b.md", "b\n");
+    repo.write("shelf/out.log", "x\n");
+    repo.write(".gitignore", "*.log\n");
+    let mut shelf = texts(&repo, &["shelf"]);
+    shelf.sort();
+    assert_eq!(shelf, ["floats", "markdown"]);
+    let shown = found(&repo, &repo.path().join("shelf"), &["."]);
+    let mut here: Vec<&str> = shown
+        .iter()
+        .map(|l| l.splitn(3, ' ').nth(2).unwrap())
+        .collect();
+    here.sort();
+    assert_eq!(here, ["floats", "markdown"]);
+}
+
+/// A pattern from an older version with only a `tool` tag reads with no path, and never comes
+/// (`spec/README.md`, "Names").
+#[test]
+fn an_older_pattern_with_a_tool_tag_has_no_path() {
+    let repo = Repo::new();
+    tagged(&repo, &[("tool", "^Grep$")], "grep", support::now() - DAY);
+    let o = repo.run(&repo.path(), &["grep", " pattern "], &[], "");
+    assert!(out(&o).contains("live {project} grep"), "{}", out(&o));
+    assert!(patterns(&repo, &["."]).is_empty());
+}
+
+/// A pattern with no path and no `at:<place>` never comes by a file, and a pattern with a path comes at its
+/// files (`spec/05-patterns.md`, "Paths").
+#[test]
+fn a_pattern_with_no_path_never_comes() {
+    let repo = Repo::new();
+    decide(&repo, &[], "no path");
+    decide(&repo, &["--scope", "me"], "mine");
+    assert!(patterns(&repo, &["README.md"]).is_empty());
+    decide(&repo, &["--path", "*.md"], "both");
+    assert_eq!(texts(&repo, &["README.md"]), ["both"]);
+}
+
+/// `pattern --situation` is a usage error, and a reader ignores an older `situation` label
+/// (`spec/02-cli.md`, "Commands"; `spec/README.md`, "Names").
+#[test]
+fn situation_is_no_flag_and_its_label_is_ignored() {
+    let repo = Repo::new();
+    let o = repo.run(
+        &repo.path(),
+        &["pattern", "--situation", "--", "t"],
+        &[],
+        "",
+    );
+    assert_eq!(o.status.code(), Some(2), "{o:?}");
+    let mut tags = pattern_tags((&repo.project_id(), "repo"));
+    tags.push(
+        ["l", "situation", "celis.decision"]
+            .map(String::from)
+            .to_vec(),
+    );
+    let old = Note::write(&account(), 1111u16, support::now() - DAY, tags, "older").unwrap();
+    put(&repo, &old);
+    let o = repo.run(&repo.path(), &["grep", " pattern "], &[], "");
+    let shown = out(&o);
+    let line = shown.lines().find(|l| l.contains(&old.id[..8])).unwrap();
+    assert!(line.ends_with("live {project} older"), "{shown}");
+}
+
+/// The grep view gives no mark for a path (`spec/02-cli.md`, "Grep").
+#[test]
+fn grep_marks_no_paths() {
+    let repo = Repo::new();
+    let path = decide(&repo, &["--path", "Makefile"], "path");
+    let all = decide(&repo, &["--path", "*.md"], "all");
+    let plain = decide(&repo, &[], "plain");
+    let o = repo.run(&repo.path(), &["grep", " pattern "], &[], "");
+    let shown = out(&o);
+    let line = |id: &str| {
+        shown
+            .lines()
+            .find(|l| l.contains(&id[..8]))
+            .unwrap()
+            .to_string()
+    };
+    assert!(line(&path).ends_with("live {project} path"), "{shown}");
+    assert!(line(&all).ends_with("live {project} all"), "{shown}");
+    assert!(line(&plain).ends_with("live {project} plain"), "{shown}");
+}
+
+/// `pattern` writes each `--path` from the project's top folder, and a reader reads them back;
+/// `--binds`, `--promoted`, `--tool`, `--content` and `--command` are no flags (`spec/02-cli.md`,
+/// "Commands").
+#[test]
+fn pattern_writes_the_paths_and_labels() {
+    let repo = Repo::new();
+    std::fs::create_dir_all(repo.path().join("shelf")).unwrap();
+    let o = repo.run(
+        &repo.path().join("shelf"),
+        &["pattern", "--path", "*.py", "--path", "b.md", "--", "kept"],
+        &[],
+        "",
+    );
+    assert!(o.status.success(), "{}", err(&o));
+    let id = out(&o).trim().to_string();
+    let step = add(&repo, &["--new", "--uses", &id, "--", "t"]);
+    let step = step.lines().next().unwrap();
+    let shown = objects(&repo, &["step", "start", step]);
+    let pattern = shown.iter().find_map(|v| v.get("pattern")).unwrap();
+    assert_eq!(pattern["paths"], json!(["shelf/*.py", "shelf/b.md"]));
+    for flag in ["--binds", "--promoted"] {
+        let o = repo.run(&repo.path(), &["pattern", flag, "--", "t"], &[], "");
+        assert_eq!(o.status.code(), Some(2), "{o:?}");
+    }
+    for flag in ["--tool", "--content", "--command"] {
+        let o = repo.run(&repo.path(), &["pattern", flag, "x", "--", "t"], &[], "");
+        assert_eq!(o.status.code(), Some(2), "{o:?}");
+    }
+}
+
+/// `pattern --scope at:<place>` is a usage error (`spec/02-cli.md`, "Commands").
+#[test]
+fn an_at_scope_is_no_scope() {
+    let repo = Repo::new();
+    let o = repo.run(
+        &repo.path(),
+        &["pattern", "--scope", "at:a.py", "--", "t"],
+        &[],
+        "",
+    );
+    assert_eq!(o.status.code(), Some(2), "{o:?}");
+}
+
+/// A pattern with a `cell` tag, which older writers wrote, still reads, and shows no cell
+/// (`spec/01-records.md`, "Records").
+#[test]
+fn an_older_pattern_with_a_cell_still_reads() {
+    let repo = Repo::new();
+    let old = tagged(
+        &repo,
+        &[("cell", "cli-help")],
+        "When a flag gets help: keep it short.",
+        support::now() - DAY,
+    );
+    let o = repo.run(&repo.path(), &["patterns"], &[], "");
+    let shown = out(&o);
+    assert!(shown.contains(&old.id[..8]), "{shown}");
+    assert!(!shown.contains("cell"), "{shown}");
+    let step = add(&repo, &["--new", "--uses", &old.id, "--", "t"]);
+    let step = step.lines().next().unwrap();
+    let shown = objects(&repo, &["step", "start", step]);
+    let pattern = shown.iter().find_map(|v| v.get("pattern")).unwrap();
+    assert!(pattern.get("cells").is_none(), "{pattern}");
+}

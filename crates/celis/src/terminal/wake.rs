@@ -1,7 +1,7 @@
 //! What wakes a watch: a record that lands, the store read again, a key, a new size, or an interrupt.
 
 use crate::failure::Failure;
-use celis_trails::Trails;
+use celis_store::Store;
 use std::io::Read;
 use std::os::fd::FromRawFd;
 use std::path::PathBuf;
@@ -13,7 +13,7 @@ use std::sync::mpsc::Sender;
 pub(crate) enum Wake {
     Record(Vec<PathBuf>),
     Rescan,
-    Store(Box<Result<Trails, Failure>>),
+    Store(Box<Result<Store, Failure>>),
     Resize,
     Key(Key),
     Quit,

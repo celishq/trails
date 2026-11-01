@@ -14,29 +14,35 @@ read. What a command shows a person is not part of it.
 ## Commands
 
 ```
-celis decide [--scope <scope>] [--replaces <id>] [--path <glob>]... [--situation] [--promoted] [--project <id>] -- <text>
-                                                       a rule, in its scope
-celis rules [<file>]... [--diff]
-                                                       the rules of some files
-celis name <trail id> <name>                          give a trail a name
-celis names [--limit <n>]                             the named trails, most used first
-celis tree [<id>] [--graph] [--full] [--all] [--demo]
+celis pattern [--scope <scope>] [--replaces <id>] [--path <glob>]... [--within <id>]... [--good <example>]... [--bad <example>]... [--project <id>] -- <text>
+                                                       a pattern, in its scope
+celis patterns [<id>] [<file>]... [--markdown] [--tidy] [--cell <name>]
+                                                       the index of the patterns in scope, one whole, or what needs tidy
+celis tree [<id>]... [--graph] [--full] [--all] [--demo]
                                                        a trail and its steps; again on each change
 celis grep <grep option>... <pattern>                 every trail, through the system grep
-celis stats [<id>] [--demo]                           what later work reused
-celis report <id>... [--demo]                         the trails as Markdown, for a pull request
+celis stats [<id>] [--demo]                           the use of the patterns, or a step's grade
+celis extract <id>                                    what an ask or a step taught, to extract as patterns
+celis migrate [--yes]                                 the patterns of a retired form, and their rewrite with --yes
+celis setup                                           the commands that add the plugin to each agent here
 celis issue [<id>]... [-- <text>]                     what went wrong, as Markdown for the celis team
-celis link [<folder>]                                 keep this project's trails in a folder
-celis unlink [<folder>]                               stop keeping them in a folder
-celis step add [--under <id>] [--replaces <id>] [--uses <id>]... [--at <place>]... [--check <command>] [--new] [--session <id>] [--project <id>] -- <text>
+celis link [<folder>] [--off]                         keep this project's trails in a folder, or stop
+celis cells                                           each cell, its account, its patterns, and on or off here
+celis cell add <name> <id>...                         put your patterns in a cell of yours
+celis cell on <name> [--scope me]                     use a cell's patterns in this project, or in every project
+celis cell off <name> [--scope me]                    stop using a cell's patterns here, or in every project
+celis cell export <name> [--to <folder>]              write a cell of yours as a folder
+celis cell import <source> [--yes]                    show a cell from a folder or a URL, and keep it with --yes
+celis cell remove <name>                              remove a cell of another account from disk
+celis step add [--under <id>] [--new] [--replaces <id>] [--uses <id>]... [--misled <id>]... [--at <place>]... [--check <command>] [--session <id>] [--project <id>] -- <text>
                                                        leave a step
-celis step start <id>                                 take up a step, and see the rules its plan links
-celis step done <id> [--changed <text>] [--as-planned] [--pitfall <text>] -- <proof>
+celis step start <id>                                 take up a step, and see the patterns and notes its plan links
+celis step done <id> [--changed <text>] [--as-planned] [--by person] [--misled <id>]... [--file <path>]... -- <proof>
                                                        close a step with its proof
-celis step drop <id> -- <reason>                      end a step, a done trail or a rule no longer wanted
+celis step drop <id> -- <reason>                      end a step, a done trail or a pattern no longer wanted
 celis step edit <id> [--at <place>]... [--check <command>] [-- <text>]
                                                        give a step a new title, places or check
-celis prompt                                          a person's prompt, from a hook
+celis step note <id> -- <text>                        leave a note on a step, for the work of its trail
 celis hook start <agent> <plugin folder>              what an agent reads at a session start
 celis hook ask <agent>                                a person's prompt, and what the agent reads on it
 celis auth login                                      keep the phrase stdin gives
@@ -49,32 +55,40 @@ $CELIS_HOME   where celis keeps the phrase and the store
 ```
 
 ```
-decision  json  {"id", "created_at", "project", "scope", "replaces", "content",
-                 "paths", "situation", "promoted"}
+pattern  json  {"id", "created_at", "project", "scope", "replaces", "content",
+                "paths"}
 ```
 
 **Rules**
 
 - Off macOS, `$CELIS_HOME` MUST default to `~/.local/share/celis`.
-- A flag no command takes is a usage error.
-- `decide` MUST write a rule of the working folder's project (CIP-05), with `--scope` and
+- A command that "Commands" does not name, and a flag no command takes, is a usage error.
+- `pattern` MUST write a pattern of the working folder's project (CIP-05), with `--scope` and
   `--replaces` as its tags, and no `scope` tag for `project`; each `--path`, from the project's top
-  folder, as a `path` tag, and `--situation` and `--promoted` as their labels.
-- `--project` on `decide` and `step add` MUST write the records of the project it names in place of the
-  working folder's: `skill:<name>` (CIP-07, "Skill projects"), or a project id that a record of the store
-  has, with that record's project name. It MUST refuse any other id as a usage error.
-- `decide` MUST refuse empty text, and a scope that is not `me`, `project`, `trail:<id>` or `at:<place>`,
-  as a usage error; a `trail:<id>` that no open trail of the project has, with `no-trail`, unless
-  `--replaces` names a live rule of that trail; and a
-  `--replaces` that no live rule of the project, and no live rule of a named trail, has, with
-  `no-decision`.
+  folder, as a `path` tag, each `--within` as a `within` tag (CIP-05, "Graph"),
+  refusing an id that no live pattern of the store has with `no-pattern`, and each `--good` and `--bad`
+  as an example (CIP-05, "Examples"): a value with `://` as a URL, a file of the working folder, `-` or
+  a `data:` URI as its blob, else the whole id of a step, refusing a step the store lacks with `no-step`.
+- A file value of `pattern --good`, `--bad` and `done --file` is a file of the working folder, `-` for the
+  bytes of stdin, or a `data:` URI with `;base64` for its decoded bytes. Stdin with no bytes, a `data:`
+  URI with no `;base64`, and base64 that does not decode are usage errors.
+- `--project` on `pattern` and `step add` MUST write the records of the project it names in place of the
+  working folder's: a project id that a record of the store has, with that record's project name. It MUST refuse any other id as a usage error.
+- `pattern` MUST refuse empty text, and a scope that is not `me` or `project`, as a usage error; and a
+  `--replaces` that no live pattern of the project has, with `no-pattern`.
 
 **Examples**
 
 ```
-celis decide --scope at:shelf/prices.py -- "When you change prices: keep them in cents, because floats lost a cent."
-celis decide --scope me -- "When you write a commit message: use plain words, because the team reads them."
-celis decide --path "**/prices*.py" -- "When you change prices: keep them in cents, because floats lost a cent."
+celis pattern --path "shelf/**" -- "When you change prices
+Forces: floats are simple, but they lose cents
+Do: keep prices in cents
+Because: floats lost a cent"
+celis pattern --scope me -- "When you write a commit message
+Forces: detail helps, but the team reads them fast
+Do: use plain words
+Because: the team reads them"
+celis pattern --path "**/prices*.py" -- "When you change prices: keep them in cents, because floats lost a cent."
 ```
 
 ## Help
@@ -82,7 +96,7 @@ celis decide --path "**/prices*.py" -- "When you change prices: keep them in cen
 **Rules**
 
 - `celis <command> --help` MUST print a page that starts with the command's usage lines from "Commands".
-- Each command line of the plugin's card MUST name the flags its command's usage names, and no other.
+- Each command line of the plugin's card MUST name only flags its command's usage names.
 - The first line of `celis --version` MUST be `celis <version>`, then a space, or its end.
 
 ## Output and errors
@@ -95,11 +109,11 @@ celis decide --path "**/prices*.py" -- "When you change prices: keep them in cen
 - A command that writes records MUST print the id of each, its main record first.
 - With `--json`, a command but `grep` MUST print one JSON object a line, and nothing else, to stdout. A
   printed id is `{"id"}`.
-- Only `decide`, `name`, `step`, `prompt` and `hook ask` MAY write a record. A command that refuses MUST write nothing.
-- A command MUST NOT ask a question, but `auth login` on a terminal.
+- Only `pattern`, `step`, `cell`, `migrate` and `hook ask` MAY write a record. A command that refuses MUST write nothing.
+- A command MUST NOT ask a question, but `auth login`.
 - A command MUST exit 0 when done, 2 on a usage error, and 1 on any other error.
-- An error MUST be named `usage`, `no-decision`, `no-trail`, `no-step`, `closed`, `open-steps`,
-  `check-failed`, else `error`. With `--json`, it MUST be one object on stderr,
+- An error MUST be named `usage`, `no-pattern`, `no-step`, `closed`, `open-steps`, `check-failed`,
+  `secret` (CIP-01, "The account"), `no-cell`, `cell-taken`, `cell-yours`, `invalid` ("Cells"), else `error`. With `--json`, it MUST be one object on stderr,
   `{"error": "<name>", "message": "<text>"}`.
 
 ## Update
@@ -130,36 +144,58 @@ $CELIS_BASE   where the releases are; default: https://github.com/celishq/trails
 `step` writes the records of CIP-03, CIP-04 and CIP-06.
 
 ```
-step  json  {"id", "created_at", "project", "links": [{"to", "kind": "under | replaces | uses"}], "places": [],
+step  json  {"id", "created_at", "project", "links": [{"to", "kind": "under | replaces | uses | misled"}], "places": [],
             "check", "content"}
+note  json  {"id", "created_at", "step", "content"}
 ```
 
 **Rules**
 
-- A `--uses` that is a name (CIP-07) MUST be taken as the id of its trail, before any id that starts
-  with it.
-- `add` MUST write the whole id of `--under`, `--replaces` and each `--uses`, each `--at` (CIP-01,
-  "Places") and the `--check` as tags. A `--replaces` that names a trail MUST name its first ask.
+- `add` MUST write the whole id of `--under`, `--replaces`, each `--uses` and each `--misled`, each
+  `--at` (CIP-01, "Places") and the `--check` as tags.
+- `add` and `done` MUST write each `--misled` as CIP-06, "Misled", states, and refuse an id that no
+  pattern of the store has, with `no-pattern`. `add` MUST refuse `--misled` without a `--replaces` of a
+  done step as a usage error.
 - `add` MUST write no step when an open step of the same project and `under` has the same text, and
   print that step's id. With `--uses`, or a `--replaces` of a done step, it MUST refuse it as a usage
   error.
-- `add` of a session's first ask MUST print the ask's id, then the trail's.
-- `add` MUST refuse empty text as a usage error; a closed `--under`, and a `--replaces` of a dropped step,
-  with `closed`; a `--replaces` of a trail with no first ask as a usage error; a `--uses` that no live
-  rule and no step has, with `no-step`; and a `--uses` of a step of its own trail, or that starts both
-  a rule's and a step's id, as a usage error.
-- `start` and `done` MUST refuse a closed step, with `closed`. `start` of a working step MUST write
-  nothing and print the id of its first `start`.
-- `drop` MUST take the id of a step or a rule. It MUST refuse a dropped step, a done step that is not a
-  trail, a trail dropped after done, and a rule that is not live, with `closed`; and an id that starts
-  both a rule's and a step's id as a usage error.
+- `add` with no `--under`, `--replaces` or `--new` MUST refuse as a usage error when its session has a
+  current trail (CIP-04, "Sessions"), with a message that names that trail's id.
+- `add` MUST refuse empty text as a usage error; a dropped `--under`, a done `--under` that is not a
+  trail, and a `--replaces` of a dropped step, with `closed`; a `--uses` that no live pattern and no step has, with `no-step`; and a `--uses` that
+  names a step, or that starts both a pattern's and a step's id, as a usage error.
+- `start` and `done` MUST refuse a closed step, with `closed`. `start` of a step that a `start` names
+  MUST write nothing and print the id of its first `start`.
+- `drop` MUST take the id of a step or a pattern. It MUST refuse a dropped step, a done step that is not a
+  trail, and a pattern that is not live, with `closed`; and an id that starts both a pattern's and a
+  step's id as a usage error.
 - `done` MUST take one of `--changed <text>` and `--as-planned`, and a proof, else refuse as a usage
   error. It MUST refuse a step with an open step under it, with `open-steps`.
 - `done` MUST run the step's `check` in the project's top folder, and refuse with `check-failed` when it
   fails or runs past `CELIS_CHECK_SECONDS`, 600 when not set.
-- `done --changed` MUST write its text as `changed`. `done --pitfall` MUST also write a rule, at
-  `at:<the step's at>`, else `trail:<the step's trail id>`.
+- `done --changed` MUST write its text as `changed`, and `done --by` its value as `by`; any other `--by` than
+  `person` is a usage error. Each `done --file` MUST be kept as a blob and named by an
+  `imeta` tag (CIP-08), and a path that is not there is a usage error.
 - `drop` MUST refuse an empty reason, and `edit` one with no text, `--at` or `--check`, as usage errors.
+- `note` MUST write its text as a note on the step (CIP-03, "Notes"), and refuse empty text as a usage
+  error.
+- `start` MUST print the notes of the step's trail (CIP-04, "Notes").
+
+The output of `done` of an ask begins with the learn brief, before its total line. The
+output of `done` of another step that fixes done work (CIP-06, "Revisions") ends with it, before the next
+move:
+
+```
+celis: before you answer, learn from <id8>. …           what the agent keeps, and how
+  expect  <line>                                          each line of the ask's text that starts with
+                                                          `expect:`, `for:` or `not:`
+  changed <id8> <text>                                    each `changed` of the ask and of its steps
+  note    <text>                                          each note of its trail (CIP-04, "Notes")
+  asked   <text>                                          each prompt on its trail (CIP-04, "Sessions") since
+                                                          the newest one before the ask, that one too
+  pattern <id8> <Name>                                    each live pattern a step of its ask's tree uses
+                                                          (CIP-06, "Uses"), once each
+```
 
 **Examples**
 
@@ -168,48 +204,12 @@ celis step add --under 3fa2c1d0 --at shelf/prices.py:40 -- "Write a test: a seni
 celis step start 4c1d22e0
 celis step done 4c1d22e0 --as-planned -- "python3 -m unittest: test_senior failed before, passes now."
 celis step drop 3fa2c1d0 -- "The person chose the shared price table instead."
-```
-
-## Name
-
-`name` writes the name of CIP-07.
-
-**Rules**
-
-- `name` MUST write the name record of the trail `<trail id>` names, and print its id. When the trail
-  already holds the name, it MUST write nothing and print the id of that record.
-- `name` MUST refuse a step that is not a trail, a text that is no name (CIP-07, "Names"), and a name
-  another trail holds, as usage errors.
-
-**Examples**
-
-```
-celis name 9b0e11aa review
-```
-
-## Names
-
-```
-line    <name> <trail id8> <the trail's title>
-json    {"name", "id", "title", "uses"}
-```
-
-- `uses`: how many steps of other trails use a step of its tree.
-
-**Rules**
-
-- `names` MUST print one line for each named trail of every project, most `uses` first, then newest.
-- `--limit <n>` MUST print the first `<n>` lines only.
-
-**Examples**
-
-```
-celis names --limit 20
+celis step note 3fa2c1d0 -- "The person wants the old table kept until the release."
 ```
 
 ## Prompt
 
-Each agent's hooks give their JSON to `prompt`.
+Each agent's hooks give `hook` the JSON of a prompt or of a session start.
 
 ```
 {"session_id", "prompt"}                 a prompt; Cursor names the session `conversation_id`
@@ -218,50 +218,191 @@ Each agent's hooks give their JSON to `prompt`.
 
 **Rules**
 
-- `prompt` MUST read the hook's JSON on stdin, with `conversation_id` in place of `session_id` when it
-  has one.
-- On a prompt, it MUST write it as CIP-04 "Sessions" states, and print the record's id. On a compaction,
-  it MUST write no record and print nothing.
-- A prompt that names a step with `celis step <id>` is a task for that step. With no open trail, `prompt`
-  MUST NOT ask for the past agent on it.
+- `hook` MUST read the session from `conversation_id` when the JSON has one, else from `session_id`.
+- On a prompt, it MUST write it as CIP-04 "Sessions" states. On a compaction, it MUST write no record.
+- A prompt that names a step with `celis step <id>` is a task for that step.
+
+## Patterns
+
+`patterns` gives the index of the live patterns in scope in the working folder's project (CIP-05). An
+agent reads it, and reads the whole of a pattern with `patterns <id8>`.
+
+```
+<id8> <scope> [<level>] <When>
+                         each pattern; its level ("Levels"); its When is the line after its Name,
+                         else its first line, and of a text of one line, the part before its first
+                         `:`; its Name is the text after `Name:` on the first line of its text, or a
+                         first line that does not start with `When` before one that does
+  path   <glob>          each `path` of it (CIP-05, "Paths")
+  match  <file>          each `<file>` that one of its paths matches (CIP-05, "Paths")
+  within <id8>           each larger pattern it completes (CIP-05, "Graph")
+no pattern yet           when there is none
+```
+
+```
+celis patterns --tidy
+<id8> <reason>[,<reason>]... <Name>     each live pattern in scope that needs tidy
+<n> patterns in the index               last, with `1 pattern` for one; the only line when none needs tidy
+```
+
+A pattern's reasons, in this order:
+
+- `misled`: it misled 2 or more steps (CIP-06, "Misled").
+- `near:<id8>`: the When of another live pattern in scope shares 2 or more words with its When, as the
+  `like` lines of `pattern` count them; the id is of the one that shares the most.
+- `unused`: it was made 60 or more days ago, and no step used it in the last 60 days (CIP-06, "Uses"),
+  while a step of the project used a pattern.
+- `churn`: it ends a chain of 3 or more `replaces` (CIP-05).
+- `nameless`: its text has no Name.
+- `form`: its When starts with `When:`, or holds `Forces:`, `Do:` or `Because:`.
+- `topic`: its When holds `is` or `are`, then one of the words planned, designed, described,
+  discussed, explained, named, pitched, positioned or chosen, alone or in a list joined by `,`, `or` or
+  `and`.
+- `tension`: its `Forces:` line holds none of the words `but`, `yet`, `while`, `though`, `although`,
+  `whereas`, `against`, `versus` or `pulls`, and no `;`.
+- `fact`: its `Because:` line starts with `the person` or `the user`, then holds one of the words chose,
+  chooses, wants, wanted, asked, asks, said, says, set, stated, states, holds, prefers, preferred, likes,
+  liked, picked, decided, decides or treats, and none of the words `because`, `so` or `since`, and no
+  `:`.
+- `many`: its `Do:` line, with each span in backticks, round brackets or quotes read as one word, holds
+  a `;` after a word and before a space, or a `.`, `!` or `?` followed by a space and a capital letter,
+  and the word after it is not when, if, unless, else, otherwise or where.
+
+**Rules**
+
+- `patterns` MUST print each live pattern in scope once, oldest first, so that a new pattern comes last.
+- `patterns` and `patterns <id>` MUST show the level of each pattern that has one ("Levels").
+- `pattern` MUST print on stderr a `warn    <reason>: <what it means>` line for each of its reasons `nameless`,
+  `form`, `topic`, `tension`, `fact` and `many`, in that order, and still write the pattern.
+- `patterns` MUST print a `match` line under a pattern for each `<file>` that one of its paths matches.
+  A `<file>` is a path from the working folder, and a folder stands for each file in it.
+- With `--markdown`, `patterns` MUST print each live pattern in scope whole, with its examples, as one
+  Markdown page.
+- With an `<id>` of a live pattern in scope, a word of 4 to 64 hex characters that names no file,
+  `patterns` MUST print that pattern whole, with its examples, as `--markdown` does, and refuse an `<id>`
+  that names no live pattern in scope with `no-pattern`. It MUST write a recall of the pattern on the
+  session's newest open step (CIP-06, "Recalls"), and nothing when the session has none or the step
+  has a recall of it.
+- With `--tidy`, `patterns` MUST print a line for each live pattern in scope that has a reason, oldest
+  first, then the line of the index size. It MUST refuse `--tidy` with a `<file>` or `--markdown` as a
+  usage error.
 
 **Examples**
 
 ```
-echo '{"session_id": "95e9be99", "prompt": "Use the shared Badge."}' | celis prompt
+celis patterns
+celis patterns shelf/prices.py shelf/
+celis patterns 9b0e11aa
+celis patterns --markdown > patterns.md
+celis patterns --tidy
 ```
 
-## Rules
+## Levels
 
-`rules` gives the live rules in scope in the working folder's project (CIP-05) that some files match
-(CIP-05, "Triggers"). With no file, it gives the words of those rules.
+A pattern's level is the evidence for it, from the steps that use it (CIP-06, "Uses"):
 
 ```
-line     <id8> <scope> <rule>
-json     {"id", "scope", "content"}
-index    <n> live rules. Their words, by how many rules use each:
-         <word> <n>, …
+**      3 or more steps use it, of 2 or more projects, and it misled none (CIP-06, "Misled")
+*       3 or more steps use it, and it misled none
+        else; no level is shown
+```
+
+## Stats
+
+`stats` with no `<id>`, off a terminal or with `--json`, gives the use of the live patterns in scope in
+the working folder's project (CIP-05).
+
+```
+<id8> uses:<n> misled:<n> replaces:<n> used:<yyyy-mm-dd | -> examples:<n> tidy:<reason>[,<reason>]... | - <Name>
+                                         each live pattern in scope
+total <n> patterns in the index · last 7 days: <n> written, <n> replaced, <n> gaps
+                                         last, with `1 pattern` for one
+```
+
+```
+pattern    json  {"id", "uses", "misled", "replaces", "used", "examples", "tidy": [], "name", "when"}
+total      json  {"index", "written", "replaced", "gaps"}
+```
+
+A pattern's fields: `uses`, how many steps name it in `uses` (CIP-06, "Uses"); `misled`, how many steps
+it misled (CIP-06, "Misled"); `replaces`, how many `replaces` its chain holds (CIP-05); `used`, the
+day of the newest step that uses it, `-` or `null` when none; `examples`, how many examples it has
+(CIP-05, "Examples"); `tidy`, its reasons as `patterns --tidy` gives them ("Patterns"), `-` when none;
+`name`, its Name ("Patterns"), `null` when none.
+
+The total's fields: `index`, how many patterns are live in scope; `written`, the patterns in scope made
+in the last 7 days; `replaced`, those of them with a `replaces`; `gaps`, the steps of the project made in
+the last 7 days that fix done work (CIP-06, "Revisions") in a trail whose steps use no pattern.
+
+**Rules**
+
+- With no `<id>`, off a terminal or with `--json`, `stats` MUST print a line for each live pattern in
+  scope, oldest first, then the total. With no record in the store, it MUST print `Nothing was reused
+  yet.`, and nothing with `--json`.
+
+**Examples**
+
+```
+celis stats
+celis stats --json
+```
+
+## Extract
+
+```json
+{"ask": "<id>", "expect": ["<line>"], "changed": [{"step": "<id>", "text": "<changed>"}], "notes": ["<note>"],
+ "asked": ["<prompt>"], "patterns": [{"id": "<id>", "when": "<When>"}]}
+```
+
+- `expect`: each line of the ask's text that starts with `expect:`, `for:` or `not:`.
+- `changed`: each `changed` of the ask's steps and of the ask.
+- `notes`: each note of its trail.
+- `asked`: each prompt on its trail since the ask began.
+- `patterns`: each live pattern that a step of the ask's tree uses.
+
+**Rules**
+
+- `extract` MUST print the learn brief ("Step") of the ask or step `<id>`, open or closed, and write no
+  record. With `--json`, it MUST print the brief as the object above.
+
+**Examples**
+
+```
+celis extract 3fa2c1d0
+celis extract 3fa2c1d0 --json
+```
+
+## Migrate
+
+`migrate` gives each live pattern of the store in a retired form (README, "Names"): a `decision` in
+`celis.decision` with a scope of CIP-05 or none, a `scope` of `at:<place>`, or a `scope` of
+`trail:<id>`. Readers read none of them.
+
+```
+old <id8> <decision | at | trail> <its first line>     each one, oldest first
+```
+
+```
+old    json  {"id", "form", "text"}
 ```
 
 **Rules**
 
-- Each `<file>` MUST count as that file. A `<file>` that is a folder MUST count as each file that
-  `git ls-files --cached --others --exclude-standard -- <folder>` gives in the project. `--diff` MUST count as each file that `git diff
-  --name-only HEAD` and `git ls-files --others --exclude-standard` give in the working folder, and that
-  exists.
-- With no file, `rules` MUST print the index of the live rules in scope: each word that
-  they use before their "because", with how many use it, most used first.
-- A rule with no trigger and no `at:<place>` scope MUST NOT come.
-- `rules` MUST print every rule that matches: first a rule with a `replaces` tag, then the rest; within
-  each, first those that match a named file (a `path` with no `*` or `?`, or an `at:<place>`), then a
-  glob; newest first within each.
+- A pattern of a retired form is live when no record's `replaces` names it and no drop names it.
+- `migrate` MUST print a line for each live pattern of a retired form; with none, `Nothing to
+  migrate.`, and nothing with `--json`.
+- `migrate --yes` MUST write each one again, and print the id of each record it writes. A `trail:<id>`
+  pattern MUST become a note (CIP-03, "Notes") on `<id>` with its content, and a drop of the pattern.
+  Any other MUST become a pattern (CIP-05) of its project with its content, scope, `path`, `within` and
+  examples, and a `replaces` of its id. An `at:<place>` scope MUST become `project` with two more `path`
+  globs: the place's path without its line, and that path with `/**` after it; a place of the
+  project's top folder, such as `.`, adds no `path`.
 
 **Examples**
 
 ```
-celis rules
-celis rules shelf/prices.py
-celis rules --diff
+celis migrate
+celis migrate --yes
 ```
 
 ## Hooks
@@ -277,12 +418,18 @@ antigravity     {"injectSteps": [{"ephemeralMessage": "<text>"}]}
 
 **Rules**
 
-- `hook` MUST read the hook's JSON on stdin, as `prompt` does, and act on it as `prompt` does. `hook ask`
-  MUST act in the folder the JSON names in `cwd`, else in the first of `workspace_roots`.
+- `hook` MUST read the hook's JSON on stdin, and act on it as "Prompt" states. It MUST act in the
+  folder the JSON names in `cwd`, else in the first of `workspace_roots`, else of `workspacePaths`.
 - `hook start` MUST read the card from `card.md` and the plugin's version from `.claude-plugin/plugin.json`
   in `<plugin folder>`.
+- `hook start` MUST NOT print the index ("Patterns"); an agent reads it with `patterns`.
+- When `patterns --tidy` lists `<n>` patterns, 1 or more, and no ask whose title starts with `Tidy the
+  celis trails` began in the last 7 days, `hook start` asks the agent to offer `/celis:tidy` once in the
+  session, after the person's first ask, and names `<n>`.
 - `hook` MUST print in the shape of `<agent>`, and nothing when it has no text, but Cursor's ask.
 - `hook` MUST exit 0 on any error but a usage error.
+- `hook ask` MUST keep no prompt that holds a secret (CIP-01, "The account"), and MUST say so to the
+  agent.
 
 **Examples**
 
@@ -291,38 +438,90 @@ echo '{"session_id": "95e9be99", "cwd": "/repo"}' | celis hook start claude ~/.c
 echo '{"session_id": "95e9be99", "cwd": "/repo", "prompt": "Use the shared Badge."}' | celis hook ask codex
 ```
 
+## Cells
+
+`cells` and `cell` act on the cells of CIP-09.
+
+```
+<name> <npub8> <n> patterns <on | off>     each cell, by name, then by account; `1 pattern` for one
+no cell yet                                when there is none
+```
+
+`<npub8>` is the 8 characters of the account's npub after `npub1`, and `<n>` counts the cell's live
+patterns.
+
+**Rules**
+
+- `cell add` MUST write one membership (CIP-09, "Membership") that names each `<id>` whole. It MUST
+  refuse a name that is not a cell name, or no `<id>`, as a usage error, an id that names no live pattern
+  of the account with `no-pattern`, and a name that a cell of another account holds with `cell-taken`.
+- `cell on` and `cell off` MUST write one mask (CIP-09, "Masks") of the working folder's project, or with
+  `--scope me` of every project. They MUST refuse a name that no cell holds with `no-cell`, a name that
+  two cells hold with `cell-taken`, and another `--scope` as a usage error.
+- `cell export` MUST write the folder of CIP-09, "Export", for the cell of the account, to `--to`, else to
+  `./<name>/`, and write no record. It MUST refuse a name that no cell of the account with a live pattern
+  holds, with `no-cell`.
+- `cell import` MUST read `<source>`, a folder or the URL of a folder or of its `cell.jsonl`, as CIP-09,
+  "Export", gives it, and print the cell and its patterns. Only with `--yes` MUST it keep the records,
+  and each blob whose bytes hash to its name. It MUST refuse a folder that CIP-09 refuses, with `invalid`,
+  and a cell whose name a cell of another account holds, with `cell-taken`, and write no mask.
+- `cell remove` MUST remove from the store each record of the cell of another account named `<name>`: its
+  patterns and its memberships, and each blob that only those records name. It MUST refuse a name that a
+  cell of the account holds with `cell-yours`, and a name that no cell holds with `no-cell`.
+- `patterns --cell <name>` MUST print the live patterns of the cells named `<name>`, on or off, as
+  `patterns` prints the index, and refuse a name that no cell holds with `no-cell`.
+
+**Examples**
+
+```
+celis cells
+celis patterns --cell eating-east
+celis cell add eating-east 9b0e11aa 4c2d17e0
+celis cell on eating-east
+celis cell off eating-east --scope me
+celis cell export eating-east --to ~/cells/eating-east
+celis cell import https://example.com/cells/eating-east/ --yes
+celis cell remove eating-east
+```
+
 ## Grep
 
-`grep` gives every trail of every project to the system `grep`, as lines. The plugin's `past.md` searches
-the trails with it, and so does the card.
+`grep` gives every trail of every project to the system `grep`, as lines. The `tidy` skill searches the
+trails with it.
 
 ```
 view    <yyyy-mm-dd> <trail id8 | -> [<project name>] <kind> <id8> <fields> <text>
-          trail | step   <open | working | done | done-dropped | dropped | expired>[ revised-by <id>,…][ at:<place>]…
-          rule           <live | replaced-by <id> | dropped> {<me | project | trail:<id8> | at:<place>>}
-                           [ trigger][ situation][ promoted]
-          proof | changed | dropped                              the step's or rule's id, no fields
+          trail | step   <open | done | dropped>[ revised-by <id>,…][ at:<place>]…
+          pattern        <live | replaced-by <id> | dropped> {<me | project>}
+                           [ uses:<n>][ misled:<n>][ used:<yyyy-mm-dd>][ cell:<name>]…
+          proof | changed | dropped | note                       the step's or pattern's id, no fields
+          prompt                                                 the trail's id, no fields (CIP-04, "Sessions")
+          good | bad                                             the pattern's id, no fields, and an example:
+                                                                 <step id8> <title> · <the first line of its proof>,
+                                                                 <path> · <its blob>, or <url> (CIP-05, "Examples")
 lines   <id8> [<project name>] <its title> · <yyyy-mm-dd>        each trail of the lines
           trail <id8> <fields>                                    the trail's own line
           <kind> <id8> <fields> <text>                            each other line of the trail
-        - rules of no trail
-          [<project name>] rule <id8> <fields> <text>             each line with no trail
+        - patterns of no trail
+          [<project name>] pattern <id8> <fields> <text>             each line with no trail
 end     project [<project name>]
 ```
 
-`<id8>` is the first 8 characters of an id. A text holds each newline as a space. A rule's fields end with
-` trigger` when it has a trigger tag (CIP-05), ` situation` when it has the `situation` label, and
-` promoted` when it has the `promoted` label.
+`<id8>` is the first 8 characters of an id. A text holds each newline as a space. After its state and
+scope, a pattern's fields give ` uses:<n>` with how many steps name it in `uses` (CIP-06, "Uses"), when not 0, ` misled:<n>` with how
+many steps it misled (CIP-06, "Misled"), when not 0, ` used:<day>` with the day of the newest step
+whose `uses` names it, and ` cell:<name>` for each cell that is on and holds it (CIP-09).
 
 **Rules**
 
 - `grep` MUST give each word after it to the system `grep` as it is, with the view on its stdin.
-- The view MUST hold every trail of every project, newest first, and each live or replaced rule of a
-  scope other than `trail:<id>` by when it was made. A trail MUST print as its line, then its rules,
-  newest first, then its steps, each level newest first, each step with its proof, `changed` and drop
-  lines, then its own steps.
+- The view MUST hold every trail of every project, newest first, and each live or replaced pattern in the
+  view of the working folder's project (CIP-09, "The view") by when it was made. A trail MUST print as its line, then the notes on it, then its prompts, oldest first,
+  then its steps, each level newest first, each step with its proof, `changed`, drop and note lines,
+  then its own steps. A pattern MUST print as its line, then a line for each example, then its drop
+  line.
 - `grep` MUST print each matched line under its trail's header, the trails with most lines first, and each
-  line with no trail under `- rules of no trail`. A matched line that is no line of the view MUST NOT
+  line with no trail under `- patterns of no trail`. A matched line that is no line of the view MUST NOT
   print. When no matched line is a line of the view, as with `-c` or `-l`, it MUST print what `grep`
   prints, and nothing else.
 - `grep` MUST print every matched line that is a line of the view, however long the output.

@@ -37,6 +37,12 @@ pub(crate) fn midnight(now: u64) -> u64 {
     now.saturating_sub(u64::try_from(since).unwrap_or(0))
 }
 
+/// The time of the local midnight that starts the month of `now`.
+pub(crate) fn month(now: u64) -> u64 {
+    let days = u64::try_from(local(now).tm_mday - 1).unwrap_or(0);
+    midnight((midnight(now) - days * 86_400) + 12 * 3_600)
+}
+
 /// The local calendar time of `at`.
 fn local(at: u64) -> libc::tm {
     let time = libc::time_t::try_from(at).unwrap_or(0);

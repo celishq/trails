@@ -1,7 +1,7 @@
 name: Release
 
 # Publishes release `v<version>` when a merge to main carries a manifest version with no tag yet: its attested
-# archives and `install.sh`. A last job installs the release on clean runners.
+# archives, `install.sh` and `install.md`. A last job installs the release on clean runners.
 
 on:
   push:
@@ -53,7 +53,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.version.outputs.version }}
-        run: gh release create "v$VERSION" dist/* install.sh --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --generate-notes
+        run: gh release create "v$VERSION" dist/* install.sh install.md --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --generate-notes
 
   smoke:
     name: Install on ${{ matrix.runner }}

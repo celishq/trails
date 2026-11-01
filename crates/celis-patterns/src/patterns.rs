@@ -1,0 +1,96 @@
+//! The patterns of a store.
+
+use crate::{Cell, Cells, Pattern, PatternEnd, PatternRecord, View};
+use celis_nostr::Note;
+use celis_store::{Drops, Refusal};
+use std::collections::HashMap;
+
+/// The patterns of a store, read once, newest first, then by id, and the cells that hold them.
+pub struct Patterns<'a> {
+    every: Vec<Pattern<'a>>,
+    by_id: HashMap<&'a str, usize>,
+    cells: Cells,
+}
+
+impl<'a> Patterns<'a> {
+    pub fn new(records: &'a [Note]) -> Patterns<'a> {
+        let read: Vec<(&'a Note, PatternRecord)> = records
+            .iter()
+            .filter_map(|n| Some((n, PatternRecord::read(n)?)))
+            .collect();
+        let by: HashMap<String, &'a Note> = read
+            .iter()
+            .filter_map(|(n, d)| Some((d.replaces.as_ref()?.to_string(), *n)))
+            .collect();
+        let drops = Drops::of(records);
+        let mut every: Vec<Pattern<'a>> = read
+            .into_iter()
+            .map(|(note, record)| Pattern {
+                note,
+                record,
+                end: by
+                    .get(note.id.as_str())
+                    .copied()
+                    .map(PatternEnd::Replaced)
+                    .or(drops.get(&note.id).map(PatternEnd::Dropped)),
+            })
+            .collect();
+        every.sort_by(|a, b| (b.note.created_at, &a.note.id).cmp(&(a.note.created_at, &b.note.id)));
+        let by_id = every.iter().enumerate().map(|(i, p)| (p.id(), i)).collect();
+        Patterns {
+            every,
+            by_id,
+            cells: Cells::new(records),
+        }
+    }
+
+    pub fn cells(&self) -> &Cells {
+        &self.cells
+    }
+
+    /// Every pattern of every project, live or ended.
+    pub fn every(&self) -> &[Pattern<'a>] {
+        &self.every
+    }
+
+    /// The patterns as the project `project` sees them.
+    pub fn view<'p>(&'p self, project: &str) -> View<'p, 'a> {
+        View::new(self, project)
+    }
+
+    /// The live pattern of any project whose id is `id`, or the only one whose id starts with `id` when
+    /// `id` is 4 or more characters.
+    pub fn find(&self, id: &str) -> Result<Pattern<'a>, Refusal> {
+        find(self.every.iter().filter(|p| p.is_live()), id)
+    }
+
+    /// The cells that hold `pattern`: those of its account that name it, or a pattern of that account
+    /// it replaces.
+    pub fn holding(&self, pattern: &Pattern) -> Vec<&Cell> {
+        let mut cells = self.cells.naming(pattern.id(), &pattern.note.pubkey);
+        let replaced = self.replaced(pattern);
+        if let Some(replaced) = replaced.filter(|r| r.note.pubkey == pattern.note.pubkey) {
+            cells.extend(self.holding(replaced));
+        }
+        cells
+    }
+
+    /// The pattern that `pattern` replaces, when the store holds it.
+    pub(crate) fn replaced(&self, pattern: &Pattern) -> Option<&Pattern<'a>> {
+        let id = pattern.record.replaces.as_deref()?;
+        self.by_id.get(id).map(|&i| &self.every[i])
+    }
+}
+
+/// The live pattern of `live` whose id is `id`, or the only one whose id starts with `id` when `id` is 4
+/// or more characters.
+pub(crate) fn find<'p, 'a: 'p>(
+    live: impl Iterator<Item = &'p Pattern<'a>>,
+    id: &str,
+) -> Result<Pattern<'a>, Refusal> {
+    let live: Vec<&Pattern<'a>> = live.collect();
+    let note = celis_store::records::id::find(live.iter().map(|p| p.note), id);
+    let note = note.ok_or_else(|| Refusal::NoPattern(id.to_string()))?;
+    let found = live.into_iter().find(|p| p.note.id == note.id);
+    Ok(found.cloned().expect("the note is of a live pattern"))
+}

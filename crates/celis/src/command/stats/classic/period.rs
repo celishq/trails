@@ -1,10 +1,10 @@
 //! The work of a store in one span of time.
 
 use crate::progress::Flags;
-use celis_trails::{Step, Steps, Used};
+use celis_trails::{Step, Steps};
 
-/// The work of a store from `from` up to `to`: the steps done, added and closed in that time. A trail
-/// counts as none of them.
+/// The work of a store from `from` up to `to`: the steps done, added and closed in that time. An ask
+/// with steps under it counts as none of them.
 pub struct Period<'a> {
     steps: &'a Steps<'a>,
     from: u64,
@@ -24,7 +24,7 @@ impl<'a> Period<'a> {
     /// The steps done in it, oldest first.
     pub fn done(&self) -> Vec<Step<'a>> {
         self.parts()
-            .filter(|s| s.done().is_some_and(|d| self.holds(d.created_at)))
+            .filter(|s| s.done_record().is_some_and(|d| self.holds(d.created_at)))
             .collect()
     }
 
@@ -53,14 +53,13 @@ impl<'a> Period<'a> {
             .collect()
     }
 
-    /// How many of its done steps use a rule.
-    pub fn ruled(&self) -> usize {
-        let rule = |u: &Used| matches!(u, Used::Rule(_));
+    /// How many of its done steps use a pattern.
+    pub fn using(&self) -> usize {
         let done = self.done().into_iter();
-        done.filter(|s| s.uses().iter().any(rule)).count()
+        done.filter(|s| !s.uses().is_empty()).count()
     }
 
-    /// The steps done or dropped in it, and those expired with a trail whose newest record is in it,
+    /// The steps done or dropped in it, and those stale with a trail whose newest record is in it,
     /// oldest first.
     pub fn closed(&self) -> Vec<Step<'a>> {
         self.parts()
@@ -68,9 +67,9 @@ impl<'a> Period<'a> {
             .collect()
     }
 
-    /// Every step of the store that is not a trail, oldest first.
+    /// Every step of the store that is work, oldest first.
     fn parts(&self) -> impl Iterator<Item = Step<'a>> {
-        self.steps.all().into_iter().filter(|s| !s.is_trail())
+        self.steps.all().into_iter().filter(|s| s.is_work())
     }
 
     /// Whether the second `at` is in it.

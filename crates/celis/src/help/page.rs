@@ -1,12 +1,9 @@
-//! The page of `celis help`: what celis is and how it works, each command with its flags, and the
-//! marks it prints.
+//! The page of `celis help`: what celis is, and each command with its flags.
 
 use super::{Verb, GROUPS};
-use crate::terminal::canvas::{Styled, BOLD, DIM, GREEN, MAGENTA, YELLOW};
-use crate::terminal::look::look;
-use celis_trails::State;
-use ratatui::style::Style;
+use crate::terminal::canvas::{Styled, BOLD, DIM};
 use ratatui::text::Span;
+use std::path::Path;
 
 /// The sections of the page: a heading, its note, and its commands with their arguments.
 const SECTIONS: &[(&str, &str, &[&str])] = &[
@@ -14,33 +11,45 @@ const SECTIONS: &[(&str, &str, &[&str])] = &[
         "Read",
         "",
         &[
+            "patterns",
+            "cells",
             "tree [<id>]",
-            "names",
             "grep <pattern>",
-            "rules [<file>]...",
             "stats [<id>]",
-            "report <id>...",
+            "extract <id>",
         ],
     ),
     (
         "Record work",
         "your agents run these",
         &[
+            "pattern",
             "step add",
             "step start <id>",
             "step done <id>",
             "step drop <id>",
             "step edit <id>",
-            "decide",
-            "name <trail> <name>",
+            "step note <id>",
+        ],
+    ),
+    (
+        "Share",
+        "",
+        &[
+            "cell add",
+            "cell on <name>",
+            "cell off <name>",
+            "cell export",
+            "cell import",
+            "cell remove <name>",
         ],
     ),
     (
         "Set up",
         "",
         &[
+            "setup",
             "link [<folder>]",
-            "unlink [<folder>]",
             "auth login",
             "auth status",
             "auth phrase",
@@ -53,53 +62,29 @@ const SECTIONS: &[(&str, &str, &[&str])] = &[
 /// What each command of one word does, in a phrase.
 const PHRASES: &[(&str, &str)] = &[
     ("tree", "Show your trails and their steps"),
-    ("names", "Show the named trails, most used first"),
-    ("name", "Name a trail, so other work can use it by its name"),
     ("grep", "Search every trail with grep"),
-    ("rules", "Show the rules of the files you will touch"),
-    ("stats", "Show what later work reused, and how work went"),
-    ("report", "Show trails as Markdown for a pull request"),
-    ("decide", "Record a rule that later work must keep"),
+    ("patterns", "Show the index of your patterns"),
+    (
+        "cells",
+        "Show each cell: its account, its patterns, and on or off",
+    ),
+    ("stats", "Show how the patterns are used, and how work went"),
+    ("extract", "Show what an ask taught, to extract as patterns"),
+    ("pattern", "Record a pattern that guides later work"),
     (
         "link",
         "Keep this project's trails in a folder to commit or share",
     ),
-    ("unlink", "Stop keeping this project's trails in a folder"),
     (
         "update",
         "Update celis to the latest version, or to one you choose",
     ),
     ("issue", "Write a problem report for the celis team"),
+    ("setup", "Show how to add the plugin to each agent here"),
 ];
 
-/// What celis keeps: each one's mark, the look of its mark, its word, and what it is.
-const WORDS: &[(&str, Style, &str, &str)] = &[
-    ("◆", MAGENTA, "trail", "each task you give"),
-    (
-        "○",
-        Style::new(),
-        "step",
-        "each piece of work your agents do in it",
-    ),
-    (
-        "§",
-        MAGENTA,
-        "rule",
-        "each lesson they learn, kept for later work",
-    ),
-];
-
-/// The flags only the plugin's hooks pass, left off the page.
-const HIDDEN: &[&str] = &["--session"];
-
-/// The marks celis prints for a step, a revision, a change and a rule.
-const MARKS: &[(State, &str)] = &[
-    (State::Open, "open"),
-    (State::Working, "working"),
-    (State::Done, "done"),
-    (State::Dropped, "dropped"),
-    (State::Expired, "expired"),
-];
+/// The flags only the plugin passes, left off the page.
+const HIDDEN: &[&str] = &["--session", "--project"];
 
 /// The width of the column of command names with their arguments.
 const NAMES: usize = 20;
@@ -107,24 +92,15 @@ const NAMES: usize = 20;
 /// The width of the column of flags with their values.
 const FLAGS: usize = 18;
 
-/// The page: what celis is, then each command with what it does and its flags, then the marks.
-pub fn page() -> Vec<Styled> {
+/// The page: what celis is, then each command with what it does and its flags, then the store folder
+/// `home`, when known.
+pub fn page(home: Option<&Path>) -> Vec<Styled> {
     let mut lines = vec![
-        Styled::raw("celis remembers how your agents do your tasks."),
+        Styled::raw("celis keeps what you teach your agents, and brings it to each task they do."),
         Styled::default(),
     ];
-    for (mark, look, word, said) in WORDS {
-        lines.push(Styled::from(vec![
-            Span::raw("  "),
-            Span::styled(*mark, *look),
-            Span::raw(" "),
-            Span::styled(format!("{word:8}"), BOLD),
-            Span::raw(*said),
-        ]));
-    }
-    lines.push(Styled::default());
     lines.push(Styled::raw(
-        "Your agents record them through the celis plugin.",
+        "Your agents record their work through the celis plugin.",
     ));
     lines.push(Styled::default());
     lines.push(Styled::styled("Usage", BOLD));
@@ -150,14 +126,24 @@ pub fn page() -> Vec<Styled> {
         }
     }
     lines.push(Styled::default());
-    lines.push(Styled::styled("Marks", BOLD));
-    lines.push(marks());
+    match home {
+        Some(home) => {
+            lines.push(Styled::styled(
+                "celis keeps your recovery phrase and records in $CELIS_HOME:",
+                DIM,
+            ));
+            lines.push(Styled::styled(format!("  {}", home.display()), DIM));
+        }
+        None => lines.push(Styled::styled(
+            "celis keeps your recovery phrase and records in $CELIS_HOME.",
+            DIM,
+        )),
+    }
     lines.push(Styled::default());
     lines.push(Styled::styled(
-        "celis keeps your recovery phrase and records in $CELIS_HOME.",
+        "Add --json to tree, stats, extract, or a command that records work, for JSON.",
         DIM,
     ));
-    lines.push(Styled::default());
     lines.push(Styled::styled(
         "To learn more about a command, run `celis <command> --help`.",
         DIM,
@@ -262,25 +248,4 @@ fn flags(verb: &Verb) -> Vec<(&'static str, Option<&'static str>, &'static str)>
         flags.push((flag, value, said));
     }
     flags
-}
-
-/// The line of marks: each state's mark in its look, then the signs of a revision, a change and a rule.
-fn marks() -> Styled {
-    let mut spans = vec![Span::raw("  ")];
-    for (state, name) in MARKS {
-        spans.push(Span::styled(look(*state).mark, look(*state).text));
-        spans.push(Span::raw(format!(" {name}  ")));
-    }
-    for (sign, name, style) in [
-        ("↻", "revised", GREEN),
-        ("~", "changed", YELLOW),
-        ("§", "rule", MAGENTA),
-    ] {
-        spans.push(Span::styled(sign, style));
-        spans.push(Span::raw(format!(" {name}  ")));
-    }
-    if let Some(last) = spans.last_mut() {
-        last.content = last.content.trim_end().to_string().into();
-    }
-    Styled::from(spans)
 }

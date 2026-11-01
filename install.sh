@@ -46,7 +46,7 @@ case "$version" in
 latest) url="$base/latest/download/$name" ;;
 *) url="$base/download/v$version/$name" ;;
 esac
-tmp="$(mktemp -d)"
+tmp="$(mktemp -d "${TMPDIR:-/tmp}/celis.XXXXXX")"
 trap 'rm -rf "$tmp"' EXIT
 
 echo "Downloading $name ($version)…"
@@ -89,5 +89,8 @@ case ":$PATH:" in
 	;;
 esac
 echo
-echo "Next, give it the phrase of your Celis account, or skip this to mint one:"
+echo "Next, add the plugin to your agents:"
+echo "  celis setup"
+echo
+echo "To use the Celis account you already have, give it its phrase:"
 echo "  celis auth login"

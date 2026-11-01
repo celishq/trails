@@ -1,0 +1,177 @@
+# celis — design
+
+This page keeps the design decisions and why we took them. The contract is in `spec/`, and the code
+follows the spec. A change of a decision changes this page first, then the spec, then the code. A plan
+names the decisions it acts on.
+
+## The core
+
+celis keeps the knowledge that agents need to do work well, and the evidence for it.
+
+- **Patterns are the core.** A pattern is a piece of knowledge: in a context, choose this, because of
+  that. It activates in each trail whose context matches it.
+- **A pattern guides.** As in Christopher Alexander's pattern language, it names the forces of a context
+  and a way to resolve them. When its forces are present, the agent resolves them in its own way. When
+  they are not present, the pattern does not apply. A pattern is never "broken". Pairs show taste: good
+  and bad examples, made from the person's picks and corrections.
+- **A pattern is narrow, and holds in any field.** Its Name is the resolved form, as a noun phrase. Its
+  When is one context and the moment its forces appear, not a topic. Its Do is one resolution, and a
+  larger resolution is a larger pattern that it completes. The form is Alexander's, not an engineering
+  one, so that a pattern can carry a concept from one field into another, such as from architecture
+  into design.
+- **Trails are the evidence.** A trail is one ask, with its steps and their proofs. It gives observability,
+  and it is the feedback loop that shows whether a pattern is still useful: its examples, its uses and
+  tidy.
+
+The store, the query, the card's method, the log, tidy and the tree are the core, because no model can
+know them by itself. Hooks, ranks and caps are a scaffold, which a smarter model can outgrow.
+
+```
+  knowledge    pattern
+               When · Forces · Do · Because
+               good / bad examples, path globs
+               scope: project | me
+               within ──► a larger pattern
+                  ▲                 │
+   examples, uses, misled           │ activates
+                  │                 ▼
+  evidence     trail ──► step ──► done: proof, changed, by ──► note
+```
+
+A bench checks a design; a design is never tuned to a bench.
+
+## Decisions
+
+1. **A pattern holds in a project or for me, never in one trail.** The `trail:<id>` scope goes. What
+   holds for one trail only is a note on its step. `celis migrate` writes an old trail pattern again as
+   a note of that trail.
+2. **One record: the pattern.** Its label is `pattern` in `celis.pattern`. A pattern record names no
+   cell: a cell names its patterns (decision 16).
+3. **The agent loads a pattern at the choice it bears on.**
+   - `celis patterns` gives the index: each live pattern in scope as its id and its When, with its
+     level (decision 17). The When is the moment a choice is due, so a reader can match it to the work. A writer gives each pattern a Name: celis
+     writes a pattern without one, with a warning. `celis grep <id>` gives the whole pattern. celis has no vector, no word match and no
+     rank. The session start does not give the index: past a few dozen patterns it grows too large
+     for the agent's session start, which cuts it. Right after an ask's step add, the agent gives the
+     `celis:patterns` agent the ask, its planned choices and its files; that agent reads the index and
+     answers with the patterns that bear on them, whole. During the work, the agent reads the index
+     itself when a new choice comes up.
+   - When a choice of the work matches a When, the agent reads that pattern whole before it chooses,
+     and names it with `--uses` on the step of that choice. The uses are the evidence.
+   - `patterns <id>` writes a recall on the session's newest open step, and nothing when the session
+     has no open step. A recall, then a use, then a step that no fix revises, is the funnel that shows
+     whether the index finds the right pattern.
+   - The agent marks a pattern that misled the work: `--misled` on the step that fixes done work, or on
+     the `done` of a step where the pattern did not fit. A revision of a step that used a pattern still
+     counts as misled, because the agent does not always mark it.
+   - Past trails serve the learn and tidy. Nothing follows a past step: a step's `uses` names only a
+     pattern.
+4. **What goes in matters most.** The agent decides when there is a lesson: a correction, a pick, a
+   reaction to a result, a wish such as "from now on", or a fix of done work. It then runs `celis extract
+<id>`, which prints the learn brief of an ask or a step, open or closed: the ask's `expect`, `for`
+   and `not` lines, its `changed` lines, its trail's notes, the person's prompts since the ask began,
+   and the patterns in play, each one a step of the ask used, so that a lesson can replace one that
+   misled. `done` of an ask, or of a step that fixes done work, because a fix is a correction, prints
+   the same brief, and `--json` gives its parts to an integration. The `celis:extraction` agent writes
+   the patterns from it, in its own context. The brief is the one place that says what to keep. A
+   pattern is written only for a choice that will come back in other work, and never records what the
+   ask did. A lesson replaces a pattern that misled the work instead of adding a near copy, and writes
+   nothing when the ask taught nothing.
+   - The brief is an after-action review: what the ask expected, and what changed. From it the agent
+     answers Gary Klein's questions before it writes. The cue that showed a choice was due gives the
+     When. The two goods that pull against each other give the Forces. What a novice would do gives a
+     bad example. Why the Do resolves the tension gives the Because. With no cue or no tension, it
+     writes nothing: a missing pattern costs less than a broad one.
+5. **The agent writes each record with a celis call.** A hook may give the agent context, such as the
+   patterns that fit, but it never captures the agent's tools to write records.
+6. **Patterns lead.** The card, the help and the README start with patterns, and trails come after.
+7. **Patterns and trails are separate crates.** `celis-store` holds the store, the account, projects and
+   ids. `celis-patterns` holds patterns, and `celis-trails` holds trails, steps and notes. Trails depend
+   on patterns, and patterns never depend on trails. The repo keeps its name for now, and becomes
+   `celis` later.
+8. **`within` is the one link between patterns.** It goes from a smaller pattern to the larger one that
+   it completes, as in Alexander's pattern language. A pattern can complete several larger ones. There
+   are no other link types: `replaces` takes a pattern's place, and tidy settles conflicts.
+9. **A must leaves celis.** celis keeps guides. A choice that must always hold goes into the project's
+   own files: `AGENTS.md`, `CLAUDE.md`, or a check such as a test, a lint or CI. Tidy learns from the
+   trails. From the uses, the misled and the replaces of each pattern, it offers to promote it, or to
+   narrow or widen its When, and it draws new patterns from the choices of past trails. It writes a file
+   only after the person agrees, and then drops the pattern with the reason "promoted to <file>".
+10. **A step is open, done or dropped.** A start gives an open step a start time, and is not a state. A
+    done trail that a drop names is dropped. A step under a done trail reopens it until its next done,
+    so a follow-up of a done ask goes on its trail. A step that revises a done step or a done ask, and
+    names no `under`, goes under that trail. An open step of an ended trail stays open, and the
+    app shows it as stale, because a state by time is the app's. An ended trail whose steps are all
+    closed, one of them done, shows done: its work is over even when the agent did not close the ask.
+11. **A trail is one ask.** The ask is a step with no `under`, and the steps of its work go under it. A
+    session does not join steps to a trail by itself, and the agent chooses each time: while the
+    session's trail is open, or done less than 30 minutes ago, `step add` takes `--under` it for a part
+    or a follow-up, or `--new` for an unrelated ask, and refuses neither. The prompts and notes of an
+    ask are on it. A reader reads an older trail, which held the asks of a session, as one ask with
+    those asks as its steps. The migrate skill closes each older trail after the person agrees.
+12. **No judge.** celis keeps patterns, and to check work is the orchestration's. A step proves its work
+    with its own check or its proof. A pattern's path is the module where it holds, which the index
+    shows, so the agent chooses it before the work, and `done` gives no patterns. `done --by person`
+    says that the person confirms the result.
+13. **The outcomes are evidence, and celis lists what needs tidy.** A pattern misled a step that used
+    it when a later step fixed that work. `celis patterns --tidy` lists each live pattern that misled
+    twice or more, that has a near copy, that no step used in 60 days, that was replaced three times
+    or more, that has no Name, or whose When holds another of its lines, with the reason. It also
+    lists the signs of a weak text: a When that names a topic, Forces with no two sides, a Because that
+    gives only the person's choice, and a Do of more than one choice. `celis pattern` prints these
+    signs as warnings when it writes, and keeps the pattern, so that no lesson is lost; the agent can
+    replace it at once, else tidy does. Tidy narrows a pattern that misled, and drops or widens one
+    unused. It names each pattern, narrows a When that names a topic, splits a Do that holds more than
+    one choice into smaller patterns `within` it, and offers to promote a pattern that gives only the
+    person's choice into the project's own files, because it is a fact and not a resolution: celis
+    lists the signs, and the tidy agent judges them.
+    `celis stats` shows the use of each live pattern: its uses, misled, replaces, last use, examples and
+    tidy reason. Its total gives the size of the index, the patterns written and replaced in the last 7
+    days, and the gaps: the fixes of done work in that time whose ask used no pattern. Only these two
+    are in the spec. The board on a terminal also gives the lifecycle and the value, which are the
+    app's, because no other end reads them. The lifecycle gives, by day, week and month, the patterns written, replaced, dropped, promoted, recalled, used and
+    misled. The value gives, for the last 28 days, what shows that celis pays: the asks that used a
+    pattern, the corrections and the repeat ones among them, first-pass success with and without a
+    pattern, the recall funnel, the reach of the patterns to other projects and agents, and the
+    promotions. A repeat correction failed when the fixed work used a pattern, and missed when it used
+    none but its lesson replaced a pattern that was live before the work. A step names its agent when the
+    variable that gives its session names one. The session start offers tidy when the list
+    is not empty, and not within 7 days of a tidy, so that a person who kept a pattern is not asked each
+    session.
+14. **celis refuses a secret.** A record is signed and cannot be deleted, so a secret in it leaks for
+    good. A writer refuses a record, and a kept file, that holds a secret, such as an API key, a token, a
+    private key or a password, with the error `secret`, and the agent writes it again with the secret
+    named by where it lives, such as `API_KEY in .env`. The prompt hook keeps no prompt that holds a
+    secret. A guide in the card alone did not hold: agents gave `.env` as a proof file.
+
+15. **An old form is migrated once, and never read again.** celis reads and writes only the current
+    forms, so that no reader keeps a branch for each form that an older version wrote. A record cannot
+    be deleted, so `celis migrate` is the one reader of an old form: after the person agrees, it writes
+    each live pattern of an old form again in the current form, and the session start says when one
+    remains. An old flag or command is a usage error.
+    The spec keeps each old name as retired, so that no new name takes it.
+16. **A cell is a layer of patterns that you can turn on and off, and share.** The log stays one log. A
+    cell is a label event that names a cell and its patterns, and only the cell's author adds to it. The
+    patterns in no cell are the base layer, which is always on. A mask record turns a cell on or off in a
+    project, or for every project. A new or imported cell is off, and the person, never the agent, turns
+    it on. The view is the log minus the patterns of the cells that are off, and of the patterns that
+    replace them. A pattern in a cell that is on holds in the project, whatever its scope and paths. A
+    cell of another account is immutable: you change it only with your own patterns that replace its
+    patterns. An export holds only patterns: a Markdown file to read, the signed records, and the blobs.
+    You can remove an imported cell from disk, but your own cells can only be off, because their records
+    may be on relays.
+17. **A pattern's level is its evidence.** As in Alexander's asterisks, a level says how sure a pattern
+    is, but celis works it out from the trails, and a writer never sets it. A pattern with no level is
+    new or unproven. One star: 3 or more steps used it, and it misled none. Two stars: it also has uses
+    in 2 or more projects. A pattern that misled has no level until tidy replaces it. The index and a
+    whole pattern show it, so that the agent prefers a proven pattern when two fit. A pattern with no
+    level still applies: the level ranks, and never hides.
+
+## What we do not do
+
+- No rank or grade of work by time, and no ask to the agent for the time it took.
+- No model, no index and no vector search in celis. The agent's own model reads the patterns.
+- No model call from a hook. A cheap model pick runs in a subagent that the card or a hook names.
+- No answer template in celis. It prints only tracking data from its trails, such as the learn brief and the
+  total line; how an answer looks stays in the person's own agent file.
+- No sharing over relays yet. A cell is shared as a folder.

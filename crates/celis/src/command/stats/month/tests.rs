@@ -1,8 +1,8 @@
-use super::super::tests::shop;
+use super::super::tests::{shop, Desk};
 use super::*;
 
-/// A done step that a later step revises is reworked, else one that follows past work is reused, else
-/// new; a dropped step is dropped, and a done step that uses a rule applied it.
+/// A done step that a later step revises is reworked, else one that uses a pattern is reused, else
+/// new; a dropped step is dropped, and a done step that uses a pattern applied it.
 #[test]
 fn each_closed_step_counts_once_by_how_it_ended() {
     let month = shop().month();
@@ -35,10 +35,10 @@ fn a_step_of_20_days_ago_counts_in_the_prior_half() {
 }
 
 /// Each project's time sums its steps with none under them, with the time of a revised step as rework
-/// and of a dropped one as dropped; the reused step names the trail it followed, and the rule it used
-/// counts as applied in its project.
+/// and of a dropped one as dropped; the pattern the reused step used counts as
+/// applied in its project.
 #[test]
-fn time_rework_and_rules_come_from_the_steps() {
+fn time_rework_and_patterns_come_from_the_steps() {
     let month = shop().month();
     let shop = Project {
         name: "shop".into(),
@@ -48,7 +48,35 @@ fn time_rework_and_rules_come_from_the_steps() {
     };
     assert_eq!(month.projects, vec![shop]);
     assert_eq!(month.prior_active, 600);
-    assert_eq!(month.sources, 1);
-    assert_eq!((month.rules, month.learned, month.kept), (1, 1, 1));
+    assert_eq!((month.patterns, month.learned, month.kept), (1, 1, 1));
     assert_eq!(month.applied, vec![("shop".to_string(), 1)]);
+}
+
+/// An ask with no steps under it counts as a step, and its uses as applied; the uses of an ask with
+/// steps under it count as hits of its pattern.
+#[test]
+fn an_ask_counts_as_a_step_when_no_step_is_under_it() {
+    let mut desk = shop();
+    let pattern = desk.pattern(500, "shop");
+    let alone = desk.add(500, "shop", None, "alone", &[&pattern], None);
+    desk.done(400, 60, &alone);
+    let parent = desk.add(500, "shop", None, "parent", &[&pattern], None);
+    let part = desk.add(500, "shop", Some(&parent), "part", &[], None);
+    desk.done(300, 60, &part);
+    desk.done(200, 0, &parent);
+    let month = desk.month();
+    assert_eq!((month.now().reused, month.now().new), (2, 2));
+    assert_eq!(month.now().applied, 2);
+    assert_eq!(month.top[0], (pattern, month.top[0].1.clone(), 2));
+}
+
+/// A step dropped after its trail had no record for the life of a trail counts no time, neither active
+/// nor dropped.
+#[test]
+fn a_drop_after_the_trail_went_quiet_counts_no_time() {
+    let mut desk = Desk::new();
+    let trail = desk.add(4 * 3_600, "shop", None, "the trail", &[], None);
+    let left = desk.add(4 * 3_600, "shop", Some(&trail), "left", &[], None);
+    desk.drop(60, 2 * 3_600, &left);
+    assert_eq!(desk.month().projects, vec![]);
 }

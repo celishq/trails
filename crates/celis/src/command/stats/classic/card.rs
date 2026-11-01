@@ -8,10 +8,10 @@ use crate::terminal::canvas::Styled;
 use crate::terminal::ink::Ink;
 use effect::effect;
 use outcome::outcome;
+use patterns::patterns;
 use projects::projects;
-use reuse::reuse;
-use rules::rules;
 use time::time;
+use value::value;
 use work::work;
 
 /// A card of stats: its title, the rows of its face, and the table it opens to.
@@ -21,7 +21,7 @@ pub(crate) struct Card {
     pub table: Table,
 }
 
-/// The count of cards: effect, reuse, rules used, work, time, outcome and projects.
+/// The count of cards: effect, patterns used, work, time, outcome, projects and value.
 pub(crate) const CARDS: usize = 7;
 
 /// The cards of `model` at its time: the effect `full` characters wide inside, the others `inside`;
@@ -31,12 +31,12 @@ pub(crate) fn cards(model: &Model, full: usize, inside: usize, plain: bool) -> [
     let ink = Ink { plain };
     [
         effect(&window, full, ink),
-        reuse(model, &window, inside, ink),
-        rules(model, &window, inside, ink),
+        patterns(model, &window, inside, ink),
         work(&window, inside, ink),
         time(&window.last, inside, ink),
         outcome(&window.last, inside, ink),
         projects(&window.last, inside, ink),
+        value(model, ink),
     ]
 }
 
@@ -50,10 +50,10 @@ mod daily;
 mod effect;
 mod face;
 mod outcome;
+mod patterns;
 mod projects;
-mod reuse;
-mod rules;
 #[cfg(test)]
 mod tests;
 mod time;
+mod value;
 mod work;

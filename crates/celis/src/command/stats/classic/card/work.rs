@@ -30,7 +30,7 @@ pub(super) fn work(window: &Window, inside: usize, ink: Ink) -> Card {
         })
         .collect();
     Card {
-        title: format!("03 WORK · {DAYS} DAYS"),
+        title: format!("02 WORK · {DAYS} DAYS"),
         face,
         table: Table {
             head: vec!["Day", "Steps done"],

@@ -9,8 +9,9 @@ Thank you for your help. This guide tells you how to make a change that we can m
 
 ## The layout
 
-- `crates/` is one Cargo workspace: `celis` (the command line), `celis-trails` (trails, steps, rules
-  and their store) and `celis-nostr` (the account, signed notes, encryption and the relay client).
+- `crates/` is one Cargo workspace: `celis` (the command line), `celis-patterns` (patterns),
+  `celis-trails` (trails, steps and notes), `celis-store` (the store, projects and ids) and `celis-nostr`
+  (the account, signed notes, encryption and the relay client).
 - `spec/` holds the contract, as numbered CIPs. `spec/fixtures/` holds what two ends must match.
 - `plugins/celis/` is the plugin: one manifest per agent, and the same hooks. Gemini CLI installs from the
   repo root, so `gemini-extension.json` and `hooks/` are there. Antigravity does too, so
@@ -47,8 +48,8 @@ To try the plugin from this checkout for one session, run `claude --plugin-dir p
 
 - Branch from `dev`, open the pull request into `dev`, and keep one change in one pull request. A fix goes
   to `dev` too. `main` takes only the release PR from `dev`.
-- Write the commit title as `<type>: <what changed>`, where the type is `feat`, `fix`, `docs`, `refactor`
-  or `chore`.
+- Write the commit title as `<type>: <what changed>`, where the type is `feat`, `fix`, `docs`, `refactor`,
+  `test` or `chore`.
 - Say in the description which CIP the change follows, and how you checked it.
 
 By contributing, you agree that your work is licensed under the [MIT License](LICENSE).

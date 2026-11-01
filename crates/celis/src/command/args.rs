@@ -11,12 +11,12 @@ pub(crate) struct Args {
     pub full: bool,
     pub all: bool,
     pub demo: bool,
-    pub new: bool,
     pub planned: bool,
-    pub situation: bool,
-    pub promoted: bool,
-    pub diff: bool,
+    pub new: bool,
     pub next: bool,
+    pub off: bool,
+    pub markdown: bool,
+    pub tidy: bool,
     pub words: Vec<String>,
     pub text: Option<String>,
     pub places: Vec<String>,
@@ -24,13 +24,21 @@ pub(crate) struct Args {
     pub scope: Option<String>,
     pub replaces: Option<String>,
     pub uses: Vec<String>,
+    pub misled: Vec<String>,
     pub check: Option<String>,
-    pub pitfall: Option<String>,
     pub changed: Option<String>,
+    pub by: Option<String>,
     pub session: Option<String>,
     pub project: Option<String>,
-    pub limit: Option<String>,
+    pub page: Option<String>,
     pub paths: Vec<String>,
+    pub files: Vec<String>,
+    pub good: Vec<String>,
+    pub within: Vec<String>,
+    pub bad: Vec<String>,
+    pub cell: Option<String>,
+    pub to: Option<String>,
+    pub yes: bool,
 }
 
 impl Args {
@@ -43,8 +51,8 @@ impl Args {
                 .any(|a| a == "--json")
     }
 
-    /// The words of `args`, only the verb when they are raw; an unknown flag, or a flag without its
-    /// value, is a usage error.
+    /// The words of `args`, only the verb when they are raw; an unknown flag and a flag without its value
+    /// are usage errors.
     pub fn parse(args: &[String]) -> Result<Args, Failure> {
         let mut parsed = Args::default();
         if crate::help::raw(args) {
@@ -67,22 +75,30 @@ impl Args {
                 "--demo" => parsed.demo = true,
                 "--new" => parsed.new = true,
                 "--as-planned" => parsed.planned = true,
-                "--situation" => parsed.situation = true,
-                "--promoted" => parsed.promoted = true,
-                "--diff" => parsed.diff = true,
                 "--next" => parsed.next = true,
+                "--off" => parsed.off = true,
+                "--markdown" => parsed.markdown = true,
+                "--tidy" => parsed.tidy = true,
                 "--at" => parsed.places.push(value(arg, rest.next())?),
                 "--under" => parsed.under = Some(value(arg, rest.next())?),
                 "--scope" => parsed.scope = Some(value(arg, rest.next())?),
                 "--replaces" => parsed.replaces = Some(value(arg, rest.next())?),
                 "--uses" => parsed.uses.push(value(arg, rest.next())?),
+                "--misled" => parsed.misled.push(value(arg, rest.next())?),
                 "--check" => parsed.check = Some(value(arg, rest.next())?),
-                "--pitfall" => parsed.pitfall = Some(value(arg, rest.next())?),
                 "--changed" => parsed.changed = Some(value(arg, rest.next())?),
+                "--by" => parsed.by = Some(value(arg, rest.next())?),
                 "--session" => parsed.session = Some(value(arg, rest.next())?),
                 "--project" => parsed.project = Some(value(arg, rest.next())?),
-                "--limit" => parsed.limit = Some(value(arg, rest.next())?),
+                "--page" => parsed.page = Some(value(arg, rest.next())?),
                 "--path" => parsed.paths.push(value(arg, rest.next())?),
+                "--file" => parsed.files.push(value(arg, rest.next())?),
+                "--good" => parsed.good.push(value(arg, rest.next())?),
+                "--within" => parsed.within.push(value(arg, rest.next())?),
+                "--cell" => parsed.cell = Some(value(arg, rest.next())?),
+                "--to" => parsed.to = Some(value(arg, rest.next())?),
+                "--yes" => parsed.yes = true,
+                "--bad" => parsed.bad.push(value(arg, rest.next())?),
                 flag if flag.starts_with("--") => {
                     bad.get_or_insert(Failure::usage(format!("{flag} is not a flag")));
                 }
