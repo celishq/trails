@@ -170,7 +170,7 @@ impl Command {
     }
 }
 
-/// The lines of `pattern` in the index: `<id8> <scope> [<level>] <Name>`, then each of its paths, each
+/// The lines of `pattern` in the index: `<id8> <scope> [<level>] <When>`, then each of its paths, each
 /// of the `files` whose paths it matches, and each larger pattern of the `held` ids.
 fn entry(
     pattern: &Pattern,
@@ -185,7 +185,7 @@ fn entry(
         short(pattern.id()),
         record.scope.text(),
         mark.unwrap_or_default(),
-        record.title()
+        record.when()
     );
     let paths = record.paths.iter().map(|p| format!("  path   {p}"));
     let matched = files.iter().filter(|(_, paths)| record.matches(paths));

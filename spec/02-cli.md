@@ -228,11 +228,11 @@ Each agent's hooks give `hook` the JSON of a prompt or of a session start.
 agent reads it, and reads the whole of a pattern with `patterns <id8>`.
 
 ```
-<id8> <scope> [<level>] <Name>
-                         each pattern; its level ("Levels"); its Name is the text after `Name:` on
-                         the first line of its text, or a first line that does not start with `When` before one that does,
-                         and with none, its When: the first line, and of a text of one line,
-                         the part before its first `:`; the When of a named text is its next line
+<id8> <scope> [<level>] <When>
+                         each pattern; its level ("Levels"); its When is the line after its Name,
+                         else its first line, and of a text of one line, the part before its first
+                         `:`; its Name is the text after `Name:` on the first line of its text, or a
+                         first line that does not start with `When` before one that does
   path   <glob>          each `path` of it (CIP-05, "Paths")
   match  <file>          each `<file>` that one of its paths matches (CIP-05, "Paths")
   within <id8>           each larger pattern it completes (CIP-05, "Graph")
