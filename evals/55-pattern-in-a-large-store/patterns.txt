@@ -1,0 +1,251 @@
+Chart axis added|When a chart axis is added|keep it next to the code that uses it
+Chart axis renamed|When a chart axis is renamed|rename every reader in the same commit
+Chart axis kept short|When a chart axis grows past one screen|split it by what each part shows
+Chart axis shown to a new user|When a chart axis is shown to a new user|say it in the words of the task, not of the code
+Chart axis changes in a release|When a chart axis changes in a release|name the change in the release note
+Csv export added|When a CSV export is added|keep it next to the code that uses it
+Csv export renamed|When a CSV export is renamed|rename every reader in the same commit
+Csv export kept short|When a CSV export grows past one screen|split it by what each part shows
+Csv export shown to a new user|When a CSV export is shown to a new user|say it in the words of the task, not of the code
+Csv export changes in a release|When a CSV export changes in a release|name the change in the release note
+Log line added|When a log line is added|keep it next to the code that uses it
+Log line renamed|When a log line is renamed|rename every reader in the same commit
+Log line kept short|When a log line grows past one screen|split it by what each part shows
+Log line shown to a new user|When a log line is shown to a new user|say it in the words of the task, not of the code
+Log line changes in a release|When a log line changes in a release|name the change in the release note
+Cache key added|When a cache key is added|keep it next to the code that uses it
+Cache key renamed|When a cache key is renamed|rename every reader in the same commit
+Cache key kept short|When a cache key grows past one screen|split it by what each part shows
+Cache key shown to a new user|When a cache key is shown to a new user|say it in the words of the task, not of the code
+Cache key changes in a release|When a cache key changes in a release|name the change in the release note
+Retry loop added|When a retry loop is added|keep it next to the code that uses it
+Retry loop renamed|When a retry loop is renamed|rename every reader in the same commit
+Retry loop kept short|When a retry loop grows past one screen|split it by what each part shows
+Retry loop shown to a new user|When a retry loop is shown to a new user|say it in the words of the task, not of the code
+Retry loop changes in a release|When a retry loop changes in a release|name the change in the release note
+Config file added|When a config file is added|keep it next to the code that uses it
+Config file renamed|When a config file is renamed|rename every reader in the same commit
+Config file kept short|When a config file grows past one screen|split it by what each part shows
+Config file shown to a new user|When a config file is shown to a new user|say it in the words of the task, not of the code
+Config file changes in a release|When a config file changes in a release|name the change in the release note
+Cli flag added|When a CLI flag is added|keep it next to the code that uses it
+Cli flag renamed|When a CLI flag is renamed|rename every reader in the same commit
+Cli flag kept short|When a CLI flag grows past one screen|split it by what each part shows
+Cli flag shown to a new user|When a CLI flag is shown to a new user|say it in the words of the task, not of the code
+Cli flag changes in a release|When a CLI flag changes in a release|name the change in the release note
+Date on screen added|When a date on screen is added|keep it next to the code that uses it
+Date on screen renamed|When a date on screen is renamed|rename every reader in the same commit
+Date on screen kept short|When a date on screen grows past one screen|split it by what each part shows
+Date on screen shown to a new user|When a date on screen is shown to a new user|say it in the words of the task, not of the code
+Date on screen changes in a release|When a date on screen changes in a release|name the change in the release note
+Currency amount added|When a currency amount is added|keep it next to the code that uses it
+Currency amount renamed|When a currency amount is renamed|rename every reader in the same commit
+Currency amount kept short|When a currency amount grows past one screen|split it by what each part shows
+Currency amount shown to a new user|When a currency amount is shown to a new user|say it in the words of the task, not of the code
+Currency amount changes in a release|When a currency amount changes in a release|name the change in the release note
+Button label added|When a button label is added|keep it next to the code that uses it
+Button label renamed|When a button label is renamed|rename every reader in the same commit
+Button label kept short|When a button label grows past one screen|split it by what each part shows
+Button label shown to a new user|When a button label is shown to a new user|say it in the words of the task, not of the code
+Button label changes in a release|When a button label changes in a release|name the change in the release note
+Commit message added|When a commit message is added|keep it next to the code that uses it
+Commit message renamed|When a commit message is renamed|rename every reader in the same commit
+Commit message kept short|When a commit message grows past one screen|split it by what each part shows
+Commit message shown to a new user|When a commit message is shown to a new user|say it in the words of the task, not of the code
+Commit message changes in a release|When a commit message changes in a release|name the change in the release note
+Sql query added|When a SQL query is added|keep it next to the code that uses it
+Sql query renamed|When a SQL query is renamed|rename every reader in the same commit
+Sql query kept short|When a SQL query grows past one screen|split it by what each part shows
+Sql query shown to a new user|When a SQL query is shown to a new user|say it in the words of the task, not of the code
+Sql query changes in a release|When a SQL query changes in a release|name the change in the release note
+Test fixture added|When a test fixture is added|keep it next to the code that uses it
+Test fixture renamed|When a test fixture is renamed|rename every reader in the same commit
+Test fixture kept short|When a test fixture grows past one screen|split it by what each part shows
+Test fixture shown to a new user|When a test fixture is shown to a new user|say it in the words of the task, not of the code
+Test fixture changes in a release|When a test fixture changes in a release|name the change in the release note
+Table header added|When a table header is added|keep it next to the code that uses it
+Table header renamed|When a table header is renamed|rename every reader in the same commit
+Table header kept short|When a table header grows past one screen|split it by what each part shows
+Table header shown to a new user|When a table header is shown to a new user|say it in the words of the task, not of the code
+Table header changes in a release|When a table header changes in a release|name the change in the release note
+Http status added|When an HTTP status is added|keep it next to the code that uses it
+Http status renamed|When an HTTP status is renamed|rename every reader in the same commit
+Http status kept short|When an HTTP status grows past one screen|split it by what each part shows
+Http status shown to a new user|When an HTTP status is shown to a new user|say it in the words of the task, not of the code
+Http status changes in a release|When an HTTP status changes in a release|name the change in the release note
+Migration added|When a migration is added|keep it next to the code that uses it
+Migration renamed|When a migration is renamed|rename every reader in the same commit
+Migration kept short|When a migration grows past one screen|split it by what each part shows
+Migration shown to a new user|When a migration is shown to a new user|say it in the words of the task, not of the code
+Migration changes in a release|When a migration changes in a release|name the change in the release note
+Feature flag added|When a feature flag is added|keep it next to the code that uses it
+Feature flag renamed|When a feature flag is renamed|rename every reader in the same commit
+Feature flag kept short|When a feature flag grows past one screen|split it by what each part shows
+Feature flag shown to a new user|When a feature flag is shown to a new user|say it in the words of the task, not of the code
+Feature flag changes in a release|When a feature flag changes in a release|name the change in the release note
+Cron job added|When a cron job is added|keep it next to the code that uses it
+Cron job renamed|When a cron job is renamed|rename every reader in the same commit
+Cron job kept short|When a cron job grows past one screen|split it by what each part shows
+Cron job shown to a new user|When a cron job is shown to a new user|say it in the words of the task, not of the code
+Cron job changes in a release|When a cron job changes in a release|name the change in the release note
+Readme section added|When a README section is added|keep it next to the code that uses it
+Readme section renamed|When a README section is renamed|rename every reader in the same commit
+Readme section kept short|When a README section grows past one screen|split it by what each part shows
+Readme section shown to a new user|When a README section is shown to a new user|say it in the words of the task, not of the code
+Readme section changes in a release|When a README section changes in a release|name the change in the release note
+Dependency added|When a dependency is added|keep it next to the code that uses it
+Dependency renamed|When a dependency is renamed|rename every reader in the same commit
+Dependency kept short|When a dependency grows past one screen|split it by what each part shows
+Dependency shown to a new user|When a dependency is shown to a new user|say it in the words of the task, not of the code
+Dependency changes in a release|When a dependency changes in a release|name the change in the release note
+Timeout added|When a timeout is added|keep it next to the code that uses it
+Timeout renamed|When a timeout is renamed|rename every reader in the same commit
+Timeout kept short|When a timeout grows past one screen|split it by what each part shows
+Timeout shown to a new user|When a timeout is shown to a new user|say it in the words of the task, not of the code
+Timeout changes in a release|When a timeout changes in a release|name the change in the release note
+File name added|When a file name is added|keep it next to the code that uses it
+File name renamed|When a file name is renamed|rename every reader in the same commit
+File name kept short|When a file name grows past one screen|split it by what each part shows
+File name shown to a new user|When a file name is shown to a new user|say it in the words of the task, not of the code
+File name changes in a release|When a file name changes in a release|name the change in the release note
+Branch name added|When a branch name is added|keep it next to the code that uses it
+Branch name renamed|When a branch name is renamed|rename every reader in the same commit
+Branch name kept short|When a branch name grows past one screen|split it by what each part shows
+Branch name shown to a new user|When a branch name is shown to a new user|say it in the words of the task, not of the code
+Branch name changes in a release|When a branch name changes in a release|name the change in the release note
+Modal dialog added|When a modal dialog is added|keep it next to the code that uses it
+Modal dialog renamed|When a modal dialog is renamed|rename every reader in the same commit
+Modal dialog kept short|When a modal dialog grows past one screen|split it by what each part shows
+Modal dialog shown to a new user|When a modal dialog is shown to a new user|say it in the words of the task, not of the code
+Modal dialog changes in a release|When a modal dialog changes in a release|name the change in the release note
+Tooltip added|When a tooltip is added|keep it next to the code that uses it
+Tooltip renamed|When a tooltip is renamed|rename every reader in the same commit
+Tooltip kept short|When a tooltip grows past one screen|split it by what each part shows
+Tooltip shown to a new user|When a tooltip is shown to a new user|say it in the words of the task, not of the code
+Tooltip changes in a release|When a tooltip changes in a release|name the change in the release note
+Icon added|When an icon is added|keep it next to the code that uses it
+Icon renamed|When an icon is renamed|rename every reader in the same commit
+Icon kept short|When an icon grows past one screen|split it by what each part shows
+Icon shown to a new user|When an icon is shown to a new user|say it in the words of the task, not of the code
+Icon changes in a release|When an icon changes in a release|name the change in the release note
+Value-first error message|When an error message is written for a value the person gave|start with the value they gave in double quotes, then a colon, then the word give and what to give instead, such as '"-3": give a whole number from 1 to 999'
+Colour token added|When a colour token is added|keep it next to the code that uses it
+Colour token renamed|When a colour token is renamed|rename every reader in the same commit
+Colour token kept short|When a colour token grows past one screen|split it by what each part shows
+Colour token shown to a new user|When a colour token is shown to a new user|say it in the words of the task, not of the code
+Colour token changes in a release|When a colour token changes in a release|name the change in the release note
+Font size added|When a font size is added|keep it next to the code that uses it
+Font size renamed|When a font size is renamed|rename every reader in the same commit
+Font size kept short|When a font size grows past one screen|split it by what each part shows
+Font size shown to a new user|When a font size is shown to a new user|say it in the words of the task, not of the code
+Font size changes in a release|When a font size changes in a release|name the change in the release note
+Progress bar added|When a progress bar is added|keep it next to the code that uses it
+Progress bar renamed|When a progress bar is renamed|rename every reader in the same commit
+Progress bar kept short|When a progress bar grows past one screen|split it by what each part shows
+Progress bar shown to a new user|When a progress bar is shown to a new user|say it in the words of the task, not of the code
+Progress bar changes in a release|When a progress bar changes in a release|name the change in the release note
+Empty state added|When an empty state is added|keep it next to the code that uses it
+Empty state renamed|When an empty state is renamed|rename every reader in the same commit
+Empty state kept short|When an empty state grows past one screen|split it by what each part shows
+Empty state shown to a new user|When an empty state is shown to a new user|say it in the words of the task, not of the code
+Empty state changes in a release|When an empty state changes in a release|name the change in the release note
+Search box added|When a search box is added|keep it next to the code that uses it
+Search box renamed|When a search box is renamed|rename every reader in the same commit
+Search box kept short|When a search box grows past one screen|split it by what each part shows
+Search box shown to a new user|When a search box is shown to a new user|say it in the words of the task, not of the code
+Search box changes in a release|When a search box changes in a release|name the change in the release note
+Sort order added|When a sort order is added|keep it next to the code that uses it
+Sort order renamed|When a sort order is renamed|rename every reader in the same commit
+Sort order kept short|When a sort order grows past one screen|split it by what each part shows
+Sort order shown to a new user|When a sort order is shown to a new user|say it in the words of the task, not of the code
+Sort order changes in a release|When a sort order changes in a release|name the change in the release note
+Page title added|When a page title is added|keep it next to the code that uses it
+Page title renamed|When a page title is renamed|rename every reader in the same commit
+Page title kept short|When a page title grows past one screen|split it by what each part shows
+Page title shown to a new user|When a page title is shown to a new user|say it in the words of the task, not of the code
+Page title changes in a release|When a page title changes in a release|name the change in the release note
+Url path added|When a URL path is added|keep it next to the code that uses it
+Url path renamed|When a URL path is renamed|rename every reader in the same commit
+Url path kept short|When a URL path grows past one screen|split it by what each part shows
+Url path shown to a new user|When a URL path is shown to a new user|say it in the words of the task, not of the code
+Url path changes in a release|When a URL path changes in a release|name the change in the release note
+Api field added|When an API field is added|keep it next to the code that uses it
+Api field renamed|When an API field is renamed|rename every reader in the same commit
+Api field kept short|When an API field grows past one screen|split it by what each part shows
+Api field shown to a new user|When an API field is shown to a new user|say it in the words of the task, not of the code
+Api field changes in a release|When an API field changes in a release|name the change in the release note
+Webhook added|When a webhook is added|keep it next to the code that uses it
+Webhook renamed|When a webhook is renamed|rename every reader in the same commit
+Webhook kept short|When a webhook grows past one screen|split it by what each part shows
+Webhook shown to a new user|When a webhook is shown to a new user|say it in the words of the task, not of the code
+Webhook changes in a release|When a webhook changes in a release|name the change in the release note
+Queue message added|When a queue message is added|keep it next to the code that uses it
+Queue message renamed|When a queue message is renamed|rename every reader in the same commit
+Queue message kept short|When a queue message grows past one screen|split it by what each part shows
+Queue message shown to a new user|When a queue message is shown to a new user|say it in the words of the task, not of the code
+Queue message changes in a release|When a queue message changes in a release|name the change in the release note
+Lock file added|When a lock file is added|keep it next to the code that uses it
+Lock file renamed|When a lock file is renamed|rename every reader in the same commit
+Lock file kept short|When a lock file grows past one screen|split it by what each part shows
+Lock file shown to a new user|When a lock file is shown to a new user|say it in the words of the task, not of the code
+Lock file changes in a release|When a lock file changes in a release|name the change in the release note
+Docker image added|When a Docker image is added|keep it next to the code that uses it
+Docker image renamed|When a Docker image is renamed|rename every reader in the same commit
+Docker image kept short|When a Docker image grows past one screen|split it by what each part shows
+Docker image shown to a new user|When a Docker image is shown to a new user|say it in the words of the task, not of the code
+Docker image changes in a release|When a Docker image changes in a release|name the change in the release note
+Env var added|When an env var is added|keep it next to the code that uses it
+Env var renamed|When an env var is renamed|rename every reader in the same commit
+Env var kept short|When an env var grows past one screen|split it by what each part shows
+Env var shown to a new user|When an env var is shown to a new user|say it in the words of the task, not of the code
+Env var changes in a release|When an env var changes in a release|name the change in the release note
+Secret added|When a secret is added|keep it next to the code that uses it
+Secret renamed|When a secret is renamed|rename every reader in the same commit
+Secret kept short|When a secret grows past one screen|split it by what each part shows
+Secret shown to a new user|When a secret is shown to a new user|say it in the words of the task, not of the code
+Secret changes in a release|When a secret changes in a release|name the change in the release note
+Metric name added|When a metric name is added|keep it next to the code that uses it
+Metric name renamed|When a metric name is renamed|rename every reader in the same commit
+Metric name kept short|When a metric name grows past one screen|split it by what each part shows
+Metric name shown to a new user|When a metric name is shown to a new user|say it in the words of the task, not of the code
+Metric name changes in a release|When a metric name changes in a release|name the change in the release note
+Dashboard tile added|When a dashboard tile is added|keep it next to the code that uses it
+Dashboard tile renamed|When a dashboard tile is renamed|rename every reader in the same commit
+Dashboard tile kept short|When a dashboard tile grows past one screen|split it by what each part shows
+Dashboard tile shown to a new user|When a dashboard tile is shown to a new user|say it in the words of the task, not of the code
+Dashboard tile changes in a release|When a dashboard tile changes in a release|name the change in the release note
+Release note added|When a release note is added|keep it next to the code that uses it
+Release note renamed|When a release note is renamed|rename every reader in the same commit
+Release note kept short|When a release note grows past one screen|split it by what each part shows
+Release note shown to a new user|When a release note is shown to a new user|say it in the words of the task, not of the code
+Release note changes in a release|When a release note changes in a release|name the change in the release note
+Changelog line added|When a changelog line is added|keep it next to the code that uses it
+Changelog line renamed|When a changelog line is renamed|rename every reader in the same commit
+Changelog line kept short|When a changelog line grows past one screen|split it by what each part shows
+Changelog line shown to a new user|When a changelog line is shown to a new user|say it in the words of the task, not of the code
+Changelog line changes in a release|When a changelog line changes in a release|name the change in the release note
+Code review comment added|When a code review comment is added|keep it next to the code that uses it
+Code review comment renamed|When a code review comment is renamed|rename every reader in the same commit
+Code review comment kept short|When a code review comment grows past one screen|split it by what each part shows
+Code review comment shown to a new user|When a code review comment is shown to a new user|say it in the words of the task, not of the code
+Code review comment changes in a release|When a code review comment changes in a release|name the change in the release note
+Docstring added|When a docstring is added|keep it next to the code that uses it
+Docstring renamed|When a docstring is renamed|rename every reader in the same commit
+Docstring kept short|When a docstring grows past one screen|split it by what each part shows
+Docstring shown to a new user|When a docstring is shown to a new user|say it in the words of the task, not of the code
+Docstring changes in a release|When a docstring changes in a release|name the change in the release note
+Type name added|When a type name is added|keep it next to the code that uses it
+Type name renamed|When a type name is renamed|rename every reader in the same commit
+Type name kept short|When a type name grows past one screen|split it by what each part shows
+Type name shown to a new user|When a type name is shown to a new user|say it in the words of the task, not of the code
+Type name changes in a release|When a type name changes in a release|name the change in the release note
+Module folder added|When a module folder is added|keep it next to the code that uses it
+Module folder renamed|When a module folder is renamed|rename every reader in the same commit
+Module folder kept short|When a module folder grows past one screen|split it by what each part shows
+Module folder shown to a new user|When a module folder is shown to a new user|say it in the words of the task, not of the code
+Module folder changes in a release|When a module folder changes in a release|name the change in the release note
+Benchmark added|When a benchmark is added|keep it next to the code that uses it
+Benchmark renamed|When a benchmark is renamed|rename every reader in the same commit
+Benchmark kept short|When a benchmark grows past one screen|split it by what each part shows
+Benchmark shown to a new user|When a benchmark is shown to a new user|say it in the words of the task, not of the code
+Benchmark changes in a release|When a benchmark changes in a release|name the change in the release note
