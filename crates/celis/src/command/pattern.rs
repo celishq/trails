@@ -140,15 +140,29 @@ pub(crate) fn like<'a>(
     replaced: Option<Pattern>,
 ) -> Vec<Pattern<'a>> {
     let asked = words(when(content));
+    nearest(live, &when_words(live), &asked, replaced.as_ref())
+}
+
+/// The words of the "When" of each of `live`, in its order.
+pub(crate) fn when_words(live: &[Pattern]) -> Vec<HashSet<String>> {
+    live.iter()
+        .map(|p| words(when(&p.record.content)))
+        .collect()
+}
+
+/// At most `LIKE` of `live`, other than `replaced`, whose words of `sets` share `SHARED` or more with
+/// `asked`, those that share the most first.
+pub(crate) fn nearest<'a>(
+    live: &[Pattern<'a>],
+    sets: &[HashSet<String>],
+    asked: &HashSet<String>,
+    replaced: Option<&Pattern>,
+) -> Vec<Pattern<'a>> {
     let mut found: Vec<(usize, &Pattern<'a>)> = live
         .iter()
-        .filter(|p| replaced.as_ref().is_none_or(|r| r.id() != p.id()))
-        .map(|p| {
-            (
-                words(when(&p.record.content)).intersection(&asked).count(),
-                p,
-            )
-        })
+        .zip(sets)
+        .filter(|(p, _)| replaced.is_none_or(|r| r.id() != p.id()))
+        .map(|(p, set)| (set.intersection(asked).count(), p))
         .filter(|(n, _)| *n >= SHARED)
         .collect();
     found.sort_by_key(|(n, _)| std::cmp::Reverse(*n));

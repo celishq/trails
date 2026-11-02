@@ -1,6 +1,6 @@
 //! A live pattern that needs tidy, and why.
 
-use crate::command::pattern::like;
+use crate::command::pattern::{nearest, when_words};
 use celis_patterns::{Flaw, Pattern, PatternStore};
 use celis_store::records::id::short;
 use celis_store::Store;
@@ -41,25 +41,35 @@ impl<'a> Candidate<'a> {
             .all()
             .into_iter()
             .any(|s| s.record().anchor.project == project && !s.uses().is_empty());
+        let mut misled: HashMap<&str, usize> = HashMap::new();
+        let mut used: HashMap<&str, u64> = HashMap::new();
+        for step in steps.all() {
+            for (id, _) in step.misled() {
+                *misled.entry(id).or_default() += 1;
+            }
+            for id in step.uses() {
+                used.insert(id, step.note().created_at);
+            }
+        }
+        let sets = when_words(&live);
         let replaced: HashMap<&str, Option<&str>> = patterns
             .every()
             .iter()
             .map(|p| (p.id(), p.record.replaces.as_deref()))
             .collect();
         live.iter()
+            .zip(&sets)
             .rev()
-            .map(|pattern| {
+            .map(|(pattern, set)| {
                 let id = pattern.id();
                 let mut reasons = Vec::new();
-                if steps.misled(id).len() >= MISLED {
+                if misled.get(id).copied().unwrap_or(0) >= MISLED {
                     reasons.push("misled".to_string());
                 }
-                if let Some(near) =
-                    like(&live, &pattern.record.content, Some(pattern.clone())).first()
-                {
+                if let Some(near) = nearest(&live, &sets, set, Some(pattern)).first() {
                     reasons.push(format!("near:{}", short(near.id())));
                 }
-                let used = steps.uses(id).first().map(|s| s.note().created_at);
+                let used = used.get(id).copied();
                 if using && pattern.note.created_at <= since && used.is_none_or(|at| at < since) {
                     reasons.push("unused".to_string());
                 }
