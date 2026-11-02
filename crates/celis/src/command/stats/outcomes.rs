@@ -40,11 +40,6 @@ impl Outcomes {
         self.reused + self.new
     }
 
-    /// The reused steps among the successful ones, in whole per cent.
-    pub fn reuse_rate(self) -> i64 {
-        percent(self.reused, self.successful())
-    }
-
     /// The first-pass steps among the resolved ones, in whole per cent.
     pub fn first_pass_rate(self) -> i64 {
         percent(self.first_pass(), self.resolved())

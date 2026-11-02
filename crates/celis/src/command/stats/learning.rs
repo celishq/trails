@@ -15,7 +15,7 @@ pub(super) fn panels() -> [Panel; 2] {
     [
         Panel {
             name: "Reuse",
-            says: "steps done with a pattern".into(),
+            says: "asks done with a pattern".into(),
             start: 0.3,
             draw: reuse,
         },
@@ -102,7 +102,7 @@ fn worth(s: &mut Sheet, m: &Moment, x: u16, y: u16, _: u16) -> u16 {
 pub(super) fn top(m: &Moment) -> Option<Panel> {
     (!m.month.top.is_empty()).then(|| Panel {
         name: "Top patterns",
-        says: "most hits".into(),
+        says: "most uses".into(),
         start: 0.5,
         draw: patterns_hit,
     })
@@ -143,22 +143,21 @@ fn patterns_hit(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
 /// The full length of a week's reuse bar: the highest weekly reuse rate of the four weeks, rounded up
 /// to ten, at least ten.
 pub(super) fn most(m: &Moment) -> i64 {
-    let weeks = m.month.weeks();
-    let most = weeks.iter().map(|w| w.reuse_rate()).max().unwrap_or(0);
+    let weeks = m.month.reuse_weeks();
+    let most = weeks.iter().filter_map(|w| w.percent()).max().unwrap_or(0);
     (most.max(1) + 9) / 10 * 10
 }
 
-/// Reuse, in cyan: the reused steps with their change, the earlier trails they came from, and the reuse
-/// rate of each of the last four weeks as a bar; the rows it takes. The rate of the 14 days stands on
-/// its tile.
+/// Reuse, in cyan: the reused asks with their change, and the reuse rate of each of the last four weeks
+/// as a bar; the rows it takes. The rate of the 14 days stands on its tile.
 fn reuse(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
-    let now = m.now();
+    let (now, prior) = (m.month.reuse_now(), m.month.reuse_prior());
     let mut row = y + 2;
     let lead = vec![
         paint(CYAN.patch(BOLD), &now.reused.to_string()),
-        paint(DIM, &format!(" reused {}", plural(now.reused, "step"))),
+        paint(DIM, &format!(" reused {}", plural(now.reused, "ask"))),
     ];
-    let before = m.before(|o| o.reused as i64);
+    let before = (prior.asks > 0).then_some(prior.reused as i64);
     let reused = (Some(now.reused as i64), before);
     let cell = m.measure(lead, reused, Kind::Count, true);
     row += s.measures(m.grid(), (x + 2, row, x + w - 3), &[cell], 0) + 1;
@@ -166,7 +165,7 @@ fn reuse(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
     let bar = m.bars(x, w);
     let value = x + w - 7;
     let most = most(m) as f64;
-    for (n, week) in m.month.weeks().iter().enumerate() {
+    for (n, week) in m.month.reuse_weeks().iter().enumerate() {
         let k = ease((m.t - 0.6 - n as f64 * 0.12) / 0.5);
         let lit = n == 3;
         let first = m.date(n * 7);
@@ -179,9 +178,9 @@ fn reuse(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
         let r = row + 1 + n as u16;
         let look = if lit { BOLD } else { DIM };
         s.put(x + 2, r, &name, look);
-        let share = week.reuse_rate() as f64 / most * k;
+        let share = week.percent().unwrap_or(0) as f64 / most * k;
         s.bar(bar, r, share, value.saturating_sub(bar + 2).max(3), CYAN);
-        s.put(value, r, &format!("{:>3}%", week.reuse_rate()), look);
+        s.put(value, r, &format!("{:>4}", week.text()), look);
     }
     row + 5 - y + 2
 }

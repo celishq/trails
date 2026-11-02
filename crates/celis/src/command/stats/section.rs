@@ -127,7 +127,7 @@ impl Section {
         y + height + 1
     }
 
-    /// Its key measures that the tiles do not show as cells of a table in one unit, steps or time, each
+    /// Its key measures that the tiles do not show as cells of a table in one unit, steps, asks or time, each
     /// value in the colour of its details, with its change in that unit after it.
     fn summary(self, m: &Moment) -> Vec<Cell> {
         let (now, month) = (m.now(), m.month);
@@ -149,14 +149,22 @@ impl Section {
                     lead(MAGENTA, now.applied.to_string(), "applied a pattern"),
                     steps(now.applied, |o| o.applied, true),
                 ),
-                (
-                    lead(
-                        CYAN,
-                        now.reused.to_string(),
-                        &format!("reused {}", plural(now.reused, "step")),
-                    ),
-                    steps(now.reused, |o| o.reused, true),
-                ),
+                {
+                    let (reuse, prior) = (month.reuse_now(), month.reuse_prior());
+                    let reused = reuse.reused as i64;
+                    let before = (prior.asks > 0).then_some(prior.reused as i64);
+                    let change = before
+                        .filter(|before| *before != reused)
+                        .map(|before| Kind::Count.change(Some(reused), Some(before), true));
+                    (
+                        lead(
+                            CYAN,
+                            reuse.reused.to_string(),
+                            &format!("reused {}", plural(reuse.reused, "ask")),
+                        ),
+                        change.into_iter().flatten().flatten().collect(),
+                    )
+                },
             ],
             Section::Quality => vec![
                 (
@@ -199,14 +207,15 @@ impl Section {
         let (now, month) = (m.now(), m.month);
         match self {
             Section::Learning => {
-                let weeks = month.weeks();
+                let weeks = month.reuse_weeks();
                 let most = most(m) as f64;
                 for (n, week) in weeks.iter().enumerate() {
-                    let level = (week.reuse_rate() as f64 / most * 8.0).round_ties_even() as usize;
+                    let rate = week.percent().unwrap_or(0) as f64;
+                    let level = (rate / most * 8.0).round_ties_even() as usize;
                     s.put(x + n as u16 * 2, y, SPARK[level.clamp(1, 8)], CYAN);
                 }
-                let (first, last) = (weeks[0].reuse_rate(), weeks[3].reuse_rate());
-                s.put(x + 8, y, &format!("{first}% → {last}% by week"), DIM);
+                let (first, last) = (weeks[0].text(), weeks[3].text());
+                s.put(x + 8, y, &format!("{first} → {last} by week"), DIM);
             }
             Section::Quality => {
                 let parts = [

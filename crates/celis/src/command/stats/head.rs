@@ -7,14 +7,23 @@ use super::sheet::Sheet;
 use crate::terminal::canvas::{paint, BOLD, CYAN, DIM, FRAME, MAGENTA};
 use crate::terminal::unfold::{ease, mix, toward};
 use crate::text::clock::day;
+use crate::text::line::plural;
 use ratatui::style::{Color, Style};
 
 /// The rows a headline tile takes.
 const TILE: u16 = 10;
 
 /// A headline tile: its name, its value and the prior one, whether more is better, what it counts,
-/// and the base it is counted from.
-type Tile = (&'static str, Option<i64>, Option<i64>, bool, Kind, String);
+/// the base it is counted from, and the text its value ends on when that is not the value itself.
+type Tile = (
+    &'static str,
+    Option<i64>,
+    Option<i64>,
+    bool,
+    Kind,
+    String,
+    Option<String>,
+);
 
 /// The head on row 0: `CELIS STATS` and the dates of the last 14 days, the trails active now at the
 /// right after a dot that pulses while one is.
@@ -56,12 +65,12 @@ pub(super) fn total(s: &mut Sheet, m: &Moment, y: u16) -> u16 {
         ),
         (
             grouped(up(total.reused as u64) as usize),
-            "reused steps",
+            "reused asks",
             CYAN,
         ),
         (
             grouped(up(total.hits as u64) as usize),
-            "pattern hits",
+            "pattern uses",
             MAGENTA,
         ),
         (
@@ -159,14 +168,16 @@ pub(super) fn headline(s: &mut Sheet, m: &Moment, y: u16) -> u16 {
     let month = m.month;
     let k = ease((m.t - 0.1) / 0.9);
     let counted = |v: i64| (v as f64 * k).round_ties_even() as i64;
+    let (reuse, reuse_prior) = (month.reuse_now(), month.reuse_prior());
     let tiles: [Tile; 4] = [
         (
             "Reuse rate",
-            Some(now.reuse_rate()),
-            m.before(|o| o.reuse_rate()),
+            reuse.percent(),
+            reuse_prior.percent(),
             true,
             Kind::Share,
-            format!("{} of {} successful", now.reused, now.successful()),
+            format!("{} of {}", reuse.reused, plural(reuse.asks, "ask")),
+            Some(reuse.text()),
         ),
         (
             "First-pass success",
@@ -175,6 +186,7 @@ pub(super) fn headline(s: &mut Sheet, m: &Moment, y: u16) -> u16 {
             true,
             Kind::Share,
             format!("{} of {} resolved", now.first_pass(), now.resolved()),
+            None,
         ),
         (
             "Resolved steps",
@@ -183,6 +195,7 @@ pub(super) fn headline(s: &mut Sheet, m: &Moment, y: u16) -> u16 {
             true,
             Kind::Count,
             format!("{:.1} a day", now.resolved() as f64 / HALF as f64),
+            None,
         ),
         (
             "Median step time",
@@ -194,9 +207,10 @@ pub(super) fn headline(s: &mut Sheet, m: &Moment, y: u16) -> u16 {
             false,
             Kind::Time,
             format!("of {} successful", now.successful()),
+            None,
         ),
     ];
-    for (n, (name, value, before, up, kind, base)) in tiles.into_iter().enumerate() {
+    for (n, (name, value, before, up, kind, base, ends)) in tiles.into_iter().enumerate() {
         let n = n as u16;
         let (x, w) = grid.span((n % per) * tracks, (n % per + 1) * tracks);
         let top = y + (n / per) * (TILE + 1);
@@ -211,7 +225,10 @@ pub(super) fn headline(s: &mut Sheet, m: &Moment, y: u16) -> u16 {
                 let shown = counted(v);
                 format!("{}:{:02}", shown / 60, shown % 60)
             }
-            (Some(v), Kind::Share) => format!("{}%", counted(v)),
+            (Some(v), Kind::Share) => match (ends, counted(v) == v) {
+                (Some(ends), true) => ends,
+                _ => format!("{}%", counted(v)),
+            },
             (Some(v), _) => counted(v).to_string(),
         };
         s.big(x + 4, top + 2, &text, Style::new());

@@ -134,13 +134,14 @@ impl Desk {
 
 /// A store of `shop` whose steps 20 days ago and today end each way: a step done new 20 days ago, then
 /// today one done that applies a pattern, one done that a later step revises, the revision,
-/// and one dropped.
+/// and one dropped; each ask done after its steps.
 pub(super) fn shop() -> Desk {
     let mut desk = Desk::new();
     let day = 86_400;
     let old = desk.add(20 * day, "shop", None, "the old trail", &[], None);
     let source = desk.add(20 * day, "shop", Some(&old), "the source", &[], None);
     desk.done(20 * day - 600, 600, &source);
+    desk.done(20 * day - 700, 0, &old);
     let pattern = desk.pattern(3_000, "shop");
     let trail = desk.add(3_000, "shop", None, "the trail", &[], None);
     let reused = desk.add(3_000, "shop", Some(&trail), "reused", &[&pattern], None);
@@ -149,8 +150,10 @@ pub(super) fn shop() -> Desk {
     desk.done(2_700, 300, &reused);
     desk.done(1_500, 1_200, &revised);
     desk.drop(1_200, 240, &dropped);
+    desk.done(1_000, 0, &trail);
     let next = desk.add(900, "shop", None, "the next trail", &[], None);
     let fix = desk.add(900, "shop", Some(&next), "the fix", &[], Some(&revised));
     desk.done(600, 60, &fix);
+    desk.done(500, 0, &next);
     desk
 }

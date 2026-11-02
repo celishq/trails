@@ -16,7 +16,6 @@ fn each_closed_step_counts_once_by_how_it_ended() {
     };
     assert_eq!(month.now(), now);
     assert_eq!(month.now().resolved(), 4);
-    assert_eq!(month.now().reuse_rate(), 33);
     assert_eq!(month.now().first_pass_rate(), 50);
     assert_eq!(month.days[DAYS - 1], now);
 }
@@ -79,4 +78,16 @@ fn a_drop_after_the_trail_went_quiet_counts_no_time() {
     let left = desk.add(4 * 3_600, "shop", Some(&trail), "left", &[], None);
     desk.drop(60, 2 * 3_600, &left);
     assert_eq!(desk.month().projects, vec![]);
+}
+
+/// The month keeps the pattern reuse of the asks done each day, and sums it for each half and each week
+/// (`DESIGN.md`, decision 19).
+#[test]
+fn the_month_sums_the_reuse_of_the_asks_done() {
+    let month = shop().month();
+    let (now, prior) = (month.reuse_now(), month.reuse_prior());
+    assert_eq!((now.asks, now.reused, now.count()), (2, 1, 1));
+    assert_eq!((prior.asks, prior.reused), (1, 0));
+    assert_eq!(month.reuse_weeks()[3].text(), "50%");
+    assert_eq!(month.top.len(), 1);
 }

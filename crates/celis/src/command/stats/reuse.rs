@@ -1,6 +1,6 @@
 //! The one measure of pattern reuse that every view of stats reads (`DESIGN.md`, decision 19).
 
-use super::outcomes::percent;
+use super::outcomes::{percent, share};
 use celis_trails::{State, Step, Steps};
 use std::collections::BTreeMap;
 
@@ -44,6 +44,19 @@ impl Reuse {
         reuse
     }
 
+    /// The reuse of every span of `spans` together.
+    pub fn sum(spans: &[Reuse]) -> Reuse {
+        let mut sum = Reuse::default();
+        for span in spans {
+            sum.asks += span.asks;
+            sum.reused += span.reused;
+            for (id, n) in &span.uses {
+                *sum.uses.entry(id.clone()).or_default() += n;
+            }
+        }
+        sum
+    }
+
     /// The pattern uses.
     pub fn count(&self) -> usize {
         self.uses.values().sum()
@@ -52,6 +65,11 @@ impl Reuse {
     /// The reused asks among the done ones, in whole per cent; none with no ask done.
     pub fn percent(&self) -> Option<i64> {
         (self.asks > 0).then(|| percent(self.reused, self.asks))
+    }
+
+    /// The share as a view shows it (`outcomes::share`).
+    pub fn text(&self) -> String {
+        share(self.reused, self.asks)
     }
 
     /// Each pattern with its uses, most first, then by id.
