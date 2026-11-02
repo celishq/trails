@@ -53,6 +53,14 @@ impl Reuse {
     pub fn percent(&self) -> Option<i64> {
         (self.asks > 0).then(|| percent(self.reused, self.asks))
     }
+
+    /// Each pattern with its uses, most first, then by id.
+    pub fn top(&self) -> Vec<(&str, usize)> {
+        let mut top: Vec<(&str, usize)> =
+            self.uses.iter().map(|(id, n)| (id.as_str(), *n)).collect();
+        top.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(b.0)));
+        top
+    }
 }
 
 #[cfg(test)]

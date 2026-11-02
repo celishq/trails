@@ -7,21 +7,27 @@ use super::face::face;
 use super::{nothing, Card, DAYS};
 use crate::progress::Model;
 use crate::terminal::ink::Ink;
+use celis_patterns::Pattern;
 
-/// The patterns used: the pattern uses of each day of `window` against the 14 days before, then the
-/// patterns used most.
+/// The patterns used: the pattern uses of the asks done in each day of `window` against the 14 days
+/// before, then the live patterns used most in the last 14 days (`DESIGN.md`, decision 19).
 pub(super) fn patterns(model: &Model, window: &Window, inside: usize, ink: Ink) -> Card {
-    let (patterns, reuse) = (model.patterns, model.reuse);
-    let used = reuse.used(patterns);
+    let patterns = model.patterns;
+    let reuse = window.last.reuse();
+    let used: Vec<(Pattern, usize)> = reuse
+        .top()
+        .into_iter()
+        .filter_map(|(id, n)| Some((patterns.find(id).ok()?, n)))
+        .collect();
     let top = used.iter().take(3);
     let top: Vec<(String, usize)> = top
         .map(|(p, n)| (p.record.brief().trim_start_matches("When ").into(), *n))
         .collect();
-    let none = match used.is_empty() {
+    let none = match model.reuse.used(patterns).is_empty() {
         true => "no pattern used yet".to_string(),
         false => nothing("pattern used"),
     };
-    let daily = Daily::new(window, |p| reuse.uses_of(&p.added(), patterns));
+    let daily = Daily::new(window, |p| p.reuse().count());
     let face = face(&daily, ("pattern uses", &none), &top, inside, ink);
     let rows = used
         .iter()

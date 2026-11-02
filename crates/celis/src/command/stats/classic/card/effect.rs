@@ -1,5 +1,6 @@
 //! The effect card: as planned, rework and patterns reused, against the 14 days before.
 
+use super::super::super::outcomes::{percent, share};
 use super::super::table::{Row, Table};
 use super::super::{Period, Window};
 use super::change::Change;
@@ -13,12 +14,13 @@ use ratatui::text::Span;
 /// The fewest records a number of the effect counts before it shows a change.
 const FEW: usize = 10;
 
-/// One number of the effect: its label, its share in each period, what its part holds of the steps
-/// done, and whether more is better.
+/// One number of the effect: its label, its share in each period, what its base counts, what its part
+/// holds of the base, and whether more is better.
 struct Measure {
     label: &'static str,
     last: Share,
     before: Share,
+    noun: &'static str,
     part: &'static str,
     up: bool,
 }
@@ -35,14 +37,14 @@ impl Share {
         Share { part, base }
     }
 
-    /// `part` in `base`, in percent; none with no records.
+    /// `part` in `base`, in whole percent; none with no records.
     fn percent(self) -> Option<i64> {
-        (self.base > 0).then(|| (self.part * 100 / self.base) as i64)
+        (self.base > 0).then(|| percent(self.part, self.base))
     }
 
-    /// The percent as the card shows it, `—` with no records.
+    /// The percent as the card shows it.
     fn text(self) -> String {
-        self.percent().map_or("—".to_string(), |v| format!("{v}%"))
+        share(self.part, self.base)
     }
 }
 
@@ -60,8 +62,34 @@ impl Measure {
             label,
             last: share(&window.last),
             before: share(&window.before),
+            noun: "step",
             part,
             up,
+        }
+    }
+
+    /// The share of the asks done in each span of `window` that used a pattern (`DESIGN.md`, decision
+    /// 19).
+    fn reuse(window: &Window) -> Measure {
+        let share = |p: &Period| {
+            let reuse = p.reuse();
+            Share::new(reuse.reused, reuse.asks)
+        };
+        Measure {
+            label: "PATTERNS REUSED",
+            last: share(&window.last),
+            before: share(&window.before),
+            noun: "ask",
+            part: "used a pattern",
+            up: true,
+        }
+    }
+
+    /// `of <n> done,` of steps, `of <n> asks,` of another noun.
+    fn of(&self) -> String {
+        match self.noun {
+            "step" => format!("of {} done,", self.last.base),
+            noun => format!("of {},", plural(self.last.base, noun)),
         }
     }
 
@@ -95,13 +123,7 @@ pub(super) fn effect(window: &Window, inside: usize, ink: Ink) -> Card {
     let measures = [
         Measure::new("AS PLANNED", Period::planned, window, "no change", true),
         Measure::new("REWORK", Period::reworked, window, "revised", false),
-        Measure::new(
-            "PATTERNS REUSED",
-            Period::using,
-            window,
-            "used a pattern",
-            true,
-        ),
+        Measure::reuse(window),
     ];
     let column = (inside / measures.len()).max(1);
     let cell = |text: Span<'static>| pad(clip(&Styled::from(text), column - 1), column);
@@ -117,15 +139,11 @@ pub(super) fn effect(window: &Window, inside: usize, ink: Ink) -> Card {
             changes.into_iter().map(|c| cell(c.unwrap_or_default())),
         ));
     }
-    let counts = |m: &Measure| format!("of {} done, {}", m.last.base, m.part);
+    let counts = |m: &Measure| format!("{} {}", m.of(), m.part);
     match measures.iter().all(|m| counts(m).chars().count() < column) {
         true => face.push(join(measures.iter().map(|m| cell(ink.dim(&counts(m)))))),
         false => face.extend([
-            join(
-                measures
-                    .iter()
-                    .map(|m| cell(ink.dim(&format!("of {} done,", m.last.base)))),
-            ),
+            join(measures.iter().map(|m| cell(ink.dim(&m.of())))),
             join(measures.iter().map(|m| cell(ink.dim(m.part)))),
         ]),
     }
@@ -137,7 +155,7 @@ pub(super) fn effect(window: &Window, inside: usize, ink: Ink) -> Card {
                 title_case(m.label),
                 m.last.text(),
                 m.before.text(),
-                plural(m.last.base, "step"),
+                plural(m.last.base, m.noun),
             ],
         })
         .collect();

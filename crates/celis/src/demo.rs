@@ -277,8 +277,8 @@ impl Demo {
         Ok(())
     }
 
-    /// Writes a trail of three steps each day from 27 days to 3 days ago, in turn in each project: the
-    /// first uses a pattern, the others take less time than the steps of a week before. The later
+    /// Writes a trail of three steps each day from 27 days to 3 days ago, closed done after them, in turn
+    /// in each project: the first uses a pattern, the others take less time than the steps of a week before. The later
     /// two weeks change, revise and take longer less often, and use patterns more.
     fn history(&self, shop: &Anchor, crm: &Anchor) -> Result<(), Failure> {
         let start = 28 * DAY;
@@ -354,6 +354,7 @@ impl Demo {
                 )?;
                 self.finish(at - 4_200, 240, &fix, "fixed", None)?;
             }
+            self.close(at - 4_500, &trail, "it all works", None)?;
             let [a, b, c]: [(String, u64); 3] =
                 ids.try_into().map_err(|_| anyhow::anyhow!("three steps"))?;
             days.push([a, b, c]);

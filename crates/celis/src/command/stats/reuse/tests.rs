@@ -49,4 +49,5 @@ fn reuse_counts_done_asks_whose_tree_names_a_pattern() {
     });
     assert_eq!((reuse.asks, reuse.reused, reuse.count()), (4, 3, 3));
     assert_eq!(reuse.percent(), Some(75));
+    assert_eq!(reuse.top().len(), 1);
 }

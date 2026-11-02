@@ -1,10 +1,11 @@
 //! The work of a store in one span of time.
 
+use super::super::reuse::Reuse;
 use crate::progress::Flags;
 use celis_trails::{Step, Steps};
 
-/// The work of a store from `from` up to `to`: the steps done, added and closed in that time. An ask
-/// with steps under it counts as none of them.
+/// The work of a store from `from` up to `to`: the steps done and closed in that time, and the reuse of
+/// the asks done in it. An ask with steps under it counts as none of the steps.
 pub struct Period<'a> {
     steps: &'a Steps<'a>,
     from: u64,
@@ -46,17 +47,9 @@ impl<'a> Period<'a> {
         done.filter(|s| s.children().is_empty()).collect()
     }
 
-    /// The steps added in it, oldest first.
-    pub fn added(&self) -> Vec<Step<'a>> {
-        self.parts()
-            .filter(|s| self.holds(s.note().created_at))
-            .collect()
-    }
-
-    /// How many of its done steps use a pattern.
-    pub fn using(&self) -> usize {
-        let done = self.done().into_iter();
-        done.filter(|s| !s.uses().is_empty()).count()
+    /// The pattern reuse of the asks done in it.
+    pub fn reuse(&self) -> Reuse {
+        Reuse::between(self.steps, self.from, self.to)
     }
 
     /// The steps done or dropped in it, and those stale with a trail whose newest record is in it,

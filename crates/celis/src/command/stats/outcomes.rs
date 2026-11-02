@@ -58,3 +58,12 @@ pub(super) fn percent(part: usize, whole: usize) -> i64 {
         _ => (part as f64 / whole as f64 * 100.0).round_ties_even() as i64,
     }
 }
+
+/// `part` of `whole` as a view shows it: `67%`, `<1%` when it rounds to 0 with a part, `—` of nothing.
+pub(super) fn share(part: usize, whole: usize) -> String {
+    match (whole, percent(part, whole)) {
+        (0, _) => "—".to_string(),
+        (_, 0) if part > 0 => "<1%".to_string(),
+        (_, p) => format!("{p}%"),
+    }
+}
