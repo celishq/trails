@@ -55,12 +55,7 @@ impl Tree<'_> {
             lines.push(Row::Lined {
                 lead,
                 marks: Styled::from(mark.clone()),
-                title: record
-                    .content
-                    .lines()
-                    .next()
-                    .unwrap_or_default()
-                    .to_string(),
+                title: label(&record.content).to_string(),
                 tone: Style::new(),
                 meta: Styled::default(),
                 whole: Some(under.clone()),
@@ -96,4 +91,10 @@ pub(in crate::command::trail::tree) fn counts(tally: Tally) -> Vec<Span<'static>
         }
     }
     counts
+}
+
+/// The first line of `content` without a `Name:` label.
+fn label(content: &str) -> &str {
+    let first = content.lines().next().unwrap_or_default();
+    first.strip_prefix("Name:").map_or(first, str::trim)
 }
