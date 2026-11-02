@@ -41,14 +41,17 @@ url=$(gh pr create --base main --head dev --title "release: v$version" --body "R
 
 \`make release\` fast-forwards main to this commit once its checks pass. The push tags the commit \`v$version\` and publishes the release.")
 
-echo "release: opened $url; waiting for its checks."
+echo "release: opened $url.
+release: keep this terminal open while its checks run. When they pass, this pushes the release commit to main,
+release: and the Release run publishes v$version. If you stop it, run this once the checks pass:
+release:   git push origin $sha:main"
 tries=0
 until [ "$(gh pr checks "$url" --json name --jq length 2>/dev/null || echo 0)" -gt 0 ]; do
 	tries=$((tries + 1))
 	[ "$tries" -le 30 ] || fail "no checks started on $url; once they pass, run: git push origin $sha:main"
 	sleep 5
 done
-gh pr checks "$url" --watch --fail-fast >/dev/null ||
+gh pr checks "$url" --watch --fail-fast ||
 	fail "a check failed on $url; fix it in a PR into dev, then close $url and release the next version."
 [ "$(gh pr view "$url" --json headRefOid --jq .headRefOid)" = "$sha" ] ||
 	fail "dev moved while the checks ran; close $url and release again."
