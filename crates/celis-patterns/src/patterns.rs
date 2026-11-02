@@ -75,6 +75,14 @@ impl<'a> Patterns<'a> {
         cells
     }
 
+    /// The pattern that replaces `pattern`, when one does.
+    pub(crate) fn replacing(&self, pattern: &Pattern) -> Option<&Pattern<'a>> {
+        let Some(PatternEnd::Replaced(by)) = pattern.end else {
+            return None;
+        };
+        self.by_id.get(by.id.as_str()).map(|&i| &self.every[i])
+    }
+
     /// The pattern that `pattern` replaces, when the store holds it.
     pub(crate) fn replaced(&self, pattern: &Pattern) -> Option<&Pattern<'a>> {
         let id = pattern.record.replaces.as_deref()?;
@@ -82,8 +90,8 @@ impl<'a> Patterns<'a> {
     }
 }
 
-/// The live pattern of `live` whose id is `id`, or the only one whose id starts with `id` when `id` is 4
-/// or more characters.
+/// The pattern of `live` whose id is `id`, or the only one whose id starts with `id` when `id` is 4 or
+/// more characters.
 pub(crate) fn find<'p, 'a: 'p>(
     live: impl Iterator<Item = &'p Pattern<'a>>,
     id: &str,

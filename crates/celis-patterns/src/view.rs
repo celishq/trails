@@ -38,6 +38,19 @@ impl<'p, 'a> View<'p, 'a> {
         find(every.filter(|p| p.is_live() && self.holds(p)), id)
     }
 
+    /// The live pattern in scope that `id` names, or that ends the chain of `replaces` of the pattern
+    /// it names.
+    pub fn current(&self, id: &str) -> Result<Pattern<'a>, Refusal> {
+        let mut at = find(self.patterns.every().iter(), id)?;
+        while let Some(by) = self.patterns.replacing(&at) {
+            at = by.clone();
+        }
+        match at.is_live() && self.holds(&at) {
+            true => Ok(at),
+            false => Err(Refusal::NoPattern(id.to_string())),
+        }
+    }
+
     /// The live patterns in scope whose `within` names `id`, newest first.
     pub fn smaller(&self, id: &str) -> Vec<Pattern<'a>> {
         let live = self.live().into_iter();

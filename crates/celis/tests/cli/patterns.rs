@@ -507,6 +507,44 @@ fn patterns_with_several_ids_print_each_whole() {
     support::refusal(&o, 1, "no-pattern");
 }
 
+/// `patterns <id>` of a replaced pattern prints the live pattern that ends its chain, and refuses the id
+/// of a dropped one (`spec/02-cli.md`, "Patterns").
+#[test]
+fn patterns_with_the_id_of_a_replaced_pattern_print_the_live_one() {
+    let repo = Repo::new();
+    let write = |args: &[&str]| {
+        let o = cli(&repo, args);
+        assert!(o.status.success(), "{}", err(&o));
+        out(&o).lines().next().unwrap().to_string()
+    };
+    let first = write(&["pattern", "--", "When a logo is drawn\nDo: keep it flat."]);
+    let second = write(&[
+        "pattern",
+        "--replaces",
+        &first[..8],
+        "--",
+        "When a logo is drawn\nDo: keep it sharp.",
+    ]);
+    let third = write(&[
+        "pattern",
+        "--replaces",
+        &second[..8],
+        "--",
+        "When a logo is drawn\nDo: keep it bold.",
+    ]);
+    let said = out(&cli(&repo, &["patterns", &first[..8]]));
+    assert!(said.contains("keep it bold"), "{said}");
+    assert!(said.contains(&third[..8]), "{said}");
+    let gone = write(&["pattern", "--", "When a price rounds\nDo: round down."]);
+    let o = cli(&repo, &["step", "drop", &gone[..8], "--", "not wanted"]);
+    assert!(o.status.success(), "{}", err(&o));
+    support::refusal(
+        &cli(&repo, &["patterns", &gone[..8], "--json"]),
+        1,
+        "no-pattern",
+    );
+}
+
 /// The forms of `spec/fixtures/pattern-labels.json`.
 fn forms() -> Vec<serde_json::Value> {
     let fixture: serde_json::Value = serde_json::from_str(include_str!(

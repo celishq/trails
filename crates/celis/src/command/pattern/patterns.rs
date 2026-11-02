@@ -63,8 +63,8 @@ impl Command {
         crate::command::put(out, &page.join("\n"))
     }
 
-    /// Prints each live pattern in scope whose id is or starts with one of `ids` whole, as `--markdown`
-    /// does, in the order given, and recalls each on the session's newest open step.
+    /// Prints the live pattern in scope that each of `ids` names, or that replaces it, whole, as
+    /// `--markdown` does, in the order given, and recalls each on the session's newest open step.
     fn patterns_whole(&self, ids: &[String], out: &mut dyn Write) -> Result<(), Failure> {
         if !self.held()? {
             return Err(Refusal::NoPattern(ids[0].clone()).into());
@@ -75,7 +75,7 @@ impl Command {
         let view = store.view(&project);
         let patterns = ids
             .iter()
-            .map(|id| view.find(id))
+            .map(|id| view.current(id))
             .collect::<Result<Vec<_>, _>>()?;
         let steps = trails.steps();
         let open = self.session().and_then(|s| steps.open(&project, &s));
