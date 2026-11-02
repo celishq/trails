@@ -62,10 +62,11 @@ Only maintainers release. Agents install the plugin from `main`, so `main` moves
 1. On an up-to-date `dev`, run `make release V=1.2.3`. It checks the version and your checkout, commits the
    version on `dev`, and opens the release PR from `dev` into `main`. If it stops, its message tells you what
    to fix.
-2. Wait for the checks, including "Release builds", then merge the PR with a merge commit. Do not squash it,
-   because a squash makes `main` and `dev` differ.
-3. The merge builds `celis` from the merge commit, tags it `v1.2.3`, publishes the GitHub release, and
-   installs it on clean runners. Agents see the new plugin version when you merge; the release follows a few
+2. It waits for the checks, including "Release builds", and then fast-forwards `main` to the release commit.
+   GitHub marks the PR merged, and `dev` and `main` stay the same commit. Do not merge the PR with the button,
+   because each merge method makes `main` and `dev` differ.
+3. The push builds `celis` from the release commit, tags it `v1.2.3`, publishes the GitHub release, and
+   installs it on clean runners. Agents see the new plugin version at the push; the release follows a few
    minutes later.
 
 If the Release run fails before it publishes, re-run it from the Actions tab. If it fails after it publishes,
