@@ -50,7 +50,9 @@ Read all that celis prints, never cut by `head` or `grep`, and do the next move 
    a new dependency, a schema, money or a deploy. Take every other choice yourself, and name it in
    your answer.
 2. **Close.** When the work of the ask is done, learn from it first, then close it with its proof. When
-   only the person can check it, ask them, and close it `--by person` with their answer.
+   only the person can check it, ask them, and close it `--by person` with their answer. End your
+   answer to the person with the last line that the ask's `done` prints, word for word, as its last
+   line: the person does not see what celis prints, and the line shows them what celis did for the ask.
 
 3. **Learn.** A lesson is a correction, a pick, a reaction to a result, a wish such as "from now on",
    or a fix of done work. When you see one, also in the ask's first prompt, run `celis extract <the
