@@ -306,8 +306,8 @@ fn the_prompt_hook_names_the_close_of_an_ask_with_no_open_step() {
 fn note(held: bool, current: Option<&str>) -> String {
     let ask = match current {
         Some(id) => format!(
-            "when this prompt goes on with the ask {id}, add its steps --under {id}; when it is a new ask, \
-             add it with celis step add --new"
+            "when this prompt goes on with the ask {id}, such as a test, an eval, a review, a commit or a PR \
+             of its work, add its steps --under {id}; when it is a new ask, add it with celis step add --new"
         ),
         None => "when this prompt is a new ask, add it with celis step add".to_string(),
     };
