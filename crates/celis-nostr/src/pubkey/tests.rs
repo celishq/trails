@@ -27,6 +27,17 @@ fn a_key_that_is_not_on_the_curve_is_refused() {
 }
 
 #[test]
+fn a_key_off_the_curve_is_refused_after_a_good_key_was_read() {
+    Pubkey::parse(HEX).unwrap();
+    Pubkey::parse(HEX).unwrap();
+    assert!(Pubkey::new([0u8; 32]).is_err());
+    assert!(
+        Pubkey::new([0u8; 32]).is_err(),
+        "a refused key is refused again"
+    );
+}
+
+#[test]
 fn a_key_survives_a_json_round_trip_as_hex() {
     let key = Pubkey::parse(HEX).unwrap();
     let json = serde_json::to_string(&key).unwrap();
