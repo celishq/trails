@@ -9,6 +9,8 @@ use k256::schnorr::signature::hazmat::PrehashVerifier;
 use k256::schnorr::{Signature, VerifyingKey};
 use serde::de::Error as _;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::collections::HashSet;
+use std::sync::{Mutex, OnceLock};
 
 const NPUB: Hrp = Hrp::parse_unchecked("npub");
 
@@ -16,9 +18,18 @@ const NPUB: Hrp = Hrp::parse_unchecked("npub");
 pub struct Pubkey([u8; 32]);
 
 impl Pubkey {
-    /// The key these bytes name. Errors when they are not a point on the curve.
+    /// The key these bytes name. Errors when they are not a point on the curve; each key is checked
+    /// on the curve once in a process.
     pub fn new(bytes: [u8; 32]) -> Result<Self> {
+        static CHECKED: OnceLock<Mutex<HashSet<[u8; 32]>>> = OnceLock::new();
+        let checked = CHECKED.get_or_init(Mutex::default);
+        if checked.lock().is_ok_and(|keys| keys.contains(&bytes)) {
+            return Ok(Self(bytes));
+        }
         VerifyingKey::from_bytes(&bytes).map_err(|e| anyhow!("not a public key: {e}"))?;
+        if let Ok(mut keys) = checked.lock() {
+            keys.insert(bytes);
+        }
         Ok(Self(bytes))
     }
 
