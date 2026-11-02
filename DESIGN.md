@@ -178,6 +178,16 @@ A bench checks a design; a design is never tuned to a bench.
     and the agent ends its answer with it. A count that is zero is left out, and `1 led the work wrong.`
     comes only when a pattern misled the ask. Neither line gives the version: the version notice and
     `celis --version` give it.
+19. **Pattern reuse has one definition, and each view reads it.** The unit is the ask. An ask counts in a
+    span when its done record is in that span. An ask is reused when a step of its tree names a pattern
+    in `uses`, the ask included. The share of reuse is the reused asks of the done asks, rounded to the
+    nearest whole percent. A view shows `<1%` when some asks are reused and the share rounds to 0, and
+    `—` when no ask is done. The pattern uses of a span are each pattern that each step of those trees
+    names, whatever the end of the step. The top patterns are the live patterns with the most of those
+    uses. The classic cards, the `--next` board and the `reuse` of the total in `celis stats --json`
+    read only this measure. A step is not the unit: one ask can have 1 step or 250 worker steps, so a
+    share of steps shows the size of the work and not the reuse. These values are the app's, so the
+    spec does not hold them.
 
 ## What we do not do
 
