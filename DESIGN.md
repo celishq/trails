@@ -52,10 +52,13 @@ A bench checks a design; a design is never tuned to a bench.
      level (decision 17). The When is the moment a choice is due, so a reader can match it to the work. A writer gives each pattern a Name: celis
      writes a pattern without one, with a warning. `celis grep <id>` gives the whole pattern. celis has no vector, no word match and no
      rank. The session start does not give the index: past a few dozen patterns it grows too large
-     for the agent's session start, which cuts it. Right after an ask's step add, the agent gives the
-     `celis:patterns` agent the ask, its planned choices and its files; that agent reads the index and
-     answers with the patterns that bear on them, whole. During the work, the agent reads the index
-     itself when a new choice comes up.
+     for the agent's session start, which cuts it. At each prompt that asks for a new choice, an answer
+     or a change, questions included, the agent gives the `celis:patterns` agent the prompt, and waits
+     for its answer before it plans its own answer; that agent reads the index and answers with the
+     patterns that bear on it, whole. The agent skips it only for a prompt with no new choice, such as
+     "yes" or "go on". The step add of the ask comes after, so that it names the patterns with
+     `--uses`. A prompt that the person sends with no step still gets its patterns. During the work,
+     the agent reads the index itself when a new choice comes up.
    - When a choice of the work matches a When, the agent reads that pattern whole before it chooses,
      and names it with `--uses` on the step of that choice. The uses are the evidence.
    - `patterns <id>` writes a recall on the session's newest open step, and nothing when the session
