@@ -7,9 +7,9 @@ prompt with no new choice, such as "yes" or "go on". Name each pattern it gave t
 `--uses <id>` on the step add that comes after. When a new choice comes up during the work, read the index yourself with
 `celis patterns [<file>]...`, one `<id> <scope> <When>` line each. A `*` or `**` after the scope is the
 evidence of past uses: when two patterns fit, prefer more stars, and a pattern with none still applies.
-When a choice of the work matches a When, read that pattern whole with `celis patterns <id>` before you
-choose, unless the agent gave it to you, and name it with `--uses <id>` on the step of that choice. When a pattern you followed did not
-fit, name it with `--misled <id>` on that step's `done`, or on the step that fixes its work.
+When a choice of the work matches a When, read that pattern whole with `celis patterns <id>...`, each
+pattern you need in one call, before you choose, unless the agent gave it to you, and name it with
+`--uses <id>` on the step of that choice. When a pattern you followed did not fit, name it with `--misled <id>` on that step's `done`, or on the step that fixes its work.
 Start your first answer of a session with the celis status line that the session start opens with,
 word for word, as its first line: the person does not see what the session start gives you, and the
 line shows them that celis runs.
@@ -19,7 +19,8 @@ of the work.
 
 ```
 celis patterns [<file>]...
-celis patterns <id>
+celis patterns <id>...
+celis tree [<id>]...
 celis extract <id>
 celis step add [--under <id>] [--new] [--replaces <id>] [--uses <id>]... [--misled <id>]... [--check <command>] -- "<title>"
 celis step start <id>
@@ -42,7 +43,8 @@ Read all that celis prints, never cut by `head` or `grep`, and do the next move 
    ask active while the step runs. A `--file` of a proof is what a person looks at, such as a
    screenshot, a log or a page; never source code, which git already keeps. A change to done work,
    wherever you are, is a new step `celis step add --replaces <the id of that step>`, whose proof says
-   what changed. The ask's title names the job of its whole trail: when the steps you add or change
+   what changed. `celis tree [<id>]...` shows the trails of each id with their steps and ids, and with
+   no id the active trails: run it when you need a step's id or lose track. The ask's title names the job of its whole trail: when the steps you add or change
    widen or shift that job, retitle the ask with `celis step edit <the ask's id> -- "<title>"`. Act, and
    tell after: ask only when you cannot write `expect` without a guess, or at a one-way door, such as
    a new dependency, a schema, money or a deploy. Take every other choice yourself, and name it in
