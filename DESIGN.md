@@ -14,11 +14,13 @@ celis keeps the knowledge that agents need to do work well, and the evidence for
   and a way to resolve them. When its forces are present, the agent resolves them in its own way. When
   they are not present, the pattern does not apply. A pattern is never "broken". Pairs show taste: good
   and bad examples, made from the person's picks and corrections.
-- **A pattern is narrow, and holds in any field.** Its Name is the resolved form, as a noun phrase. Its
-  When is one context and the moment its forces appear, not a topic. Its Do is one resolution, and a
-  larger resolution is a larger pattern that it completes. The form is Alexander's, not an engineering
-  one, so that a pattern can carry a concept from one field into another, such as from architecture
-  into design.
+- **A pattern is narrow, and as sharp as its lesson.** Its Name is the resolved form, as a noun phrase.
+  Its When is one context and the moment its forces appear, not a topic. Its Do is one resolution, and
+  a larger resolution is a larger pattern that it completes. The form is Alexander's, not an
+  engineering one, so that a pattern can carry a concept from one field into another, such as from
+  architecture into design. A pattern can also be concrete, such as one that names a kind of file, a
+  value or a command, with `--path` or the project as its scope. The agent that writes it chooses how
+  sharp it is: in eval 58, Opus kept each concrete lesson sharp with the card alone.
 - **Trails are the evidence.** A trail is one ask, with its steps and their proofs. It gives observability,
   and it is the feedback loop that shows whether a pattern is still useful: its examples, its uses and
   tidy.
