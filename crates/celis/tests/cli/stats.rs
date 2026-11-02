@@ -120,8 +120,32 @@ fn stats_prints_the_use_of_each_pattern_and_the_gaps() {
         serde_json::json!(["unused", "nameless"])
     );
     assert_eq!(json[2]["pattern"]["misled"], 2, "{json:?}");
+    let mut total = json[3]["total"].clone();
+    total.as_object_mut().unwrap().remove("reuse");
     assert_eq!(
-        json[3]["total"],
+        total,
         serde_json::json!({"index": 3, "written": 3, "replaced": 1, "gaps": 1})
+    );
+}
+
+/// The total of `stats --json` gives the reuse of the asks done in the last 14 days and in the 14 days
+/// before: the asks done, those whose tree names a pattern, their share and the pattern uses.
+#[test]
+fn stats_json_gives_the_reuse_of_the_done_asks() {
+    let repo = Repo::new();
+    let pattern = decide(&repo, &["--", "When prices round: round up."]);
+    used(&repo, &[&pattern], 1);
+    used(&repo, &[], 2);
+    let ask = add(&repo, &["--uses", &pattern[..8], "--", "Ship part 3"]);
+    finish(&repo, &ask[..8]);
+    let json = objects(&repo, &["stats"]);
+    let total = &json.last().unwrap()["total"];
+    assert_eq!(
+        total["reuse"],
+        serde_json::json!({
+            "last": {"asks": 3, "reused": 2, "percent": 67, "uses": 2},
+            "before": {"asks": 0, "reused": 0, "percent": null, "uses": 0}
+        }),
+        "{json:?}"
     );
 }
