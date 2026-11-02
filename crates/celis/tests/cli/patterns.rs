@@ -336,6 +336,26 @@ fn tree_and_stats_show_the_patterns() {
     assert!(line.contains(" examples:2 "), "{stats}");
 }
 
+/// The tree shows a pattern by its Name, without the `Name:` label.
+#[test]
+fn tree_shows_a_pattern_by_its_name() {
+    let repo = Repo::new();
+    let text = "Name: Prices in whole cents\nWhen a price is stored\nForces: floats are quick\nDo: store cents\nBecause: floats lost a cent";
+    let o = cli(&repo, &["pattern", "--", text]);
+    assert!(o.status.success(), "{}", err(&o));
+    let pattern = out(&o)[..8].to_string();
+    let trail = add(&repo, &["--uses", &pattern, "--", "the price"]);
+    for next in [false, true] {
+        let mut args = vec!["tree", &trail[..8], "--full"];
+        if next {
+            args.push("--next");
+        }
+        let tree = out(&cli(&repo, &args));
+        let shown = format!("§   {pattern} Prices in whole cents\n");
+        assert!(tree.contains(&shown), "{tree}");
+    }
+}
+
 /// A linked folder carries a pattern and the blob of each file example to a second store, and keeps a
 /// `me` pattern out (`spec/08-files.md`, "Blobs").
 #[test]

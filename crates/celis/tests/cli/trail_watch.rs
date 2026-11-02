@@ -523,6 +523,36 @@ fn watch_opens_a_steps_notes_line() {
     }
 }
 
+/// In both watches, a pattern's line shows its Name without the `Name:` label.
+#[test]
+fn watch_shows_a_pattern_by_its_name() {
+    let repo = Repo::new();
+    let pattern = "Name: Prices in whole cents\nWhen a price is stored\nForces: floats are quick\nDo: store cents\nBecause: floats lost a cent";
+    let o = cli(&repo, &["pattern", "--", pattern]);
+    assert!(o.status.success(), "{}", err(&o));
+    let used = out(&o)[..8].to_string();
+    let trail = add(&repo, &["--uses", &used, "--", "the trail"]);
+    add(&repo, &["--under", &trail[..8], "--", "the part"]);
+    for next in [false, true] {
+        let mut args = vec!["tree", &trail[..8]];
+        if next {
+            args.push("--next");
+        }
+        let mut watch = Watch::start(&repo, &args);
+        watch.size(24, 80);
+        watch.until("§   1 pattern");
+        watch.press("\x1b[B\x1b[B\x1b[B\x1b[C");
+        watch.until("§   Prices in whole cents");
+        assert!(
+            !watch.rows().join("\n").contains("Name:"),
+            "{:?}",
+            watch.rows()
+        );
+        watch.press("q");
+        assert_eq!(watch.child.wait().unwrap().code(), Some(0));
+    }
+}
+
 /// In both watches, `→` on a pattern's line opens it to its forces, do and because, each labelled and
 /// dim under it, and `←` closes it.
 #[test]

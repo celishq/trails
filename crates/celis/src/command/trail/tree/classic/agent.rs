@@ -105,9 +105,10 @@ impl Tree<'_> {
 }
 
 /// The line of the pattern or note `record` after `indent`: `mark` in its slot, its id, and its first
-/// line.
+/// line without a `Name:` label.
 fn record_line(indent: &str, mark: &str, record: &Note) -> Row {
     let first = record.content.lines().next().unwrap_or_default();
+    let first = first.strip_prefix("Name:").map_or(first, str::trim);
     let line = format!("{indent}{mark:<SLOT$} {} {first}", short(&record.id));
     Row::Text(line.into())
 }
