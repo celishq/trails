@@ -472,6 +472,41 @@ fn patterns_with_an_id_print_that_pattern_whole() {
     assert!(index.contains("When a price rounds"), "{index}");
 }
 
+/// `patterns <id>...` prints each pattern whole in the order given, and refuses all when one id
+/// names no live pattern (`spec/02-cli.md`, "Patterns").
+#[test]
+fn patterns_with_several_ids_print_each_whole() {
+    let repo = Repo::new();
+    let decide = |text: &str| {
+        let o = cli(&repo, &["pattern", "--", text]);
+        assert!(o.status.success(), "{}", err(&o));
+        out(&o).lines().next().unwrap().to_string()
+    };
+    let logo = decide("When a logo is drawn\nDo: keep it flat.");
+    let price = decide("When a price rounds\nDo: round down.");
+    let said = out(&cli(&repo, &["patterns", &price[..8], &logo[..8]]));
+    assert_eq!(
+        said.lines().collect::<Vec<_>>(),
+        [
+            "## When a price rounds".to_string(),
+            String::new(),
+            format!("`{}` · project", &price[..8]),
+            String::new(),
+            "Do: round down.  ".to_string(),
+            String::new(),
+            "## When a logo is drawn".to_string(),
+            String::new(),
+            format!("`{}` · project", &logo[..8]),
+            String::new(),
+            "Do: keep it flat.  ".to_string(),
+        ],
+        "{said}"
+    );
+    let o = cli(&repo, &["patterns", &logo[..8], "deadbeef", "--json"]);
+    assert!(out(&o).is_empty(), "{}", out(&o));
+    support::refusal(&o, 1, "no-pattern");
+}
+
 /// The forms of `spec/fixtures/pattern-labels.json`.
 fn forms() -> Vec<serde_json::Value> {
     let fixture: serde_json::Value = serde_json::from_str(include_str!(

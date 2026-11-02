@@ -14,7 +14,7 @@ bears on it too. Keep a pattern you are unsure of: one the work does not need co
 you miss makes the person give the same correction again.
 
 `celis patterns <file>...` gives the index, one `<id> <scope> <When>` line each, with a `match` line
-under a pattern whose path matches one of the files. `celis patterns <id>` gives one pattern whole. Read
+under a pattern whose path matches one of the files. `celis patterns <id>...` gives each pattern whole: read the ones you may keep in one call. Read
 all that celis prints, never cut by `head` or `grep`, and read each pattern whole before you keep it.
 
 Answer in this shape, and add nothing else:

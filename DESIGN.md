@@ -61,7 +61,7 @@ A bench checks a design; a design is never tuned to a bench.
      the agent reads the index itself when a new choice comes up.
    - When a choice of the work matches a When, the agent reads that pattern whole before it chooses,
      and names it with `--uses` on the step of that choice. The uses are the evidence.
-   - `patterns <id>` writes a recall on the session's newest open step, and nothing when the session
+   - `patterns <id>...` writes a recall of each pattern on the session's newest open step, and nothing when the session
      has no open step. A recall, then a use, then a step that no fix revises, is the funnel that shows
      whether the index finds the right pattern.
    - The agent marks a pattern that misled the work: `--misled` on the step that fixes done work, or on

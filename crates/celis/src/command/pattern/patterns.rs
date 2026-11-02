@@ -17,7 +17,7 @@ use std::collections::HashSet;
 use std::io::{IsTerminal, Write};
 
 impl Command {
-    /// Prints the index of the live patterns in scope; with an id, that pattern whole; with `--markdown`,
+    /// Prints the index of the live patterns in scope; with ids, each of those patterns whole; with `--markdown`,
     /// each whole as one page, newest first; with `--tidy`, those that need tidy and the index size.
     pub(crate) fn patterns(&self, args: &Args, out: &mut dyn Write) -> Result<(), Failure> {
         if args.tidy {
@@ -34,10 +34,10 @@ impl Command {
             }
             return crate::command::put(out, &self.cell_index(name)?);
         }
-        if let [id] = &args.words[1..] {
-            if is_id(id) && !self.folder.join(id).exists() {
-                return self.pattern_whole(id, out);
-            }
+        let ids = &args.words[1..];
+        let named = |w: &String| is_id(w) && !self.folder.join(w).exists();
+        if !ids.is_empty() && ids.iter().all(named) {
+            return self.patterns_whole(ids, out);
         }
         if !args.markdown {
             let index = self.index(&args.words[1..])?;
@@ -63,38 +63,47 @@ impl Command {
         crate::command::put(out, &page.join("\n"))
     }
 
-    /// Prints the live pattern in scope whose id is or starts with `id` whole, as `--markdown` does,
-    /// and recalls it on the session's newest open step.
-    fn pattern_whole(&self, id: &str, out: &mut dyn Write) -> Result<(), Failure> {
+    /// Prints each live pattern in scope whose id is or starts with one of `ids` whole, as `--markdown`
+    /// does, in the order given, and recalls each on the session's newest open step.
+    fn patterns_whole(&self, ids: &[String], out: &mut dyn Write) -> Result<(), Failure> {
         if !self.held()? {
-            return Err(Refusal::NoPattern(id.to_string()).into());
+            return Err(Refusal::NoPattern(ids[0].clone()).into());
         }
         let trails = self.trails()?;
         let project = self.project().anchor.project;
-        let pattern = trails.patterns().view(&project).find(id)?;
+        let store = trails.patterns();
+        let view = store.view(&project);
+        let patterns = ids
+            .iter()
+            .map(|id| view.find(id))
+            .collect::<Result<Vec<_>, _>>()?;
         let steps = trails.steps();
         let open = self.session().and_then(|s| steps.open(&project, &s));
-        if let Some(step) = open {
-            trails.recall(step.id(), pattern.id())?;
-        }
         let level = Level::of(&steps);
-        let mut lines = markdown(&pattern, &level, &trails, &project);
-        while lines.last().is_some_and(String::is_empty) {
-            lines.pop();
-        }
-        crate::command::put(out, &lines[1..].join("\n"))?;
         let program = self.env.get("TERM_PROGRAM").map(String::as_str);
-        if !image::drawn(std::io::stdout().is_terminal(), program) {
-            return Ok(());
-        }
-        for file in pictures(&pattern, &trails) {
-            let Some(bytes) = trails
-                .blob(&file.sha256)
-                .and_then(|p| std::fs::read(p).ok())
-            else {
+        let drawn = image::drawn(std::io::stdout().is_terminal(), program);
+        for (n, pattern) in patterns.iter().enumerate() {
+            if let Some(step) = open {
+                trails.recall(step.id(), pattern.id())?;
+            }
+            let mut lines = markdown(pattern, &level, &trails, &project);
+            while lines.last().is_some_and(String::is_empty) {
+                lines.pop();
+            }
+            let start = if n == 0 { 1 } else { 0 };
+            crate::command::put(out, &lines[start..].join("\n"))?;
+            if !drawn {
                 continue;
-            };
-            crate::command::put(out, &image::inline(&file.place, &bytes))?;
+            }
+            for file in pictures(pattern, &trails) {
+                let Some(bytes) = trails
+                    .blob(&file.sha256)
+                    .and_then(|p| std::fs::read(p).ok())
+                else {
+                    continue;
+                };
+                crate::command::put(out, &image::inline(&file.place, &bytes))?;
+            }
         }
         Ok(())
     }

@@ -394,3 +394,23 @@ fn patterns_of_an_id_recalls_it_on_the_sessions_open_step() {
     assert_eq!(recalls[0].tag("e"), Some(part.as_str()));
     assert_eq!(recalls[0].tag("pattern"), Some(pattern.as_str()));
 }
+
+/// `patterns <id>...` writes a recall of each pattern on the session's newest open step
+/// (`spec/06-reuse.md`, "Recalls").
+#[test]
+fn patterns_of_several_ids_recall_each() {
+    let repo = Repo::new();
+    let cents = decide(&repo, "When a price is shown: keep cents.");
+    let round = decide(&repo, "When a price rounds: round down.");
+    added(&repo, "s1", &["--", "the senior price"]);
+    let env = [("CLAUDE_CODE_SESSION_ID", "s1")];
+    let words = ["patterns", &cents[..8], &round[..8]];
+    let o = repo.run(&repo.path(), &words, &env, "");
+    assert!(o.status.success(), "{}", err(&o));
+    let recalls = support::kept(&repo, 1985, "recall");
+    let mut recalled: Vec<_> = recalls.iter().filter_map(|r| r.tag("pattern")).collect();
+    recalled.sort();
+    let mut expected = vec![cents.as_str(), round.as_str()];
+    expected.sort();
+    assert_eq!(recalled, expected);
+}
