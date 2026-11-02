@@ -162,14 +162,14 @@ fn done_on_an_ask_prints_its_total() {
             format!("  changed {} it took the cache", &claim[..8]),
             format!("  pattern {} When a price rounds", &old.id[..8]),
             format!("celis: the ask {a} is done. When you have kept what it taught, celis stats {a} gives its total."),
-            "celis · 4 steps · 1 pattern used".to_string(),
+            "celis used 1 of your patterns.".to_string(),
         ]
     );
 }
 
-/// The total of an ask whose steps are all proven, with no pattern, gives only its steps.
+/// The total of an ask that used and wrote no pattern says that no pattern bore on it.
 #[test]
-fn a_total_with_nothing_to_flag_gives_only_the_steps() {
+fn a_total_with_no_pattern_says_so() {
     let repo = Repo::new();
     let ask = add(&repo, &["--check", "true", "--", "the ask"]);
     let part = add(
@@ -178,7 +178,49 @@ fn a_total_with_nothing_to_flag_gives_only_the_steps() {
     );
     done(&repo, &part, &["--as-planned"]);
     let lines = done(&repo, &ask, &["--as-planned"]);
-    assert!(lines.contains(&"celis · 2 steps".to_string()), "{lines:?}");
+    let last = lines.last().unwrap();
+    assert_eq!(last, "celis had no pattern for this ask.", "{lines:?}");
+}
+
+/// The total of an ask whose step a pattern misled says how many misled.
+#[test]
+fn a_total_names_the_patterns_that_misled() {
+    let repo = Repo::new();
+    let project = repo.project_id();
+    let old = stored_pattern(
+        &repo,
+        (&project, "repo"),
+        &account(),
+        (None, None),
+        "When a price rounds: round up.",
+        now() - 60,
+    );
+    let id = old.id;
+    let ask = add(&repo, &["--check", "true", "--", "the ask"]);
+    let part = add(
+        &repo,
+        &[
+            "--under",
+            &ask[..8],
+            "--uses",
+            &id[..8],
+            "--check",
+            "true",
+            "--",
+            "part",
+        ],
+    );
+    done(
+        &repo,
+        &part,
+        &["--changed", "it rounds down", "--misled", &id[..8]],
+    );
+    let lines = done(&repo, &ask, &["--as-planned"]);
+    let last = lines.last().unwrap();
+    assert_eq!(
+        last, "celis used 1 of your patterns. 1 led the work wrong.",
+        "{lines:?}"
+    );
 }
 
 /// The head of the learn brief of the ask `a`.

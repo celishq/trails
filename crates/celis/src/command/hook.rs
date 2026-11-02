@@ -111,21 +111,24 @@ impl Command {
         text
     }
 
-    /// The status line: the version of celis, and how many patterns are live in scope here.
+    /// The status line: how many of the person's patterns are live in scope here, and how many of
+    /// them are new this week.
     fn status(&self) -> String {
         let here = self.project();
-        let count = match self.held() {
-            Ok(true) => self
-                .trails()
-                .map_or(0, |t| t.patterns().view(&here.anchor.project).live().len()),
-            _ => 0,
+        let week = crate::command::now().saturating_sub(7 * 86_400);
+        let (count, new) = match (self.held(), self.trails()) {
+            (Ok(true), Ok(t)) => {
+                let live = t.patterns().view(&here.anchor.project).live();
+                let new = live.iter().filter(|p| p.note.created_at >= week).count();
+                (live.len(), new)
+            }
+            _ => (0, 0),
         };
-        let patterns = match count {
-            0 => "no pattern".to_string(),
-            1 => "1 pattern".to_string(),
-            n => format!("{n} patterns"),
-        };
-        format!("{} is on: {patterns} in scope here.", crate::version())
+        match (count, new) {
+            (0, _) => "celis is on and learns from your first correction.".to_string(),
+            (n, 0) => format!("celis knows {n} of your patterns."),
+            (n, m) => format!("celis knows {n} of your patterns, {m} new this week."),
+        }
     }
 
     /// The line that asks to offer `/celis:learn` on the person's past chats, the first time a session

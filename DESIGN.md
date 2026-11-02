@@ -169,6 +169,13 @@ A bench checks a design; a design is never tuned to a bench.
     in 2 or more projects. A pattern that misled has no level until tidy replaces it. The index and a
     whole pattern show it, so that the agent prefers a proven pattern when two fit. A pattern with no
     level still applies: the level ranks, and never hides.
+18. **Two status lines say what celis does for the person.** The person does not see what celis prints,
+    so the agent gives them two lines word for word. The session start opens with `celis knows 271 of
+    your patterns, 4 new this week.`, or `celis is on and learns from your first correction.` when no
+    pattern is in scope. The close of an ask ends with `celis used 3 of your patterns and learned 1.`,
+    and the agent ends its answer with it. A count that is zero is left out, and `1 led the work wrong.`
+    comes only when a pattern misled the ask. Neither line gives the version: the version notice and
+    `celis --version` give it.
 
 ## What we do not do
 

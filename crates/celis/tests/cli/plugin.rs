@@ -179,7 +179,7 @@ fn each_agents_session_start_gives_the_card_and_its_session() {
         let context = agent.context(&stdout);
         let (status, card) = context.split_once("\n\n").unwrap();
         assert!(
-            status.ends_with(" is on: no pattern in scope here."),
+            status == "celis is on and learns from your first correction.",
             "{}: {context}",
             agent.name
         );
@@ -216,7 +216,7 @@ fn no_agents_session_start_gives_the_index_of_the_patterns() {
         let stdout = agent.run(&repo, agent.start, &agent.payload("s1", &repo.path(), ""));
         let context = agent.context(&stdout);
         assert!(
-            context.contains(" is on: 1 pattern in scope here."),
+            context.contains("celis knows 1 of your patterns, 1 new this week."),
             "{}: {context}",
             agent.name
         );

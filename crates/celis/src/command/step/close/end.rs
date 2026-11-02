@@ -6,13 +6,14 @@ use celis_nostr::Note;
 use celis_patterns::Patterns;
 use celis_store::StepId;
 use celis_trails::{Done, Step};
+use std::collections::HashSet;
 
-/// The total of an ask when it closes: its done steps, the patterns written in its project since it
-/// began, and what it taught.
+/// The total of an ask when it closes: the patterns it used, the patterns written in its project since
+/// it began, the patterns that misled it, and what it taught.
 pub(crate) struct End {
     pub ask: StepId,
-    pub steps: usize,
     pub extracted: usize,
+    pub misled: usize,
     pub learn: Learn,
 }
 
@@ -30,14 +31,15 @@ impl End {
         let from = step.start().unwrap_or(step.note()).created_at;
         let project = &step.record().anchor.project;
         let patterns = Patterns::new(records);
+        let misled: HashSet<&String> = closed.iter().flat_map(|(_, d)| &d.misled).collect();
         End {
             ask: step.step_id(),
-            steps: closed.len(),
             extracted: patterns
                 .every()
                 .iter()
                 .filter(|p| &p.record.anchor.project == project && p.note.created_at >= from)
                 .count(),
+            misled: misled.len(),
             learn: Learn::of(records, step, done.changed.clone()),
         }
     }
@@ -53,22 +55,20 @@ impl End {
         lines
     }
 
-    /// Its total line: the steps, then the patterns used and extracted, each pattern part left out
-    /// when it is zero.
+    /// Its total line: how many of the person's patterns it used and how many it wrote, each left out
+    /// when it is zero, then how many misled when any did.
     pub fn total(&self) -> String {
-        let steps = plural(self.steps, "step");
         let used = self.learn.patterns.len();
-        let patterns: Vec<String> = [
-            (used > 0).then(|| format!("{} used", plural(used, "pattern"))),
-            (self.extracted > 0).then(|| format!("{} extracted", self.extracted)),
-        ]
-        .into_iter()
-        .flatten()
-        .collect();
-        let mut parts = vec!["celis".to_string(), steps];
-        if !patterns.is_empty() {
-            parts.push(patterns.join(", "));
+        let learned = self.extracted;
+        let mut line = match (used, learned) {
+            (0, 0) => "celis had no pattern for this ask.".to_string(),
+            (0, n) => format!("celis learned {}.", plural(n, "new pattern")),
+            (u, 0) => format!("celis used {u} of your patterns."),
+            (u, n) => format!("celis used {u} of your patterns and learned {n}."),
+        };
+        if self.misled > 0 {
+            line.push_str(&format!(" {} led the work wrong.", self.misled));
         }
-        parts.join(" · ")
+        line
     }
 }
