@@ -279,7 +279,8 @@ A pattern's reasons, in this order:
 - With `--markdown`, `patterns` MUST print each live pattern in scope whole, with its examples, as one
   Markdown page.
 - When each word is an `<id>`, a word of 4 to 64 hex characters that names no file, `patterns` MUST
-  print each of those patterns whole, with its examples, as `--markdown` does, in the order given. It
+  print each of those patterns whole, with its examples, as `--markdown` does, in the order given. An
+  `<id>` of a replaced pattern names the live pattern that ends its chain of `replaces` (CIP-05). It
   MUST refuse with `no-pattern`, and print nothing, when an `<id>` names no live pattern in scope. It
   MUST write a recall of each pattern on the session's newest open step (CIP-06, "Recalls"), and
   nothing when the session has none or the step has a recall of it.
