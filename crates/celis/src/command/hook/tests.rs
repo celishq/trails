@@ -84,7 +84,10 @@ fn the_session_start_counts_the_patterns_of_the_project_without_their_index() {
     assert_eq!(write.run(&mut Vec::new(), &mut Vec::new()), 0);
     let elsewhere = tempfile::tempdir().unwrap();
     let text = desk.start("claude", elsewhere.path());
-    assert!(text.contains(" is on: 1 pattern in scope here."), "{text}");
+    assert!(
+        text.contains("celis knows 1 of your patterns, 1 new this week."),
+        "{text}"
+    );
     assert!(!text.contains("When a logo is drawn"), "{text}");
 }
 
@@ -119,15 +122,15 @@ fn a_session_start_with_a_pattern_does_not_offer_to_learn() {
     assert!(!text.contains("/celis:learn"), "{text}");
 }
 
-/// The session start opens with one status line: the version of celis and how many patterns are in
-/// scope here.
+/// The session start opens with one status line: how many of the person's patterns are in scope here,
+/// and how many of them are new this week.
 #[test]
 fn the_session_start_opens_with_a_status_line() {
     let desk = Desk::new();
     let none = desk.start("claude", desk.project.path());
     let first = none.lines().next().unwrap();
-    assert!(
-        first.ends_with(" is on: no pattern in scope here."),
+    assert_eq!(
+        first, "celis is on and learns from your first correction.",
         "{none}"
     );
     for text in [
@@ -139,9 +142,8 @@ fn the_session_start_opens_with_a_status_line() {
     }
     let two = desk.start("claude", desk.project.path());
     let first = two.lines().next().unwrap();
-    assert!(first.starts_with("celis "), "{two}");
-    assert!(
-        first.ends_with(" is on: 2 patterns in scope here."),
+    assert_eq!(
+        first, "celis knows 2 of your patterns, 2 new this week.",
         "{two}"
     );
 }
