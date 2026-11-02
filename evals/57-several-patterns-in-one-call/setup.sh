@@ -4,9 +4,6 @@ sh "$(dirname "$0")/../../scripts/eval-celis.sh"
 export GIT_CEILING_DIRECTORIES="$(dirname "$PWD")"
 unset CLAUDE_CODE_SESSION_ID CODEX_THREAD_ID CELIS_SESSION_ID
 printf 'def parse_quantity(text):\n    return int(text)\n' > order.py
-git init -q
-git add order.py
-git -c user.name=eval -c user.email=eval@example.com commit -qm "first"
 celis pattern -- "Name: Error messages that name the value and the rule
 When an input check refuses a value
 Forces: a short message is quick to write, but the reader cannot tell what was wrong
