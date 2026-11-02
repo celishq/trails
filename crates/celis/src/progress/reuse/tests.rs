@@ -67,22 +67,3 @@ fn reuse_counts_live_pattern_uses() {
     assert_eq!(used.len(), 1);
     assert_eq!((used[0].0.id(), used[0].1), (live.as_str(), 2));
 }
-
-/// Reuse counts the uses of a live pattern by some steps, not of a replaced one or of a step
-/// (`spec/06-reuse.md`, "Uses").
-#[test]
-fn reuse_counts_live_pattern_uses_of_some_steps() {
-    let old = pattern("old", 1, None);
-    let new = pattern("new", 2, Some(&old));
-    let trail = step("trail", 10, None, &[]);
-    let source = step("source", 11, Some(&trail), &[]);
-    let both = step("both", 21, Some(&trail), &[&source.id, &new.id, &old.id]);
-    let other = step("other", 22, Some(&trail), &[&new.id]);
-    let records = vec![old, new, trail, source, both.clone(), other];
-    let steps = Steps::new(&records, 50);
-    let patterns = Patterns::new(&records);
-    let reuse = Reuse::new(&steps);
-    let picked = vec![steps.get(&both.id).unwrap()];
-    assert_eq!(reuse.uses_of(&picked, &patterns), 1);
-    assert_eq!(reuse.uses_of(&steps.all(), &patterns), 2);
-}

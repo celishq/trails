@@ -1,6 +1,7 @@
 //! What shows that celis pays: the value of the patterns in the last 28 days.
 
 use super::lifecycle::promoted;
+use super::reuse::Reuse;
 use crate::progress::Model;
 use celis_patterns::{PatternEnd, Scope};
 use celis_trails::{State, Step};
@@ -48,9 +49,11 @@ impl Value {
             Some(project) => model.patterns.view(project).scoped(),
             None => model.patterns.every().to_vec(),
         };
+        let reuse = Reuse::of(&asks);
         let mut value = Value {
-            asks: asks.len(),
-            covered: asks.iter().filter(|a| uses_any(**a)).count(),
+            asks: reuse.asks,
+            covered: reuse.reused,
+            used: reuse.count(),
             ..Value::default()
         };
         for fix in trees.iter().filter(|s| s.fixes()) {
@@ -80,7 +83,6 @@ impl Value {
         value.without = first_pass(&plain);
         for step in &trees {
             value.recalled += step.recalls().len();
-            value.used += step.uses().len();
             if step.revised().is_empty() && step.misled().is_empty() {
                 value.held += step.uses().len();
             }

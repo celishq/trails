@@ -40,11 +40,6 @@ impl Outcomes {
         self.reused + self.new
     }
 
-    /// The reused steps among the successful ones, in whole per cent.
-    pub fn reuse_rate(self) -> i64 {
-        percent(self.reused, self.successful())
-    }
-
     /// The first-pass steps among the resolved ones, in whole per cent.
     pub fn first_pass_rate(self) -> i64 {
         percent(self.first_pass(), self.resolved())
@@ -56,5 +51,14 @@ pub(super) fn percent(part: usize, whole: usize) -> i64 {
     match whole {
         0 => 0,
         _ => (part as f64 / whole as f64 * 100.0).round_ties_even() as i64,
+    }
+}
+
+/// `part` of `whole` as a view shows it: `67%`, `<1%` when it rounds to 0 with a part, `—` of nothing.
+pub(super) fn share(part: usize, whole: usize) -> String {
+    match (whole, percent(part, whole)) {
+        (0, _) => "—".to_string(),
+        (_, 0) if part > 0 => "<1%".to_string(),
+        (_, p) => format!("{p}%"),
     }
 }

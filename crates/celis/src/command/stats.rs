@@ -12,6 +12,7 @@ use celis_store::records::id::short;
 use celis_store::Refusal;
 use celis_store::Store;
 use celis_trails::{Step, Trail, TrailStore};
+use reuse::Reuse;
 use serde_json::json;
 use std::io::{IsTerminal, Write};
 
@@ -20,6 +21,9 @@ const NOTHING: &str = "Nothing was reused yet.";
 
 /// The seconds of the last days that the total counts.
 const WEEK: u64 = 7 * 86_400;
+
+/// The seconds of each span the reuse of the total compares.
+const SPAN: u64 = 14 * 86_400;
 
 impl Command {
     /// Prints the step `args` names with its grade, or with no id each live pattern with its use, and the
@@ -55,7 +59,7 @@ impl Command {
 }
 
 /// Prints each live pattern in scope in `project` with its use, oldest first, then the total (CIP-02,
-/// "Stats").
+/// "Stats"); with `json`, the total also gives the reuse of the whole store.
 fn uses(trails: &Store, project: &str, json: bool, out: &mut dyn Write) -> Result<(), Failure> {
     let steps = trails.steps();
     let live = Candidate::every(trails, project);
@@ -98,8 +102,15 @@ fn uses(trails: &Store, project: &str, json: bool, out: &mut dyn Write) -> Resul
             && unled(s)
     });
     let gaps = gaps.count();
+    let now = steps.now();
+    let last = Reuse::between(&steps, now.saturating_sub(SPAN), now + 1);
+    let before = Reuse::between(
+        &steps,
+        now.saturating_sub(2 * SPAN),
+        now.saturating_sub(SPAN),
+    );
     let value = json!({"index": live.len(), "written": written.len(), "replaced": replaced,
-        "gaps": gaps});
+        "gaps": gaps, "reuse": {"last": reuse(&last), "before": reuse(&before)}});
     let line = format!(
         "total {} in the index · last 7 days: {} written, {replaced} replaced, {}",
         plural(live.len(), "pattern"),
@@ -107,6 +118,12 @@ fn uses(trails: &Store, project: &str, json: bool, out: &mut dyn Write) -> Resul
         plural(gaps, "gap")
     );
     crate::command::show(out, json, "total", value, &line)
+}
+
+/// `reuse` as the total of `--json` gives it.
+fn reuse(reuse: &Reuse) -> serde_json::Value {
+    json!({"asks": reuse.asks, "reused": reuse.reused, "percent": reuse.percent(),
+        "uses": reuse.count()})
 }
 
 /// Prints `step` with its grade, then with no `json`, of a done ask, its total from `trails`.
@@ -152,6 +169,7 @@ mod output;
 mod panel;
 mod project;
 mod quality;
+mod reuse;
 mod section;
 mod sheet;
 mod total;

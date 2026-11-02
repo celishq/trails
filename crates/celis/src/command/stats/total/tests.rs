@@ -1,8 +1,8 @@
 use super::super::tests::shop;
 use super::*;
 
-/// The total counts every trail and ended step, the done steps that reused past work and that applied
-/// a pattern, the patterns kept and how many a step ever used, and the time of every step with none under it,
+/// The total counts every trail and ended step, the asks done that used a pattern and their pattern
+/// uses, the patterns kept and how many a step ever used, and the time of every step with none under it,
 /// from the first step on.
 #[test]
 fn the_total_counts_all_time() {
@@ -17,7 +17,7 @@ fn the_total_counts_all_time() {
     assert_eq!(total.time, 600 + 300 + 1_200 + 240 + 60);
 }
 
-/// An ask with no steps under it counts as an ended step, and its uses as hits.
+/// An ask with no steps under it counts as an ended step, and its uses as pattern uses.
 #[test]
 fn an_ask_with_no_steps_under_it_counts_as_a_step() {
     let mut desk = shop();

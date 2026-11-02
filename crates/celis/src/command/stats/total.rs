@@ -1,14 +1,13 @@
 //! What a store holds of all time, as the Total block of stats sums it.
 
 use super::month::spent;
+use super::reuse::Reuse;
 use crate::progress::Model;
-use celis_trails::State;
 use std::collections::HashSet;
 
 /// What a store holds of all time: the second of its first step, its trails, its steps that ended, the
-/// done steps that used a pattern and no later step revised, the done steps that applied a pattern,
-/// its patterns kept and how many of them a step ever used, and the time its steps with no steps under
-/// them took.
+/// asks done that used a pattern and their pattern uses (`DESIGN.md`, decision 19), its patterns kept
+/// and how many of them a step ever used, and the time its steps with no steps under them took.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub(super) struct Total {
     pub since: u64,
@@ -25,8 +24,7 @@ impl Total {
     pub fn of(model: &Model) -> Total {
         let all = model.steps.all();
         let parts = || all.iter().filter(|s| s.is_work());
-        let done = || parts().filter(|s| s.state() == State::Done);
-        let using = |s: &celis_trails::Step| !s.uses().is_empty();
+        let reuse = Reuse::between(model.steps, 0, u64::MAX);
         let named: HashSet<&str> = all.iter().flat_map(|s| s.uses()).collect();
         let live: Vec<_> = model
             .patterns
@@ -38,13 +36,8 @@ impl Total {
             since: all.iter().map(|s| s.note().created_at).min().unwrap_or(0),
             trails: all.iter().filter(|s| s.is_trail()).count(),
             resolved: parts().filter(|s| s.closed_at().is_some()).count(),
-            reused: done()
-                .filter(|s| s.revised().is_empty() && using(s))
-                .count(),
-            hits: all
-                .iter()
-                .filter(|s| s.state() == State::Done && using(s))
-                .count(),
+            reused: reuse.reused,
+            hits: reuse.count(),
             patterns: live.len(),
             used: live
                 .iter()

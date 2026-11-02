@@ -3,12 +3,13 @@
 use super::lifecycle::Lifecycle;
 use super::outcomes::Outcomes;
 use super::project::Project;
+use super::reuse::Reuse;
 use super::value::Value;
 use crate::progress::{Grade, Model};
 use crate::text::clock::midnight;
 use celis_trails::step::steps::LIFE;
 use celis_trails::{State, Step};
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 
 /// The seconds of one day.
 pub(super) const DAY: u64 = 86_400;
@@ -28,7 +29,8 @@ pub(super) const SPANS: [(&str, u64); 5] = [
     ("> 4h", u64::MAX),
 ];
 
-/// The steps of a store in the last 28 days: how those of each day ended, the first second of the
+/// The steps of a store in the last 28 days: how those of each day ended, the pattern reuse of the asks
+/// done each day (`DESIGN.md`, decision 19), the first second of the
 /// oldest day, the median time of a successful step in the last and the prior 14 days, how many fell in
 /// each span, each project's time and the time of the prior 14 days, the live patterns, those learned and those applied in the last 14 days with the steps that
 /// applied one in each project, the five live patterns with the most hits in them, each its id, its words
@@ -36,6 +38,7 @@ pub(super) const SPANS: [(&str, u64); 5] = [
 #[derive(Debug, Default)]
 pub(super) struct Month {
     pub days: Vec<Outcomes>,
+    pub reuse: Vec<Reuse>,
     pub first: u64,
     pub median: Option<u64>,
     pub prior_median: Option<u64>,
@@ -64,7 +67,6 @@ impl Month {
         };
         let (mut took, mut earlier) = (vec![], vec![]);
         let mut projects: BTreeMap<String, Project> = BTreeMap::new();
-        let mut used: HashMap<&str, usize> = HashMap::new();
         let mut applied: BTreeMap<String, usize> = BTreeMap::new();
         for step in steps.all() {
             let Some(at) = step.closed_at().filter(|at| *at >= first) else {
@@ -76,11 +78,6 @@ impl Month {
             }
             let last = at >= half;
             if !step.is_work() {
-                if last && step.state() == State::Done {
-                    for pattern in step.uses() {
-                        *used.entry(pattern).or_default() += 1;
-                    }
-                }
                 continue;
             }
             let name = &step.record().anchor.name;
@@ -102,9 +99,6 @@ impl Month {
                             took.push(grade);
                             if !patterns.is_empty() {
                                 *applied.entry(name.clone()).or_default() += 1;
-                                for pattern in patterns {
-                                    *used.entry(pattern).or_default() += 1;
-                                }
                             }
                         }
                         false => earlier.push(grade),
@@ -151,14 +145,18 @@ impl Month {
             .collect();
         month.patterns = live.len();
         month.learned = live.iter().filter(|e| e.note.created_at >= half).count();
+        month.reuse = (0..DAYS)
+            .map(|d| Reuse::between(steps, month.start(d), month.start(d) + DAY))
+            .collect();
+        let uses = month.reuse_now().uses;
         month.kept = live
             .iter()
-            .filter(|e| used.contains_key(e.note.id.as_str()))
+            .filter(|e| uses.contains_key(e.note.id.as_str()))
             .count();
         let mut top: Vec<(String, String, usize)> = live
             .iter()
             .filter_map(|e| {
-                let hits = *used.get(e.note.id.as_str())?;
+                let hits = *uses.get(e.note.id.as_str())?;
                 Some((e.note.id.clone(), e.record.content.clone(), hits))
             })
             .collect();
@@ -183,6 +181,21 @@ impl Month {
     /// How the steps of the prior 14 days ended.
     pub fn prior(&self) -> Outcomes {
         Outcomes::sum(&self.days[..HALF])
+    }
+
+    /// The pattern reuse of the asks done in the last 14 days.
+    pub fn reuse_now(&self) -> Reuse {
+        Reuse::sum(&self.reuse[HALF..])
+    }
+
+    /// The pattern reuse of the asks done in the prior 14 days.
+    pub fn reuse_prior(&self) -> Reuse {
+        Reuse::sum(&self.reuse[..HALF])
+    }
+
+    /// The pattern reuse of the asks done in each of the four weeks, the oldest first.
+    pub fn reuse_weeks(&self) -> Vec<Reuse> {
+        self.reuse.chunks(7).map(Reuse::sum).collect()
     }
 
     /// How the steps of each of the four weeks ended, the oldest first.

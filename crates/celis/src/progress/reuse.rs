@@ -2,7 +2,7 @@
 
 use celis_patterns::{Pattern, Patterns};
 
-use celis_trails::{Step, Steps};
+use celis_trails::Steps;
 use std::cmp::Reverse;
 use std::collections::HashMap;
 
@@ -26,14 +26,6 @@ impl<'a> Reuse<'a> {
             }
         }
         reuse
-    }
-
-    /// The uses of a live pattern of `patterns` that `steps` made.
-    pub fn uses_of(&self, steps: &[Step<'a>], patterns: &Patterns<'a>) -> usize {
-        let used = steps.iter().filter_map(|s| self.used.get(s.id()));
-        used.flatten()
-            .filter(|id| patterns.find(id).is_ok())
-            .count()
     }
 
     /// Each live pattern of `patterns` that a step used, with how often, most used first, then newest

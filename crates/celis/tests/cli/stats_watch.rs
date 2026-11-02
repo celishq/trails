@@ -243,7 +243,7 @@ fn next_stats_on_a_terminal_draws_its_board() {
         "▸ LEARNING",
         "▸ QUALITY",
         "▸ OUTPUT AND SPEED",
-        "0 of 1 successful",
+        "0 of 0 asks",
     ] {
         assert!(shown.contains(text), "{text:?} in\n{shown}");
     }
@@ -288,7 +288,7 @@ fn next_stats_opens_a_section_and_all() {
     watch.until("▸ LEARNING");
     watch.press("\r");
     watch.until("▾ Learning");
-    watch.until("REUSE · steps done with a pattern");
+    watch.until("REUSE · asks done with a pattern");
     watch.until("enter close");
     watch.press("a");
     watch.until("▾ Output and speed");
@@ -356,9 +356,9 @@ fn next_stats_demo_fills_the_board() {
     let repo = Repo::new();
     let mut watch = Watch::start(&repo, &["stats", "--next", "--demo"]);
     watch.size(40, 110);
-    watch.until("20 of 42 successful");
+    watch.until("40 of 44 resolved");
     let shown = watch.screen_rows().join("\n");
-    for text in ["40 of 44 resolved", "10% → 57% by week", "● 2 active"] {
+    for text in ["15 of 23 asks", "15% → 75% by week", "● 2 active"] {
         assert!(shown.contains(text), "{text:?} in\n{shown}");
     }
     assert!(!shown.contains("no prior steps"), "{shown}");

@@ -11,7 +11,8 @@ use std::collections::VecDeque;
 
 impl Demo {
     /// Writes the month: four patterns a day before it, a fifth halfway; then each day's steps, a trail a
-    /// project, from the morning, or today so that they close before now; then two trails at work.
+    /// project, from the morning, or today so that they close before now, the trail done after them when
+    /// none is left open; then two trails at work.
     pub(super) fn month(&self) -> Result<(), Failure> {
         let (shop, crm) = (anchor("shop"), anchor("crm"));
         let first = midnight(self.now) - 27 * DAY;
@@ -95,6 +96,9 @@ impl Demo {
                     if kind == 'w' {
                         reworked.push_back(id.clone());
                     }
+                }
+                if steps.iter().all(|s| s.2 != 'e') {
+                    self.close(ago(at), &trail, "it all works", None)?;
                 }
                 at += 60;
             }

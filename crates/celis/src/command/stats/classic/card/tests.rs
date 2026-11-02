@@ -105,7 +105,7 @@ fn the_effect_says_what_each_share_counts() {
     for counts in [
         "of 1 done, no change",
         "of 1 done, revised",
-        "of 1 done, used a pattern",
+        "of 0 asks, used a pattern",
     ] {
         assert!(effect.contains(counts), "{counts:?} in\n{effect}");
     }
@@ -184,7 +184,7 @@ fn the_effect_counts_its_shares_among_the_steps_done() {
     assert!(effect.contains("of 2 done, no change"), "{effect}");
 }
 
-/// `worked`, with a new trail added at `AT` and a step under it that uses a pattern.
+/// `worked`, with a new trail added at `AT` and a step under it that uses a pattern, both done soon after.
 fn reused(later: u64) -> (TempDir, Store) {
     let (home, mut trails) = worked(later);
     let anchor = Anchor {
@@ -223,11 +223,31 @@ fn reused(later: u64) -> (TempDir, Store) {
         .id
         .clone();
     trails.at(AT);
-    trails
-        .add(draft("the next", Some(trail), vec![pattern]))
-        .unwrap();
+    let next = trails
+        .add(draft("the next", Some(trail.clone()), vec![pattern]))
+        .unwrap()
+        .records[0]
+        .id
+        .clone();
+    trails.at(AT);
+    trails.start(&next).unwrap();
+    for id in [&next, &trail] {
+        trails.at(AT + 30);
+        let done = celis_trails::Done::new("it works".into(), None);
+        trails.done(id, done, home.path()).unwrap();
+    }
     trails.at(AT + later);
     (home, trails)
+}
+
+/// The effect counts the share of reuse among the asks done, not the steps: one ask done whose step
+/// used a pattern is all of them, while the open ask counts none (`DESIGN.md`, decision 19).
+#[test]
+fn the_effect_counts_reuse_among_the_asks_done() {
+    let (_home, trails) = reused(3_600);
+    let effect = face(&trails, "00 EFFECT");
+    assert!(effect.contains("of 1 ask, used a pattern"), "{effect}");
+    assert!(effect.contains("of 2 done,"), "{effect}");
 }
 
 /// The patterns card draws the pattern uses of each of the last 14 days as columns, a dot on each day

@@ -76,8 +76,8 @@ fn the_tiles_stand_four_two_or_one_a_row() {
     assert_ne!(row(&lines, "REUSE RATE"), row(&lines, "RESOLVED STEPS"));
 }
 
-/// Opened, the sections show only what the tiles do not: the reused steps and the patterns, the top patterns
-/// by hits, how the resolved steps ended, the weeks and the step times, the daily activity, and each
+/// Opened, the sections show only what the tiles do not: the reused asks and the patterns, the top patterns
+/// by uses, how the resolved steps ended, the weeks and the step times, the daily activity, and each
 /// project's time with its rework and drops; no tile number shows again, and prior is said once, in the
 /// Overview heading.
 #[test]
@@ -85,12 +85,12 @@ fn opened_sections_show_their_details() {
     let month = shop().month();
     let text = board(&month, 108, [true; 4]).join("\n");
     for part in [
-        "REUSE · steps done with a pattern",
-        "1 reused step  ▲ 1",
+        "REUSE · asks done with a pattern",
+        "1 reused ask  ▲ 1",
         "PATTERNS · learned patterns applied",
         "1 of 3 steps applied a pattern  ▲ 1",
         "1 pattern kept: 1 applied, 1 new",
-        "TOP PATTERNS · most hits",
+        "TOP PATTERNS · most uses",
         "RESOLVED STEPS · how they ended",
         "4 resolved  ▲ 3",
         "2 first pass  ▲ 1",
@@ -138,8 +138,8 @@ fn the_total_block_stands_over_the_14_day_board() {
     assert!(lines[2].contains("Total  since"), "{text}");
     for name in [
         "resolved steps",
-        "reused steps",
-        "pattern hits",
+        "reused asks",
+        "pattern uses",
         "patterns used",
         "trails",
         "active time",
@@ -331,7 +331,7 @@ fn learning_opened_shows_the_value_and_the_lifecycle() {
     let month = shop().month();
     let text = board(&month, 120, [true, false, false, false]).join("\n");
     assert!(text.contains("VALUE · 28 days"), "{text}");
-    assert!(text.contains("0 of 0 asks used a pattern"), "{text}");
+    assert!(text.contains("1 of 3 asks used a pattern"), "{text}");
     assert!(text.contains("recalled → "), "{text}");
     assert!(text.contains("week of     written"), "{text}");
 }

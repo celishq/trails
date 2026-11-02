@@ -76,52 +76,6 @@ fn a_period_counts_its_done_steps_as_planned_and_reworked() {
     assert_eq!(period.reworked(), 1);
 }
 
-/// A period counts the steps done in it that use a pattern, and not those that use only a step or an id
-/// that names no record (`spec/06-reuse.md`, "Uses").
-#[test]
-fn a_period_counts_its_done_steps_that_use_a_pattern() {
-    let pattern = PatternRecord {
-        anchor: Anchor {
-            project: "p".into(),
-            name: "repo".into(),
-        },
-        scope: Scope::Project,
-        replaces: None,
-        content: "keep cents".into(),
-        paths: vec![],
-        within: vec![],
-        examples: Default::default(),
-    }
-    .record(&account(), 5)
-    .unwrap();
-    let trail = step("trail", 10, None, &[], None);
-    let source = step("source", 11, Some(&trail), &[], None);
-    let using = step("using", 21, Some(&trail), &[&pattern.id], None);
-    let follows = step("follows", 22, Some(&trail), &[&source.id], None);
-    let dangling = step("dangling", 23, Some(&trail), &["ab12cd34"], None);
-    let late = step("late", 45, Some(&trail), &[&pattern.id], None);
-    let open = step("open", 24, Some(&trail), &[&pattern.id], None);
-    let records = vec![
-        pattern,
-        trail,
-        source,
-        using.clone(),
-        follows.clone(),
-        dangling,
-        open,
-        late,
-        done(&using.id, None, 30),
-        done(&follows.id, None, 31),
-    ];
-    let steps = Steps::new(&records, 50);
-    let period = Period::new(&steps, 20, 40);
-    assert_eq!(
-        titles(period.added()),
-        ["using", "follows", "dangling", "open"]
-    );
-    assert_eq!(period.using(), 1);
-}
-
 /// A period's closed steps are those done or dropped in it, and those that went stale with a trail whose
 /// newest record is in it.
 #[test]
@@ -166,5 +120,5 @@ fn a_period_counts_an_ask_with_no_steps_under_it() {
     let steps = Steps::new(&records, 50);
     let period = Period::new(&steps, 20, 40);
     assert_eq!(titles(period.done()), ["alone"]);
-    assert_eq!(period.using(), 1);
+    assert_eq!(period.reuse().reused, 1);
 }
