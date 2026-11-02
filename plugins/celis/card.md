@@ -62,7 +62,9 @@ A pattern has five lines, in Christopher Alexander's form. Its Name is the form 
 noun phrase, such as "Light on two sides of every room". Its When is one context and the moment its
 forces appear, such as "When a list gets more rows than fit on one screen", never a topic, the person
 or the project. Its Do is one choice: a larger choice is a larger pattern, which it names with
-`--within`. Say it in words that hold in other fields, so that it can guide work there too:
+`--within`. When the lesson names a concrete thing, such as a kind of file, a value, a format or a
+command, keep it in the Do and give it `--path` or the project as its scope, so that the agent does
+it exactly. Else say it in words that hold in other fields, so that it can guide work there too:
 
 ```
 Name: <the resolved form>
