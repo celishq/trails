@@ -18,9 +18,9 @@ celis keeps the knowledge that agents need to do work well, and the evidence for
   Its When is one context and the moment its forces appear, not a topic. Its Do is one resolution, and
   a larger resolution is a larger pattern that it completes. The form is Alexander's, not an
   engineering one, so that a pattern can carry a concept from one field into another, such as from
-  architecture into design. A lesson that names a concrete thing, such as a kind of file, a value, a
-  format or a command, keeps it in the Do, with `--path` or the project as its scope. Any other lesson
-  is said in words that hold in other fields.
+  architecture into design. A pattern can also be concrete, such as one that names a kind of file, a
+  value or a command, with `--path` or the project as its scope. The agent that writes it chooses how
+  sharp it is: in eval 58, Opus kept each concrete lesson sharp with the card alone.
 - **Trails are the evidence.** A trail is one ask, with its steps and their proofs. It gives observability,
   and it is the feedback loop that shows whether a pattern is still useful: its examples, its uses and
   tidy.
