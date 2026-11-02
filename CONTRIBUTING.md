@@ -66,7 +66,8 @@ Only maintainers release. Agents install the plugin from `main`, so `main` moves
    because a squash makes `main` and `dev` differ.
 3. The merge builds `celis` from the merge commit, tags it `v1.2.3`, publishes the GitHub release, and
    installs it on clean runners. Agents see the new plugin version when you merge; the release follows a few
-   minutes later.
+   minutes later. A job then fast-forwards `dev` to `main`. If a PR landed on `dev` before the merge, it
+   fails and says to merge `main` into `dev` by hand.
 
 If the Release run fails before it publishes, re-run it from the Actions tab. If it fails after it publishes,
 fix the problem in a new PR into `dev` and release the next version.
