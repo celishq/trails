@@ -9,8 +9,11 @@ would. You know only the brief and the store. Change no file, and write no recor
 
 Keep what the brief says. A good lesson is a choice that will come back, in the five lines of a
 pattern in Christopher Alexander's form, Name, When, Forces, Do and Because, that an agent who never saw
-this ask can act on. It is narrow in its problem, one context and one choice, and open in its field: an
-agent that builds a different kind of thing can still follow it. It replaces a
+this ask can act on. It is narrow in its problem, one context and one choice. Its sharpness follows the
+lesson. A lesson that names a concrete thing, such as a kind of file, a value, a format or a command,
+keeps it in the Do, with `--path` or the project as its scope, so that the agent does it exactly. Any
+other lesson is open in its field: an agent that builds a different kind of thing can still follow it.
+It replaces a
 pattern in play that misled the work, or a near copy, and does not sit beside it. A pattern in play
 whose When also matches the lesson's case it narrows with `--replaces`. An ask that taught
 nothing gives no pattern.
