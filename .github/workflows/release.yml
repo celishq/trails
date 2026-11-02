@@ -1,8 +1,7 @@
 name: Release
 
 # Publishes release `v<version>` when a merge to main carries a manifest version with no tag yet: its attested
-# archives, `install.sh` and `install.md`. It then fast-forwards dev to main, and a last job installs the
-# release on clean runners.
+# archives, `install.sh` and `install.md`. A last job installs the release on clean runners.
 
 on:
   push:
@@ -55,22 +54,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.version.outputs.version }}
         run: gh release create "v$VERSION" dist/* install.sh install.md --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --generate-notes
-
-  sync:
-    name: Sync dev to main
-    needs: publish
-    runs-on: namespace-profile-linux
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          ssh-key: ${{ secrets.DEV_SYNC_KEY }}
-      - name: Fast-forward dev
-        run: |
-          git push origin "$GITHUB_SHA:refs/heads/dev" || {
-            echo "::error::dev has moved since the release. Merge main into dev by hand: git switch dev && git pull && git merge origin/main && git push"
-            exit 1
-          }
 
   smoke:
     name: Install on ${{ matrix.runner }}
