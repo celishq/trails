@@ -1,6 +1,6 @@
 {
   "name": "celis",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Celis: your team's know-how, in every AI agent.",
   "author": { "name": "Celis" },
   "skills": "./skills/",

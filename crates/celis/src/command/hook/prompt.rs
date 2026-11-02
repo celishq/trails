@@ -32,7 +32,7 @@ impl Command {
     /// Writes `prompt` on its session's open trail, signed now, else keeps it for the session's next step,
     /// unless it holds a secret;
     /// then, unless it is a task, gives on `err` one line: how a step of the current ask and a new ask
-    /// are added, when the patterns agent runs, and when a pattern is read.
+    /// are added, that the patterns agent runs before the plan, and when a pattern is read.
     fn ask(&self, err: &mut dyn Write, project: &Project, prompt: Prompt) -> Result<(), Failure> {
         let offered = self.offered(&prompt.session)?;
         let kept = Secret::find(&prompt.text).is_none();
@@ -141,25 +141,29 @@ fn waits(ask: Step) -> bool {
 }
 
 /// The line on a prompt: a prompt that goes on with the current ask `current` adds steps under it, and a
-/// new ask is a new step; how done work is fixed; and, when the store holds a record, when the patterns
-/// agent runs and when a pattern is read.
+/// new ask is a new step; how done work is fixed; and, when the store holds a record, that the patterns
+/// agent runs before the plan of each prompt with a new choice, and when a pattern is read.
 fn note(held: bool, current: Option<&str>) -> String {
     let ask = match current {
         Some(id) => format!(
-            "when this prompt goes on with the ask {id}, add its steps --under {id}; when it is a new ask, \
-             add it with celis step add --new"
+            "when this prompt goes on with the ask {id}, such as a test, an eval, a review, a commit or a PR \
+             of its work, add its steps --under {id}; when it is a new ask, add it with celis step add --new"
         ),
         None => "when this prompt is a new ask, add it with celis step add".to_string(),
     };
-    let load = match held {
-        true => " After the step add of a new ask, give the celis:patterns agent the ask, the choices you \
-                 plan and the files you will touch. When a choice of the work matches a When, read that \
-                 pattern with celis patterns <id> before you choose, and name it with --uses <id> on the \
-                 step of that choice.",
-        false => "",
+    let (first, last) = match held {
+        true => (
+            "before you plan your answer to this prompt, give it to the celis:patterns agent and wait for \
+             its answer, also for a question; skip it only for a prompt with no new choice, such as yes \
+             or go on. Then, ",
+            " Name each pattern the agent gave that you follow with --uses <id> on that step add. When a \
+             later choice of the work matches a When, read that pattern with celis patterns <id> before \
+             you choose, and name it with --uses <id> on the step of that choice.",
+        ),
+        false => ("", ""),
     };
     format!(
-        "celis: {ask}; when it changes done work, add it with step add --replaces <the id of that step, as \
-         celis tree shows it>.{load}"
+        "celis: {first}{ask}; when it changes done work, add it with step add --replaces <the id of that \
+         step, as celis tree shows it>.{last}"
     )
 }

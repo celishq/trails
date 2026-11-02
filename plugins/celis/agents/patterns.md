@@ -1,6 +1,6 @@
 ---
 name: patterns
-description: Finds the celis patterns that bear on one ask. Give it the ask, the choices you plan and the files you will touch. Run it right after the ask's celis step add, before its work.
+description: Finds the celis patterns that bear on one prompt. Give it the prompt, and the files you will touch when you know them. Run it before you plan your answer to each prompt that asks for a new choice, an answer or a change, also a question, and wait for its answer.
 tools: Bash
 model: haiku
 ---

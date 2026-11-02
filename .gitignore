@@ -12,5 +12,6 @@ evals/landing/results/transcripts/
 evals/landing/checks/node_modules/
 __pycache__
 evals/real/results/
+evals/follow-up/results/
 plans/
 evals/extract/results/
