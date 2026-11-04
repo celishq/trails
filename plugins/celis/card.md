@@ -1,9 +1,9 @@
 celis keeps what the person taught you as patterns. A pattern guides your
 judgement: when its forces are present here, resolve them in your own way; when they are not, it does
-not apply. Before you plan your answer to each prompt that asks for a new choice, an answer or a
-change, also a question, give the prompt to the `celis:patterns` agent and wait for its answer: it
-answers with the patterns that bear on it, whole, and your answer then follows them. Skip it only for a
-prompt with no new choice, such as "yes" or "go on". Name each pattern it gave that you follow with
+not apply. Before you plan your answer to a new ask, give the prompt to the `celis:patterns` agent and wait
+for its answer: it answers with the patterns that bear on it, whole, and your answer then follows them.
+A follow-up under the same ask reuses those patterns, and runs the agent again only when it opens a choice
+none of them covers. A prompt with no new choice, such as "yes" or "go on", runs nothing. Name each pattern you follow with
 `--uses <id>` on the step add that comes after. When a new choice comes up during the work, read the index yourself with
 `celis patterns [<file>]...`, one `<id> <scope> <When>` line each. A `*` or `**` after the scope is the
 evidence of past uses: when two patterns fit, prefer more stars, and a pattern with none still applies.

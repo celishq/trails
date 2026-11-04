@@ -141,8 +141,8 @@ fn waits(ask: Step) -> bool {
 }
 
 /// The line on a prompt: a prompt that goes on with the current ask `current` adds steps under it, and a
-/// new ask is a new step; how done work is fixed; and, when the store holds a record, that the patterns
-/// agent runs before the plan of each prompt with a new choice, and when a pattern is read.
+/// new ask is a new step; how done work is fixed; and, when the store holds a record, when the patterns
+/// agent runs before the plan of an ask, and when a pattern is read.
 fn note(held: bool, current: Option<&str>) -> String {
     let ask = match current {
         Some(id) => format!(
@@ -151,16 +151,23 @@ fn note(held: bool, current: Option<&str>) -> String {
         ),
         None => "when this prompt is a new ask, add it with celis step add".to_string(),
     };
-    let (first, last) = match held {
-        true => (
-            "before you plan your answer to this prompt, give it to the celis:patterns agent and wait for \
-             its answer, also for a question; skip it only for a prompt with no new choice, such as yes \
-             or go on. Then, ",
-            " Name each pattern the agent gave that you follow with --uses <id> on that step add. When a \
+    let first = match (held, current) {
+        (false, _) => String::new(),
+        (true, Some(id)) => format!(
+            "before you plan your answer to this prompt, if it opens a choice that no pattern named on the ask \
+             {id} covers, give it to the celis:patterns agent and wait for its answer; otherwise reuse the \
+             patterns named on that ask. Then, "
+        ),
+        (true, None) => "before you plan your answer to this prompt, give it to the celis:patterns agent and \
+             wait for its answer, also for a question; skip it only for a prompt with no new choice, such as \
+             yes or go on. Then, "
+            .to_string(),
+    };
+    let last = match held {
+        true => " Name each pattern the agent gave that you follow with --uses <id> on that step add. When a \
              later choice of the work matches a When, read that pattern with celis patterns <id> before \
              you choose, and name it with --uses <id> on the step of that choice.",
-        ),
-        false => ("", ""),
+        false => "",
     };
     format!(
         "celis: {first}{ask}; when it changes done work, add it with step add --replaces <the id of that \
