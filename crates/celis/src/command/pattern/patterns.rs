@@ -40,7 +40,7 @@ impl Command {
             return self.patterns_whole(ids, out);
         }
         if !args.markdown {
-            let index = self.index(&args.words[1..])?;
+            let index = self.index(&args.words[1..], args.all)?;
             return crate::command::put(out, index.as_deref().unwrap_or(NONE));
         }
         if !self.held()? {
@@ -149,8 +149,9 @@ impl Command {
     }
 
     /// The index of the live patterns in scope, oldest first: each one's id, scope and When, with its
-    /// paths, each of `files` that they match, and its larger patterns; none when there is none.
-    pub(crate) fn index(&self, files: &[String]) -> Result<Option<String>, Failure> {
+    /// paths, each of `files` that they match, and its larger patterns, then how many it hides unless
+    /// `all`; none when there is none.
+    pub(crate) fn index(&self, files: &[String], all: bool) -> Result<Option<String>, Failure> {
         if !self.held()? {
             return Ok(None);
         }
@@ -170,11 +171,22 @@ impl Command {
             .collect();
         let steps = trails.steps();
         let level = Level::of(&steps);
-        let lines: Vec<String> = patterns
+        let hidden = match all {
+            true => HashSet::new(),
+            false => Candidate::hidden(&trails, &here.anchor.project),
+        };
+        let mut lines: Vec<String> = patterns
             .iter()
             .rev()
+            .filter(|pattern| !hidden.contains(pattern.id()))
             .map(|pattern| entry(pattern, &level, &held, &files))
             .collect();
+        if !hidden.is_empty() {
+            lines.push(format!(
+                "{} hidden: celis patterns --all shows them",
+                hidden.len()
+            ));
+        }
         Ok(Some(lines.join("\n")))
     }
 }

@@ -355,11 +355,12 @@ pub const VERBS: &[Verb] = &[
     },
     Verb {
         command: "patterns",
-        usage: &["celis patterns [<id>]... [<file>]... [--markdown] [--tidy] [--cell <name>]"],
-        summary: "Show the index of the patterns of this project and of you, the oldest first: each one's id, scope, level and When, with its paths, each named file they match, and the larger patterns it completes. A level of * or ** is the evidence of past uses. With ids, print each of those patterns whole, with its examples, and mark each recalled on the session's open step. With --markdown, print each whole as one page, with its examples, each file a link to its blob, for a review or a skill file. With --tidy, list the patterns that need tidy, with the reason (misled, near, unused, churn, nameless, form, topic, tension, fact or many), then the size of the index.",
+        usage: &["celis patterns [<id>]... [<file>]... [--all] [--markdown] [--tidy] [--cell <name>]"],
+        summary: "Show the index of the patterns of this project and of you, the oldest first: each one's id, scope, level and When, with its paths, each named file they match, and the larger patterns it completes. A level of * or ** is the evidence of past uses. It hides each pattern that misled 2 or more steps, or that is 7 or more days old and that no step used in the last 7 days, and its last line counts them; with --all, show every one. With ids, print each of those patterns whole, with its examples, and mark each recalled on the session's open step. With --markdown, print each whole as one page, with its examples, each file a link to its blob, for a review or a skill file. With --tidy, list the patterns that need tidy, with the reason (misled, near, unused, churn, nameless, form, topic, tension, fact or many), then the size of the index.",
         args: &[
             ("<id>", "A pattern id, or its first 4 or more characters"),
             ("<file>", "A file or folder; marks each pattern whose paths match it"),
+            ("--all", "Show every pattern, also those the index hides"),
             ("--markdown", "Print one Markdown page, each file a link to its blob"),
             ("--tidy", "List the patterns that need tidy, with the reason"),
             ("--cell <name>", "Show only the patterns of one cell, on or off"),
@@ -367,6 +368,7 @@ pub const VERBS: &[Verb] = &[
         examples: &[
             "celis patterns",
             "celis patterns shelf/prices.py shelf/",
+            "celis patterns --all",
             "celis patterns 9b0e11aa",
             "celis patterns 9b0e11aa 4c2d7f01",
             "celis patterns --markdown > patterns.md",

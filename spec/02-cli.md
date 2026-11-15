@@ -16,7 +16,7 @@ read. What a command shows a person is not part of it.
 ```
 celis pattern [--scope <scope>] [--replaces <id>] [--path <glob>]... [--within <id>]... [--good <example>]... [--bad <example>]... [--project <id>] -- <text>
                                                        a pattern, in its scope
-celis patterns [<id>]... [<file>]... [--markdown] [--tidy] [--cell <name>]
+celis patterns [<id>]... [<file>]... [--all] [--markdown] [--tidy] [--cell <name>]
                                                        the index of the patterns in scope, some whole, or what needs tidy
 celis tree [<id>]... [--graph] [--full] [--all] [--demo]
                                                        a trail and its steps; again on each change
@@ -236,8 +236,14 @@ agent reads it, and reads the whole of patterns with `patterns <id8>...`.
   path   <glob>          each `path` of it (CIP-05, "Paths")
   match  <file>          each `<file>` that one of its paths matches (CIP-05, "Paths")
   within <id8>           each larger pattern it completes (CIP-05, "Graph")
+<n> hidden: celis patterns --all shows them
+                         last, when it hides any
 no pattern yet           when there is none
 ```
+
+A live pattern is hidden when it misled 2 or more steps (CIP-06, "Misled"), or when it was made 7 or
+more days ago and no step used it in the last 7 days (CIP-06, "Uses"), while a step of the project used
+a pattern.
 
 ```
 celis patterns --tidy
@@ -270,7 +276,9 @@ A pattern's reasons, in this order:
 
 **Rules**
 
-- `patterns` MUST print each live pattern in scope once, oldest first, so that a new pattern comes last.
+- `patterns` MUST print each live pattern in scope that is not hidden once, oldest first, so that a new
+  pattern comes last, then the `hidden` line when it hides any. With `--all`, it MUST print each live
+  pattern in scope, and no `hidden` line.
 - `patterns` and `patterns <id>` MUST show the level of each pattern that has one ("Levels").
 - `pattern` MUST print on stderr a `warn    <reason>: <what it means>` line for each of its reasons `nameless`,
   `form`, `topic`, `tension`, `fact` and `many`, in that order, and still write the pattern.
@@ -279,9 +287,9 @@ A pattern's reasons, in this order:
 - With `--markdown`, `patterns` MUST print each live pattern in scope whole, with its examples, as one
   Markdown page.
 - When each word is an `<id>`, a word of 4 to 64 hex characters that names no file, `patterns` MUST
-  print each of those patterns whole, with its examples, as `--markdown` does, in the order given. An
-  `<id>` of a replaced pattern names the live pattern that ends its chain of `replaces` (CIP-05). It
-  MUST refuse with `no-pattern`, and print nothing, when an `<id>` names no live pattern in scope. It
+  print each of those patterns whole, hidden or not, with its examples, as `--markdown` does, in the
+  order given. An `<id>` of a replaced pattern names the live pattern that ends its chain of `replaces`
+  (CIP-05). It MUST refuse with `no-pattern`, and print nothing, when an `<id>` names no live pattern in scope. It
   MUST write a recall of each pattern on the session's newest open step (CIP-06, "Recalls"), and
   nothing when the session has none or the step has a recall of it.
 - With `--tidy`, `patterns` MUST print a line for each live pattern in scope that has a reason, oldest
@@ -293,6 +301,7 @@ A pattern's reasons, in this order:
 ```
 celis patterns
 celis patterns shelf/prices.py shelf/
+celis patterns --all
 celis patterns 9b0e11aa
 celis patterns 9b0e11aa 4c2d7f01
 celis patterns --markdown > patterns.md
