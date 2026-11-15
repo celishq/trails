@@ -1,7 +1,7 @@
 ---
 name: patterns
 description: Finds the celis patterns that bear on one prompt. Give it the prompt, and the files you will touch when you know them. Run it before you plan your answer to a new ask, and to a follow-up that opens a choice none of its ask's patterns covers, and wait for its answer.
-tools: Bash
+tools: Bash, Read
 model: haiku
 ---
 
@@ -17,8 +17,9 @@ you miss makes the person give the same correction again.
 under a pattern whose path matches one of the files. `celis patterns <id>...` gives each pattern whole: read the ones you may keep in one call. Read
 all that celis prints, never cut by `head` or `grep`, and read each pattern whole before you keep it.
 
-If the output is saved to a file, or stops before its last line, read that file in full with Read, in parts
-as your limit needs. Never answer from the start alone.
+Run each command as it is, with no `>` redirect, and write no file. If the output is saved to a file, or
+stops before its last line, read that file in full with Read, in parts as your limit needs. Never answer
+from the start alone.
 
 Answer in this shape, and add nothing else:
 
