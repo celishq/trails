@@ -205,13 +205,12 @@ fn daily(s: &mut Sheet, m: &Moment, x: u16, y: u16, w: u16) -> u16 {
     row += s.legend(grid, (x0, row, right), &OUTCOMES) + 1;
     row += titled(s, row, titles[1], &source) + 1;
     let (slate, green) = (colour(SLATE), colour(GREEN));
-    for d in columns.first..DAYS {
+    for (d, day) in month.days.iter().enumerate().take(DAYS).skip(columns.first) {
         let x = columns.column(d);
         let (mark, at) = match wide >= 2 {
             true => ("██", x + (columns.wide - 2) / 2),
             false => ("■", x),
         };
-        let day = month.days[d];
         if day.successful() == 0 {
             s.put(at, row, if wide >= 2 { " ·" } else { "·" }, DIM);
             continue;
