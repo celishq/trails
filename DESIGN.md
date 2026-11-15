@@ -53,7 +53,12 @@ A bench checks a design; a design is never tuned to a bench.
    - `celis patterns` gives the index: each live pattern in scope as its id and its When, with its
      level (decision 17). The When is the moment a choice is due, so a reader can match it to the work. A writer gives each pattern a Name: celis
      writes a pattern without one, with a warning. `celis grep <id>` gives the whole pattern. celis has no vector, no word match and no
-     rank. The session start does not give the index: past a few dozen patterns it grows too large
+     rank. The index hides a live pattern that misled 2 or more steps, and one made 7 or more days
+     ago that no step used in the last 7 days, while a step of the project used a pattern: past a
+     thousand patterns the index grows too large to read, and these add noise but guide no work. Its
+     last line counts the hidden ones. `celis patterns --all` shows every one, and tidy reads that; a
+     hidden pattern still reads whole by its id. Hiding by rule is not a cut: a line that shows is
+     never cut. The session start does not give the index: past a few dozen patterns it grows too large
      for the agent's session start, which cuts it. At each prompt that asks for a new choice, an answer
      or a change, questions included, the agent gives the `celis:patterns` agent the prompt, and waits
      for its answer before it plans its own answer; that agent reads the index and answers with the
@@ -170,7 +175,8 @@ A bench checks a design; a design is never tuned to a bench.
     new or unproven. One star: 3 or more steps used it, and it misled none. Two stars: it also has uses
     in 2 or more projects. A pattern that misled has no level until tidy replaces it. The index and a
     whole pattern show it, so that the agent prefers a proven pattern when two fit. A pattern with no
-    level still applies: the level ranks, and never hides.
+    level still applies: the level ranks, and never hides. Only misled and use hide a
+    pattern from the index (decision 3).
 18. **Two status lines say what celis does for the person.** The person does not see what celis prints,
     so the agent gives them two lines word for word. The session start opens with `celis knows 271 of
     your patterns, 4 new this week.`, or `celis is on and learns from your first correction.` when no

@@ -6,8 +6,8 @@ description: Tidies the celis trails and patterns. Drops stale trails and patter
 The person wants a small index of patterns that guide, and no musts in celis: a must goes into the
 project's own files. Ask what to tidy: this project, this project and the `me` patterns, or all
 projects. Do the tidy as one ask titled `Tidy the celis trails`, so that celis knows when the last tidy
-was. Start from `celis patterns --tidy`: each pattern that needs tidy, and why. `celis patterns` gives
-the index, and `celis grep` gives each pattern with its uses, misled, last use and replaces. A pattern whose grep line names
+was. Start from `celis patterns --tidy`: each pattern that needs tidy, and why. `celis patterns --all` gives
+the whole index, and `celis grep` gives each pattern with its uses, misled, last use and replaces. A pattern whose grep line names
 ` cell:<name>` is in that cell, and `celis cells` lists the cells.
 
 A good tidy:

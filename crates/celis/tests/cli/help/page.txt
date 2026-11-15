@@ -7,6 +7,7 @@ Usage
 
 Read
   patterns            Show the index of your patterns
+  ├ --all             Show every pattern, also those the index hides
   ├ --markdown        Print one Markdown page, each file a link to its blob
   ├ --tidy            List the patterns that need tidy, with the reason
   └ --cell <name>     Show only the patterns of one cell, on or off

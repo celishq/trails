@@ -88,7 +88,7 @@ impl Command {
                  brief that celis extract prints."
             ));
         }
-        if self.here(json).index(&[]).ok().flatten().is_none() {
+        if self.here(json).index(&[], true).ok().flatten().is_none() {
             if let Some(line) = self.learn() {
                 text.push_str(&format!("\n\n{line}"));
             }

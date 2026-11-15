@@ -348,3 +348,87 @@ fn a_pattern_earns_its_level_from_its_uses() {
         format!("{} me When a price prints", &id[..8])
     );
 }
+
+/// A done ask with a done step under it that uses `pattern`, and a later step that fixes that step.
+fn misled_once(repo: &Repo, pattern: &str, n: usize) {
+    let ask = add(repo, &["--", &format!("Print price {n}")]);
+    let text = format!("print price {n} in cents");
+    let step = add(
+        repo,
+        &["--under", &ask[..8], "--uses", &pattern[..8], "--", &text],
+    );
+    support::finish(repo, &step[..8]);
+    support::finish(repo, &ask[..8]);
+    let fix = format!("Print price {n} with its cents");
+    add(repo, &["--replaces", &step[..8], "--", &fix]);
+}
+
+/// The lines `patterns <args>` prints.
+fn index_lines(repo: &Repo, args: &[&str]) -> Vec<String> {
+    let mut all = vec!["patterns"];
+    all.extend(args);
+    let o = cli(repo, &all);
+    assert!(o.status.success(), "{}", err(&o));
+    out(&o).lines().map(str::to_string).collect()
+}
+
+/// `patterns` hides a pattern that misled 2 or more steps and counts it on the `hidden` line; `--all`
+/// shows it, and `patterns <id>` prints it whole (`spec/02-cli.md`, "Patterns").
+#[test]
+fn patterns_hides_a_pattern_that_misled_twice() {
+    let repo = Repo::new();
+    let id = decide(&repo, &[], "When a price prints: keep cents.");
+    std::thread::sleep(std::time::Duration::from_millis(1100));
+    let logo = decide(&repo, &[], "When a logo is drawn: keep it flat.");
+    let shown = format!("{} project When a price prints", &id[..8]);
+    let flat = format!("{} project When a logo is drawn", &logo[..8]);
+    misled_once(&repo, &id, 1);
+    assert_eq!(index_lines(&repo, &[]), [shown.clone(), flat.clone()]);
+    misled_once(&repo, &id, 2);
+    assert_eq!(
+        index_lines(&repo, &[]),
+        [flat.clone(), HIDDEN_ONE.to_string()]
+    );
+    assert_eq!(index_lines(&repo, &["--all"]), [shown, flat]);
+    let whole = out(&cli(&repo, &["patterns", &id[..8]]));
+    assert!(
+        whole.contains("When a price prints: keep cents."),
+        "{whole}"
+    );
+}
+
+/// `patterns` hides a pattern made 7 or more days ago that no step used in the last 7 days, while a
+/// step of the project used a pattern, and shows an old one a step used and a new one
+/// (`spec/02-cli.md`, "Patterns").
+#[test]
+fn patterns_hides_an_old_pattern_no_step_uses() {
+    let repo = Repo::new();
+    let project = (repo.project_id(), "repo".to_string());
+    let old = |text: &str, days: u64| {
+        stored_pattern(
+            &repo,
+            (&project.0, &project.1),
+            &account(),
+            (None, None),
+            text,
+            now() - days * DAY,
+        )
+    };
+    let stale = old("When a release is cut: tag it.", 9);
+    let used = old("When a price prints: keep cents.", 8);
+    let fresh = decide(&repo, &[], "When a logo is drawn: keep it flat.");
+    let stale = format!("{} project When a release is cut", &stale.id[..8]);
+    let used_line = format!("{} project When a price prints", &used.id[..8]);
+    let fresh = format!("{} project When a logo is drawn", &fresh[..8]);
+    let every = [stale.clone(), used_line.clone(), fresh.clone()];
+    assert_eq!(index_lines(&repo, &[]), every);
+    add(&repo, &["--uses", &used.id[..8], "--", "Print the price"]);
+    assert_eq!(
+        index_lines(&repo, &[]),
+        [used_line, fresh, HIDDEN_ONE.to_string()]
+    );
+    assert_eq!(index_lines(&repo, &["--all"]), every);
+}
+
+/// The `hidden` line of an index that hides one pattern (`spec/02-cli.md`, "Patterns").
+const HIDDEN_ONE: &str = "1 hidden: celis patterns --all shows them";

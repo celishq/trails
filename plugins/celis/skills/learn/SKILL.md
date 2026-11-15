@@ -16,7 +16,7 @@ person says yes.
    short recording, a gif or an mp4, of each motion, such as a hover or a page load. Read each motion's
    timing and easing from its CSS or script, because a recording shows the motion but not its values.
    When you cannot open a browser, say so, and draft from the text alone.
-2. Read the index that `celis patterns` gives, open with `celis patterns <id>` each pattern that may say
+2. Read the whole index that `celis patterns --all` gives, open with `celis patterns <id>` each pattern that may say
    the same as a draft, and leave out each draft that a live pattern already says.
 3. Draft each point as a pattern in the five lines the card shows, as its Learn move says: a must, such
    as "always" or "never", a taste, and a choice the source explains are each a pattern that guides,
